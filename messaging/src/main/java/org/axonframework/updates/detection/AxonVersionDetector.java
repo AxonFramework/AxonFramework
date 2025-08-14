@@ -143,7 +143,7 @@ public final class AxonVersionDetector {
         );
     }
 
-    private static List<Artifact> extractVersionFromDirectory(URL url) throws URISyntaxException, IOException {
+    private static List<Artifact> extractVersionFromDirectory(URL url) throws URISyntaxException {
         File file = new File(url.toURI());
         List<Artifact> foundVersions = new LinkedList<>();
         if (file.isDirectory()) {

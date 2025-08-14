@@ -46,7 +46,7 @@ class GrpcBackedQueryUpdateMessageTest {
             new SubscriptionMessageSerializer(serializer, serializer, new AxonServerConfiguration());
 
     @Test
-    void getIdentifierReturnsTheSameIdentifierAsSpecifiedInTheQueryUpdate() {
+    void identifierAsSpecifiedInTheQueryUpdate() {
         SubscriptionQueryUpdateMessage<Object> testSubscriptionQueryUpdateMessage =
                 asUpdateMessage(TEST_QUERY_UPDATE);
         QueryUpdate testQueryUpdate =
@@ -54,11 +54,11 @@ class GrpcBackedQueryUpdateMessageTest {
         GrpcBackedQueryUpdateMessage<TestQueryUpdate> testSubject =
                 new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
 
-        assertEquals(testQueryUpdate.getMessageIdentifier(), testSubject.getIdentifier());
+        assertEquals(testQueryUpdate.getMessageIdentifier(), testSubject.identifier());
     }
 
     @Test
-    void getMetaDataReturnsTheSameMapAsWasInsertedInTheQueryUpdate() {
+    void metaDataReturnsTheSameMapAsWasInsertedInTheQueryUpdate() {
         MetaData expectedMetaData = MetaData.with("some-key", "some-value");
         SubscriptionQueryUpdateMessage<Object> testSubscriptionQueryUpdateMessage =
                 asUpdateMessage(TEST_QUERY_UPDATE).withMetaData(expectedMetaData);
@@ -67,11 +67,11 @@ class GrpcBackedQueryUpdateMessageTest {
         GrpcBackedQueryUpdateMessage<TestQueryUpdate> testSubject =
                 new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
 
-        assertEquals(expectedMetaData, testSubject.getMetaData());
+        assertEquals(expectedMetaData, testSubject.metaData());
     }
 
     @Test
-    void getPayloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryUpdate() {
+    void payloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryUpdate() {
         TestQueryUpdate expectedQueryUpdate = TEST_QUERY_UPDATE;
         SubscriptionQueryUpdateMessage<Object> testSubscriptionQueryUpdateMessage =
                 asUpdateMessage(expectedQueryUpdate);
@@ -80,11 +80,11 @@ class GrpcBackedQueryUpdateMessageTest {
         GrpcBackedQueryUpdateMessage<TestQueryUpdate> testSubject =
                 new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
 
-        assertEquals(expectedQueryUpdate, testSubject.getPayload());
+        assertEquals(expectedQueryUpdate, testSubject.payload());
     }
 
     @Test
-    void getPayloadTypeReturnsTheTypeOfTheInsertedQueryUpdate() {
+    void payloadTypeReturnsTheTypeOfTheInsertedQueryUpdate() {
         SubscriptionQueryUpdateMessage<Object> testSubscriptionQueryUpdateMessage =
                 asUpdateMessage(TEST_QUERY_UPDATE);
         QueryUpdate testQueryUpdate =
@@ -92,7 +92,7 @@ class GrpcBackedQueryUpdateMessageTest {
         GrpcBackedQueryUpdateMessage<TestQueryUpdate> testSubject =
                 new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
 
-        assertEquals(TestQueryUpdate.class, testSubject.getPayloadType());
+        assertEquals(TestQueryUpdate.class, testSubject.payloadType());
     }
 
     @Test
@@ -104,7 +104,7 @@ class GrpcBackedQueryUpdateMessageTest {
         GrpcBackedQueryUpdateMessage<TestQueryUpdate> testSubject =
                 new GrpcBackedQueryUpdateMessage<>(testQueryUpdate, serializer);
 
-        assertThrows(IllegalPayloadAccessException.class, testSubject::getPayload);
+        assertThrows(IllegalPayloadAccessException.class, testSubject::payload);
     }
 
     @Test
@@ -120,7 +120,7 @@ class GrpcBackedQueryUpdateMessageTest {
         MetaData replacementMetaData = MetaData.with("some-other-key", "some-other-value");
 
         testSubject = testSubject.withMetaData(replacementMetaData);
-        MetaData resultMetaData = testSubject.getMetaData();
+        MetaData resultMetaData = testSubject.metaData();
         assertFalse(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
         assertEquals(replacementMetaData, resultMetaData);
     }
@@ -138,7 +138,7 @@ class GrpcBackedQueryUpdateMessageTest {
         MetaData additionalMetaData = MetaData.with("some-other-key", "some-other-value");
 
         testSubject = testSubject.andMetaData(additionalMetaData);
-        MetaData resultMetaData = testSubject.getMetaData();
+        MetaData resultMetaData = testSubject.metaData();
 
         assertTrue(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
         assertTrue(resultMetaData.containsKey(additionalMetaData.keySet().iterator().next()));
@@ -147,8 +147,8 @@ class GrpcBackedQueryUpdateMessageTest {
     private static <U> SubscriptionQueryUpdateMessage<U> asUpdateMessage(Class<U> declaredType, Throwable exception) {
         return new GenericSubscriptionQueryUpdateMessage<>(new MessageType(exception.getClass()),
                                                            exception,
-                                                           MetaData.emptyInstance(),
-                                                           declaredType);
+                                                           declaredType,
+                                                           MetaData.emptyInstance());
     }
 
     @SuppressWarnings("unchecked")

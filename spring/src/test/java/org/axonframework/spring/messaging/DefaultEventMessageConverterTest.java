@@ -57,11 +57,11 @@ class DefaultEventMessageConverterTest {
                 eventMessageConverter.convertToOutboundMessage(axonMessage)
         );
 
-        assertEquals(instant, convertedAxonMessage.getTimestamp());
-        assertEquals("100", convertedAxonMessage.getMetaData().get("number"));
-        assertEquals("world", convertedAxonMessage.getMetaData().get("string"));
-        assertEquals("hello", convertedAxonMessage.getPayload().name);
-        assertEquals(id, convertedAxonMessage.getIdentifier());
+        assertEquals(instant, convertedAxonMessage.timestamp());
+        assertEquals("100", convertedAxonMessage.metaData().get("number"));
+        assertEquals("world", convertedAxonMessage.metaData().get("string"));
+        assertEquals("hello", convertedAxonMessage.payload().name);
+        assertEquals(id, convertedAxonMessage.identifier());
     }
 
     @Test
@@ -84,11 +84,11 @@ class DefaultEventMessageConverterTest {
         assertInstanceOf(DomainEventMessage.class, convertedAxonMessage);
 
         DomainEventMessage<EventPayload> convertDomainMessage = (DomainEventMessage<EventPayload>) convertedAxonMessage;
-        assertEquals(instant, convertDomainMessage.getTimestamp());
-        assertEquals("100", convertDomainMessage.getMetaData().get("number"));
-        assertEquals("world", convertDomainMessage.getMetaData().get("string"));
-        assertEquals("hello", convertDomainMessage.getPayload().name);
-        assertEquals(id, convertDomainMessage.getIdentifier());
+        assertEquals(instant, convertDomainMessage.timestamp());
+        assertEquals("100", convertDomainMessage.metaData().get("number"));
+        assertEquals("world", convertDomainMessage.metaData().get("string"));
+        assertEquals("hello", convertDomainMessage.payload().name);
+        assertEquals(id, convertDomainMessage.identifier());
         assertEquals("foo", convertDomainMessage.getType());
         assertEquals(aggId, convertDomainMessage.getAggregateIdentifier());
         assertEquals(1, convertDomainMessage.getSequenceNumber());

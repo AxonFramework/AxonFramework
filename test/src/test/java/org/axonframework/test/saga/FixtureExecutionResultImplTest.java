@@ -124,9 +124,9 @@ class FixtureExecutionResultImplTest {
         IllegalArgumentException secondException = new IllegalArgumentException("Second");
         errorHandler.onError(secondException, endEventMessage, eventMessageHandler);
 
-        testSubject.expectPublishedEvents(endEventMessage.getPayload());
+        testSubject.expectPublishedEvents(endEventMessage.payload());
         testSubject.expectPublishedEventsMatching(
-                payloadsMatching(exactSequenceOf(deepEquals(endEventMessage.getPayload()), andNoMore()))
+                payloadsMatching(exactSequenceOf(deepEquals(endEventMessage.payload()), andNoMore()))
         );
         testSubject.expectDispatchedCommands("Second");
         testSubject.expectDispatchedCommandsMatching(
@@ -498,7 +498,7 @@ class FixtureExecutionResultImplTest {
     void noDeadlineInTimeframeWithDeadlineInsideWindow() {
         Instant expiryTime = deadlineWindowFrom.plus(1, ChronoUnit.DAYS);
         ScheduledDeadlineInfo deadlineInfo = createDeadline(expiryTime);
-        Object deadline = deadlineInfo.deadlineMessage().getPayload();
+        Object deadline = deadlineInfo.deadlineMessage().payload();
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
         assertThrows(AxonAssertionError.class,
@@ -518,7 +518,7 @@ class FixtureExecutionResultImplTest {
     @Test
     void noDeadlineInTimeframeWithDeadlineAtFrom() {
         ScheduledDeadlineInfo deadlineInfo = createDeadline(deadlineWindowFrom);
-        Object deadline = deadlineInfo.deadlineMessage().getPayload();
+        Object deadline = deadlineInfo.deadlineMessage().payload();
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
         assertThrows(AxonAssertionError.class,
@@ -528,7 +528,7 @@ class FixtureExecutionResultImplTest {
     @Test
     void noDeadlineInTimeframeWithDeadlineAtTo() {
         ScheduledDeadlineInfo deadlineInfo = createDeadline(deadlineWindowTo);
-        Object deadline = deadlineInfo.deadlineMessage().getPayload();
+        Object deadline = deadlineInfo.deadlineMessage().payload();
         when(deadlineManager.getScheduledDeadlines()).thenReturn(Collections.singletonList(deadlineInfo));
 
         assertThrows(AxonAssertionError.class,
@@ -543,10 +543,10 @@ class FixtureExecutionResultImplTest {
 
         assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom,
                                                                        deadlineWindowTo,
-                                                                       deadlineBefore.deadlineMessage().getPayload()));
+                                                                       deadlineBefore.deadlineMessage().payload()));
         assertDoesNotThrow(() -> testSubject.expectNoScheduledDeadline(deadlineWindowFrom,
                                                                        deadlineWindowTo,
-                                                                       deadlineAfter.deadlineMessage().getPayload()));
+                                                                       deadlineAfter.deadlineMessage().payload()));
     }
 
     @Test

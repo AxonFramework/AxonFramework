@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
@@ -30,15 +31,30 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-class RecordingCommandBus implements CommandBus {
+/**
+ * An CommandBus implementation recording all the commands that are dispatched. The recorded commands can then be used
+ * to assert expectations with test cases.
+ *
+ * @author Allard Buijze
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
+@Internal
+public class RecordingCommandBus implements CommandBus {
 
     private final CommandBus delegate;
     private final Map<CommandMessage<?>, Message<?>> recorded = new HashMap<>();
 
-    public RecordingCommandBus(CommandBus delegate) {
-        this.delegate = delegate;
+    /**
+     * Creates a new {@link RecordingCommandBus} that will record all commands dispatched to the given {@code delegate}.
+     *
+     * @param delegate The {@link CommandBus} to which commands will be dispatched.
+     */
+    public RecordingCommandBus(@Nonnull CommandBus delegate) {
+        this.delegate = Objects.requireNonNull(delegate, "The delegate CommandBus may not be null");
     }
 
     @Override

@@ -18,17 +18,20 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Optional;
 
 /**
  * Generic implementation of {@link ResultMessage} interface.
  *
- * @param <R> The type of {@link #getPayload() result} contained in this {@link ResultMessage}.
+ * @param <R> The type of {@link #payload() result} contained in this {@link ResultMessage}.
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 4.0.0
@@ -98,8 +101,8 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
-     *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
+     * @param delegate The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
+     *                 {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
     public GenericResultMessage(@Nonnull Message<R> delegate) {
@@ -113,14 +116,14 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
-     *                  {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
-     *                  {@link Message#getMetaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
+     * @param delegate  The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
+     *                  {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
+     *                  {@link QueryResponseMessage} to reconstruct.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link ResultMessage}.
      */
     public GenericResultMessage(@Nonnull Message<R> delegate,
-                                @Nonnull Throwable exception) {
+                                @Nullable Throwable exception) {
         super(delegate);
         this.exception = exception;
     }
@@ -192,25 +195,45 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     @Override
-    public GenericResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericResultMessage<>(getDelegate().withMetaData(metaData), exception);
+    @Nonnull
+    public ResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericResultMessage<>(delegate().withMetaData(metaData), exception);
     }
 
     @Override
-    public GenericResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericResultMessage<>(getDelegate().andMetaData(metaData), exception);
+    @Nonnull
+    public ResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericResultMessage<>(delegate().andMetaData(metaData), exception);
+    }
+
+    @Override
+    @Nonnull
+    public <T> ResultMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
+            //noinspection unchecked
+            return (ResultMessage<T>) this;
+        }
+        Message<R> delegate = delegate();
+        Message<T> converted = new GenericMessage<>(delegate.identifier(),
+                                                    delegate.type(),
+                                                    convertedPayload,
+                                                    delegate.metaData());
+        return optionalExceptionResult().isPresent()
+                ? new GenericResultMessage<>(converted, optionalExceptionResult().get())
+                : new GenericResultMessage<>(converted);
     }
 
     @Override
     protected void describeTo(StringBuilder stringBuilder) {
         stringBuilder.append("payload={")
-                     .append(isExceptional() ? null : getPayload())
+                     .append(isExceptional() ? null : payload())
                      .append('}')
                      .append(", metadata={")
-                     .append(getMetaData())
+                     .append(metaData())
                      .append('}')
                      .append(", messageIdentifier='")
-                     .append(getIdentifier())
+                     .append(identifier())
                      .append('\'')
                      .append(", exception='")
                      .append(exception)
@@ -223,7 +246,7 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     @Override
-    public R getPayload() {
+    public R payload() {
         if (isExceptional()) {
             throw new IllegalPayloadAccessException(
                     "This result completed exceptionally, payload is not available. "
@@ -231,6 +254,6 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
                     exception
             );
         }
-        return super.getPayload();
+        return super.payload();
     }
 }

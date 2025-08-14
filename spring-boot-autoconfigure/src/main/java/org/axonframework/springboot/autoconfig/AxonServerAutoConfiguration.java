@@ -17,11 +17,14 @@
 package org.axonframework.springboot.autoconfig;
 
 
+import io.axoniq.axonserver.connector.control.ControlChannel;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
 import org.axonframework.axonserver.connector.TargetContextResolver;
+import org.axonframework.axonserver.connector.TopologyChangeListener;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
 import org.axonframework.axonserver.connector.event.axon.DefaultPersistentStreamMessageSourceFactory;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
@@ -29,7 +32,6 @@ import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessage
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceFactory;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
-import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
@@ -38,6 +40,7 @@ import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
+import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
@@ -52,6 +55,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
@@ -64,8 +68,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.lang.Nullable;
 
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
-import jakarta.annotation.Nonnull;
 
 /**
  * Configures Axon Server as implementation for the CommandBus, QueryBus and EventStore.
@@ -182,9 +186,10 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
             AxonServerConnectionManager connectionManager,
             AxonServerConfiguration configuration
     ) {
-        return new EventProcessorInfoConfiguration(c -> eventProcessingConfiguration,
-                                                   c -> connectionManager,
-                                                   c -> configuration);
+        // TODO #3521
+        return new EventProcessorInfoConfiguration(/*c -> eventProcessingConfiguration*/null,
+                                                                                        c -> connectionManager,
+                                                                                        c -> configuration);
     }
 
     @Bean
@@ -350,14 +355,32 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                                                                                     .getSource());
                                                                processingConfigurer.registerSequencingPolicy(
                                                                        e.getKey(),
-                                                                       new PersistentStreamSequencingPolicyProvider(
-                                                                               e.getKey(),
-                                                                               persistentStreamConfig.getSequencingPolicy(),
-                                                                               persistentStreamConfig.getSequencingPolicyParameters()
-                                                                       )
+                                                                       // TODO #3520
+                                                                       null
+//                                                                       new PersistentStreamSequencingPolicyProvider(
+//                                                                               e.getKey(),
+//                                                                               persistentStreamConfig.getSequencingPolicy(),
+//                                                                               persistentStreamConfig.getSequencingPolicyParameters()
+//                                                                       )
                                                                );
                                                            })
         );
+    }
+
+    @Bean
+    @ConditionalOnBean
+    public ConfigurerModule topologyChangeListenerConfigurerModule(
+            AxonServerConnectionManager platformConnectionManager,
+            List<TopologyChangeListener> changeListeners
+    ) {
+        // ConditionalOnBean does not work for collections of beans, as it simply creates an empty collection.
+        if (changeListeners.isEmpty()) {
+            return configurer -> { /*Noop*/ };
+        }
+        return configurer -> configurer.onInitialize(config -> config.onStart(Phase.INSTRUCTION_COMPONENTS, () -> {
+            ControlChannel defaultControlChannel = platformConnectionManager.getConnection().controlChannel();
+            changeListeners.forEach(defaultControlChannel::registerTopologyChangeHandler);
+        }));
     }
 
     @Override

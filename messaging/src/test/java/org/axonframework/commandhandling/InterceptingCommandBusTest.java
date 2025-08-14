@@ -86,12 +86,12 @@ class InterceptingCommandBusTest {
 
         CommandMessage<?> actualDispatched = dispatchedMessage.getValue();
         assertEquals(Map.of("dispatch1", "value-0", "dispatch2", "value-1"),
-                     actualDispatched.getMetaData(),
+                     actualDispatched.metaData(),
                      "Expected command interceptors to be invoked in registered order");
 
         assertTrue(result.isDone());
         assertEquals(Map.of("dispatch1", "value-1", "dispatch2", "value-0"),
-                     result.get().getMetaData(),
+                     result.get().metaData(),
                      "Expected result interceptors to be invoked in reverse order");
     }
 
@@ -131,7 +131,7 @@ class InterceptingCommandBusTest {
         verify(mockCommandBus, times(2)).dispatch(any(), any());
 
         assertEquals(Map.of("dispatch1", "value-1", "dispatch2", "value-0"),
-                     result.get().getMetaData());
+                     result.get().metaData());
     }
 
     @Test
@@ -171,11 +171,11 @@ class InterceptingCommandBusTest {
 
         CommandMessage<?> actualHandled = handledMessage.get();
         assertEquals(Map.of("handler1", "value-0", "handler2", "value-1"),
-                     actualHandled.getMetaData(),
+                     actualHandled.metaData(),
                      "Expected command interceptors to be invoked in registered order");
 
         assertEquals(Map.of("handler1", "value-1", "handler2", "value-0"),
-                     result.first().asCompletableFuture().get().message().getMetaData(),
+                     result.first().asCompletableFuture().get().message().metaData(),
                      "Expected result interceptors to be invoked in reverse order");
     }
 
@@ -223,11 +223,11 @@ class InterceptingCommandBusTest {
         assertEquals(2, handledMessages.size());
 
         assertEquals(Map.of("handler1", "value-0", "handler2", "value-1"),
-                     handledMessages.get(0).getMetaData());
+                     handledMessages.get(0).metaData());
         assertEquals(Map.of("handler1", "value-0", "handler2", "value-1"),
-                     handledMessages.get(1).getMetaData());
+                     handledMessages.get(1).metaData());
         assertEquals(Map.of("handler1", "value-1", "handler2", "value-0"),
-                     result.first().asCompletableFuture().join().message().getMetaData());
+                     result.first().asCompletableFuture().join().message().metaData());
     }
 
     @Test
@@ -298,7 +298,7 @@ class InterceptingCommandBusTest {
         }
 
         private String buildValue(Message<?> message) {
-            return value + "-" + message.getMetaData().size();
+            return value + "-" + message.metaData().size();
         }
 
         @Nonnull

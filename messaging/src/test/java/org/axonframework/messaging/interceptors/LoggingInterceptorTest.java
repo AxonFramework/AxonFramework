@@ -23,10 +23,10 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
@@ -43,6 +43,8 @@ import static org.mockito.Mockito.*;
  */
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
 class LoggingInterceptorTest {
+
+    private static final MessageType TYPE = new MessageType("message");
 
     private LoggingInterceptor<Message<?>> testSubject;
     private ExtendedLogger mockLogger;
@@ -62,7 +64,7 @@ class LoggingInterceptorTest {
         loggerField.set(logger, mockLogger);
 
         interceptorChain = mock(InterceptorChain.class);
-        GenericMessage<StubMessage> message = new GenericMessage<>(new MessageType("message"), new StubMessage());
+        Message<StubMessage> message = new GenericMessage<>(TYPE, new StubMessage());
         context = StubProcessingContext.forMessage(message);
         unitOfWork = new LegacyDefaultUnitOfWork<>(message);
     }
@@ -87,7 +89,7 @@ class LoggingInterceptorTest {
 
         verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
         verify(mockLogger).logIfEnabled(
-                anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"), contains("null")
+                anyString(), eq(Level.INFO), isNull(), anyString(), contains(TYPE.name()), contains("null")
         );
         verifyNoMoreInteractions(mockLogger);
     }
@@ -101,7 +103,7 @@ class LoggingInterceptorTest {
 
         verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
         verify(mockLogger).logIfEnabled(
-                anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"), contains("null")
+                anyString(), eq(Level.INFO), isNull(), anyString(), contains(TYPE.name()), contains("null")
         );
         verifyNoMoreInteractions(mockLogger);
     }
@@ -115,7 +117,7 @@ class LoggingInterceptorTest {
 
         verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
         verify(mockLogger).logIfEnabled(
-                anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"), contains("StubResponse")
+                anyString(), eq(Level.INFO), isNull(), anyString(), contains(TYPE.name()), contains("StubResponse")
         );
         verifyNoMoreInteractions(mockLogger);
     }
@@ -145,9 +147,9 @@ class LoggingInterceptorTest {
     void dispatchInterceptorLogging() {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        testSubject.handle(new GenericMessage<>(new MessageType("message"), new StubMessage()));
+        testSubject.handle(new GenericMessage<>(TYPE, new StubMessage()));
 
-        verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
+        verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains(TYPE.name()));
         verifyNoMoreInteractions(mockLogger);
     }
 

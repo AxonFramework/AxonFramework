@@ -107,8 +107,8 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
                                                               @Nonnull DeadlineMessage message,
                                                               @Nonnull Serializer serializer) {
         SerializedObject<String> serializedDescriptor = serializer.serialize(descriptor, String.class);
-        SerializedObject<String> serializedPayload = serializer.serialize(message.getPayload(), String.class);
-        SerializedObject<String> serializedMetaData = serializer.serialize(message.getMetaData(), String.class);
+        SerializedObject<String> serializedPayload = serializer.serialize(message.payload(), String.class);
+        SerializedObject<String> serializedMetaData = serializer.serialize(message.metaData(), String.class);
 
         return new DbSchedulerHumanReadableDeadlineDetails(deadlineName,
                                                            message.type().toString(),

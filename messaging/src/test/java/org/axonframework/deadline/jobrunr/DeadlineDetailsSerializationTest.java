@@ -84,7 +84,7 @@ class DeadlineDetailsSerializationTest {
         DeadlineMessage resultMessage = result.asDeadLineMessage(serializer);
 
         assertNotNull(resultMessage);
-        assertEquals(TEST_DEADLINE_PAYLOAD, resultMessage.getPayload());
-        assertEquals(metaData, resultMessage.getMetaData());
+        assertEquals(TEST_DEADLINE_PAYLOAD, resultMessage.payload());
+        assertEquals(metaData, resultMessage.metaData());
     }
 }

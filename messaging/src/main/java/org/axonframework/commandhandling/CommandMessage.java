@@ -17,8 +17,11 @@
 package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.Message;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -29,7 +32,7 @@ import java.util.function.Function;
  * <p>
  * These messages carry an intention to change application state.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link CommandMessage}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link CommandMessage}.
  * @author Allard Buijze
  * @since 2.0.0
  */
@@ -54,11 +57,26 @@ public interface CommandMessage<P> extends Message<P> {
     OptionalInt priority();
 
     @Override
+    @Nonnull
     CommandMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     CommandMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
-    <C> CommandMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion);
+    @Nonnull
+    default <T> CommandMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload((Type) type, converter);
+    }
+
+    @Override
+    @Nonnull
+    default <T> CommandMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload(type.getType(), converter);
+    }
+
+    @Override
+    @Nonnull
+    <T> CommandMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

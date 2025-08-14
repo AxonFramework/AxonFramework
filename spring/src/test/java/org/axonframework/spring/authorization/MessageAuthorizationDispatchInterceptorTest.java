@@ -26,7 +26,6 @@ import org.axonframework.test.matchers.Matchers;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.UUID;
@@ -65,7 +64,7 @@ class MessageAuthorizationDispatchInterceptorTest {
                .when(new CreateAggregateCommand(aggregateId))
                .expectSuccessfulHandlerExecution()
                .expectResultMessageMatching(Matchers.matches(
-                       message -> message.getMetaData().get("username").equals("admin")
+                       message -> message.metaData().get("username").equals("admin")
                ));
     }
 

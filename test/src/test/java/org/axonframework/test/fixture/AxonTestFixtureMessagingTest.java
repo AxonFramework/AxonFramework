@@ -187,7 +187,7 @@ class AxonTestFixtureMessagingTest {
                    .then()
                    .success()
                    .resultMessageSatisfies(c -> assertEquals(new CommandResult("Result name-1", "metaValue"),
-                                                             c.getPayload()));
+                                                             c.payload()));
         }
 
         @Test
@@ -223,7 +223,7 @@ class AxonTestFixtureMessagingTest {
                             .subscribe(
                                     new QualifiedName(ChangeStudentNameCommand.class),
                                     (command, context) -> {
-                                        ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
+                                        ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.payload();
                                         var eventSink = c.getComponent(EventSink.class);
                                         var changeNo = studentEvents.size() + 1;
                                         eventSink.publish(context,
@@ -430,8 +430,8 @@ class AxonTestFixtureMessagingTest {
                    .commandsSatisfy(commands -> {
                        assertEquals(1, commands.size());
                        var command = commands.getFirst();
-                       assertEquals("id", ((ChangeStudentNameCommand) command.getPayload()).id());
-                       assertEquals("name", ((ChangeStudentNameCommand) command.getPayload()).name());
+                       assertEquals("id", ((ChangeStudentNameCommand) command.payload()).id());
+                       assertEquals("name", ((ChangeStudentNameCommand) command.payload()).name());
                    }).commandsMatch(commands -> !commands.isEmpty())
                    .success();
         }
@@ -651,7 +651,7 @@ class AxonTestFixtureMessagingTest {
                 (c, n, d) -> d.subscribe(
                         new QualifiedName(ChangeStudentNameCommand.class),
                         (command, context) -> {
-                            ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
+                            ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.payload();
                             var eventSink = c.getComponent(EventSink.class);
                             eventSink.publish(context,
                                               studentNameChangedEventMessage(payload.id(), payload.name(), 1));
@@ -667,8 +667,8 @@ class AxonTestFixtureMessagingTest {
                 (c, n, d) -> d.subscribe(
                         new QualifiedName(ChangeStudentNameCommand.class),
                         (command, context) -> {
-                            ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
-                            var metadataSample = (String) command.getMetaData().get("sample");
+                            ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.payload();
+                            var metadataSample = (String) command.metaData().get("sample");
                             var eventSink = c.getComponent(EventSink.class);
                             eventSink.publish(context, studentNameChangedEventMessage(payload.id(), payload.name(), 1));
                             var resultMessage = new GenericCommandResultMessage<>(

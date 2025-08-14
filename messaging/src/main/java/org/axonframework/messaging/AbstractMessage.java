@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * Abstract base class for {@link Message Messages}.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link AbstractMessage}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link AbstractMessage}.
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
@@ -46,30 +46,33 @@ public abstract class AbstractMessage<P> implements Message<P> {
     }
 
     @Override
-    public String getIdentifier() {
+    @Nonnull
+    public String identifier() {
         return this.identifier;
     }
 
-    @Nonnull
     @Override
+    @Nonnull
     public MessageType type() {
         return this.type;
     }
 
     @Override
+    @Nonnull
     public Message<P> withMetaData(@Nonnull Map<String, String> metaData) {
-        if (getMetaData().equals(metaData)) {
+        if (metaData().equals(metaData)) {
             return this;
         }
         return withMetaData(MetaData.from(metaData));
     }
 
     @Override
+    @Nonnull
     public Message<P> andMetaData(@Nonnull Map<String, String> metaData) {
         if (metaData.isEmpty()) {
             return this;
         }
-        return withMetaData(getMetaData().mergedWith(metaData));
+        return withMetaData(metaData().mergedWith(metaData));
     }
 
     /**

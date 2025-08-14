@@ -116,7 +116,7 @@ class LegacyEventSourcingRepositoryTest {
 
         verify(mockEventStore, times(1)).publish((EventMessage) any());
         assertEquals(1, aggregate.invoke(TestAggregate::getLiveEvents).size());
-        assertSame(event3, aggregate.invoke(TestAggregate::getLiveEvents).get(0).getPayload());
+        assertSame(event3, aggregate.invoke(TestAggregate::getLiveEvents).get(0).payload());
     }
 
     @Test

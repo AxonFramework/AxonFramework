@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,11 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
                     "Aggregate Member type should be a concrete implementation instead of [" + entityType + "]."
             );
         }
-        return declaringEntity.modelOf(entityType);
+
+        @SuppressWarnings("unchecked")
+        Class<Object> castEntityType = (Class<Object>)entityType;
+
+        return declaringEntity.modelOf(castEntityType);
     }
 
     @Override
@@ -82,7 +86,7 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
                 extractCommandHandlerRoutingKeys(member, childEntityModel);
 
         Object routingValue = commandHandlerRoutingKeys.get(msg.type().name())
-                                                       .getValue(msg.getPayload());
+                                                       .getValue(msg.payload());
         Iterable<?> memberValue = ReflectionUtils.getMemberValue(member, parent);
 
         return StreamSupport.stream(memberValue.spliterator(), false)

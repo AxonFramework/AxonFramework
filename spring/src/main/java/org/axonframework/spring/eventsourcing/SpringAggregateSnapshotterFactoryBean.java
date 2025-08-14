@@ -16,10 +16,10 @@
 
 package org.axonframework.spring.eventsourcing;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -40,12 +40,11 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
-
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import jakarta.annotation.Nonnull;
+
+import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
 
 /**
  * Implementation of the {@link org.axonframework.eventsourcing.AggregateSnapshotter} that eases the configuration when
@@ -55,6 +54,7 @@ import jakarta.annotation.Nonnull;
  * @author Allard Buijze
  * @since 0.6
  */
+// TODO #3105 - Adjust as part of Snapshot Revisioning
 public class SpringAggregateSnapshotterFactoryBean
         implements FactoryBean<SpringAggregateSnapshotter>, ApplicationContextAware {
 
@@ -82,7 +82,7 @@ public class SpringAggregateSnapshotterFactoryBean
         }
 
         if (repositoryProvider == null) {
-            repositoryProvider = applicationContext.getBean(LegacyConfiguration.class)::repository;
+            repositoryProvider = (RepositoryProvider) null;
         }
 
         if (parameterResolverFactory == null) {

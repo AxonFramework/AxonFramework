@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -199,7 +199,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
         // noinspection unchecked
         StreamingQueryMessage<Q, R> streamingQueryMessage = new GenericStreamingQueryMessage<>(
                 originalQueryMessage,
-                (Class<R>) originalQueryMessage.getResponseType().getExpectedResponseType());
+                (Class<R>) originalQueryMessage.responseType().getExpectedResponseType());
         Publisher<QueryResponseMessage<R>> resultPublisher = localSegment.streamingQuery(streamingQueryMessage);
         setResult(streamableFluxResult(resultPublisher));
     }
@@ -213,11 +213,11 @@ class QueryProcessingTask implements Runnable, FlowControl {
                             try {
                                 StreamableResponse streamableResponse;
                                 if (supportsStreaming
-                                        && queryMessage.getResponseType() instanceof MultipleInstancesResponseType) {
+                                        && queryMessage.responseType() instanceof MultipleInstancesResponseType) {
                                     //noinspection unchecked
                                     streamableResponse = streamableMultiInstanceResult(
                                             (QueryResponseMessage<List<T>>) result,
-                                            (Class<T>) queryMessage.getResponseType().getExpectedResponseType()
+                                            (Class<T>) queryMessage.responseType().getExpectedResponseType()
                                     );
                                 } else {
                                     streamableResponse = streamableInstanceResult(result);

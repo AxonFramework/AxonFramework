@@ -60,8 +60,8 @@ class ProcessingContextEventAppenderTest {
         assertEquals(2, publishedEvents.size());
         EventMessage<?> publishedEvent1 = publishedEvents.get(0);
         EventMessage<?> publishedEvent2 = publishedEvents.get(1);
-        assertEquals(payload1, publishedEvent1.getPayload());
-        assertEquals(payload2, publishedEvent2.getPayload());
+        assertEquals(payload1, publishedEvent1.payload());
+        assertEquals(payload2, publishedEvent2.payload());
         assertEquals(
                 messageTypeResolver.resolveOrThrow(payload1).qualifiedName(),
                 publishedEvent1.type().qualifiedName()

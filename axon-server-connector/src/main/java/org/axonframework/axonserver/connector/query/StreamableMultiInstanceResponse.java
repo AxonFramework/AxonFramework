@@ -72,7 +72,7 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
         this.responseHandler = responseHandler;
         this.serializer = serializer;
         this.requestId = requestId;
-        List<T> payload = resultMessage.getPayload();
+        List<T> payload = resultMessage.payload();
         this.result = payload != null ? payload.iterator() : emptyIterator();
     }
 
@@ -118,16 +118,17 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
     private void send() {
         GenericMessage<?> delegate;
         if (firstResponseToBeSent.compareAndSet(true, false)) {
-            delegate = new GenericMessage<>(resultMessage.getIdentifier(),
+            delegate = new GenericMessage<>(resultMessage.identifier(),
                                             new MessageType(responseType),
                                             result.next(),
-                                            resultMessage.getMetaData(),
-                                            responseType);
+                                            responseType,
+                                            resultMessage.metaData()
+            );
         } else {
             delegate = new GenericMessage<>(new MessageType(responseType),
                                             result.next(),
-                                            MetaData.emptyInstance(),
-                                            responseType);
+                                            responseType,
+                                            MetaData.emptyInstance());
         }
         GenericQueryResponseMessage<?> message = new GenericQueryResponseMessage<>(delegate);
         responseHandler.send(serializer.serializeResponse(message, requestId));

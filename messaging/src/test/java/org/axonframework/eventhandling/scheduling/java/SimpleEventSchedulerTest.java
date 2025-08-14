@@ -26,11 +26,6 @@ import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.mockito.junit.jupiter.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -98,8 +93,8 @@ class SimpleEventSchedulerTest {
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus, never()).publish(event1);
         verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<Object>>) item -> (item != null)
-                && event2.getPayload().equals(item.getPayload())
-                && event2.getMetaData().equals(item.getMetaData())));
+                && event2.payload().equals(item.payload())
+                && event2.metaData().equals(item.metaData())));
         scheduledExecutorService.shutdown();
         assertTrue(scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS),
                    "Executor refused to shutdown within a second");

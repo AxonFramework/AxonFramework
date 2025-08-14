@@ -20,6 +20,7 @@ import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.configuration.Component;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
@@ -44,7 +45,7 @@ class AxonServerEventStorageEngineFactoryTest {
     void setUp() {
         configuration = EventSourcingConfigurer.create()
                                                .componentRegistry(registry -> registry.registerComponent(
-                                                       Converter.class, c -> new TestConverter()
+                                                       Converter.class, c -> new ChainingContentTypeConverter()
                                                ))
                                                .build();
         testSubject = new AxonServerEventStorageEngineFactory();

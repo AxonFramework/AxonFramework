@@ -63,13 +63,15 @@ class EventProcessorOperationsTest {
             }
         };
 
-        EventMessageHandler mockHandler = mock(EventMessageHandler.class);
-        EventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
-                                                                           .eventHandlers(mockHandler)
-                                                                           .build();
+        EventHandlingComponent mockEventHandlingComponent = mock(EventHandlingComponent.class);
+        when(mockEventHandlingComponent.handle(any(), any())).thenReturn(MessageStream.empty());
+        when(mockEventHandlingComponent.supports(any())).thenReturn(true);
+        when(mockEventHandlingComponent.sequenceIdentifierFor(any())).thenAnswer(
+                e -> e.getArgument(0, EventMessage.class).identifier()
+        );
         TestEventProcessor testSubject = TestEventProcessor.builder()
                                                            .name("test")
-                                                           .eventHandlerInvoker(eventHandlerInvoker)
+                                                           .eventHandlingComponent(mockEventHandlingComponent)
                                                            .messageMonitor(messageMonitor)
                                                            .build();
 
@@ -107,7 +109,7 @@ class EventProcessorOperationsTest {
             builder.validate();
             this.eventProcessorOperations = new EventProcessorOperations.Builder()
                     .name(builder.name())
-                    .eventHandlerInvoker(builder.eventHandlerInvoker())
+                    .eventHandlingComponent(builder.eventHandlingComponent())
                     .errorHandler(builder.errorHandler())
                     .spanFactory(builder.spanFactory())
                     .messageMonitor(builder.messageMonitor())
@@ -178,6 +180,12 @@ class EventProcessorOperationsTest {
             @Override
             public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
                 super.messageMonitor(messageMonitor);
+                return this;
+            }
+
+            @Override
+            public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
+                super.eventHandlingComponent(eventHandlingComponent);
                 return this;
             }
 

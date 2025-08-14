@@ -19,7 +19,9 @@ package org.axonframework.springboot.autoconfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import com.thoughtworks.xstream.XStream;
+import jakarta.annotation.Nonnull;
 import org.apache.avro.message.SchemaStore;
+import org.axonframework.axonserver.connector.TagsConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -32,15 +34,12 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.SubscribableMessageSourceDefinition;
-import org.axonframework.axonserver.connector.TagsConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
@@ -59,7 +58,6 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
@@ -71,7 +69,7 @@ import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingConverter;
+import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.avro.AvroSerializer;
@@ -84,8 +82,6 @@ import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.SerializerProperties;
 import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,11 +98,9 @@ import org.springframework.context.annotation.Primary;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
@@ -238,7 +232,7 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
                         ? objectMapperBeans.get("defaultAxonObjectMapper")
                         : objectMapperBeans.values().stream().findFirst()
                                            .orElseThrow(() -> new NoSuchBeanDefinitionException(ObjectMapper.class));
-                ChainingConverter converter = new ChainingConverter(beanClassLoader);
+                ChainingContentTypeConverter converter = new ChainingContentTypeConverter(beanClassLoader);
                 return JacksonSerializer.builder()
                                         .revisionResolver(revisionResolver)
                                         .converter(converter)
@@ -251,7 +245,7 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
                         ? cborMapperBeans.get("defaultAxonCborObjectMapper")
                         : cborMapperBeans.values().stream().findFirst()
                                          .orElseThrow(() -> new NoSuchBeanDefinitionException(CBORMapper.class));
-                ChainingConverter cborConverter = new ChainingConverter(beanClassLoader);
+                ChainingContentTypeConverter cborConverter = new ChainingContentTypeConverter(beanClassLoader);
                 return JacksonSerializer.builder()
                                         .revisionResolver(revisionResolver)
                                         .converter(cborConverter)
@@ -283,7 +277,8 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
     @Bean(name = "eventBus")
     @ConditionalOnMissingBean(EventBus.class)
     @ConditionalOnBean(LegacyEventStorageEngine.class)
-    public LegacyEmbeddedEventStore eventStore(LegacyEventStorageEngine storageEngine, LegacyConfiguration configuration) {
+    public LegacyEmbeddedEventStore eventStore(LegacyEventStorageEngine storageEngine,
+                                               LegacyConfiguration configuration) {
         return LegacyEmbeddedEventStore.builder()
                                        .storageEngine(storageEngine)
                                        .messageMonitor(configuration.messageMonitor(
@@ -359,21 +354,11 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
     public void configureEventHandling(EventProcessingConfigurer eventProcessingConfigurer,
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((name, settings) -> {
-            Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy =
+            Function<LegacyConfiguration, SequencingPolicy> sequencingPolicy =
                     resolveSequencingPolicy(applicationContext, settings);
             eventProcessingConfigurer.registerSequencingPolicy(name, sequencingPolicy);
 
-            if (settings.getMode() == EventProcessorProperties.Mode.TRACKING) {
-                TrackingEventProcessorConfiguration config = TrackingEventProcessorConfiguration
-                        .forParallelProcessing(settings.getThreadCount())
-                        .andBatchSize(settings.getBatchSize())
-                        .andInitialSegmentsCount(initialSegmentCount(settings, 1))
-                        .andTokenClaimInterval(settings.getTokenClaimInterval(),
-                                               settings.getTokenClaimIntervalTimeUnit());
-                Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource =
-                        resolveMessageSource(applicationContext, settings);
-                eventProcessingConfigurer.registerTrackingEventProcessor(name, messageSource, c -> config);
-            } else if (settings.getMode() == EventProcessorProperties.Mode.POOLED) {
+            if (settings.getMode() == EventProcessorProperties.Mode.POOLED) {
                 eventProcessingConfigurer.registerPooledStreamingEventProcessor(
                         name,
                         resolveMessageSource(applicationContext, settings),
@@ -396,10 +381,11 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
                             name,
                             c -> {
                                 Object bean = applicationContext.getBean(settings.getSource());
-                                if (bean instanceof SubscribableMessageSourceDefinition) {
-                                    return ((SubscribableMessageSourceDefinition<? extends EventMessage<?>>) bean)
-                                            .create(c);
-                                }
+                                // TODO #3520
+//                                if (bean instanceof SubscribableMessageSourceDefinition) {
+//                                    return ((SubscribableMessageSourceDefinition<? extends EventMessage<?>>) bean)
+//                                            .create(c);
+//                                }
                                 if (bean instanceof SubscribableMessageSource) {
                                     return (SubscribableMessageSource<? extends EventMessage<?>>) bean;
                                 }
@@ -444,9 +430,9 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @SuppressWarnings("unchecked")
-    private Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> resolveSequencingPolicy(
+    private Function<LegacyConfiguration, SequencingPolicy> resolveSequencingPolicy(
             ApplicationContext applicationContext, EventProcessorProperties.ProcessorSettings v) {
-        Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy;
+        Function<LegacyConfiguration, SequencingPolicy> sequencingPolicy;
         if (v.getSequencingPolicy() != null) {
             sequencingPolicy = c -> applicationContext.getBean(v.getSequencingPolicy(), SequencingPolicy.class);
         } else {

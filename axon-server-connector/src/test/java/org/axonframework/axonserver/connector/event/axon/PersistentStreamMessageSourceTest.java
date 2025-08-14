@@ -20,8 +20,8 @@ import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.LegacyDefaultConfigurer;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -50,17 +50,18 @@ class PersistentStreamMessageSourceTest {
     private static ScheduledExecutorService TEST_SCHEDULER;
     private static ExecutorService CONCURRENT_TEST_EXECUTOR;
     private static final int THREAD_COUNT = 10;
-    private static final LegacyConfiguration DEFAULT_CONFIGURATION = LegacyDefaultConfigurer
-            .defaultConfiguration()
-            .registerComponent(AxonServerConfiguration.class, c -> new AxonServerConfiguration())
-            .registerComponent(AxonServerConnectionManager.class, c -> {
-                AxonServerConfiguration serverConfig = c.getComponent(AxonServerConfiguration.class);
-                return AxonServerConnectionManager.builder().
-                                                  routingServers(serverConfig.getServers())
-                                                  .axonServerConfiguration(serverConfig)
-                                                  .build();
-            })
-            .buildConfiguration();
+    private static final Configuration DEFAULT_CONFIGURATION =
+            MessagingConfigurer.create().componentRegistry(
+                                       cr -> cr.registerComponent(AxonServerConfiguration.class, c -> new AxonServerConfiguration())
+                                               .registerComponent(AxonServerConnectionManager.class, c -> {
+                                                   AxonServerConfiguration serverConfig = c.getComponent(AxonServerConfiguration.class);
+                                                   return AxonServerConnectionManager.builder().
+                                                                                     routingServers(serverConfig.getServers())
+                                                                                     .axonServerConfiguration(serverConfig)
+                                                                                     .build();
+                                               })
+                               )
+                               .build();
 
     @Mock
     private Consumer<List<? extends EventMessage<?>>> eventConsumer;

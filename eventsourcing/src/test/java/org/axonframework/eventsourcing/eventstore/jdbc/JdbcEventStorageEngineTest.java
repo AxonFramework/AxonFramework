@@ -229,17 +229,17 @@ class JdbcEventStorageEngineTest
                                  createDomainEvent(AGGREGATE, 4, expectedPayloadTwo));
 
         List<String> eventStorageEngineResult = testSubject.readEvents(null, false)
-                                                           .filter(m -> m.getPayload() instanceof String)
-                                                           .map(m -> (String) m.getPayload())
+                                                           .filter(m -> m.payload() instanceof String)
+                                                           .map(m -> (String) m.payload())
                                                            .collect(toList());
         assertEquals(Arrays.asList(expectedPayloadOne, expectedPayloadTwo), eventStorageEngineResult);
 
         TrackingEventStream eventStoreResult = testEventStore.openStream(null);
         assertTrue(eventStoreResult.hasNextAvailable());
-        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
-        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().getPayloadType());
-        assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().getPayload());
-        assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().getPayload());
+        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().payloadType());
+        assertEquals(UnknownSerializedType.class, eventStoreResult.nextAvailable().payloadType());
+        assertEquals(expectedPayloadOne, eventStoreResult.nextAvailable().payload());
+        assertEquals(expectedPayloadTwo, eventStoreResult.nextAvailable().payload());
     }
 
     @Test

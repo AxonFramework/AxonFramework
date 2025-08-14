@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.spring.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.spring.stereotype.Saga;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,15 +26,14 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 
-import jakarta.annotation.Nonnull;
-
 /**
- * A {@link BeanDefinitionRegistryPostProcessor} implementation that scans for Saga types and registers a {@link
- * SpringSagaConfigurer configurer} for each Saga found.
+ * A {@link BeanDefinitionRegistryPostProcessor} implementation that scans for Saga types and registers a
+ * {@link SpringSagaConfigurer configurer} for each Saga found.
  *
  * @author Allard Buijze
  * @since 4.6.0
  */
+// TODO #3097 Fix as part of referred to issue
 public class SpringSagaLookup implements BeanDefinitionRegistryPostProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringSagaLookup.class);

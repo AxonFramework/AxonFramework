@@ -473,7 +473,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
                        .setAggregateType(((GenericDomainEventMessage<?>) eventMessage).getType());
             }
             SerializedObject<byte[]> serializedPayload = eventMessage.serializePayload(serializer, byte[].class);
-            builder.setMessageIdentifier(eventMessage.getIdentifier()).setPayload(
+            builder.setMessageIdentifier(eventMessage.identifier()).setPayload(
                     io.axoniq.axonserver.grpc.SerializedObject.newBuilder()
                                                               .setType(serializedPayload.getType().getName())
                                                               .setRevision(getOrDefault(
@@ -481,8 +481,8 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
                                                                       ""
                                                               ))
                                                               .setData(ByteString.copyFrom(serializedPayload.getData()))
-            ).setTimestamp(eventMessage.getTimestamp().toEpochMilli());
-            eventMessage.getMetaData().forEach((k, v) -> builder.putMetaData(k, converter.convertToMetaDataValue(v)));
+            ).setTimestamp(eventMessage.timestamp().toEpochMilli());
+            eventMessage.metaData().forEach((k, v) -> builder.putMetaData(k, converter.convertToMetaDataValue(v)));
             return builder.build();
         }
 

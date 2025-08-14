@@ -428,13 +428,13 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 "event-3",
                 stream.next()
                       .map(e -> {
-                          if (e.message().getPayload() instanceof String payload) {
+                          if (e.message().payload() instanceof String payload) {
                               return payload;
-                          } else if (e.message().getPayload() instanceof byte[] payload) {
+                          } else if (e.message().payload() instanceof byte[] payload) {
                               return new String(payload, StandardCharsets.UTF_8);
                           } else {
                               throw new AssertionError(
-                                      "Unexpected payload type: " + e.message().getPayload().getClass()
+                                      "Unexpected payload type: " + e.message().payload().getClass()
                               );
                           }
                       })
@@ -635,16 +635,16 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     private static void assertEvent(EventMessage<?> actual,
                                     EventMessage<String> expected) {
-        if (actual.getPayload() instanceof byte[] actualPayload) {
-            assertEquals(expected.getPayload(), new String(actualPayload, StandardCharsets.UTF_8));
-        } else if (actual.getPayload() instanceof String actualPayload) {
-            assertEquals(expected.getPayload(), actualPayload);
+        if (actual.payload() instanceof byte[] actualPayload) {
+            assertEquals(expected.payload(), new String(actualPayload, StandardCharsets.UTF_8));
+        } else if (actual.payload() instanceof String actualPayload) {
+            assertEquals(expected.payload(), actualPayload);
         } else {
-            throw new AssertionError("Unexpected payload type: " + actual.getPayload().getClass());
+            throw new AssertionError("Unexpected payload type: " + actual.payload().getClass());
         }
-        assertEquals(expected.getIdentifier(), actual.getIdentifier());
-        assertEquals(expected.getTimestamp().toEpochMilli(), actual.getTimestamp().toEpochMilli());
-        assertEquals(expected.getMetaData(), actual.getMetaData());
+        assertEquals(expected.identifier(), actual.identifier());
+        assertEquals(expected.timestamp().toEpochMilli(), actual.timestamp().toEpochMilli());
+        assertEquals(expected.metaData(), actual.metaData());
     }
 
     private static void waitUntilHasNextAvailable(MessageStream<EventMessage<?>> stream) {

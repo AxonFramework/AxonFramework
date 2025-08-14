@@ -17,22 +17,45 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.ResultMessage;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
  * A {@link ResultMessage} implementation that holds incremental updates of a subscription query.
  *
- * @param <U> The type of {@link #getPayload() update} contained in this {@link SubscriptionQueryUpdateMessage}.
+ * @param <U> The type of {@link #payload() update} contained in this {@link SubscriptionQueryUpdateMessage}.
  * @author Milan Savic
  * @since 3.3.0
  */
 public interface SubscriptionQueryUpdateMessage<U> extends ResultMessage<U> {
 
     @Override
+    @Nonnull
     SubscriptionQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     SubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData);
+
+    @Override
+    @Nonnull
+    default <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Class<T> type,
+                                                                       @Nonnull Converter converter) {
+        return withConvertedPayload((Type) type, converter);
+    }
+
+    @Override
+    @Nonnull
+    default <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type,
+                                                                       @Nonnull Converter converter) {
+        return withConvertedPayload(type.getType(), converter);
+    }
+
+    @Override
+    @Nonnull
+    <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

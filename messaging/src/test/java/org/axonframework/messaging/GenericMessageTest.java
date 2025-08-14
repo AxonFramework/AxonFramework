@@ -17,6 +17,8 @@
 package org.axonframework.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -40,7 +42,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Rene de Waele
  */
-class GenericMessageTest {
+class GenericMessageTest extends MessageTestSuite<Message<?>> {
 
     private final Map<String, String> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
 
@@ -53,6 +55,16 @@ class GenericMessageTest {
         CurrentUnitOfWork.set(unitOfWork);
     }
 
+    @Override
+    protected Message<?> buildDefaultMessage() {
+        return new GenericMessage<>(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+    }
+
+    @Override
+    protected <P> Message<?> buildMessage(@Nullable P payload) {
+        return new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    }
+
     @AfterEach
     void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
@@ -61,29 +73,14 @@ class GenericMessageTest {
     }
 
     @Test
-    void containsDataAsExpected() {
-        String testIdentifier = "testIdentifier";
-        MessageType testType = new MessageType("message");
-        String testPayload = "payload";
-        MetaData testMetaData = MetaData.emptyInstance();
-
-        Message<String> testSubject = new GenericMessage<>(testIdentifier, testType, testPayload, testMetaData);
-
-        assertEquals(testIdentifier, testSubject.getIdentifier());
-        assertEquals(testType, testSubject.type());
-        assertEquals(testPayload, testSubject.getPayload());
-        assertEquals(testMetaData, testSubject.getMetaData());
-    }
-
-    @Test
     void correlationDataAddedToNewMessage() {
         Message<Object> testMessage = new GenericMessage<>(new MessageType("message"), new Object());
-        assertEquals(correlationData, new HashMap<>(testMessage.getMetaData()));
+        assertEquals(correlationData, new HashMap<>(testMessage.metaData()));
 
         MetaData newMetaData = MetaData.from(Collections.singletonMap("what", "ever"));
         Message<Object> testMessageWithMetaData =
                 new GenericMessage<>(new MessageType("message"), new Object(), newMetaData);
-        assertEquals(newMetaData.mergedWith(correlationData), testMessageWithMetaData.getMetaData());
+        assertEquals(newMetaData.mergedWith(correlationData), testMessageWithMetaData.metaData());
     }
 
     @Test

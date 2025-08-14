@@ -52,10 +52,6 @@ public class EventProcessorProperties {
      */
     public enum Mode {
         /**
-         * Indicates a {@link org.axonframework.eventhandling.TrackingEventProcessor} should be used.
-         */
-        TRACKING,
-        /**
          * Indicates a {@link org.axonframework.eventhandling.SubscribingEventProcessor} should be used.
          */
         SUBSCRIBING,
@@ -71,21 +67,20 @@ public class EventProcessorProperties {
          * Sets the source for this processor.
          * <p>
          * Defaults to streaming from the {@link LegacyEventStore} when the
-         * {@link #mode} is set to {@link Mode#TRACKING} or {@link Mode#POOLED}, and to subscribing to the
+         * {@link #mode} is set to {@link Mode#POOLED}, and to subscribing to the
          * {@link org.axonframework.eventhandling.EventBus} when the {@link #mode} is set to {@link Mode#SUBSCRIBING}.
          */
         private String source;
 
         /**
-         * Indicates whether this processor should be Tracking, or Subscribing its source. Defaults to
-         * {@link Mode#TRACKING}.
+         * Indicates whether this processor should be Pooled, or Subscribing its source. Defaults to
+         * {@link Mode#POOLED}.
          */
-        private Mode mode = Mode.TRACKING;
+        private Mode mode = Mode.POOLED;
 
         /**
          * Indicates the number of segments that should be created when the processor starts for the first time.
-         * Defaults to 1 for a {@link org.axonframework.eventhandling.TrackingEventProcessor} and 16 for a
-         * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * Defaults to 16 for a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
          */
         private Integer initialSegmentCount = null;
 
@@ -106,8 +101,7 @@ public class EventProcessorProperties {
 
         /**
          * The maximum number of threads the processor should process events with. Defaults to the number of initial
-         * segments if this is not further specified. Defaults to 1 for a
-         * {@link org.axonframework.eventhandling.TrackingEventProcessor} and 4 for a
+         * segments if this is not further specified. Defaults to 4 for a
          * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
          */
         private int threadCount = -1;
@@ -151,7 +145,7 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Returns the type of processor to configure. Defaults to {@link Mode#TRACKING}.
+         * Returns the type of processor to configure. Defaults to {@link Mode#POOLED}.
          *
          * @return the type of processor to configure.
          */
@@ -170,8 +164,7 @@ public class EventProcessorProperties {
 
         /**
          * Returns the number of initial segments that should be created, if no segments are already present. Defaults
-         * to 1 for a {@link org.axonframework.eventhandling.TrackingEventProcessor} and 16 for a
-         * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * to 16 for a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
          * <p>
          * If the {@link #threadCount} is not further specified, the initial segment count will be used for this too.
          *
@@ -182,9 +175,8 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Sets the number of initial segments that should be created, if no segments are already present. Defaults to 1
-         * for a {@link org.axonframework.eventhandling.TrackingEventProcessor} and 16 for a
-         * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * Sets the number of initial segments that should be created, if no segments are already present. Defaults to 16
+         * for a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
          * <p>
          * If the {@link #threadCount} is not further specified, the initial segment count will be used for this too.
          *
@@ -210,7 +202,7 @@ public class EventProcessorProperties {
          * 5000 milliseconds.
          *
          * @param tokenClaimInterval the interval between attempts to claim tokens by a
-         *                           {@link org.axonframework.eventhandling.TrackingEventProcessor}.
+         *                           {@link org.axonframework.eventhandling.StreamingEventProcessor}.
          */
         public void setTokenClaimInterval(long tokenClaimInterval) {
             this.tokenClaimInterval = tokenClaimInterval;
@@ -238,17 +230,14 @@ public class EventProcessorProperties {
         /**
          * Returns the number of threads to use to process Events, when using a
          * {@link org.axonframework.eventhandling.StreamingEventProcessor} implementation. Defaults to the configured
-         * number of initial segments. If this field is not configured, the thread count defaults to 1 for a
-         * {@link org.axonframework.eventhandling.TrackingEventProcessor} and 4 for a
+         * number of initial segments. If this field is not configured, the thread count defaults to 4 for a
          * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
          *
          * @return the number of threads to use to process Events.
          */
         public int getThreadCount() {
             int defaultThreadCount = 1;
-            if (mode == Mode.TRACKING) {
-                defaultThreadCount = initialSegmentCount != null ? initialSegmentCount : 1;
-            } else if (mode == Mode.POOLED) {
+            if (mode == Mode.POOLED) {
                 defaultThreadCount = initialSegmentCount != null ? initialSegmentCount : 4;
             }
             return threadCount < 0 ? defaultThreadCount : threadCount;
@@ -257,8 +246,7 @@ public class EventProcessorProperties {
         /**
          * Sets the number of threads to use to process Events, when using a
          * {@link org.axonframework.eventhandling.StreamingEventProcessor} implementation. Defaults to the configured
-         * number of initial segments. If this field is not configured, the thread count defaults to 1 for a
-         * {@link org.axonframework.eventhandling.TrackingEventProcessor} and 4 for a
+         * number of initial segments. If this field is not configured, the thread count defaults to 4 for a
          * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
          * <p>
          * A provided {@code threadCount} < 0 will result in a number of threads equal to the configured number of

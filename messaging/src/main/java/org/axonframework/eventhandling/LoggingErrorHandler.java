@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,8 +53,8 @@ public class LoggingErrorHandler implements ListenerInvocationErrorHandler {
         logger.error("EventListener [{}] failed to handle event [{}] ({}). " +
                              "Continuing processing with next listener",
                      eventHandler.getTargetType().getSimpleName(),
-                     event.getIdentifier(),
-                     event.getPayloadType().getName(),
+                     event.identifier(),
+                     event.type().name(),
                      exception);
     }
 }

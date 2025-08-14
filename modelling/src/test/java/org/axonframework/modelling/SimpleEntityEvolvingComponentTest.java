@@ -57,11 +57,11 @@ class SimpleEntityEvolvingComponentTest {
 
         EntityEvolver<String> stringBasedEntityEvolver = (entity, event, context) -> {
             stringEvolverInvoked.set(true);
-            return entity + "-" + event.getPayload();
+            return entity + "-" + event.payload();
         };
         EntityEvolver<String> integerBasedEntityEvolver = (entity, event, context) -> {
             integerEvolverInvoked.set(true);
-            return entity + "-" + event.getPayload();
+            return entity + "-" + event.payload();
         };
 
         Map<QualifiedName, EntityEvolver<String>> evolvers = new HashMap<>();

@@ -23,7 +23,6 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -58,12 +57,12 @@ class RecordingCommandBusTest {
         if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
             fail("Didn't expect handling to fail");
         }
-        assertNull(commandResultMessage.getPayload(),
+        assertNull(commandResultMessage.payload(),
                    "Expected default callback behavior to invoke onResult(null)");
         List<CommandMessage<?>> actual = testSubject.getDispatchedCommands();
         assertEquals(2, actual.size());
-        assertEquals("First", actual.get(0).getPayload());
-        assertEquals("Second", actual.get(1).getPayload());
+        assertEquals("First", actual.get(0).payload());
+        assertEquals("Second", actual.get(1).payload());
     }
 
     @Test
@@ -78,11 +77,11 @@ class RecordingCommandBusTest {
         if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
             fail("Didn't expect handling to fail");
         }
-        assertEquals("callbackResult", commandResultMessage.getPayload());
+        assertEquals("callbackResult", commandResultMessage.payload());
         List<CommandMessage<?>> actual = testSubject.getDispatchedCommands();
         assertEquals(2, actual.size());
-        assertEquals("First", actual.get(0).getPayload());
-        assertEquals("Second", actual.get(1).getPayload());
+        assertEquals("First", actual.get(0).payload());
+        assertEquals("Second", actual.get(1).payload());
     }
 
     @Test

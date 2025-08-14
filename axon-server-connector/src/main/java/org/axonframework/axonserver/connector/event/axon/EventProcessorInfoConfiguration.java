@@ -16,58 +16,57 @@
 
 package org.axonframework.axonserver.connector.event.axon;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.processor.EventProcessorControlService;
-import org.axonframework.config.Component;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.EventProcessingConfiguration;
-import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.lifecycle.Phase;
 
 import java.util.function.Function;
 
 /**
- * Module Configuration implementation that defines the components needed to control and monitor the {@link
- * EventProcessor}s with AxonServer.
+ * Module Configuration implementation that defines the components needed to control and monitor the
+ * {@link EventProcessor}s with AxonServer.
  *
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class EventProcessorInfoConfiguration implements ModuleConfiguration {
+// TODO #3521
+public class EventProcessorInfoConfiguration implements Module {
 
-    private final Component<EventProcessorControlService> eventProcessorControlService;
+//    private final Component<EventProcessorControlService> eventProcessorControlService;
 
-    private LegacyConfiguration config;
+    private Configuration config;
 
     /**
-     * Create an default EventProcessorInfoConfiguration, which uses the {@link LegacyConfiguration} as a means to retrieve
-     * the {@link EventProcessingConfiguration}, {@link AxonServerConnectionManager} and {@link
-     * AxonServerConfiguration}.
+     * Create an default EventProcessorInfoConfiguration, which uses the {@link Configuration} as a means to retrieve
+     * the {@link Configuration}, {@link AxonServerConnectionManager} and {@link AxonServerConfiguration}.
      */
     public EventProcessorInfoConfiguration() {
-        this(LegacyConfiguration::eventProcessingConfiguration,
+        this(null,
              c -> c.getComponent(AxonServerConnectionManager.class),
              c -> c.getComponent(AxonServerConfiguration.class));
     }
 
 
     /**
-     * Creates an EventProcessorInfoConfiguration using the provided functions to retrieve the {@link
-     * EventProcessingConfiguration}, {@link AxonServerConnectionManager} and {@link AxonServerConfiguration}.
+     * Creates an EventProcessorInfoConfiguration using the provided functions to retrieve the
+     * {@code EventProcessingConfiguration}, {@link AxonServerConnectionManager} and {@link AxonServerConfiguration}.
      *
-     * @param eventProcessingConfigurationBuilder a Function taking in the {@link LegacyConfiguration} and providing a {@link
-     *                                            EventProcessingConfiguration}
-     * @param connectionManagerBuilder            a Function taking in the {@link LegacyConfiguration} and providing a {@link
-     *                                            AxonServerConnectionManager}
-     * @param axonServerConfigurationBuilder      a Function taking in the {@link LegacyConfiguration} and providing a {@link
-     *                                            AxonServerConfiguration}
+     * @param eventProcessingConfigurationBuilder a Function taking in the {@link Configuration} and providing a
+     *                                            {@code EventProcessingConfiguration}
+     * @param connectionManagerBuilder            a Function taking in the {@link Configuration} and providing a
+     *                                            {@link AxonServerConnectionManager}
+     * @param axonServerConfigurationBuilder      a Function taking in the {@link Configuration} and providing a
+     *                                            {@link AxonServerConfiguration}
      */
     public EventProcessorInfoConfiguration(
-            Function<LegacyConfiguration, EventProcessingConfiguration> eventProcessingConfigurationBuilder,
-            Function<LegacyConfiguration, AxonServerConnectionManager> connectionManagerBuilder,
-            Function<LegacyConfiguration, AxonServerConfiguration> axonServerConfigurationBuilder
+            Function<Configuration, Configuration> eventProcessingConfigurationBuilder,
+            Function<Configuration, AxonServerConnectionManager> connectionManagerBuilder,
+            Function<Configuration, AxonServerConfiguration> axonServerConfigurationBuilder
     ) {
         this(c -> new EventProcessorControlService(
                 connectionManagerBuilder.apply(c),
@@ -79,23 +78,28 @@ public class EventProcessorInfoConfiguration implements ModuleConfiguration {
     /**
      * Create a default EventProcessorInfoConfiguration, which uses the {@link EventProcessorControlService}
      *
-     * @param eventProcessorControlService a Function taking in the {@link LegacyConfiguration} and providing a {@link
-     *                                     EventProcessorControlService}
+     * @param eventProcessorControlService a Function taking in the {@link Configuration} and providing a
+     *                                     {@link EventProcessorControlService}
      */
     public EventProcessorInfoConfiguration(
-            Function<LegacyConfiguration, EventProcessorControlService> eventProcessorControlService
+            Function<Configuration, EventProcessorControlService> eventProcessorControlService
     ) {
-        this.eventProcessorControlService = new Component<>(
-                () -> config, "eventProcessorControlService", eventProcessorControlService
-        );
+//        this.eventProcessorControlService =
+//                ComponentDefinition.ofTypeAndName(EventProcessorControlService.class, "eventProcessorControlService");
     }
 
     @Override
-    public void initialize(LegacyConfiguration config) {
+    public String name() {
+        return "";
+    }
+
+    @Override
+    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         this.config = config;
         // if there are no event handlers registered, there may be no EventProcessingConfiguration at all.
-        if (config.eventProcessingConfiguration() != null) {
-            this.config.onStart(Phase.INBOUND_EVENT_CONNECTORS, eventProcessorControlService::get);
-        }
+//        if (config.eventProcessingConfiguration() != null) {
+//            lifecycleRegistry.onStart(Phase.INBOUND_EVENT_CONNECTORS, eventProcessorControlService::get);
+//        }
+        return null;
     }
 }

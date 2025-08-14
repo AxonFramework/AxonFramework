@@ -63,7 +63,7 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void getResponseTypeReturnsTheTypeAsSpecifiedInTheQueryRequest() {
+    void responseTypeReturnsTheTypeAsSpecifiedInTheQueryRequest() {
         ResponseType<String> expectedResponseType = RESPONSE_TYPE;
         QueryMessage<TestQuery, String> testQueryMessage = new GenericQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, expectedResponseType
@@ -74,12 +74,12 @@ class GrpcBackedQueryMessageTest {
                 new GrpcBackedQueryMessage<>(testQueryRequest, serializer, serializer);
 
         assertEquals(
-                expectedResponseType.getExpectedResponseType(), testSubject.getResponseType().getExpectedResponseType()
+                expectedResponseType.getExpectedResponseType(), testSubject.responseType().getExpectedResponseType()
         );
     }
 
     @Test
-    void getIdentifierReturnsTheSameIdentifierAsSpecifiedInTheQueryRequest() {
+    void identifierAsSpecifiedInTheQueryRequest() {
         QueryMessage<TestQuery, String> testQueryMessage =
                 new GenericQueryMessage<>(new MessageType("query"), TEST_QUERY, RESPONSE_TYPE);
         QueryRequest testQueryRequest =
@@ -87,11 +87,11 @@ class GrpcBackedQueryMessageTest {
         GrpcBackedQueryMessage<TestQuery, String> testSubject =
                 new GrpcBackedQueryMessage<>(testQueryRequest, serializer, serializer);
 
-        assertEquals(testQueryRequest.getMessageIdentifier(), testSubject.getIdentifier());
+        assertEquals(testQueryRequest.getMessageIdentifier(), testSubject.identifier());
     }
 
     @Test
-    void getMetaDataReturnsTheSameMapAsWasInsertedInTheQueryRequest() {
+    void metaDataReturnsTheSameMapAsWasInsertedInTheQueryRequest() {
         MetaData expectedMetaData = MetaData.with("some-key", "some-value");
         QueryMessage<TestQuery, String> testQueryMessage = new GenericQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE
@@ -101,11 +101,11 @@ class GrpcBackedQueryMessageTest {
         GrpcBackedQueryMessage<TestQuery, String> testSubject =
                 new GrpcBackedQueryMessage<>(testQueryRequest, serializer, serializer);
 
-        assertEquals(expectedMetaData, testSubject.getMetaData());
+        assertEquals(expectedMetaData, testSubject.metaData());
     }
 
     @Test
-    void getPayloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryRequest() {
+    void payloadReturnsAnIdenticalObjectAsInsertedThroughTheQueryRequest() {
         TestQuery expectedQuery = TEST_QUERY;
         QueryMessage<TestQuery, String> testQueryMessage =
                 new GenericQueryMessage<>(new MessageType("query"), expectedQuery, RESPONSE_TYPE);
@@ -114,11 +114,11 @@ class GrpcBackedQueryMessageTest {
         GrpcBackedQueryMessage<TestQuery, String> testSubject =
                 new GrpcBackedQueryMessage<>(testQueryRequest, serializer, serializer);
 
-        assertEquals(expectedQuery, testSubject.getPayload());
+        assertEquals(expectedQuery, testSubject.payload());
     }
 
     @Test
-    void getPayloadTypeReturnsTheTypeOfTheInsertedQueryRequest() {
+    void payloadTypeReturnsTheTypeOfTheInsertedQueryRequest() {
         QueryMessage<TestQuery, String> testQueryMessage =
                 new GenericQueryMessage<>(new MessageType("query"), TEST_QUERY, RESPONSE_TYPE);
         QueryRequest testQueryRequest =
@@ -126,7 +126,7 @@ class GrpcBackedQueryMessageTest {
         GrpcBackedQueryMessage<TestQuery, String> testSubject =
                 new GrpcBackedQueryMessage<>(testQueryRequest, serializer, serializer);
 
-        assertEquals(TestQuery.class, testSubject.getPayloadType());
+        assertEquals(TestQuery.class, testSubject.payloadType());
     }
 
     @Test
@@ -143,7 +143,7 @@ class GrpcBackedQueryMessageTest {
         MetaData replacementMetaData = MetaData.with("some-other-key", "some-other-value");
 
         testSubject = testSubject.withMetaData(replacementMetaData);
-        MetaData resultMetaData = testSubject.getMetaData();
+        MetaData resultMetaData = testSubject.metaData();
         assertFalse(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
         assertEquals(replacementMetaData, resultMetaData);
     }
@@ -162,7 +162,7 @@ class GrpcBackedQueryMessageTest {
         MetaData additionalMetaData = MetaData.with("some-other-key", "some-other-value");
 
         testSubject = testSubject.andMetaData(additionalMetaData);
-        MetaData resultMetaData = testSubject.getMetaData();
+        MetaData resultMetaData = testSubject.metaData();
 
         assertTrue(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
         assertTrue(resultMetaData.containsKey(additionalMetaData.keySet().iterator().next()));

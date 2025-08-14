@@ -78,7 +78,7 @@ public class AnnotationRoutingStrategy implements RoutingStrategy {
     @Override
     public String getRoutingKey(@Nonnull CommandMessage<?> command) {
         try {
-            Object payload = command.getPayload();
+            Object payload = command.payload();
             return payload == null ? null : findIdentifier(payload);
         } catch (InvocationTargetException e) {
             throw new AxonConfigurationException(

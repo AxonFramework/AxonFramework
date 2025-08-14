@@ -17,20 +17,24 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
  * Generic implementation of the {@link SubscriptionQueryMessage} interface.
  *
- * @param <P> The type of {@link #getPayload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
- * @param <I> The type of {@link #getResponseType() initial response} expected from this
- *            {@link SubscriptionQueryMessage}.
- * @param <U> The type of {@link #getUpdateResponseType() incremental updates} expected from this
+ * @param <P> The type of {@link #payload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
+ * @param <I> The type of {@link #responseType() initial response} expected from this {@link SubscriptionQueryMessage}.
+ * @param <U> The type of {@link #updatesResponseType() incremental updates} expected from this
  *            {@link SubscriptionQueryMessage}.
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -57,7 +61,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      *                           {@link SubscriptionQueryMessage}.
      */
     public GenericSubscriptionQueryMessage(@Nonnull MessageType type,
-                                           @Nonnull P payload,
+                                           @Nullable P payload,
                                            @Nonnull ResponseType<I> responseType,
                                            @Nonnull ResponseType<U> updateResponseType) {
         super(type, payload, responseType);
@@ -65,19 +69,19 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     }
 
     /**
-     * Constructs a {@code GenericSubscriptionQueryMessage} with given {@code delegate},
-     * {@code responseType}, and {@code updateResponseType}.
+     * Constructs a {@code GenericSubscriptionQueryMessage} with given {@code delegate}, {@code responseType}, and
+     * {@code updateResponseType}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
+     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate           The {@link Message} containing {@link Message#getPayload() payload},
-     *                           {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
-     *                           {@link Message#getMetaData() metadata} for the {@link SubscriptionQueryMessage} to
+     * @param delegate           The {@link Message} containing {@link Message#payload() payload},
+     *                           {@link Message#type() type}, {@link Message#identifier() identifier} and
+     *                           {@link Message#metaData() metadata} for the {@link SubscriptionQueryMessage} to
      *                           reconstruct.
      * @param responseType       The expected {@link ResponseType response type} for this
      *                           {@link SubscriptionQueryMessage}.
@@ -92,21 +96,41 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     }
 
     @Override
-    public ResponseType<U> getUpdateResponseType() {
+    @Nonnull
+    public ResponseType<U> updatesResponseType() {
         return updateResponseType;
     }
 
     @Override
-    public GenericSubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericSubscriptionQueryMessage<>(getDelegate().withMetaData(metaData),
-                                                     getResponseType(),
+    @Nonnull
+    public SubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericSubscriptionQueryMessage<>(delegate().withMetaData(metaData),
+                                                     responseType(),
                                                      updateResponseType);
     }
 
     @Override
-    public GenericSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericSubscriptionQueryMessage<>(getDelegate().andMetaData(metaData),
-                                                     getResponseType(),
+    @Nonnull
+    public SubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericSubscriptionQueryMessage<>(delegate().andMetaData(metaData),
+                                                     responseType(),
                                                      updateResponseType);
+    }
+
+    @Override
+    @Nonnull
+    public <T> SubscriptionQueryMessage<T, I, U> withConvertedPayload(@Nonnull Type type,
+                                                                      @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
+            //noinspection unchecked
+            return (SubscriptionQueryMessage<T, I, U>) this;
+        }
+        Message<P> delegate = delegate();
+        Message<T> converted = new GenericMessage<>(delegate.identifier(),
+                                                    delegate.type(),
+                                                    convertedPayload,
+                                                    delegate.metaData());
+        return new GenericSubscriptionQueryMessage<>(converted, responseType(), updatesResponseType());
     }
 }

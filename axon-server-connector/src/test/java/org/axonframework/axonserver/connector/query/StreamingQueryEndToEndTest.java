@@ -237,10 +237,10 @@ class StreamingQueryEndToEndTest {
     private <R> Flux<R> streamingQueryPayloads(StreamingQueryMessage<?, R> query, boolean supportsStreaming) {
         if (supportsStreaming) {
             return Flux.from(senderQueryBus.streamingQuery(query))
-                       .map(Message::getPayload);
+                       .map(Message::payload);
         }
         return Flux.from(nonStreamingSenderQueryBus.streamingQuery(query))
-                   .map(Message::getPayload);
+                   .map(Message::payload);
     }
 
     private <R> R directQueryPayload(QueryMessage<?, R> query,
@@ -250,7 +250,7 @@ class StreamingQueryEndToEndTest {
             response = supportsStreaming
                     ? senderQueryBus.query(query).get()
                     : nonStreamingSenderQueryBus.query(query).get();
-            return response.getPayload();
+            return response.payload();
         } catch (IllegalPayloadAccessException e) {
             if (response != null && response.optionalExceptionResult().isPresent()) {
                 throw response.optionalExceptionResult().get();

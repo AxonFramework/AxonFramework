@@ -67,6 +67,10 @@ public class PropertyFileUsagePropertyProvider implements UsagePropertyProvider 
     private void load() {
         try {
             var installationIdFile = getFile();
+            if(installationIdFile == null) {
+                logger.debug("Could not determine user home directory. Skipping property provider from file.");
+                return;
+            }
             Properties properties = new Properties();
             if (!installationIdFile.exists()) {
                 createDefaultFile();
@@ -87,20 +91,28 @@ public class PropertyFileUsagePropertyProvider implements UsagePropertyProvider 
     }
 
     private void createDefaultFile() throws IOException {
-        logger.info("Creating default AxonIQ Data Collection properties file at: {}", getFile().getAbsolutePath());
+        File file = getFile();
+        if(file == null) {
+            logger.debug("Could not determine user home directory. Skipping creation of default properties file.");
+            return;
+        }
+        logger.info("Creating default AxonIQ Data Collection properties file at: {}", file.getAbsolutePath());
         Properties properties = new Properties();
         properties.setProperty("telemetry_url", DefaultUsagePropertyProvider.INSTANCE.getUrl());
         properties.setProperty("opted_out", String.valueOf(DefaultUsagePropertyProvider.INSTANCE.getDisabled()));
         // Ensure the parent directory exists
-        File parentDir = getFile().getParentFile();
+        File parentDir = file.getParentFile();
         if (!parentDir.exists() && !parentDir.mkdirs()) {
             throw new IOException("Failed to create parent directory: " + parentDir.getAbsolutePath());
         }
-        properties.store(Files.newOutputStream(getFile().toPath()), "AxonIQ Anonymous Usage Reporting");
+        properties.store(Files.newOutputStream(file.toPath()), "AxonIQ Anonymous Usage Reporting");
     }
 
     private File getFile() {
         String pwdDir = System.getProperty("user.home");
+        if (pwdDir == null) {
+            return null;
+        }
         String installationIdFilePath = pwdDir + AXONIQ_PROPERTIES_PATH;
         return new File(installationIdFilePath);
     }

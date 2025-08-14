@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,8 +93,8 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
 
     @SuppressWarnings("unchecked")
     private Optional<T> fromSnapshot(DomainEventMessage<?> firstEvent) {
-        if (aggregateModel.types().anyMatch(firstEvent.getPayloadType()::equals)) {
-            return (Optional<T>) Optional.of(firstEvent.getPayload());
+        if (aggregateModel.types().anyMatch(firstEvent.payloadType()::equals)) {
+            return (Optional<T>) Optional.of(firstEvent.payload());
         }
         return Optional.empty();
     }

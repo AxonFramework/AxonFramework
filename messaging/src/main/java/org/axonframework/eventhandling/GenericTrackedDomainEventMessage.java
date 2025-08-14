@@ -46,7 +46,7 @@ public class GenericTrackedDomainEventMessage<T>
      */
     public GenericTrackedDomainEventMessage(TrackingToken trackingToken, DomainEventMessage<T> delegate) {
         this(trackingToken, delegate.getType(), delegate.getAggregateIdentifier(), delegate.getSequenceNumber(),
-             delegate, delegate.getTimestamp());
+             delegate, delegate.timestamp());
     }
 
     /**
@@ -88,17 +88,19 @@ public class GenericTrackedDomainEventMessage<T>
     }
 
     @Override
+    @Nonnull
     public GenericTrackedDomainEventMessage<T> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericTrackedDomainEventMessage<>(trackingToken, getType(), getAggregateIdentifier(),
-                                                      getSequenceNumber(), getDelegate().withMetaData(metaData),
-                                                      getTimestamp());
+                                                      getSequenceNumber(), delegate().withMetaData(metaData),
+                                                      timestamp());
     }
 
     @Override
+    @Nonnull
     public GenericTrackedDomainEventMessage<T> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericTrackedDomainEventMessage<>(trackingToken, getType(), getAggregateIdentifier(),
-                                                      getSequenceNumber(), getDelegate().andMetaData(metaData),
-                                                      getTimestamp());
+                                                      getSequenceNumber(), delegate().andMetaData(metaData),
+                                                      timestamp());
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,26 +101,27 @@ public class SubscriptionMessageSerializer {
     public QueryRequest serializeQuery(SubscriptionQueryMessage subscriptionQueryMessage) {
         return QueryRequest.newBuilder()
                            .setTimestamp(System.currentTimeMillis())
-                           .setMessageIdentifier(subscriptionQueryMessage.getIdentifier())
+                           .setMessageIdentifier(subscriptionQueryMessage.identifier())
                            .setQuery(subscriptionQueryMessage.type().name())
                            .setClientId(configuration.getClientId())
                            .setComponentName(configuration.getComponentName())
                            .setPayload(payloadSerializer.apply(subscriptionQueryMessage))
-                           .setResponseType(responseTypeSerializer.apply(subscriptionQueryMessage.getResponseType()))
-                           .putAllMetaData(metadataSerializer.apply(subscriptionQueryMessage.getMetaData()))
+                           .setResponseType(responseTypeSerializer.apply(subscriptionQueryMessage.responseType()))
+                           .putAllMetaData(metadataSerializer.apply(subscriptionQueryMessage.metaData()))
                            .build();
     }
 
     /**
      * Serializes the given {@code subscriptionQueryMessage} into a {@link SerializedObject}.
      *
-     * @param subscriptionQueryMessage the {@link SubscriptionQueryMessage} who's {@link SubscriptionQueryMessage#getUpdateResponseType()}
-     *                                 to serialize into a {@link SerializedObject}
-     * @return a {@link SerializedObject} based on the given {@code subscriptionQueryMessage} its {@link
-     * SubscriptionQueryMessage#getUpdateResponseType()}
+     * @param subscriptionQueryMessage the {@link SubscriptionQueryMessage} who's
+     *                                 {@link SubscriptionQueryMessage#updatesResponseType()} to serialize into a
+     *                                 {@link SerializedObject}
+     * @return a {@link SerializedObject} based on the given {@code subscriptionQueryMessage} its
+     * {@link SubscriptionQueryMessage#updatesResponseType()}
      */
     public SerializedObject serializeUpdateType(SubscriptionQueryMessage<?, ?, ?> subscriptionQueryMessage) {
-        return responseTypeSerializer.apply(subscriptionQueryMessage.getUpdateResponseType());
+        return responseTypeSerializer.apply(subscriptionQueryMessage.updatesResponseType());
     }
 
     /**
@@ -149,9 +150,9 @@ public class SubscriptionMessageSerializer {
             updateMessageBuilder.setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage));
         }
 
-        Map<String, MetaDataValue> metaData = metadataSerializer.apply(subscriptionQueryUpdateMessage.getMetaData());
+        Map<String, MetaDataValue> metaData = metadataSerializer.apply(subscriptionQueryUpdateMessage.metaData());
         return updateMessageBuilder.putAllMetaData(metaData)
-                                   .setMessageIdentifier(subscriptionQueryUpdateMessage.getIdentifier())
+                                   .setMessageIdentifier(subscriptionQueryUpdateMessage.identifier())
                                    .setClientId(configuration.getClientId())
                                    .setComponentName(configuration.getComponentName())
                                    .build();

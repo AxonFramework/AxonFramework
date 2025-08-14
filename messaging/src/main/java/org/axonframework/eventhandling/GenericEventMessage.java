@@ -17,24 +17,26 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.CachingSupplier;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
  * Generic implementation of the {@link EventMessage} interface.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link EventMessage}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link EventMessage}.
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
@@ -62,7 +64,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * @param payload The payload of type {@code P} for this {@link EventMessage}.
      */
     public GenericEventMessage(@Nonnull MessageType type,
-                               @Nonnull P payload) {
+                               @Nullable P payload) {
         this(type, payload, MetaData.emptyInstance());
     }
 
@@ -74,7 +76,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * @param metaData The metadata for this {@link EventMessage}.
      */
     public GenericEventMessage(@Nonnull MessageType type,
-                               @Nonnull P payload,
+                               @Nullable P payload,
                                @Nonnull Map<String, String> metaData) {
         this(new GenericMessage<>(type, payload, metaData), clock.instant());
     }
@@ -91,7 +93,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      */
     public GenericEventMessage(@Nonnull String identifier,
                                @Nonnull MessageType type,
-                               @Nonnull P payload,
+                               @Nullable P payload,
                                @Nonnull Map<String, String> metaData,
                                @Nonnull Instant timestamp) {
         this(new GenericMessage<>(identifier, type, payload, metaData), timestamp);
@@ -107,9 +109,9 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate          The {@link Message} containing {@link Message#getPayload() payload},
-     *                          {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
-     *                          {@link Message#getMetaData() metadata} for the {@link EventMessage} to reconstruct.
+     * @param delegate          The {@link Message} containing {@link Message#payload() payload},
+     *                          {@link Message#type() type}, {@link Message#identifier() identifier} and
+     *                          {@link Message#metaData() metadata} for the {@link EventMessage} to reconstruct.
      * @param timestampSupplier {@link Supplier} for the {@link Instant timestamp} of the
      *                          {@link EventMessage EventMessage's} creation.
      */
@@ -122,16 +124,16 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     /**
      * Constructs a {@code GenericEventMessage} with given {@code delegate} and {@code timestamp}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
+     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericEventMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
-     *                  {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
-     *                  {@link Message#getMetaData() metadata} for the {@link EventMessage} to reconstruct.
+     * @param delegate  The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
+     *                  {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
+     *                  {@link EventMessage} to reconstruct.
      * @param timestamp The {@link Instant timestamp} of this {@link EventMessage GenericEventMessage's} creation.
      */
     protected GenericEventMessage(@Nonnull Message<P> delegate,
@@ -139,49 +141,56 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
         this(delegate, CachingSupplier.of(timestamp));
     }
 
-    @Nonnull
     @Override
-    public Instant getTimestamp() {
+    @Nonnull
+    public Instant timestamp() {
         return timestampSupplier.get();
     }
 
     @Override
-    public GenericEventMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
-        if (getMetaData().equals(metaData)) {
+    @Nonnull
+    public EventMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
+        if (metaData().equals(metaData)) {
             return this;
         }
-        return new GenericEventMessage<>(getDelegate().withMetaData(metaData), timestampSupplier);
+        return new GenericEventMessage<>(delegate().withMetaData(metaData), timestampSupplier);
     }
 
     @Override
-    public GenericEventMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
+    @Nonnull
+    public EventMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
         //noinspection ConstantConditions
-        if (metaData == null || metaData.isEmpty() || getMetaData().equals(metaData)) {
+        if (metaData == null || metaData.isEmpty() || metaData().equals(metaData)) {
             return this;
         }
-        return new GenericEventMessage<>(getDelegate().andMetaData(metaData), timestampSupplier);
+        return new GenericEventMessage<>(delegate().andMetaData(metaData), timestampSupplier);
+    }
+
+    @Override
+    @Nonnull
+    public <T> EventMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
+            //noinspection unchecked
+            return (EventMessage<T>) this;
+        }
+        Message<P> delegate = delegate();
+        Message<T> converted = new GenericMessage<T>(delegate.identifier(),
+                                                     delegate.type(),
+                                                     convertedPayload,
+                                                     delegate.metaData());
+        return new GenericEventMessage<>(converted, timestamp());
     }
 
     @Override
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
         stringBuilder.append(", timestamp='")
-                     .append(getTimestamp());
+                     .append(timestamp());
     }
 
     @Override
     protected String describeType() {
         return "GenericEventMessage";
-    }
-
-    @Override
-    public <C> EventMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
-        P payload = getPayload();
-        C converted = conversion.apply(payload);
-        if (Objects.equals(converted, payload)) {
-            //noinspection unchecked
-            return (EventMessage<C>) this;
-        }
-        return new GenericEventMessage<>(this.getIdentifier(), this.type(), converted, getMetaData(), getTimestamp());
     }
 }

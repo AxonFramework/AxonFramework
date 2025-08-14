@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,9 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * engines how to store event entries.
  *
  * @author Rene de Waele
+ * @deprecated Will be removed entirely in favor of the {@link EventMessage}.
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 @MappedSuperclass
 public abstract class AbstractEventEntry<T> implements EventData<T> {
 
@@ -72,12 +74,12 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
     public AbstractEventEntry(EventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
         SerializedObject<T> payload = eventMessage.serializePayload(serializer, contentType);
         SerializedObject<T> metaData = eventMessage.serializeMetaData(serializer, contentType);
-        this.eventIdentifier = eventMessage.getIdentifier();
+        this.eventIdentifier = eventMessage.identifier();
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();
         this.payload = payload.getData();
         this.metaData = metaData.getData();
-        this.timeStamp = formatInstant(eventMessage.getTimestamp());
+        this.timeStamp = formatInstant(eventMessage.timestamp());
     }
 
     /**

@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.GrpcMetaData;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
@@ -25,9 +26,11 @@ import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -92,7 +95,8 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     }
 
     @Override
-    public String getIdentifier() {
+    @Nonnull
+    public String identifier() {
         return queryUpdate.getMessageIdentifier();
     }
 
@@ -103,12 +107,14 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     }
 
     @Override
-    public MetaData getMetaData() {
+    @Nonnull
+    public MetaData metaData() {
         return metaDataSupplier.get();
     }
 
     @Override
-    public U getPayload() {
+    @Nullable
+    public U payload() {
         if (isExceptional()) {
             throw new IllegalPayloadAccessException(
                     "This result completed exceptionally, payload is not available. "
@@ -120,7 +126,15 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     }
 
     @Override
-    public Class<U> getPayloadType() {
+    @Nullable
+    public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
+        // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
+        return null;
+    }
+
+    @Override
+    @Nonnull
+    public Class<U> payloadType() {
         return serializedPayload.getType();
     }
 
@@ -135,6 +149,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     }
 
     @Override
+    @Nonnull
     public GrpcBackedQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GrpcBackedQueryUpdateMessage<>(queryUpdate,
                                                   serializedPayload,
@@ -144,7 +159,16 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     }
 
     @Override
+    @Nonnull
     public GrpcBackedQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData) {
-        return withMetaData(getMetaData().mergedWith(metaData));
+        return withMetaData(metaData().mergedWith(metaData));
+    }
+
+    @Override
+    @Nonnull
+    public <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Type type,
+                                                                      @Nonnull Converter converter) {
+        // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
+        return null;
     }
 }

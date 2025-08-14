@@ -122,7 +122,7 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
         assertEquals(expectedDescriptions(command), configuration.eventStore()
                                                                  .readEvents(aggregateIdentifier)
                                                                  .asStream()
-                                                                 .map(Message::getPayload)
+                                                                 .map(Message::payload)
                                                                  .map(MyEvent.class::cast)
                                                                  .map(MyEvent::getDescription)
                                                                  .collect(Collectors.toList()));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,12 +114,12 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
             Optional<Cause> optionalCause = letter.cause();
             if (optionalCause.isPresent()) {
                 logger.debug("Adding dead letter with message id [{}] because [{}].",
-                             letter.message().getIdentifier(),
+                             letter.message().identifier(),
                              optionalCause.get().type());
             } else {
                 logger.debug(
                         "Adding dead letter with message id [{}] because the sequence identifier [{}] is already present.",
-                        letter.message().getIdentifier(),
+                        letter.message().identifier(),
                         sequenceIdentifier);
             }
         }
@@ -146,11 +146,11 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
                     deadLetters.remove(sequenceId);
                 }
                 if (logger.isTraceEnabled()) {
-                    logger.trace("Evicted letter with message id [{}] for sequence id [{}].", letter.message().getIdentifier(), sequenceId);
+                    logger.trace("Evicted letter with message id [{}] for sequence id [{}].", letter.message().identifier(), sequenceId);
                 }
             }
         } else if (logger.isDebugEnabled()) {
-            logger.debug("Cannot evict letter with message id [{}] as it could not be found in this queue.", letter.message().getIdentifier());
+            logger.debug("Cannot evict letter with message id [{}] as it could not be found in this queue.", letter.message().identifier());
         }
     }
 
@@ -171,12 +171,12 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
                 deadLetters.get(sequenceId)
                            .addFirst(letterUpdater.apply(letter.markTouched()));
                 if (logger.isTraceEnabled()) {
-                    logger.trace("Requeued letter [{}] for sequence [{}].", letter.message().getIdentifier(), sequenceId);
+                    logger.trace("Requeued letter [{}] for sequence [{}].", letter.message().identifier(), sequenceId);
                 }
             }
         } else {
             throw new NoSuchDeadLetterException(
-                    "Cannot requeue [" + letter.message().getIdentifier() + "] since there is not matching entry in this queue."
+                    "Cannot requeue [" + letter.message().identifier() + "] since there is not matching entry in this queue."
             );
         }
     }

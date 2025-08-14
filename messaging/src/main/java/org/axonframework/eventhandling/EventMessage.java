@@ -17,21 +17,22 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.Message;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 
 /**
- * A {@link Message} wrapping an event, which is represented by its {@link #getPayload() payload}.
+ * A {@link Message} wrapping an event, which is represented by its {@link #payload() payload}.
  * <p>
  * An event is a representation of an occurrence of an event (i.e. anything that happened any might be of importance to
  * any other component) in the application. It contains the data relevant for components that need to act based on that
  * event.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link EventMessage}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link EventMessage}.
  * @author Allard Buijze
  * @see DomainEventMessage
  * @since 2.0.0
@@ -42,8 +43,8 @@ public interface EventMessage<P> extends Message<P> {
      * Returns the identifier of this {@link EventMessage event}.
      * <p>
      * The identifier is used to define the uniqueness of an event. Two events may contain similar (or equal)
-     * {@link #getPayload() payloads} and {@link #getTimestamp() timestamp}, if the event identifiers are different,
-     * they both represent a different occurrence of an Event.
+     * {@link #payload() payloads} and {@link #timestamp() timestamp}, if the event identifiers are different, they both
+     * represent a different occurrence of an Event.
      * <p>
      * If two messages have the same identifier, they both represent the same unique occurrence of an event, even though
      * the resulting view may be different. You may not assume two messages are equal (i.e. interchangeable) if their
@@ -56,7 +57,8 @@ public interface EventMessage<P> extends Message<P> {
      * @return The identifier of this {@link EventMessage event}.
      */
     @Override
-    String getIdentifier();
+    @Nonnull
+    String identifier();
 
     /**
      * Returns the timestamp of this {@link EventMessage event}.
@@ -65,28 +67,30 @@ public interface EventMessage<P> extends Message<P> {
      *
      * @return The timestamp of this {@link EventMessage event}.
      */
-    Instant getTimestamp();
+    @Nonnull
+    Instant timestamp();
 
     @Override
+    @Nonnull
     EventMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
+    @Nonnull
     EventMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
 
-    /**
-     * Returns a copy of this EventMessage with its payload converted using given {@code conversion} function. If the
-     * function returns an equal payload, this Event Message instance is returned.
-     *
-     * @param conversion The function to apply to the payload of this message
-     * @param <C>        The type of payload returned by the conversion
-     * @return a copy of this message with the payload converted
-     */
-    default <C> EventMessage<C> withConvertedPayload(@Nonnull Function<P, C> conversion) {
-        P payload = getPayload();
-        if (Objects.equals(payload, conversion.apply(payload))) {
-            //noinspection unchecked
-            return (EventMessage<C>) this;
-        }
-        throw new UnsupportedOperationException("To be implemented");
+    @Override
+    @Nonnull
+    default <T> EventMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload((Type) type, converter);
     }
+
+    @Override
+    @Nonnull
+    default <T> EventMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+        return withConvertedPayload(type.getType(), converter);
+    }
+
+    @Override
+    @Nonnull
+    <T> EventMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

@@ -106,14 +106,14 @@ class FixtureTest_CommandInterceptors {
                 ArgumentCaptor.forClass(GenericCommandMessage.class);
         verify(firstMockCommandDispatchInterceptor).handle(firstCommandMessageCaptor.capture());
         GenericCommandMessage<?> firstResult = firstCommandMessageCaptor.getValue();
-        assertEquals(expectedCommand, firstResult.getPayload());
+        assertEquals(expectedCommand, firstResult.payload());
 
         //noinspection unchecked
         ArgumentCaptor<GenericCommandMessage<?>> secondCommandMessageCaptor =
                 ArgumentCaptor.forClass(GenericCommandMessage.class);
         verify(secondMockCommandDispatchInterceptor).handle(secondCommandMessageCaptor.capture());
         GenericCommandMessage<?> secondResult = secondCommandMessageCaptor.getValue();
-        assertEquals(expectedCommand, secondResult.getPayload());
+        assertEquals(expectedCommand, secondResult.payload());
     }
 
     @Test
@@ -169,8 +169,8 @@ class FixtureTest_CommandInterceptors {
         verify(mockCommandHandlerInterceptor).handle(unitOfWorkCaptor.capture(), any(), interceptorChainCaptor.capture());
         LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWorkResult = unitOfWorkCaptor.getValue();
         Message<?> messageResult = unitOfWorkResult.getMessage();
-        assertEquals(expectedCommand, messageResult.getPayload());
-        assertEquals(expectedMetaDataMap, messageResult.getMetaData());
+        assertEquals(expectedCommand, messageResult.payload());
+        assertEquals(expectedMetaDataMap, messageResult.metaData());
     }
 
     @Test

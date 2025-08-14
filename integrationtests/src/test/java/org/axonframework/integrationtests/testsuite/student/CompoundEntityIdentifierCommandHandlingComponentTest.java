@@ -60,8 +60,9 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                                                         new QualifiedName(MentorAssignedToStudentEvent.class),
                                                         (entity, event, context) -> {
                                                             Converter converter = c.getComponent(Converter.class);
-                                                            MentorAssignedToStudentEvent payload = converter.convert(event.getPayload(),
-                                                                                                                     MentorAssignedToStudentEvent.class);
+                                                            MentorAssignedToStudentEvent payload = event.payloadAs(
+                                                                    MentorAssignedToStudentEvent.class, converter
+                                                            );
                                                             entity.handle(payload);
                                                             return entity;
                                                         }
@@ -97,8 +98,8 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                 new QualifiedName(AssignMentorCommand.class),
                 c -> (command, state, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context, c);
-                    Converter converter = c.getComponent(Converter.class);
-                    AssignMentorCommand payload = converter.convert(command.getPayload(), AssignMentorCommand.class);
+                    AssignMentorCommand payload = command.payloadAs(AssignMentorCommand.class,
+                                                                    c.getComponent(Converter.class));
                     StudentMentorAssignment assignment = state.loadEntity(
                             StudentMentorAssignment.class, payload.modelIdentifier(), context
                     ).join();

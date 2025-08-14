@@ -75,7 +75,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AsyncInMemoryStreamableEventSource implements StreamableEventSource<EventMessage<?>> {
 
     /**
-     * An {@link EventMessage#getPayload()} representing a failed event.
+     * An {@link EventMessage#payload()} representing a failed event.
      */
     private static final String FAIL_PAYLOAD = "FAIL";
 
@@ -135,7 +135,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                            .stream()
                            .filter(positionToEventEntry -> {
                                EventMessage<?> event = positionToEventEntry.getValue();
-                               Instant eventTimestamp = event.getTimestamp();
+                               Instant eventTimestamp = event.timestamp();
                                return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);
                            })
                            .map(Map.Entry::getKey)
@@ -241,7 +241,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                 context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(position + 1));
                 context = Tag.addToContext(context, Collections.emptySet());
 
-                if (FAIL_PAYLOAD.equals(event.getPayload())) {
+                if (FAIL_PAYLOAD.equals(event.payload())) {
                     throw new IllegalStateException("Cannot retrieve event at position [" + position + "].");
                 }
 
@@ -270,7 +270,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
             context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(position + 1));
             context = Tag.addToContext(context, Collections.emptySet());
 
-            if (FAIL_PAYLOAD.equals(event.getPayload())) {
+            if (FAIL_PAYLOAD.equals(event.payload())) {
                 throw new IllegalStateException("Cannot retrieve event at position [" + position + "].");
             }
 
@@ -285,7 +285,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                     if (nextEvent == null) {
                         return Optional.empty();
                     }
-                    if (FAIL_PAYLOAD.equals(nextEvent.getPayload())) {
+                    if (FAIL_PAYLOAD.equals(nextEvent.payload())) {
                         throw new IllegalStateException("Cannot retrieve event at position [" + nextPos + "].");
                     }
                     if (matches(nextEvent, condition)) {
@@ -370,7 +370,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         // Always let FAIL_EVENT through to trigger the exception
-        if (FAIL_PAYLOAD.equals(event.getPayload())) {
+        if (FAIL_PAYLOAD.equals(event.payload())) {
             return true;
         }
 

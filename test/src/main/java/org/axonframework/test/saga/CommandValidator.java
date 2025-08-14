@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,23 +93,23 @@ public class CommandValidator {
             Object expectedItem = expectedIterator.next();
             if (expectedItem instanceof CommandMessage) {
                 CommandMessage<?> expectedMessage = (CommandMessage<?>) expectedItem;
-                if (!expectedMessage.getPayloadType().equals(actualItem.getPayloadType())) {
+                if (!expectedMessage.payloadType().equals(actualItem.payloadType())) {
                     throw new AxonAssertionError(
                             "Unexpected payload type of command at position " + counter + " (0-based).\n"
-                                    + "Expected <" + expectedMessage.getPayloadType() + ">,\n"
-                                    + " but got <" + actualItem.getPayloadType() + ">."
+                                    + "Expected <" + expectedMessage.payloadType() + ">,\n"
+                                    + " but got <" + actualItem.payloadType() + ">."
                     );
                 }
-                assertCommandEquality(counter, expectedMessage.getPayload(), actualItem.getPayload());
-                if (!expectedMessage.getMetaData().equals(actualItem.getMetaData())) {
+                assertCommandEquality(counter, expectedMessage.payload(), actualItem.payload());
+                if (!expectedMessage.metaData().equals(actualItem.metaData())) {
                     throw new AxonAssertionError(
                             "Unexpected Meta Data of command at position " + counter + " (0-based).\n"
-                                    + "Expected <" + expectedMessage.getMetaData() + ">,\n"
-                                    + " but got <" + actualItem.getMetaData() + ">."
+                                    + "Expected <" + expectedMessage.metaData() + ">,\n"
+                                    + " but got <" + actualItem.metaData() + ">."
                     );
                 }
             } else {
-                assertCommandEquality(counter, expectedItem, actualItem.getPayload());
+                assertCommandEquality(counter, expectedItem, actualItem.payload());
             }
             counter++;
         }

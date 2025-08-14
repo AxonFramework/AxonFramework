@@ -88,7 +88,7 @@ class ConvertingCommandGatewayTest {
         CompletableFuture<byte[]> actual = commandResult.resultAs(byte[].class);
         assertTrue(actual.isDone());
         assertArrayEquals(HELLO_BYTES, actual.get());
-        assertEquals(HELLO_MESSAGE, commandResult.getResultMessage().get().getPayload());
+        assertEquals(HELLO_MESSAGE, commandResult.getResultMessage().get().payload());
     }
 
     @Test
@@ -107,7 +107,7 @@ class ConvertingCommandGatewayTest {
 
         commandResult.onSuccess(byte[].class, (p, m) -> {
             assertArrayEquals(HELLO_BYTES, p);
-            assertEquals(HELLO_MESSAGE, m.getPayload());
+            assertEquals(HELLO_MESSAGE, m.payload());
             invoked.set(true);
         });
 

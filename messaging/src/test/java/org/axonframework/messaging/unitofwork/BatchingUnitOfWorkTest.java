@@ -76,7 +76,7 @@ class BatchingUnitOfWorkTest {
         try {
             subject.executeWithResult((ctx) -> {
                 registerListeners(subject);
-                if (subject.getMessage().getPayload().equals(1)) {
+                if (subject.getMessage().payload().equals(1)) {
                     throw e;
                 }
                 return resultFor(subject.getMessage());
@@ -106,7 +106,7 @@ class BatchingUnitOfWorkTest {
         try {
             subject.executeWithResult((ctx) -> {
                 registerListeners(subject);
-                if (subject.getMessage().getPayload().equals(2)) {
+                if (subject.getMessage().payload().equals(2)) {
                     subject.addHandler(PREPARE_COMMIT, u -> {
                         throw commitException;
                     });
@@ -139,7 +139,7 @@ class BatchingUnitOfWorkTest {
     }
 
     public static Object resultFor(Message<?> message) {
-        return "Result for: " + message.getPayload();
+        return "Result for: " + message.payload();
     }
 
     private void validatePhaseTransitions(List<LegacyUnitOfWork.Phase> phases, List<Message<?>> messages) {
@@ -170,11 +170,11 @@ class BatchingUnitOfWorkTest {
                                                       .collect(Collectors.toList());
         List<?> expectedPayloads = expectedMessages.stream()
                                                    .filter(crm -> !crm.isExceptional())
-                                                   .map(Message::getPayload)
+                                                   .map(Message::payload)
                                                    .collect(Collectors.toList());
         List<?> actualPayloads = actualMessages.stream()
                                                .filter(crm -> !crm.isExceptional())
-                                               .map(Message::getPayload)
+                                               .map(Message::payload)
                                                .collect(Collectors.toList());
         List<Throwable> expectedExceptions = expectedMessages.stream()
                                                              .filter(ResultMessage::isExceptional)
@@ -185,10 +185,10 @@ class BatchingUnitOfWorkTest {
                                                          .map(ResultMessage::exceptionResult)
                                                          .collect(Collectors.toList());
         List<MetaData> expectedMetaData = expectedMessages.stream()
-                                                          .map(Message::getMetaData)
+                                                          .map(Message::metaData)
                                                           .collect(Collectors.toList());
         List<MetaData> actualMetaData = actualMessages.stream()
-                                                      .map(Message::getMetaData)
+                                                      .map(Message::metaData)
                                                       .collect(Collectors.toList());
         assertEquals(expectedPayloads.size(), actualPayloads.size());
         //noinspection SuspiciousMethodCalls
@@ -224,7 +224,7 @@ class BatchingUnitOfWorkTest {
 
         @Override
         public String toString() {
-            return phase + " -> " + message.getPayload();
+            return phase + " -> " + message.payload();
         }
     }
 }

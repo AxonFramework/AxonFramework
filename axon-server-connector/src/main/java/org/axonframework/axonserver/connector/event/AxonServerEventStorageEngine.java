@@ -66,7 +66,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
      * Constructs an {@code AxonServerEventStorageEngine} with the given {@code connection} and {@code converter}.
      *
      * @param connection The context-specific backing connection to Axon Server.
-     * @param converter  The converter to use to serialize {@link EventMessage#getPayload() payloads} and complex
+     * @param converter  The converter to use to serialize {@link EventMessage#payload() payloads} and complex
      *                   {@link org.axonframework.messaging.MetaData} values into bytes.
      */
     public AxonServerEventStorageEngine(@Nonnull AxonServerConnection connection,

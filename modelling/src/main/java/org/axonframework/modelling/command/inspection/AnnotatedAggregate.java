@@ -543,7 +543,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      */
     protected void applyMessageOrPayload(Object payloadOrMessage) {
         if (payloadOrMessage instanceof Message<?> message) {
-            apply(message.getPayload(), message.getMetaData());
+            apply(message.payload(), message.metaData());
         } else if (payloadOrMessage != null) {
             apply(payloadOrMessage, MetaData.emptyInstance());
         }
@@ -565,33 +565,35 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         }
 
         @Override
+        @Nonnull
         public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, String> newMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(
                         getType(), getAggregateIdentifier(), getSequenceNumber(),
-                        getIdentifier(), type(), getPayload(), getMetaData(), getTimestamp()
+                        identifier(), type(), payload(), metaData(), timestamp()
                 );
             } else {
                 return new LazyIdentifierDomainEventMessage<>(
                         getType(), getSequenceNumber(),
-                        type(), getPayload(), MetaData.from(newMetaData)
+                        type(), payload(), MetaData.from(newMetaData)
                 );
             }
         }
 
         @Override
+        @Nonnull
         public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(
                         getType(), getAggregateIdentifier(), getSequenceNumber(),
-                        getIdentifier(), type(), getPayload(), getMetaData(), getTimestamp()
+                        identifier(), type(), payload(), metaData(), timestamp()
                 ).andMetaData(additionalMetaData);
             } else {
                 return new LazyIdentifierDomainEventMessage<>(
                         getType(), getSequenceNumber(),
-                        type(), getPayload(), getMetaData().mergedWith(additionalMetaData)
+                        type(), payload(), metaData().mergedWith(additionalMetaData)
                 );
             }
         }

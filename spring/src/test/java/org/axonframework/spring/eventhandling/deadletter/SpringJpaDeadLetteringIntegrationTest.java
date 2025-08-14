@@ -75,6 +75,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(SpringExtension.class)
 @ExtendWith(MysqlTestContainerExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+@Disabled("TODO #3517 - Support dead lettering with EventHandlingComponent instead of EventHandlerInvoker")
 class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     @Autowired
@@ -140,7 +141,7 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
             JpaDeadLetter<? extends EventMessage<?>> actual = ((JpaDeadLetter<? extends EventMessage<?>>) result);
 
             assertEquals(expected.getSequenceIdentifier(), actual.getSequenceIdentifier(), assertMessageSupplier);
-            assertEquals(expected.message().getPayload(), actual.message().getPayload(), assertMessageSupplier);
+            assertEquals(expected.message().payload(), actual.message().payload(), assertMessageSupplier);
             assertFalse(result.cause().isPresent(), assertMessageSupplier);
             assertEquals(expected.diagnostics(), actual.diagnostics(), assertMessageSupplier);
             assertEquals(sequenceIndex.longValue(), actual.getIndex(), assertMessageSupplier);

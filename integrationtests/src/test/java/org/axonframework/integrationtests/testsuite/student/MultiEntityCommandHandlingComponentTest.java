@@ -68,8 +68,8 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
                 new QualifiedName(EnrollStudentToCourseCommand.class),
                 c -> (command, state, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context, c);
-                    Converter converter = c.getComponent(Converter.class);
-                    EnrollStudentToCourseCommand payload = converter.convert(command.getPayload(), EnrollStudentToCourseCommand.class);
+                    EnrollStudentToCourseCommand payload =
+                            command.payloadAs(c.getComponent(Converter.class), EnrollStudentToCourseCommand.class);
                     Student student = state.loadEntity(Student.class, payload.studentId(), context).join();
                     Course course = state.loadEntity(Course.class, payload.courseId(), context).join();
 
@@ -183,7 +183,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
             @Nonnull
             public String resolve(@Nonnull Message<?> command, @Nonnull ProcessingContext context) {
                 //noinspection unused
-                if (command.getPayload() instanceof AssignMentorCommand(String studentId, String mentorId)) {
+                if (command.payload() instanceof AssignMentorCommand(String studentId, String mentorId)) {
                     return studentId;
                 }
                 throw new IllegalArgumentException("Can not resolve mentor id from command");

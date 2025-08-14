@@ -17,15 +17,19 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
+
+import java.lang.reflect.Type;
 
 /**
  * Abstract implementation of a {@link Message} that delegates to an existing message.
  * <p>
  * Extend this decorator class to extend the message with additional features.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link MessageDecorator}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link MessageDecorator}.
  * @author Steven van Beelen
  * @author Rene de Waele
  * @since 3.0.0
@@ -37,8 +41,8 @@ public abstract class MessageDecorator<P> implements Message<P> {
     /**
      * Initializes a new decorator with given {@code delegate} {@link Message}.
      * <p>
-     * The decorator delegates to the delegate for the message's {@link #getIdentifier() identifier},
-     * {@link Message#type() type}, {@link #getPayload() payload}, and {@link #getMetaData() metadata}.
+     * The decorator delegates to the delegate for the message's {@link #identifier() identifier},
+     * {@link Message#type() type}, {@link #payload() payload}, and {@link #metaData() metadata}.
      *
      * @param delegate The {@link Message} delegate.
      */
@@ -47,32 +51,43 @@ public abstract class MessageDecorator<P> implements Message<P> {
     }
 
     @Override
-    public String getIdentifier() {
-        return delegate.getIdentifier();
+    @Nonnull
+    public String identifier() {
+        return delegate.identifier();
     }
 
-    @Nonnull
     @Override
+    @Nonnull
     public MessageType type() {
         return delegate.type();
     }
 
     @Override
-    public MetaData getMetaData() {
-        return delegate.getMetaData();
+    @Nullable
+    public P payload() {
+        return delegate.payload();
     }
 
     @Override
-    public P getPayload() {
-        return delegate.getPayload();
+    @Nullable
+    public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
+        return delegate.payloadAs(type, converter);
     }
 
     @Override
-    public Class<P> getPayloadType() {
-        return delegate.getPayloadType();
+    @Nonnull
+    public Class<P> payloadType() {
+        return delegate.payloadType();
     }
 
     @Override
+    @Nonnull
+    public MetaData metaData() {
+        return delegate.metaData();
+    }
+
+    @Override
+    @Nonnull
     public <S> SerializedObject<S> serializePayload(Serializer serializer, Class<S> expectedRepresentation) {
         return delegate.serializePayload(serializer, expectedRepresentation);
     }
@@ -82,12 +97,19 @@ public abstract class MessageDecorator<P> implements Message<P> {
         return delegate.serializeMetaData(serializer, expectedRepresentation);
     }
 
+    @Override
+    @Nonnull
+    public <T> Message<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        return delegate.withConvertedPayload(type, converter);
+    }
+
     /**
-     * Returns the wrapped message delegate.
+     * Returns the wrapped {@link Message} delegated by this decorator.
      *
-     * @return the delegate message
+     * @return The wrapped {@link Message} delegated by this decorator.
      */
-    protected Message<P> getDelegate() {
+    @Nonnull
+    protected Message<P> delegate() {
         return delegate;
     }
 
@@ -109,20 +131,20 @@ public abstract class MessageDecorator<P> implements Message<P> {
      * may be appended without enclosing. All properties should be preceded by a comma when appending, or finish with a
      * comma when prefixing values.
      *
-     * @param stringBuilder the builder to append data to
+     * @param stringBuilder The builder to append data to.
      */
     protected void describeTo(StringBuilder stringBuilder) {
         stringBuilder.append("type={")
                      .append(type())
                      .append('}')
                      .append(", payload={")
-                     .append(getPayload())
+                     .append(payload())
                      .append('}')
                      .append(", metadata={")
-                     .append(getMetaData())
+                     .append(metaData())
                      .append('}')
                      .append(", messageIdentifier='")
-                     .append(getIdentifier())
+                     .append(identifier())
                      .append('\'');
     }
 
@@ -131,7 +153,7 @@ public abstract class MessageDecorator<P> implements Message<P> {
      * <p>
      * Defaults to the simple class name of the actual instance.
      *
-     * @return the type of message
+     * @return The type of the message.
      */
     protected String describeType() {
         return getClass().getSimpleName();

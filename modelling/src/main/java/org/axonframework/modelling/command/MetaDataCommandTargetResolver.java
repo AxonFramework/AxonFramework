@@ -47,7 +47,7 @@ public class MetaDataCommandTargetResolver implements CommandTargetResolver {
 
     @Override
     public String resolveTarget(@Nonnull CommandMessage<?> command) {
-        String identifier = command.getMetaData().get(identifierKey).toString();
+        String identifier = command.metaData().get(identifierKey).toString();
         if (identifier == null) {
             throw new IdentifierMissingException(
                     "The MetaData for the command does not contain an identifier under key [" + identifierKey + "]"

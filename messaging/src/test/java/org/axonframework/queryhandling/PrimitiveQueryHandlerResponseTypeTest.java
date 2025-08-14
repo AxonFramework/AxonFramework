@@ -98,8 +98,8 @@ class PrimitiveQueryHandlerResponseTypeTest {
         );
 
 
-        final T responseBoxed = queryBus.query(queryBoxed).join().getPayload();
-        final T responsePrimitive = queryBus.query(queryPrimitive).join().getPayload();
+        final T responseBoxed = queryBus.query(queryBoxed).join().payload();
+        final T responsePrimitive = queryBus.query(queryPrimitive).join().payload();
 
         assertEquals(value, responseBoxed);
         assertEquals(value, responsePrimitive);

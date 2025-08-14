@@ -15,19 +15,20 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
-import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static java.lang.String.format;
 
 /**
- * A provider of {@link SequencingPolicy SequencingPolicies} for a given {@link LegacyConfiguration}.
+ * A provider of {@link SequencingPolicy SequencingPolicies} for a given {@link Configuration}.
  * <p>
  * The provided {@code SequencingPolicy} for a given {@code Configuration} returns a sequencing key for an event to
  * identify which sequence/stream the event belongs to. The policy is <b>only</b> used for when a dead letter queue is
@@ -37,7 +38,7 @@ import static java.lang.String.format;
  * @since 4.10.0
  */
 public class PersistentStreamSequencingPolicyProvider
-        implements Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> {
+        implements Function<Configuration, SequencingPolicy> {
 
     /**
      * A {@link String} constant representing the "sequential per aggregate" sequencing policy. This means all events
@@ -79,7 +80,7 @@ public class PersistentStreamSequencingPolicyProvider
     private final List<String> sequencingPolicyParameters;
 
     /**
-     * Instantiates a {@link PersistentStreamSequencingPolicyProvider} based on the given parameters.
+     * Instantiates a {@code PersistentStreamSequencingPolicyProvider} based on the given parameters.
      *
      * @param name                       The processor name.
      * @param sequencingPolicy           The name of the sequencing policy.
@@ -94,8 +95,8 @@ public class PersistentStreamSequencingPolicyProvider
     }
 
     @Override
-    public SequencingPolicy<EventMessage<?>> apply(LegacyConfiguration configuration) {
-        return this::sequencingIdentifier;
+    public SequencingPolicy apply(Configuration configuration) {
+        return event -> Optional.ofNullable(sequencingIdentifier(event));
     }
 
     private Object sequencingIdentifier(EventMessage<?> event) {
@@ -103,13 +104,13 @@ public class PersistentStreamSequencingPolicyProvider
             if (event instanceof DomainEventMessage) {
                 return ((DomainEventMessage<?>) event).getAggregateIdentifier();
             }
-            return event.getIdentifier();
+            return event.identifier();
         }
 
         if (META_DATA_SEQUENCING_POLICY.equals(sequencingPolicy)) {
             List<Object> metaDataValues = new LinkedList<>();
             for (String sequencingPolicyParameter : sequencingPolicyParameters) {
-                metaDataValues.add(event.getMetaData().get(sequencingPolicyParameter));
+                metaDataValues.add(event.metaData().get(sequencingPolicyParameter));
             }
             return metaDataValues;
         }
@@ -119,7 +120,7 @@ public class PersistentStreamSequencingPolicyProvider
         }
 
         if (FULL_CONCURRENCY_POLICY.equals(sequencingPolicy)) {
-            return event.getIdentifier();
+            return event.identifier();
         }
 
         if (PROPERTY_SEQUENCING_POLICY.equals(sequencingPolicy)) {

@@ -56,7 +56,7 @@ public class SpringAxonApplication implements ApplicationConfigurer {
      *                          operation and the {@link AxonConfiguration} {@link #build() built} by this
      *                          {@link ApplicationConfigurer}.
      * @param lifecycleRegistry The Spring-based {@link ComponentRegistry} used for {@link #lifecycleRegistry(Consumer)}
-     *                          operation
+     *                          operation.
      */
     @Internal
     @Autowired

@@ -137,7 +137,7 @@ class AxonServerEventStoreTest {
 
         List<String> received = new ArrayList<>();
         while (stream.hasNextAvailable(100, TimeUnit.MILLISECONDS)) {
-            received.add(stream.nextAvailable().getPayload().toString());
+            received.add(stream.nextAvailable().payload().toString());
         }
         stream.close();
 
@@ -182,12 +182,12 @@ class AxonServerEventStoreTest {
 
         DomainEventStream actual = testSubject.readEvents(AGGREGATE_ID);
         assertTrue(actual.hasNext());
-        assertEquals("Test1", actual.next().getPayload());
-        assertEquals("Test1", actual.next().getPayload());
-        assertEquals("Test2", actual.next().getPayload());
-        assertEquals("Test2", actual.next().getPayload());
-        assertEquals("Test3", actual.next().getPayload());
-        assertEquals("Test3", actual.next().getPayload());
+        assertEquals("Test1", actual.next().payload());
+        assertEquals("Test1", actual.next().payload());
+        assertEquals("Test2", actual.next().payload());
+        assertEquals("Test2", actual.next().payload());
+        assertEquals("Test3", actual.next().payload());
+        assertEquals("Test3", actual.next().payload());
         assertFalse(actual.hasNext());
     }
 
@@ -218,14 +218,14 @@ class AxonServerEventStoreTest {
         assertWithin(2, TimeUnit.SECONDS, () -> {
             DomainEventStream events = testSubject.readEvents(AGGREGATE_ID);
             assertTrue(events.hasNext());
-            assertEquals("Snapshot1", events.next().getPayload());
+            assertEquals("Snapshot1", events.next().payload());
         });
 
         DomainEventStream actual = testSubject.readEvents(AGGREGATE_ID);
         assertTrue(actual.hasNext());
-        assertEquals("Snapshot1", actual.next().getPayload());
-        assertEquals("Test3", actual.next().getPayload());
-        assertEquals("Test3", actual.next().getPayload());
+        assertEquals("Snapshot1", actual.next().payload());
+        assertEquals("Test3", actual.next().payload());
+        assertEquals("Test3", actual.next().payload());
         assertFalse(actual.hasNext());
     }
 
@@ -274,9 +274,9 @@ class AxonServerEventStoreTest {
 
         DomainEventStream actual = testSubject.readEvents(AGGREGATE_ID);
         assertTrue(actual.hasNext());
-        assertEquals("0", actual.next().getMetaData().get("counter"));
-        assertEquals("1", actual.next().getMetaData().get("counter"));
-        assertEquals("2", actual.next().getMetaData().get("counter"));
+        assertEquals("0", actual.next().metaData().get("counter"));
+        assertEquals("1", actual.next().metaData().get("counter"));
+        assertEquals("2", actual.next().metaData().get("counter"));
         assertFalse(actual.hasNext());
     }
 
@@ -337,22 +337,22 @@ class AxonServerEventStoreTest {
         assertWithin(2, TimeUnit.SECONDS, () -> {
             DomainEventStream snapshotValidationStream = testSubject.readEvents(AGGREGATE_ID);
             assertTrue(snapshotValidationStream.hasNext());
-            assertEquals("Snapshot1", snapshotValidationStream.next().getPayload());
+            assertEquals("Snapshot1", snapshotValidationStream.next().payload());
         });
 
         DomainEventStream resultStream = testSubject.readEvents(AGGREGATE_ID);
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> resultSnapshot = resultStream.next();
-        assertEquals("Snapshot1", resultSnapshot.getPayload());
-        assertTrue(resultSnapshot.getMetaData().containsKey("key"));
-        assertTrue(resultSnapshot.getMetaData().containsValue("value"));
+        assertEquals("Snapshot1", resultSnapshot.payload());
+        assertTrue(resultSnapshot.metaData().containsKey("key"));
+        assertTrue(resultSnapshot.metaData().containsValue("value"));
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> resultEvent = resultStream.next();
-        assertEquals("Test3", resultEvent.getPayload());
-        assertTrue(resultEvent.getMetaData().containsKey("key"));
-        assertTrue(resultEvent.getMetaData().containsValue("value"));
+        assertEquals("Test3", resultEvent.payload());
+        assertTrue(resultEvent.metaData().containsKey("key"));
+        assertTrue(resultEvent.metaData().containsValue("value"));
 
         assertFalse(resultStream.hasNext());
     }
@@ -381,28 +381,28 @@ class AxonServerEventStoreTest {
         assertWithin(2, TimeUnit.SECONDS, () -> {
             DomainEventStream snapshotValidationStream = testSubject.readEvents(AGGREGATE_ID);
             assertTrue(snapshotValidationStream.hasNext());
-            assertEquals("Snapshot1", snapshotValidationStream.next().getPayload());
+            assertEquals("Snapshot1", snapshotValidationStream.next().payload());
         });
 
         DomainEventStream resultStream = testSubject.readEvents(AGGREGATE_ID, 0);
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> firstResultEvent = resultStream.next();
-        assertEquals("Test1", firstResultEvent.getPayload());
-        assertTrue(firstResultEvent.getMetaData().containsKey("key"));
-        assertTrue(firstResultEvent.getMetaData().containsValue("value"));
+        assertEquals("Test1", firstResultEvent.payload());
+        assertTrue(firstResultEvent.metaData().containsKey("key"));
+        assertTrue(firstResultEvent.metaData().containsValue("value"));
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> secondResultEvent = resultStream.next();
-        assertEquals("Test2", secondResultEvent.getPayload());
-        assertTrue(secondResultEvent.getMetaData().containsKey("key"));
-        assertTrue(secondResultEvent.getMetaData().containsValue("value"));
+        assertEquals("Test2", secondResultEvent.payload());
+        assertTrue(secondResultEvent.metaData().containsKey("key"));
+        assertTrue(secondResultEvent.metaData().containsValue("value"));
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> thirdResultEvent = resultStream.next();
-        assertEquals("Test3", thirdResultEvent.getPayload());
-        assertTrue(thirdResultEvent.getMetaData().containsKey("key"));
-        assertTrue(thirdResultEvent.getMetaData().containsValue("value"));
+        assertEquals("Test3", thirdResultEvent.payload());
+        assertTrue(thirdResultEvent.metaData().containsKey("key"));
+        assertTrue(thirdResultEvent.metaData().containsValue("value"));
 
         assertFalse(resultStream.hasNext());
     }
@@ -444,28 +444,28 @@ class AxonServerEventStoreTest {
         assertWithin(2, TimeUnit.SECONDS, () -> {
             DomainEventStream snapshotValidationStream = testSubject.readEvents(AGGREGATE_ID);
             assertTrue(snapshotValidationStream.hasNext());
-            assertEquals("Snapshot1", snapshotValidationStream.next().getPayload());
+            assertEquals("Snapshot1", snapshotValidationStream.next().payload());
         });
 
         DomainEventStream resultStream = testSubject.readEvents(AGGREGATE_ID, -42);
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> firstResultEvent = resultStream.next();
-        assertEquals("Test1", firstResultEvent.getPayload());
-        assertTrue(firstResultEvent.getMetaData().containsKey("key"));
-        assertTrue(firstResultEvent.getMetaData().containsValue("value"));
+        assertEquals("Test1", firstResultEvent.payload());
+        assertTrue(firstResultEvent.metaData().containsKey("key"));
+        assertTrue(firstResultEvent.metaData().containsValue("value"));
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> secondResultEvent = resultStream.next();
-        assertEquals("Test2", secondResultEvent.getPayload());
-        assertTrue(secondResultEvent.getMetaData().containsKey("key"));
-        assertTrue(secondResultEvent.getMetaData().containsValue("value"));
+        assertEquals("Test2", secondResultEvent.payload());
+        assertTrue(secondResultEvent.metaData().containsKey("key"));
+        assertTrue(secondResultEvent.metaData().containsValue("value"));
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> thirdResultEvent = resultStream.next();
-        assertEquals("Test3", thirdResultEvent.getPayload());
-        assertTrue(thirdResultEvent.getMetaData().containsKey("key"));
-        assertTrue(thirdResultEvent.getMetaData().containsValue("value"));
+        assertEquals("Test3", thirdResultEvent.payload());
+        assertTrue(thirdResultEvent.metaData().containsKey("key"));
+        assertTrue(thirdResultEvent.metaData().containsValue("value"));
 
         assertFalse(resultStream.hasNext());
     }
@@ -504,22 +504,22 @@ class AxonServerEventStoreTest {
         assertWithin(2, TimeUnit.SECONDS, () -> {
             DomainEventStream snapshotValidationStream = testSubject.readEvents(AGGREGATE_ID);
             assertTrue(snapshotValidationStream.hasNext());
-            assertEquals("Snapshot1", snapshotValidationStream.next().getPayload());
+            assertEquals("Snapshot1", snapshotValidationStream.next().payload());
         });
 
         DomainEventStream resultStream = testSubject.readEvents(AGGREGATE_ID);
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> firstResultEvent = resultStream.next();
-        assertEquals("Snapshot1", firstResultEvent.getPayload());
-        assertTrue(firstResultEvent.getMetaData().containsKey("key"));
-        assertTrue(firstResultEvent.getMetaData().containsValue("value"));
+        assertEquals("Snapshot1", firstResultEvent.payload());
+        assertTrue(firstResultEvent.metaData().containsKey("key"));
+        assertTrue(firstResultEvent.metaData().containsValue("value"));
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> thirdResultEvent = resultStream.next();
-        assertEquals("Test3", thirdResultEvent.getPayload());
-        assertTrue(thirdResultEvent.getMetaData().containsKey("key"));
-        assertTrue(thirdResultEvent.getMetaData().containsValue("value"));
+        assertEquals("Test3", thirdResultEvent.payload());
+        assertTrue(thirdResultEvent.metaData().containsKey("key"));
+        assertTrue(thirdResultEvent.metaData().containsValue("value"));
 
         assertFalse(resultStream.hasNext());
     }
@@ -574,15 +574,15 @@ class AxonServerEventStoreTest {
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> firstResultEvent = resultStream.next();
-        assertEquals(testPayloadOne, firstResultEvent.getPayload());
+        assertEquals(testPayloadOne, firstResultEvent.payload());
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> secondResultEvent = resultStream.next();
-        assertEquals(testPayloadTwo, secondResultEvent.getPayload());
+        assertEquals(testPayloadTwo, secondResultEvent.payload());
 
         assertTrue(resultStream.hasNext());
         DomainEventMessage<?> thirdResultEvent = resultStream.next();
-        assertEquals(testPayloadThree, thirdResultEvent.getPayload());
+        assertEquals(testPayloadThree, thirdResultEvent.payload());
 
         assertFalse(resultStream.hasNext());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package org.axonframework.eventhandling.async;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 
-import jakarta.annotation.Nonnull;
+import java.util.Optional;
 
 /**
  * SequencingPolicy that does not enforce any sequencing requirements on event processing.
@@ -27,10 +28,10 @@ import jakarta.annotation.Nonnull;
  * @author Henrique Sena
  * @since 0.3
  */
-public class FullConcurrencyPolicy implements SequencingPolicy<EventMessage<?>> {
+public class FullConcurrencyPolicy implements SequencingPolicy {
 
     @Override
-    public Object getSequenceIdentifierFor(@Nonnull EventMessage<?> event) {
-        return event.getIdentifier();
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+        return Optional.of(event.identifier());
     }
 }

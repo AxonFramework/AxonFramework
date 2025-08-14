@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public class PayloadMatcher<T extends Message> extends BaseMatcher<T> {
     @Override
     public boolean matches(Object item) {
         return Message.class.isInstance(item)
-                && payloadMatcher.matches(((Message) item).getPayload());
+                && payloadMatcher.matches(((Message) item).payload());
     }
 
     @Override

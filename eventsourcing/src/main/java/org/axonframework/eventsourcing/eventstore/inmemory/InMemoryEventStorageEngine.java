@@ -128,9 +128,9 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
                                       if (logger.isDebugEnabled()) {
                                           logger.debug("Appended event [{}] with position [{}] and timestamp [{}].",
-                                                       event.event().getIdentifier(),
+                                                       event.event().identifier(),
                                                        next,
-                                                       event.event().getTimestamp());
+                                                       event.event().timestamp());
                                       }
                                       return (ConsistencyMarker) new GlobalIndexConsistencyMarker(marker);
                                   })
@@ -236,7 +236,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                            .stream()
                            .filter(positionToEventEntry -> {
                                EventMessage<?> event = positionToEventEntry.getValue().event();
-                               Instant eventTimestamp = event.getTimestamp();
+                               Instant eventTimestamp = event.timestamp();
                                return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);
                            })
                            .map(Map.Entry::getKey)

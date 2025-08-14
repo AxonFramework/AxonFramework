@@ -28,7 +28,9 @@ import org.axonframework.serialization.Serializer;
  * LegacyJpaEventStorageEngine} to store events. Event payload and metadata are serialized to a byte array.
  *
  * @author Rene de Waele
+ * @deprecated Will be removed entirely in favor of the {@link org.axonframework.eventhandling.EventMessage}.
  */
+@Deprecated(since = "5.0.0", forRemoval = true)
 @Entity
 @Table(indexes = @Index(columnList = "aggregateIdentifier,sequenceNumber", unique = true))
 public class DomainEventEntry extends AbstractSequencedDomainEventEntry<byte[]> {

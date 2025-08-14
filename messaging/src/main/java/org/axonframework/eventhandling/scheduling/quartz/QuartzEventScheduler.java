@@ -55,7 +55,6 @@ import java.util.function.Supplier;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.eventhandling.GenericEventMessage.clock;
 import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.*;
-import static org.axonframework.messaging.Headers.*;
 import static org.quartz.JobKey.jobKey;
 
 /**
@@ -134,7 +133,7 @@ public class QuartzEventScheduler implements EventScheduler {
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
         Assert.state(initialized, () -> "Scheduler is not yet initialized");
         EventMessage eventMessage = asEventMessage(event);
-        String jobIdentifier = JOB_NAME_PREFIX + eventMessage.getIdentifier();
+        String jobIdentifier = JOB_NAME_PREFIX + eventMessage.identifier();
         QuartzScheduleToken tr = new QuartzScheduleToken(jobIdentifier, groupIdentifier);
         try {
             JobDetail jobDetail = buildJobDetail(eventMessage, new JobKey(jobIdentifier, groupIdentifier));
@@ -177,7 +176,7 @@ public class QuartzEventScheduler implements EventScheduler {
     protected JobDetail buildJobDetail(EventMessage event, JobKey jobKey) {
         JobDataMap jobData = jobDataBinder.toJobData(event);
         return JobBuilder.newJob(FireEventJob.class)
-                         .withDescription(event.getPayloadType().getName())
+                         .withDescription(event.type().name())
                          .withIdentity(jobKey)
                          .usingJobData(jobData)
                          .build();
@@ -249,6 +248,30 @@ public class QuartzEventScheduler implements EventScheduler {
     public static class DirectEventJobDataBinder implements EventJobDataBinder {
 
         /**
+         * Key pointing to a message identifier.
+         */
+        public static final String MESSAGE_ID = "axon-message-id";
+        /**
+         * Key pointing to the serialized payload of a message.
+         */
+        public static final String SERIALIZED_MESSAGE_PAYLOAD = "axon-serialized-message-payload";
+        /**
+         * Key pointing to the payload type of a message.
+         */
+        public static final String MESSAGE_TYPE = "axon-message-type";
+        /**
+         * Key pointing to the revision of a message.
+         */
+        public static final String MESSAGE_REVISION = "axon-message-revision";
+        /**
+         * Key pointing to the timestamp of a message.
+         */
+        public static final String MESSAGE_TIMESTAMP = "axon-message-timestamp";
+        /**
+         * Key pointing to the {@link MetaData} of a message.
+         */
+        public static final String MESSAGE_METADATA = "axon-metadata";
+        /**
          * Key pointing to the {@link Message#type()} as a {@code String} of the deadline in the {@link JobDataMap}.
          */
         public static final String TYPE = "type";
@@ -271,18 +294,18 @@ public class QuartzEventScheduler implements EventScheduler {
 
             EventMessage<?> eventMessage = (EventMessage<?>) event;
 
-            jobData.put(MESSAGE_ID, eventMessage.getIdentifier());
+            jobData.put(MESSAGE_ID, eventMessage.identifier());
             jobData.put(TYPE, eventMessage.type().toString());
-            jobData.put(MESSAGE_TIMESTAMP, eventMessage.getTimestamp().toString());
+            jobData.put(MESSAGE_TIMESTAMP, eventMessage.timestamp().toString());
 
             SerializedObject<byte[]> serializedPayload =
-                    serializer.serialize(eventMessage.getPayload(), byte[].class);
+                    serializer.serialize(eventMessage.payload(), byte[].class);
             jobData.put(SERIALIZED_MESSAGE_PAYLOAD, serializedPayload.getData());
             jobData.put(MESSAGE_TYPE, serializedPayload.getType().getName());
             jobData.put(MESSAGE_REVISION, serializedPayload.getType().getRevision());
 
             SerializedObject<byte[]> serializedMetaData =
-                    serializer.serialize(eventMessage.getMetaData(), byte[].class);
+                    serializer.serialize(eventMessage.metaData(), byte[].class);
             jobData.put(MESSAGE_METADATA, serializedMetaData.getData());
 
             return jobData;

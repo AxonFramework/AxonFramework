@@ -37,7 +37,8 @@ import java.util.Optional;
  */
 public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
 
-    private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("axoniq/axonserver");
+    private static final DockerImageName DEFAULT_IMAGE_NAME =
+            DockerImageName.parse("docker.axoniq.io/axoniq/axonserver");
 
     private static final int AXON_SERVER_HTTP_PORT = 8024;
     private static final int AXON_SERVER_GRPC_PORT = 8124;
@@ -67,7 +68,7 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
 
     /**
      * Initialize an Axon Server {@link GenericContainer test container} using the default image name
-     * {@code "axoniq/axonserver"}.
+     * {@code "docker.axoniq.io/axoniq/axonserver"}.
      */
     public AxonServerContainer() {
         this(DEFAULT_IMAGE_NAME);
@@ -90,7 +91,7 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
     public AxonServerContainer(final DockerImageName dockerImageName) {
         super(dockerImageName);
 
-        dockerImageName.assertCompatibleWith(DEFAULT_IMAGE_NAME);
+        dockerImageName.assertCompatibleWith(DEFAULT_IMAGE_NAME, DockerImageName.parse("axoniq/axonserver"));
 
         //noinspection resource | ignore from AutoClosable on GenericContainer
         withExposedPorts(AXON_SERVER_HTTP_PORT, AXON_SERVER_GRPC_PORT)

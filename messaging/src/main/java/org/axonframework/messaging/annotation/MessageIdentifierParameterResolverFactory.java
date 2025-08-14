@@ -54,7 +54,7 @@ public final class MessageIdentifierParameterResolverFactory
 
         @Override
         public String resolveParameterValue(@Nonnull ProcessingContext context) {
-            return Message.fromContext(context).getIdentifier();
+            return Message.fromContext(context).identifier();
         }
 
         @Override

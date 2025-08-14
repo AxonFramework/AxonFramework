@@ -56,8 +56,8 @@ class DefaultCommandGatewayTest {
         ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
-        verify(mockCommandBus).dispatch(argThat(m -> m.getPayload().equals(payload)), isNull());
-        assertEquals("OK", result.getResultMessage().get().getPayload());
+        verify(mockCommandBus).dispatch(argThat(m -> m.payload().equals(payload)), isNull());
+        assertEquals("OK", result.getResultMessage().get().payload());
     }
 
     @Test
@@ -66,7 +66,7 @@ class DefaultCommandGatewayTest {
                                      any())).thenAnswer(i -> CompletableFuture.failedFuture(new MockException()));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
-        verify(mockCommandBus).dispatch(argThat(m -> m.getPayload().equals(payload)), isNull());
+        verify(mockCommandBus).dispatch(argThat(m -> m.payload().equals(payload)), isNull());
         assertTrue(result.getResultMessage().isCompletedExceptionally());
     }
 
@@ -77,7 +77,7 @@ class DefaultCommandGatewayTest {
         ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
-        verify(mockCommandBus).dispatch(argThat(m -> m.getPayload().equals(payload)), isNull());
+        verify(mockCommandBus).dispatch(argThat(m -> m.payload().equals(payload)), isNull());
         assertTrue(result.getResultMessage().isCompletedExceptionally());
     }
 
@@ -95,7 +95,7 @@ class DefaultCommandGatewayTest {
         // then
         var expectedMessageType = new MessageType("TestPayload");
         verify(mockCommandBus).dispatch(argThat(m -> m.type().equals(expectedMessageType)), isNull());
-        assertEquals("OK", result.getResultMessage().get().getPayload());
+        assertEquals("OK", result.getResultMessage().get().payload());
     }
 
     @Test
@@ -113,7 +113,7 @@ class DefaultCommandGatewayTest {
 
         // then
         verify(mockCommandBus).dispatch(argThat(m -> m.equals(testCommand)), isNull());
-        assertEquals("OK", result.getResultMessage().get().getPayload());
+        assertEquals("OK", result.getResultMessage().get().payload());
     }
 
     private static class TestPayload {

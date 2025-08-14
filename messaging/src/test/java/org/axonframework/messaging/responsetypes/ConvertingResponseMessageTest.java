@@ -38,9 +38,9 @@ class ConvertingResponseMessageTest {
         QueryResponseMessage<List<String>> wrapped =
                 new ConvertingResponseMessage<>(ResponseTypes.multipleInstancesOf(String.class), msg);
 
-        assertEquals(List.class, wrapped.getPayloadType());
-        assertEquals(singletonList("Some string result"), wrapped.getPayload());
-        assertEquals("value", wrapped.getMetaData().get("test"));
+        assertEquals(List.class, wrapped.payloadType());
+        assertEquals(singletonList("Some string result"), wrapped.payload());
+        assertEquals("value", wrapped.metaData().get("test"));
     }
 
     @Test
@@ -49,8 +49,8 @@ class ConvertingResponseMessageTest {
         QueryResponseMessage<List<String>> wrapped =
                 new ConvertingResponseMessage<>(ResponseTypes.multipleInstancesOf(String.class), msg);
 
-        assertEquals(List.class, wrapped.getPayloadType());
-        assertThrows(IllegalPayloadAccessException.class, wrapped::getPayload);
+        assertEquals(List.class, wrapped.payloadType());
+        assertThrows(IllegalPayloadAccessException.class, wrapped::payload);
     }
 
     private static <R> QueryResponseMessage<R> asResponseMessage(Class<R> declaredType, Throwable exception) {

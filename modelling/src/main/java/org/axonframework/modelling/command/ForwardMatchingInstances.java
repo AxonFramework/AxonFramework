@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,14 +65,14 @@ public class ForwardMatchingInstances<T extends Message<?>> implements Forwardin
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
     public <E> Stream<E> filterCandidates(@Nonnull T message, @Nonnull Stream<E> candidates) {
-        Property routingProperty = routingProperties.computeIfAbsent(message.getPayloadType(),
+        Property routingProperty = routingProperties.computeIfAbsent(message.payloadType(),
                                                                      this::resolveProperty);
 
         if (routingProperty == null || routingProperty == NO_PROPERTY) {
             return Stream.empty();
         }
 
-        Object routingValue = routingProperty.getValue(message.getPayload());
+        Object routingValue = routingProperty.getValue(message.payload());
         return candidates.filter(candidate -> matchesInstance(candidate, routingValue));
     }
 

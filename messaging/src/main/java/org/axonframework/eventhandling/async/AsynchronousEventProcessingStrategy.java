@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.async;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessingStrategy;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -31,7 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
-import jakarta.annotation.Nonnull;
 
 import static java.util.Objects.requireNonNull;
 
@@ -46,7 +46,7 @@ public class AsynchronousEventProcessingStrategy implements EventProcessingStrat
     private static final Logger logger = LoggerFactory.getLogger(AsynchronousEventProcessingStrategy.class);
     private final String scheduledEventsKey = this + "_SCHEDULED_EVENTS";
     private final Executor executor;
-    private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
+    private final SequencingPolicy sequencingPolicy;
     private final ConcurrentMap<Object, EventProcessorTask> currentTasks = new ConcurrentHashMap<>();
 
     /**
@@ -58,7 +58,7 @@ public class AsynchronousEventProcessingStrategy implements EventProcessingStrat
      * @param sequencingPolicy the policy that determines if an event may be processed in sequence or in parallel
      */
     public AsynchronousEventProcessingStrategy(Executor executor,
-                                               SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
+                                               SequencingPolicy sequencingPolicy) {
         this.executor = requireNonNull(executor);
         this.sequencingPolicy = requireNonNull(sequencingPolicy);
     }
@@ -88,8 +88,10 @@ public class AsynchronousEventProcessingStrategy implements EventProcessingStrat
                             Consumer<List<? extends EventMessage<?>>> processor) {
         Map<Object, List<EventMessage<?>>> groupedEvents = new HashMap<>();
         for (EventMessage<?> event : events) {
-            groupedEvents.computeIfAbsent(sequencingPolicy.getSequenceIdentifierFor(event), key -> new ArrayList<>())
-                    .add(event);
+            groupedEvents.computeIfAbsent(
+                    sequencingPolicy.getSequenceIdentifierFor(event).orElse(null),
+                    key -> new ArrayList<>()
+            ).add(event);
         }
         groupedEvents.forEach((sequenceIdentifier, eventGroup) -> {
             if (sequenceIdentifier == null) {

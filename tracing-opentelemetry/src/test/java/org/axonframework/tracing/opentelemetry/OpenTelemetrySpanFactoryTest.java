@@ -213,7 +213,7 @@ class OpenTelemetrySpanFactoryTest {
         EventMessage<Object> originalMessage = asEventMessage("MyEvent");
         EventMessage<Object> modifiedMessage = factory.propagateContext(originalMessage);
 
-        assertNotNull(modifiedMessage.getMetaData().get("traceparent"));
+        assertNotNull(modifiedMessage.metaData().get("traceparent"));
     }
 
     @Test

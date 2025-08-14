@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * {@code CorrelationDataProvider} that provides the {@link Message#getIdentifier() identifier} of a {@link Message} to
+ * {@code CorrelationDataProvider} that provides the {@link Message#identifier() identifier} of a {@link Message} to
  * other messages that are created as result of processing the first message.
  *
  * @author Rene de Waele
@@ -80,8 +80,8 @@ public class MessageOriginProvider implements CorrelationDataProvider {
     @Override
     public Map<String, String> correlationDataFor(@Nonnull Message<?> message) {
         Map<String, String> result = new HashMap<>();
-        result.put(correlationKey, message.getIdentifier());
-        result.put(traceKey, message.getMetaData().getOrDefault(traceKey, message.getIdentifier()));
+        result.put(correlationKey, message.identifier());
+        result.put(traceKey, message.metaData().getOrDefault(traceKey, message.identifier()));
         return result;
     }
 }

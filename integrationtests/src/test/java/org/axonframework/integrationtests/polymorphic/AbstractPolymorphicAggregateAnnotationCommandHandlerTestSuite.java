@@ -236,7 +236,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
             AtomicReference<String> rv = new AtomicReference<>();
             repository.load(aggregateId).execute(a -> rv.set(a.getState()));
             return rv.get();
-        }).getPayload();
+        }).payload();
         assertEquals(expectedState, state);
     }
 

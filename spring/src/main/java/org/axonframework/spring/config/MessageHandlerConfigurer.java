@@ -16,10 +16,10 @@
 
 package org.axonframework.spring.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.LegacyConfigurer;
-import org.axonframework.config.ConfigurerModule;
+import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.QueryMessage;
@@ -28,14 +28,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.util.List;
-import jakarta.annotation.Nonnull;
 
 /**
- * An implementation of a {@link ConfigurerModule} that will register a list of beans as handlers for a specific type of
- * message.
+ * An implementation of a {@link ConfigurationEnhancer} that will register a list of beans as handlers for a specific
+ * type of message.
  * <p>
- * The beans will be lazily resolved to avoid circular dependencies if any these beans relies on the Axon {@link
- * LegacyConfiguration} to be available in the Application Context.
+ * The beans will be lazily resolved to avoid circular dependencies if any these beans relies on the Axon
+ * {@link org.axonframework.configuration.Configuration} to be available in the Application Context.
  * <p>
  * Typically, an application context would have an instance of this class registered for each type of message to
  * register.
@@ -43,7 +42,8 @@ import jakarta.annotation.Nonnull;
  * @author Allard Buijze
  * @since 4.6.0
  */
-public class MessageHandlerConfigurer implements ConfigurerModule, ApplicationContextAware {
+// TODO #3498 Fix as part of referred to issue
+public class MessageHandlerConfigurer implements ConfigurationEnhancer, ApplicationContextAware {
 
     private final Type type;
     private final List<String> handlerBeans;
@@ -51,7 +51,7 @@ public class MessageHandlerConfigurer implements ConfigurerModule, ApplicationCo
 
     /**
      * Registers the beans identified in given {@code beanRefs} as the given {@code type} of handler with the Axon
-     * {@link LegacyConfiguration}.
+     * {@link org.axonframework.configuration.Configuration}.
      *
      * @param type     The type of handler to register the beans as.
      * @param beanRefs A list of bean identifiers to register.
@@ -62,17 +62,17 @@ public class MessageHandlerConfigurer implements ConfigurerModule, ApplicationCo
     }
 
     @Override
-    public void configureModule(@Nonnull LegacyConfigurer configurer) {
+    public void enhance(@Nonnull ComponentRegistry registry) {
         switch (type) {
             case EVENT:
-                handlerBeans.forEach(handler -> configurer.registerEventHandler(c -> applicationContext.getBean(handler)));
+//                handlerBeans.forEach(handler -> configurer.registerEventHandler(c -> applicationContext.getBean(handler)));
                 break;
             case QUERY:
-                handlerBeans.forEach(handler -> configurer.registerQueryHandler(c -> applicationContext.getBean(handler)));
+//                handlerBeans.forEach(handler -> configurer.registerQueryHandler(c -> applicationContext.getBean(handler)));
                 break;
             case COMMAND:
-                handlerBeans.forEach(handler -> configurer.registerCommandHandler(c -> applicationContext.getBean(
-                        handler)));
+//                handlerBeans.forEach(handler -> configurer.registerCommandHandler(c -> applicationContext.getBean(
+//                        handler)));
                 break;
         }
     }

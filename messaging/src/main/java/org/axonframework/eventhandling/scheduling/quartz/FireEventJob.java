@@ -93,7 +93,7 @@ public class FireEventJob implements Job {
 
             if (logger.isInfoEnabled()) {
                 logger.info("Job successfully executed. Scheduled Event [{}] has been published.",
-                            eventMessage.getPayloadType().getSimpleName());
+                            eventMessage.type().name());
             }
         } catch (Exception e) {
             logger.error("Exception occurred while publishing scheduled event [{}]", jobDetail.getDescription(), e);
@@ -112,8 +112,8 @@ public class FireEventJob implements Job {
     private EventMessage<?> createMessage(Object event, MessageTypeResolver messageTypeResolver) {
         return event instanceof EventMessage
                 ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
-                                            ((EventMessage<?>) event).getPayload(),
-                                            ((EventMessage<?>) event).getMetaData())
+                                            ((EventMessage<?>) event).payload(),
+                                            ((EventMessage<?>) event).metaData())
                 : new GenericEventMessage<>(messageTypeResolver.resolveOrThrow(event), event);
     }
 }

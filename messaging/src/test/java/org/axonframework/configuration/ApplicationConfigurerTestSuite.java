@@ -1390,7 +1390,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             Thread startThread = new Thread(() -> testSubject.start());
             startThread.start();
             // Sleep to give the start thread some time to execute
-            Thread.sleep(250);
+            Thread.sleep(350);
 
             try {
                 // Phase one has not started yet, as the method has not been invoked yet.

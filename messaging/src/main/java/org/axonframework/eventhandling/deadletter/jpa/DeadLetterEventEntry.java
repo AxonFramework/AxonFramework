@@ -160,7 +160,7 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the original {@link EventMessage#getIdentifier()}.
+     * Returns the original {@link EventMessage#identifier()}.
      *
      * @return The event identifier.
      */
@@ -180,7 +180,7 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the original {@link EventMessage#getTimestamp()}.
+     * Returns the original {@link EventMessage#timestamp()}.
      *
      * @return The event timestamp.
      */

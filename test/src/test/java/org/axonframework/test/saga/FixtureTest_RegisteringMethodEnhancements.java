@@ -70,7 +70,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
                    .published(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER))
                    .whenPublishingA(new ParameterResolvedEvent(TEST_AGGREGATE_IDENTIFIER))
                    .expectDispatchedCommandsMatching(listWithAnyOf(predicate(commandMessage -> {
-                       Object payload = commandMessage.getPayload();
+                       Object payload = commandMessage.payload();
                        assertTrue(payload instanceof ResolveParameterCommand);
                        AtomicBoolean assertion = ((ResolveParameterCommand) payload).getAssertion();
                        return assertion.get();
@@ -146,7 +146,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
             Message<?> message = Message.fromContext(context);
-            return message.getPayloadType().isAssignableFrom(ParameterResolvedEvent.class);
+            return message.payloadType().isAssignableFrom(ParameterResolvedEvent.class);
         }
     }
 

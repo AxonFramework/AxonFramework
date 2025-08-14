@@ -16,13 +16,21 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -30,67 +38,30 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
-class GenericEventMessageTest {
+class GenericEventMessageTest extends MessageTestSuite<EventMessage<?>> {
 
-    @Test
-    void constructor() {
-        Object payload = new Object();
-        EventMessage<Object> message1 = new GenericEventMessage<>(new MessageType("event"), payload);
-        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
-        MetaData metaData = MetaData.from(metaDataMap);
-        EventMessage<Object> message2 =
-                new GenericEventMessage<>(new MessageType("event"), payload, metaData);
-        EventMessage<Object> message3 =
-                new GenericEventMessage<>(new MessageType("event"), payload, metaDataMap);
+    private static final Instant TEST_TIMESTAMP = Instant.now();
 
-        assertSame(MetaData.emptyInstance(), message1.getMetaData());
-        assertEquals(Object.class, message1.getPayload().getClass());
-        assertEquals(Object.class, message1.getPayloadType());
-
-        assertEquals(metaData, message2.getMetaData());
-        assertEquals(Object.class, message2.getPayload().getClass());
-        assertEquals(Object.class, message2.getPayloadType());
-
-        assertNotSame(metaDataMap, message3.getMetaData());
-        assertEquals(metaDataMap, message3.getMetaData());
-        assertEquals(Object.class, message3.getPayload().getClass());
-        assertEquals(Object.class, message3.getPayloadType());
-
-        assertNotEquals(message1.getIdentifier(), message2.getIdentifier());
-        assertNotEquals(message1.getIdentifier(), message3.getIdentifier());
-        assertNotEquals(message2.getIdentifier(), message3.getIdentifier());
+    @Override
+    protected EventMessage<?> buildDefaultMessage() {
+        Message<String> delegate =
+                new GenericMessage<>(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+        return new GenericEventMessage<>(delegate, TEST_TIMESTAMP);
     }
 
-    @Test
-    void withMetaData() {
-        Object payload = new Object();
-        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
-        MetaData metaData = MetaData.from(metaDataMap);
-        GenericEventMessage<Object> message =
-                new GenericEventMessage<>(new MessageType("event"), payload, metaData);
-        GenericEventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
-        GenericEventMessage<Object> message2 = message.withMetaData(
-                MetaData.from(Collections.singletonMap("key", "otherValue")));
-
-        assertEquals(0, message1.getMetaData().size());
-        assertEquals(1, message2.getMetaData().size());
+    @Override
+    protected <P> EventMessage<?> buildMessage(@Nullable P payload) {
+        return new GenericEventMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 
-    @Test
-    void andMetaData() {
-        Object payload = new Object();
-        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
-        MetaData metaData = MetaData.from(metaDataMap);
-        GenericEventMessage<Object> message =
-                new GenericEventMessage<>(new MessageType("event"), payload, metaData);
-        GenericEventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
-        GenericEventMessage<Object> message2 = message.andMetaData(
-                MetaData.from(Collections.singletonMap("key", "otherValue")));
+    @Override
+    protected void validateDefaultMessage(@Nonnull EventMessage<?> result) {
+        assertThat(TEST_TIMESTAMP).isEqualTo(result.timestamp());
+    }
 
-        assertEquals(1, message1.getMetaData().size());
-        assertEquals("value", message1.getMetaData().get("key"));
-        assertEquals(1, message2.getMetaData().size());
-        assertEquals("otherValue", message2.getMetaData().get("key"));
+    @Override
+    protected void validateMessageSpecifics(@Nonnull EventMessage<?> actual, @Nonnull EventMessage<?> result) {
+        assertThat(actual.timestamp()).isEqualTo(result.timestamp());
     }
 
     @Test

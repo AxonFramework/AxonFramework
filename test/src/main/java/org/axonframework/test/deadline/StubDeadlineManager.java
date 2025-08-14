@@ -107,11 +107,11 @@ public class StubDeadlineManager implements DeadlineManager {
 
         scheduledDeadlines.add(new ScheduledDeadlineInfo(triggerDateTime,
                                                          deadlineName,
-                                                         scheduledMessage.getIdentifier(),
+                                                         scheduledMessage.identifier(),
                                                          deadlineCounter.getAndIncrement(),
                                                          scheduledMessage,
                                                          deadlineScope));
-        return scheduledMessage.getIdentifier();
+        return scheduledMessage.identifier();
     }
 
     @SuppressWarnings("unchecked")
@@ -272,6 +272,6 @@ public class StubDeadlineManager implements DeadlineManager {
             Throwable e = resultMessage.exceptionResult();
             throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
         }
-        return (DeadlineMessage<?>) resultMessage.getPayload();
+        return (DeadlineMessage<?>) resultMessage.payload();
     }
 }

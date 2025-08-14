@@ -17,10 +17,10 @@
 package org.axonframework.eventhandling.async;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +42,7 @@ class AsynchronousEventProcessorConcurrencyTest {
     @BeforeEach
     void setUp() {
         executor = Executors.newCachedThreadPool();
-        testSubject = new AsynchronousEventProcessingStrategy(executor, Message::getPayload);
+        testSubject = new AsynchronousEventProcessingStrategy(executor, e -> Optional.of(e.payload()));
     }
 
     @Test

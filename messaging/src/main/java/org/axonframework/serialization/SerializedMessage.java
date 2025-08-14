@@ -17,22 +17,25 @@
 package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.AbstractMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
- * A message containing serialized {@link #getPayload() payload data} and {@link #getMetaData() metadata}.
+ * A message containing serialized {@link #payload() payload data} and {@link #metaData() metadata}.
  * <p>
- * A {@link SerializedMessage} will deserialize the payload or metadata on demand when {@link #getPayload()} or
- * {@link #getMetaData()} is called.
+ * A {@link SerializedMessage} will deserialize the payload or metadata on demand when {@link #payload()} or
+ * {@link #metaData()} is called.
  * <p>
  * The {@code SerializedMessage} guarantees that the payload and metadata will not be deserialized more than once.
  * Messages of this type  will not be serialized more than once by the same serializer.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link org.axonframework.messaging.Message}.
+ * @param <P> The type of {@link #payload() payload} contained in this {@link org.axonframework.messaging.Message}.
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
@@ -87,46 +90,58 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
 
     private SerializedMessage(@Nonnull SerializedMessage<P> message,
                               @Nonnull LazyDeserializingObject<MetaData> newMetaData) {
-        this(message.getIdentifier(), message.type(), message.payload, newMetaData);
+        this(message.identifier(), message.type(), message.payload, newMetaData);
     }
 
     @Override
-    public P getPayload() {
+    @Nullable
+    public P payload() {
         try {
             return payload.getObject();
         } catch (SerializationException e) {
-            throw new SerializationException("Error while deserializing payload of message " + getIdentifier(), e);
+            throw new SerializationException("Error while deserializing payload of message " + identifier(), e);
         }
     }
 
     @Override
-    public MetaData getMetaData() {
+    @Nullable
+    public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
+        // This class will be removed/replaced by the ConversionAwareMessage, so skipping implementation
+        return null;
+    }
+
+    @Override
+    @Nonnull
+    public MetaData metaData() {
         try {
             return metaData.getObject();
         } catch (SerializationException e) {
-            throw new SerializationException("Error while deserializing meta data of message " + getIdentifier(), e);
+            throw new SerializationException("Error while deserializing meta data of message " + identifier(), e);
         }
     }
 
     @Override
-    public Class<P> getPayloadType() {
+    @Nonnull
+    public Class<P> payloadType() {
         return payload.getType();
     }
 
     @Override
     protected SerializedMessage<P> withMetaData(MetaData metaData) {
-        if (getMetaData().equals(metaData)) {
+        if (metaData().equals(metaData)) {
             return this;
         }
         return new SerializedMessage<>(this, new LazyDeserializingObject<>(metaData));
     }
 
     @Override
+    @Nonnull
     public SerializedMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
         return (SerializedMessage<P>) super.withMetaData(metaData);
     }
 
     @Override
+    @Nonnull
     public SerializedMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
         return (SerializedMessage<P>) super.andMetaData(metaData);
     }
@@ -147,6 +162,13 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
         return serializer.serialize(metaData.getObject(), expectedRepresentation);
     }
 
+    @Override
+    @Nonnull
+    public <T> Message<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        // This class will be removed/replaced by the ConversionAwareMessage, so skipping implementation
+        return null;
+    }
+
     /**
      * Indicates whether the payload of this message has already been deserialized.
      *
@@ -164,5 +186,4 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     public boolean isMetaDataDeserialized() {
         return metaData.isDeserialized();
     }
-
 }

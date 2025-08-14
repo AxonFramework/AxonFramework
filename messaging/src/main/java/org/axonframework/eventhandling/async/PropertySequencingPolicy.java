@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package org.axonframework.eventhandling.async;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.eventhandling.EventMessage;
 
+import java.util.Optional;
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -37,11 +38,11 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 4.5.2
  */
 @SuppressWarnings("rawtypes")
-public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMessage> {
+public class PropertySequencingPolicy<T, K> implements SequencingPolicy {
 
     private final Class<T> payloadClass;
     private final Function<T, K> propertyExtractor;
-    private final SequencingPolicy<EventMessage> fallbackSequencingPolicy;
+    private final SequencingPolicy fallbackSequencingPolicy;
 
     /**
      * Instantiate a {@link PropertySequencingPolicy} based on the fields contained in the {@link Builder}.
@@ -60,10 +61,10 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
     }
 
     @Override
-    public Object getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
-        if (payloadClass.isAssignableFrom(eventMessage.getPayloadType())) {
-            @SuppressWarnings("unchecked") final T castedPayload = (T) eventMessage.getPayload();
-            return propertyExtractor.apply(castedPayload);
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage<?> eventMessage) {
+        if (payloadClass.isAssignableFrom(eventMessage.payloadType())) {
+            @SuppressWarnings("unchecked") final T castedPayload = (T) eventMessage.payload();
+            return Optional.ofNullable(propertyExtractor.apply(castedPayload));
         }
 
         return fallbackSequencingPolicy.getSequenceIdentifierFor(eventMessage);
@@ -115,7 +116,7 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
 
         private final Class<T> payloadClass;
         private Function<T, K> propertyExtractor;
-        private SequencingPolicy<EventMessage> fallbackSequencingPolicy = ExceptionRaisingSequencingPolicy.instance();
+        private SequencingPolicy fallbackSequencingPolicy = ExceptionRaisingSequencingPolicy.instance();
 
         private Builder(final Class<T> payloadClass) {
             assertNonNull(payloadClass, "Payload class may not be null");
@@ -157,7 +158,7 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
          * @param fallbackSequencingPolicy The new fallback sequencing policy.
          * @return The current Builder instance, for fluent interfacing
          */
-        public Builder<T, K> fallbackSequencingPolicy(final SequencingPolicy<EventMessage> fallbackSequencingPolicy) {
+        public Builder<T, K> fallbackSequencingPolicy(final SequencingPolicy fallbackSequencingPolicy) {
             assertNonNull(fallbackSequencingPolicy, "Fallback sequencing policy may not be null");
             this.fallbackSequencingPolicy = fallbackSequencingPolicy;
             return this;
@@ -182,7 +183,7 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
         /**
          * A simple implementation of a {@link SequencingPolicy} that raises an {@link IllegalArgumentException}.
          */
-        private static final class ExceptionRaisingSequencingPolicy implements SequencingPolicy<EventMessage> {
+        private static final class ExceptionRaisingSequencingPolicy implements SequencingPolicy {
 
             private static final ExceptionRaisingSequencingPolicy INSTANCE = new ExceptionRaisingSequencingPolicy();
 
@@ -191,7 +192,7 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy<EventMes
             }
 
             @Override
-            public Object getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
+            public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
                 throw new IllegalArgumentException(
                         "The event message payload is not of a supported type. "
                                 + "Either make sure that the processor only consumes supported events "

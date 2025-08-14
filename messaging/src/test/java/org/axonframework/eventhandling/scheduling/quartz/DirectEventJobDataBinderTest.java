@@ -34,7 +34,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static org.axonframework.messaging.Headers.*;
+import static org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler.DirectEventJobDataBinder.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -78,9 +78,9 @@ class DirectEventJobDataBinderTest {
 
         JobDataMap result = testSubject.toJobData(testEventMessage);
 
-        assertEquals(testEventMessage.getIdentifier(), result.get(MESSAGE_ID));
-        assertEquals(testEventMessage.getTimestamp().toString(), result.get(MESSAGE_TIMESTAMP));
-        String expectedPayloadType = expectedSerializedClassType.apply(testEventMessage.getPayloadType());
+        assertEquals(testEventMessage.identifier(), result.get(MESSAGE_ID));
+        assertEquals(testEventMessage.timestamp().toString(), result.get(MESSAGE_TIMESTAMP));
+        String expectedPayloadType = expectedSerializedClassType.apply(testEventMessage.payloadType());
         assertEquals(expectedPayloadType, result.get(MESSAGE_TYPE));
         Object resultRevision = result.get(MESSAGE_REVISION);
         assertTrue(revisionMatcher.test(resultRevision));
@@ -109,11 +109,11 @@ class DirectEventJobDataBinderTest {
 
         EventMessage<String> resultEventMessage = (EventMessage<String>) result;
 
-        assertEquals(testEventMessage.getIdentifier(), resultEventMessage.getIdentifier());
-        assertEquals(testEventMessage.getTimestamp(), resultEventMessage.getTimestamp());
-        assertEquals(testEventMessage.getPayload(), resultEventMessage.getPayload());
-        assertEquals(testEventMessage.getPayloadType(), resultEventMessage.getPayloadType());
-        assertEquals(testEventMessage.getMetaData(), resultEventMessage.getMetaData());
+        assertEquals(testEventMessage.identifier(), resultEventMessage.identifier());
+        assertEquals(testEventMessage.timestamp(), resultEventMessage.timestamp());
+        assertEquals(testEventMessage.payload(), resultEventMessage.payload());
+        assertEquals(testEventMessage.payloadType(), resultEventMessage.payloadType());
+        assertEquals(testEventMessage.metaData(), resultEventMessage.metaData());
 
         verify(serializer, times(2)).deserialize(
                 argThat(new MatchEventMessageSerializedObject(expectedSerializedClassType, revisionMatcher))

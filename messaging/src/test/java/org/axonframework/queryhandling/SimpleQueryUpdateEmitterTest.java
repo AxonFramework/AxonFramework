@@ -65,7 +65,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        StepVerifier.create(result.getUpdates().map(Message::payload))
                     .expectNext("some-awesome-text")
                     .verifyComplete();
     }
@@ -122,7 +122,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, "some-awesome-text");
         result.getRegistration().cancel();
 
-        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        StepVerifier.create(result.getUpdates().map(Message::payload))
                     .expectNext("some-awesome-text")
                     .verifyTimeout(Duration.ofMillis(500));
     }
@@ -143,7 +143,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        StepVerifier.create(result.getUpdates().map(Message::payload))
                     .expectNext("some-awesome-text")
                     .verifyComplete();
     }
@@ -189,7 +189,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, 1234);
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        StepVerifier.create(result.getUpdates().map(Message::payload))
                     .expectNext(1234)
                     .verifyComplete();
     }
@@ -217,7 +217,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, Mono.just("mono-item"));
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        StepVerifier.create(result.getUpdates().map(Message::payload))
                     .expectNextMatches(actual -> equalTo(new String[]{"array-item-1", "array-item-2"}).matches(actual))
                     .expectNextMatches(actual -> equalTo(Arrays.asList("list-item-1", "list-item-2")).matches(actual))
                     .verifyComplete();
@@ -246,7 +246,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, Mono.just("mono-item"));
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        StepVerifier.create(result.getUpdates().map(Message::payload))
                     .expectNext(Optional.of("optional-payload"), Optional.empty())
                     .verifyComplete();
     }
@@ -276,7 +276,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, Mono.empty());
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        StepVerifier.create(result.getUpdates().map(Message::payload))
                     .expectNextMatches(publisher -> {
                         try {
                             StepVerifier.create((Publisher<String>) publisher)
@@ -325,7 +325,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, Arrays.asList("text3", "text4"));
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        StepVerifier.create(result.getUpdates().map(Message::payload))
                     .expectNext(Arrays.asList("text1", "text2"), Arrays.asList("text3", "text4"))
                     .verifyComplete();
     }
@@ -347,7 +347,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, Optional.of("text2"));
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        StepVerifier.create(result.getUpdates().map(Message::payload))
                     .expectNext(Optional.of("text1"), Optional.of("text2"))
                     .verifyComplete();
     }
@@ -368,7 +368,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, "some-awesome-text");
         result.getRegistration().cancel();
 
-        StepVerifier.create(result.getUpdates().map(Message::getPayload))
+        StepVerifier.create(result.getUpdates().map(Message::payload))
                     .expectNext("some-awesome-text")
                     .verifyTimeout(Duration.ofMillis(500));
     }

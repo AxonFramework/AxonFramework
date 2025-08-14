@@ -167,7 +167,7 @@ class WorkPackage {
                     logger.trace(
                             "Ignoring event [{}] with position [{}] for work package [{}]. "
                                     + "The last token [{}] covers event's token [{}].",
-                            eventEntry.message().getIdentifier(),
+                            eventEntry.message().identifier(),
                             eventToken != null ? eventToken.position().orElse(-1) : -1,
                             segment.getSegmentId(),
                             lastDeliveredToken,
@@ -223,7 +223,7 @@ class WorkPackage {
         if (shouldNotSchedule(eventEntry)) {
             logger.trace("Ignoring event [{}] with position [{}] for work package [{}]. "
                                  + "The last token [{}] covers event's token [{}].",
-                         eventEntry.message().getIdentifier(),
+                         eventEntry.message().identifier(),
                          eventToken != null ? eventToken.position().orElse(-1) : -1,
                          segment.getSegmentId(),
                          lastDeliveredToken,
@@ -232,7 +232,7 @@ class WorkPackage {
         }
 
         logger.debug("Assigned event [{}] with position [{}] to work package [{}].",
-                     eventEntry.message().getIdentifier(),
+                     eventEntry.message().identifier(),
                      eventToken != null ? eventToken.position().orElse(-1) : -1,
                      segment.getSegmentId());
 

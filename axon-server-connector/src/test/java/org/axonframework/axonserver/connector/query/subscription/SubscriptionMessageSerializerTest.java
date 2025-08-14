@@ -63,23 +63,23 @@ class SubscriptionMessageSerializerTest {
                 new GenericSubscriptionQueryUpdateMessage<>(new MessageType("query"), payload);
         QueryUpdate result = testSubject.serialize(message);
         SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
-        assertEquals(message.getIdentifier(), deserialized.getIdentifier());
-        assertEquals(message.getPayload(), deserialized.getPayload());
-        assertEquals(message.getPayloadType(), deserialized.getPayloadType());
-        assertEquals(message.getMetaData(), deserialized.getMetaData());
+        assertEquals(message.identifier(), deserialized.identifier());
+        assertEquals(message.payload(), deserialized.payload());
+        assertEquals(message.payloadType(), deserialized.payloadType());
+        assertEquals(message.metaData(), deserialized.metaData());
     }
 
     @Test
     void exceptionalUpdate() {
         MetaData metaData = MetaData.with("k1", "v1");
         SubscriptionQueryUpdateMessage<String> message = new GenericSubscriptionQueryUpdateMessage<>(
-                new MessageType("query"), new RuntimeException("oops"), metaData, String.class
+                new MessageType("query"), new RuntimeException("oops"), String.class, metaData
         );
         QueryUpdate result = testSubject.serialize(message);
         SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
-        assertEquals(message.getIdentifier(), deserialized.getIdentifier());
+        assertEquals(message.identifier(), deserialized.identifier());
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), result.getErrorCode());
-        assertEquals(message.getMetaData(), deserialized.getMetaData());
+        assertEquals(message.metaData(), deserialized.metaData());
         assertTrue(deserialized.isExceptional());
         assertEquals("oops", deserialized.exceptionResult().getMessage());
         assertInstanceOf(AxonServerRemoteQueryHandlingException.class, deserialized.exceptionResult().getCause());
@@ -89,13 +89,13 @@ class SubscriptionMessageSerializerTest {
     void nonTransientExceptionalUpdate() {
         MetaData metaData = MetaData.with("k1", "v1");
         SubscriptionQueryUpdateMessage<String> message = new GenericSubscriptionQueryUpdateMessage<>(
-                new MessageType("query"), new SerializationException("oops"), metaData, String.class
+                new MessageType("query"), new SerializationException("oops"), String.class, metaData
         );
         QueryUpdate result = testSubject.serialize(message);
         assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), result.getErrorCode());
         SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
-        assertEquals(message.getIdentifier(), deserialized.getIdentifier());
-        assertEquals(message.getMetaData(), deserialized.getMetaData());
+        assertEquals(message.identifier(), deserialized.identifier());
+        assertEquals(message.metaData(), deserialized.metaData());
         assertTrue(deserialized.isExceptional());
         assertEquals("oops", deserialized.exceptionResult().getMessage());
         assertInstanceOf(AxonServerNonTransientRemoteQueryHandlingException.class,

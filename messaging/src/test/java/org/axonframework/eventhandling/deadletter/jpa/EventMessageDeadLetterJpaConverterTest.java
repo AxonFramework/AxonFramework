@@ -143,11 +143,11 @@ class EventMessageDeadLetterJpaConverterTest {
     }
 
     private void assertCorrectlyRestored(EventMessage<?> expected, EventMessage<?> actual) {
-        assertEquals(expected.getIdentifier(), actual.getIdentifier());
-        assertEquals(expected.getTimestamp(), actual.getTimestamp());
-        assertEquals(expected.getPayload(), actual.getPayload());
-        assertEquals(expected.getPayloadType(), actual.getPayloadType());
-        assertEquals(expected.getMetaData(), actual.getMetaData());
+        assertEquals(expected.identifier(), actual.identifier());
+        assertEquals(expected.timestamp(), actual.timestamp());
+        assertEquals(expected.payload(), actual.payload());
+        assertEquals(expected.payloadType(), actual.payloadType());
+        assertEquals(expected.metaData(), actual.metaData());
 
         assertEquals(expected.getClass(), actual.getClass());
         if (expected instanceof DomainEventMessage<?> domainExpected) {
@@ -165,9 +165,9 @@ class EventMessageDeadLetterJpaConverterTest {
     }
 
     private void assertCorrectlyMapped(EventMessage<?> eventMessage, DeadLetterEventEntry deadLetterEventEntry) {
-        assertEquals(eventMessage.getIdentifier(), deadLetterEventEntry.getEventIdentifier());
-        assertEquals(eventMessage.getTimestamp().toString(), deadLetterEventEntry.getTimeStamp());
-        assertEquals(eventMessage.getPayload().getClass().getName(),
+        assertEquals(eventMessage.identifier(), deadLetterEventEntry.getEventIdentifier());
+        assertEquals(eventMessage.timestamp().toString(), deadLetterEventEntry.getTimeStamp());
+        assertEquals(eventMessage.payload().getClass().getName(),
                      deadLetterEventEntry.getPayload().getType().getName());
         assertEquals(PAYLOAD_REVISION, deadLetterEventEntry.getPayload().getType().getRevision());
         assertEquals(eventSerializer.serialize(event, String.class).getData(),

@@ -17,16 +17,12 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -50,24 +46,26 @@ public abstract class EventTestUtils {
     /**
      * Constructs a {@link List} of {@link EventMessage EventMessages} with a size equalling the given {@code number}.
      * <p>
-     * The {@link EventMessage#getPayload() payload} of the events equals it's position within the sequence.
+     * The {@link EventMessage#payload() payload} of the events equals it's position within the sequence.
      *
      * @param number The number of events to construct.
+     * @param <P>   The generic type of the expected payload of the resulting object.
      * @return A {@link List} of {@link EventMessage EventMessages} with a size equalling the given {@code number}.
      */
-    public static List<EventMessage<?>> createEvents(int number) {
+    public static <P> List<EventMessage<P>> createEvents(int number) {
         return IntStream.range(0, number)
-                        .mapToObj(EventTestUtils::createEvent)
-                        .collect(Collectors.toList());
+                        .mapToObj(EventTestUtils::<P>createEvent)
+                        .toList();
     }
 
     /**
-     * Constructs an {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() payload}.
+     * Constructs an {@link EventMessage} with the given {@code seq} as the {@link EventMessage#payload() payload}.
      *
      * @param seq The payload for the message to construct.
-     * @return An {@link EventMessage} with the given {@code seq} as the {@link EventMessage#getPayload() payload}.
+     * @param <P> The generic type of the expected payload of the resulting object.
+     * @return An {@link EventMessage} with the given {@code seq} as the {@link EventMessage#payload() payload}.
      */
-    public static EventMessage<?> createEvent(int seq) {
+    public static <P> EventMessage<P> createEvent(int seq) {
         return EventTestUtils.asEventMessage(seq);
     }
 

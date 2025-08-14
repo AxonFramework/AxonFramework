@@ -67,7 +67,7 @@ class OutboundEventMessageChannelAdapterTest {
     @Test
     void filterBlocksEvents() {
         testSubject = new OutboundEventMessageChannelAdapter(
-                mockEventBus, mockChannel, m -> !m.getPayloadType().isAssignableFrom(Class.class)
+                mockEventBus, mockChannel, m -> !m.payloadType().isAssignableFrom(Class.class)
         );
         testSubject.handle(singletonList(newDomainEvent()));
         verify(mockEventBus, never()).publish(isA(EventMessage.class));

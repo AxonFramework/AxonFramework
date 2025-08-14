@@ -51,7 +51,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
     @Mock
     private EventMessage<?> eventMessage;
 
-    private Converter converter = new PassThroughConverter();
+    private final Converter converter = PassThroughConverter.INSTANCE;
 
 
     @BeforeEach
@@ -154,7 +154,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
         @Test
         void throwsErrorIfRuntimeParametersDontMatch() {
             when(eventMessage.type()).thenReturn(new MessageType("metadata-required-test-type"));
-            when(eventMessage.getMetaData()).thenReturn(MetaData.emptyInstance());
+            when(eventMessage.metaData()).thenReturn(MetaData.emptyInstance());
             AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
                 factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
@@ -310,7 +310,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                     converter
             );
 
-            when(eventMessage.getMetaData()).thenReturn(MetaData.from(Collections.singletonMap("blabla", "blabla")));
+            when(eventMessage.metaData()).thenReturn(MetaData.from(Collections.singletonMap("blabla", "blabla")));
             var entity = factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             assertEquals("id-and-metadata", entity.invoked);
         }
@@ -325,7 +325,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                     converter
             );
 
-            when(eventMessage.getMetaData()).thenReturn(MetaData.emptyInstance());
+            when(eventMessage.metaData()).thenReturn(MetaData.emptyInstance());
             var entity = factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             assertEquals("simply-id", entity.invoked);
         }

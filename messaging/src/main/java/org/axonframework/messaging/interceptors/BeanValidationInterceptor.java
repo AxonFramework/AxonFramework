@@ -92,7 +92,7 @@ public class BeanValidationInterceptor<T extends Message<?>>
 
     private Set<ConstraintViolation<Object>> validate(Message<?> message) {
         Validator validator = validatorFactory.getValidator();
-        return validateMessage(message.getPayload(), validator);
+        return validateMessage(message.payload(), validator);
     }
 
     @Deprecated
@@ -109,7 +109,7 @@ public class BeanValidationInterceptor<T extends Message<?>>
     public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
         return (index, message) -> {
             Validator validator = validatorFactory.getValidator();
-            Set<ConstraintViolation<Object>> violations = validateMessage(message.getPayload(), validator);
+            Set<ConstraintViolation<Object>> violations = validateMessage(message.payload(), validator);
             if (violations != null && !violations.isEmpty()) {
                 throw new JSR303ViolationException(violations);
             }

@@ -21,6 +21,7 @@ import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
+import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -69,7 +70,7 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
                                                            container.getHttpPort(),
                                                            CONTEXT,
                                                            AxonServerContainerUtils.DCB_CONTEXT);
-        return new AxonServerEventStorageEngine(connection, new TestConverter());
+        return new AxonServerEventStorageEngine(connection, new ChainingContentTypeConverter());
     }
 
     @Test

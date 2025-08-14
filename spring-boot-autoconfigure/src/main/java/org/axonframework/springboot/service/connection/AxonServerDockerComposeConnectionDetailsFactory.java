@@ -35,7 +35,7 @@ public class AxonServerDockerComposeConnectionDetailsFactory extends DockerCompo
     private static final Logger logger = LoggerFactory.getLogger(AxonServerDockerComposeConnectionDetailsFactory.class);
 
     /**
-     * Initializes the factory to look for containers running the "axoniq/axonserver" image.
+     * Initializes the factory to look for containers running the "docker.axoniq.io/axoniq/axonserver" image.
      */
     public AxonServerDockerComposeConnectionDetailsFactory() {
         super("axoniq/axonserver", "io.axoniq.axonserver.connector.AxonServerConnectionFactory");

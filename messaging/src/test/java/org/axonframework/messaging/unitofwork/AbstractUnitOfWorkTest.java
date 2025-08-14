@@ -140,9 +140,9 @@ class AbstractUnitOfWorkTest {
         inOrder.verify(task).call(any());
         inOrder.verify(subject).commit();
         assertFalse(subject.isActive());
-        assertSame(taskResult, result.getPayload());
+        assertSame(taskResult, result.payload());
         assertNotNull(subject.getExecutionResult());
-        assertSame(taskResult, subject.getExecutionResult().getResult().getPayload());
+        assertSame(taskResult, subject.getExecutionResult().getResult().payload());
     }
 
     @Test

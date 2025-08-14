@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import jakarta.annotation.Nonnull;
 /**
  * A {@link MessageMonitor} implementation dedicated to {@link EventMessage EventMessages}.
  * <p>
- * This monitor defines the latency between the {@link EventMessage#getTimestamp()} and the {@link Clock#instant()}.
+ * This monitor defines the latency between the {@link EventMessage#timestamp()} and the {@link Clock#instant()}.
  * Doing so, it depicts the latency from when an event was published compared to when an
  * {@link org.axonframework.eventhandling.EventProcessor} processes the event to clarify how far behind an
  * {@code EventProcessor} is.
@@ -71,7 +71,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
     public MonitorCallback onMessageIngested(@Nonnull EventMessage<?> message) {
         //noinspection ConstantConditions
         if (message != null) {
-            this.processTime.set(Duration.between(message.getTimestamp(), clock.instant()).toMillis());
+            this.processTime.set(Duration.between(message.timestamp(), clock.instant()).toMillis());
         }
         return NoOpMessageMonitorCallback.INSTANCE;
     }

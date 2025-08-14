@@ -73,14 +73,14 @@ public class AnnotatedAggregateTest {
                        root.handle(testPayload);
                        return root;
                    }))
-                   .getPayload();
+                   .payload();
         assertNotNull(aggregate);
 
         InOrder inOrder = inOrder(eventBus);
         inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
-                .equals(x.getPayloadType()) && ((Event_1) x.getPayload()).value == 1));
+                .equals(x.payloadType()) && ((Event_1) x.payload()).value == 1));
         inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
-                .equals(x.getPayloadType()) && ((Event_1) x.getPayload()).value == 2));
+                .equals(x.payloadType()) && ((Event_1) x.payload()).value == 2));
     }
 
     @Test
@@ -95,14 +95,14 @@ public class AnnotatedAggregateTest {
                        root.handle(testPayload);
                        return root;
                    }))
-                   .getPayload();
+                   .payload();
         assertNotNull(aggregate);
 
         InOrder inOrder = inOrder(eventBus);
         inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
-                .equals(x.getPayloadType())));
+                .equals(x.payloadType())));
         inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_2.class
-                .equals(x.getPayloadType())));
+                .equals(x.payloadType())));
     }
 
     // Test for issue #1506 - https://github.com/AxonFramework/AxonFramework/issues/1506
@@ -114,7 +114,7 @@ public class AnnotatedAggregateTest {
 
         AnnotatedAggregate<AggregateRoot> testSubject =
                 (AnnotatedAggregate<AggregateRoot>) uow.executeWithResult(
-                        (ctx) -> repository.newInstance(AggregateRoot::new)).getPayload();
+                        (ctx) -> repository.newInstance(AggregateRoot::new)).payload();
 
         assertNull(testSubject.lastSequence());
     }
@@ -132,18 +132,18 @@ public class AnnotatedAggregateTest {
                        root.handle(testPayload, sideEffect);
                        return root;
                    }))
-                   .getPayload();
+                   .payload();
         assertNotNull(aggregate);
 
         InOrder inOrderEvents = inOrder(eventBus);
         inOrderEvents.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_1.class
-                .equals(x.getPayloadType())));
+                .equals(x.payloadType())));
         if (applyConditional) {
             inOrderEvents.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_2.class
-                    .equals(x.getPayloadType())));
+                    .equals(x.payloadType())));
         }
         inOrderEvents.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<?>>) x -> Event_3.class
-                .equals(x.getPayloadType())));
+                .equals(x.payloadType())));
 
         InOrder inOrderSideEffect = inOrder(sideEffect);
         inOrderSideEffect.verify(sideEffect).doSomething(eq(ID));

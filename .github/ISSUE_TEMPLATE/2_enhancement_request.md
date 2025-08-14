@@ -2,14 +2,14 @@
 name: 'Enhancement request'
 about: 'Suggest an enhancement/change to an existing feature for Axon Framework'
 title:
-labels: 'Type: Enhancement'
+type: 'Enhancement'
 ---
 
 <!-- Please use markdown (https://guides.github.com/features/mastering-markdown/) semantics throughout the enhancement description. -->
 
 ### Enhancement Description
 
-<!-- Please provide a description of the feature you envision. -->
+<!-- Please provide a description of the enhancement you envision. -->
 
 ### Current Behaviour
 

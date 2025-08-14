@@ -215,10 +215,10 @@ class LegacyStreamableEventSourceTest {
         }
 
         private static void assertEvent(EventMessage<?> actual, EventMessage<?> expected) {
-            assertEquals(expected.getIdentifier(), actual.getIdentifier());
-            assertEquals(expected.getPayload(), actual.getPayload());
-            assertEquals(expected.getTimestamp(), actual.getTimestamp());
-            assertEquals(expected.getMetaData(), actual.getMetaData());
+            assertEquals(expected.identifier(), actual.identifier());
+            assertEquals(expected.payload(), actual.payload());
+            assertEquals(expected.timestamp(), actual.timestamp());
+            assertEquals(expected.metaData(), actual.metaData());
         }
     }
 

@@ -36,11 +36,13 @@ Major API Changes
   imperative and reactive style of programming, (2) eliminate the use of `ThreadLocal`, and (3) protect users from
   internals APIs. This does mean that any direct interaction with the `UnitOfWork` has become a breaking change. Please
   check the [Unit of Work](#unit-of-work) section for more details if you are facing this predicament.
-* Messages have undergone roughly two major changes. One, they now contain a `MessageType`, decoupling a messages (
+* Messages have undergone a number of major changes. Firstly, they now contain a `MessageType`, decoupling a messages (
   business) type from Java's type system. You can find more details on this [here](#message-type-and-qualified-name).
   Secondly, the `MetaData` of each `Message` now reflects a `Map<String, String>` instead of `Map<String, ?>`, thus
   forcing metadata values to strings. Please read [this](#metadata-with-string-values) section for more details on this
-  shift.
+  shift. Other noteworthy adjustments, are the removal of the [static
+  `Message` factory methods](#factory-methods-like-genericmessageasmessageobject)
+  and [renaming of all getters](#message-method-renames).
 * All message-based infrastructure in Axon Framework will return the `MessageStream` interface. The `MessageStream` is
   intended to support empty results, results of one entry, and results of N entries, thus mirroring Event Handlers (no
   results), Command Handlers (one result), and Query Handlers (N results). Added, the `MessageStream` will function as a
@@ -63,6 +65,10 @@ Major API Changes
   The former typically represents an infrastructure component (e.g. the `CommandBus`) whereas modules are themselves
   configurers for a specific module of an application. For an exhaustive list of all the operations that have been
   removed, moved, or altered, see the [Configurer and Configuration](#applicationconfigurer-and-configuration) section.
+* Event Processors have undergone a significant change with the removal of `TrackingEventProcessor`. The
+  `PooledStreamingEventProcessor` is now the default and recommended
+  streaming event processor, providing enhanced performance and better resource utilization. See the
+  [Event Processors](#event-processors) section for more details on this transition.
 * The Test Fixtures have been replaced by an approach that, instead of an Aggregate or Saga class, take in an
   `ApplicationConfigurer` instance. In doing so, test fixtures reflect the actual application configuration. This
   resolves the predicament that you need to configure your application twice (for production and testing), making the
@@ -155,7 +161,8 @@ public class MyInterceptingEventHandler {
 }
 ```
 
-You are able inject the `ProcessingContext` in any message-handling method, so this is always available. Any code that uses the old `UnitOfWork` should be rewritten to put resources in this context.
+You are able inject the `ProcessingContext` in any message-handling method, so this is always available. Any code that
+uses the old `UnitOfWork` should be rewritten to put resources in this context.
 
 We will provide a migration guide, as well as OpenWrite recipes for these scenarios.
 
@@ -205,6 +212,32 @@ Framework. These factory methods no longer align with the new API, which expects
 consciously. Hence,
 users of the factory methods need to revert to using the constructor of the `Message` implementation instead.
 
+### MetaData with String values
+
+The `MetaData` class in Axon Framework changed its implementation. Originally, it was a `Map<String, ?>` implementation.
+As of Axon Framework 5, it is a `Map<String, String>`.
+
+The reason for this shift can be broken down in three main pillars:
+
+1. It greatly simplifies de-/serialization for storing `Messages` and putting `Messages` over the wire, since any value
+   is a `String` in all cases.
+2. It aligns better with how other services, libraries, and frameworks view metadata, which tends to be a `String` or
+   byte array.
+3. Depending on application requirements, the de-/serialization of specific values can be different. By enforcing a
+   `String`, we streamline the process.
+
+Although this may seem like a devolution of the `Message`, we believe this stricter guardrails will help all users in
+the long run.
+
+### Message method renames
+
+We have renamed the "get-styled" getters **all** `Message` implementations by removing "get" from the signature.
+Thus, `Message#getIdentifier()` is now called `Message#identifier()`, `Message#getPayload()` is now called
+`Message#payload()`, `Message#getPayloadType()` is now `Message#payloadType()`, and `Message#getMetaData()` is now
+referred to as `Message#metaData()`. A similar rename occurred for the `EventMessage`, for which we renamed the
+`getTimestamp()` method to `timestamp()`. Lastly, the `QueryMessage` and `SubscriptionQueryMessage` have undergone the
+same rename, for `getResponseType()` and `getUpdateResponseType()` respectively.
+
 ## Message Stream
 
 We have introduced the so-called `MessageStream` to allow people to draft both imperative **and** reactive message
@@ -228,23 +261,6 @@ As can be expected, the `MessageStream` streams implementation of `Message`. Hen
 `MessageStream`, by specifying a lambda that takes in the `Message` and returns a `Context` object. For example, Axon
 Framework uses this `Context` to add the aggregate identifier, aggregate type, and sequence number for events that
 originate from an aggregate-based event store (thus a pre-Dynamic Consistency Boundary event store).
-
-### MetaData with String values
-
-The `MetaData` class in Axon Framework changed its implementation. Originally, it was a `Map<String, ?>` implementation.
-As of Axon Framework 5, it is a `Map<String, String>`.
-
-The reason for this shift can be broken down in three main pillars:
-
-1. It greatly simplifies de-/serialization for storing `Messages` and putting `Messages` over the wire, since any value
-   is a `String` in all cases.
-2. It aligns better with how other services, libraries, and frameworks view metadata, which tends to be a `String` or
-   byte array.
-3. Depending on application requirements, the de-/serialization of specific values can be different. By enforcing a
-   `String`, we streamline the process.
-
-Although this may seem like a devolution of the `Message`, we believe this stricter guardrails will help all users in
-the long run.
 
 ## Adjusted APIs
 
@@ -390,6 +406,56 @@ public void streamingEvents(
 }
 ```
 
+### Event Storage
+
+#### Generic `EventStorageEngine` changes
+
+The `EventStorageEngine` aligns with the changes made to the `EventStore` and `StreamableMessageSource` to service both
+interfaces correctly.
+
+As such, it's API now uses asynchronous operations throughout - all methods now return
+`CompletableFuture` objects instead of blocking calls. Furthermore, event appending requires an `AppendCondition` and
+uses
+`TaggedEventMessage` objects, with operations wrapped in an `AppendTransaction` that must be explicitly committed or
+rolled back for better transactional control. The `TaggedEventMessage` wraps an `EventMessage` and a set of `Tags` that
+are important labels of the `EventMessage`.
+
+Event retrieval is consolidated into two primary methods: `source()` for finite streams and `stream()` for infinite
+streams. Both use condition objects (the aforementioned `SourcingCondition` in [appending events](#appending-events) and
+`StreamingCondition` in [streaming events](#streaming-events)) to specify filtering and positioning
+logic, replacing direct parameter-based methods. Token creation is streamlined with `firstToken()`, `latestToken()`, and
+`tokenAt()` methods that all return futures.
+
+Although the chance is slim users are hit with the API change on the `EventStorageEngine` itself, as we recommend event
+reading and writing through higher level APIs, if you are hit, we recommend a manual transition. Both when directly
+using the  `EventStorageEngine` or with a manual implementation of the old `EventStorageEngine`.
+During such a migration, you'll need to handle async operations with `CompletableFutures`, replace direct append calls
+with transactional ones using conditions, and convert aggregate-specific reads to condition-based sourcing calls. The
+API removes aggregate-specific methods and snapshot functionality in favor of the more generic condition-based approach.
+
+#### JPA based Event Storage
+
+If you've chosen a JPA-based event storage solution in pre-Axon-Framework-5, that means you need to switch from the
+`JpaEventStorageEngine` to the `AggregateBasedJpaEventStorageEngine`. Any changes to the API are described
+shortly [here](#generic-eventstorageengine-changes), expect for the construction. Instead of using the builder-pattern
+for all fields, the builder pattern is now restricted to the non-required fields, like, for example, the gap cleaning
+timeout.
+
+## Event Processors
+
+### TrackingEventProcessor Removal
+
+The `TrackingEventProcessor` has been removed from the framework, with `PooledStreamingEventProcessor` taking over as the default streaming event processor.
+The main difference between these processors lies in their threading model, but the benefits of the PooledStreaming event processor far outweighed the Tracking one.
+
+In the `PooledStreamingEventProcessor` there is a much lower IO overhead, and more segments can be processed in parallel with the same resources.
+The processor uses one thread pool to read the event stream and another thread pool to process the events, so it reads the stream only once regardless of segment count.
+For example, when processing 8 segments on a single instance, instead of reading the event stream 8 times, it now reads it once.
+In the contrary, the `TrackingEventProcessor` opens a separate event stream per segment it claims.
+
+The pooled streaming processor has one limitation: segments process as fast as the slowest segment. However, this minor disadvantage is outweighed by the `PooledStreamingEventProcessor` advantages and does not warrant maintaining the `TrackingEventProcessor`.
+Users who previously configured `TrackingEventProcessor` instances or used `tracking` mode in Spring Boot configuration should migrate to `PooledStreamingEventProcessor`.
+
 ## ApplicationConfigurer and Configuration
 
 The configuration API of Axon Framework has seen a big adjustment. You can essentially say it has been turned upside
@@ -517,7 +583,7 @@ the `INBOUND_EVENT_CONNECTORS`.
 
 This registration approach of a complete definition, wherein the construction of the component and the decoration
 thereof are kept and **only** invoked when used in your end application, ensures that lifecycle management does not
-cause eager initialization of _any_ component. 
+cause eager initialization of _any_ component.
 
 ### Decorating components with the ComponentDecorator interface
 
@@ -999,7 +1065,7 @@ public class MyEntity {
 
 While very similar to the reflection-based aggregates from AF4, reflection-based entities have gained some new capabilities.
 
-First, it is now possible to define two or more children of the same type. 
+First, it is now possible to define two or more children of the same type.
 Note that the `@EntityMember#commandTargetResolver` must resolve to only one value over all children.
 
 ```java
@@ -1013,7 +1079,7 @@ public abstract class Project {
 }
 ```
 
-Second, the `@EntityMember#commandTargetResolver` can now be customized. 
+Second, the `@EntityMember#commandTargetResolver` can now be customized.
 By creating your own definition, you can route the command target using something else than the `@RoutingKey`.
 
 ```java
@@ -1136,6 +1202,8 @@ Minor API Changes
   allows component construction to be lazy instead of eager, since we do not require an active instance anymore (as was
   the case with the `Lifecycle` interface). Please read
   the [Component Lifecycle Management](#component-lifecycle-management) section for more details on this.
+* The SequencingPolicy interface no longer uses generics and now operates directly on EventMessage<?>. This simplifies
+  its usage and implementation, as many implementations do not depend on the payload type and can ignore it entirely.
 
 Stored Format Changes
 =====================
@@ -1239,6 +1307,19 @@ This section contains five tables:
 | org.axonframework.config.LifecycleHandlerInspector                                       | [Lifecycle management](#component-lifecycle-management) is now only done lazy, eliminating the need for concrete component scanning.           |
 | org.axonframework.lifecycle.StartHandler                                                 | [Lifecycle management](#component-lifecycle-management) is now only done lazy, eliminating the need for concrete component scanning.           |
 | org.axonframework.lifecycle.ShutdownHandler                                              | [Lifecycle management](#component-lifecycle-management) is now only done lazy, eliminating the need for concrete component scanning.           |
+| org.axonframework.eventhandling.TrackingEventProcessor                                   | Removed in favor of `PooledStreamingEventProcessor` (see [Event Processors](#event-processors)).                                               |
+| org.axonframework.eventhandling.TrackingEventProcessorConfiguration                      | Removed along with `TrackingEventProcessor` (see [Event Processors](#event-processors)).                                                       |
+| org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine                     | Replaced in favor of the `AggregateBasedJpaEventStorageEngine`                                                                                 |
+| org.axonframework.eventhandling.EventData                                                | Removed in favor of the `EventMessage` carrying all required data to map from stored to read formats.                                          |
+| org.axonframework.eventhandling.AbstractEventEntry                                       | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventhandling.DomainEventData                                          | Removed in favor of the `EventMessage` carrying all required data to map from stored to read formats.                                          |
+| org.axonframework.eventhandling.AbstractDomainEventEntry                                 | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventhandling.GenericDomainEventEntry                                  | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventhandling.AbstractSequencedDomainEventEntry                        | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry                          | Replaced by `...`                                                                                                                              |
+| org.axonframework.eventhandling.TrackedEventData                                         | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
+| org.axonframework.eventhandling.TrackedDomainEventData                                   | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
+| org.axonframework.messaging.Headers                                                      | Removed due to lack of use and foreseen use.                                                                                                   |
 
 ### Marked for removal Classes
 
@@ -1260,10 +1341,10 @@ Note that **any**  changes here may have far extending impact on the original cl
 
 ### Adjusted Constants
 
-| Class                | Constant          | Change   | Why                                   |
-|----------------------|-------------------|----------|---------------------------------------|
-| `HandlerAttributes`  | `START_PHASE`     | Removed  | StartHandler annotation is removed    |
-| `HandlerAttributes`  | `SHUTDOWN_PHASE`  | Removed  | ShutdownHandler annotation is removed |
+| Class               | Constant         | Change  | Why                                   |
+|---------------------|------------------|---------|---------------------------------------|
+| `HandlerAttributes` | `START_PHASE`    | Removed | StartHandler annotation is removed    |
+| `HandlerAttributes` | `SHUTDOWN_PHASE` | Removed | ShutdownHandler annotation is removed |
 
 ## Method Signature Changes
 
@@ -1330,45 +1411,56 @@ This section contains four subsections, called:
 | `Converter#convert(Object, Class<?>, Class<T>)`                                                                                 | `Converter.#convert(S, Class<S>, Class<T>)`                                                                            |
 | `EventGateway#publish(Object...)`                                                                                               | `EventGateway#publish(ProcessingContext, Object...)`                                                                   |
 | `EventGateway#publish(List<?>)`                                                                                                 | `EventGateway#publish(ProcessingContext, List<?>)`                                                                     |
+| `SequencingPolicy#getSequenceIdentifierFor(Object)`                                                                             | `SequencingPolicy#getSequenceIdentifierFor(EventMessage<?>)`                                                           |
+| `Message#getIdentifier()`                                                                                                       | `Message#identifier()`                                                                                                 |
+| `Message#getPayload()`                                                                                                          | `Message#payload()`                                                                                                    |
+| `Message#getPayloadType()`                                                                                                      | `Message#payloadType()`                                                                                                |
+| `Message#getMetaData()`                                                                                                         | `Message#metaData()`                                                                                                   |
+| `EventMessage#getTimestamp()`                                                                                                   | `EventMessage#timestamp()`                                                                                             |
+| `QueryMessage#getReponseType()`                                                                                                 | `QueryMessage#responseType()`                                                                                          | 
+| `SubscriptionQueryMessage#getUpdateReponseType()`                                                                               | `SubscriptionQueryMessage#updatesResponseType()`                                                                       | 
 
 ### Removed Methods and Constructors
 
-| Constructor / Method                                                                                 | Why                                                                                         | 
-|------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`                             | Initialize is now replace fully by start and shutdown handlers.                             |
-| `org.axonframework.config.ModuleConfiguration#unwrap()`                                              | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.             |
-| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                                      | Only use by `unwrap()` that's also removed.                                                 |
-| `org.axonframework.config.Configuration#lifecycleRegistry()`                                         | A round about way to support life cycle handler registration.                               |
-| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`                          | Fully replaced by start and shutdown handler registration.                                  |
-| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`                      | Each Configurer now has get optional operation replacing this functionality.                |
-| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)`                     | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation.    |
-| `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Leftover behavior to support aggregate validation on subsequent invocations.                |
-| `org.axonframework.modelling.command.Repository#newInstance(Callable<T>, Consumer<Aggregate<T>>)`    | No longer necessary with replacement `Repository#persist(ID, T, ProcessingContext)`.        |
-| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String)`                           | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).        | 
-| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String, long)`                     | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).        | 
-| `org.axonframework.eventsourcing.eventstore.EventStore#storeSnapshot(DomainEventMessage<?>)`         | Replaced for a dedicated `SnapshotStore`.                                                   |
-| `org.axonframework.eventsourcing.eventstore.EventStore#lastSequenceNumberFor(String)`                | No longer necessary to support through the introduction of DCB.                             |
-| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#storeSnapshot(DomainEventMessage<?>)` | Replaced for a dedicated `SnapshotStore`.                                                   |
-| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#readSnapshot(String)`                 | Replaced for a dedicated `SnapshotStore`.                                                   |
-| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#lastSequenceNumberFor(String)`        | No longer necessary to support through the introduction of DCB.                             |
-| `org.axonframework.eventsourcing.CachingEventSourcingRepository#validateOnLoad(Aggregate<T>, Long)`  | Version-based loading is no longer supported due to limited use by the community.           |
-| `org.axonframework.eventsourcing.CachingEventSourcingRepository#doLoadWithLock(String, Long)`        | Version-based loading is no longer supported due to limited use by the community.           |
-| `org.axonframework.eventsourcing.EventSourcingRepository#doLoadWithLock(String, Long)`               | Version-based loading is no longer supported due to limited use by the community.           |
-| `org.axonframework.modelling.command.AbstractRepository#load(String, Long)`                          | Version-based loading is no longer supported due to limited use by the community.           |
-| `org.axonframework.modelling.command.GenericJpaRepository#doLoadWithLock(String, Long)`              | Version-based loading is no longer supported due to limited use by the community.           |
-| `org.axonframework.modelling.command.LockingRepository#doLoad(String, Long)`                         | Version-based loading is no longer supported due to limited use by the community.           |
-| `org.axonframework.modelling.command.LockingRepository#doLoadWithLock(String, Long)`                 | Version-based loading is no longer supported due to limited use by the community.           |
-| `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Version-based loading is no longer supported due to limited use by the community.           |
-| `org.axonframework.modelling.command.Aggregate#version()`                                            | Version-based loading is no longer supported due to limited use by the community.           |
-| `org.axonframework.modelling.command.LockAwareAggregate#version()`                                   | Version-based loading is no longer supported due to limited use by the community.           |
-| `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#startScheduler(boolean)`  | [Lifecycle management](#component-lifecycle-management) has become a configuration concern. |
-| `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#stopScheduler(boolean)`   | [Lifecycle management](#component-lifecycle-management) has become a configuration concern. |
+| Constructor / Method                                                                                 | Why                                                                                                                         | 
+|------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`                             | Initialize is now replace fully by start and shutdown handlers.                                                             |
+| `org.axonframework.config.ModuleConfiguration#unwrap()`                                              | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.                                             |
+| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                                      | Only use by `unwrap()` that's also removed.                                                                                 |
+| `org.axonframework.config.Configuration#lifecycleRegistry()`                                         | A round about way to support life cycle handler registration.                                                               |
+| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`                          | Fully replaced by start and shutdown handler registration.                                                                  |
+| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`                      | Each Configurer now has get optional operation replacing this functionality.                                                |
+| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)`                     | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation.                                    |
+| `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Leftover behavior to support aggregate validation on subsequent invocations.                                                |
+| `org.axonframework.modelling.command.Repository#newInstance(Callable<T>, Consumer<Aggregate<T>>)`    | No longer necessary with replacement `Repository#persist(ID, T, ProcessingContext)`.                                        |
+| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String)`                           | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).                                        | 
+| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String, long)`                     | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).                                        | 
+| `org.axonframework.eventsourcing.eventstore.EventStore#storeSnapshot(DomainEventMessage<?>)`         | Replaced for a dedicated `SnapshotStore`.                                                                                   |
+| `org.axonframework.eventsourcing.eventstore.EventStore#lastSequenceNumberFor(String)`                | No longer necessary to support through the introduction of DCB.                                                             |
+| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#storeSnapshot(DomainEventMessage<?>)` | Replaced for a dedicated `SnapshotStore`.                                                                                   |
+| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#readSnapshot(String)`                 | Replaced for a dedicated `SnapshotStore`.                                                                                   |
+| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#lastSequenceNumberFor(String)`        | No longer necessary to support through the introduction of DCB.                                                             |
+| `org.axonframework.eventsourcing.CachingEventSourcingRepository#validateOnLoad(Aggregate<T>, Long)`  | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.eventsourcing.CachingEventSourcingRepository#doLoadWithLock(String, Long)`        | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.eventsourcing.EventSourcingRepository#doLoadWithLock(String, Long)`               | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.AbstractRepository#load(String, Long)`                          | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.GenericJpaRepository#doLoadWithLock(String, Long)`              | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.LockingRepository#doLoad(String, Long)`                         | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.LockingRepository#doLoadWithLock(String, Long)`                 | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.Aggregate#version()`                                            | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.LockAwareAggregate#version()`                                   | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#startScheduler(boolean)`  | [Lifecycle management](#component-lifecycle-management) has become a configuration concern.                                 |
+| `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#stopScheduler(boolean)`   | [Lifecycle management](#component-lifecycle-management) has become a configuration concern.                                 |
+| `org.axonframework.config.EventProcessingConfigurer#registerTrackingEventProcessor`                  | Removed along with `TrackingEventProcessor`. Use `registerPooledStreamingEventProcessor` instead.                           |
+| `org.axonframework.config.EventProcessingConfigurer#registerTrackingEventProcessorConfiguration`     | Removed along with `TrackingEventProcessorConfiguration`. Use `registerPooledStreamingEventProcessorConfiguration` instead. |
 
 ### Changed Method return types
 
-| Method                                         | Before                         | After                     |
-|------------------------------------------------|--------------------------------|---------------------------|
-| `CorrelationDataProvider#correlationDataFor()` | `Map<String, String>`          | `Map<String, ?>`          | 
-| `CommandTargetResolver#resolveTarget`          | `VersionedAggregateIdentifier` | `String`                  |
-| `EventGateway#publish(Object...)`              | `void`                         | `CompletableFuture<Void>` |
-| `EventGateway#publish(List<?>)`                | `void`                         | `CompletableFuture<Void>` |
+| Method                                               | Before                         | After                     |
+|------------------------------------------------------|--------------------------------|---------------------------|
+| `CorrelationDataProvider#correlationDataFor()`       | `Map<String, String>`          | `Map<String, ?>`          | 
+| `CommandTargetResolver#resolveTarget`                | `VersionedAggregateIdentifier` | `String`                  |
+| `EventGateway#publish(Object...)`                    | `void`                         | `CompletableFuture<Void>` |
+| `EventGateway#publish(List<?>)`                      | `void`                         | `CompletableFuture<Void>` |
+| `SequencingPolicy#getSequenceIdentifierFor(List<?>)` | `Object`                       | `Optional<Object>`        |

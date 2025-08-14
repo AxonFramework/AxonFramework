@@ -54,7 +54,8 @@ import java.util.function.Predicate;
 
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineMessage;
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineScope;
-import static org.axonframework.messaging.Headers.*;
+import static org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler.DirectEventJobDataBinder.*;
+import static org.axonframework.messaging.HandlerAttributes.DEADLINE_NAME;
 
 /**
  * Quartz job which depicts handling of a scheduled deadline message. The {@link DeadlineMessage} and
@@ -172,7 +173,7 @@ public class DeadlineJob implements Job {
                 throw new JobExecutionException(exceptionResult);
             } else if (logger.isInfoEnabled()) {
                 logger.info("Job successfully executed. Deadline message [{}] processed.",
-                            deadlineMessage.getPayloadType().getSimpleName());
+                            deadlineMessage.type().name());
             }
         } finally {
             span.end();
@@ -215,6 +216,34 @@ public class DeadlineJob implements Job {
          * Key pointing to the {@link Message#type()} as a {@code String} of the deadline in the {@link JobDataMap}.
          */
         public static final String TYPE = "type";
+        /**
+         * Key pointing to a message identifier.
+         */
+        public static final String MESSAGE_ID = "axon-message-id";
+        /**
+         * Key pointing to the serialized payload of a message.
+         */
+        public static final String SERIALIZED_MESSAGE_PAYLOAD = "axon-serialized-message-payload";
+        /**
+         * Key pointing to the payload type of a message.
+         */
+        public static final String MESSAGE_TYPE = "axon-message-type";
+        /**
+         * Key pointing to the revision of a message.
+         */
+        public static final String MESSAGE_REVISION = "axon-message-revision";
+        /**
+         * Key pointing to the timestamp of a message.
+         */
+        public static final String MESSAGE_TIMESTAMP = "axon-message-timestamp";
+        /**
+         * Key pointing to the {@link MetaData} of a message.
+         */
+        public static final String MESSAGE_METADATA = "axon-metadata";
+        /**
+         * Key pointing to the deadline name of a {@link org.axonframework.deadline.DeadlineMessage}.
+         */
+        public static final String DEADLINE_NAME = "axon-deadline-name";
 
         /**
          * Serializes the provided {@code deadlineMessage} and {@code deadlineScope} and puts them in a
@@ -241,18 +270,18 @@ public class DeadlineJob implements Job {
                                                DeadlineMessage<?> deadlineMessage,
                                                Serializer serializer) {
             jobData.put(DEADLINE_NAME, deadlineMessage.getDeadlineName());
-            jobData.put(MESSAGE_ID, deadlineMessage.getIdentifier());
+            jobData.put(MESSAGE_ID, deadlineMessage.identifier());
             jobData.put(TYPE, deadlineMessage.type().toString());
-            jobData.put(MESSAGE_TIMESTAMP, deadlineMessage.getTimestamp().toString());
+            jobData.put(MESSAGE_TIMESTAMP, deadlineMessage.timestamp().toString());
 
             SerializedObject<byte[]> serializedDeadlinePayload =
-                    serializer.serialize(deadlineMessage.getPayload(), byte[].class);
+                    serializer.serialize(deadlineMessage.payload(), byte[].class);
             jobData.put(SERIALIZED_MESSAGE_PAYLOAD, serializedDeadlinePayload.getData());
             jobData.put(MESSAGE_TYPE, serializedDeadlinePayload.getType().getName());
             jobData.put(MESSAGE_REVISION, serializedDeadlinePayload.getType().getRevision());
 
             SerializedObject<byte[]> serializedDeadlineMetaData =
-                    serializer.serialize(deadlineMessage.getMetaData(), byte[].class);
+                    serializer.serialize(deadlineMessage.metaData(), byte[].class);
             jobData.put(MESSAGE_METADATA, serializedDeadlineMetaData.getData());
         }
 

@@ -404,8 +404,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             MetaData metaData = null;
             String type = aggregateType.getSimpleName();
             if (event instanceof Message) {
-                payload = ((Message<?>) event).getPayload();
-                metaData = ((Message<?>) event).getMetaData();
+                payload = ((Message<?>) event).payload();
+                metaData = ((Message<?>) event).metaData();
             }
             if (event instanceof DomainEventMessage) {
                 type = ((DomainEventMessage<?>) event).getType();
@@ -1041,11 +1041,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                     givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getType(),
                                                                     aggregateIdentifier,
                                                                     oldEvent.getSequenceNumber(),
-                                                                    oldEvent.getIdentifier(),
+                                                                    oldEvent.identifier(),
                                                                     oldEvent.type(),
-                                                                    oldEvent.getPayload(),
-                                                                    oldEvent.getMetaData(),
-                                                                    oldEvent.getTimestamp()));
+                                                                    oldEvent.payload(),
+                                                                    oldEvent.metaData(),
+                                                                    oldEvent.timestamp()));
                 } else {
                     givenEvents.add(oldEvent);
                 }

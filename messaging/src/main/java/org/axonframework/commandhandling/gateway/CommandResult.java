@@ -51,16 +51,16 @@ public interface CommandResult {
     default <R> CompletableFuture<R> resultAs(@Nonnull Class<R> type) {
         requireNonNull(type, "The result type must not be null");
         return getResultMessage().thenApply(r -> {
-            if (r == null || r.getPayload() == null) {
+            if (r == null || r.payload() == null) {
                 return null;
             }
-            if (type.isInstance(r.getPayload())) {
-                return type.cast(r.getPayload());
+            if (type.isInstance(r.payload())) {
+                return type.cast(r.payload());
             }
             throw new ConversionException(
                     String.format("Expected result of type [%s] in the CommandResult, but got [%s]",
                                   type.getName(),
-                                  r.getPayload().getClass().getName())
+                                  r.payload().getClass().getName())
             );
         });
     }
@@ -104,7 +104,7 @@ public interface CommandResult {
         requireNonNull(successHandler, "The success handler must not be null.");
         getResultMessage().whenComplete((r, e) -> {
             if (e == null) {
-                successHandler.accept(resultType.cast(r.getPayload()), r);
+                successHandler.accept(resultType.cast(r.payload()), r);
             }
         });
         return this;

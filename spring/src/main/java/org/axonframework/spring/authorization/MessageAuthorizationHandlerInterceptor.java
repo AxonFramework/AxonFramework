@@ -35,9 +35,8 @@ import java.util.stream.Collectors;
 
 
 /**
- * A {@link MessageHandlerInterceptor} that verifies authorization based on
- * {@link org.springframework.security.access.annotation.Secured} annotations on the payload of
- * {@link Message Messages}.
+ * A {@link MessageHandlerInterceptor} that verifies authorization based on {@link Secured} annotations on the payload
+ * of {@link Message Messages}.
  *
  * @param <T> The message type this interceptor can process
  * @author Roald Bankras
@@ -53,26 +52,26 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
                          @Nonnull InterceptorChain interceptorChain
     ) throws Exception {
         T message = unitOfWork.getMessage();
-        if (!AnnotationUtils.isAnnotationPresent(message.getPayloadType(), Secured.class)) {
+        if (!AnnotationUtils.isAnnotationPresent(message.payloadType(), Secured.class)) {
             return interceptorChain.proceedSync(context);
         }
-        Secured annotation = message.getPayloadType()
+        Secured annotation = message.payloadType()
                                     .getAnnotation(Secured.class);
 
         Set<String> authorities =
-                Optional.ofNullable(message.getMetaData().get("authorities"))
+                Optional.ofNullable(message.metaData().get("authorities"))
                         .map(authorityMetaData -> {
                             if (logger.isDebugEnabled()) {
                                 logger.debug("Found authorities [{}]", authorityMetaData);
                             }
-                            return new HashSet<>(Arrays.asList(message.getMetaData().get("authorities").split(",")));
+                            return new HashSet<>(Arrays.asList(message.metaData().get("authorities").split(",")));
                         })
                         .orElseThrow(() -> new UnauthorizedMessageException(
-                                "No authorities found for message with identifier [" + message.getIdentifier() + "]"
+                                "No authorities found for message with identifier [" + message.identifier() + "]"
                         ));
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Authorizing for [{}] and [{}]", message.getPayloadType().getName(), annotation.value());
+            logger.debug("Authorizing for [{}] and [{}]", message.type().name(), annotation.value());
         }
 
         authorities.retainAll(Arrays.stream(annotation.value()).collect(Collectors.toSet()));
@@ -80,7 +79,7 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
             return interceptorChain.proceedSync(context);
         }
         throw new UnauthorizedMessageException(
-                "Unauthorized message with identifier [" + message.getIdentifier() + "]"
+                "Unauthorized message with identifier [" + message.identifier() + "]"
         );
     }
 }

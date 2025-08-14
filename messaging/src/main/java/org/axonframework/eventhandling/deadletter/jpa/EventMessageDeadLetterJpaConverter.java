@@ -63,15 +63,15 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         // make us able to store deserialization errors as well.
         SerializedObject<byte[]> serializedPayload = message.serializePayload(eventSerializer, byte[].class);
         // For compatibility, we use the serializer directly for the metadata
-        SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.getMetaData(), byte[].class);
+        SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.metaData(), byte[].class);
         Optional<SerializedObject<byte[]>> serializedToken =
                 trackedEventMessage.map(m -> genericSerializer.serialize(m.trackingToken(), byte[].class));
 
         return new DeadLetterEventEntry(
                 message.getClass().getName(),
-                message.getIdentifier(),
+                message.identifier(),
                 message.type().toString(),
-                message.getTimestamp().toString(),
+                message.timestamp().toString(),
                 serializedPayload.getType().getName(),
                 serializedPayload.getType().getRevision(),
                 serializedPayload.getData(),
@@ -110,10 +110,10 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
             return new GenericDomainEventMessage<>(entry.getAggregateType(),
                                                    entry.getAggregateIdentifier(),
                                                    entry.getSequenceNumber(),
-                                                   serializedMessage.getIdentifier(),
+                                                   serializedMessage.identifier(),
                                                    MessageType.fromString(entry.getType()),
-                                                   serializedMessage.getPayload(),
-                                                   serializedMessage.getMetaData(),
+                                                   serializedMessage.payload(),
+                                                   serializedMessage.metaData(),
                                                    timestampSupplier.get());
         } else {
             return new GenericEventMessage<>(serializedMessage, timestampSupplier);

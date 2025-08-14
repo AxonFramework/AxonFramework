@@ -28,7 +28,6 @@ import org.axonframework.commandhandling.tracing.DefaultCommandBusSpanFactory;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -55,7 +54,6 @@ import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
@@ -284,7 +282,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     /**
      * Returns a Configurer instance which has JPA versions of building blocks configured, such as a JPA based Event
-     * Store (see {@link LegacyJpaEventStorageEngine}), a {@link JpaTokenStore} and {@link JpaSagaStore}.
+     * Store, a {@link JpaTokenStore} and {@link JpaSagaStore}.
      * <br>
      * This method allows to provide a transaction manager for usage in JTA-managed entity manager.
      *
@@ -297,19 +295,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         return new LegacyDefaultConfigurer()
                 .registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
                 .registerComponent(TransactionManager.class, c -> transactionManager)
-                .configureEmbeddedEventStore(
-                        c -> LegacyJpaEventStorageEngine.builder()
-                                                        .snapshotSerializer(c.serializer())
-                                                        .upcasterChain(c.upcasterChain())
-                                                        .persistenceExceptionResolver(
-                                                                c.getComponent(PersistenceExceptionResolver.class)
-                                                        )
-                                                        .eventSerializer(c.eventSerializer())
-                                                        .snapshotFilter(c.snapshotFilter())
-                                                        .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
-                                                        .transactionManager(c.getComponent(TransactionManager.class))
-                                                        .build()
-                )
                 .registerComponent(TokenStore.class,
                                    c -> JpaTokenStore.builder()
                                                      .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
@@ -324,7 +309,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     /**
      * Returns a Configurer instance which has JPA versions of building blocks configured, such as a JPA based Event
-     * Store (see {@link LegacyJpaEventStorageEngine}), a {@link JpaTokenStore} and {@link JpaSagaStore}.
+     * Store, a {@link JpaTokenStore} and {@link JpaSagaStore}.
      * <br>
      * This configuration should be used with an entity manager running without JTA transaction. If you are using a
      * entity manager in JTA mode, please provide the corresponding {@link TransactionManager} in the

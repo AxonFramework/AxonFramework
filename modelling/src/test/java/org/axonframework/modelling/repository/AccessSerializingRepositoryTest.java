@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.repository;
 
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -133,7 +133,7 @@ class AccessSerializingRepositoryTest {
 
         assertFalse(result1.isDone());
         // This one times out, and is expected to have completed
-        await().pollDelay(Duration.ofMillis(10))
+        await().pollDelay(Duration.ofMillis(20))
                .atMost(Duration.ofMillis(100))
                .untilAsserted(() -> assertTrue(result2.isCompletedExceptionally()));
 

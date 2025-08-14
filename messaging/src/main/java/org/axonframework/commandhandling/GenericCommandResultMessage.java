@@ -18,19 +18,21 @@ package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.serialization.Converter;
 
+import java.lang.reflect.Type;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * Generic implementation of the {@link CommandResultMessage} interface.
  *
- * @param <R> The type of {@link #getPayload() result} contained in this {@link CommandResultMessage}.
+ * @param <R> The type of {@link #payload() result} contained in this {@link CommandResultMessage}.
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 4.0.0
@@ -73,7 +75,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      * @param metaData      The metadata for this {@link CommandResultMessage}.
      */
     public GenericCommandResultMessage(@Nonnull MessageType type,
-                                       @Nonnull R commandResult,
+                                       @Nullable R commandResult,
                                        @Nonnull Map<String, String> metaData) {
         super(type, commandResult, metaData);
     }
@@ -100,8 +102,8 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
-     *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
+     * @param delegate The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
+     *                 {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
     public GenericCommandResultMessage(@Nonnull Message<R> delegate) {
@@ -115,9 +117,9 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
-     *                  {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
-     *                  {@link Message#getMetaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
+     * @param delegate  The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
+     *                  {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
+     *                  {@link QueryResponseMessage} to reconstruct.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link CommandResultMessage}.
      */
@@ -127,26 +129,34 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
     }
 
     @Override
-    public GenericCommandResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
+    @Nonnull
+    public CommandResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         Throwable exception = optionalExceptionResult().orElse(null);
-        return new GenericCommandResultMessage<>(getDelegate().withMetaData(metaData), exception);
+        return new GenericCommandResultMessage<>(delegate().withMetaData(metaData), exception);
     }
 
     @Override
-    public GenericCommandResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
+    @Nonnull
+    public CommandResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
         Throwable exception = optionalExceptionResult().orElse(null);
-        return new GenericCommandResultMessage<>(getDelegate().andMetaData(metaData), exception);
+        return new GenericCommandResultMessage<>(delegate().andMetaData(metaData), exception);
     }
 
     @Override
-    public <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Function<R, T> conversion) {
-        Throwable exception = optionalExceptionResult().orElse(null);
-        Message<R> delegate = getDelegate();
-        Message<T> transformed = new GenericMessage<>(delegate.getIdentifier(),
-                                                      delegate.type(),
-                                                      conversion.apply(delegate.getPayload()),
-                                                      delegate.getMetaData());
-        return new GenericCommandResultMessage<>(transformed, exception);
+    @Nonnull
+    public <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Type type,
+                                                            @Nonnull Converter converter) {
+        T convertedPayload = payloadAs(type, converter);
+        if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
+            //noinspection unchecked
+            return (CommandResultMessage<T>) this;
+        }
+        Message<R> delegate = delegate();
+        Message<T> converted = new GenericMessage<>(delegate.identifier(),
+                                                    delegate.type(),
+                                                    convertedPayload,
+                                                    delegate.metaData());
+        return new GenericCommandResultMessage<>(converted, optionalExceptionResult().orElse(null));
     }
 
     @Override

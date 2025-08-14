@@ -48,7 +48,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
             new SubscriptionMessageSerializer(serializer, serializer, new AxonServerConfiguration());
 
     @Test
-    void getUpdateResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
+    void updatesResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
         ResponseType<String> expectedUpdateResponseType = RESPONSE_TYPE;
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE, expectedUpdateResponseType
@@ -64,7 +64,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
 
         assertEquals(
                 expectedUpdateResponseType.getExpectedResponseType(),
-                testSubject.getResponseType().getExpectedResponseType()
+                testSubject.responseType().getExpectedResponseType()
         );
     }
 
@@ -86,7 +86,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void getResponseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
+    void responseTypeReturnsTheTypeAsSpecifiedInTheSubscriptionQuery() {
         ResponseType<String> expectedResponseType = RESPONSE_TYPE;
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, expectedResponseType, RESPONSE_TYPE
@@ -101,12 +101,12 @@ class GrpcBackedSubscriptionQueryMessageTest {
                 new GrpcBackedSubscriptionQueryMessage<>(testSubscriptionQuery, serializer, serializer);
 
         assertEquals(
-                expectedResponseType.getExpectedResponseType(), testSubject.getResponseType().getExpectedResponseType()
+                expectedResponseType.getExpectedResponseType(), testSubject.responseType().getExpectedResponseType()
         );
     }
 
     @Test
-    void getIdentifierReturnsTheSameIdentifierAsSpecifiedInTheSubscriptionQuery() {
+    void identifierAsSpecifiedInTheSubscriptionQuery() {
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
         );
@@ -119,11 +119,11 @@ class GrpcBackedSubscriptionQueryMessageTest {
         GrpcBackedSubscriptionQueryMessage<TestQuery, String, String> testSubject =
                 new GrpcBackedSubscriptionQueryMessage<>(testSubscriptionQuery, serializer, serializer);
 
-        assertEquals(testSubscriptionQuery.getSubscriptionIdentifier(), testSubject.getIdentifier());
+        assertEquals(testSubscriptionQuery.getSubscriptionIdentifier(), testSubject.identifier());
     }
 
     @Test
-    void getMetaDataReturnsTheSameMapAsWasInsertedInTheSubscriptionQuery() {
+    void metaDataReturnsTheSameMapAsWasInsertedInTheSubscriptionQuery() {
         MetaData expectedMetaData = MetaData.with("some-key", "some-value");
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
@@ -137,11 +137,11 @@ class GrpcBackedSubscriptionQueryMessageTest {
         GrpcBackedSubscriptionQueryMessage<TestQuery, String, String> testSubject =
                 new GrpcBackedSubscriptionQueryMessage<>(testSubscriptionQuery, serializer, serializer);
 
-        assertEquals(expectedMetaData, testSubject.getMetaData());
+        assertEquals(expectedMetaData, testSubject.metaData());
     }
 
     @Test
-    void getPayloadReturnsAnIdenticalObjectAsInsertedThroughTheSubscriptionQuery() {
+    void payloadReturnsAnIdenticalObjectAsInsertedThroughTheSubscriptionQuery() {
         TestQuery expectedQuery = TEST_QUERY;
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), expectedQuery, RESPONSE_TYPE, RESPONSE_TYPE
@@ -155,11 +155,11 @@ class GrpcBackedSubscriptionQueryMessageTest {
         GrpcBackedSubscriptionQueryMessage<TestQuery, String, String> testSubject =
                 new GrpcBackedSubscriptionQueryMessage<>(testSubscriptionQuery, serializer, serializer);
 
-        assertEquals(expectedQuery, testSubject.getPayload());
+        assertEquals(expectedQuery, testSubject.payload());
     }
 
     @Test
-    void getPayloadTypeReturnsTheTypeOfTheInsertedSubscriptionQuery() {
+    void payloadTypeReturnsTheTypeOfTheInsertedSubscriptionQuery() {
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
         );
@@ -172,7 +172,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
         GrpcBackedSubscriptionQueryMessage<TestQuery, String, String> testSubject =
                 new GrpcBackedSubscriptionQueryMessage<>(testSubscriptionQuery, serializer, serializer);
 
-        assertEquals(TestQuery.class, testSubject.getPayloadType());
+        assertEquals(TestQuery.class, testSubject.payloadType());
     }
 
     @Test
@@ -193,7 +193,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
         MetaData replacementMetaData = MetaData.with("some-other-key", "some-other-value");
 
         testSubject = testSubject.withMetaData(replacementMetaData);
-        MetaData resultMetaData = testSubject.getMetaData();
+        MetaData resultMetaData = testSubject.metaData();
         assertFalse(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
         assertEquals(replacementMetaData, resultMetaData);
     }
@@ -216,7 +216,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
         MetaData additionalMetaData = MetaData.with("some-other-key", "some-other-value");
 
         testSubject = testSubject.andMetaData(additionalMetaData);
-        MetaData resultMetaData = testSubject.getMetaData();
+        MetaData resultMetaData = testSubject.metaData();
 
         assertTrue(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
         assertTrue(resultMetaData.containsKey(additionalMetaData.keySet().iterator().next()));

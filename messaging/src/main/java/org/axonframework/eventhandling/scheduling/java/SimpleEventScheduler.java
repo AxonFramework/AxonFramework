@@ -230,7 +230,7 @@ public class SimpleEventScheduler implements EventScheduler {
         public void run() {
             EventMessage<?> eventMessage = createMessage();
             if (logger.isDebugEnabled()) {
-                logger.debug("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
+                logger.debug("Triggered the publication of event [{}]", eventMessage.type().name());
             }
             try {
                 LegacyUnitOfWork<EventMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(null);
@@ -250,8 +250,8 @@ public class SimpleEventScheduler implements EventScheduler {
         private EventMessage<?> createMessage() {
             return event instanceof EventMessage
                     ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
-                                                ((EventMessage<?>) event).getPayload(),
-                                                ((EventMessage<?>) event).getMetaData())
+                                                ((EventMessage<?>) event).payload(),
+                                                ((EventMessage<?>) event).metaData())
                     : new GenericEventMessage<>(messageTypeResolver.resolveOrThrow(event), event);
         }
     }

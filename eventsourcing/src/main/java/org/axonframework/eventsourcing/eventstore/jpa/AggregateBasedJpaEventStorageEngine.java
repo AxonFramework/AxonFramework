@@ -232,19 +232,19 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                     aggregateType,
                     aggregateIdentifier,
                     nextSequence,
-                    event.getIdentifier(),
+                    event.identifier(),
                     event.type(),
-                    event.getPayload(),
-                    event.getMetaData(),
-                    event.getTimestamp()
+                    event.payload(),
+                    event.metaData(),
+                    event.timestamp()
             );
         } else {
             // returns non-aggregate event, so the sequence is always 0
             return new GenericDomainEventMessage<>(null,
-                                                   event.getIdentifier(),
+                                                   event.identifier(),
                                                    0L,
                                                    event,
-                                                   event::getTimestamp);
+                                                   event::timestamp);
         }
     }
 
@@ -663,7 +663,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                     batchSize,
                     finalAggregateBatchPredicate,
                     lowestGlobalSequence,
-                    tokenGapsHandling
+                    configurationOverride.apply(tokenGapsHandling)
             );
         }
     }

@@ -107,15 +107,15 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         try {
             events.forEach(taggedEvent -> {
                 EventMessage<?> event = taggedEvent.event();
-                byte[] payload = payloadConverter.convert(event.getPayload(), byte[].class);
+                byte[] payload = payloadConverter.convert(event.payload(), byte[].class);
                 Event.Builder builder = Event.newBuilder()
                                              .setPayload(SerializedObject.newBuilder()
                                                                          .setData(ByteString.copyFrom(payload))
                                                                          .setType(event.type().name())
                                                                          .setRevision(event.type().version())
                                                                          .build())
-                                             .setMessageIdentifier(event.getIdentifier())
-                                             .setTimestamp(event.getTimestamp().toEpochMilli());
+                                             .setMessageIdentifier(event.identifier())
+                                             .setTimestamp(event.timestamp().toEpochMilli());
                 String aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
                 String aggregateType = resolveAggregateType(taggedEvent.tags());
                 if (aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty()) {
@@ -124,7 +124,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
                            .setAggregateSequenceNumber(nextSequence);
                 }
                 var modifiableMetaDataMap = new HashMap<>(builder.getMetaDataMap());
-                buildMetaData(event.getMetaData(), modifiableMetaDataMap);
+                buildMetaData(event.metaData(), modifiableMetaDataMap);
                 Event message = builder.build();
                 tx.appendEvent(message);
             });

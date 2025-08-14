@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,10 +178,10 @@ class JdbcSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Even
                                 DeadLetter<? extends EventMessage<?>> actual) {
         EventMessage<?> expectedMessage = expected.message();
         EventMessage<?> actualMessage = actual.message();
-        assertEquals(expectedMessage.getPayload(), actualMessage.getPayload());
-        assertEquals(expectedMessage.getPayloadType(), actualMessage.getPayloadType());
-        assertEquals(expectedMessage.getMetaData(), actualMessage.getMetaData());
-        assertEquals(expectedMessage.getIdentifier(), actualMessage.getIdentifier());
+        assertEquals(expectedMessage.payload(), actualMessage.payload());
+        assertEquals(expectedMessage.payloadType(), actualMessage.payloadType());
+        assertEquals(expectedMessage.metaData(), actualMessage.metaData());
+        assertEquals(expectedMessage.identifier(), actualMessage.identifier());
         assertEquals(expected.cause(), actual.cause());
         assertEquals(formatExpected(expected.enqueuedAt()), actual.enqueuedAt());
         assertEquals(formatExpected(expected.lastTouched()), actual.lastTouched());

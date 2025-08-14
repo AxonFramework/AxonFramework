@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.query.GrpcBackedQueryMessage;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MessageType;
@@ -25,9 +26,11 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
@@ -35,10 +38,10 @@ import java.util.Map;
  * {@link SubscriptionQueryMessage}.
  *
  * @param <P> A generic specifying the type of the {@link SubscriptionQueryMessage SubscriptionQueryMessage's}
- *            {@link #getPayload() payload}.
- * @param <I> A generic specifying the type of the {@link #getResponseType() initial result} of the
+ *            {@link #payload() payload}.
+ * @param <I> A generic specifying the type of the {@link #responseType() initial result} of the
  *            {@link SubscriptionQueryResult}.
- * @param <U> A generic specifying the type of the {@link #getUpdateResponseType() subsequent updates} of the
+ * @param <U> A generic specifying the type of the {@link #updatesResponseType() subsequent updates} of the
  *            {@link SubscriptionQueryResult}.
  * @author Sara Pellegrini
  * @since 4.0.0
@@ -77,43 +80,56 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
-    public String getIdentifier() {
+    @Nonnull
+    public String identifier() {
         return subscriptionQuery.getSubscriptionIdentifier();
     }
 
-    @Nonnull
     @Override
+    @Nonnull
     public MessageType type() {
         return grpcBackedQueryMessage.type();
     }
 
     @Nonnull
     @Override
-    public ResponseType<I> getResponseType() {
-        return grpcBackedQueryMessage.getResponseType();
+    public ResponseType<I> responseType() {
+        return grpcBackedQueryMessage.responseType();
     }
 
     @Override
-    public ResponseType<U> getUpdateResponseType() {
+    @Nonnull
+    public ResponseType<U> updatesResponseType() {
         return serializedUpdateResponseType.getObject();
     }
 
     @Override
-    public P getPayload() {
-        return grpcBackedQueryMessage.getPayload();
+    @Nullable
+    public P payload() {
+        return grpcBackedQueryMessage.payload();
     }
 
     @Override
-    public MetaData getMetaData() {
-        return grpcBackedQueryMessage.getMetaData();
+    @Nullable
+    public <T> T payloadAs(@Nonnull Type type, @Nullable Converter converter) {
+        // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
+        return null;
     }
 
     @Override
-    public Class<P> getPayloadType() {
-        return grpcBackedQueryMessage.getPayloadType();
+    @Nonnull
+    public MetaData metaData() {
+        return grpcBackedQueryMessage.metaData();
     }
 
     @Override
+    @Nonnull
+    public Class<P> payloadType() {
+        return grpcBackedQueryMessage.payloadType();
+    }
+
+    @Override
+    @Nonnull
     public GrpcBackedSubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GrpcBackedSubscriptionQueryMessage<>(subscriptionQuery,
                                                         grpcBackedQueryMessage.withMetaData(metaData),
@@ -121,7 +137,16 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
     }
 
     @Override
+    @Nonnull
     public GrpcBackedSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
-        return withMetaData(getMetaData().mergedWith(metaData));
+        return withMetaData(metaData().mergedWith(metaData));
+    }
+
+    @Override
+    @Nonnull
+    public <T> SubscriptionQueryMessage<T, I, U> withConvertedPayload(@Nonnull Type type,
+                                                                      @Nonnull Converter converter) {
+        // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
+        return null;
     }
 }

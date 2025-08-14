@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,14 +73,14 @@ public class EventLoggingInterceptor implements MessageDispatchInterceptor<Event
             @Nonnull List<? extends EventMessage<?>> messages) {
         StringBuilder sb = new StringBuilder(String.format("Events published: [%s]",
                                                            messages.stream()
-                                                                   .map(m -> m.getPayloadType().getSimpleName())
+                                                                   .map(m -> m.type().name())
                                                                    .collect(Collectors.joining(", "))));
         CurrentUnitOfWork.ifStarted(unitOfWork -> {
             Message<?> message = unitOfWork.getMessage();
             if (message == null) {
                 sb.append(" while processing an operation not tied to an incoming message");
             } else {
-                sb.append(String.format(" while processing a [%s]", message.getPayloadType().getSimpleName()));
+                sb.append(String.format(" while processing a [%s]", message.type().name()));
             }
             ExecutionResult executionResult = unitOfWork.getExecutionResult();
             if (executionResult != null) {

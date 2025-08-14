@@ -62,12 +62,11 @@ public record UpdateCheckRequest(
      */
     public String toQueryString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("&os=").append(encode(osName + "; " + osVersion + "; " + osArch))
+        sb.append("os=").append(encode(osName + "; " + osVersion + "; " + osArch))
           .append("&java=").append(encode(jvmVersion + "; " + jvmVendor))
           .append("&kotlin=").append(encode(kotlinVersion));
         for (Artifact library : libraries) {
-            String stringLib = library.groupId() + ':' + library.artifactId() + ':' + library.version();
-            sb.append("&lib=").append(encode(stringLib));
+            sb.append("&lib-").append(library.shortGroupId()).append(".").append(library.artifactId()).append("=").append(encode(library.version()));
         }
         return sb.toString();
     }
@@ -96,6 +95,7 @@ public record UpdateCheckRequest(
                         .filter(a -> a.groupId().equals("org.axonframework"))
                         .filter(a -> a.artifactId().equals("axon-messaging"))
                         .map(Artifact::version)
-                        .findFirst().orElse("5.0.0");
+                        .findFirst()
+                        .orElse("4.12.0");
     }
 }

@@ -17,11 +17,11 @@
 package org.axonframework.axonserver.connector;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.LegacyDefaultConfigurer;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -40,20 +40,23 @@ public class ServerConnectorRunner {
     private static final Logger logger = LoggerFactory.getLogger(ServerConnectorRunner.class);
 
     public static void main(String[] args) {
-        LegacyConfiguration configuration =
-                LegacyDefaultConfigurer.defaultConfiguration()
-                                       .registerComponent(AxonServerConfiguration.class,
-                                                          c -> AxonServerConfiguration.builder()
-                                                                                      .servers("localhost")
-                                                                                      .build())
-                                       .configureAggregate(MyAggregate.class)
-                                       .eventProcessing(ep -> ep.registerEventHandler(c -> new MyEventHandler()))
-                                       .start();
+        AxonConfiguration configuration =
+                MessagingConfigurer.create().componentRegistry(
+                                           cr -> cr.registerComponent(AxonServerConfiguration.class,
+                                                                      c -> AxonServerConfiguration.builder()
+                                                                                                  .servers(
+                                                                                                          "localhost")
+                                                                                                  .build())
+                                           // TODO #3499 Fix as part of referred to issue
+//                                                   .configureAggregate(MyAggregate.class)
+//                                                   .eventProcessing(ep -> ep.registerEventHandler(c -> new MyEventHandler()))
+                                   )
+                                   .start();
 
         try {
             logger.info("Sending command");
             CompletableFuture<Object> result =
-                    configuration.commandGateway()
+                    configuration.getComponent(CommandGateway.class)
                                  .send(new CreateMyAggregateCommand(UUID.randomUUID().toString()), null, Object.class);
             logger.info("Command sent, awaiting response...");
             result.join();

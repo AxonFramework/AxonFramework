@@ -18,7 +18,6 @@ package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
@@ -28,7 +27,6 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.PassThroughConverter;
 
 import java.util.Objects;
 import java.util.Set;
@@ -105,7 +103,7 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
 
             E evolvedEntity = entity;
             for (var handler : handlers) {
-                var convertedEvent = event.withConvertedPayload(p -> converter.convert(p, handler.payloadType()));
+                var convertedEvent = event.withConvertedPayload(handler.payloadType(), converter);
                 if (!handler.canHandle(convertedEvent, context)) {
                     continue;
                 }
@@ -128,7 +126,7 @@ public class AnnotationBasedEntityEvolvingComponent<E> implements EntityEvolving
 
     private E entityFromStreamResultOrUpdatedExisting(MessageStream.Entry<?> potentialEntityFromStream, E existing) {
         if (potentialEntityFromStream != null) {
-            var resultPayload = potentialEntityFromStream.message().getPayload();
+            var resultPayload = potentialEntityFromStream.message().payload();
             if (resultPayload != null && existing.getClass().isAssignableFrom(resultPayload.getClass())) {
                 //noinspection unchecked
                 return (E) existing.getClass().cast(resultPayload);

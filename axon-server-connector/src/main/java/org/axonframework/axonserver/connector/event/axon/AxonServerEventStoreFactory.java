@@ -199,16 +199,16 @@ public class AxonServerEventStoreFactory {
         }
 
         /**
-         * Sets the {@link Serializer} used to de-/serialize the {@link EventMessage#getPayload() event payload} and
-         * {@link EventMessage#getMetaData() meta data} with.
+         * Sets the {@link Serializer} used to de-/serialize the {@link EventMessage#payload() event payload} and
+         * {@link EventMessage#metaData() meta data} with.
          * <p>
          * Defaults to a {@link XStreamSerializer}.
          * <p>
          * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link LegacyEventStorageEngine}
          * implementation.
          *
-         * @param eventSerializer The serializer to de-/serialize the {@link EventMessage#getPayload() event payload}
-         *                        and {@link EventMessage#getMetaData() meta data} with.
+         * @param eventSerializer The serializer to de-/serialize the {@link EventMessage#payload() event payload}
+         *                        and {@link EventMessage#metaData() meta data} with.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder eventSerializer(@Nonnull Serializer eventSerializer) {

@@ -81,7 +81,7 @@ public class SpringLifecycleRegistry implements BeanFactoryAware, LifecycleRegis
                 phase,
                 () -> shutdownHandler.run(beanFactory.getBean(AxonConfiguration.class))
         );
-        beanFactory.registerSingleton(getBeanName("shutdown") + uniqueId.getAndIncrement(), springShutdownHandler);
+        beanFactory.registerSingleton(getBeanName("shutdown"), springShutdownHandler);
         return this;
     }
 

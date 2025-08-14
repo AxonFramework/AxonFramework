@@ -27,6 +27,7 @@ import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -63,7 +64,7 @@ class EventConverterTest {
 
     @BeforeEach
     void setUp() {
-        converter = spy(new TestConverter());
+        converter = spy(new JacksonConverter());
 
         testSubject = new EventConverter(converter);
 
@@ -182,11 +183,11 @@ class EventConverterTest {
         // when...
         EventMessage<byte[]> result = testSubject.convertEvent(testEvent);
         // then...
-        assertEquals(EVENT_ID, result.getIdentifier());
+        assertEquals(EVENT_ID, result.identifier());
         assertEquals(EVENT_TYPE, result.type());
-        assertArrayEquals(eventPayloadByteArray, result.getPayload());
-        assertEquals(EVENT_METADATA, result.getMetaData());
-        assertEquals(EVENT_TIMESTAMP, result.getTimestamp().toEpochMilli());
+        assertArrayEquals(eventPayloadByteArray, result.payload());
+        assertEquals(EVENT_METADATA, result.metaData());
+        assertEquals(EVENT_TIMESTAMP, result.timestamp().toEpochMilli());
     }
 
     private record TestEvent(String stringState, Integer intState, List<Boolean> booleanState) {

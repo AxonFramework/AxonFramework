@@ -25,13 +25,13 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -77,7 +77,7 @@ class AggregateBasedAxonServerEventStorageEngineTest extends
                                                            axonServerContainer.getHttpPort(),
                                                            "default",
                                                            AxonServerContainerUtils.NO_DCB_CONTEXT);
-        return new AggregateBasedAxonServerEventStorageEngine(connection, new TestConverter());
+        return new AggregateBasedAxonServerEventStorageEngine(connection, new ChainingContentTypeConverter());
     }
 
     @Override
@@ -92,6 +92,6 @@ class AggregateBasedAxonServerEventStorageEngineTest extends
 
     @Override
     protected EventMessage<String> convertPayload(EventMessage<?> original) {
-        return original.withConvertedPayload(p -> new String((byte[]) p, StandardCharsets.UTF_8));
+        return original.withConvertedPayload(String.class, converter);
     }
 }

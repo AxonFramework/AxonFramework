@@ -62,7 +62,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
                    .given(new MyEvent(TEST_AGGREGATE_IDENTIFIER, 42))
                    .when(new ResolveParameterCommand(TEST_AGGREGATE_IDENTIFIER))
                    .expectEventsMatching(exactSequenceOf(predicate(eventMessage -> {
-                       Object payload = eventMessage.getPayload();
+                       Object payload = eventMessage.payload();
                        assertTrue(payload instanceof ParameterResolvedEvent);
                        AtomicBoolean assertion = ((ParameterResolvedEvent) payload).getAssertion();
                        return assertion.get();
@@ -78,7 +78,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
                    .givenNoPriorActivity()
                    .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER))
                    .expectEventsMatching(exactSequenceOf(predicate(
-                           eventMessage -> eventMessage.getPayloadType().isAssignableFrom(MyEvent.class)
+                           eventMessage -> eventMessage.payloadType().isAssignableFrom(MyEvent.class)
                    )));
 
         assertTrue(handlerDefinitionReached.get());
@@ -93,7 +93,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
                    .givenNoPriorActivity()
                    .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER))
                    .expectEventsMatching(exactSequenceOf(predicate(
-                           eventMessage -> eventMessage.getPayloadType().isAssignableFrom(MyEvent.class)
+                           eventMessage -> eventMessage.payloadType().isAssignableFrom(MyEvent.class)
                    )));
 
         assertTrue(handlerEnhancerReached.get());
@@ -125,7 +125,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
             Message<?> message = Message.fromContext(context);
-            return message.getPayloadType().isAssignableFrom(ResolveParameterCommand.class);
+            return message.payloadType().isAssignableFrom(ResolveParameterCommand.class);
         }
     }
 

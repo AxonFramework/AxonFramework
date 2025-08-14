@@ -52,26 +52,26 @@ class GenericDomainEventMessageTest {
 
         assertSame(id, message1.getAggregateIdentifier());
         assertEquals(seqNo, message1.getSequenceNumber());
-        assertSame(MetaData.emptyInstance(), message1.getMetaData());
-        assertEquals(Object.class, message1.getPayload().getClass());
-        assertEquals(Object.class, message1.getPayloadType());
+        assertSame(MetaData.emptyInstance(), message1.metaData());
+        assertEquals(Object.class, message1.payload().getClass());
+        assertEquals(Object.class, message1.payloadType());
 
         assertSame(id, message2.getAggregateIdentifier());
         assertEquals(seqNo, message2.getSequenceNumber());
-        assertSame(metaData, message2.getMetaData());
-        assertEquals(Object.class, message2.getPayload().getClass());
-        assertEquals(Object.class, message2.getPayloadType());
+        assertSame(metaData, message2.metaData());
+        assertEquals(Object.class, message2.payload().getClass());
+        assertEquals(Object.class, message2.payloadType());
 
         assertSame(id, message3.getAggregateIdentifier());
         assertEquals(seqNo, message3.getSequenceNumber());
-        assertNotSame(metaDataMap, message3.getMetaData());
-        assertEquals(metaDataMap, message3.getMetaData());
-        assertEquals(Object.class, message3.getPayload().getClass());
-        assertEquals(Object.class, message3.getPayloadType());
+        assertNotSame(metaDataMap, message3.metaData());
+        assertEquals(metaDataMap, message3.metaData());
+        assertEquals(Object.class, message3.payload().getClass());
+        assertEquals(Object.class, message3.payloadType());
 
-        assertNotEquals(message1.getIdentifier(), message2.getIdentifier());
-        assertNotEquals(message1.getIdentifier(), message3.getIdentifier());
-        assertNotEquals(message2.getIdentifier(), message3.getIdentifier());
+        assertNotEquals(message1.identifier(), message2.identifier());
+        assertNotEquals(message1.identifier(), message3.identifier());
+        assertNotEquals(message2.identifier(), message3.identifier());
     }
 
     @Test
@@ -88,8 +88,8 @@ class GenericDomainEventMessageTest {
         GenericDomainEventMessage<Object> message2 = message.withMetaData(
                 MetaData.from(Collections.singletonMap("key", "otherValue")));
 
-        assertEquals(0, message1.getMetaData().size());
-        assertEquals(1, message2.getMetaData().size());
+        assertEquals(0, message1.metaData().size());
+        assertEquals(1, message2.metaData().size());
     }
 
     @Test
@@ -106,10 +106,10 @@ class GenericDomainEventMessageTest {
         GenericDomainEventMessage<Object> message2 = message.andMetaData(
                 MetaData.from(Collections.singletonMap("key", "otherValue")));
 
-        assertEquals(1, message1.getMetaData().size());
-        assertEquals("value", message1.getMetaData().get("key"));
-        assertEquals(1, message2.getMetaData().size());
-        assertEquals("otherValue", message2.getMetaData().get("key"));
+        assertEquals(1, message1.metaData().size());
+        assertEquals("value", message1.metaData().get("key"));
+        assertEquals(1, message2.metaData().size());
+        assertEquals("otherValue", message2.metaData().get("key"));
     }
 
     @Test

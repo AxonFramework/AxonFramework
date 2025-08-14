@@ -80,7 +80,7 @@ class MultiStreamableMessageSourceTest {
                 testSubject.openStream(testSubject.createTailToken());
 
         assertTrue(singleEventStream.hasNextAvailable());
-        assertEquals(publishedEvent.getPayload(), singleEventStream.nextAvailable().getPayload());
+        assertEquals(publishedEvent.payload(), singleEventStream.nextAvailable().payload());
 
         singleEventStream.close();
     }
@@ -118,7 +118,7 @@ class MultiStreamableMessageSourceTest {
         assertTrue(singleEventStream.hasNextAvailable());
         TrackedEventMessage<?> actual = singleEventStream.nextAvailable();
 
-        assertEquals(publishedEvent.getPayload(), actual.getPayload());
+        assertEquals(publishedEvent.payload(), actual.payload());
         assertTrue(actual instanceof DomainEventMessage);
 
         singleEventStream.close();
@@ -133,7 +133,7 @@ class MultiStreamableMessageSourceTest {
         eventStoreA.publish(publishedEvent1);
 
         BlockingStream<TrackedEventMessage<?>> stream = testSubject.openStream(null);
-        assertEquals("Event1", stream.peek().map(Message::getPayload).map(Object::toString).orElse("None"));
+        assertEquals("Event1", stream.peek().map(Message::payload).map(Object::toString).orElse("None"));
         assertTrue(stream.hasNextAvailable());
         assertTrue(stream.hasNextAvailable(10, TimeUnit.SECONDS));
     }
@@ -152,8 +152,8 @@ class MultiStreamableMessageSourceTest {
         BlockingStream<TrackedEventMessage<?>> actual = testSubject.openStream(null);
         assertNotNull(actual);
         TrackedEventMessage<?> trackedEventMessage = actual.nextAvailable();
-        assertEquals(message.getIdentifier(), trackedEventMessage.getIdentifier());
-        assertEquals(message.getPayload(), trackedEventMessage.getPayload());
+        assertEquals(message.identifier(), trackedEventMessage.identifier());
+        assertEquals(message.payload(), trackedEventMessage.payload());
     }
 
     @Test
@@ -204,8 +204,8 @@ class MultiStreamableMessageSourceTest {
         assertTrue(singleEventStream.hasNextAvailable());
 
         //order published must be same as order consumed
-        assertEquals(pubToStreamA.getPayload(), singleEventStream.nextAvailable().getPayload());
-        assertEquals(pubToStreamB.getPayload(), singleEventStream.nextAvailable().getPayload());
+        assertEquals(pubToStreamA.payload(), singleEventStream.nextAvailable().payload());
+        assertEquals(pubToStreamB.payload(), singleEventStream.nextAvailable().payload());
         assertFalse(singleEventStream.hasNextAvailable());
 
         singleEventStream.close();
@@ -221,10 +221,10 @@ class MultiStreamableMessageSourceTest {
                 testSubject.openStream(testSubject.createTokenAt(recentTimeStamp()));
 
         assertTrue(singleEventStream.peek().isPresent());
-        assertEquals(publishedEvent.getPayload(), singleEventStream.peek().get().getPayload());
+        assertEquals(publishedEvent.payload(), singleEventStream.peek().get().payload());
 
         //message is still consumable
-        assertEquals(publishedEvent.getPayload(), singleEventStream.nextAvailable().getPayload());
+        assertEquals(publishedEvent.payload(), singleEventStream.nextAvailable().payload());
 
         singleEventStream.close();
     }
@@ -245,18 +245,18 @@ class MultiStreamableMessageSourceTest {
         assertTrue(singleEventStream.peek().isPresent());
         TrackedEventMessage<?> peekedMessageA = singleEventStream.peek().get();
         MultiSourceTrackingToken tokenA = (MultiSourceTrackingToken) peekedMessageA.trackingToken();
-        assertEquals(pubToStreamA.getPayload(), peekedMessageA.getPayload());
+        assertEquals(pubToStreamA.payload(), peekedMessageA.payload());
 
         //message is still consumable and consumed message equal to peeked
-        assertEquals(peekedMessageA.getPayload(), singleEventStream.nextAvailable().getPayload());
+        assertEquals(peekedMessageA.payload(), singleEventStream.nextAvailable().payload());
 
         //peek and consume another
         assertTrue(singleEventStream.peek().isPresent());
         TrackedEventMessage<?> peekedMessageB = singleEventStream.peek().get();
         MultiSourceTrackingToken tokenB = (MultiSourceTrackingToken) peekedMessageB.trackingToken();
-        assertEquals(pubToStreamB.getPayload(), peekedMessageB.getPayload());
+        assertEquals(pubToStreamB.payload(), peekedMessageB.payload());
 
-        assertEquals(peekedMessageB.getPayload(), singleEventStream.nextAvailable().getPayload());
+        assertEquals(peekedMessageB.payload(), singleEventStream.nextAvailable().payload());
 
         //consuming from second stream doesn't alter token from first stream
         assertEquals(tokenA.getTokenForStream("eventStoreA"), tokenB.getTokenForStream("eventStoreA"));
@@ -360,7 +360,7 @@ class MultiStreamableMessageSourceTest {
     void configuredDifferentComparator() throws InterruptedException {
         Comparator<Map.Entry<String, TrackedEventMessage<?>>> eventStoreAPriority =
                 Comparator.comparing((Map.Entry<String, TrackedEventMessage<?>> e) -> !e.getKey().equals("eventStoreA"))
-                          .thenComparing(e -> e.getValue().getTimestamp());
+                          .thenComparing(e -> e.getValue().timestamp());
 
         LegacyEmbeddedEventStore eventStoreC = LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine())
                                                                        .build();
@@ -392,8 +392,8 @@ class MultiStreamableMessageSourceTest {
         singleEventStream.nextAvailable();
         singleEventStream.nextAvailable();
         singleEventStream.nextAvailable();
-        assertEquals(pubToStreamC.getPayload(), singleEventStream.nextAvailable().getPayload());
-        assertEquals(pubToStreamB.getPayload(), singleEventStream.nextAvailable().getPayload());
+        assertEquals(pubToStreamC.payload(), singleEventStream.nextAvailable().payload());
+        assertEquals(pubToStreamB.payload(), singleEventStream.nextAvailable().payload());
     }
 
     @SuppressWarnings({"unchecked", "resource"})

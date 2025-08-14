@@ -139,7 +139,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
                            Object messageOrPayload,
                            @Nonnull ScopeDescriptor deadlineScope) {
         DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
-        String deadlineId = JOB_NAME_PREFIX + deadlineMessage.getIdentifier();
+        String deadlineId = JOB_NAME_PREFIX + deadlineMessage.identifier();
 
         Span span = spanFactory.createScheduleSpan(deadlineName, deadlineId, deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
@@ -223,7 +223,7 @@ public class QuartzDeadlineManager extends AbstractDeadlineManager {
     private JobDetail buildJobDetail(DeadlineMessage deadlineMessage, ScopeDescriptor deadlineScope, JobKey jobKey) {
         JobDataMap jobData = DeadlineJob.DeadlineJobDataBinder.toJobData(serializer, deadlineMessage, deadlineScope);
         return JobBuilder.newJob(DeadlineJob.class)
-                         .withDescription(deadlineMessage.getPayloadType().getName())
+                         .withDescription(deadlineMessage.type().name())
                          .withIdentity(jobKey)
                          .usingJobData(jobData)
                          .requestRecovery(true)

@@ -78,7 +78,7 @@ class AnnotatedCommandHandlingComponentTest {
                                    .asCompletableFuture()
                                    .join()
                                    .message()
-                                   .getPayload();
+                                   .payload();
 
         assertNull(result);
         assertEquals(1, annotatedCommandHandler.voidHandlerInvoked);
@@ -94,7 +94,7 @@ class AnnotatedCommandHandlingComponentTest {
                                    .asCompletableFuture()
                                    .join()
                                    .message()
-                                   .getPayload();
+                                   .payload();
 
         assertEquals(1L, result);
         assertEquals(0, annotatedCommandHandler.voidHandlerInvoked);
@@ -111,7 +111,7 @@ class AnnotatedCommandHandlingComponentTest {
                                    .asCompletableFuture()
                                    .join()
                                    .message()
-                                   .getPayload();
+                                   .payload();
 
         assertEquals(1L, result);
         assertEquals(0, annotatedCommandHandler.voidHandlerInvoked);
@@ -162,7 +162,7 @@ class AnnotatedCommandHandlingComponentTest {
                                    .asCompletableFuture()
                                    .join()
                                    .message()
-                                   .getPayload();
+                                   .payload();
 
         assertNull(result);
         // TODO The interceptor chain is not yet implemented fully through the MessageStream.
