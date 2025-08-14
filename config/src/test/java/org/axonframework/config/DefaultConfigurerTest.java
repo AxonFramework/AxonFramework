@@ -150,8 +150,8 @@ class DefaultConfigurerTest {
         configurer.eventProcessing().registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
         LegacyConfiguration config = configurer.registerComponent(
                                                        PooledStreamingProcessorConfiguration.class,
-                                                       c -> (config1, builder) -> builder.workerExecutor(name -> 
-                                                           Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + name)))
+                                                       c -> (config1, builder) -> builder.workerExecutor(
+                                                           Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker")))
                                                )
                                                .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .start();
@@ -177,8 +177,8 @@ class DefaultConfigurerTest {
         configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor(processorName,
                                                   LegacyConfiguration::eventStore,
-                                                  (config, builder) -> builder.workerExecutor(name -> 
-                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + name))))
+                                                  (config, builder) -> builder.workerExecutor(
+                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
                   .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
@@ -204,8 +204,8 @@ class DefaultConfigurerTest {
         configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor(processorName,
                                                   LegacyConfiguration::eventStore,
-                                                  (config, builder) -> builder.workerExecutor(name -> 
-                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + name))))
+                                                  (config, builder) -> builder.workerExecutor(
+                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
                   .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
@@ -229,8 +229,8 @@ class DefaultConfigurerTest {
         configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor(processorName,
                                                   LegacyConfiguration::eventStore,
-                                                  (config, builder) -> builder.workerExecutor(name -> 
-                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + name))))
+                                                  (config, builder) -> builder.workerExecutor(
+                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
                   .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);

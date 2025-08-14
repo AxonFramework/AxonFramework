@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.awaitility.Awaitility.await;
+import static org.axonframework.eventhandling.EventTestUtils.handleEventsInUnitOfWork;
 
 /**
  * Class testing the {@link SequencingEventHandlingComponent} to ensure it correctly handles event sequencing.
@@ -85,7 +86,7 @@ class SequencingEventHandlingComponentTest {
         var event9 = testEvent("event-9_seq-B");
         var batch = List.of(event1, event2, event3, event4, event5, event6, event7, event8, event9);
 
-        handleInUnitOfWork(eventHandlingComponent, batch);
+        handleEventsInUnitOfWork(eventHandlingComponent, batch);
 
         // then
         await().atMost(Duration.ofSeconds(1))
@@ -124,7 +125,7 @@ class SequencingEventHandlingComponentTest {
         var event9 = testEvent("event-9_seq-B");
         var batch = List.of(event1, event2, event3, event4, event5, event6, event7, event8, event9);
 
-        handleInUnitOfWork(eventHandlingComponent, batch);
+        handleEventsInUnitOfWork(eventHandlingComponent, batch);
 
         // then
         assertThat(internal.recorded())
@@ -203,23 +204,6 @@ class SequencingEventHandlingComponentTest {
                         internal
                 )
         );
-    }
-
-    private static void handleInUnitOfWork(EventHandlingComponent component, List<EventMessage<Object>> batch) {
-        var unitOfWork = new SimpleUnitOfWorkFactory().create();
-        unitOfWork.onInvocation(context -> {
-            MessageStream<Message<Void>> batchResult = MessageStream.empty().cast();
-            for (var event : batch) {
-                var eventResult = component.handle(event, context);
-                batchResult = batchResult.concatWith(eventResult.cast());
-            }
-            return batchResult.ignoreEntries().asCompletableFuture();
-        });
-        try {
-            unitOfWork.execute().get(2, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Nonnull
