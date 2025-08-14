@@ -198,7 +198,7 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         @DisplayName("Case #1: EventProcessorModule - customized")
-        void testCase1() {
+        void moduleCustomizedConfiguration() {
             // given
             var configurer = MessagingConfigurer.create();
             var processorName = "testProcessor";
@@ -255,7 +255,7 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         @DisplayName("Case #2: EventProcessorModule - customized with new configuration object")
-        void testCase2() {
+        void moduleCustomizedWithNewConfiguration() {
             // given
             var configurer = MessagingConfigurer.create();
             var processorName = "testProcessor";
@@ -316,7 +316,7 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         @DisplayName("Case #3: EventProcessorModule - build with type specific configuration")
-        void testCase3() {
+        void moduleWithTypeSpecificConfiguration() {
             // given
             var configurer = MessagingConfigurer.create();
             var processorName = "testProcessor";
@@ -368,7 +368,7 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         @DisplayName("Case #4: EventProcessorModule - globally registered event source")
-        void testCase4() {
+        void moduleWithGlobalEventSource() {
             // given
             var configurer = MessagingConfigurer.create();
             var processorName = "testProcessor";
@@ -399,7 +399,7 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         @DisplayName("Case #5: EventProcessing defaults do not override global components")
-        void testCase5() {
+        void defaultsDoNotOverrideGlobalComponents() {
             // given
             var configurer = MessagingConfigurer.create();
             var processorName = "testProcessor";
@@ -440,7 +440,7 @@ class PooledStreamingEventProcessorModuleTest {
 
         @Test
         @DisplayName("Case #6: EventProcessing defaults do not register components on the MessagingConfigurer level")
-        void testCase6() {
+        void defaultsDoNotRegisterGlobalComponents() {
             // given
             var configurer = MessagingConfigurer.create();
 
