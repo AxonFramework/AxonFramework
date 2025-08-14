@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -60,13 +61,26 @@ import org.axonframework.serialization.json.JacksonConverter;
  *     <li>Registers a {@link org.axonframework.queryhandling.DefaultQueryGateway} for class {@link org.axonframework.queryhandling.QueryGateway}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryBus} for class {@link QueryBus}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryUpdateEmitter} for class {@link QueryUpdateEmitter}</li>
-
+ *
  * </ul>
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
 public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
+
+    /**
+     * The order in which the {@link ConvertingCommandGateway} is applied to the {@link CommandGateway} in the
+     * {@link ComponentRegistry}. As such, any decorator with a lower value will be applied to the delegate, and any
+     * higher value will be applied to the {@link ConvertingCommandGateway} itself. Using the same value can either lead
+     * to application of the decorator to the delegate or the converting command gateway, depending on the order of
+     * registration.
+     * <p>
+     * The order of the {@link ConvertingCommandGateway} is set to {@code Integer.MIN_VALUE + 100} to ensure it is
+     * applied very early in the configuration process, but not the earliest to allow for other decorators to be
+     * applied.
+     */
+    public static final int CONVERTING_COMMAND_GATEWAY_ORDER = Integer.MIN_VALUE + 100;
 
     @Override
     public int order() {
@@ -86,7 +100,13 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(EventBus.class, MessagingConfigurationDefaults::defaultEventBus)
                 .registerIfNotPresent(QueryGateway.class, MessagingConfigurationDefaults::defaultQueryGateway)
                 .registerIfNotPresent(QueryBus.class, MessagingConfigurationDefaults::defaultQueryBus)
-                .registerIfNotPresent(QueryUpdateEmitter.class, MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
+                .registerIfNotPresent(QueryUpdateEmitter.class,
+                                      MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
+        registry.registerDecorator(
+                CommandGateway.class,
+                CONVERTING_COMMAND_GATEWAY_ORDER,
+                (config, name, delegate) -> new ConvertingCommandGateway(delegate, config.getComponent(Converter.class))
+        );
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(Configuration config) {

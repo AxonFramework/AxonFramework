@@ -97,6 +97,13 @@ class MessagingConfigurationDefaultsTest {
         assertEquals(testCommandBus, configuredCommandBus);
     }
 
+    @Test
+    void enhancesComponentRegistryWithConvertingCommandGateway() {
+        MessagingConfigurer configurer = MessagingConfigurer.create();
+        Configuration resultConfig = configurer.build();
+        assertInstanceOf(ConvertingCommandGateway.class, resultConfig.getComponent(CommandGateway.class));
+    }
+
     private static class TestCommandBus implements CommandBus {
 
         @Override
@@ -114,12 +121,5 @@ class MessagingConfigurationDefaultsTest {
         public void describeTo(@Nonnull ComponentDescriptor descriptor) {
             throw new UnsupportedOperationException();
         }
-    }
-
-    @Test
-    void test() {
-        MessagingConfigurer configurer = MessagingConfigurer.create();
-        Configuration resultConfig = configurer.build();
-        assertInstanceOf(ConvertingCommandGateway.class, resultConfig.getComponent(CommandGateway.class));
     }
 }
