@@ -109,7 +109,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
             WHERE e.timestamp >= :dateTime""";
     private static final String EVENTS_BY_AGGREGATE_QUERY = """
             SELECT new org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry(
-               e.identifier, e.type, e.version, e.payload, e.metadata, e.timestamp, e.aggregateType, \
+               e.identifier, e.type, e.version, e.payload, e.metaData, e.timestamp, e.aggregateType, \
                e.aggregateIdentifier, e.aggregateSequenceNumber
             ) \
             FROM AggregateBasedEventEntry e \
@@ -118,7 +118,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
             ORDER BY e.aggregateSequenceNumber ASC""";
     private static final String EVENTS_BY_TOKEN_QUERY = """
             SELECT new org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry(
-                e.globalIndex, e.identifier, e.type, e.version, e.payload, e.metadata, e.timestamp, e.aggregateType,
+                e.globalIndex, e.identifier, e.type, e.version, e.payload, e.metaData, e.timestamp, e.aggregateType,
                 e.aggregateIdentifier, e.aggregateSequenceNumber
             ) \
             FROM AggregateBasedEventEntry e \
@@ -126,7 +126,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
             ORDER BY e.globalIndex ASC""";
     private static final String EVENTS_BY_GAPPED_TOKEN = """
             SELECT new org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry(
-                e.globalIndex, e.identifier, e.type, e.version, e.payload, e.metadata, e.timestamp, e.aggregateType,
+                e.globalIndex, e.identifier, e.type, e.version, e.payload, e.metaData, e.timestamp, e.aggregateType,
                 e.aggregateIdentifier, e.aggregateSequenceNumber
             ) \
             FROM AggregateBasedEventEntry e \
