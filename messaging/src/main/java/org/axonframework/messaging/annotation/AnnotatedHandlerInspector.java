@@ -20,6 +20,7 @@ import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.util.ClasspathResolver;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -38,6 +39,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import reactor.core.publisher.Mono;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.emptySortedSet;
@@ -213,6 +216,9 @@ public class AnnotatedHandlerInspector<T> {
         }
         if (result instanceof MessageStream<?> stream) {
             return stream;
+        }
+        if (ClasspathResolver.projectReactorOnClasspath() && result instanceof Mono<?> mono) {
+            return MessageStream.fromMono(mono.map(r -> new GenericMessage(new MessageType(r.getClass()), r)));
         }
         return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
