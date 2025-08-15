@@ -66,7 +66,7 @@ public class UnknownSerializedType {
      * @return the data in the desired format
      */
     public <T> T readData(Class<T> desiredFormat) {
-        return serializer.getConverter().convert(serializedObject, desiredFormat).getData();
+        return serializer.getConverter().convertSerializedObject(serializedObject, desiredFormat).getData();
     }
 
     /**

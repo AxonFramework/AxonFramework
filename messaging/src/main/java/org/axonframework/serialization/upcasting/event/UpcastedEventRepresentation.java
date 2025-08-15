@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,14 +89,14 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
     @Override
     @SuppressWarnings("unchecked")
     public SerializedObject<T> getData() {
-        SerializedObject<?> serializedInput = converter.convert(source.getData(), requiredType);
+        SerializedObject<?> serializedInput = converter.convertSerializedObject(source.getData(), requiredType);
         return new SimpleSerializedObject<>(upcastFunction.apply((T) serializedInput.getData()), requiredType,
                                             getType());
     }
 
     @Override
     public <D> SerializedObject<D> getData(Class<D> requiredType) {
-        return converter.convert(getData(), requiredType);
+        return converter.convertSerializedObject(getData(), requiredType);
     }
 
     @Override

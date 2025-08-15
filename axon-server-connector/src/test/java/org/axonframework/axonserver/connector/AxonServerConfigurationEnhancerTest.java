@@ -17,6 +17,8 @@
 package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
+import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
@@ -27,22 +29,22 @@ import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link ServerConnectorConfigurationEnhancer}.
+ * Test class validating the {@link AxonServerConfigurationEnhancer}.
  *
  * @author Allard Buijze
  */
-class ServerConnectorConfigurationEnhancerTest {
+class AxonServerConfigurationEnhancerTest {
 
-    private ServerConnectorConfigurationEnhancer testSubject;
+    private AxonServerConfigurationEnhancer testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new ServerConnectorConfigurationEnhancer();
+        testSubject = new AxonServerConfigurationEnhancer();
     }
 
     @Test
     void orderEqualsEnhancersConstant() {
-        assertEquals(ServerConnectorConfigurationEnhancer.ENHANCER_ORDER, testSubject.order());
+        assertEquals(AxonServerConfigurationEnhancer.ENHANCER_ORDER, testSubject.order());
     }
 
     @Test
@@ -64,5 +66,6 @@ class ServerConnectorConfigurationEnhancerTest {
         assertNotNull(result.getComponent(AxonServerConnectionManager.class));
         assertInstanceOf(ManagedChannelCustomizer.class, result.getComponent(ManagedChannelCustomizer.class));
         assertInstanceOf(AxonServerEventStorageEngine.class, result.getComponent(AxonServerEventStorageEngine.class));
+        assertInstanceOf(PayloadConvertingCommandBusConnector.class, result.getComponent(CommandBusConnector.class));
     }
 }

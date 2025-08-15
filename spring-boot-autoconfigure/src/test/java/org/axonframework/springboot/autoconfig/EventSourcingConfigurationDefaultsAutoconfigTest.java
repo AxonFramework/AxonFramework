@@ -16,7 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer;
+import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventSink;
@@ -91,7 +91,7 @@ class EventSourcingConfigurationDefaultsAutoconfigTest {
             return new ConfigurationEnhancer() {
                 @Override
                 public void enhance(@NotNull ComponentRegistry registry) {
-                    registry.disableEnhancer(ServerConnectorConfigurationEnhancer.class);
+                    registry.disableEnhancer(AxonServerConfigurationEnhancer.class);
                 }
 
                 @Override
