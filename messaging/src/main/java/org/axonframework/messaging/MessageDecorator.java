@@ -88,17 +88,6 @@ public abstract class MessageDecorator<P> implements Message<P> {
 
     @Override
     @Nonnull
-    public <S> SerializedObject<S> serializePayload(Serializer serializer, Class<S> expectedRepresentation) {
-        return delegate.serializePayload(serializer, expectedRepresentation);
-    }
-
-    @Override
-    public <S> SerializedObject<S> serializeMetaData(Serializer serializer, Class<S> expectedRepresentation) {
-        return delegate.serializeMetaData(serializer, expectedRepresentation);
-    }
-
-    @Override
-    @Nonnull
     public <T> Message<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         return delegate.withConvertedPayload(type, converter);
     }

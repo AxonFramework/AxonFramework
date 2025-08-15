@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class GrpcPayloadSerializer implements Function<Message<?>, io.axoniq.axo
         this(new GrpcObjectSerializer.Serializer<Message<?>>() {
             @Override
             public <T> SerializedObject<T> serialize(Message<?> object, Class<T> expectedRepresentation) {
-                return object.serializePayload(serializer, expectedRepresentation);
+                return serializer.serialize(object.payload(), expectedRepresentation);
             }
         });
     }

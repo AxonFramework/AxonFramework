@@ -84,28 +84,6 @@ class GenericMessageTest extends MessageTestSuite<Message<?>> {
     }
 
     @Test
-    void messageSerialization() throws IOException {
-        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
-
-        Message<String> message =
-                new GenericMessage<>(new MessageType("message"), "payload", metaDataMap);
-
-        JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
-
-
-        SerializedObject<String> serializedPayload = message.serializePayload(jacksonSerializer, String.class);
-        SerializedObject<String> serializedMetaData = message.serializeMetaData(jacksonSerializer, String.class);
-
-        assertEquals("\"payload\"", serializedPayload.getData());
-
-
-        ObjectMapper objectMapper = jacksonSerializer.getObjectMapper();
-        Map<String, String> actualMetaData = objectMapper.readValue(serializedMetaData.getData(), Map.class);
-
-        assertTrue(actualMetaData.entrySet().containsAll(metaDataMap.entrySet()));
-    }
-
-    @Test
     void whenCorrelationDataProviderThrowsException_thenCatchException() {
         unitOfWork = new LegacyDefaultUnitOfWork<>(
                 new GenericEventMessage<>(new MessageType("event"), "Input 1")

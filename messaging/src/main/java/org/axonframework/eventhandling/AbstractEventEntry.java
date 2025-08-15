@@ -72,8 +72,8 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
      * @param contentType  The data type of the payload and metadata after serialization
      */
     public AbstractEventEntry(EventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
-        SerializedObject<T> payload = eventMessage.serializePayload(serializer, contentType);
-        SerializedObject<T> metaData = eventMessage.serializeMetaData(serializer, contentType);
+        SerializedObject<T> payload = serializer.serialize(eventMessage.payload(), contentType);
+        SerializedObject<T> metaData = serializer.serialize(eventMessage.metaData(), contentType);
         this.eventIdentifier = eventMessage.identifier();
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();

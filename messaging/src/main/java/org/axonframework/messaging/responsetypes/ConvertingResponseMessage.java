@@ -60,21 +60,6 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
     }
 
     @Override
-    public <S> SerializedObject<S> serializePayload(Serializer serializer, Class<S> expectedRepresentation) {
-        return responseMessage.serializePayload(serializer, expectedRepresentation);
-    }
-
-    @Override
-    public <T> SerializedObject<T> serializeExceptionResult(Serializer serializer, Class<T> expectedRepresentation) {
-        return responseMessage.serializeExceptionResult(serializer, expectedRepresentation);
-    }
-
-    @Override
-    public <R1> SerializedObject<R1> serializeMetaData(Serializer serializer, Class<R1> expectedRepresentation) {
-        return responseMessage.serializeMetaData(serializer, expectedRepresentation);
-    }
-
-    @Override
     public boolean isExceptional() {
         return responseMessage.isExceptional();
     }
