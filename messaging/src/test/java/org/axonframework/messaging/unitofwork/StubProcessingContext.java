@@ -19,9 +19,15 @@ package org.axonframework.messaging.unitofwork;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.configuration.ApplicationConfigurer;
+import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.DefaultComponentRegistry;
+import org.axonframework.messaging.ApplicationContext;
+import org.axonframework.messaging.ConfigurationApplicationContext;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
+import org.axonframework.utils.StubLifecycleRegistry;
 
 import java.util.Comparator;
 import java.util.List;
@@ -42,10 +48,18 @@ import java.util.function.UnaryOperator;
  */
 public class StubProcessingContext implements ProcessingContext {
 
-    private final DefaultComponentRegistry componentRegistry = new DefaultComponentRegistry();
     private final Map<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
     private final Map<Phase, List<Function<ProcessingContext, CompletableFuture<?>>>> phaseActions = new ConcurrentHashMap<>();
     private final Phase currentPhase = DefaultPhases.PRE_INVOCATION;
+    private final ApplicationContext applicationContext;
+
+    public StubProcessingContext() {
+        this(new EmptyApplicationContext());
+    }
+
+    public StubProcessingContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
 
     @Override
     public boolean isStarted() {
@@ -172,14 +186,22 @@ public class StubProcessingContext implements ProcessingContext {
         return Message.addToContext(new StubProcessingContext(), message);
     }
 
-    public static ProcessingContext withComponents(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
-        StubProcessingContext context = new StubProcessingContext();
-        return context.componentRegistry(componentRegistrar);
+    public static <C> StubProcessingContext withComponent(@Nonnull Class<C> clazz, @Nonnull C instance) {
+        return withComponents(componentRegistry -> componentRegistry.registerComponent(ComponentDefinition.ofType(clazz)
+                                                                                                          .withInstance(
+                                                                                                                  instance)));
     }
 
-    public StubProcessingContext componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+    public static <C> StubProcessingContext withComponent(@Nonnull ComponentDefinition<C> definition) {
+        return withComponents(componentRegistry -> componentRegistry.registerComponent(definition));
+    }
+
+    public static StubProcessingContext withComponents(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+        DefaultComponentRegistry componentRegistry = new DefaultComponentRegistry();
         componentRegistrar.accept(componentRegistry);
-        return this;
+        Configuration configuration = componentRegistry.build(new StubLifecycleRegistry());
+        ApplicationContext applicationContext = new ConfigurationApplicationContext(configuration);
+        return new StubProcessingContext(applicationContext);
     }
 
     public ProcessingContext withMessage(Message<?> message) {
@@ -200,6 +222,6 @@ public class StubProcessingContext implements ProcessingContext {
 
     @Override
     public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nullable String name) {
-        return Optional.empty();
+        return applicationContext.getOptionalComponent(type, name);
     }
 }
