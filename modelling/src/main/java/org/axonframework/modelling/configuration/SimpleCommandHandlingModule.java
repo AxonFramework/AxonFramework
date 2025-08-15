@@ -31,8 +31,6 @@ import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
-import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,7 +66,7 @@ class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule
     SimpleCommandHandlingModule(@Nonnull String moduleName) {
         super(moduleName);
         this.moduleName = requireNonNull(moduleName, "The module name cannot be null.");
-        this.commandHandlingComponentName = "StatefulCommandHandlingComponent[" + moduleName + "]";
+        this.commandHandlingComponentName = "CommandHandlingComponent[" + moduleName + "]";
         this.entityModules = new HashMap<>();
         this.handlerBuilders = new HashMap<>();
         this.handlingComponentBuilders = new ArrayList<>();
@@ -145,7 +143,7 @@ class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule
                 })
                 .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (configuration, component) -> {
                     configuration.getComponent(CommandBus.class)
-                                 .subscribe(configuration.getComponent(StatefulCommandHandlingComponent.class,
+                                 .subscribe(configuration.getComponent(CommandHandlingComponent.class,
                                                                        commandHandlingComponentName));
                     return FutureUtils.emptyCompletedFuture();
                 });

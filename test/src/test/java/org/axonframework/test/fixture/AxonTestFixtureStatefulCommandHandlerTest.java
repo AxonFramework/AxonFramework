@@ -35,7 +35,6 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.serialization.Converter;
 import org.axonframework.test.fixture.sampledomain.ChangeStudentNameCommand;
 import org.axonframework.test.fixture.sampledomain.Student;

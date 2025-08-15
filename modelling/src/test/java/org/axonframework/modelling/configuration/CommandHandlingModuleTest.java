@@ -27,7 +27,6 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandler;
-import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.repository.Repository;
 import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
@@ -122,8 +121,8 @@ class CommandHandlingModuleTest {
                           .build()
                           .build(ModellingConfigurer.create().build(), new StubLifecycleRegistry());
 
-        Optional<StatefulCommandHandlingComponent> optionalHandlingComponent = resultConfig.getOptionalComponent(
-                StatefulCommandHandlingComponent.class, "StatefulCommandHandlingComponent[test-subject]");
+        Optional<CommandHandlingComponent> optionalHandlingComponent = resultConfig.getOptionalComponent(
+                CommandHandlingComponent.class, "CommandHandlingComponent[test-subject]");
         assertTrue(optionalHandlingComponent.isPresent());
         assertTrue(optionalHandlingComponent.get().supportedCommands().contains(new QualifiedName(String.class)));
     }
