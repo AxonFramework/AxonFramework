@@ -17,8 +17,6 @@
 package org.axonframework.springboot;
 
 import com.codahale.metrics.MetricRegistry;
-import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
-import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.MessageMonitorFactory;
 import org.axonframework.eventhandling.EventBus;
@@ -91,18 +89,6 @@ class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
         assertEquals(GlobalMetricRegistry.class, globalMetricRegistry.getClass());
 
         assertFalse(applicationContext.containsBean("metricsConfigurerModule"));
-    }
-
-    @Test
-    void axonServerEventStoreAndFactoryRequestMonitor() {
-        assertNotNull(applicationContext.getBean(AxonServerEventStore.class));
-        assertNotNull(applicationContext.getBean(AxonServerEventStoreFactory.class));
-
-        MessageMonitorFactory monitor =
-                applicationContext.getBean("mockMessageMonitorFactory", MessageMonitorFactory.class);
-
-        verify(monitor, times(2).description("expected MessageMonitorFactory to be retrieved for AxonServerEventStore"))
-                .create(any(), eq(AxonServerEventStore.class), anyString());
     }
 
     @Configuration

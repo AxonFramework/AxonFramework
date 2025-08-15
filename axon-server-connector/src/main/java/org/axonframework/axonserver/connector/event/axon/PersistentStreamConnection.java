@@ -216,12 +216,12 @@ public class PersistentStreamConnection {
         private final AtomicBoolean processGate = new AtomicBoolean();
         private final AtomicBoolean doneConfirmed = new AtomicBoolean();
         private final PersistentStreamSegment persistentStreamSegment;
-        private final GrpcMetaDataAwareSerializer serializer;
+//        private final GrpcMetaDataAwareSerializer serializer;
         private final AtomicReference<SegmentState> currentState = new AtomicReference<>(new ProcessingState());
 
         public SegmentConnection(PersistentStreamSegment persistentStreamSegment) {
             this.persistentStreamSegment = persistentStreamSegment;
-            serializer = new GrpcMetaDataAwareSerializer(configuration.getComponent(Serializer.class));
+//            serializer = new GrpcMetaDataAwareSerializer(configuration.getComponent(Serializer.class));
         }
 
         private class RetryState implements SegmentState {
@@ -355,20 +355,21 @@ public class PersistentStreamConnection {
         }
 
         private List<TrackedEventMessage<?>> upcastAndDeserialize(List<PersistentStreamEvent> batch) {
-            return EventUtils.upcastAndDeserializeTrackedEvents(
-                                     batch.stream()
-                                          .map(e -> {
-                                              TrackingToken trackingToken = createToken(e);
-                                              return new TrackedDomainEventData<>(
-                                                      trackingToken,
-                                                      new GrpcBackedDomainEventData(e.getEvent().getEvent())
-                                              );
-                                          }),
-                                     serializer,
-                                     configuration.getComponent(EventUpcasterChain.class))
-                             .collect(Collectors.toList());
+            // TODO #3520 - Be sure to fix this part to support persistent streams correctly.
+            return null;
+//            EventUtils.upcastAndDeserializeTrackedEvents(
+//                                     batch.stream()
+//                                          .map(e -> {
+//                                              TrackingToken trackingToken = createToken(e);
+//                                              return new TrackedDomainEventData<>(
+//                                                      trackingToken,
+//                                                      new GrpcBackedDomainEventData(e.getEvent().getEvent())
+//                                              );
+//                                          }),
+//                                     serializer,
+//                                     configuration.getComponent(EventUpcasterChain.class))
+//                             .collect(Collectors.toList());
         }
-
 
         private TrackingToken createToken(PersistentStreamEvent event) {
             if (!event.getReplay()) {
