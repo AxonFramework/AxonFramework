@@ -53,7 +53,7 @@ class EventMessageDeadLetterJpaConverterTest {
     private static final String PAYLOAD_REVISION = "23.0";
     private final EventMessageDeadLetterJpaConverter converter = new EventMessageDeadLetterJpaConverter();
     private final Serializer eventSerializer = TestSerializer.JACKSON.getSerializer();
-    private final Serializer genericSerializer = TestSerializer.XSTREAM.getSerializer();
+    private final Serializer genericSerializer = eventSerializer;
     private final ConverterTestEvent event = new ConverterTestEvent("myValue");
     private final MessageType type = new MessageType("event");
     private final MetaData metaData = MetaData.from(Collections.singletonMap("myMetadataKey", "myMetadataValue"));

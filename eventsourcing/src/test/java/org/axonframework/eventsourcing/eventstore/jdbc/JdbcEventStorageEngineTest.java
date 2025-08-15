@@ -30,8 +30,8 @@ import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.JdbcEventStorageEngineStatements;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataForAggregateStatementBuilder;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.serialization.UnknownSerializedType;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 import org.springframework.test.annotation.DirtiesContext;
@@ -427,9 +427,9 @@ class JdbcEventStorageEngineTest
                                                       EventTableFactory eventTableFactory) {
         LegacyJdbcEventStorageEngine.Builder engineBuilder =
                 LegacyJdbcEventStorageEngine.builder()
-                                            .eventSerializer(TestSerializer.xStreamSerializer())
+                                            .eventSerializer(JacksonSerializer.defaultSerializer())
                                             .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
-                                            .snapshotSerializer(TestSerializer.xStreamSerializer())
+                                            .snapshotSerializer(JacksonSerializer.defaultSerializer())
                                             .batchSize(100)
                                             .connectionProvider(dataSource::getConnection)
                                             .transactionManager(NoTransactionManager.INSTANCE);
@@ -442,8 +442,8 @@ class JdbcEventStorageEngineTest
     private LegacyJdbcEventStorageEngine createTimestampEngine(EventTableFactory eventTableFactory) {
         LegacyJdbcEventStorageEngine.Builder builder =
                 LegacyJdbcEventStorageEngine.builder()
-                                            .eventSerializer(TestSerializer.xStreamSerializer())
-                                            .snapshotSerializer(TestSerializer.xStreamSerializer())
+                                            .eventSerializer(JacksonSerializer.defaultSerializer())
+                                            .snapshotSerializer(JacksonSerializer.defaultSerializer())
                                             .connectionProvider(dataSource::getConnection)
                                             .transactionManager(NoTransactionManager.INSTANCE);
 

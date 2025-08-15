@@ -18,10 +18,8 @@ package org.axonframework.modelling.command;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.modelling.OnlyAcceptConstructorPropertiesAnnotation;
-import org.axonframework.modelling.utils.TestSerializer;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,19 +41,6 @@ class AggregateScopeDescriptorSerializationTest {
     @BeforeEach
     void setUp() {
         testSubject = new AggregateScopeDescriptor(expectedType, expectedIdentifier);
-    }
-
-    @Test
-    void xStreamSerializationWorksAsExpected() {
-        XStreamSerializer xStreamSerializer = TestSerializer.xStreamSerializer();
-        xStreamSerializer.getXStream().setClassLoader(this.getClass().getClassLoader());
-
-        SerializedObject<String> serializedObject =
-                xStreamSerializer.serialize(testSubject, String.class);
-        AggregateScopeDescriptor result = xStreamSerializer.deserialize(serializedObject);
-
-        assertEquals(expectedType, result.getType());
-        assertEquals(expectedIdentifier, result.getIdentifier());
     }
 
     @Test

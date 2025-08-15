@@ -56,12 +56,6 @@ class DeadlineDetailsSerializationTest {
     }
 
     @Test
-    void whenSerializedAndDeserializedAllPropertiesShouldBeTheSameUsingXStream() {
-        Serializer serializer = TestSerializer.XSTREAM.getSerializer();
-        testSerialisationWithSpecificSerializer(serializer);
-    }
-
-    @Test
     void whenSerializedAndDeserializedAllPropertiesShouldBeTheSameUsingJackson() {
         Serializer serializer = TestSerializer.JACKSON.getSerializer();
         testSerialisationWithSpecificSerializer(serializer);

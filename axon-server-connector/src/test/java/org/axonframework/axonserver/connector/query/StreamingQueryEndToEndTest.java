@@ -16,7 +16,7 @@
 
 package org.axonframework.axonserver.connector.query;
 
-import com.thoughtworks.xstream.XStream;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
@@ -26,7 +26,6 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.QueryExecutionException;
-import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
@@ -34,8 +33,9 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -132,9 +132,7 @@ class StreamingQueryEndToEndTest {
 
     private AxonServerQueryBus axonServerQueryBus(SimpleQueryBus localSegment, String axonServerAddress) {
         QueryUpdateEmitter emitter = SimpleQueryUpdateEmitter.builder().build();
-        Serializer serializer = XStreamSerializer.builder()
-                                                 .xStream(new XStream())
-                                                 .build();
+        Serializer serializer = JacksonSerializer.defaultSerializer();
         return AxonServerQueryBus.builder()
                                  .localSegment(localSegment)
                                  .configuration(configuration(axonServerAddress))
@@ -284,18 +282,22 @@ class StreamingQueryEndToEndTest {
         }
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class FluxQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ListQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ErrorFluxQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class HandlerErrorFluxQuery {
 
     }

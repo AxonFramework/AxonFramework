@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ class UpcastedEventRepresentationTest {
     @SuppressWarnings("unused") // Used by parameterized test "testContentType"
     private static Stream<Arguments> serializer() {
         return Stream.of(
-                Arguments.of(TestSerializer.XSTREAM.getSerializer()),
                 Arguments.of(TestSerializer.JACKSON.getSerializer()),
                 Arguments.of(TestSerializer.JACKSON_ONLY_ACCEPT_CONSTRUCTOR_PARAMETERS.getSerializer())
         );

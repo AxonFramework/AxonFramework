@@ -30,8 +30,8 @@ import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
+import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jdbc.GenericSagaSqlSchema;
 import org.axonframework.modelling.saga.repository.jdbc.JdbcSagaStore;
@@ -130,23 +130,21 @@ public class JdbcAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean({SagaStore.class, SagaSqlSchema.class})
-    public JdbcSagaStore sagaStoreNoSchema(ConnectionProvider connectionProvider, Serializer serializer) {
+    public JdbcSagaStore sagaStoreNoSchema(ConnectionProvider connectionProvider) {
         return JdbcSagaStore.builder()
                             .connectionProvider(connectionProvider)
                             .sqlSchema(new GenericSagaSqlSchema())
-                            .serializer(serializer)
                             .build();
     }
 
     @Bean
     @ConditionalOnMissingBean(SagaStore.class)
     @ConditionalOnBean(SagaSqlSchema.class)
-    public JdbcSagaStore sagaStoreWithSchema(ConnectionProvider connectionProvider, Serializer serializer,
+    public JdbcSagaStore sagaStoreWithSchema(ConnectionProvider connectionProvider,
                                              SagaSqlSchema schema) {
         return JdbcSagaStore.builder()
                             .connectionProvider(connectionProvider)
                             .sqlSchema(schema)
-                            .serializer(serializer)
                             .build();
     }
 

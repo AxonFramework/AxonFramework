@@ -22,7 +22,8 @@ package org.axonframework.serialization;
  * @param <T> The data type representing the serialized object
  * @author Allard Buijze
  * @since 2.0
- * @deprecated By shifting from the {@link Serializer} to the {@link Converter}, this class becomes obsolete.
+ * TODO #3602 remove
+ * @deprecated By shifting from the {@link Serializer} to the {@link Converter}, this exception becomes obsolete.
  */
 @Deprecated(forRemoval = true, since = "5.0.0")
 public interface SerializedObject<T> {

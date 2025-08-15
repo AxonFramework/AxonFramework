@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,10 @@ import java.util.function.Supplier;
  * @author Allard Buijze
  * @author Frank Versnel
  * @since 2.0
+ * TODO #3602 remove
+ * @deprecated By shifting from the {@link Serializer} to the {@link Converter}, this exception becomes obsolete.
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class LazyDeserializingObject<T> {
 
     private final transient Serializer serializer;

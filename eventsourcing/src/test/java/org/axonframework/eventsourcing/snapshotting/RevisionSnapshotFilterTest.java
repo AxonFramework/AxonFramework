@@ -21,10 +21,10 @@ import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
-import org.axonframework.eventsourcing.utils.TestSerializer;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,7 +38,7 @@ class RevisionSnapshotFilterTest {
 
     private static final String EXPECTED_REVISION = "LET ME IN";
 
-    private final Serializer serializer = TestSerializer.xStreamSerializer();
+    private final Serializer serializer = JacksonSerializer.defaultSerializer();
 
     @Test
     void allowsDomainEventDataContainingTheAllowedAggregateTypeAndRevision() {

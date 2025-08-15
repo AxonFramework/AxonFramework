@@ -23,7 +23,6 @@ import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.TestSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -51,7 +50,6 @@ class EventTypeUpcasterTest {
     @SuppressWarnings("unused") // Used by all parameterized tests
     private static Stream<Arguments> provideSerializers() {
         return Stream.of(
-                Arguments.of(TestSerializer.XSTREAM.getSerializer()),
                 Arguments.of(TestSerializer.JACKSON.getSerializer()),
                 Arguments.of(TestSerializer.JACKSON_ONLY_ACCEPT_CONSTRUCTOR_PARAMETERS.getSerializer())
         );
@@ -163,9 +161,6 @@ class EventTypeUpcasterTest {
     void shouldDeserializeToNewType(Serializer serializer) {
         // If we're dealing with an XStreamSerializer the FQCN in the XML tags defines the type.
         // Due to this, it's more reasonable to use type aliases on the XStream instance i.o. using this upcaster.
-        if (serializer instanceof XStreamSerializer) {
-            return;
-        }
 
         final EventData<?> testEventData = new TestEventEntry(EXPECTED_PAYLOAD_TYPE, EXPECTED_REVISION, serializer);
         final InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);

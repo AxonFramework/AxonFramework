@@ -92,7 +92,6 @@ class DbSchedulerBinaryDeadlineDetailsTest {
     public static Collection<TestSerializer> axonSerializers() {
         List<TestSerializer> testSerializerList = new ArrayList<>();
         testSerializerList.add(TestSerializer.JACKSON);
-        testSerializerList.add(TestSerializer.XSTREAM);
         return testSerializerList;
     }
 

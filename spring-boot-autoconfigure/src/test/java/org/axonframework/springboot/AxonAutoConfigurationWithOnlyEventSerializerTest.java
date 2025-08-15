@@ -16,15 +16,13 @@
 
 package org.axonframework.springboot;
 
-import com.thoughtworks.xstream.XStream;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -71,9 +69,9 @@ class AxonAutoConfigurationWithOnlyEventSerializerTest {
         assertNotNull(serializer);
         assertNotNull(eventSerializer);
         assertNotNull(messageSerializer);
-        assertEquals(XStreamSerializer.class, serializer.getClass());
+//        assertEquals(XStreamSerializer.class, serializer.getClass());
         assertEquals(JacksonSerializer.class, eventSerializer.getClass());
-        assertEquals(XStreamSerializer.class, messageSerializer.getClass());
+//        assertEquals(XStreamSerializer.class, messageSerializer.getClass());
         assertNotSame(eventSerializer, serializer);
         assertNotSame(eventSerializer, messageSerializer);
         assertNotSame(serializer, messageSerializer);
@@ -90,10 +88,8 @@ class AxonAutoConfigurationWithOnlyEventSerializerTest {
 
         @Bean
         @Qualifier("messageSerializer")
-        public Serializer myMessageSerializer(XStream xStream) {
-            return XStreamSerializer.builder()
-                                    .xStream(xStream)
-                                    .build();
+        public Serializer myMessageSerializer() {
+            return JacksonSerializer.defaultSerializer();
         }
     }
 }

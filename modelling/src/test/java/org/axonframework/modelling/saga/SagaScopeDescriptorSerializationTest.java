@@ -18,16 +18,9 @@ package org.axonframework.modelling.saga;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.modelling.OnlyAcceptConstructorPropertiesAnnotation;
-import org.axonframework.modelling.utils.TestSerializer;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -46,18 +39,6 @@ class SagaScopeDescriptorSerializationTest {
     @BeforeEach
     void setUp() {
         testSubject = new SagaScopeDescriptor(expectedType, expectedIdentifier);
-    }
-
-    @Test
-    void xStreamSerializationWorksAsExpected() {
-        XStreamSerializer xStreamSerializer = TestSerializer.xStreamSerializer();
-        xStreamSerializer.getXStream().setClassLoader(this.getClass().getClassLoader());
-
-        SerializedObject<String> serializedObject = xStreamSerializer.serialize(testSubject, String.class);
-        SagaScopeDescriptor result = xStreamSerializer.deserialize(serializedObject);
-
-        assertEquals(expectedType, result.getType());
-        assertEquals(expectedIdentifier, result.getIdentifier());
     }
 
     @Test

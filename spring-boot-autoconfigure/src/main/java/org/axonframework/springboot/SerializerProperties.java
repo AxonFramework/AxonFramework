@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * <p>
  * The General Serializer is used to serialize the rest of the objects, such as TrackingTokens, Saga state,
  * Snapshot Events and all other data that needs to be serialized, but is not expected to be shared with other systems.
- * If no General Serializer is specified, it defaults to an XStream based serializer (see
- * {@link org.axonframework.serialization.xml.XStreamSerializer}).
+ * If no General Serializer is specified, it defaults to an XStream based serializer.
  */
 @ConfigurationProperties("axon.serializer")
 public class SerializerProperties {

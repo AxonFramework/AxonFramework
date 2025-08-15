@@ -35,13 +35,13 @@ import io.grpc.stub.StreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerException;
-import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -169,7 +169,7 @@ public class AxonServerEventSchedulerTest {
                                                        .axonServerConfiguration(axonserverConfiguration)
                                                        .build();
         testSubject = AxonServerEventScheduler.builder()
-                                              .eventSerializer(TestSerializer.xStreamSerializer())
+                                              .eventSerializer(JacksonSerializer.defaultSerializer())
                                               .connectionManager(connectionManager)
                                               .build();
         testSubject.start();
@@ -197,7 +197,7 @@ public class AxonServerEventSchedulerTest {
         AxonServerConnectionManager spyConnectionManager = spy(connectionManager);
 
         testSubject = AxonServerEventScheduler.builder()
-                                              .eventSerializer(TestSerializer.xStreamSerializer())
+                                              .eventSerializer(JacksonSerializer.defaultSerializer())
                                               .connectionManager(spyConnectionManager)
                                               .defaultContext("textContext")
                                               .build();
@@ -215,7 +215,7 @@ public class AxonServerEventSchedulerTest {
     void scheduleTimeout() {
         sendResponse.set(false);
         testSubject = AxonServerEventScheduler.builder()
-                                              .eventSerializer(TestSerializer.xStreamSerializer())
+                                              .eventSerializer(JacksonSerializer.defaultSerializer())
                                               .connectionManager(connectionManager)
                                               .requestTimeout(500, TimeUnit.MILLISECONDS)
                                               .build();

@@ -32,6 +32,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 2.4.2
  * @deprecated in favor of the {@link JacksonConverter}.
+ * TODO #3602 remove
  */
 @Deprecated(forRemoval = true, since = "5.0.0")
 public class MetaDataDeserializer extends JsonDeserializer<MetaData> {

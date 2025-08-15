@@ -40,7 +40,7 @@ import static org.mockito.Mockito.*;
  */
 class IntermediateRepresentationTest {
 
-    private final static Serializer serializer = TestSerializer.XSTREAM.getSerializer();
+    private final static Serializer serializer = TestSerializer.JACKSON.getSerializer();
 
     @Test
     public void canConvertDataTo() {

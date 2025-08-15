@@ -43,7 +43,6 @@ class InitialEventRepresentationTest {
     @SuppressWarnings("unused") // Used by parameterized test "testContentType"
     private static Stream<Arguments> serializer() {
         return Stream.of(
-                Arguments.of(TestSerializer.XSTREAM.getSerializer()),
                 Arguments.of(TestSerializer.JACKSON.getSerializer()),
                 Arguments.of(TestSerializer.JACKSON_ONLY_ACCEPT_CONSTRUCTOR_PARAMETERS.getSerializer())
         );

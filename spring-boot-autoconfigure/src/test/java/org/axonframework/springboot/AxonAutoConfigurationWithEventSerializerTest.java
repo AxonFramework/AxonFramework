@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot;
 
-import com.thoughtworks.xstream.XStream;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.axonframework.commandhandling.CommandBus;
@@ -31,7 +30,6 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -103,10 +101,8 @@ class AxonAutoConfigurationWithEventSerializerTest {
 
         @Bean
         @Primary
-        public Serializer mySerializer(XStream xStream) {
-            return XStreamSerializer.builder()
-                                    .xStream(xStream)
-                                    .build();
+        public Serializer mySerializer() {
+            return JacksonSerializer.defaultSerializer();
         }
 
         @Bean

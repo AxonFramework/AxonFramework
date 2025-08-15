@@ -57,6 +57,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Allard Buijze
  * @since 2.2
  * @deprecated in favor of the {@link JacksonConverter}.
+ * TODO #3602 remove
  */
 @Deprecated(forRemoval = true, since = "5.0.0")
 public class JacksonSerializer implements Serializer {

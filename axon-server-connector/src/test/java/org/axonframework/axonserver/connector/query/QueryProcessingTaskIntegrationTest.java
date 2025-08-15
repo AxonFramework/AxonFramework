@@ -16,7 +16,8 @@
 
 package org.axonframework.axonserver.connector.query;
 
-import com.thoughtworks.xstream.XStream;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.axoniq.axonserver.connector.ErrorCategory;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.grpc.ErrorMessage;
@@ -32,13 +33,13 @@ import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusSpanFactory;
-import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.reactivestreams.Publisher;
@@ -84,9 +85,7 @@ class QueryProcessingTaskIntegrationTest {
                                                         .build();
         localSegment = SimpleQueryBus.builder().build();
         responseHandler = new CachingReplyChannel<>();
-        Serializer serializer = XStreamSerializer.builder()
-                                                 .xStream(new XStream())
-                                                 .build();
+        Serializer serializer = JacksonSerializer.defaultSerializer();
         AxonServerConfiguration config = AxonServerConfiguration.builder()
                                                                 .clientId(CLIENT_ID)
                                                                 .componentName(COMPONENT_NAME)
@@ -852,11 +851,12 @@ class QueryProcessingTaskIntegrationTest {
         }
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class MultipleInstanceQuery {
 
         private final int numberOfResults;
 
-        private MultipleInstanceQuery(int numberOfResults) {
+        private MultipleInstanceQuery(@JsonProperty("numberOfResults") int numberOfResults) {
             this.numberOfResults = numberOfResults;
         }
 
@@ -865,11 +865,12 @@ class QueryProcessingTaskIntegrationTest {
         }
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class FluxQuery {
 
         private final int numberOfResults;
 
-        private FluxQuery(int numberOfResults) {
+        private FluxQuery(@JsonProperty("numberOfResults") int numberOfResults) {
             this.numberOfResults = numberOfResults;
         }
 
@@ -878,11 +879,12 @@ class QueryProcessingTaskIntegrationTest {
         }
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ListQuery {
 
         private final int numberOfResults;
 
-        private ListQuery(int numberOfResults) {
+        private ListQuery(@JsonProperty("numberOfResults") int numberOfResults) {
             this.numberOfResults = numberOfResults;
         }
 
@@ -891,22 +893,27 @@ class QueryProcessingTaskIntegrationTest {
         }
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ErrorFluxQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ErrorAfterAWhileFluxQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ThrowingExceptionFluxQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class ThrowingExceptionListQuery {
 
     }
 
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static class InstanceQuery {
 
     }

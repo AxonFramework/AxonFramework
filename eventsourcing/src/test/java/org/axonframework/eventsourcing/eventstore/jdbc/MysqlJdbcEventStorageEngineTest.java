@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 import com.mysql.cj.jdbc.MysqlDataSource;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.eventsourcing.utils.TestSerializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -74,9 +74,9 @@ class MysqlJdbcEventStorageEngineTest {
     private LegacyJdbcEventStorageEngine createEngine(MysqlDataSource dataSource) throws SQLException {
         LegacyJdbcEventStorageEngine engine =
                 LegacyJdbcEventStorageEngine.builder()
-                                            .snapshotSerializer(TestSerializer.xStreamSerializer())
+                                            .snapshotSerializer(JacksonSerializer.defaultSerializer())
                                             .persistenceExceptionResolver(new SQLErrorCodesResolver(dataSource))
-                                            .eventSerializer(TestSerializer.xStreamSerializer())
+                                            .eventSerializer(JacksonSerializer.defaultSerializer())
                                             .connectionProvider(dataSource::getConnection)
                                             .transactionManager(NoTransactionManager.INSTANCE)
                                             .build();

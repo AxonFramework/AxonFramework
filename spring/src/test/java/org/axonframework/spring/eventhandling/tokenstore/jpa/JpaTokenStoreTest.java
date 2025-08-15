@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,11 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
 import org.axonframework.eventhandling.tokenstore.jpa.TokenEntry;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.hibernate.dialect.HSQLDialect;
 import org.hibernate.jpa.HibernatePersistenceProvider;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -47,7 +47,12 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -136,7 +141,7 @@ class JpaTokenStoreTest {
         public JpaTokenStore jpaTokenStore(EntityManagerProvider entityManagerProvider) {
             return JpaTokenStore.builder()
                     .entityManagerProvider(entityManagerProvider)
-                    .serializer(TestSerializer.XSTREAM.getSerializer())
+                    .serializer(JacksonSerializer.defaultSerializer())
                     .nodeId("local")
                     .build();
         }
@@ -145,7 +150,7 @@ class JpaTokenStoreTest {
         public JpaTokenStore stealingJpaTokenStore(EntityManagerProvider entityManagerProvider) {
             return JpaTokenStore.builder()
                     .entityManagerProvider(entityManagerProvider)
-                    .serializer(TestSerializer.XSTREAM.getSerializer())
+                    .serializer(JacksonSerializer.defaultSerializer())
                     .claimTimeout(Duration.ofSeconds(-1))
                     .nodeId("stealing")
                     .build();

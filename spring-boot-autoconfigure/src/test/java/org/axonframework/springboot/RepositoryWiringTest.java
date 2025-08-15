@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot;
 
-import com.thoughtworks.xstream.XStream;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
@@ -25,7 +24,6 @@ import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventSt
 import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.spring.stereotype.Aggregate;
-import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -170,11 +168,6 @@ class RepositoryWiringTest {
         @Bean
         public LegacyEventStorageEngine eventStorageEngine() {
             return new LegacyInMemoryEventStorageEngine();
-        }
-
-        @Bean
-        public XStream xStream() {
-            return TestSerializer.xStreamSerializer().getXStream();
         }
     }
 

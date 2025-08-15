@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
@@ -37,7 +36,6 @@ import org.axonframework.springboot.autoconfig.context.CreateDogCommand;
 import org.axonframework.springboot.autoconfig.context.Dog;
 import org.axonframework.springboot.autoconfig.context.DogCreatedEvent;
 import org.axonframework.springboot.autoconfig.context.RenameAnimalCommand;
-import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -237,11 +235,6 @@ class AggregatePolymorphismAutoConfigurationTest {
         @Bean
         public LegacyEventStorageEngine eventStorageEngine() {
             return new LegacyInMemoryEventStorageEngine();
-        }
-
-        @Bean
-        public XStream xStream() {
-            return TestSerializer.xStreamSerializer().getXStream();
         }
     }
 

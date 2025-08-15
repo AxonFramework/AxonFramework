@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -434,7 +434,7 @@ class JdbcTokenStoreTest {
         public JdbcTokenStore tokenStore(DataSource dataSource) {
             return JdbcTokenStore.builder()
                                  .connectionProvider(dataSource::getConnection)
-                                 .serializer(TestSerializer.XSTREAM.getSerializer())
+                                 .serializer(TestSerializer.JACKSON.getSerializer())
                                  .build();
         }
 
@@ -442,7 +442,7 @@ class JdbcTokenStoreTest {
         public JdbcTokenStore concurrentTokenStore(DataSource dataSource) {
             return JdbcTokenStore.builder()
                                  .connectionProvider(dataSource::getConnection)
-                                 .serializer(TestSerializer.XSTREAM.getSerializer())
+                                 .serializer(TestSerializer.JACKSON.getSerializer())
                                  .claimTimeout(Duration.ofSeconds(2))
                                  .nodeId("concurrent")
                                  .build();
@@ -452,7 +452,7 @@ class JdbcTokenStoreTest {
         public JdbcTokenStore stealingTokenStore(DataSource dataSource) {
             return JdbcTokenStore.builder()
                                  .connectionProvider(dataSource::getConnection)
-                                 .serializer(TestSerializer.XSTREAM.getSerializer())
+                                 .serializer(TestSerializer.JACKSON.getSerializer())
                                  .claimTimeout(Duration.ofSeconds(-1))
                                  .nodeId("stealing")
                                  .build();

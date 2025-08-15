@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ class JpaTokenStoreTest {
                 .getResultList();
         assertEquals(1, tokens.size());
         assertNotNull(tokens.get(0).getOwner());
-        assertNull(tokens.get(0).getToken(TestSerializer.XSTREAM.getSerializer()));
+        assertNull(tokens.get(0).getToken(TestSerializer.JACKSON.getSerializer()));
     }
 
     @Test
@@ -126,7 +126,7 @@ class JpaTokenStoreTest {
         EntityManager spyEntityManager = mock(EntityManager.class);
 
         JpaTokenStore testSubject = JpaTokenStore.builder()
-                .serializer(TestSerializer.XSTREAM.getSerializer())
+                .serializer(TestSerializer.JACKSON.getSerializer())
                 .loadingLockMode(LockModeType.NONE)
                 .entityManagerProvider(new SimpleEntityManagerProvider(spyEntityManager))
                 .nodeId("test")
@@ -413,7 +413,7 @@ class JpaTokenStoreTest {
     private JpaTokenStore getTokenStore(String nodeId, @Nullable TemporalAmount claimTimeOut) {
         JpaTokenStore.Builder builder = JpaTokenStore.builder()
                 .entityManagerProvider(entityManagerProvider)
-                .serializer(TestSerializer.XSTREAM.getSerializer())
+                .serializer(TestSerializer.JACKSON.getSerializer())
                 .nodeId(nodeId);
         if (!Objects.isNull(claimTimeOut)) {
             builder.claimTimeout(claimTimeOut);

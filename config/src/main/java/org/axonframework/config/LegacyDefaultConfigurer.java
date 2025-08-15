@@ -97,7 +97,6 @@ import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
@@ -303,7 +302,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                 .registerComponent(SagaStore.class,
                                    c -> JpaSagaStore.builder()
                                                     .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
-                                                    .serializer(c.serializer())
                                                     .build());
     }
 
@@ -685,11 +683,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @return The default Serializer to use.
      */
     protected Serializer defaultSerializer(LegacyConfiguration config) {
-        return defaultComponent(Serializer.class, config)
-                .orElseGet(() -> XStreamSerializer.builder()
-                                                  .revisionResolver(config.getComponent(RevisionResolver.class,
-                                                                                        AnnotationRevisionResolver::new))
-                                                  .build());
+        return defaultComponent(Serializer.class, config).orElseThrow();
     }
 
     /**
