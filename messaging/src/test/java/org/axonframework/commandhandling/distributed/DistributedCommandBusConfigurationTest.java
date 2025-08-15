@@ -16,59 +16,60 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-
-import org.axonframework.util.ExecutorServiceFactory;
+import org.axonframework.common.AxonConfigurationException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link DistributedCommandBusConfiguration}.
+ *
+ * @author Jens Mayer
+ */
 class DistributedCommandBusConfigurationTest {
 
-    private final DistributedCommandBusConfiguration testSubject = new DistributedCommandBusConfiguration();
+    private DistributedCommandBusConfiguration testSubject = DistributedCommandBusConfiguration.DEFAULT;
 
     @Test
     void validLoadFactorIsAccepted() {
-        testSubject.withLoadFactor(1);
+        testSubject = testSubject.loadFactor(1);
         assertEquals(1, testSubject.loadFactor());
     }
 
     @ParameterizedTest
     @ValueSource(ints = {0, -1})
     void invalidLoadFactorCausesException(int invalidLoadFactor) {
-        assertThrows(IllegalArgumentException.class, () -> {
-            testSubject.withLoadFactor(invalidLoadFactor);
-        });
+        assertThrows(AxonConfigurationException.class, () -> testSubject.loadFactor(invalidLoadFactor));
     }
 
     @Test
     void validNumberOfThreadsIsAccepted() {
-        testSubject.withNumberOfThreads(1);
+        testSubject = testSubject.numberOfThreads(1);
         assertEquals(1, testSubject.numberOfThreads());
     }
 
     @ParameterizedTest
     @ValueSource(ints = {0, -1})
     void invalidNumberOfThreadCausesException(int invalidNumberOfThreads) {
-        assertThrows(IllegalArgumentException.class, () -> {
-            testSubject.withNumberOfThreads(invalidNumberOfThreads);
-        });
+        assertThrows(AxonConfigurationException.class, () -> testSubject.numberOfThreads(invalidNumberOfThreads));
     }
 
     @Test
     void executorServiceFactoryUsesGivenExecutorService() {
         var myThreadPoolExecutor = Executors.newSingleThreadExecutor();
-        testSubject.withExecutorService(myThreadPoolExecutor);
-        ExecutorService executorService = testSubject.executorServiceFactory().createExecutorService(
-                mock(DistributedCommandBusConfiguration.class),mock(
-                BlockingQueue.class));
-        assertSame(myThreadPoolExecutor,executorService);
+        testSubject = testSubject.executorService(myThreadPoolExecutor);
+        //noinspection unchecked
+        ExecutorService executorService =
+                testSubject.executorServiceFactory()
+                           .createExecutorService(mock(DistributedCommandBusConfiguration.class),
+                                                  mock(BlockingQueue.class));
+        assertSame(myThreadPoolExecutor, executorService);
     }
-
 }

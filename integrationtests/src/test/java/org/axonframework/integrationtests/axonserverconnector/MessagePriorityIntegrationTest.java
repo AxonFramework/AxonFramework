@@ -21,6 +21,7 @@ import io.grpc.ManagedChannelBuilder;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -51,6 +52,16 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating whether the provided message priority for {@link CommandMessage#priority() commands} is
+ * respected.
+ * <p>
+ * Priorities for command messages are calculated through the {@link CommandPriorityCalculator} and typically set by the
+ * {@link CommandGateway}.
+ *
+ * @author Jens Mayer
+ * @author Steven van Beelen
+ */
 @Testcontainers
 class MessagePriorityIntegrationTest {
 
@@ -94,7 +105,7 @@ class MessagePriorityIntegrationTest {
         CommandPriorityCalculator commandPriorityCalculator =
                 command -> Objects.equals(command.payloadType(), PriorityMessage.class) ? PRIORITY : REGULAR;
 
-        var commandBusConfig = new DistributedCommandBusConfiguration().withLoadFactor(1);
+        var commandBusConfig = DistributedCommandBusConfiguration.DEFAULT.loadFactor(1);
         commandBus = new DistributedCommandBus(localCommandBus, serializingConnector, commandBusConfig);
         commandGateway = new DefaultCommandGateway(commandBus,
                                                    new ClassBasedMessageTypeResolver(),
@@ -126,22 +137,21 @@ class MessagePriorityIntegrationTest {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            return MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class),
-                                                                              "started"));
+            return MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class), "started"));
         });
 
         commandBus.subscribe(
                 new QualifiedName(RegularMessage.class),
-                (command, context)
-                        -> MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class),
-                                                                                      "regular"))
+                (command, context) -> MessageStream.just(
+                        new GenericCommandResultMessage<>(new MessageType(String.class), "regular")
+                )
         );
 
         commandBus.subscribe(
                 new QualifiedName(PriorityMessage.class),
-                (command, context)
-                        -> MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class),
-                                                                                      "priority"))
+                (command, context) -> MessageStream.just(
+                        new GenericCommandResultMessage<>(new MessageType(String.class), "priority")
+                )
         );
 
         logger.info("About to start dispatcher.");
@@ -226,46 +236,15 @@ class MessagePriorityIntegrationTest {
         }
     }
 
-    @SuppressWarnings("unused")
-    private static class StartMessage {
+    private record StartMessage(@JsonProperty("text") String text) {
 
-        private final String text;
-
-        public StartMessage(@JsonProperty("text") String text) {
-            this.text = text;
-        }
-
-        public String getText() {
-            return text;
-        }
     }
 
+    private record RegularMessage(@JsonProperty("text") String text) {
 
-    @SuppressWarnings("unused")
-    private static class RegularMessage {
-
-        private final String text;
-
-        public RegularMessage(@JsonProperty("text") String text) {
-            this.text = text;
-        }
-
-        public String getText() {
-            return text;
-        }
     }
 
-    @SuppressWarnings("unused")
-    private static class PriorityMessage {
+    private record PriorityMessage(@JsonProperty("text") String text) {
 
-        private final String text;
-
-        public PriorityMessage(@JsonProperty("text") String text) {
-            this.text = text;
-        }
-
-        public String getText() {
-            return text;
-        }
     }
 }

@@ -59,8 +59,7 @@ public interface CommandResult {
             }
             throw new ConversionException(
                     String.format("Expected result of type [%s] in the CommandResult, but got [%s]",
-                                  type.getName(),
-                                  r.payload().getClass().getName())
+                                  type.getName(), r.payloadType().getName())
             );
         });
     }

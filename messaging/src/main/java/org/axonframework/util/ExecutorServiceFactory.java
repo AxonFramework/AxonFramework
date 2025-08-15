@@ -16,24 +16,24 @@
 
 package org.axonframework.util;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
-import org.axonframework.commandhandling.distributed.DistributedCommandBusConfiguration;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 
 /**
- * A Functional Interface towards a {@link BiFunction} which ingests both a Configuration
- * and a {@link BlockingQueue} of {@link Runnable}, and outputs an {@link ExecutorService}. Provides a means to allow
- * configuration of the used ExecutorService in, for example, the {@link DistributedCommandBus}, but maintaining the
- * option for the framework to provide a BlockingQueue which is tailored towards message prioritization when building
- * the executor.
+ * A Functional Interface towards a {@link BiFunction} which ingests both a Configuration and a {@link BlockingQueue} of
+ * {@link Runnable}, and outputs an {@link ExecutorService}. Provides a means to allow configuration of the used
+ * {@code ExecutorService} in, for example, the {@link DistributedCommandBus}, but maintaining the option for the
+ * framework to provide a {@code BlockingQueue} which is tailored towards message prioritization when building the
+ * executor.
  * <p>
- * Before 5.0.0 this class was specific for the AxonServer configuration, but it has been generalized to allow other
- * configurations to provide their own ExecutorService implementations as well.
+ * Before 5.0.0 this class was specific for the Axon Server configuration, but it has been generalized to allow other
+ * configurations to provide their own {@code ExecutorService} implementations as well.
  *
- * @param <C> The type of Configuration to use for the ExecutorService.
+ * @param <C> The type of configuration to use for constructing a {@link ExecutorService}.
  * @author Steven van Beelen
  * @since 5.0.0
  */
@@ -45,7 +45,8 @@ public interface ExecutorServiceFactory<C> {
      *
      * @param configuration The Configuration to use for the ExecutorService.
      * @param queue         The {@link BlockingQueue} to use for the ExecutorService.
-     * @return an {@link ExecutorService}based on the given {@code configuration} and {@code queue}.
+     * @return An {@link ExecutorService}based on the given {@code configuration} and {@code queue}.
      */
-    ExecutorService createExecutorService(C configuration, BlockingQueue<Runnable> queue);
+    @Nonnull
+    ExecutorService createExecutorService(@Nonnull C configuration, @Nonnull BlockingQueue<Runnable> queue);
 }

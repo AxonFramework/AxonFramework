@@ -37,6 +37,10 @@ import java.util.Map;
 @Internal
 public class MetaDataConverter {
 
+    private MetaDataConverter() {
+        // Utility class
+    }
+
     /**
      * Converts a {@link Map} of String key-value pairs to a {@link Map} of Axon Server {@link MetaDataValue} objects.
      *
@@ -68,7 +72,7 @@ public class MetaDataConverter {
         Map<String, String> result = new HashMap<>();
         source.forEach((k, v) -> {
             String convertedValue = convertFromMetaDataValue(v);
-            if(convertedValue != null) {
+            if (convertedValue != null) {
                 result.put(k, convertedValue);
             }
         });

@@ -32,10 +32,13 @@ import java.io.IOException;
  * Abstract test suite for integration tests using an AxonServerContainer. Concrete implementations have to provide a
  * specific {@link ApplicationConfigurer}. The server is started using the default {@link AxonServerConfiguration}. The
  * started configuration and the associated {@link CommandGateway} are available through member-variables.
+ *
+ * @author Mitchell Herrijgers
  */
 public abstract class AbstractAxonServerIntegrationTest {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractAxonServerIntegrationTest.class);
+
     private static final AxonServerContainer container = new AxonServerContainer()
             .withAxonServerHostname("localhost")
             .withDevMode(true)
@@ -43,7 +46,6 @@ public abstract class AbstractAxonServerIntegrationTest {
 
     protected CommandGateway commandGateway;
     protected AxonConfiguration startedConfiguration;
-
 
     @BeforeAll
     static void beforeAll() {
@@ -55,7 +57,6 @@ public abstract class AbstractAxonServerIntegrationTest {
         container.stop();
     }
 
-
     @BeforeEach
     void setUp() throws IOException {
         AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
@@ -66,16 +67,6 @@ public abstract class AbstractAxonServerIntegrationTest {
                     container.getHttpPort());
     }
 
-    protected void startApp() {
-        AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
-        axonServerConfiguration.setServers(container.getHost() + ":" + container.getGrpcPort());
-        startedConfiguration = createConfigurer()
-                .componentRegistry(cr -> cr
-                        .registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration))
-                .start();
-        commandGateway = startedConfiguration.getComponent(CommandGateway.class);
-    }
-
     @AfterEach
     void tearDown() {
         if (startedConfiguration != null) {
@@ -83,5 +74,20 @@ public abstract class AbstractAxonServerIntegrationTest {
         }
     }
 
+    protected void startApp() {
+        AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
+        axonServerConfiguration.setServers(container.getHost() + ":" + container.getGrpcPort());
+        startedConfiguration = createConfigurer().componentRegistry(cr -> cr.registerComponent(
+                                                         AxonServerConfiguration.class, c -> axonServerConfiguration
+                                                 ))
+                                                 .start();
+        commandGateway = startedConfiguration.getComponent(CommandGateway.class);
+    }
+
+    /**
+     * Creates the {@link ApplicationConfigurer} defining the Axon Framework test context.
+     *
+     * @return The {@link ApplicationConfigurer} defining the Axon Framework test context.
+     */
     protected abstract ApplicationConfigurer createConfigurer();
 }

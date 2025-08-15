@@ -206,5 +206,4 @@ class PayloadConvertingCommandBusConnectorTest {
         CommandMessage<?> capturedCommand = commandCaptor.getValue();
         assertEquals(originalMetaData, capturedCommand.metaData());
     }
-
 }

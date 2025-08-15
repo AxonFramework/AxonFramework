@@ -35,12 +35,11 @@ import java.util.concurrent.CompletableFuture;
  * @author Allard Buijze
  * @since 5.0.0
  */
-public class PayloadConvertingCommandBusConnector<T> extends WrappedCommandBusConnector {
+public class PayloadConvertingCommandBusConnector<T> extends DelegatingCommandBusConnector {
 
     private final CommandBusConnector delegate;
     private final Converter converter;
     private final Class<?> targetType;
-
 
     /**
      * Initialize the {@code PayloadConvertingConnector} to use given {@code converter} to convert each Message's
@@ -71,8 +70,8 @@ public class PayloadConvertingCommandBusConnector<T> extends WrappedCommandBusCo
     public void onIncomingCommand(@Nonnull Handler handler) {
         delegate.onIncomingCommand((commandMessage, callback) -> handler.handle(
                 commandMessage,
-                new ConvertingResultMessageCallback(callback))
-        );
+                new ConvertingResultMessageCallback(callback)
+        ));
     }
 
     /**

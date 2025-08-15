@@ -16,7 +16,6 @@
 
 package org.axonframework.axonserver.connector;
 
-import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;

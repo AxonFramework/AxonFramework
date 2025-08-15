@@ -61,9 +61,9 @@ class DistributedCommandBusTest {
 
         connector = new StubConnector();
         delegate = new SimpleCommandBus();
-        DistributedCommandBusConfiguration configuration = new DistributedCommandBusConfiguration();
+        DistributedCommandBusConfiguration configuration = DistributedCommandBusConfiguration.DEFAULT;
         // Create virtual threads for the test, so we don't have to manage the thread pool.
-        configuration.withExecutorService(Executors.newVirtualThreadPerTaskExecutor());
+        configuration.executorService(Executors.newVirtualThreadPerTaskExecutor());
         testSubject = new DistributedCommandBus(delegate, connector, configuration);
     }
 
@@ -98,7 +98,6 @@ class DistributedCommandBusTest {
         await().untilAsserted(() -> {
             verify(mockCallback).onSuccess(same(resultMessage));
         });
-
     }
 
     @Test
@@ -143,14 +142,6 @@ class DistributedCommandBusTest {
 
         public Map<CommandMessage<?>, CompletableFuture<?>> getDispatchedCommands() {
             return dispatchedCommands;
-        }
-
-        public Map<QualifiedName, Integer> getSubscriptions() {
-            return subscriptions;
-        }
-
-        public Handler getHandler() {
-            return handler.get();
         }
     }
 }

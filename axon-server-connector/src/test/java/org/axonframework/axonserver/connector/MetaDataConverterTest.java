@@ -16,17 +16,20 @@
 
 package org.axonframework.axonserver.connector;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.axoniq.axonserver.grpc.MetaDataValue;
+import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link MetaDataConverter}.
+ *
+ * @author Jens Mayer
+ */
 class MetaDataConverterTest {
-
 
     @Test
     void convertsEmptyMap() {
@@ -108,6 +111,4 @@ class MetaDataConverterTest {
         assertEquals(String.valueOf(numberValue), result.get(numberKey));
         assertEquals(String.valueOf(booleanValue), result.get(booleanKey));
     }
-
-
 }

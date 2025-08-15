@@ -18,7 +18,6 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -37,9 +36,9 @@ import static org.axonframework.messaging.configuration.reflection.ParameterReso
  * {@link #registerEventSink(ComponentBuilder) event}, and {@link #registerQueryBus(ComponentBuilder) query}
  * infrastructure components.
  * <p>
- * This configurer registers several defaults, provided by class {@link MessagingConfigurationDefaults}.<br/>
- * To replace or decorate any of these defaults, use their respective interfaces as the identifier. For example, to
- * adjust the {@code CommandBus}, invoke {@link #componentRegistry(Consumer)} and
+ * This configurer registers several defaults, provided by class {@link MessagingConfigurationDefaults}.<br/> To replace
+ * or decorate any of these defaults, use their respective interfaces as the identifier. For example, to adjust the
+ * {@code CommandBus}, invoke {@link #componentRegistry(Consumer)} and
  * {@link ComponentRegistry#registerComponent(Class, ComponentBuilder)} with {@code CommandBus.class} to replace it.
  * <p>
  * <pre><code>
@@ -99,7 +98,8 @@ public class MessagingConfigurer implements ApplicationConfigurer {
 
     /**
      * Registers the given {@link MessageTypeResolver} factory in this {@code Configurer}. This is the global
-     * {@link MessageTypeResolver}, whose mappings can be accessed by all Modules and Components within the application.
+     * {@link MessageTypeResolver}, whose mappings can be accessed by all Modules and Components within the
+     * application.
      * <p>
      * The {@code commandBusFactory} receives the {@link Configuration} as input and is expected to return a
      * {@link MessageTypeResolver} instance.

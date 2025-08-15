@@ -18,7 +18,6 @@ package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
@@ -31,7 +30,6 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.function.Function;
 
 /**
  * Generic implementation of the {@link CommandMessage} interface.
@@ -75,6 +73,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
 
     /**
      * Constructs a {@code GenericCommandMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
+     * <p>
      * Optionally, a {@code routingKey} and/or a {@code priority} may be passed.
      *
      * @param type       The {@link MessageType type} for this {@link CommandMessage}.
@@ -87,8 +86,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
                                  @Nonnull P payload,
                                  @Nonnull Map<String, String> metaData,
                                  @Nullable String routingKey,
-                                 @Nullable Integer priority
-    ) {
+                                 @Nullable Integer priority) {
         this(new GenericMessage<>(type, payload, metaData), routingKey, priority);
     }
 
@@ -107,24 +105,23 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      *                 {@link Message#metaData() metadata} for the {@link CommandMessage} to reconstruct.
      */
     public GenericCommandMessage(@Nonnull Message<P> delegate) {
-        super(delegate);
-        this.routingKey = null;
-        this.priority = null;
+        this(delegate, null, null);
     }
 
     /**
-     * Constructs a {@code GenericCommandMessage} with given {@code delegate}.
+     * Constructs a {@code GenericCommandMessage} with given {@code delegate}, {@code routingKey}, and
+     * {@code priority}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
-     * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
+     * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
+     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericCommandMessage}.<br/> Optionally, a {@code routingKey} and/or a {@code priority} may be passed.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate   The {@link Message} containing {@link Message#getPayload() payload},
-     *                   {@link Message#type() qualifiedName}, {@link Message#getIdentifier() identifier} and
-     *                   {@link Message#getMetaData() metadata} for the {@link CommandMessage} to reconstruct.
+     * @param delegate   The {@link Message} containing {@link Message#payload() payload},
+     *                   {@link Message#type() qualifiedName}, {@link Message#identifier() identifier} and
+     *                   {@link Message#metaData() metadata} for the {@link CommandMessage} to reconstruct.
      * @param routingKey The routing key for this {@link CommandMessage}, if any.
      * @param priority   The priority for this {@link CommandMessage}, if any.
      */

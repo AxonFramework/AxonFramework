@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public abstract class WrappedCommandBusConnector implements CommandBusConnector, DescribableComponent {
+public abstract class DelegatingCommandBusConnector implements CommandBusConnector, DescribableComponent {
 
     private final CommandBusConnector delegate;
 
@@ -44,7 +44,7 @@ public abstract class WrappedCommandBusConnector implements CommandBusConnector,
      *
      * @param delegate The {@link CommandBusConnector} to delegate all calls to.
      */
-    protected WrappedCommandBusConnector(@Nonnull CommandBusConnector delegate) {
+    protected DelegatingCommandBusConnector(@Nonnull CommandBusConnector delegate) {
         this.delegate = delegate;
     }
 

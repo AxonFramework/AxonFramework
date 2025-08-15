@@ -29,8 +29,8 @@ import java.util.function.BiConsumer;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A {@link CommandGateway} implementation that wraps the {@link CommandResult} of the delegate into a
- * result that can convert the payload of the result using a provided {@link Converter}.
+ * A {@link CommandGateway} implementation that wraps the {@link CommandResult} of the delegate into a result that can
+ * convert the payload of the result using a provided {@link Converter}.
  *
  * @author Allard Buijze
  * @author Mitchell Herrijgers
@@ -42,8 +42,10 @@ public class ConvertingCommandGateway implements CommandGateway {
     private final Converter converter;
 
     /**
-     * @param delegate   The delegate command gateway to wrap within this command gateway.
-     * @param converter  The converter to use for converting the result of command handling.
+     * Constructs a {@code ConvertingCommandGateway} with the given {@code delegate} and {@code converter}.
+     *
+     * @param delegate  The delegate command gateway to wrap within this command gateway.
+     * @param converter The converter to use for converting the result of command handling.
      */
     public ConvertingCommandGateway(@Nonnull CommandGateway delegate,
                                     @Nonnull Converter converter) {
@@ -54,17 +56,17 @@ public class ConvertingCommandGateway implements CommandGateway {
     @Override
     public CommandResult send(@Nonnull Object command,
                               @Nullable ProcessingContext context) {
-        return new SerializingCommandResult(converter, delegate.send(command, context));
+        return new ConvertingCommandResult(converter, delegate.send(command, context));
     }
 
     @Override
     public CommandResult send(@Nonnull Object command,
                               @Nonnull MetaData metaData,
                               @Nullable ProcessingContext context) {
-        return new SerializingCommandResult(converter, delegate.send(command, metaData, context));
+        return new ConvertingCommandResult(converter, delegate.send(command, metaData, context));
     }
 
-    private record SerializingCommandResult(
+    private record ConvertingCommandResult(
             Converter serializer,
             CommandResult delegate
     ) implements CommandResult {

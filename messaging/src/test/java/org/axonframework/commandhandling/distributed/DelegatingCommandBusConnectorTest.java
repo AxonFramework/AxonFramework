@@ -33,29 +33,31 @@ import java.util.concurrent.CompletableFuture;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class WrappedCommandBusConnectorTest {
+/**
+ * Test class validating the {@link DelegatingCommandBusConnector}.
+ *
+ * @author Jens Mayer
+ */
+class DelegatingCommandBusConnectorTest {
 
     private final CommandBusConnector delegate = mock(CommandBusConnector.class);
-
     private final ProcessingContext processingContext = mock(ProcessingContext.class);
-
     private final CommandBusConnector.Handler handler = mock(CommandBusConnector.Handler.class);
-
     private final ComponentDescriptor componentDescriptor = mock(ComponentDescriptor.class);
 
-    private TestWrappedCommandBusConnector wrappedConnector;
+    private TestDelegatingCommandBusConnector wrappedConnector;
 
     @BeforeEach
     void setUp() {
-        wrappedConnector = new TestWrappedCommandBusConnector(delegate);
+        wrappedConnector = new TestDelegatingCommandBusConnector(delegate);
     }
 
     @Test
     void testDispatchDelegatesToWrappedConnector() {
         // Given
         CommandMessage<String> command = asCommandMessage("command");
-        CompletableFuture<CommandResultMessage<?>> expectedResult = CompletableFuture.completedFuture(
-                asCommandResultMessage("result"));
+        CompletableFuture<CommandResultMessage<?>> expectedResult =
+                CompletableFuture.completedFuture(asCommandResultMessage("result"));
 
         when(delegate.dispatch(command, processingContext)).thenReturn(expectedResult);
 
@@ -133,9 +135,9 @@ public class WrappedCommandBusConnectorTest {
     /**
      * Concrete test implementation of the abstract WrappedCommandBusConnector for testing purposes.
      */
-    private static class TestWrappedCommandBusConnector extends WrappedCommandBusConnector {
+    private static class TestDelegatingCommandBusConnector extends DelegatingCommandBusConnector {
 
-        protected TestWrappedCommandBusConnector(CommandBusConnector delegate) {
+        protected TestDelegatingCommandBusConnector(CommandBusConnector delegate) {
             super(delegate);
         }
     }

@@ -22,7 +22,7 @@ import jakarta.annotation.Nonnull;
  * Calculate the priority of {@link CommandMessage} based on its content. Higher value means higher priority.
  *
  * @author Marc Gathier
- * @since 4.0
+ * @since 4.0.0
  */
 @FunctionalInterface
 public interface CommandPriorityCalculator {
@@ -30,8 +30,8 @@ public interface CommandPriorityCalculator {
     /**
      * Determines the priority of the given {@code command}. The higher the returned value, the higher the priority is.
      *
-     * @param command a {@link CommandMessage} to prioritize.
-     * @return an {@code int} defining the priority of the given {@code command}.
+     * @param command A {@link CommandMessage} to prioritize.
+     * @return An {@code int} defining the priority of the given {@code command}.
      */
     int determinePriority(@Nonnull CommandMessage<?> command);
 }

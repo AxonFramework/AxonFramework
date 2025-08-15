@@ -52,12 +52,11 @@ public class DistributedCommandBusConfigurationEnhancer implements Configuration
             componentRegistry
                     .registerIfNotPresent(
                             DistributedCommandBusConfiguration.class,
-                            (c) -> new DistributedCommandBusConfiguration(),
+                            (c) -> DistributedCommandBusConfiguration.DEFAULT,
                             SearchScope.ALL
                     )
-                    .registerDecorator(forType(CommandBus.class)
-                                               .with(commandBusDecoratorDefinition())
-                                               .order(DISTRIBUTED_COMMAND_BUS_ORDER));
+                    .registerDecorator(forType(CommandBus.class).with(commandBusDecoratorDefinition())
+                                                                .order(DISTRIBUTED_COMMAND_BUS_ORDER));
         }
     }
 
@@ -68,9 +67,9 @@ public class DistributedCommandBusConfigurationEnhancer implements Configuration
             }
             var commandBusConfiguration = config.getComponent(DistributedCommandBusConfiguration.class);
             return config.getOptionalComponent(CommandBusConnector.class)
-                         .map(connector -> (CommandBus) new DistributedCommandBus(delegate,
-                                                                                  connector,
-                                                                                  commandBusConfiguration))
+                         .map(connector -> (CommandBus) new DistributedCommandBus(
+                                 delegate, connector, commandBusConfiguration
+                         ))
                          .orElse(delegate);
         };
     }

@@ -29,10 +29,10 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Objects;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Default implementation of the {@link CommandGateway} interface.
@@ -85,9 +85,8 @@ public class DefaultCommandGateway implements CommandGateway {
                                  @Nonnull MessageTypeResolver messageTypeResolver,
                                  @Nullable CommandPriorityCalculator priorityCalculator,
                                  @Nullable RoutingStrategy routingKeyResolver) {
-        this.commandBus = Objects.requireNonNull(commandBus, "The commandBus may not be null.");
-        this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver,
-                                                          "The messageTypeResolver may not be null.");
+        this.commandBus = requireNonNull(commandBus, "The commandBus may not be null.");
+        this.messageTypeResolver = requireNonNull(messageTypeResolver, "The messageTypeResolver may not be null.");
         this.priorityCalculator = priorityCalculator;
         this.routingKeyResolver = routingKeyResolver;
     }
@@ -130,8 +129,8 @@ public class DefaultCommandGateway implements CommandGateway {
      *
      * @param command The command to wrap as {@link CommandMessage}.
      * @return A {@link CommandMessage} containing given {@code command} as payload, a {@code command} if it already
-     * implements {@code CommandMessage}, or a {@code CommandMessage} based on the result of
-     * {@link Message#payload()} and {@link Message#metaData()} for other {@link Message} implementations.
+     * implements {@code CommandMessage}, or a {@code CommandMessage} based on the result of {@link Message#payload()}
+     * and {@link Message#metaData()} for other {@link Message} implementations.
      */
     private <C> CommandMessage<C> asCommandMessage(Object command, MetaData metaData) {
         CommandMessage<C> commandMessage = createCommandMessage(command, metaData);
@@ -143,24 +142,13 @@ public class DefaultCommandGateway implements CommandGateway {
         if (command instanceof CommandMessage<?>) {
             return (CommandMessage<C>) command;
         }
-
-        if (command instanceof Message<?> message) {
-            return new GenericCommandMessage<>(
-                    message.type(),
-                    (C) message.payload(),
-                    message.metaData()
-            );
-        }
-
-        return new GenericCommandMessage<>(
-                messageTypeResolver.resolveOrThrow(command),
-                (C) command,
-                metaData
-        );
+        return command instanceof Message<?> message
+                ? new GenericCommandMessage<>(message.type(), (C) message.payload(), message.metaData())
+                : new GenericCommandMessage<>(messageTypeResolver.resolveOrThrow(command), (C) command, metaData);
     }
 
     private <C> CommandMessage<C> enrichCommandMessage(CommandMessage<C> commandMessage) {
-        if(routingKeyResolver == null && priorityCalculator == null) {
+        if (routingKeyResolver == null && priorityCalculator == null) {
             return commandMessage;
         }
         return new GenericCommandMessage<>(
@@ -171,17 +159,12 @@ public class DefaultCommandGateway implements CommandGateway {
     }
 
     private String resolveRoutingKey(CommandMessage<?> commandMessage) {
-        if (routingKeyResolver == null) {
-            return null;
-        }
-        return routingKeyResolver.getRoutingKey(commandMessage);
+        return routingKeyResolver == null ? null : routingKeyResolver.getRoutingKey(commandMessage);
     }
 
     private OptionalInt resolvePriority(CommandMessage<?> commandMessage) {
-        if (priorityCalculator == null) {
-            return OptionalInt.empty();
-        }
-        int priority = priorityCalculator.determinePriority(commandMessage);
-        return OptionalInt.of(priority);
+        return priorityCalculator == null
+                ? OptionalInt.empty()
+                : OptionalInt.of(priorityCalculator.determinePriority(commandMessage));
     }
 }

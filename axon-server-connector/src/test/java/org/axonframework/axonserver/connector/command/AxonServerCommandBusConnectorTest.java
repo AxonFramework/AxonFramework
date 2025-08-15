@@ -49,6 +49,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link AxonServerCommandBusConnector}.
+ *
+ * @author Jens Mayer
+ */
 class AxonServerCommandBusConnectorTest {
 
     private static final QualifiedName ANY_TEST_COMMAND_NAME = new QualifiedName("TestCommand");
@@ -74,6 +79,7 @@ class AxonServerCommandBusConnectorTest {
 
     @Test
     void constructionWithConnectionNullRefFails() {
+        //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> new AxonServerCommandBusConnector(null));
     }
 
@@ -219,7 +225,7 @@ class AxonServerCommandBusConnectorTest {
         testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR);
 
         // Assert
-        assertThat(getSubscriptions(testSubject)).containsEntry(ANY_TEST_COMMAND_NAME,mockRegistration);
+        assertThat(getSubscriptions(testSubject)).containsEntry(ANY_TEST_COMMAND_NAME, mockRegistration);
     }
 
     @Test
@@ -336,20 +342,19 @@ class AxonServerCommandBusConnectorTest {
                               .build();
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<QualifiedName, Registration> getSubscriptions(AxonServerCommandBusConnector instance){
+    private Map<QualifiedName, Registration> getSubscriptions(AxonServerCommandBusConnector instance) {
         try {
             Field field = instance.getClass().getDeclaredField("subscriptions");
             field.setAccessible(true);
 
+            //noinspection unchecked
             return (Map<QualifiedName, Registration>) field.get(instance);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private CommandBusConnector.Handler getIncomingHandler(AxonServerCommandBusConnector instance){
+    private CommandBusConnector.Handler getIncomingHandler(AxonServerCommandBusConnector instance) {
         try {
             Field field = instance.getClass().getDeclaredField("incomingHandler");
             field.setAccessible(true);
@@ -358,5 +363,4 @@ class AxonServerCommandBusConnectorTest {
             throw new RuntimeException(e);
         }
     }
-
 }

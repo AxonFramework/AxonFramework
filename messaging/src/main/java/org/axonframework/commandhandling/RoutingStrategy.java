@@ -19,20 +19,22 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 
 /**
- * Interface describing a mechanism that generates a routing key for a given command. Commands that should be handled by
- * the same segment, should result in the same routing key.
+ * Interface describing a mechanism that generates a routing key for a given command.
+ * <p>
+ * Commands that should be handled by the same segment, should result in the same routing key.
  *
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
 public interface RoutingStrategy {
 
     /**
-     * Generates a routing key for the given {@code command}. Commands that should be handled by the same segment,
-     * should result in the same routing key.
+     * Generates a routing key for the given {@code command}.
+     * <p>
+     * Commands that should be handled by the same segment, should result in the same routing key.
      *
-     * @param command the command to create a routing key for
-     * @return the routing key for the command
+     * @param command The command to create a routing key for.
+     * @return The routing key for the command.
      */
     String getRoutingKey(@Nonnull CommandMessage<?> command);
 }

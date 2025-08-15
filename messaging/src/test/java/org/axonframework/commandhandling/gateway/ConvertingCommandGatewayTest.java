@@ -48,7 +48,7 @@ class ConvertingCommandGatewayTest {
     }
 
     @Test
-    void testResultIsDeserializedWhenRetrievedFromCommandResult() throws ExecutionException, InterruptedException {
+    void resultIsDeserializedWhenRetrievedFromCommandResult() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
                 CompletableFuture.completedFuture(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE))
         );
@@ -62,7 +62,7 @@ class ConvertingCommandGatewayTest {
     }
 
     @Test
-    void testResultIsDeserializedWhenRetrievedDirectly() throws ExecutionException, InterruptedException {
+    void resultIsDeserializedWhenRetrievedDirectly() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
                 CompletableFuture.completedFuture(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE))
         );
@@ -76,7 +76,7 @@ class ConvertingCommandGatewayTest {
     }
 
     @Test
-    void testCommandResultProvidesAccessToOriginalMessage() throws ExecutionException, InterruptedException {
+    void commandResultProvidesAccessToOriginalMessage() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
                 CompletableFuture.completedFuture(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE))
         );
@@ -92,7 +92,7 @@ class ConvertingCommandGatewayTest {
     }
 
     @Test
-    void testOnSuccessCallbackIsInvokedWhenFutureCompletes() {
+    void onSuccessCallbackIsInvokedWhenFutureCompletes() {
         CompletableFuture<Message<Object>> completableFuture = new CompletableFuture<>();
         CommandResult stubResult = new FutureCommandResult(completableFuture);
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);

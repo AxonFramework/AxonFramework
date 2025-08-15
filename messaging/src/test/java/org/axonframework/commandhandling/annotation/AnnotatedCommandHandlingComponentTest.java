@@ -167,7 +167,7 @@ class AnnotatedCommandHandlingComponentTest {
                                    .payload();
 
         assertNull(result);
-        // TODO The interceptor chain is not yet implemented fully through the MessageStream.
+        // TODO #3103 The interceptor chain is not yet implemented fully through the MessageStream.
         //  Hence, this test does not end up in the message handler.
 //        assertEquals(1, annotatedCommandHandler.voidHandlerInvoked);
         assertEquals(Collections.singletonList(testCommandMessage), withInterceptor);
@@ -257,7 +257,8 @@ class AnnotatedCommandHandlingComponentTest {
         }
 
         @MessageHandlerInterceptor
-        public Object interceptAny(CommandMessage<?> command, ProcessingContext context, InterceptorChain chain) throws Exception {
+        public Object interceptAny(CommandMessage<?> command, ProcessingContext context, InterceptorChain chain)
+                throws Exception {
             interceptedWithInterceptorChain.add(command);
             return chain.proceedSync(context);
         }

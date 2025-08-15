@@ -25,6 +25,11 @@ import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link DistributedCommandBusConfigurationEnhancer}.
+ *
+ * @author Jens Mayer
+ */
 class DistributedCommandBusConfigurationEnhancerTest {
 
     @Test
@@ -32,12 +37,13 @@ class DistributedCommandBusConfigurationEnhancerTest {
 
         CommandBusConnector mockConnector = mock(CommandBusConnector.class);
 
-        Configuration config = MessagingConfigurer.create()
-                                                  .componentRegistry(cr -> {
-                                                      cr.registerComponent(CommandBusConnector.class, c -> mockConnector);
-                                                      cr.registerEnhancer(new DistributedCommandBusConfigurationEnhancer());
-                                                  })
-                                                  .build();
+        Configuration config =
+                MessagingConfigurer.create()
+                                   .componentRegistry(cr -> {
+                                       cr.registerComponent(CommandBusConnector.class, c -> mockConnector);
+                                       cr.registerEnhancer(new DistributedCommandBusConfigurationEnhancer());
+                                   })
+                                   .build();
 
         assertInstanceOf(DistributedCommandBus.class, config.getComponent(CommandBus.class));
         assertTrue(config.hasComponent(DistributedCommandBusConfiguration.class));
@@ -45,13 +51,15 @@ class DistributedCommandBusConfigurationEnhancerTest {
 
     @Test
     void noEnhancementsWhenNoCommandBusConnectorPresent() {
-        Configuration config = MessagingConfigurer.create()
-                                                  .componentRegistry(cr -> cr.registerEnhancer(new DistributedCommandBusConfigurationEnhancer()))
-                                                  .build();
+        Configuration config =
+                MessagingConfigurer.create()
+                                   .componentRegistry(cr -> cr.registerEnhancer(
+                                           new DistributedCommandBusConfigurationEnhancer()
+                                   ))
+                                   .build();
 
         CommandBus commandBus = config.getComponent(CommandBus.class);
         assertInstanceOf(SimpleCommandBus.class, commandBus);
         assertFalse(config.hasComponent(DistributedCommandBusConfiguration.class));
     }
-
 }

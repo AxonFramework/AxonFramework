@@ -51,12 +51,14 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DistributedCommandBus implements CommandBus {
 
-    private final Logger logger = LoggerFactory.getLogger(DistributedCommandBus.class);
+    private static final Logger logger = LoggerFactory.getLogger(DistributedCommandBus.class);
+
     private final CommandBus delegate;
     private final CommandBusConnector connector;
-    // TODO Currently, the loadFactor impacts the whole application. Should be refactored to a loadFactor per CommandType, see issue #3074.
-    private final int loadFactor;
     private final ExecutorService executorService;
+
+    // TODO #3074 Refactor to a loadFactor per CommandType.
+    private final int loadFactor;
 
     /**
      * Constructs a {@code DistributedCommandBus} using the given {@code delegate} for
@@ -65,8 +67,8 @@ public class DistributedCommandBus implements CommandBus {
      *
      * @param delegate      The delegate {@code CommandBus} used to subscribe handlers to.
      * @param connector     The {@code Connector} to dispatch commands or replies.
-     * @param configuration The {@code DistributedCommandBusConfiguration} containing the load factor and the {@code
-     *                      ExecutorServiceFactory} for this bus.
+     * @param configuration The {@code DistributedCommandBusConfiguration} containing the load factor and the
+     *                      {@code ExecutorServiceFactory} for this bus.
      */
     public DistributedCommandBus(@Nonnull CommandBus delegate,
                                  @Nonnull CommandBusConnector connector,
@@ -116,18 +118,20 @@ public class DistributedCommandBus implements CommandBus {
                 );
             }
             long sequence = TASK_SEQUENCE.incrementAndGet();
-            executorService.execute(new PriorityRunnable(() -> {
-                doHandleCommand(commandMessage, callback);
-            }, priority, sequence));
+            executorService.execute(new PriorityRunnable(
+                    () -> doHandleCommand(commandMessage, callback), priority, sequence
+            ));
         }
 
         private void doHandleCommand(CommandMessage<?> commandMessage,
                                      CommandBusConnector.ResultCallback callback) {
-            logger.info("Processing incoming command [{}] with priority [{}] and routing key [{}]",
-                        commandMessage.type(),
-                        commandMessage.priority().orElse(0),
-                        commandMessage.routingKey().orElse(null)
-            );
+            if (logger.isDebugEnabled()) {
+                logger.debug("Processing incoming command [{}] with priority [{}] and routing key [{}]",
+                             commandMessage.type(),
+                             commandMessage.priority().orElse(0),
+                             commandMessage.routingKey().orElse(null));
+            }
+
             delegate.dispatch(commandMessage, null).whenComplete((resultMessage, e) -> {
                 try {
                     if (e == null) {

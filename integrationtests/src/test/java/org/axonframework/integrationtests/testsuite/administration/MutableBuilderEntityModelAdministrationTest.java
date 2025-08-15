@@ -28,7 +28,6 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Comp
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateCustomer;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateEmployee;
 import org.axonframework.integrationtests.testsuite.administration.commands.GiveRaise;
-import org.axonframework.integrationtests.testsuite.administration.commands.PersonCommand;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
 import org.axonframework.integrationtests.testsuite.administration.events.TaskCompleted;
@@ -48,16 +47,12 @@ import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 import org.axonframework.serialization.Converter;
 
-import java.util.List;
 import java.util.Objects;
-
-import static java.lang.String.format;
 
 /**
  * Runs the administration test suite using the builders of {@link EntityMetamodel} and related classes.
  */
 public class MutableBuilderEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
-
 
     EntityMetamodel<MutablePerson> buildEntityMetamodel(Configuration configuration,
                                                         EntityMetamodelBuilder<MutablePerson> builder) {
@@ -166,9 +161,8 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutablePerson.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
-                                            EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                                   configuration);
-                                            entity.handle(command.payloadAs(ChangeEmailAddress.class, converter), eventAppender);
+                                            entity.handle(command.payloadAs(ChangeEmailAddress.class, converter),
+                                                          EventAppender.forContext(context, configuration));
                                             return MessageStream.empty().cast();
                                         })
                 .build();

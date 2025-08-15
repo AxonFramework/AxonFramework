@@ -16,31 +16,18 @@
 
 package org.axonframework.axonserver.connector.command;
 
-import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.Registration;
 import io.axoniq.axonserver.connector.impl.AsyncRegistration;
-import io.axoniq.axonserver.grpc.MetaDataValue;
-import io.axoniq.axonserver.grpc.ProcessingKey;
-import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.MetaDataConverter;
-import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.common.Assert;
-import org.axonframework.common.AxonException;
-import org.axonframework.common.FutureUtils;
-import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
@@ -48,18 +35,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import static org.axonframework.axonserver.connector.MetaDataConverter.convertMetaDataValuesToGrpc;
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.createProcessingInstruction;
-import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * An implementation of the {@link CommandBusConnector} that connects to an Axon Server instance to send and receive
@@ -92,94 +71,14 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                                @Nullable ProcessingContext processingContext) {
         return connection.commandChannel()
-                         .sendCommand(buildOutgoingCommand(command))
-                         .thenCompose(this::buildResultMessage);
-    }
-
-    private CompletableFuture<CommandResultMessage<?>> buildResultMessage(CommandResponse commandResponse) {
-        if (commandResponse.hasErrorMessage()) {
-            return CompletableFuture.failedFuture(exceptionFromErrorResponse(commandResponse));
-        }
-
-        if (commandResponse.getPayload().getType().isEmpty()) {
-            return FutureUtils.emptyCompletedFuture();
-        }
-
-        MessageType messageType = new MessageType(commandResponse.getPayload().getType(),
-                                                  commandResponse.getPayload().getRevision());
-        Map<String, String> metadata = convertMetaDataValuesToGrpc(commandResponse.getMetaDataMap());
-        return CompletableFuture.completedFuture(new GenericCommandResultMessage<>(new GenericMessage<>(
-                commandResponse.getMessageIdentifier(),
-                messageType,
-                commandResponse.getPayload().getData().toByteArray(),
-                metadata
-        )));
-    }
-
-    private AxonException exceptionFromErrorResponse(CommandResponse commandResponse) {
-        return ErrorCode.getFromCode(commandResponse.getErrorCode())
-                        .convert(commandResponse.getErrorMessage(),
-                                 () -> getErrorMessageFromCommandResponse(commandResponse));
-    }
-
-    private Object getErrorMessageFromCommandResponse(CommandResponse commandResponse) {
-        if (commandResponse.getPayload().getData().isEmpty()) {
-            return null;
-        }
-        return commandResponse.getPayload().getData().toByteArray();
-    }
-
-    private Command buildOutgoingCommand(CommandMessage<?> command) {
-        Object payload = command.payload();
-        if (!(payload instanceof byte[] payloadAsBytes)) {
-            throw new IllegalArgumentException(
-                    "Payload must be of type byte[] for AxonServerConnector, but was: "
-                            + command.payloadType().getName()
-                            + ", consider using a Converter-based CommandBusConnector"
-            );
-        }
-        Command.Builder builder = Command.newBuilder();
-        addRoutingKey(builder, command);
-        addPriority(builder, command);
-
-        return builder
-                .setMessageIdentifier(command.identifier())
-                .setName(command.type().name())
-                .putAllMetaData(MetaDataConverter.convertGrpcToMetaDataValues(command.metaData()))
-                .setPayload(SerializedObject.newBuilder()
-                                            .setData(ByteString.copyFrom(payloadAsBytes))
-                                            .setType(command.type().name())
-                                            .setRevision(command.type().version())
-                                            .build())
-                .build();
-    }
-
-    private void addPriority(Command.Builder builder, CommandMessage<?> command) {
-        OptionalInt priority = command.priority();
-        if (priority.isEmpty()) {
-            return;
-        }
-        var instruction = createProcessingInstruction(
-                ProcessingKey.PRIORITY,
-                MetaDataValue.newBuilder().setNumberValue(priority.getAsInt()));
-        builder.addProcessingInstructions(instruction).build();
-    }
-
-    private void addRoutingKey(Command.Builder builder, CommandMessage<?> command) {
-        Optional<String> routingKey = command.routingKey();
-        if (routingKey.isEmpty()) {
-            return;
-        }
-        var instruction = createProcessingInstruction(
-                ProcessingKey.ROUTING_KEY,
-                MetaDataValue.newBuilder().setTextValue(routingKey.get()));
-        builder.addProcessingInstructions(instruction).build();
+                         .sendCommand(CommandConverter.convertCommandMessage(command))
+                         .thenCompose(CommandConverter::convertCommandResponse);
     }
 
     @Override
     public void subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
         Assert.isTrue(loadFactor >= 0, () -> "Load factor must be greater than 0.");
-        logger.info("Subscribing to command [{}] with load factor [{}]", commandName, loadFactor);
+        logger.debug("Subscribing to command [{}] with load factor [{}]", commandName, loadFactor);
         Registration registration = connection.commandChannel()
                                               .registerCommandHandler(this::handle, loadFactor, commandName.name());
 
@@ -202,11 +101,11 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     private CompletableFuture<CommandResponse> handle(Command command) {
-        logger.info("Received incoming command [{}]", command.getName());
+        logger.debug("Received incoming command [{}]", command.getName());
         try {
             CompletableFuture<CommandResponse> result = new CompletableFuture<>();
-            incomingHandler.handle(convertToCommandMessage(command),
-                                         new FutureResultCallback(result, command));
+            incomingHandler.handle(CommandConverter.convertCommand(command),
+                                   new FutureResultCallback(result, command));
             return result;
         } catch (Exception e) {
             logger.error("Error processing incoming command: {}", command.getName(), e);
@@ -214,50 +113,6 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
             errorResult.completeExceptionally(e);
             return errorResult;
         }
-    }
-
-    private CommandMessage<?> convertToCommandMessage(Command command) {
-        SerializedObject commandPayload = command.getPayload();
-        int priority = priority(command.getProcessingInstructionsList());
-        String routingKey = ProcessingInstructionHelper.routingKey(command.getProcessingInstructionsList());
-        return new GenericCommandMessage<>(
-                new GenericMessage<>(
-                        command.getMessageIdentifier(),
-                        new MessageType(commandPayload.getType(), commandPayload.getRevision()),
-                        commandPayload.getData().toByteArray(),
-                        convertMetaDataValuesToGrpc(command.getMetaDataMap())
-                ),
-                routingKey,
-                priority
-        );
-    }
-
-    private CommandResponse createResult(Command command, Message<?> resultMessage) {
-        if (resultMessage == null) {
-            return CommandResponse.newBuilder()
-                                  .setMessageIdentifier(UUID.randomUUID().toString())
-                                  .build();
-        }
-        Object payload = resultMessage.payload();
-        String messageId = getOrDefault(resultMessage.identifier(), UUID.randomUUID().toString());
-        CommandResponse.Builder responseBuilder = CommandResponse
-                .newBuilder()
-                .setMessageIdentifier(messageId)
-                .putAllMetaData(MetaDataConverter.convertGrpcToMetaDataValues(resultMessage.metaData()))
-                .setRequestIdentifier(command.getMessageIdentifier());
-
-        if (payload!=null && !(payload instanceof byte[])) {
-            throw new IllegalArgumentException(
-                    "Payload must be of type byte[] for AxonServerConnector, but was: %s, consider using a Converter-based CommandBusConnector".
-                            formatted(resultMessage.payloadType().getName())
-            );
-        }
-        byte[] payloadAsBytes = (byte[]) Objects.requireNonNullElse(payload, new byte[0]);
-        return responseBuilder.setPayload(SerializedObject.newBuilder()
-                .setType(resultMessage.type().name())
-                .setRevision(resultMessage.type().version())
-                .setData(ByteString.copyFrom(payloadAsBytes)))
-                .build();
     }
 
     @Override
@@ -275,20 +130,15 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         this.incomingHandler = handler;
     }
 
-    private class FutureResultCallback implements ResultCallback {
-
-        private final CompletableFuture<CommandResponse> result;
-        private final Command command;
-
-        public FutureResultCallback(CompletableFuture<CommandResponse> result, Command command) {
-            this.result = result;
-            this.command = command;
-        }
+    private record FutureResultCallback(
+            @Nonnull CompletableFuture<CommandResponse> result,
+            @Nonnull Command command
+    ) implements ResultCallback {
 
         @Override
         public void onSuccess(Message<?> resultMessage) {
             logger.debug("Command [{}] completed successfully with result [{}]", command.getName(), resultMessage);
-            result.complete(createResult(command, resultMessage));
+            result.complete(CommandConverter.convertResultMessage(resultMessage, command.getMessageIdentifier()));
         }
 
         @Override

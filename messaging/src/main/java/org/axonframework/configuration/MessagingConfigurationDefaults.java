@@ -18,9 +18,9 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.RoutingStrategy;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
@@ -61,7 +61,6 @@ import org.axonframework.serialization.json.JacksonConverter;
  *     <li>Registers a {@link org.axonframework.queryhandling.DefaultQueryGateway} for class {@link org.axonframework.queryhandling.QueryGateway}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryBus} for class {@link QueryBus}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryUpdateEmitter} for class {@link QueryUpdateEmitter}</li>
- *
  * </ul>
  *
  * @author Steven van Beelen

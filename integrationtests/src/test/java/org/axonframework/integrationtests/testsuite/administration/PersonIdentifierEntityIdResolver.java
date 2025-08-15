@@ -40,7 +40,7 @@ class PersonIdentifierEntityIdResolver implements EntityIdResolver<PersonIdentif
 
     private final Configuration config;
 
-    public PersonIdentifierEntityIdResolver(Configuration config) {
+    PersonIdentifierEntityIdResolver(Configuration config) {
         this.config = config;
     }
 
@@ -55,14 +55,13 @@ class PersonIdentifierEntityIdResolver implements EntityIdResolver<PersonIdentif
                 CompleteTaskCommand.class,
                 GiveRaise.class
         );
-        var clazz = personCommandTypes.stream().filter(type -> type.getName()
-                                                                   .equals(message.type().name()))
+        var clazz = personCommandTypes.stream()
+                                      .filter(type -> type.getName().equals(message.type().name()))
                                       .findFirst()
                                       .orElseThrow(() -> new IllegalArgumentException(format(
                                               "Unknown command type: %s",
-                                              message.type().name())));
-        PersonCommand personCommand = config.getComponent(Converter.class)
-                                            .convert(message.payload(), clazz);
-        return Objects.requireNonNull(personCommand).identifier();
+                                              message.type().name()
+                                      )));
+        return Objects.requireNonNull(message.payloadAs(clazz, config.getComponent(Converter.class))).identifier();
     }
 }
