@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.configuration;
+package org.axonframework.commandhandling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
@@ -26,7 +26,6 @@ import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.modelling.command.StatefulCommandHandler;
 
 import java.util.function.Consumer;
 
@@ -37,28 +36,19 @@ import static java.util.Objects.requireNonNull;
  * handling application module.
  * <p>
  * The {@code StatefulCommandHandlingModule} follows a builder paradigm, wherein several
- * {@link EntityModule entity modules} and {@link StatefulCommandHandler StatefulCommandHandlers} can be registered in
- * either order. Entities defined in the registered entity modules will be available in the
- * {@link org.axonframework.modelling.StateManager} of the stateful command handlers defined in this module.
+ * {@link CommandHandler CommmandHandlers} can be registered in either order.
  * <p>
- * To register command handlers, a similar registration phase switch should be made, by
- * invoking {@link SetupPhase#commandHandlers()}.
+ * To register command handlers, a similar registration phase switch should be made, by invoking
+ * {@link SetupPhase#commandHandlers()}.
  * <p>
- * Here's an example of how to register two stateful command handler lambdas, one state-based entity with a repository
- * and another state-based entity using a separate loader and persister:
+ * Here's an example of how to register two stateful command handler lambdas:
  * <pre>
  * StatefulCommandHandlingModule.named("my-module")
- *                              .entities()
- *                              .entity(StateBasedEntityModule.declarative(CourseId.class, Course.class)
- *                                                            .repository(config -> ...))
- *                              .entity(StateBasedEntityModule.declarative(StudentId.class, Student.class)
- *                                                            .loader(config -> ...)
- *                                                            .persister(config -> ...))
  *                              .commandHandlers()
  *                              .commandHandler(new QualifiedName(RenameCourseCommand.class),
- *                                              (cmd, course, context) -> { ...command handling logic... })
+ *                                              (cmd, context) -> { ...command handling logic... })
  *                              .commandHandler(new QualifiedName(ChangeCourseClassRoomCommand.class),
- *                                              (cmd, entity, context) -> { ...command handling logic... });
+ *                                              (cmd, context) -> { ...command handling logic... });
  * </pre>
  * <p>
  * Note that users do not have to invoke {@link #build()} themselves when using this interface, as the
@@ -86,7 +76,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
      * The setup phase of the stateful command handling module.
      * <p>
      * The {@link #commandHandlers()} method allows users to start configuring all the
-     * {@link StatefulCommandHandler StatefulCommandHandlers} for this module.
+     * {@link CommandHandler CommandHandlers} for this module.
      */
     interface SetupPhase {
 
@@ -116,14 +106,14 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
     /**
      * The command handler configuration phase of the stateful command handling module.
      * <p>
-     * Every registered {@link StatefulCommandHandler} will be subscribed with the
+     * Every registered {@link CommandHandler} will be subscribed with the
      * {@link org.axonframework.commandhandling.CommandBus} of the
      * {@link org.axonframework.configuration.ApplicationConfigurer} this module is given to.
      * <p>
      * Provides roughly two options for configuring stateful command handlers. Firstly, a stateful command handler can
-     * be registered as is, through the {@link #commandHandler(QualifiedName, CommandHandler)} method. Secondly,
-     * if the stateful command handler provides components from the {@link Configuration}, a
-     * {@link ComponentBuilder builder} of the stateful command handler can be registered through the
+     * be registered as is, through the {@link #commandHandler(QualifiedName, CommandHandler)} method. Secondly, if the
+     * stateful command handler provides components from the {@link Configuration}, a {@link ComponentBuilder builder}
+     * of the stateful command handler can be registered through the
      * {@link #commandHandler(QualifiedName, ComponentBuilder)} method.
      */
     interface CommandHandlerPhase extends SetupPhase, ModuleBuilder<CommandHandlingModule> {
@@ -156,9 +146,9 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * subscribed with the {@link org.axonframework.commandhandling.CommandBus} of the
          * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
          *
-         * @param commandName           The qualified name of the command the {@link StatefulCommandHandler} created by
+         * @param commandName           The qualified name of the command the {@link CommandHandler} created by
          *                              the given {@code commandHandlerBuilder}.
-         * @param commandHandlerBuilder A builder of a {@link StatefulCommandHandler}. Provides the
+         * @param commandHandlerBuilder A builder of a {@link CommandHandler}. Provides the
          *                              {@link Configuration} to retrieve components from to use during construction of
          *                              the stateful command handler.
          * @return The command handler phase of this builder, for a fluent API.

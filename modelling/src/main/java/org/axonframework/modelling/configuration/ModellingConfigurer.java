@@ -17,6 +17,7 @@
 package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Component;
@@ -99,7 +100,7 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      *                      {@code this ModellingConfigurer}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
-    public ModellingConfigurer registerStatefulCommandHandlingModule(
+    public ModellingConfigurer registerCommandHandlingModule(
             ModuleBuilder<CommandHandlingModule> moduleBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerModule(moduleBuilder.build()));

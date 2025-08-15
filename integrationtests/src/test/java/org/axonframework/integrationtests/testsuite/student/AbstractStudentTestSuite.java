@@ -40,7 +40,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.configuration.CommandHandlingModule;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.serialization.Converter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;

@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.configuration;
 
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ModuleBuilder;
@@ -40,7 +41,7 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
     }
 
     @Test
-    void registerStatefulCommandHandlingModuleAddsAModuleConfiguration() {
+    void registerCommandHandlingModuleAddsAModuleConfiguration() {
         StateBasedEntityModule<String, Object> testEntityBuilder =
                 StateBasedEntityModule.declarative(String.class, Object.class)
                                       .loader(c -> (id, context) -> null)
@@ -55,7 +56,7 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
 
         List<Configuration> moduleConfigurations =
                 testSubject.componentRegistry(cr -> cr.registerModule(testEntityBuilder))
-                           .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
+                           .registerCommandHandlingModule(statefulCommandHandlingModule)
                            .build()
                            .getModuleConfigurations();
 

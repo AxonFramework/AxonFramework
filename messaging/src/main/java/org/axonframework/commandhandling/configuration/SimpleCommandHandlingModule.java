@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.configuration;
+package org.axonframework.commandhandling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
@@ -27,10 +27,7 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer;
-import org.axonframework.modelling.SimpleStateManager;
-import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.annotation.InjectEntity;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,10 +37,7 @@ import static java.util.Objects.requireNonNull;
 import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
 
 /**
- * Simple implementation of the {@link CommandHandlingModule}. Registers the
- * {@link HierarchicalStateManagerConfigurationEnhancer} enhancer to the module so that message handlers get access to
- * entities via defining parameters, such as entitiy classes with {@link InjectEntity} or the {@link StateManager}
- * itself.
+ * Simple implementation of the {@link CommandHandlingModule}.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
@@ -54,17 +48,14 @@ import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
 class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule>
         implements CommandHandlingModule,
         CommandHandlingModule.SetupPhase,
-        CommandHandlingModule.CommandHandlerPhase
-{
+        CommandHandlingModule.CommandHandlerPhase {
 
-    private final String moduleName;
     private final String commandHandlingComponentName;
     private final Map<QualifiedName, ComponentBuilder<CommandHandler>> handlerBuilders;
     private final List<ComponentBuilder<CommandHandlingComponent>> handlingComponentBuilders;
 
     SimpleCommandHandlingModule(@Nonnull String moduleName) {
-        super(moduleName);
-        this.moduleName = requireNonNull(moduleName, "The module name cannot be null.");
+        super(requireNonNull(moduleName, "The module name cannot be null."));
         this.commandHandlingComponentName = "CommandHandlingComponent[" + moduleName + "]";
         this.handlerBuilders = new HashMap<>();
         this.handlingComponentBuilders = new ArrayList<>();
@@ -106,13 +97,13 @@ class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule
     private ComponentDefinition<CommandHandlingComponent> commandHandlingComponentComponentDefinition() {
         return ofTypeAndName(CommandHandlingComponent.class, commandHandlingComponentName)
                 .withBuilder(c -> {
-                    SimpleCommandHandlingComponent statefulCommandHandler = SimpleCommandHandlingComponent.create(
+                    SimpleCommandHandlingComponent commandHandlingComponent = SimpleCommandHandlingComponent.create(
                             commandHandlingComponentName
                     );
-                    handlingComponentBuilders.forEach(handlingComponent -> statefulCommandHandler.subscribe(
+                    handlingComponentBuilders.forEach(handlingComponent -> commandHandlingComponent.subscribe(
                             handlingComponent.build(c)));
-                    handlerBuilders.forEach((key, value) -> statefulCommandHandler.subscribe(key, value.build(c)));
-                    return statefulCommandHandler;
+                    handlerBuilders.forEach((key, value) -> commandHandlingComponent.subscribe(key, value.build(c)));
+                    return commandHandlingComponent;
                 })
                 .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (configuration, component) -> {
                     configuration.getComponent(CommandBus.class)

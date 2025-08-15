@@ -32,7 +32,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.configuration.CommandHandlingModule;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.junit.jupiter.api.*;
 

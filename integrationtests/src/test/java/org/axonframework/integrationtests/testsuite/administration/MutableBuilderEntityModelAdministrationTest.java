@@ -41,7 +41,7 @@ import org.axonframework.integrationtests.testsuite.administration.state.mutable
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
-import org.axonframework.modelling.configuration.CommandHandlingModule;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;

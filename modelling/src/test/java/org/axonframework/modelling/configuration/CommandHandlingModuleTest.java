@@ -19,6 +19,7 @@ package org.axonframework.modelling.configuration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlingComponent;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentBuilder;
