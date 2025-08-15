@@ -23,9 +23,11 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
@@ -254,7 +256,8 @@ class SimpleCommandBusTest {
     @Test
     void describeReturnsRegisteredComponents() {
         ProcessingLifecycleHandlerRegistrar lifecycleHandlerRegistrar = mock(ProcessingLifecycleHandlerRegistrar.class);
-        testSubject = new SimpleCommandBus(executor, lifecycleHandlerRegistrar);
+        UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory();
+        testSubject = new SimpleCommandBus(unitOfWorkFactory, List.of(lifecycleHandlerRegistrar));
         var handler1 = mock(CommandHandler.class);
         var handler2 = mock(CommandHandler.class);
         testSubject.subscribe(COMMAND_NAME, handler1);
@@ -264,7 +267,7 @@ class SimpleCommandBusTest {
         ComponentDescriptor mockComponentDescriptor = mock(ComponentDescriptor.class);
         testSubject.describeTo(mockComponentDescriptor);
 
-        verify(mockComponentDescriptor).describeProperty("worker", executor);
+        verify(mockComponentDescriptor).describeProperty("unitOfWorkFactory", unitOfWorkFactory);
         verify(mockComponentDescriptor).describeProperty("lifecycleRegistrars", List.of(lifecycleHandlerRegistrar));
         verify(mockComponentDescriptor)
                 .describeProperty("subscriptions", Map.of(COMMAND_NAME, handler1, handlerTwoName, handler2));

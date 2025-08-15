@@ -17,11 +17,17 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.ApplicationContext;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -66,33 +72,70 @@ public class UnitOfWork implements ProcessingLifecycle {
     private final UnitOfWorkProcessingContext context;
 
     /**
-     * Constructs a {@code UnitOfWork} with a {@link UUID#randomUUID() random UUID String}. Will execute provided
-     * actions on the same thread invoking this Unit of Work.
-     */
-    public UnitOfWork() {
-        this(UUID.randomUUID().toString());
-    }
-
-    /**
-     * Constructs a {@code UnitOfWork} with the given {@code identifier}. Will execute provided actions on the same
-     * thread invoking this Unit of Work.
-     *
-     * @param identifier The identifier of this Unit of Work.
-     */
-    public UnitOfWork(String identifier) {
-        this(identifier, Runnable::run);
-    }
-
-    /**
      * Constructs a {@code UnitOfWork} with the given {@code identifier}, processing actions through the given
      * {@code workScheduler}.
      *
      * @param identifier    The identifier of this Unit of Work.
      * @param workScheduler The {@link Executor} used to process the steps attached to the phases in this Unit of Work
      */
-    public UnitOfWork(String identifier, Executor workScheduler) {
+    @Internal
+    UnitOfWork(@Nonnull String identifier, @Nonnull Configuration configuration) {
+        Objects.requireNonNull(identifier, "identifier may not be null");
+        Objects.requireNonNull(configuration, "configuration may not be null");
         this.identifier = identifier;
-        this.context = new UnitOfWorkProcessingContext(identifier, workScheduler);
+        this.context = new UnitOfWorkProcessingContext(
+                identifier,
+                configuration.workScheduler,
+                configuration.applicationContext
+        );
+    }
+
+    /**
+     * Configuration record for {@link UnitOfWork} construction parameters.
+     * <p>
+     * Defines the work scheduler and application context used during unit of work processing.
+     *
+     * @param workScheduler      The {@link Executor} for processing unit of work actions.
+     * @param applicationContext The {@link ApplicationContext} for component resolution.
+     */
+    public record Configuration(
+            Executor workScheduler,
+            ApplicationContext applicationContext
+    ) {
+
+        /**
+         * Creates default configuration with direct execution and empty application context.
+         *
+         * @return Default {@link Configuration} instance.
+         */
+        @Nonnull
+        public static Configuration defaultValues() {
+            return new Configuration(Runnable::run, new EmptyApplicationContext());
+        }
+
+        /**
+         * Creates new configuration with specified work scheduler.
+         *
+         * @param workScheduler The {@link Executor} for processing actions.
+         * @return New {@link Configuration} with updated work scheduler.
+         */
+        @Nonnull
+        public Configuration workScheduler(@Nonnull Executor workScheduler) {
+            Objects.requireNonNull(workScheduler, "workScheduler may not be null");
+            return new Configuration(workScheduler, applicationContext);
+        }
+
+        /**
+         * Creates new configuration with specified application context.
+         *
+         * @param applicationContext The {@link ApplicationContext} for component access.
+         * @return New {@link Configuration} with updated application context.
+         */
+        @Nonnull
+        public Configuration applicationContext(@Nonnull ApplicationContext applicationContext) {
+            Objects.requireNonNull(applicationContext, "applicationContext may not be null");
+            return new Configuration(workScheduler, applicationContext);
+        }
     }
 
     @Override
@@ -202,12 +245,18 @@ public class UnitOfWork implements ProcessingLifecycle {
 
         private final String identifier;
         private final Executor workScheduler;
+        private final ApplicationContext applicationContext;
         private final ConcurrentMap<ResourceKey<?>, Object> resources;
 
-        private UnitOfWorkProcessingContext(String identifier, Executor workScheduler) {
+        private UnitOfWorkProcessingContext(
+                String identifier,
+                Executor workScheduler,
+                ApplicationContext applicationContext
+        ) {
             this.identifier = identifier;
             this.workScheduler = workScheduler;
             this.resources = new ConcurrentHashMap<>();
+            this.applicationContext = applicationContext;
         }
 
         @Override
@@ -456,6 +505,12 @@ public class UnitOfWork implements ProcessingLifecycle {
         public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
                                           @Nonnull T expectedResource) {
             return resources.remove(key, expectedResource);
+        }
+
+        @Nonnull
+        @Override
+        public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+            return applicationContext.component(type, name);
         }
 
         @Override

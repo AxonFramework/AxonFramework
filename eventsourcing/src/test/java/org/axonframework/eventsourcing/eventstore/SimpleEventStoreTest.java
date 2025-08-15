@@ -28,6 +28,7 @@ import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -151,7 +152,7 @@ class SimpleEventStoreTest {
             EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(42);
 
-            UnitOfWork unitOfWork = new UnitOfWork();
+            UnitOfWork unitOfWork = aUnitOfWork();
             when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
             var result = unitOfWork.executeWithResult(pc -> {
@@ -171,7 +172,7 @@ class SimpleEventStoreTest {
             EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(42);
 
-            UnitOfWork unitOfWork = new UnitOfWork();
+            UnitOfWork unitOfWork = aUnitOfWork();
             when(mockStorageEngine.source(any())).thenReturn(messageStreamOf(10));
             when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
@@ -206,7 +207,7 @@ class SimpleEventStoreTest {
             EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(101);
 
-            UnitOfWork unitOfWork = new UnitOfWork();
+            UnitOfWork unitOfWork = aUnitOfWork();
             when(mockStorageEngine.source(any())).thenReturn(messageStreamOf(size1))
                                                  .thenReturn(messageStreamOf(size2))
                                                  .thenReturn(messageStreamOf(size3));
@@ -244,7 +245,7 @@ class SimpleEventStoreTest {
             EventMessage<?> testEventZero = createEvent(0);
             EventMessage<?> testEventOne = createEvent(1);
 
-            UnitOfWork uow = new UnitOfWork();
+            UnitOfWork uow = aUnitOfWork();
             uow.onPreInvocation(context -> {
                    CompletableFuture<Void> result = testSubject.publish(context, testEventZero, testEventOne);
                    assertTrue(result.isDone());
@@ -283,8 +284,8 @@ class SimpleEventStoreTest {
             assertEquals(1, resultTags.size());
             assertEquals(testTag, resultTags.getFirst());
         }
-    }
 
+    }
     @Test
     void describeToDescribesPropertiesForEventStorageEngineAndTheContext() {
         // given
@@ -318,5 +319,10 @@ class SimpleEventStoreTest {
             assertionFailedError.addSuppressed(e);
             throw assertionFailedError;
         }
+    }
+
+    @Nonnull
+    private static UnitOfWork aUnitOfWork() {
+        return new SimpleUnitOfWorkFactory().create();
     }
 }

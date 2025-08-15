@@ -21,6 +21,7 @@ import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
@@ -39,7 +40,7 @@ import org.axonframework.integrationtests.testsuite.administration.state.mutable
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
@@ -169,7 +170,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
     }
 
     @Override
-    Module getModule() {
+    protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
         EventSourcedEntityModule<PersonIdentifier, MutablePerson> personEntityModule = EventSourcedEntityModule
                 .declarative(PersonIdentifier.class, MutablePerson.class)
                 .messagingModel(this::buildEntityMetamodel)
@@ -183,10 +184,13 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 }))
                 .criteriaResolver(c -> (s, ctx) -> EventCriteria.havingTags("Person", s.key()))
                 .entityIdResolver(PersonIdentifierEntityIdResolver::new);
-        return StatefulCommandHandlingModule
+        return configurer.componentRegistry(cr -> cr.registerModule(personEntityModule));
+    }
+
+    @Override
+    Module getModule() {
+        return CommandHandlingModule
                 .named("MutableBuilderEntityModelAdministrationTest")
-                .entities()
-                .entity(personEntityModule)
                 .commandHandlers()
                 .build();
     }

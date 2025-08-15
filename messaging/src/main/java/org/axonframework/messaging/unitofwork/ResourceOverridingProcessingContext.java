@@ -17,7 +17,9 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -45,8 +47,7 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
      * Constructs a resource-overriding {@link ProcessingContext} using the provided parameters.
      *
      * @param delegate The {@link ProcessingContext} to <em>only</em> override the given {@code key} for.
-     * @param key      The {@link ResourceKey} to override in the {@code delegate}
-     *                 {@link ProcessingContext}.
+     * @param key      The {@link ResourceKey} to override in the {@code delegate} {@link ProcessingContext}.
      * @param resource The resource of type {@code R} that's overridden with the given {@code key}.
      */
     public ResourceOverridingProcessingContext(@Nonnull ProcessingContext delegate,
@@ -226,5 +227,11 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
         return this.key.equals(key)
                 ? resource.compareAndSet((R) expectedResource, null)
                 : delegate.removeResource(key, expectedResource);
+    }
+
+    @Nonnull
+    @Override
+    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+        return delegate.component(type, name);
     }
 }

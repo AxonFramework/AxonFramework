@@ -33,7 +33,7 @@ import java.util.function.Consumer;
 public abstract class BaseModule<S extends BaseModule<S>> implements Module {
 
     private final DefaultComponentRegistry componentRegistry;
-    private final String name;
+    protected final String name;
 
     /**
      * Construct a base module with the given {@code name}.

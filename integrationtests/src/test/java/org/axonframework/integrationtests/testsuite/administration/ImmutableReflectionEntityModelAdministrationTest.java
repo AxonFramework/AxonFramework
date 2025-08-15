@@ -18,23 +18,28 @@ package org.axonframework.integrationtests.testsuite.administration;
 
 import org.axonframework.configuration.Module;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutablePerson;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
 
 /**
- * Runs the administration test suite using as many reflection components of the {@link EntityMetamodel} and
- * related classes as possible. As reflection-based components are added, this test may change to use more of them.
+ * Runs the administration test suite using as many reflection components of the {@link EntityMetamodel} and related
+ * classes as possible. As reflection-based components are added, this test may change to use more of them.
  */
 public class ImmutableReflectionEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
     @Override
     Module getModule() {
-        return StatefulCommandHandlingModule.named("ImmutableReflectionEntityModelAdministrationTest")
-                                            .entities()
-                                            .entity(EventSourcedEntityModule
-                                                            .annotated(PersonIdentifier.class, ImmutablePerson.class))
-                                            .build();
+        return CommandHandlingModule.named("ImmutableReflectionEntityModelAdministrationTest")
+                                    .commandHandlers()
+                                    .build();
+    }
+
+    @Override
+    protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
+        var personEntity = EventSourcedEntityModule.annotated(PersonIdentifier.class, ImmutablePerson.class);
+        return configurer.componentRegistry(cr -> cr.registerModule(personEntity));
     }
 }

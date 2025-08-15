@@ -96,11 +96,19 @@ public class SimpleCommandHandlingComponent implements
                              .findFirst();
 
         if (optionalSubHandler.isPresent()) {
-            return optionalSubHandler.get().handle(command, context);
+            try {
+                return optionalSubHandler.get().handle(command, context);
+            } catch (Throwable e) {
+                return MessageStream.failed(e);
+            }
         }
 
         if (commandHandlers.containsKey(qualifiedName)) {
-            return commandHandlers.get(qualifiedName).handle(command, context);
+            try {
+                return commandHandlers.get(qualifiedName).handle(command, context);
+            } catch (Throwable e) {
+                return MessageStream.failed(e);
+            }
         }
 
         String message = "No handler was subscribed for command with qualified name [%s] on component [%s]. Registered handlers: [%s]"

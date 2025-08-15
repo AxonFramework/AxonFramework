@@ -22,6 +22,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Context;
 
 import java.util.Objects;
+import java.util.function.UnaryOperator;
 
 /**
  * Factory for creating {@link UnitOfWork} instances that are bound to a transaction.
@@ -82,9 +83,13 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
      *
      * @return A new transactional unit of work.
      */
+    @Nonnull
     @Override
-    public UnitOfWork create() {
-        var unitOfWork = delegate.create();
+    public UnitOfWork create(
+            @Nonnull String identifier,
+            @Nonnull UnaryOperator<UnitOfWork.Configuration> customization
+    ) {
+        var unitOfWork = delegate.create(identifier, customization);
         unitOfWork.runOnPreInvocation(ctx -> {
             var transaction = transactionManager.startTransaction();
             ctx.putResource(TRANSACTION_RESOURCE_KEY, transaction);

@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
@@ -31,8 +32,8 @@ import org.axonframework.integrationtests.testsuite.student.state.StudentMentorA
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.SimpleEntityEvolvingComponent;
+import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
@@ -49,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
     @Override
-    protected void registerAdditionalEntities(StatefulCommandHandlingModule.EntityPhase entityConfigurer) {
+    protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
         EventSourcedEntityModule<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentSlice =
                 EventSourcedEntityModule
                         .declarative(StudentMentorModelIdentifier.class, StudentMentorAssignment.class)
@@ -78,8 +79,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                                              .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
                         ))
                         .build();
-
-        entityConfigurer.entity(mentorAssignmentSlice);
+        return configurer.componentRegistry(cr -> cr.registerModule(mentorAssignmentSlice));
     }
 
     @Test
@@ -96,10 +96,11 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
     void canHandleCommandThatTargetsMultipleModelsViaStatefulCommandHandler() {
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(AssignMentorCommand.class),
-                c -> (command, state, context) -> {
+                c -> (command, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context, c);
                     AssignMentorCommand payload = command.payloadAs(AssignMentorCommand.class,
                                                                     c.getComponent(Converter.class));
+                    StateManager state = context.component(StateManager.class);
                     StudentMentorAssignment assignment = state.loadEntity(
                             StudentMentorAssignment.class, payload.modelIdentifier(), context
                     ).join();

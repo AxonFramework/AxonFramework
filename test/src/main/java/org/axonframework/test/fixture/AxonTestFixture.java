@@ -22,6 +22,8 @@ import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
@@ -49,6 +51,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
     private final MessageTypeResolver messageTypeResolver;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
+    private final UnitOfWorkFactory unitOfWorkFactory;
 
     AxonTestFixture(@Nonnull Configuration configuration,
                     @Nonnull UnaryOperator<Customization> customization) {
@@ -59,10 +62,10 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         CommandBus commandBusComponent = configuration.getComponent(CommandBus.class);
         if (!(commandBusComponent instanceof RecordingCommandBus)) {
             throw new FixtureExecutionException(
-                "CommandBus is not a RecordingCommandBus. This may happen in Spring environments where the " +
-                "MessagesRecordingConfigurationEnhancer is not properly registered. " +
-                "Please declare MessagesRecordingConfigurationEnhancer as a bean in your test context. " +
-                "Note: This configuration may be subject to change until the 5.0.0 release."
+                    "CommandBus is not a RecordingCommandBus. This may happen in Spring environments where the " +
+                            "MessagesRecordingConfigurationEnhancer is not properly registered. " +
+                            "Please declare MessagesRecordingConfigurationEnhancer as a bean in your test context. " +
+                            "Note: This configuration may be subject to change until the 5.0.0 release."
             );
         }
         this.commandBus = (RecordingCommandBus) commandBusComponent;
@@ -71,13 +74,15 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         EventSink eventSinkComponent = configuration.getComponent(EventSink.class);
         if (!(eventSinkComponent instanceof RecordingEventSink)) {
             throw new FixtureExecutionException(
-                "EventSink is not a RecordingEventSink. This may happen in Spring environments where the " +
-                "MessagesRecordingConfigurationEnhancer is not properly registered. " +
-                "Please declare MessagesRecordingConfigurationEnhancer as a bean in your test context. " +
-                "Note: This configuration may be subject to change until the 5.0.0 release."
+                    "EventSink is not a RecordingEventSink. This may happen in Spring environments where the " +
+                            "MessagesRecordingConfigurationEnhancer is not properly registered. " +
+                            "Please declare MessagesRecordingConfigurationEnhancer as a bean in your test context. " +
+                            "Note: This configuration may be subject to change until the 5.0.0 release."
             );
         }
         this.eventSink = (RecordingEventSink) eventSinkComponent;
+        this.unitOfWorkFactory = configuration.getOptionalComponent(UnitOfWorkFactory.class).orElseGet(
+                SimpleUnitOfWorkFactory::new);
     }
 
     /**
@@ -111,12 +116,26 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
     @Override
     public AxonTestPhase.Given given() {
-        return new AxonTestGiven(configuration, customization, commandBus, eventSink, messageTypeResolver);
+        return new AxonTestGiven(
+                configuration,
+                customization,
+                commandBus,
+                eventSink,
+                messageTypeResolver,
+                unitOfWorkFactory
+        );
     }
 
     @Override
     public AxonTestPhase.When when() {
-        return new AxonTestWhen(configuration, customization, messageTypeResolver, commandBus, eventSink);
+        return new AxonTestWhen(
+                configuration,
+                customization,
+                messageTypeResolver,
+                commandBus,
+                eventSink,
+                unitOfWorkFactory
+        );
     }
 
     /**

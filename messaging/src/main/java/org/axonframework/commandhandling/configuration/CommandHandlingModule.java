@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.configuration;
+package org.axonframework.commandhandling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
@@ -26,7 +26,6 @@ import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.serialization.Converter;
 
 import java.util.function.Consumer;
@@ -34,33 +33,23 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A {@link Module} and {@link ModuleBuilder} implementation providing operation to construct a stateful command
+ * A {@link Module} and {@link ModuleBuilder} implementation providing operation to construct a command
  * handling application module.
  * <p>
- * The {@code StatefulCommandHandlingModule} follows a builder paradigm, wherein several
- * {@link EntityModule entity modules} and {@link StatefulCommandHandler StatefulCommandHandlers} can be registered in
- * either order. Entities defined in the registered entity modules will be available in the
- * {@link org.axonframework.modelling.StateManager} of the stateful command handlers defined in this module.
+ * The {@code CommandHandlingModule} follows a builder paradigm, wherein several
+ * {@link CommandHandler CommmandHandlers} can be registered in either order.
  * <p>
- * To initiate entity registration, you should move into the entity registration phase by invoking
- * {@link SetupPhase#entities()}. To register command handlers, a similar registration phase switch should be made, by
- * invoking {@link SetupPhase#commandHandlers()}.
+ * To register command handlers, a similar registration phase switch should be made, by invoking
+ * {@link SetupPhase#commandHandlers()}.
  * <p>
- * Here's an example of how to register two stateful command handler lambdas, one state-based entity with a repository
- * and another state-based entity using a separate loader and persister:
+ * Here's an example of how to register two command handler lambdas:
  * <pre>
- * StatefulCommandHandlingModule.named("my-module")
- *                              .entities()
- *                              .entity(StateBasedEntityModule.declarative(CourseId.class, Course.class)
- *                                                            .repository(config -> ...))
- *                              .entity(StateBasedEntityModule.declarative(StudentId.class, Student.class)
- *                                                            .loader(config -> ...)
- *                                                            .persister(config -> ...))
+ * CommandHandlingModule.named("my-module")
  *                              .commandHandlers()
  *                              .commandHandler(new QualifiedName(RenameCourseCommand.class),
- *                                              (cmd, course, context) -> { ...command handling logic... })
+ *                                              (cmd, context) -> { ...command handling logic... })
  *                              .commandHandler(new QualifiedName(ChangeCourseClassRoomCommand.class),
- *                                              (cmd, entity, context) -> { ...command handling logic... });
+ *                                              (cmd, context) -> { ...command handling logic... });
  * </pre>
  * <p>
  * Note that users do not have to invoke {@link #build()} themselves when using this interface, as the
@@ -72,24 +61,23 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<StatefulCommandHandlingModule> {
+public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHandlingModule> {
 
     /**
-     * Starts a {@code StatefulCommandHandlingModule} module with the given {@code moduleName}.
+     * Starts a {@code CommandHandlingModule} module with the given {@code moduleName}.
      *
-     * @param moduleName The name of the {@code StatefulCommandHandlingModule} under construction.
+     * @param moduleName The name of the {@code CommandHandlingModule} under construction.
      * @return The setup phase of this module, for a fluent API.
      */
     static SetupPhase named(@Nonnull String moduleName) {
-        return new SimpleStatefulCommandHandlingModule(moduleName);
+        return new SimpleCommandHandlingModule(moduleName);
     }
 
     /**
-     * The setup phase of the stateful command handling module.
+     * The setup phase of the command handling module.
      * <p>
-     * Allows for two paths when building a stateful command handling module. Firstly, the {@link #commandHandlers()}
-     * method allows users to start configuring all the {@link StatefulCommandHandler StatefulCommandHandlers} for this
-     * module. The second option allows for moving to the {@link #entities() entity} registration flow of this module.
+     * The {@link #commandHandlers()} method allows users to start configuring all the
+     * {@link CommandHandler CommandHandlers} for this module.
      */
     interface SetupPhase {
 
@@ -114,43 +102,22 @@ public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<Sta
                     .accept(commandHandlerPhase);
             return commandHandlerPhase;
         }
-
-        /**
-         * Initiates the entity configuration phase for this module.
-         *
-         * @return The entity phase of this module, for a fluent API.
-         */
-        EntityPhase entities();
-
-        /**
-         * Initiates the entity configuration phase for this module, as well as performing the given
-         * {@code configurationLambda} within this phase.
-         *
-         * @param configurationLambda A consumer of the entity phase, performing entity configuration right away.
-         * @return The setup phase of this module, for a fluent API.
-         */
-        default EntityPhase entities(@Nonnull Consumer<EntityPhase> configurationLambda) {
-            EntityPhase entityPhase = entities();
-            requireNonNull(configurationLambda, "The entity configuration lambda cannot be null.")
-                    .accept(entityPhase);
-            return entityPhase;
-        }
     }
 
     /**
-     * The command handler configuration phase of the stateful command handling module.
+     * The command handler configuration phase of the command handling module.
      * <p>
-     * Every registered {@link StatefulCommandHandler} will be subscribed with the
+     * Every registered {@link CommandHandler} will be subscribed with the
      * {@link org.axonframework.commandhandling.CommandBus} of the
      * {@link org.axonframework.configuration.ApplicationConfigurer} this module is given to.
      * <p>
-     * Provides roughly two options for configuring stateful command handlers. Firstly, a stateful command handler can
-     * be registered as is, through the {@link #commandHandler(QualifiedName, StatefulCommandHandler)} method. Secondly,
-     * if the stateful command handler provides components from the {@link Configuration}, a
-     * {@link ComponentBuilder builder} of the stateful command handler can be registered through the
+     * Provides roughly two options for configuring command handlers. Firstly, a command handler can
+     * be registered as is, through the {@link #commandHandler(QualifiedName, CommandHandler)} method. Secondly, if the
+     * command handler provides components from the {@link Configuration}, a {@link ComponentBuilder builder}
+     * of the command handler can be registered through the
      * {@link #commandHandler(QualifiedName, ComponentBuilder)} method.
      */
-    interface CommandHandlerPhase extends SetupPhase, ModuleBuilder<StatefulCommandHandlingModule> {
+    interface CommandHandlerPhase extends SetupPhase, ModuleBuilder<CommandHandlingModule> {
 
         /**
          * Registers the given {@code commandHandler} for the given qualified {@code commandName} within this module.
@@ -163,53 +130,33 @@ public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<Sta
          * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
          *
          * @param commandName    The qualified name of the command the given {@code commandHandler} can handle.
-         * @param commandHandler The stateful command handler to register with this module.
+         * @param commandHandler The command handler to register with this module.
          * @return The command handler phase of this builder, for a fluent API.
          */
         default CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
                                                    @Nonnull CommandHandler commandHandler) {
             requireNonNull(commandHandler, "The command handler cannot be null.");
-            return commandHandler(commandName, (command, state, context) -> commandHandler.handle(command, context));
-        }
-
-        /**
-         * Registers the given stateful {@code commandHandler} for the given qualified {@code commandName} within this
-         * module.
-         * <p>
-         * Once this module is finalized, the stateful command handler will be subscribed with the
-         * {@link org.axonframework.commandhandling.CommandBus} of the
-         * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
-         *
-         * @param commandName    The qualified name of the command the given {@code commandHandler} can handle.
-         * @param commandHandler The stateful command handler to register with this module.
-         * @return The command handler phase of this builder, for a fluent API.
-         */
-        default CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
-                                                   @Nonnull StatefulCommandHandler commandHandler) {
-            requireNonNull(commandName, "The command name cannot be null.");
-            requireNonNull(commandHandler, "The stateful command handler cannot be null.");
-            return commandHandler(commandName, c -> commandHandler);
+            return commandHandler(commandName, cfg -> commandHandler);
         }
 
         /**
          * Registers the given {@code commandHandlerBuilder} for the given qualified {@code commandName} within this
          * module.
          * <p>
-         * Once this module is finalized, the stateful command handler from the {@code commandHandlerBuilder} will be
+         * Once this module is finalized, the command handler from the {@code commandHandlerBuilder} will be
          * subscribed with the {@link org.axonframework.commandhandling.CommandBus} of the
          * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
          *
-         * @param commandName           The qualified name of the command the {@link StatefulCommandHandler} created by
+         * @param commandName           The qualified name of the command the {@link CommandHandler} created by
          *                              the given {@code commandHandlerBuilder}.
-         * @param commandHandlerBuilder A builder of a {@link StatefulCommandHandler}. Provides the
+         * @param commandHandlerBuilder A builder of a {@link CommandHandler}. Provides the
          *                              {@link Configuration} to retrieve components from to use during construction of
-         *                              the stateful command handler.
+         *                              the command handler.
          * @return The command handler phase of this builder, for a fluent API.
          */
         CommandHandlerPhase commandHandler(
                 @Nonnull QualifiedName commandName,
-                @Nonnull ComponentBuilder<StatefulCommandHandler> commandHandlerBuilder
-        );
+                @Nonnull ComponentBuilder<CommandHandler> commandHandlerBuilder);
 
         /**
          * Registers the given {@code handlingComponentBuilder} within this module.
@@ -254,24 +201,5 @@ public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<Sta
                     c.getComponent(Converter.class)
             ));
         }
-    }
-
-    /**
-     * The entity phase of the stateful command handling module, where {@link EntityModule entity modules} can be
-     * registered. The entities defined in the registered modules will be available in the
-     * {@link org.axonframework.modelling.StateManager} of the stateful command handlers defined in this module.
-     */
-    interface EntityPhase extends SetupPhase, ModuleBuilder<StatefulCommandHandlingModule> {
-
-        /**
-         * Registers the given {@code entityModule} with this module. This will make the entity available in the
-         * {@link org.axonframework.modelling.StateManager} of the stateful command handlers defined in this module.
-         *
-         * @param entityModule The entity module to register with this module.
-         * @param <I>          The type of identifier used to identify the entity that's being built.
-         * @param <E>          The type of the entity being built.
-         * @return The entity phase of this module, for a fluent API.
-         */
-        <I, E> EntityPhase entity(@Nonnull EntityModule<I, E> entityModule);
     }
 }

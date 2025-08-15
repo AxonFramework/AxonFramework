@@ -34,13 +34,13 @@ import java.util.function.Supplier;
 public interface Configuration extends DescribableComponent {
 
     /**
-     * Returns the component declared under the given {@code type} or throws a {@link NullPointerException} if it does
+     * Returns the component declared under the given {@code type} or throws a {@link ComponentNotFoundException} if it does
      * not exist.
      *
      * @param type The type of component, typically the interface the component implements.
      * @param <C>  The type of component.
      * @return The component registered for the given type.
-     * @throws NullPointerException Whenever there is no component present for the given {@code type}.
+     * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type}.
      */
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type) {
@@ -49,7 +49,7 @@ public interface Configuration extends DescribableComponent {
 
     /**
      * Returns the component declared under the given {@code type} and {@code name} or throws a
-     * {@link NullPointerException} if it does not exist.
+     * {@link ComponentNotFoundException} if it does not exist.
      *
      * @param type The type of component, typically the interface the component implements.
      * @param name The name of the component to retrieve. Use {@code null} when there is no name or use

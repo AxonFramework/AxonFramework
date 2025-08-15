@@ -32,13 +32,14 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -81,7 +82,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
     }
 
     @Test
-    void registerStatefulCommandHandlingModuleAddsAModuleConfiguration() {
+    void registerCommandHandlingModuleAddsAModuleConfiguration() {
         EventSourcedEntityModule<String, Object> testEntityBuilder =
                 EventSourcedEntityModule.declarative(String.class, Object.class)
                                         .messagingModel((c, b) -> EntityMetamodel.forEntityType(Object.class)
@@ -90,21 +91,19 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                         .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(id -> null))
                                         .criteriaResolver(c -> (event, ctx) -> EventCriteria.havingAnyTag())
                                         .build();
-        ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
-                StatefulCommandHandlingModule.named("test")
-                                             .entities(entityPhase -> entityPhase.entity(testEntityBuilder))
-                                             .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
-                                                     new QualifiedName(String.class),
-                                                     (command, stateManager, context) -> MessageStream.empty().cast()
-                                             ));
+        ModuleBuilder<CommandHandlingModule> statefulCommandHandlingModule =
+                CommandHandlingModule.named("test")
+                                     .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
+                                             new QualifiedName(String.class),
+                                             (command, context) -> MessageStream.empty().cast()
+                                     ));
 
-        List<Configuration> moduleConfigurations =
-                testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
-                           .build()
-                           .getModuleConfigurations();
+        Configuration configuration =
+                testSubject.componentRegistry(cr -> cr.registerModule(testEntityBuilder))
+                           .registerCommandHandlingModule(statefulCommandHandlingModule)
+                           .build();
 
-        assertFalse(moduleConfigurations.isEmpty());
-        assertEquals(1, moduleConfigurations.size());
+        assertThat(configuration.getModuleConfiguration("test")).isPresent();
     }
 
     @Test

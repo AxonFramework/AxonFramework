@@ -18,8 +18,10 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.configuration.ComponentNotFoundException;
 import org.axonframework.messaging.Message;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -131,5 +133,11 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
     public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
                                       @Nullable T expectedResource) {
         return expectedResource == null;
+    }
+
+    @Nonnull
+    @Override
+    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+        throw new ComponentNotFoundException(type, name);
     }
 }

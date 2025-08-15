@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
@@ -38,7 +39,7 @@ class UnitOfWorkTest extends ProcessingLifecycleTest<UnitOfWork> {
 
     @Override
     UnitOfWork createTestSubject() {
-        return new UnitOfWork();
+        return new UnitOfWork("unit-of-work-id", UnitOfWork.Configuration.defaultValues());
     }
 
     @Override
