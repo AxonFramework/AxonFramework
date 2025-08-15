@@ -34,9 +34,10 @@ import java.util.function.BiConsumer;
  * One connector can be wrapped with another through the {@link DelegatingCommandBusConnector}, upon which more
  * functionality can be added, such as payload conversion or serialization.
  *
- * @author Mitchell Herrijgers
  * @author Allard Buijze
- * @since 5.0.0
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
+ * @since 2.0.0
  */
 public interface CommandBusConnector {
 
