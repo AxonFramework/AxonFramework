@@ -149,7 +149,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     @Override
     public <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
         if (serializer.equals(payload.getSerializer())) {
-            return serializer.getConverter().convert(payload.getSerializedObject(), expectedRepresentation);
+            return serializer.getConverter().convertSerializedObject(payload.getSerializedObject(), expectedRepresentation);
         }
         return serializer.serialize(payload.getObject(), expectedRepresentation);
     }
@@ -157,7 +157,7 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     @Override
     public <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
         if (serializer.equals(metaData.getSerializer())) {
-            return serializer.getConverter().convert(metaData.getSerializedObject(), expectedRepresentation);
+            return serializer.getConverter().convertSerializedObject(metaData.getSerializedObject(), expectedRepresentation);
         }
         return serializer.serialize(metaData.getObject(), expectedRepresentation);
     }

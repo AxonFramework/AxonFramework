@@ -169,7 +169,7 @@ public class AvroSerializer implements Serializer {
 
             // without upcasting:
             // byte[] -> T
-            SerializedObject<byte[]> bytesSerialized = converter.convert(serializedObject, byte[].class);
+            SerializedObject<byte[]> bytesSerialized = converter.convertSerializedObject(serializedObject, byte[].class);
 
             return (T) serializerStrategy.get().deserializeFromSingleObjectEncoded(bytesSerialized, payloadType);
         }

@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -26,15 +28,17 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -57,7 +61,10 @@ class DistributedCommandBusTest {
 
         connector = new StubConnector();
         delegate = new SimpleCommandBus();
-        testSubject = new DistributedCommandBus(delegate, connector);
+        DistributedCommandBusConfiguration configuration = DistributedCommandBusConfiguration.DEFAULT;
+        // Create virtual threads for the test, so we don't have to manage the thread pool.
+        configuration.executorService(Executors.newVirtualThreadPerTaskExecutor());
+        testSubject = new DistributedCommandBus(delegate, connector, configuration);
     }
 
     @Test
@@ -71,10 +78,12 @@ class DistributedCommandBusTest {
 
     @Test
     void incomingCommandsAreRejectedWhenNoHandlerRegistered() {
-        Connector.ResultCallback mockCallback = mock();
-        connector.handler.get().accept(testCommand, mockCallback);
+        CommandBusConnector.ResultCallback mockCallback = mock();
+        connector.handler.get().handle(testCommand, mockCallback);
 
-        verify(mockCallback).error(isA(NoHandlerForCommandException.class));
+        await().untilAsserted(() -> {
+            verify(mockCallback).onError(isA(NoHandlerForCommandException.class));
+        });
     }
 
     @Test
@@ -84,10 +93,11 @@ class DistributedCommandBusTest {
         testSubject.subscribe(testCommand.type().qualifiedName(),
                               (command, context) -> MessageStream.just(resultMessage));
 
-        Connector.ResultCallback mockCallback = mock();
-        connector.handler.get().accept(testCommand, mockCallback);
-
-        verify(mockCallback).success(same(resultMessage));
+        CommandBusConnector.ResultCallback mockCallback = mock();
+        connector.handler.get().handle(testCommand, mockCallback);
+        await().untilAsserted(() -> {
+            verify(mockCallback).onSuccess(same(resultMessage));
+        });
     }
 
     @Test
@@ -99,46 +109,39 @@ class DistributedCommandBusTest {
         verify(mock).describeProperty("connector", connector);
     }
 
-    private static class StubConnector implements Connector {
+    private static class StubConnector implements CommandBusConnector {
 
         private final Map<CommandMessage<?>, CompletableFuture<?>> dispatchedCommands = new ConcurrentHashMap<>();
-        private final Map<String, Integer> subscriptions = new ConcurrentHashMap<>();
-        private final AtomicReference<BiConsumer<CommandMessage<?>, ResultCallback>> handler = new AtomicReference<>();
+        private final Map<QualifiedName, Integer> subscriptions = new ConcurrentHashMap<>();
+        private final AtomicReference<Handler> handler = new AtomicReference<>();
 
 
+        @Nonnull
         @Override
-        public CompletableFuture<CommandResultMessage<?>> dispatch(CommandMessage<?> command,
-                                                                   ProcessingContext processingContext) {
+        public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                                   @Nullable ProcessingContext processingContext) {
             CompletableFuture<CommandResultMessage<?>> future = new CompletableFuture<>();
             dispatchedCommands.put(command, future);
             return future;
         }
 
         @Override
-        public void subscribe(String commandName, int loadFactor) {
+        public void subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
             subscriptions.put(commandName, loadFactor);
         }
 
         @Override
-        public boolean unsubscribe(String commandName) {
+        public boolean unsubscribe(@Nonnull QualifiedName commandName) {
             return subscriptions.remove(commandName) != null;
         }
 
         @Override
-        public void onIncomingCommand(BiConsumer<CommandMessage<?>, ResultCallback> handler) {
+        public void onIncomingCommand(@Nonnull Handler handler) {
             this.handler.set(handler);
         }
 
         public Map<CommandMessage<?>, CompletableFuture<?>> getDispatchedCommands() {
             return dispatchedCommands;
-        }
-
-        public Map<String, Integer> getSubscriptions() {
-            return subscriptions;
-        }
-
-        public BiConsumer<CommandMessage<?>, ResultCallback> getHandler() {
-            return handler.get();
         }
     }
 }

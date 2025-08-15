@@ -16,14 +16,19 @@
 
 package org.axonframework.axonserver.connector;
 
+import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
+import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
+import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.SearchScope;
 import org.axonframework.lifecycle.Phase;
+import org.axonframework.serialization.Converter;
 
 import javax.annotation.Nonnull;
 
@@ -34,21 +39,32 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @since 4.0.0
  */
-public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhancer {
+public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
 
     /**
-     * The {@link #order()} when this {@link ServerConnectorConfigurationEnhancer} enhances an
+     * The {@link #order()} when this {@link AxonServerConfigurationEnhancer} enhances an
      * {@link org.axonframework.configuration.ApplicationConfigurer}.
      */
     public static final int ENHANCER_ORDER = Integer.MIN_VALUE + 10;
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
-        registry.registerIfNotPresent(AxonServerConfiguration.class, c -> new AxonServerConfiguration(), SearchScope.ALL)
+        registry.registerIfNotPresent(AxonServerConfiguration.class,
+                                      c -> new AxonServerConfiguration(),
+                                      SearchScope.ALL)
                 .registerIfNotPresent(connectionManagerDefinition(), SearchScope.ALL)
                 .registerIfNotPresent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity(), SearchScope.ALL)
                 .registerIfNotPresent(eventStorageEngineDefinition(), SearchScope.ALL)
+                .registerIfNotPresent(commandBusConnectorDefinition(), SearchScope.ALL)
+                .registerDecorator(CommandBusConnector.class, 0, payloadConvertingConnectorComponentDecorator())
                 .registerFactory(new AxonServerEventStorageEngineFactory());
+    }
+
+    private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector<Object>> payloadConvertingConnectorComponentDecorator() {
+        return (config, name, delegate) -> new PayloadConvertingCommandBusConnector<>(
+                delegate,
+                config.getComponent(Converter.class),
+                byte[].class);
     }
 
     private ComponentDefinition<AxonServerConnectionManager> connectionManagerDefinition() {
@@ -80,6 +96,13 @@ public class ServerConnectorConfigurationEnhancer implements ConfigurationEnhanc
                                               config
                                       );
                                   });
+    }
+
+    private ComponentDefinition<CommandBusConnector> commandBusConnectorDefinition() {
+        return ComponentDefinition.ofType(CommandBusConnector.class)
+                                  .withBuilder(config -> new AxonServerCommandBusConnector(
+                                          config.getComponent(AxonServerConnectionManager.class).getConnection()
+                                  ));
     }
 
     @Override

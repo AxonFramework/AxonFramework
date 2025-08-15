@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -113,7 +114,7 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
 
     @Override
     public <D> SerializedObject<D> getData(Class<D> requiredType) {
-        return serializer.getConverter().convert(data, requiredType);
+        return serializer.getConverter().convertSerializedObject(data, requiredType);
     }
 
     @Override

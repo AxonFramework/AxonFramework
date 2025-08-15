@@ -16,54 +16,58 @@
 
 package org.axonframework.commandhandling.gateway;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.Converter;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * A {@link CommandGateway} implementation that deserializes the result of command handling.
+ * A {@link CommandGateway} implementation that wraps the {@link CommandResult} of the delegate into a result that can
+ * convert the payload of the result using a provided {@link Converter}.
  *
  * @author Allard Buijze
+ * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ResultDeserializingCommandGateway implements CommandGateway {
+public class ConvertingCommandGateway implements CommandGateway {
 
     private final CommandGateway delegate;
-    private final Serializer serializer;
+    private final Converter converter;
 
     /**
-     * @param delegate   The delegate command gateway to wrap within this command gateway.
-     * @param serializer The serializer to use while deserializing command results.
+     * Constructs a {@code ConvertingCommandGateway} with the given {@code delegate} and {@code converter}.
+     *
+     * @param delegate  The delegate command gateway to wrap within this command gateway.
+     * @param converter The converter to use for converting the result of command handling.
      */
-    public ResultDeserializingCommandGateway(@Nonnull CommandGateway delegate,
-                                             @Nonnull Serializer serializer) {
+    public ConvertingCommandGateway(@Nonnull CommandGateway delegate,
+                                    @Nonnull Converter converter) {
         this.delegate = requireNonNull(delegate, "The delegate must not be null.");
-        this.serializer = requireNonNull(serializer, "The serializer must not be null.");
+        this.converter = requireNonNull(converter, "The converter must not be null.");
     }
 
     @Override
     public CommandResult send(@Nonnull Object command,
                               @Nullable ProcessingContext context) {
-        return new SerializingCommandResult(serializer, delegate.send(command, context));
+        return new ConvertingCommandResult(converter, delegate.send(command, context));
     }
 
     @Override
     public CommandResult send(@Nonnull Object command,
                               @Nonnull MetaData metaData,
                               @Nullable ProcessingContext context) {
-        return new SerializingCommandResult(serializer, delegate.send(command, metaData, context));
+        return new ConvertingCommandResult(converter, delegate.send(command, metaData, context));
     }
 
-    private record SerializingCommandResult(
-            Serializer serializer,
+    private record ConvertingCommandResult(
+            Converter serializer,
             CommandResult delegate
     ) implements CommandResult {
 

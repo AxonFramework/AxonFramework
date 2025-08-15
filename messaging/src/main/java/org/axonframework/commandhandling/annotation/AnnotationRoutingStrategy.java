@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed;
+package org.axonframework.commandhandling.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.RoutingKey;
+import org.axonframework.commandhandling.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
@@ -29,7 +31,6 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.*;
 
@@ -47,7 +48,7 @@ import static org.axonframework.common.ReflectionUtils.*;
  *
  * @author Allard Buijze
  * @see DistributedCommandBus
- * @since 2.0
+ * @since 2.0.0
  */
 public class AnnotationRoutingStrategy implements RoutingStrategy {
 
@@ -58,18 +59,21 @@ public class AnnotationRoutingStrategy implements RoutingStrategy {
     private final Map<Class<?>, RoutingKeyResolver> resolverMap = new ConcurrentHashMap<>();
 
     /**
-     * Instantiate a default {@link AnnotationRoutingStrategy}.
-     * <p>
-     * The {@code annotationType} is defaulted to {@link RoutingKey}.
-     *
-     * @return a default {@link AnnotationRoutingStrategy}
+     * Instantiate an annotation {@link RoutingStrategy}. The {@code annotationType} is defaulted to
+     * {@link RoutingKey}.
      */
     public AnnotationRoutingStrategy() {
         this(RoutingKey.class);
     }
 
-    public AnnotationRoutingStrategy(Class<? extends Annotation> annotationType) {
-        this.annotationType = annotationType;
+    /**
+     * Instantiate an annotation {@link RoutingStrategy}. The {@code annotationType} is used to indicate which field to
+     * use as routing key.
+     *
+     * @param annotationType The annotation to check the fields of the payload for.
+     */
+    public AnnotationRoutingStrategy(@Nonnull Class<? extends Annotation> annotationType) {
+        this.annotationType = Objects.requireNonNull(annotationType, "The annotationType can not be null.");
     }
 
     @Override
@@ -94,7 +98,6 @@ public class AnnotationRoutingStrategy implements RoutingStrategy {
                           .identify(payload);
     }
 
-    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     private RoutingKeyResolver createResolver(Class<?> type) {
         for (Field f : fieldsOf(type)) {
             if (AnnotationUtils.findAnnotationAttributes(f, annotationType).isPresent()) {

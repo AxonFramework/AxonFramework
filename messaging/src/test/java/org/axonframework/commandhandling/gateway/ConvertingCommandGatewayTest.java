@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
 import java.nio.charset.StandardCharsets;
@@ -30,31 +30,31 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class ResultDeserializingCommandGatewayTest {
+class ConvertingCommandGatewayTest {
 
     private static final String HELLO_MESSAGE = "Hello, world!";
     private static final byte[] HELLO_BYTES = HELLO_MESSAGE.getBytes(StandardCharsets.UTF_8);
     private static final MessageType TEST_TYPE = new MessageType("message");
 
-    private Serializer mockSerializer;
+    private Converter mockConverter;
     private CommandGateway mockDelegate;
-    private ResultDeserializingCommandGateway testSubject;
+    private ConvertingCommandGateway testSubject;
 
     @BeforeEach
     void setUp() {
         mockDelegate = mock(CommandGateway.class);
-        mockSerializer = mock(Serializer.class);
-        testSubject = new ResultDeserializingCommandGateway(mockDelegate, mockSerializer);
+        mockConverter = mock(Converter.class);
+        testSubject = new ConvertingCommandGateway(mockDelegate, mockConverter);
     }
 
     @Test
-    void testResultIsDeserializedWhenRetrievedFromCommandResult() throws ExecutionException, InterruptedException {
+    void resultIsDeserializedWhenRetrievedFromCommandResult() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
                 CompletableFuture.completedFuture(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE))
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
-        when(mockSerializer.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
+        when(mockConverter.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
 
         CompletableFuture<byte[]> actual = testSubject.send("Test", null).resultAs(byte[].class);
         assertTrue(actual.isDone());
@@ -62,13 +62,13 @@ class ResultDeserializingCommandGatewayTest {
     }
 
     @Test
-    void testResultIsDeserializedWhenRetrievedDirectly() throws ExecutionException, InterruptedException {
+    void resultIsDeserializedWhenRetrievedDirectly() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
                 CompletableFuture.completedFuture(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE))
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
-        when(mockSerializer.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
+        when(mockConverter.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
 
         CompletableFuture<byte[]> actual = testSubject.send("Test", null, byte[].class);
         assertTrue(actual.isDone());
@@ -76,13 +76,13 @@ class ResultDeserializingCommandGatewayTest {
     }
 
     @Test
-    void testCommandResultProvidesAccessToOriginalMessage() throws ExecutionException, InterruptedException {
+    void commandResultProvidesAccessToOriginalMessage() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
                 CompletableFuture.completedFuture(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE))
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
-        when(mockSerializer.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
+        when(mockConverter.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
 
         var commandResult = testSubject.send("Test", null);
         CompletableFuture<byte[]> actual = commandResult.resultAs(byte[].class);
@@ -92,12 +92,12 @@ class ResultDeserializingCommandGatewayTest {
     }
 
     @Test
-    void testOnSuccessCallbackIsInvokedWhenFutureCompletes() {
+    void onSuccessCallbackIsInvokedWhenFutureCompletes() {
         CompletableFuture<Message<Object>> completableFuture = new CompletableFuture<>();
         CommandResult stubResult = new FutureCommandResult(completableFuture);
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
-        when(mockSerializer.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
+        when(mockConverter.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
 
         var commandResult = testSubject.send("Test", null);
         CompletableFuture<byte[]> actual = commandResult.resultAs(byte[].class);
