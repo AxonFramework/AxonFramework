@@ -208,14 +208,14 @@ public class CommandConverter {
      * @param resultMessage     The result message to convert to a {@link CommandResponse}, when present.
      * @param requestIdentifier The identifier correlating the {@link CommandResponse} to the {@link Command} that led
      *                          to the response.
-     * @return A {@link CommandResponse} based on the given {@code resultMessage} and {@code requestIdentifier} whenever
-     * the {@code resultMessage} is not {@code null}.
+     * @return A {@link CommandResponse} based on the given {@code resultMessage} and {@code requestIdentifier}.
      */
     public static CommandResponse convertResultMessage(@Nullable Message<?> resultMessage,
                                                        @Nonnull String requestIdentifier) {
         if (resultMessage == null) {
             return CommandResponse.newBuilder()
                                   .setMessageIdentifier(UUID.randomUUID().toString())
+                                  .setRequestIdentifier(requestIdentifier)
                                   .build();
         }
         Object payload = resultMessage.payload();
