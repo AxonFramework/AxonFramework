@@ -60,8 +60,21 @@ public abstract class AbstractAdministrationTestSuite extends AbstractAxonServer
 
     @Override
     protected ApplicationConfigurer createConfigurer() {
-        return EventSourcingConfigurer.create()
+        var configurer = EventSourcingConfigurer.create()
                                       .componentRegistry(cr -> cr.registerModule(getModule()));
+        return testSuiteConfigurer(configurer);
+    }
+
+    /**
+     * Allows for further configuration of the {@link EventSourcingConfigurer} used in the test suite.
+     * <p>
+     * This method can be overridden by subclasses to add additional configuration.
+     *
+     * @param configurer The {@link EventSourcingConfigurer} to configure.
+     * @return The configured {@link EventSourcingConfigurer}.
+     */
+    protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
+        return configurer;
     }
 
     @Test

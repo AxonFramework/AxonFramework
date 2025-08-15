@@ -16,11 +16,11 @@
 
 package org.axonframework.modelling.command;
 
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.configuration.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
 
@@ -33,11 +33,11 @@ import jakarta.annotation.Nonnull;
  *
  * @author Mitchell Herrijgers
  * @see StateManager
- * @see StatefulCommandHandlerRegistry
+ * @see org.axonframework.commandhandling.CommandHandlerRegistry
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface StatefulCommandHandler extends MessageHandler {
+public interface StatefulCommandHandler extends CommandHandler {
 
     /**
      * Handles the given {@code command} within the given {@code context}. The {@code state} parameter provides access
@@ -58,4 +58,11 @@ public interface StatefulCommandHandler extends MessageHandler {
     MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                          @Nonnull StateManager state,
                                                          @Nonnull ProcessingContext context);
+
+    @Nonnull
+    @Override
+    default MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                 @Nonnull ProcessingContext context) {
+        return handle(command, context.component(StateManager.class), context);
+    }
 }

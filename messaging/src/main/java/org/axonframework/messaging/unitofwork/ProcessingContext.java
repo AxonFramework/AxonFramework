@@ -17,6 +17,7 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.ApplicationContext;
 import org.axonframework.messaging.Context;
 
 import java.util.function.Supplier;
@@ -38,7 +39,7 @@ import java.util.function.UnaryOperator;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface ProcessingContext extends ProcessingLifecycle, Context {
+public interface ProcessingContext extends ProcessingLifecycle, ApplicationContext, Context {
 
     /**
      * Constructs a new {@link ProcessingContext}, branching off from {@code this} {@code ProcessingContext}.

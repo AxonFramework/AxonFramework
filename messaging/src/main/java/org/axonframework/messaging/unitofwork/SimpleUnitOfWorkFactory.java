@@ -16,17 +16,48 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import jakarta.annotation.Nonnull;
+
+import java.util.function.UnaryOperator;
+
 /**
- * Factory for creating simple {@link UnitOfWork} instances. Create units of work by invoking the {@link UnitOfWork}
- * constructor.
+ * Factory for creating simple {@link UnitOfWork} instances.
+ * This factory allows for the creation of {@link UnitOfWork} instances with a default configuration,
+ * which can be customized using a provided function.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
 
+    private final UnaryOperator<UnitOfWork.Configuration> factoryCustomization;
+
+    /**
+     * Initializes a {@link SimpleUnitOfWorkFactory} with the default configuration. This constructor uses the default
+     * configuration for creating {@link UnitOfWork} instances without any customizations.
+     */
+    public SimpleUnitOfWorkFactory() {
+        this(c -> c);
+    }
+
+    /**
+     * Initializes a {@link SimpleUnitOfWorkFactory} with the given customization function. Allows customizing the
+     * default configuration used to create {@link UnitOfWork} instances by this factory.
+     *
+     * @param factoryCustomization The function to customize the {@link UnitOfWork.Configuration} used to create
+     *                             {@link UnitOfWork} instances.
+     */
+    public SimpleUnitOfWorkFactory(UnaryOperator<UnitOfWork.Configuration> factoryCustomization) {
+        this.factoryCustomization = factoryCustomization;
+    }
+
+    @Nonnull
     @Override
-    public UnitOfWork create() {
-        return new UnitOfWork();
+    public UnitOfWork create(
+            @Nonnull String identifier,
+            @Nonnull UnaryOperator<UnitOfWork.Configuration> customization
+    ) {
+        var configuration = customization.apply(factoryCustomization.apply(UnitOfWork.Configuration.defaultValues()));
+        return new UnitOfWork(identifier, configuration);
     }
 }

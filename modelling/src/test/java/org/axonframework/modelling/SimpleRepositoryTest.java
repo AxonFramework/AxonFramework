@@ -16,6 +16,8 @@
 
 package org.axonframework.modelling;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
@@ -51,7 +53,7 @@ class SimpleRepositoryTest {
 
     @Test
     void loadedEntityPersistsOnCommit() throws ExecutionException, InterruptedException, TimeoutException {
-        new UnitOfWork().executeWithResult(ctx -> {
+        aUnitOfWork().executeWithResult(ctx -> {
             ManagedEntity<String, Integer> entity = testSubject.load("42", ctx).join();
             assertEquals(42, entity.entity());
 
@@ -81,7 +83,7 @@ class SimpleRepositoryTest {
         Mockito.when(managedEntity.identifier()).thenReturn("42");
         Mockito.when(managedEntity.entity()).thenReturn(42);
 
-        new UnitOfWork().executeWithResult(ctx -> {
+        aUnitOfWork().executeWithResult(ctx -> {
             ManagedEntity<String, Integer> entity = testSubject.attach(managedEntity, ctx);
             assertEquals(42, entity.entity());
             assertEquals("42", entity.identifier());
@@ -100,7 +102,7 @@ class SimpleRepositoryTest {
     @Test
     void queuesPersistForCommitOnPersistNonLoadedEntity()
             throws ExecutionException, InterruptedException, TimeoutException {
-        new UnitOfWork().executeWithResult(ctx -> {
+        aUnitOfWork().executeWithResult(ctx -> {
             ManagedEntity<String, Integer> entity = testSubject.persist("42", 42, ctx);
             assertEquals(42, entity.entity());
 
@@ -122,7 +124,7 @@ class SimpleRepositoryTest {
     @Test
     void updatesKnownEntityWhenLoadedAndPersistedWithOtherValue()
             throws ExecutionException, InterruptedException, TimeoutException {
-        new UnitOfWork().executeWithResult(ctx -> {
+        aUnitOfWork().executeWithResult(ctx -> {
             ManagedEntity<String, Integer> entity = testSubject.load("42", ctx).join();
             assertEquals(42, entity.entity());
 
@@ -143,5 +145,10 @@ class SimpleRepositoryTest {
 
             return CompletableFuture.completedFuture(null);
         }).get(5, TimeUnit.SECONDS);
+    }
+
+    @Nonnull
+    private static UnitOfWork aUnitOfWork() {
+        return new SimpleUnitOfWorkFactory().create();
     }
 }

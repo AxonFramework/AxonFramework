@@ -24,8 +24,10 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -39,19 +41,22 @@ class AxonTestGiven implements AxonTestPhase.Given {
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
     private final MessageTypeResolver messageTypeResolver;
+    private final UnitOfWorkFactory unitOfWorkFactory;
 
     AxonTestGiven(
             Configuration configuration,
             AxonTestFixture.Customization customization,
             RecordingCommandBus commandBus,
             RecordingEventSink eventSink,
-            MessageTypeResolver messageTypeResolver
+            MessageTypeResolver messageTypeResolver,
+            UnitOfWorkFactory unitOfWorkFactory
     ) {
         this.configuration = configuration;
         this.customization = customization;
         this.commandBus = commandBus;
         this.eventSink = eventSink;
         this.messageTypeResolver = messageTypeResolver;
+        this.unitOfWorkFactory = unitOfWorkFactory;
     }
 
     @Override
@@ -92,13 +97,13 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     private void inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
-        var unitOfWork = new UnitOfWork();
+        var unitOfWork = unitOfWorkFactory.create();
         unitOfWork.runOnInvocation(action);
         unitOfWork.execute().join();
     }
 
     private void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
-        var unitOfWork = new UnitOfWork();
+        var unitOfWork = unitOfWorkFactory.create();
         unitOfWork.onInvocation(action);
         unitOfWork.execute().join();
     }
@@ -140,6 +145,6 @@ class AxonTestGiven implements AxonTestPhase.Given {
 
     @Override
     public AxonTestPhase.When when() {
-        return new AxonTestWhen(configuration, customization, messageTypeResolver, commandBus, eventSink);
+        return new AxonTestWhen(configuration, customization, messageTypeResolver, commandBus, eventSink, unitOfWorkFactory);
     }
 }
