@@ -186,10 +186,8 @@ public class StubProcessingContext implements ProcessingContext {
         return Message.addToContext(new StubProcessingContext(), message);
     }
 
-    public static <C> StubProcessingContext withComponent(@Nonnull Class<C> clazz, @Nonnull C instance) {
-        return withComponents(componentRegistry -> componentRegistry.registerComponent(ComponentDefinition.ofType(clazz)
-                                                                                                          .withInstance(
-                                                                                                                  instance)));
+    public static <C> StubProcessingContext withComponent(@Nonnull Class<C> type, @Nonnull C instance) {
+        return withComponent(ComponentDefinition.ofType(type).withInstance(instance));
     }
 
     public static <C> StubProcessingContext withComponent(@Nonnull ComponentDefinition<C> definition) {
