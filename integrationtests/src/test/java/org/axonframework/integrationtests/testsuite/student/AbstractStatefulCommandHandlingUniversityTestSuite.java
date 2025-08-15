@@ -17,6 +17,8 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
+import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -54,11 +56,6 @@ public abstract class AbstractStatefulCommandHandlingUniversityTestSuite extends
                                                                      .commandHandlers();
     }
 
-    @Override
-    protected ConfigurationEnhancer testSuiteConfigurationEnhancer() {
-        return config -> config.registerModule(statefulCommandHandlingModule.build());
-    }
-
     /**
      * Test suite implementations can invoke this method to register additional command handlers.
      *
@@ -69,5 +66,22 @@ public abstract class AbstractStatefulCommandHandlingUniversityTestSuite extends
             Consumer<StatefulCommandHandlingModule.CommandHandlerPhase> handlerConfigurer
     ) {
         statefulCommandHandlingModule.commandHandlers(handlerConfigurer);
+    }
+
+    @Override
+    protected ConfigurationEnhancer testSuiteConfigurationEnhancer() {
+        return config -> config.registerModule(statefulCommandHandlingModule.build());
+    }
+
+    protected void changeStudentName(String studentId, String name) {
+        sendCommand(new ChangeStudentNameCommand(studentId, name));
+    }
+
+    protected void enrollStudentToCourse(String studentId, String courseId) {
+        sendCommand(new EnrollStudentToCourseCommand(studentId, courseId));
+    }
+
+    protected <T> void sendCommand(T payload) {
+        commandGateway.sendAndWait(payload);
     }
 }
