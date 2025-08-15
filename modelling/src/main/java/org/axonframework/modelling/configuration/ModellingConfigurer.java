@@ -96,14 +96,15 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      * will not be accessible from other {@code Modules} to enforce encapsulation. The sole exception to this, are
      * {@code Modules} registered with the resulting {@link CommandHandlingModule} itself.
      *
-     * @param moduleBuilder The builder returning a stateful command handling module to register with
+     * @param moduleBuilder The builder returning a command handling module to register with
      *                      {@code this ModellingConfigurer}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
+    @Nonnull
     public ModellingConfigurer registerCommandHandlingModule(
-            ModuleBuilder<CommandHandlingModule> moduleBuilder
+            @Nonnull ModuleBuilder<CommandHandlingModule> moduleBuilder
     ) {
-        delegate.componentRegistry(cr -> cr.registerModule(moduleBuilder.build()));
+        delegate.registerCommandHandlingModule(Objects.requireNonNull(moduleBuilder, "ModuleBuilder may not be null"));
         return this;
     }
 
