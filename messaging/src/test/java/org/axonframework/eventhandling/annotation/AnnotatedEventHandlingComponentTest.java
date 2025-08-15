@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -201,7 +202,10 @@ class AnnotatedEventHandlingComponentTest {
             var result = eventHandlingComponent.handle(event, StubProcessingContext.forMessage(event));
 
             // then
-            assertSuccessfulStream(result);
+            assertTrue(result.error().isPresent());
+            var exception = result.error().get();
+            assertInstanceOf(RuntimeException.class, exception);
+            assertEquals("No handler found for event with name [java.lang.Integer]", exception.getMessage());
             assertEquals(0, eventHandler.handledCount);
         }
 
@@ -242,25 +246,6 @@ class AnnotatedEventHandlingComponentTest {
         }
 
         @Test
-        void propagateExceptionIfExceptionThrownOutOfEventHandler() {
-            // given
-            var eventHandler = new TestEventHandler();
-            AnnotatedHandlerInspector<TestEventHandler> errorThrowingDependency = mock(AnnotatedHandlerInspector.class);
-            when(errorThrowingDependency.getHandlers(any())).thenThrow(new RuntimeException("Simulated error"));
-            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(eventHandler, errorThrowingDependency);
-            var event = domainEvent(0);
-
-            // when-thenn
-            var exception = assertThrows(
-                    RuntimeException.class,
-                    () -> eventHandlingComponent.handle(event, StubProcessingContext.forMessage(event))
-            );
-
-            // then
-            assertEquals("Simulated error", exception.getMessage());
-        }
-
-        @Test
         void rejectsNullEvent() {
             // when-then
             assertThrows(NullPointerException.class,
@@ -277,6 +262,41 @@ class AnnotatedEventHandlingComponentTest {
         }
     }
 
+    @Nested
+    class SupportedEvents {
+
+        @Test
+        void testMethodWithPayload() {
+            // given
+            var eventHandler = new HandlingJustStringEventHandler();
+            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(eventHandler);
+
+            // when
+            var supportedEvents = eventHandlingComponent.supportedEvents();
+
+            // then
+            assertThat(supportedEvents).containsExactlyInAnyOrder(
+                    new QualifiedName(String.class)
+            );
+        }
+
+        @Test
+        void testMethodsWithObjectAndPayload() {
+            // given
+            var eventHandler = new TestEventHandler();
+            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(eventHandler);
+
+            // when
+            var supportedEvents = eventHandlingComponent.supportedEvents();
+
+            // then
+            assertThat(supportedEvents).containsExactlyInAnyOrder(
+                    new QualifiedName(Object.class),
+                    new QualifiedName(Integer.class)
+            );
+        }
+    }
+
     private static DomainEventMessage<?> domainEvent(int seq) {
         return domainEvent(seq, null);
     }
@@ -286,8 +306,9 @@ class AnnotatedEventHandlingComponentTest {
                 "test",
                 "id",
                 seq,
-                new MessageType("event"),
-                seq, sampleMetaData == null ? MetaData.emptyInstance() : MetaData.with("sampleKey", sampleMetaData)
+                new MessageType(Integer.class),
+                seq,
+                sampleMetaData == null ? MetaData.emptyInstance() : MetaData.with("sampleKey", sampleMetaData)
         );
     }
 

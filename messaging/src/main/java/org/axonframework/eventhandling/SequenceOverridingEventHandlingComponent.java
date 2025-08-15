@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
@@ -43,18 +44,13 @@ import static java.util.Objects.requireNonNull;
  * @see EventHandlingComponent
  * @since 5.0.0
  */
+@Internal
 public class SequenceOverridingEventHandlingComponent implements EventHandlingComponent {
 
     private final SequencingPolicy sequencingPolicy;
     private final EventHandlingComponent delegate;
 
-    /**
-     * Creates a new {@link SequenceOverridingEventHandlingComponent} that uses the given {@code sequencingPolicy} to
-     * override sequence identification while delegating all other operations to the {@code delegate} component.
-     *
-     * @param sequencingPolicy The policy to use for determining sequence identifiers for events.
-     * @param delegate         The underlying event handling component to delegate operations to.
-     */
+
     public SequenceOverridingEventHandlingComponent(@Nonnull SequencingPolicy sequencingPolicy,
                                                     @Nonnull EventHandlingComponent delegate) {
         this.sequencingPolicy = requireNonNull(sequencingPolicy, "SequencingPolicy may not be null");
@@ -63,10 +59,10 @@ public class SequenceOverridingEventHandlingComponent implements EventHandlingCo
 
     @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
         requireNonNull(event, "Event Message may not be null");
         return sequencingPolicy.getSequenceIdentifierFor(event)
-                               .orElseGet(() -> delegate.sequenceIdentifierFor(event));
+                               .orElseGet(() -> delegate.sequenceIdentifierFor(event, context));
     }
 
     @Override

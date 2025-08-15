@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Set;
 
@@ -59,11 +60,12 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * for the same aggregate sequentially. Or use a {@link SequenceOverridingEventHandlingComponent} if you cannot
      * inherit from a certain {@code EventHandlingComponent} implementation.
      *
-     * @param event The event for which to get the sequencing identifier.
+     * @param event   The event for which to get the sequencing identifier.
+     * @param context The processing context in which the event is being handled.
      * @return A sequence identifier for the given event.
      */
     @Nonnull
-    default Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+    default Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
         return event.identifier();
     }
 }

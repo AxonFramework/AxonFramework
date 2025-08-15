@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
+import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
@@ -38,6 +39,7 @@ import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.LegacyStreamableEventSource;
@@ -54,12 +56,12 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +89,8 @@ import static org.axonframework.config.EventProcessingConfigurer.PooledStreaming
  * @author Milan Savic
  * @since 4.0
  */
+// TODO #3098 - Remove the class and other related to legacy configuration approach
+@Deprecated(since = "5.0.0", forRemoval = true)
 public class EventProcessingModule
         implements ModuleConfiguration, EventProcessingConfiguration, EventProcessingConfigurer {
 
@@ -390,7 +394,8 @@ public class EventProcessingModule
                 .getOrDefault(processorName, defaultEventProcessorBuilder)
                 .build(processorName, configuration, multiEventHandlerInvoker);
 
-        addInterceptors(processorName, eventProcessor);
+        // TODO #3103 - implement differently
+//        addInterceptors(processorName, eventProcessor);
 
         return eventProcessor;
     }
@@ -432,13 +437,6 @@ public class EventProcessingModule
         return selectProcessingGroupByType(sagaType);
     }
     //</editor-fold>
-
-    @Override
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
-        validateConfigInitialization();
-        return eventProcessor(processorName).map(EventProcessor::getHandlerInterceptors)
-                                            .orElse(Collections.emptyList());
-    }
 
     @Override
     public ListenerInvocationErrorHandler listenerInvocationErrorHandler(String processingGroup) {
@@ -721,7 +719,8 @@ public class EventProcessingModule
                                                                 Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         Component<EventProcessor> eps = eventProcessors.get(processorName);
         if (eps != null && eps.isInitialized()) {
-            eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
+            // TODO #3103 - implement differently
+//            eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
         }
         this.handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
                                         .add(interceptorBuilder);
@@ -796,8 +795,8 @@ public class EventProcessingModule
             PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     ) {
         psepConfigs.put(name, new Component<>(() -> configuration,
-                                             "pooledStreamingProcessorConfiguration",
-                                             c -> pooledStreamingProcessorConfiguration));
+                                              "pooledStreamingProcessorConfiguration",
+                                              c -> pooledStreamingProcessorConfiguration));
         return this;
     }
 
@@ -844,9 +843,9 @@ public class EventProcessingModule
             PooledStreamingProcessorConfiguration pooledStreamingProcessorConfiguration
     ) {
         this.psepConfigs.put(CONFIGURED_DEFAULT_PSEP_CONFIG,
-                            new Component<>(() -> configuration,
-                                            "pooledStreamingProcessorConfiguration",
-                                            c -> pooledStreamingProcessorConfiguration));
+                             new Component<>(() -> configuration,
+                                             "pooledStreamingProcessorConfiguration",
+                                             c -> pooledStreamingProcessorConfiguration));
         return this;
     }
 
@@ -885,16 +884,16 @@ public class EventProcessingModule
     protected EventProcessor subscribingEventProcessor(String name,
                                                        EventHandlerInvoker eventHandlerInvoker,
                                                        SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
-        return SubscribingEventProcessor.builder()
-                                        .name(name)
-                                        .eventHandlerInvoker(eventHandlerInvoker)
-                                        .errorHandler(errorHandler(name))
-                                        .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
-                                        .messageSource(messageSource)
-                                        .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
-                                        .transactionManager(transactionManager(name))
-                                        .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
-                                        .build();
+        return new SubscribingEventProcessor(
+                name,
+                List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
+                c -> c.errorHandler(errorHandler(name))
+                      .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
+                      .messageSource(messageSource)
+                      .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
+                      .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
+                      .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
+        );
     }
 
     /**
@@ -914,34 +913,31 @@ public class EventProcessingModule
             StreamableMessageSource<TrackedEventMessage<?>> messageSource,
             PooledStreamingProcessorConfiguration processorConfiguration
     ) {
-        PooledStreamingEventProcessor.Builder builder =
-                PooledStreamingEventProcessor.builder()
-                                             .name(name)
-                                             .eventHandlerInvoker(eventHandlerInvoker)
-                                             .errorHandler(errorHandler(name))
-                                             .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
-                                             .eventSource(new LegacyStreamableEventSource<>(messageSource))
-                                             .tokenStore(tokenStore(name))
-                                             .transactionManager(transactionManager(name))
-                                             .coordinatorExecutor(processorName -> {
-                                                 ScheduledExecutorService coordinatorExecutor =
-                                                         defaultExecutor(1, "Coordinator[" + processorName + "]");
-                                                 config.onShutdown(coordinatorExecutor::shutdown);
-                                                 return coordinatorExecutor;
-                                             })
-                                             .workerExecutor(processorName -> {
-                                                 ScheduledExecutorService workerExecutor =
-                                                         defaultExecutor(4, "WorkPackage[" + processorName + "]");
-                                                 config.onShutdown(workerExecutor::shutdown);
-                                                 return workerExecutor;
-                                             })
-                                             .spanFactory(config.getComponent(EventProcessorSpanFactory.class));
+        ScheduledExecutorService coordinatorExecutor = defaultExecutor(1, "Coordinator[" + name + "]");
+        config.onShutdown(coordinatorExecutor::shutdown);
+        ScheduledExecutorService workerExecutor = defaultExecutor(4, "WorkPackage[" + name + "]");
+        config.onShutdown(workerExecutor::shutdown);
 
-        return pooledStreamingProcessorConfig(CONFIGURED_DEFAULT_PSEP_CONFIG)
+        var processorConfig = new PooledStreamingEventProcessorConfiguration()
+                .errorHandler(errorHandler(name))
+                .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
+                .eventSource(new LegacyStreamableEventSource<>(messageSource))
+                .tokenStore(tokenStore(name))
+                .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
+                .coordinatorExecutor(coordinatorExecutor)
+                .workerExecutor(workerExecutor)
+                .spanFactory(config.getComponent(EventProcessorSpanFactory.class));
+
+        var customized = pooledStreamingProcessorConfig(CONFIGURED_DEFAULT_PSEP_CONFIG)
                           .andThen(pooledStreamingProcessorConfig(name))
                           .andThen(processorConfiguration)
-                          .apply(config, builder)
-                          .build();
+                          .apply(config, processorConfig);
+
+        return new PooledStreamingEventProcessor(
+                name,
+                List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
+                customized
+        );
     }
 
     private ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {

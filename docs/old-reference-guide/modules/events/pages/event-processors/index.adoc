@@ -344,8 +344,8 @@ To that end, we can configure a custom `EventProcessorBuilder`:
 interface EventProcessorBuilder {
 
     // Note: the `EventHandlerInvoker` is the component which holds the event handling functions.
-    EventProcessor build(String name, 
-                         Configuration configuration, 
+    EventProcessor build(String name,
+                         Configuration configuration,
                          EventHandlerInvoker eventHandlerInvoker);
 }
 ----
