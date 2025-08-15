@@ -144,7 +144,7 @@ public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<Sta
      * {@link org.axonframework.configuration.ApplicationConfigurer} this module is given to.
      * <p>
      * Provides roughly two options for configuring stateful command handlers. Firstly, a stateful command handler can
-     * be registered as is, through the {@link #commandHandler(QualifiedName, StatefulCommandHandler)} method. Secondly,
+     * be registered as is, through the {@link #commandHandler(QualifiedName, CommandHandler)} method. Secondly,
      * if the stateful command handler provides components from the {@link Configuration}, a
      * {@link ComponentBuilder builder} of the stateful command handler can be registered through the
      * {@link #commandHandler(QualifiedName, ComponentBuilder)} method.
@@ -168,26 +168,7 @@ public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<Sta
         default CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
                                                    @Nonnull CommandHandler commandHandler) {
             requireNonNull(commandHandler, "The command handler cannot be null.");
-            return commandHandler(commandName, (command, state, context) -> commandHandler.handle(command, context));
-        }
-
-        /**
-         * Registers the given stateful {@code commandHandler} for the given qualified {@code commandName} within this
-         * module.
-         * <p>
-         * Once this module is finalized, the stateful command handler will be subscribed with the
-         * {@link org.axonframework.commandhandling.CommandBus} of the
-         * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
-         *
-         * @param commandName    The qualified name of the command the given {@code commandHandler} can handle.
-         * @param commandHandler The stateful command handler to register with this module.
-         * @return The command handler phase of this builder, for a fluent API.
-         */
-        default CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
-                                                   @Nonnull StatefulCommandHandler commandHandler) {
-            requireNonNull(commandName, "The command name cannot be null.");
-            requireNonNull(commandHandler, "The stateful command handler cannot be null.");
-            return commandHandler(commandName, c -> commandHandler);
+            return commandHandler(commandName, cfg -> commandHandler);
         }
 
         /**
@@ -207,8 +188,7 @@ public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<Sta
          */
         CommandHandlerPhase commandHandler(
                 @Nonnull QualifiedName commandName,
-                @Nonnull ComponentBuilder<StatefulCommandHandler> commandHandlerBuilder
-        );
+                @Nonnull ComponentBuilder<CommandHandler> commandHandlerBuilder);
 
         /**
          * Registers the given {@code handlingComponentBuilder} within this module.

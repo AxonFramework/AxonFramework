@@ -18,7 +18,9 @@ package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlingComponent;
+import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
@@ -29,7 +31,6 @@ import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
-import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 
 import java.util.ArrayList;
@@ -60,15 +61,15 @@ class SimpleStatefulCommandHandlingModule
         StatefulCommandHandlingModule.EntityPhase {
 
     private final String moduleName;
-    private final String statefulCommandHandlingComponentName;
+    private final String commandHandlingComponentName;
     private final Map<String, EntityModule<?, ?>> entityModules;
-    private final Map<QualifiedName, ComponentBuilder<StatefulCommandHandler>> handlerBuilders;
+    private final Map<QualifiedName, ComponentBuilder<CommandHandler>> handlerBuilders;
     private final List<ComponentBuilder<CommandHandlingComponent>> handlingComponentBuilders;
 
     SimpleStatefulCommandHandlingModule(@Nonnull String moduleName) {
         super(moduleName);
         this.moduleName = requireNonNull(moduleName, "The module name cannot be null.");
-        this.statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[" + moduleName + "]";
+        this.commandHandlingComponentName = "StatefulCommandHandlingComponent[" + moduleName + "]";
         this.entityModules = new HashMap<>();
         this.handlerBuilders = new HashMap<>();
         this.handlingComponentBuilders = new ArrayList<>();
@@ -81,7 +82,7 @@ class SimpleStatefulCommandHandlingModule
 
     @Override
     public CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
-                                              @Nonnull ComponentBuilder<StatefulCommandHandler> commandHandlerBuilder) {
+                                              @Nonnull ComponentBuilder<CommandHandler> commandHandlerBuilder) {
         handlerBuilders.put(requireNonNull(commandName, "The command name cannot be null."),
                             requireNonNull(commandHandlerBuilder, "The command handler builder cannot be null."));
         return this;
@@ -129,15 +130,14 @@ class SimpleStatefulCommandHandlingModule
     }
 
     private void registerStatefulCommandHandlingComponent() {
-        componentRegistry(cr -> cr.registerComponent(getStatefulCommandHandlingComponentComponentDefinition()));
+        componentRegistry(cr -> cr.registerComponent(commandHandlingComponentComponentDefinition()));
     }
 
-    private ComponentDefinition<StatefulCommandHandlingComponent> getStatefulCommandHandlingComponentComponentDefinition() {
-        return ofTypeAndName(StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName)
+    private ComponentDefinition<CommandHandlingComponent> commandHandlingComponentComponentDefinition() {
+        return ofTypeAndName(CommandHandlingComponent.class, commandHandlingComponentName)
                 .withBuilder(c -> {
-                    StatefulCommandHandlingComponent statefulCommandHandler = StatefulCommandHandlingComponent.create(
-                            statefulCommandHandlingComponentName,
-                            c.getComponent(StateManager.class)
+                    SimpleCommandHandlingComponent statefulCommandHandler = SimpleCommandHandlingComponent.create(
+                            commandHandlingComponentName
                     );
                     handlingComponentBuilders.forEach(handlingComponent -> statefulCommandHandler.subscribe(
                             handlingComponent.build(c)));
@@ -147,7 +147,7 @@ class SimpleStatefulCommandHandlingModule
                 .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (configuration, component) -> {
                     configuration.getComponent(CommandBus.class)
                                  .subscribe(configuration.getComponent(StatefulCommandHandlingComponent.class,
-                                                                       statefulCommandHandlingComponentName));
+                                                                       commandHandlingComponentName));
                     return FutureUtils.emptyCompletedFuture();
                 });
     }
