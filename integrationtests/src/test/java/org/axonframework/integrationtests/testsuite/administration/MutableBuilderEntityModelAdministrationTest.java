@@ -40,7 +40,7 @@ import org.axonframework.integrationtests.testsuite.administration.state.mutable
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
@@ -192,7 +192,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                     throw new IllegalArgumentException(
                             format("Unknown command type: %s", message.payloadType().getName()));
                 });
-        return StatefulCommandHandlingModule
+        return CommandHandlingModule
                 .named("MutableBuilderEntityModelAdministrationTest")
                 .entities()
                 .entity(personEntityModule)

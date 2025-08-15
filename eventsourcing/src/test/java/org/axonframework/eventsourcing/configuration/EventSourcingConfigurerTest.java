@@ -32,7 +32,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.junit.jupiter.api.*;
 
@@ -90,10 +90,10 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                         .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(id -> null))
                                         .criteriaResolver(c -> (event, ctx) -> EventCriteria.havingAnyTag())
                                         .build();
-        ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
-                StatefulCommandHandlingModule.named("test")
-                                             .entities(entityPhase -> entityPhase.entity(testEntityBuilder))
-                                             .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
+        ModuleBuilder<CommandHandlingModule> statefulCommandHandlingModule =
+                CommandHandlingModule.named("test")
+                                     .entities(entityPhase -> entityPhase.entity(testEntityBuilder))
+                                     .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
                                                      new QualifiedName(String.class),
                                                      (command, stateManager, context) -> MessageStream.empty().cast()
                                              ));

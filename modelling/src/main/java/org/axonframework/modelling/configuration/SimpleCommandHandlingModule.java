@@ -42,7 +42,7 @@ import static java.util.Objects.requireNonNull;
 import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
 
 /**
- * Simple implementation of the {@link StatefulCommandHandlingModule}. Registers the
+ * Simple implementation of the {@link CommandHandlingModule}. Registers the
  * {@link HierarchicalStateManagerConfigurationEnhancer} enhancer to the module so that message handlers get access to
  * entities via defining parameters, such as entitiy classes with {@link InjectEntity} or the {@link StateManager}
  * itself.
@@ -53,12 +53,12 @@ import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class SimpleStatefulCommandHandlingModule
-        extends BaseModule<SimpleStatefulCommandHandlingModule>
-        implements StatefulCommandHandlingModule,
-        StatefulCommandHandlingModule.SetupPhase,
-        StatefulCommandHandlingModule.CommandHandlerPhase,
-        StatefulCommandHandlingModule.EntityPhase {
+class SimpleCommandHandlingModule
+        extends BaseModule<SimpleCommandHandlingModule>
+        implements CommandHandlingModule,
+        CommandHandlingModule.SetupPhase,
+        CommandHandlingModule.CommandHandlerPhase,
+        CommandHandlingModule.EntityPhase {
 
     private final String moduleName;
     private final String commandHandlingComponentName;
@@ -66,7 +66,7 @@ class SimpleStatefulCommandHandlingModule
     private final Map<QualifiedName, ComponentBuilder<CommandHandler>> handlerBuilders;
     private final List<ComponentBuilder<CommandHandlingComponent>> handlingComponentBuilders;
 
-    SimpleStatefulCommandHandlingModule(@Nonnull String moduleName) {
+    SimpleCommandHandlingModule(@Nonnull String moduleName) {
         super(moduleName);
         this.moduleName = requireNonNull(moduleName, "The module name cannot be null.");
         this.commandHandlingComponentName = "StatefulCommandHandlingComponent[" + moduleName + "]";
@@ -111,7 +111,7 @@ class SimpleStatefulCommandHandlingModule
     }
 
     @Override
-    public StatefulCommandHandlingModule build() {
+    public CommandHandlingModule build() {
         registerStateManager();
         registerStatefulCommandHandlingComponent();
         registerEntityModules();

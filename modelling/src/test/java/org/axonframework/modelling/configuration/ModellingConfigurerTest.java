@@ -46,8 +46,8 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
                                       .loader(c -> (id, context) -> null)
                                       .persister(c -> (id, entity, context) -> null)
                                       .build();
-        ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
-                StatefulCommandHandlingModule.named("test")
+        ModuleBuilder<CommandHandlingModule> statefulCommandHandlingModule =
+                CommandHandlingModule.named("test")
                                              .entities(entityPhase -> entityPhase.entity(testEntityBuilder))
                                              .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
                                                      new QualifiedName(String.class),

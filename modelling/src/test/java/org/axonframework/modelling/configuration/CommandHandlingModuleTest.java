@@ -39,21 +39,21 @@ import java.util.concurrent.CompletableFuture;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link StatefulCommandHandlingModule}.
+ * Test class validating the {@link CommandHandlingModule}.
  *
  * @author Steven van Beelen
  */
-class StatefulCommandHandlingModuleTest {
+class CommandHandlingModuleTest {
 
     private static final QualifiedName COMMAND_NAME = new QualifiedName(String.class);
 
-    private StatefulCommandHandlingModule.SetupPhase setupPhase;
-    private StatefulCommandHandlingModule.CommandHandlerPhase commandHandlerPhase;
-    private StatefulCommandHandlingModule.EntityPhase entityPhase;
+    private CommandHandlingModule.SetupPhase setupPhase;
+    private CommandHandlingModule.CommandHandlerPhase commandHandlerPhase;
+    private CommandHandlingModule.EntityPhase entityPhase;
 
     @BeforeEach
     void setUp() {
-        setupPhase = StatefulCommandHandlingModule.named("test-subject");
+        setupPhase = CommandHandlingModule.named("test-subject");
         commandHandlerPhase = setupPhase.commandHandlers();
         entityPhase = setupPhase.entities();
     }
@@ -131,12 +131,12 @@ class StatefulCommandHandlingModuleTest {
     @Test
     void namedThrowsIllegalArgumentExceptionForNullModuleName() {
         //noinspection DataFlowIssue
-        assertThrows(IllegalArgumentException.class, () -> StatefulCommandHandlingModule.named(null));
+        assertThrows(IllegalArgumentException.class, () -> CommandHandlingModule.named(null));
     }
 
     @Test
     void namedThrowsIllegalArgumentExceptionForEmptyModuleName() {
-        assertThrows(IllegalArgumentException.class, () -> StatefulCommandHandlingModule.named(""));
+        assertThrows(IllegalArgumentException.class, () -> CommandHandlingModule.named(""));
     }
 
     @Test

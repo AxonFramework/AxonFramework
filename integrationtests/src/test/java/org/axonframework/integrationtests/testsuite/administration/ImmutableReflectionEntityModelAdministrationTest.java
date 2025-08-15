@@ -20,7 +20,7 @@ import org.axonframework.configuration.Module;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutablePerson;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
 
 /**
@@ -31,7 +31,7 @@ public class ImmutableReflectionEntityModelAdministrationTest extends AbstractAd
 
     @Override
     Module getModule() {
-        return StatefulCommandHandlingModule.named("ImmutableReflectionEntityModelAdministrationTest")
+        return CommandHandlingModule.named("ImmutableReflectionEntityModelAdministrationTest")
                                             .entities()
                                             .entity(EventSourcedEntityModule
                                                             .annotated(PersonIdentifier.class, ImmutablePerson.class))
