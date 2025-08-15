@@ -23,6 +23,8 @@ import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
  * A {@link Message} carrying a command as its payload.
@@ -34,6 +36,26 @@ import java.util.Map;
  * @since 2.0.0
  */
 public interface CommandMessage<P> extends Message<P> {
+
+    /**
+     * Returns the routing key for this command message, if any is applicable.
+     * <p>
+     * Commands with the same routing key should be routed to the same handler if possible, as they are likely related
+     * and might have to be executed in a specific order.
+     *
+     * @return The routing key for this command message, or an empty {@link Optional} if no routing key is set.
+     **/
+    Optional<String> routingKey();
+
+    /**
+     * Returns the priority of this command message, if any is applicable.
+     * <p>
+     * Commands with a higher priority should be handled before commands with a lower priority. Commands without a
+     * priority are considered to have the lowest priority.
+     *
+     * @return The priority of this command message, or an empty {@link OptionalInt} if no priority is set.
+     */
+    OptionalInt priority();
 
     @Override
     @Nonnull

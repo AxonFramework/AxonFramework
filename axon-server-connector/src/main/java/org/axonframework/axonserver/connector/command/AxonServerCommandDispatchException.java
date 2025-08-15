@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.command;
 
 import io.axoniq.axonserver.grpc.ErrorMessage;
-import org.axonframework.commandhandling.distributed.CommandDispatchException;
+import org.axonframework.commandhandling.CommandDispatchException;
 
 import java.util.Collections;
 import java.util.List;

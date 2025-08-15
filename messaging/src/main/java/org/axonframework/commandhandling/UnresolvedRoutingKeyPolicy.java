@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed;
+package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.CommandMessage;
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.retry.RetryScheduler;
 
 import java.util.function.Function;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 
 /**
- * Set of simple {@link RoutingStrategy} implementations. Could for example be used as fallback solutions when another
- * {@code RoutingStrategy} is unable to resolve the routing key.
+ * Set of simple {@link RoutingStrategy} implementations.
+ * <p>
+ * Could for example be used as fallback solutions when another {@code RoutingStrategy} is unable to resolve the routing
+ * key.
  *
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
 public enum UnresolvedRoutingKeyPolicy implements RoutingStrategy {
 
     /**
-     * A {@link RoutingStrategy} which always throws a {@link CommandDispatchException} regardless of the {@link
-     * CommandMessage} received. Only feasible as a fallback solution which should straight out fail if the intended
-     * policy is unable to resolve a routing key.
+     * A {@link RoutingStrategy} which always throws a {@link CommandDispatchException} regardless of the
+     * {@link CommandMessage} received. Only feasible as a fallback solution which should straight out fail if the
+     * intended policy is unable to resolve a routing key.
      * <p>
      * Note that when the routing key is based on static content in the {@code CommandMessage}, the exception raised
      * should extend from {@link org.axonframework.common.AxonNonTransientException} to indicate that retries do not
