@@ -210,7 +210,7 @@ public class CommandConverter {
      *                          to the response.
      * @return A {@link CommandResponse} based on the given {@code resultMessage} and {@code requestIdentifier}.
      */
-    public static CommandResponse convertResultMessage(@Nullable Message<?> resultMessage,
+    public static CommandResponse convertResultMessage(@Nullable CommandResultMessage<?> resultMessage,
                                                        @Nonnull String requestIdentifier) {
         if (resultMessage == null) {
             return CommandResponse.newBuilder()

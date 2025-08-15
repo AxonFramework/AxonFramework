@@ -136,7 +136,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     ) implements ResultCallback {
 
         @Override
-        public void onSuccess(Message<?> resultMessage) {
+        public void onSuccess(CommandResultMessage<?> resultMessage) {
             logger.debug("Command [{}] completed successfully with result [{}]", command.getName(), resultMessage);
             result.complete(CommandConverter.convertResultMessage(resultMessage, command.getMessageIdentifier()));
         }

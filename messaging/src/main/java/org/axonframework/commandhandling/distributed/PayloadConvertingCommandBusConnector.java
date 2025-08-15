@@ -87,7 +87,7 @@ public class PayloadConvertingCommandBusConnector<T> extends DelegatingCommandBu
         }
 
         @Override
-        public void onSuccess(Message<?> resultMessage) {
+        public void onSuccess(CommandResultMessage<?> resultMessage) {
             if (resultMessage == null || resultMessage.payload() == null) {
                 callback.onSuccess(resultMessage);
                 return;

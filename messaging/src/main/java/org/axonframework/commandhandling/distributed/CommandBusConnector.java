@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -105,7 +104,7 @@ public interface CommandBusConnector {
          * @param resultMessage The result message containing the outcome of the command processing. If the message
          *                      handling yielded no result message, a {@code null} should be passed.
          */
-        void onSuccess(@Nullable Message<?> resultMessage);
+        void onSuccess(@Nullable CommandResultMessage<?> resultMessage);
 
         /**
          * Called when an error occurs during command processing.
