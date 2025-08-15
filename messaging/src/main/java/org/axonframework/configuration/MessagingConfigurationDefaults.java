@@ -46,6 +46,8 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 
+import java.util.Collections;
+
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link MessagingConfigurer}.
  * <p>
@@ -107,7 +109,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     private static CommandBus defaultCommandBus(Configuration config) {
         return config.getOptionalComponent(TransactionManager.class)
                      .map(SimpleCommandBus::new)
-                     .orElse(new SimpleCommandBus());
+                     .orElse(new SimpleCommandBus(config.getComponent(UnitOfWorkFactory.class), Collections.emptyList()));
     }
 
     private static CommandGateway defaultCommandGateway(Configuration config) {
