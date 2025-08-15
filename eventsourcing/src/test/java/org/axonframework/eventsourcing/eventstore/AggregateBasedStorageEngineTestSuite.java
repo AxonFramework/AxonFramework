@@ -29,8 +29,8 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
@@ -86,7 +86,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         OTHER_AGGREGATE_TAGS = Set.of(new Tag("OTHER_AGGREGATE", OTHER_AGGREGATE_ID));
         OTHER_AGGREGATE_CRITERIA = EventCriteria.havingTags("OTHER_AGGREGATE", OTHER_AGGREGATE_ID);
 
-        converter = new ChainingContentTypeConverter();
+        converter = new JacksonConverter();
 
         testSubject = buildStorageEngine();
     }

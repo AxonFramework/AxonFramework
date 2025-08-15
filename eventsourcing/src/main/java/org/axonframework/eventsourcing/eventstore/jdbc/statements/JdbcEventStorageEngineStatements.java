@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
