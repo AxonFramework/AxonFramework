@@ -229,7 +229,7 @@ public abstract class JdbcEventStorageEngineStatements {
         final String sql = "INSERT INTO "
                 + schema.snapshotTable() + " (" + schema.domainEventFields() + ") VALUES (?,?,?,?,?,?,?,?,?)";
         PreparedStatement statement = connection.prepareStatement(sql);
-        SerializedObject<?> payload = serializer.serialize(snapshot.payload(), dataType;
+        SerializedObject<?> payload = serializer.serialize(snapshot.payload(), dataType);
         SerializedObject<?> metaData = serializer.serialize(snapshot.metaData(), dataType);
         statement.setString(1, snapshot.identifier());
         statement.setString(2, snapshot.getAggregateIdentifier());
