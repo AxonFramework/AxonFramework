@@ -238,19 +238,21 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
                                   .setMessageIdentifier(UUID.randomUUID().toString())
                                   .build();
         }
-
+        Object payload = resultMessage.payload();
         String messageId = getOrDefault(resultMessage.identifier(), UUID.randomUUID().toString());
         CommandResponse.Builder responseBuilder = CommandResponse
                 .newBuilder()
                 .setMessageIdentifier(messageId)
                 .putAllMetaData(MetaDataConverter.convertGrpcToMetaDataValues(resultMessage.metaData()))
                 .setRequestIdentifier(command.getMessageIdentifier());
-        if (!(resultMessage.payload() instanceof byte[] payloadAsBytes)) {
+
+        if (payload!=null && !(payload instanceof byte[])) {
             throw new IllegalArgumentException(
                     "Payload must be of type byte[] for AxonServerConnector, but was: %s, consider using a Converter-based CommandBusConnector".
                             formatted(resultMessage.payloadType().getName())
             );
         }
+        byte[] payloadAsBytes = (byte[]) Objects.requireNonNullElse(payload, new byte[0]);
         return responseBuilder.setPayload(SerializedObject.newBuilder()
                 .setType(resultMessage.type().name())
                 .setRevision(resultMessage.type().version())
