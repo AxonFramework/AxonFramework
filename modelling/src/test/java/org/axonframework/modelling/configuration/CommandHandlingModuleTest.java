@@ -85,7 +85,7 @@ class CommandHandlingModuleTest {
                                               .entity(entityModule)
                                               .commandHandlers()
                                               .commandHandler(new QualifiedName(Integer.class),
-                                                              (command, state, context) -> MessageStream.just(null))
+                                                              (command, context) -> MessageStream.just(null))
                                               .build());
                 })
                 .start();
@@ -157,7 +157,7 @@ class CommandHandlingModuleTest {
     void commandHandlerThrowsNullPointerExceptionForNullCommandNameWithStatefulCommandHandler() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
-                     () -> commandHandlerPhase.commandHandler(null, (cmd, state, context) -> MessageStream.just(null)));
+                     () -> commandHandlerPhase.commandHandler(null, (cmd, context) -> MessageStream.just(null)));
     }
 
     @Test
@@ -171,7 +171,7 @@ class CommandHandlingModuleTest {
     void commandHandlerThrowsNullPointerExceptionForNullCommandNameWithCommandHandlerBuilder() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandler(
-                null, c -> (cmd, state, context) -> null
+                null, c -> (cmd, context) -> null
         ));
     }
 
@@ -179,7 +179,7 @@ class CommandHandlingModuleTest {
     void commandHandlerThrowsNullPointerExceptionForNullCommandHandlerBuilder() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandler(
-                COMMAND_NAME, (ComponentBuilder<StatefulCommandHandler>) null
+                COMMAND_NAME, (ComponentBuilder<CommandHandler>) null
         ));
     }
 

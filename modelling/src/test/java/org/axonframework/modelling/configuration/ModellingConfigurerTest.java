@@ -51,7 +51,7 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
                                              .entities(entityPhase -> entityPhase.entity(testEntityBuilder))
                                              .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
                                                      new QualifiedName(String.class),
-                                                     (command, stateManager, context) -> MessageStream.empty().cast()
+                                                     (command, context) -> MessageStream.empty().cast()
                                              ));
 
         List<Configuration> moduleConfigurations =

@@ -53,8 +53,7 @@ import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class SimpleCommandHandlingModule
-        extends BaseModule<SimpleCommandHandlingModule>
+class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule>
         implements CommandHandlingModule,
         CommandHandlingModule.SetupPhase,
         CommandHandlingModule.CommandHandlerPhase,
