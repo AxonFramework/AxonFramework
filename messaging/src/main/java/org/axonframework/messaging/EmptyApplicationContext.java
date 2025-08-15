@@ -21,6 +21,13 @@ import jakarta.annotation.Nullable;
 
 import java.util.Optional;
 
+/**
+ * An {@link ApplicationContext} implementation that does not provide any components.
+ * It is useful as a placeholder or default context when no components are available.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 public class EmptyApplicationContext implements ApplicationContext {
 
     @Override

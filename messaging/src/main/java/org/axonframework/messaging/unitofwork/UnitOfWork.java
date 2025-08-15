@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
@@ -78,7 +79,9 @@ public class UnitOfWork implements ProcessingLifecycle {
      * @param workScheduler The {@link Executor} used to process the steps attached to the phases in this Unit of Work
      */
     @Internal
-    UnitOfWork(String identifier, Configuration configuration) {
+    UnitOfWork(@Nonnull String identifier, @Nonnull Configuration configuration) {
+        Objects.requireNonNull(identifier, "identifier may not be null");
+        Objects.requireNonNull(configuration, "configuration may not be null");
         this.identifier = identifier;
         this.context = new UnitOfWorkProcessingContext(
                 identifier,
@@ -87,20 +90,50 @@ public class UnitOfWork implements ProcessingLifecycle {
         );
     }
 
+    /**
+     * Configuration record for {@link UnitOfWork} construction parameters.
+     * <p>
+     * Defines the work scheduler and application context used during unit of work processing.
+     *
+     * @param workScheduler      The {@link Executor} for processing unit of work actions.
+     * @param applicationContext The {@link ApplicationContext} for component resolution.
+     */
     public record Configuration(
             Executor workScheduler,
             ApplicationContext applicationContext
     ) {
 
-        static Configuration defaultValues() {
+        /**
+         * Creates default configuration with direct execution and empty application context.
+         *
+         * @return Default {@link Configuration} instance.
+         */
+        @Nonnull
+        public static Configuration defaultValues() {
             return new Configuration(Runnable::run, new EmptyApplicationContext());
         }
 
-        public Configuration workScheduler(Executor workScheduler) {
+        /**
+         * Creates new configuration with specified work scheduler.
+         *
+         * @param workScheduler The {@link Executor} for processing actions.
+         * @return New {@link Configuration} with updated work scheduler.
+         */
+        @Nonnull
+        public Configuration workScheduler(@Nonnull Executor workScheduler) {
+            Objects.requireNonNull(workScheduler, "workScheduler may not be null");
             return new Configuration(workScheduler, applicationContext);
         }
 
-        public Configuration applicationContext(ApplicationContext applicationContext) {
+        /**
+         * Creates new configuration with specified application context.
+         *
+         * @param applicationContext The {@link ApplicationContext} for component access.
+         * @return New {@link Configuration} with updated application context.
+         */
+        @Nonnull
+        public Configuration applicationContext(@Nonnull ApplicationContext applicationContext) {
+            Objects.requireNonNull(applicationContext, "applicationContext may not be null");
             return new Configuration(workScheduler, applicationContext);
         }
     }
@@ -211,8 +244,11 @@ public class UnitOfWork implements ProcessingLifecycle {
         private final ApplicationContext applicationContext;
         private final ConcurrentMap<ResourceKey<?>, Object> resources;
 
-        private UnitOfWorkProcessingContext(String identifier, Executor workScheduler,
-                                            ApplicationContext applicationContext) {
+        private UnitOfWorkProcessingContext(
+                String identifier,
+                Executor workScheduler,
+                ApplicationContext applicationContext
+        ) {
             this.identifier = identifier;
             this.workScheduler = workScheduler;
             this.resources = new ConcurrentHashMap<>();

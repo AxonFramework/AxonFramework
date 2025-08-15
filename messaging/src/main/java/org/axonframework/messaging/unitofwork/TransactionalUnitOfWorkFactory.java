@@ -85,8 +85,10 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
      */
     @Nonnull
     @Override
-    public UnitOfWork create(@Nonnull String identifier,
-                             @Nonnull UnaryOperator<UnitOfWork.Configuration> customization) {
+    public UnitOfWork create(
+            @Nonnull String identifier,
+            @Nonnull UnaryOperator<UnitOfWork.Configuration> customization
+    ) {
         var unitOfWork = delegate.create(identifier, customization);
         unitOfWork.runOnPreInvocation(ctx -> {
             var transaction = transactionManager.startTransaction();

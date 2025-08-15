@@ -21,22 +21,21 @@ import jakarta.annotation.Nonnull;
 import java.util.function.UnaryOperator;
 
 /**
- * Factory for creating simple {@link UnitOfWork} instances. Create units of work by invoking the {@link UnitOfWork}
- * constructor.
+ * Factory for creating simple {@link UnitOfWork} instances.
+ * This factory allows for the creation of {@link UnitOfWork} instances with a default configuration,
+ * which can be customized using a provided function.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
 
-    // todo: CustomizableUnitOfWorkFactory --- a few layers down... I can provide custom IdGenerator by mean of this!!!
-    // todo: DecoratingUnitOfWorkFactory - here, just create() method! Maybe Decorating or Delegating???
-    // identifier - IDK if makes sense in Configuration?
+    private final UnaryOperator<UnitOfWork.Configuration> factoryCustomization;
 
-    private final UnaryOperator<UnitOfWork.Configuration> factoryCustomization; // customizers?
-    //TODO: Configuration as a factory concern! and the Customizable part!?
-    //Some of them will be Customizable some Decorating, and with many layers, for example in SimpleCommandBus i might just wrap it??? IDK?
-
+    /**
+     * Initializes a {@link SimpleUnitOfWorkFactory} with the default configuration. This constructor uses the default
+     * configuration for creating {@link UnitOfWork} instances without any customizations.
+     */
     public SimpleUnitOfWorkFactory() {
         this(c -> c);
     }
@@ -45,7 +44,7 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
      * Initializes a {@link SimpleUnitOfWorkFactory} with the given customization function. Allows customizing the
      * default configuration used to create {@link UnitOfWork} instances by this factory.
      *
-     * @param factoryCustomization a function to customize the {@link UnitOfWork.Configuration} used to create
+     * @param factoryCustomization The function to customize the {@link UnitOfWork.Configuration} used to create
      *                             {@link UnitOfWork} instances.
      */
     public SimpleUnitOfWorkFactory(UnaryOperator<UnitOfWork.Configuration> factoryCustomization) {

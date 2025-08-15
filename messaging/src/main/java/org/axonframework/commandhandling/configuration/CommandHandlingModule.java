@@ -32,18 +32,18 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 /**
- * A {@link Module} and {@link ModuleBuilder} implementation providing operation to construct a stateful command
+ * A {@link Module} and {@link ModuleBuilder} implementation providing operation to construct a command
  * handling application module.
  * <p>
- * The {@code StatefulCommandHandlingModule} follows a builder paradigm, wherein several
+ * The {@code CommandHandlingModule} follows a builder paradigm, wherein several
  * {@link CommandHandler CommmandHandlers} can be registered in either order.
  * <p>
  * To register command handlers, a similar registration phase switch should be made, by invoking
  * {@link SetupPhase#commandHandlers()}.
  * <p>
- * Here's an example of how to register two stateful command handler lambdas:
+ * Here's an example of how to register two command handler lambdas:
  * <pre>
- * StatefulCommandHandlingModule.named("my-module")
+ * CommandHandlingModule.named("my-module")
  *                              .commandHandlers()
  *                              .commandHandler(new QualifiedName(RenameCourseCommand.class),
  *                                              (cmd, context) -> { ...command handling logic... })
@@ -63,9 +63,9 @@ import static java.util.Objects.requireNonNull;
 public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHandlingModule> {
 
     /**
-     * Starts a {@code StatefulCommandHandlingModule} module with the given {@code moduleName}.
+     * Starts a {@code CommandHandlingModule} module with the given {@code moduleName}.
      *
-     * @param moduleName The name of the {@code StatefulCommandHandlingModule} under construction.
+     * @param moduleName The name of the {@code CommandHandlingModule} under construction.
      * @return The setup phase of this module, for a fluent API.
      */
     static SetupPhase named(@Nonnull String moduleName) {
@@ -73,7 +73,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
     }
 
     /**
-     * The setup phase of the stateful command handling module.
+     * The setup phase of the command handling module.
      * <p>
      * The {@link #commandHandlers()} method allows users to start configuring all the
      * {@link CommandHandler CommandHandlers} for this module.
@@ -104,16 +104,16 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
     }
 
     /**
-     * The command handler configuration phase of the stateful command handling module.
+     * The command handler configuration phase of the command handling module.
      * <p>
      * Every registered {@link CommandHandler} will be subscribed with the
      * {@link org.axonframework.commandhandling.CommandBus} of the
      * {@link org.axonframework.configuration.ApplicationConfigurer} this module is given to.
      * <p>
-     * Provides roughly two options for configuring stateful command handlers. Firstly, a stateful command handler can
+     * Provides roughly two options for configuring command handlers. Firstly, a command handler can
      * be registered as is, through the {@link #commandHandler(QualifiedName, CommandHandler)} method. Secondly, if the
-     * stateful command handler provides components from the {@link Configuration}, a {@link ComponentBuilder builder}
-     * of the stateful command handler can be registered through the
+     * command handler provides components from the {@link Configuration}, a {@link ComponentBuilder builder}
+     * of the command handler can be registered through the
      * {@link #commandHandler(QualifiedName, ComponentBuilder)} method.
      */
     interface CommandHandlerPhase extends SetupPhase, ModuleBuilder<CommandHandlingModule> {
@@ -129,7 +129,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
          *
          * @param commandName    The qualified name of the command the given {@code commandHandler} can handle.
-         * @param commandHandler The stateful command handler to register with this module.
+         * @param commandHandler The command handler to register with this module.
          * @return The command handler phase of this builder, for a fluent API.
          */
         default CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
@@ -142,7 +142,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          * Registers the given {@code commandHandlerBuilder} for the given qualified {@code commandName} within this
          * module.
          * <p>
-         * Once this module is finalized, the stateful command handler from the {@code commandHandlerBuilder} will be
+         * Once this module is finalized, the command handler from the {@code commandHandlerBuilder} will be
          * subscribed with the {@link org.axonframework.commandhandling.CommandBus} of the
          * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
          *
@@ -150,7 +150,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
          *                              the given {@code commandHandlerBuilder}.
          * @param commandHandlerBuilder A builder of a {@link CommandHandler}. Provides the
          *                              {@link Configuration} to retrieve components from to use during construction of
-         *                              the stateful command handler.
+         *                              the command handler.
          * @return The command handler phase of this builder, for a fluent API.
          */
         CommandHandlerPhase commandHandler(

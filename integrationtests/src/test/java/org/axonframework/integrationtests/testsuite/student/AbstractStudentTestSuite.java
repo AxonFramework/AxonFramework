@@ -150,7 +150,7 @@ public abstract class AbstractStudentTestSuite {
                 })
                 .componentRegistry(cr -> cr.registerModule(studentEntity))
                 .componentRegistry(cr -> cr.registerModule(courseEntity))
-                .registerStatefulCommandHandlingModule(statefulCommandHandlingModule);
+                .registerCommandHandlingModule(statefulCommandHandlingModule);
         eventSourcingConfigurer = testSuiteConfigurer(eventSourcingConfigurer);
         startedConfiguration = eventSourcingConfigurer.start();
         commandGateway = startedConfiguration.getComponent(CommandGateway.class);
@@ -160,10 +160,12 @@ public abstract class AbstractStudentTestSuite {
     }
 
     /**
-     * Test suites can override this method to register additional entities.
+     * Allows for further configuration of the {@link EventSourcingConfigurer} used in the test suite.
+     * <p>
+     * This method can be overridden by subclasses to add additional configuration.
      *
-     * @param configurer The entity phase of the {@link CommandHandlingModule}, allowing for additional entities to be
-     *                   registered.
+     * @param configurer The {@link EventSourcingConfigurer} to configure.
+     * @return The configured {@link EventSourcingConfigurer}.
      */
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
         return configurer;

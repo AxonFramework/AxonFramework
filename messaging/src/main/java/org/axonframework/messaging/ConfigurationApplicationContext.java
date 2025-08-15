@@ -20,13 +20,26 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.configuration.Configuration;
 
+import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * An {@link ApplicationContext} implementation that retrieves components from a given {@link Configuration}.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 public class ConfigurationApplicationContext implements ApplicationContext {
 
     private final Configuration configuration;
 
-    public ConfigurationApplicationContext(Configuration configuration) {
+    /**
+     * Creates a new {@link ConfigurationApplicationContext} that retrieves components from the given {@code configuration}.
+     *
+     * @param configuration The configuration to retrieve components from.
+     */
+    public ConfigurationApplicationContext(@Nonnull Configuration configuration) {
+        Objects.requireNonNull(configuration, "configuration may not be null");
         this.configuration = configuration;
     }
 

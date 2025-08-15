@@ -114,16 +114,16 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given stateful command handling {@code moduleBuilder} to use in this configuration.
+     * Registers the given command handling {@code moduleBuilder} to use in this configuration.
      * <p>
      * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
      * will not be accessible from other {@code Modules} to enforce encapsulation.
      *
-     * @param moduleBuilder The builder returning a stateful command handling module to register with
+     * @param moduleBuilder The builder returning a command handling module to register with
      *                      {@code this ModellingConfigurer}.
-     * @return A {@code ModellingConfigurer} instance for further configuring.
+     * @return A {@code EventSourcingConfigurer} instance for further configuring.
      */
-    public EventSourcingConfigurer registerStatefulCommandHandlingModule(
+    public EventSourcingConfigurer registerCommandHandlingModule(
             ModuleBuilder<CommandHandlingModule> moduleBuilder
     ) {
         return modelling(modellingConfigurer -> modellingConfigurer.registerCommandHandlingModule(
