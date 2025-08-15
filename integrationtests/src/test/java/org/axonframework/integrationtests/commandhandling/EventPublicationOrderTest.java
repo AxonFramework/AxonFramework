@@ -31,7 +31,7 @@ import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -59,7 +59,7 @@ class EventPublicationOrderTest {
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
         target.setEventBus(eventStore);
-        commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(target));
+        commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(target, PassThroughConverter.INSTANCE));
     }
 
     @Test

@@ -28,6 +28,8 @@ import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
  * Generic implementation of the {@link CommandMessage} interface.
@@ -38,6 +40,9 @@ import java.util.Map;
  * @since 2.0.0
  */
 public class GenericCommandMessage<P> extends MessageDecorator<P> implements CommandMessage<P> {
+
+    private final String routingKey;
+    private final Integer priority;
 
     /**
      * Constructs a {@code GenericCommandMessage} for the given {@code type} and {@code payload}.
@@ -65,6 +70,26 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
         this(new GenericMessage<>(type, payload, metaData));
     }
 
+
+    /**
+     * Constructs a {@code GenericCommandMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
+     * <p>
+     * Optionally, a {@code routingKey} and/or a {@code priority} may be passed.
+     *
+     * @param type       The {@link MessageType type} for this {@link CommandMessage}.
+     * @param payload    The payload of type {@code P} for this {@link CommandMessage}.
+     * @param metaData   The metadata for this {@link CommandMessage}.
+     * @param routingKey The routing key for this {@link CommandMessage}, if any.
+     * @param priority   The priority for this {@link CommandMessage}, if any.
+     */
+    public GenericCommandMessage(@Nonnull MessageType type,
+                                 @Nonnull P payload,
+                                 @Nonnull Map<String, String> metaData,
+                                 @Nullable String routingKey,
+                                 @Nullable Integer priority) {
+        this(new GenericMessage<>(type, payload, metaData), routingKey, priority);
+    }
+
     /**
      * Constructs a {@code GenericCommandMessage} with given {@code delegate}.
      * <p>
@@ -80,7 +105,45 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      *                 {@link Message#metaData() metadata} for the {@link CommandMessage} to reconstruct.
      */
     public GenericCommandMessage(@Nonnull Message<P> delegate) {
+        this(delegate, null, null);
+    }
+
+    /**
+     * Constructs a {@code GenericCommandMessage} with given {@code delegate}, {@code routingKey}, and
+     * {@code priority}.
+     * <p>
+     * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
+     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@code GenericCommandMessage}.<br/> Optionally, a {@code routingKey} and/or a {@code priority} may be passed.
+     * <p>
+     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
+     * of Work.
+     *
+     * @param delegate   The {@link Message} containing {@link Message#payload() payload},
+     *                   {@link Message#type() qualifiedName}, {@link Message#identifier() identifier} and
+     *                   {@link Message#metaData() metadata} for the {@link CommandMessage} to reconstruct.
+     * @param routingKey The routing key for this {@link CommandMessage}, if any.
+     * @param priority   The priority for this {@link CommandMessage}, if any.
+     */
+    public GenericCommandMessage(@Nonnull Message<P> delegate,
+                                 @Nullable String routingKey,
+                                 @Nullable Integer priority) {
         super(delegate);
+        this.routingKey = routingKey;
+        this.priority = priority;
+    }
+
+    @Override
+    public Optional<String> routingKey() {
+        return Optional.ofNullable(routingKey);
+    }
+
+    @Override
+    public OptionalInt priority() {
+        if (priority == null) {
+            return OptionalInt.empty();
+        }
+        return OptionalInt.of(priority);
     }
 
     @Override
@@ -104,10 +167,11 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
             return (CommandMessage<T>) this;
         }
         Message<P> delegate = delegate();
-        return new GenericCommandMessage<>(new GenericMessage<>(delegate.identifier(),
-                                                                delegate.type(),
-                                                                convertedPayload,
-                                                                delegate.metaData()));
+        Message<T> converted = new GenericMessage<>(delegate.identifier(),
+                                                    delegate.type(),
+                                                    convertedPayload,
+                                                    delegate.metaData());
+        return new GenericCommandMessage<>(converted, routingKey, priority);
     }
 
     @Override

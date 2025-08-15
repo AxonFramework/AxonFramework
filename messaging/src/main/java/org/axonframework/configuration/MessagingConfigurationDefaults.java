@@ -18,8 +18,12 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
+import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
@@ -48,8 +52,10 @@ import org.axonframework.serialization.json.JacksonConverter;
  * Will only register the following components <b>if</b> there is no component registered for the given class yet:
  * <ul>
  *     <li>Registers a {@link org.axonframework.messaging.ClassBasedMessageTypeResolver} for class {@link org.axonframework.messaging.MessageTypeResolver}</li>
+ *     <li>Registers a {@link org.axonframework.serialization.json.JacksonConverter} for class {@link org.axonframework.serialization.Converter}</li>
  *     <li>Registers a {@link org.axonframework.commandhandling.gateway.DefaultCommandGateway} for class {@link org.axonframework.commandhandling.gateway.CommandGateway}</li>
  *     <li>Registers a {@link org.axonframework.commandhandling.SimpleCommandBus} for class {@link CommandBus}</li>
+ *     <li>Registers a {@link org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy} for class {@link RoutingStrategy}</li>
  *     <li>Registers a {@link org.axonframework.eventhandling.gateway.DefaultEventGateway} for class {@link org.axonframework.eventhandling.gateway.EventGateway}</li>
  *     <li>Registers a {@link org.axonframework.eventhandling.SimpleEventBus} for class {@link org.axonframework.eventhandling.EventBus}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.DefaultQueryGateway} for class {@link org.axonframework.queryhandling.QueryGateway}</li>
@@ -61,6 +67,19 @@ import org.axonframework.serialization.json.JacksonConverter;
  * @since 5.0.0
  */
 public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
+
+    /**
+     * The order in which the {@link ConvertingCommandGateway} is applied to the {@link CommandGateway} in the
+     * {@link ComponentRegistry}. As such, any decorator with a lower value will be applied to the delegate, and any
+     * higher value will be applied to the {@link ConvertingCommandGateway} itself. Using the same value can either lead
+     * to application of the decorator to the delegate or the converting command gateway, depending on the order of
+     * registration.
+     * <p>
+     * The order of the {@link ConvertingCommandGateway} is set to {@code Integer.MIN_VALUE + 100} to ensure it is
+     * applied very early in the configuration process, but not the earliest to allow for other decorators to be
+     * applied.
+     */
+    public static final int CONVERTING_COMMAND_GATEWAY_ORDER = Integer.MIN_VALUE + 100;
 
     @Override
     public int order() {
@@ -74,6 +93,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(Converter.class, c -> new JacksonConverter())
                 .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(CommandBus.class, MessagingConfigurationDefaults::defaultCommandBus)
+                .registerIfNotPresent(RoutingStrategy.class, MessagingConfigurationDefaults::defaultRoutingStrategy)
                 .registerIfNotPresent(EventGateway.class, MessagingConfigurationDefaults::defaultEventGateway)
                 .registerIfNotPresent(EventSink.class, MessagingConfigurationDefaults::defaultEventSink)
                 .registerIfNotPresent(EventBus.class, MessagingConfigurationDefaults::defaultEventBus)
@@ -81,6 +101,11 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(QueryBus.class, MessagingConfigurationDefaults::defaultQueryBus)
                 .registerIfNotPresent(QueryUpdateEmitter.class,
                                       MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
+        registry.registerDecorator(
+                CommandGateway.class,
+                CONVERTING_COMMAND_GATEWAY_ORDER,
+                (config, name, delegate) -> new ConvertingCommandGateway(delegate, config.getComponent(Converter.class))
+        );
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(Configuration config) {
@@ -96,7 +121,9 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     private static CommandGateway defaultCommandGateway(Configuration config) {
         return new DefaultCommandGateway(
                 config.getComponent(CommandBus.class),
-                config.getComponent(MessageTypeResolver.class)
+                config.getComponent(MessageTypeResolver.class),
+                config.getOptionalComponent(CommandPriorityCalculator.class).orElse(null),
+                config.getOptionalComponent(RoutingStrategy.class).orElse(null)
         );
     }
 
@@ -143,5 +170,9 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     private static QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
         return SimpleQueryUpdateEmitter.builder().build();
+    }
+
+    private static RoutingStrategy defaultRoutingStrategy(Configuration config) {
+        return new AnnotationRoutingStrategy();
     }
 }

@@ -16,7 +16,9 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import io.axoniq.axonserver.connector.AxonServerConnection;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
@@ -33,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating that the {@link org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer}
+ * Test class validating that the {@link AxonServerConfigurationEnhancer}
  * are registered and customizable when using Spring Boot.
  *
  * @author Steven van Beelen
@@ -108,7 +110,10 @@ class AxonServerConfigurationDefaultsAutoconfigTest {
 
         @Bean
         public AxonServerConnectionManager customAxonServerConnectionManager() {
-            return mock(AxonServerConnectionManager.class);
+            AxonServerConnectionManager mock = mock(AxonServerConnectionManager.class);
+            AxonServerConnection connectionMock = mock();
+            when(mock.getConnection()).thenReturn(connectionMock);
+            return mock;
         }
 
         @Bean

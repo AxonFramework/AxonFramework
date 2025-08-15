@@ -1,0 +1,366 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.axonserver.connector.command;
+
+import com.google.protobuf.ByteString;
+import io.axoniq.axonserver.connector.AxonServerConnection;
+import io.axoniq.axonserver.connector.Registration;
+import io.axoniq.axonserver.connector.command.CommandChannel;
+import io.axoniq.axonserver.connector.impl.AsyncRegistration;
+import io.axoniq.axonserver.grpc.ErrorMessage;
+import io.axoniq.axonserver.grpc.MetaDataValue;
+import io.axoniq.axonserver.grpc.ProcessingKey;
+import io.axoniq.axonserver.grpc.SerializedObject;
+import io.axoniq.axonserver.grpc.command.Command;
+import io.axoniq.axonserver.grpc.command.CommandResponse;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Test class validating the {@link AxonServerCommandBusConnector}.
+ *
+ * @author Jens Mayer
+ */
+class AxonServerCommandBusConnectorTest {
+
+    private static final QualifiedName ANY_TEST_COMMAND_NAME = new QualifiedName("TestCommand");
+    private static final String ANY_TEST_MESSAGE_ID = "test-message-id";
+    private static final String ANY_TEST_COMMAND_TYPE = "TestCommandType";
+    private static final String ANY_TEST_REVISION = "1.0";
+    private static final byte[] ANY_TEST_PAYLOAD = "test-payload".getBytes();
+    private static final int ANY_TEST_LOAD_FACTOR = 100;
+    private static final int ANY_TEST_PRIORITY = 5;
+    private static final String ANY_TEST_ROUTING_KEY = "test-routing-key";
+
+    private CommandChannel commandChannel;
+    private AxonServerCommandBusConnector testSubject;
+
+    @BeforeEach
+    void setUp() {
+        var serverConnection = mock(AxonServerConnection.class);
+        commandChannel = mock(CommandChannel.class);
+        testSubject = new AxonServerCommandBusConnector(serverConnection);
+
+        when(serverConnection.commandChannel()).thenReturn(commandChannel);
+    }
+
+    @Test
+    void constructionWithConnectionNullRefFails() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> new AxonServerCommandBusConnector(null));
+    }
+
+    @Test
+    void dispatchingCommandMessageWithInvalidPayloadTypeFails() {
+        CommandMessage<String> command = new GenericCommandMessage<>(
+                new GenericMessage<>(ANY_TEST_MESSAGE_ID,
+                                     new MessageType(ANY_TEST_COMMAND_TYPE, ANY_TEST_REVISION),
+                                     "invalid-payload",
+                                     new HashMap<>())
+        );
+        assertThrows(IllegalArgumentException.class, () -> testSubject.dispatch(command, null));
+    }
+
+    @Test
+    void dispatchingCommandMessageWithValidPayloadResultsToResponse() {
+        // Arrange
+        CommandMessage<byte[]> command = createTestCommandMessage();
+        CommandResponse response = createSuccessfulCommandResponse();
+
+        when(commandChannel.sendCommand(any(Command.class)))
+                .thenReturn(CompletableFuture.completedFuture(response));
+
+        // Act
+        CompletableFuture<CommandResultMessage<?>> result = testSubject.dispatch(command, null);
+
+        // Assert
+        assertDoesNotThrow(() -> result.get());
+        verify(commandChannel).sendCommand(any(Command.class));
+    }
+
+    @Test
+    void dispatchingBuildsCorrectOutgoingCommand() {
+        // Arrange
+        Map<String, String> metadata = Map.of("key1", "value1", "key2", "value2");
+        CommandMessage<byte[]> command = new GenericCommandMessage<>(
+                new GenericMessage<>(ANY_TEST_MESSAGE_ID,
+                                     new MessageType(ANY_TEST_COMMAND_TYPE, ANY_TEST_REVISION),
+                                     ANY_TEST_PAYLOAD,
+                                     metadata),
+                ANY_TEST_ROUTING_KEY,
+                ANY_TEST_PRIORITY
+        );
+
+        when(commandChannel.sendCommand(any(Command.class)))
+                .thenReturn(CompletableFuture.completedFuture(createSuccessfulCommandResponse()));
+
+        ArgumentCaptor<Command> commandCaptor = ArgumentCaptor.forClass(Command.class);
+
+        // Act
+        testSubject.dispatch(command, null);
+
+        // Assert
+        verify(commandChannel).sendCommand(commandCaptor.capture());
+        Command sentCommand = commandCaptor.getValue();
+
+        assertEquals(ANY_TEST_MESSAGE_ID, sentCommand.getMessageIdentifier());
+        assertEquals(ANY_TEST_COMMAND_TYPE, sentCommand.getName());
+        assertEquals(ANY_TEST_COMMAND_TYPE, sentCommand.getPayload().getType());
+        assertEquals(ANY_TEST_REVISION, sentCommand.getPayload().getRevision());
+        assertArrayEquals(ANY_TEST_PAYLOAD, sentCommand.getPayload().getData().toByteArray());
+        assertEquals(2, sentCommand.getMetaDataCount());
+        assertTrue(sentCommand.getProcessingInstructionsList().size() >= 2); // Priority and routing key
+    }
+
+    @Test
+    void dispatchingWithEmptyPriorityDoesNotAddPriorityInstruction() {
+        // Arrange
+        CommandMessage<byte[]> command = createTestCommandMessage();
+
+        when(commandChannel.sendCommand(any(Command.class)))
+                .thenReturn(CompletableFuture.completedFuture(createSuccessfulCommandResponse()));
+
+        ArgumentCaptor<Command> commandCaptor = ArgumentCaptor.forClass(Command.class);
+
+        // Act
+        testSubject.dispatch(command, null);
+
+        // Assert
+        verify(commandChannel).sendCommand(commandCaptor.capture());
+        Command sentCommand = commandCaptor.getValue();
+
+        assertFalse(sentCommand.getProcessingInstructionsList().stream()
+                               .anyMatch(pi -> pi.getKey() == ProcessingKey.PRIORITY));
+    }
+
+    @Test
+    void dispatchingHandlesErrorResponse() {
+        // Arrange
+        CommandMessage<byte[]> command = createTestCommandMessage();
+        CommandResponse errorResponse = CommandResponse.newBuilder()
+                                                       .setMessageIdentifier(UUID.randomUUID().toString())
+                                                       .setErrorCode("COMMAND_EXECUTION_ERROR")
+                                                       .setErrorMessage(ErrorMessage.newBuilder().setMessage(
+                                                               "Command execution error").build()
+                                                       )
+                                                       .build();
+
+        when(commandChannel.sendCommand(any(Command.class)))
+                .thenReturn(CompletableFuture.completedFuture(errorResponse));
+
+        // Act
+        CompletableFuture<CommandResultMessage<?>> result = testSubject.dispatch(command, null);
+
+        // Assert
+        assertTrue(result.isCompletedExceptionally());
+    }
+
+    @Test
+    void dispatchingHandlesEmptyPayloadResponse() {
+        // Arrange
+        CommandMessage<byte[]> command = createTestCommandMessage();
+        CommandResponse response = CommandResponse.newBuilder()
+                                                  .setMessageIdentifier(UUID.randomUUID().toString())
+                                                  .setPayload(SerializedObject.newBuilder()
+                                                                              .setType("")
+                                                                              .setRevision("")
+                                                                              .setData(ByteString.EMPTY)
+                                                                              .build())
+                                                  .build();
+
+        when(commandChannel.sendCommand(any(Command.class)))
+                .thenReturn(CompletableFuture.completedFuture(response));
+
+        // Act
+        CompletableFuture<CommandResultMessage<?>> result = testSubject.dispatch(command, null);
+
+        // Assert
+        assertDoesNotThrow(() -> {
+            CommandResultMessage<?> resultMessage = result.get();
+            assertNull(resultMessage);
+        });
+    }
+
+    @Test
+    void subscribeRegistersCommandHandlerWithCorrectParameters() {
+        // Arrange
+        Registration mockRegistration = mock(Registration.class);
+        when(commandChannel.registerCommandHandler(any(), eq(ANY_TEST_LOAD_FACTOR), eq(ANY_TEST_COMMAND_NAME.name())))
+                .thenReturn(mockRegistration);
+
+        // Act
+        testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR);
+
+        // Assert
+        assertThat(getSubscriptions(testSubject)).containsEntry(ANY_TEST_COMMAND_NAME, mockRegistration);
+    }
+
+    @Test
+    void subscribeWithNegativeLoadFactorThrowsException() {
+        assertThrows(IllegalArgumentException.class,
+                     () -> testSubject.subscribe(ANY_TEST_COMMAND_NAME, -1));
+    }
+
+    @Test
+    void subscribeWithAsyncRegistrationWaitsForAcknowledgment() throws Exception {
+        // Arrange
+        AsyncRegistration asyncRegistration = mock(AsyncRegistration.class);
+        when(commandChannel.registerCommandHandler(any(), eq(ANY_TEST_LOAD_FACTOR), eq(ANY_TEST_COMMAND_NAME.name())))
+                .thenReturn(asyncRegistration);
+
+        // Act
+        testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR);
+
+        // Assert
+        verify(asyncRegistration).awaitAck(anyLong(), eq(TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    void subscribeWithAsyncRegistrationTimeoutThrowsException() throws Exception {
+        // Arrange
+        AsyncRegistration asyncRegistration = mock(AsyncRegistration.class);
+        when(commandChannel.registerCommandHandler(any(), eq(ANY_TEST_LOAD_FACTOR), eq(ANY_TEST_COMMAND_NAME.name())))
+                .thenReturn(asyncRegistration);
+        doThrow(new TimeoutException("Test timeout"))
+                .when(asyncRegistration).awaitAck(anyLong(), eq(TimeUnit.MILLISECONDS));
+
+        // Act & Assert
+        assertThrows(RuntimeException.class,
+                     () -> testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR));
+    }
+
+    @Test
+    void subscribeWithAsyncRegistrationInterruptedThrowsException() throws Exception {
+        // Arrange
+        AsyncRegistration asyncRegistration = mock(AsyncRegistration.class);
+        when(commandChannel.registerCommandHandler(any(), eq(ANY_TEST_LOAD_FACTOR), eq(ANY_TEST_COMMAND_NAME.name())))
+                .thenReturn(asyncRegistration);
+        doThrow(new InterruptedException("Test interruption"))
+                .when(asyncRegistration).awaitAck(anyLong(), eq(TimeUnit.MILLISECONDS));
+
+        // Act & Assert
+        assertThrows(RuntimeException.class,
+                     () -> testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR));
+        assertTrue(Thread.currentThread().isInterrupted());
+    }
+
+    @Test
+    void unsubscribeRemovesAndCancelsRegistration() {
+        // Arrange
+        Registration mockRegistration = mock(Registration.class);
+        when(commandChannel.registerCommandHandler(any(), eq(ANY_TEST_LOAD_FACTOR), eq(ANY_TEST_COMMAND_NAME.name())))
+                .thenReturn(mockRegistration);
+
+        testSubject.subscribe(ANY_TEST_COMMAND_NAME, ANY_TEST_LOAD_FACTOR);
+
+        // Act
+        boolean result = testSubject.unsubscribe(ANY_TEST_COMMAND_NAME);
+
+        // Assert
+        assertTrue(result);
+        verify(mockRegistration).cancel();
+        assertFalse(getSubscriptions(testSubject).containsKey(ANY_TEST_COMMAND_NAME));
+
+        // Second unsubscribe should return false
+        assertFalse(testSubject.unsubscribe(ANY_TEST_COMMAND_NAME));
+    }
+
+    @Test
+    void unsubscribeNonExistentCommandReturnsFalse() {
+        // Act
+        boolean result = testSubject.unsubscribe(ANY_TEST_COMMAND_NAME);
+
+        // Assert
+        assertFalse(result);
+    }
+
+    @Test
+    void onIncomingCommandSetsHandler() {
+        // Arrange
+        CommandBusConnector.Handler handler = mock(CommandBusConnector.Handler.class);
+
+        // Act
+        testSubject.onIncomingCommand(handler);
+
+        // Assert
+        assertThat(getIncomingHandler(testSubject)).isSameAs(handler);
+    }
+
+    // Helpers
+    private CommandMessage<byte[]> createTestCommandMessage() {
+        return new GenericCommandMessage<>(
+                new GenericMessage<>(ANY_TEST_MESSAGE_ID,
+                                     new MessageType(ANY_TEST_COMMAND_TYPE, ANY_TEST_REVISION),
+                                     ANY_TEST_PAYLOAD,
+                                     new HashMap<>())
+        );
+    }
+
+    private CommandResponse createSuccessfulCommandResponse() {
+        return CommandResponse.newBuilder()
+                              .setMessageIdentifier(UUID.randomUUID().toString())
+                              .setPayload(SerializedObject.newBuilder()
+                                                          .setType("ResponseType")
+                                                          .setRevision("1.0")
+                                                          .setData(ByteString.copyFrom("response-payload".getBytes()))
+                                                          .build())
+                              .putMetaData("responseKey",
+                                           MetaDataValue.newBuilder().setTextValue("responseValue").build())
+                              .build();
+    }
+
+    private Map<QualifiedName, Registration> getSubscriptions(AxonServerCommandBusConnector instance) {
+        try {
+            Field field = instance.getClass().getDeclaredField("subscriptions");
+            field.setAccessible(true);
+
+            //noinspection unchecked
+            return (Map<QualifiedName, Registration>) field.get(instance);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private CommandBusConnector.Handler getIncomingHandler(AxonServerCommandBusConnector instance) {
+        try {
+            Field field = instance.getClass().getDeclaredField("incomingHandler");
+            field.setAccessible(true);
+            return (CommandBusConnector.Handler) field.get(instance);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
