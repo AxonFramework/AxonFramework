@@ -32,6 +32,7 @@ import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.ConfigurationApplicationContext;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -47,6 +48,7 @@ import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 
 import java.util.Collections;
+import java.util.List;
 
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link MessagingConfigurer}.
@@ -107,9 +109,13 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static CommandBus defaultCommandBus(Configuration config) {
-        return config.getOptionalComponent(TransactionManager.class)
-                     .map(SimpleCommandBus::new)
-                     .orElse(new SimpleCommandBus(config.getComponent(UnitOfWorkFactory.class), Collections.emptyList()));
+        return new SimpleCommandBus(
+                config.getComponent(UnitOfWorkFactory.class),
+                config.getOptionalComponent(TransactionManager.class)
+                      .map(tm -> (ProcessingLifecycleHandlerRegistrar) tm)
+                      .map(List::of)
+                      .orElse(Collections.emptyList())
+        );
     }
 
     private static CommandGateway defaultCommandGateway(Configuration config) {
