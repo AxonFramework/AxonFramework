@@ -30,7 +30,11 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.ConfigurationApplicationContext;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
@@ -72,6 +76,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         registry.registerIfNotPresent(MessageTypeResolver.class,
                                       MessagingConfigurationDefaults::defaultMessageTypeResolver)
                 .registerIfNotPresent(Converter.class, c -> new JacksonConverter())
+                .registerIfNotPresent(UnitOfWorkFactory.class, MessagingConfigurationDefaults::defaultUnitOfWorkFactory)
                 .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(CommandBus.class, MessagingConfigurationDefaults::defaultCommandBus)
                 .registerIfNotPresent(EventGateway.class, MessagingConfigurationDefaults::defaultEventGateway)
@@ -85,6 +90,18 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     private static MessageTypeResolver defaultMessageTypeResolver(Configuration config) {
         return new ClassBasedMessageTypeResolver();
+    }
+
+    private static UnitOfWorkFactory defaultUnitOfWorkFactory(Configuration config) {
+        return new TransactionalUnitOfWorkFactory(
+                config.getComponent(
+                        TransactionManager.class,
+                        NoTransactionManager::instance
+                ),
+                new SimpleUnitOfWorkFactory(
+                        c -> c.applicationContext(new ConfigurationApplicationContext(config))
+                )
+        );
     }
 
     private static CommandBus defaultCommandBus(Configuration config) {

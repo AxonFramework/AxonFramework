@@ -31,4 +31,5 @@ public interface UnitOfWorkFactory {
      * @return A new unit of work.
      **/
     UnitOfWork create();
+
 }

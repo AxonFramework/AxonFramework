@@ -16,8 +16,9 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.messaging.ApplicationContext;
-import org.axonframework.messaging.EmptyApplicationContext;
+import java.util.UUID;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * Factory for creating simple {@link UnitOfWork} instances. Create units of work by invoking the {@link UnitOfWork}
@@ -28,18 +29,27 @@ import org.axonframework.messaging.EmptyApplicationContext;
  */
 public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
 
-    private final ApplicationContext applicationContext;
+    // todo: CustomizableUnitOfWorkFactory --- a few layers down... I can provide custom IdGenerator by mean of this!!!
+    // todo: DelegatingUnitOfWorkFactory - here, just create() method!
 
-    public SimpleUnitOfWorkFactory(){
-        this(new EmptyApplicationContext());
+    private final static Supplier<String> DEFAULT_UNIT_OF_WORK_ID_GENERATOR = () -> UUID.randomUUID().toString();
+    private final UnaryOperator<UnitOfWork.Configuration> unitOfWorkCustomization;
+    //TODO: Configuration as a factory concern! and the Customizable part!?
+
+    public SimpleUnitOfWorkFactory() {
+        this(c -> c);
     }
 
-    public SimpleUnitOfWorkFactory(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
+    public SimpleUnitOfWorkFactory(UnaryOperator<UnitOfWork.Configuration> unitOfWorkCustomization) {
+        this.unitOfWorkCustomization = unitOfWorkCustomization;
     }
 
     @Override
     public UnitOfWork create() {
-        return new UnitOfWork(this.applicationContext);
+        var defaultConfig = UnitOfWork.Configuration
+                .defaultValues()
+                .identifier(DEFAULT_UNIT_OF_WORK_ID_GENERATOR.get());
+        var configuration = unitOfWorkCustomization.apply(defaultConfig);
+        return new UnitOfWork(configuration);
     }
 }

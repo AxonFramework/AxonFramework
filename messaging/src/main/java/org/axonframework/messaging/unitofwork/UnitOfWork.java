@@ -19,7 +19,9 @@ package org.axonframework.messaging.unitofwork;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.ApplicationContext;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,33 +71,47 @@ public class UnitOfWork implements ProcessingLifecycle {
     private final UnitOfWorkProcessingContext context;
 
     /**
-     * Constructs a {@code UnitOfWork} with a {@link UUID#randomUUID() random UUID String}. Will execute provided
-     * actions on the same thread invoking this Unit of Work.
-     */
-    public UnitOfWork(ApplicationContext applicationContext) {
-        this(UUID.randomUUID().toString(), applicationContext);
-    }
-
-    /**
-     * Constructs a {@code UnitOfWork} with the given {@code identifier}. Will execute provided actions on the same
-     * thread invoking this Unit of Work.
-     *
-     * @param identifier The identifier of this Unit of Work.
-     */
-    public UnitOfWork(String identifier,  ApplicationContext applicationContext) {
-        this(identifier, Runnable::run, applicationContext);
-    }
-
-    /**
      * Constructs a {@code UnitOfWork} with the given {@code identifier}, processing actions through the given
      * {@code workScheduler}.
      *
      * @param identifier    The identifier of this Unit of Work.
      * @param workScheduler The {@link Executor} used to process the steps attached to the phases in this Unit of Work
      */
+    @Internal
+    UnitOfWork(Configuration configuration) {
+        this.identifier = configuration.identifier;
+        this.context = new UnitOfWorkProcessingContext(configuration.identifier,
+                                                       configuration.workScheduler,
+                                                       configuration.applicationContext);
+    }
+
+    // todo: configuration to the factory, always requires those 3 parameters!?
     public UnitOfWork(String identifier, Executor workScheduler, ApplicationContext applicationContext) {
         this.identifier = identifier;
         this.context = new UnitOfWorkProcessingContext(identifier, workScheduler, applicationContext);
+    }
+
+    public record Configuration(
+            String identifier,
+            Executor workScheduler,
+            ApplicationContext applicationContext
+    ) {
+
+        static Configuration defaultValues() {
+            return new Configuration(UUID.randomUUID().toString(), Runnable::run, new EmptyApplicationContext());
+        }
+
+        public Configuration identifier(String identifier) {
+            return new Configuration(identifier, workScheduler, applicationContext);
+        }
+
+        public Configuration workScheduler(Executor workScheduler) {
+            return new Configuration(identifier, workScheduler, applicationContext);
+        }
+
+        public Configuration applicationContext(ApplicationContext applicationContext) {
+            return new Configuration(identifier, workScheduler, applicationContext);
+        }
     }
 
     @Override
@@ -204,7 +220,8 @@ public class UnitOfWork implements ProcessingLifecycle {
         private final ApplicationContext applicationContext;
         private final ConcurrentMap<ResourceKey<?>, Object> resources;
 
-        private UnitOfWorkProcessingContext(String identifier, Executor workScheduler, ApplicationContext applicationContext) {
+        private UnitOfWorkProcessingContext(String identifier, Executor workScheduler,
+                                            ApplicationContext applicationContext) {
             this.identifier = identifier;
             this.workScheduler = workScheduler;
             this.resources = new ConcurrentHashMap<>();

@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 
@@ -200,6 +201,24 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     ) {
         applicationConfigurer.componentRegistry(
                 cr -> cr.registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder)
+        );
+        return this;
+    }
+
+    /**
+     * Registers the given {@link UnitOfWorkFactory} factory in this {@code Configurer}.
+     * <p>
+     * The {@code unitOfWorkFactoryBuilder} receives the {@link Configuration} as input and is expected to return a
+     * {@link UnitOfWorkFactory} instance.
+     *
+     * @param unitOfWorkFactoryBuilder The builder constructing the {@link UnitOfWorkFactory}.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    public MessagingConfigurer registerUnitOfWorkFactory(
+            @Nonnull ComponentBuilder<UnitOfWorkFactory> unitOfWorkFactoryBuilder
+    ) {
+        applicationConfigurer.componentRegistry(
+                cr -> cr.registerComponent(UnitOfWorkFactory.class, unitOfWorkFactoryBuilder)
         );
         return this;
     }
