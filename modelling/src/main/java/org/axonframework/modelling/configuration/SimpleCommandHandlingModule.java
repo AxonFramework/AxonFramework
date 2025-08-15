@@ -54,12 +54,11 @@ import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
 class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule>
         implements CommandHandlingModule,
         CommandHandlingModule.SetupPhase,
-        CommandHandlingModule.CommandHandlerPhase,
-        CommandHandlingModule.EntityPhase {
+        CommandHandlingModule.CommandHandlerPhase
+{
 
     private final String moduleName;
     private final String commandHandlingComponentName;
-    private final Map<String, EntityModule<?, ?>> entityModules;
     private final Map<QualifiedName, ComponentBuilder<CommandHandler>> handlerBuilders;
     private final List<ComponentBuilder<CommandHandlingComponent>> handlingComponentBuilders;
 
@@ -67,7 +66,6 @@ class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule
         super(moduleName);
         this.moduleName = requireNonNull(moduleName, "The module name cannot be null.");
         this.commandHandlingComponentName = "CommandHandlingComponent[" + moduleName + "]";
-        this.entityModules = new HashMap<>();
         this.handlerBuilders = new HashMap<>();
         this.handlingComponentBuilders = new ArrayList<>();
     }
@@ -96,37 +94,12 @@ class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule
     }
 
     @Override
-    public EntityPhase entities() {
-        return this;
-    }
-
-    @Override
-    public <I, E> EntityPhase entity(@Nonnull EntityModule<I, E> entityModule) {
-        requireNonNull(entityModule, "The entity module cannot be null.");
-        entityModules.put(entityModule.entityName(), entityModule);
-        return this;
-    }
-
-    @Override
     public CommandHandlingModule build() {
-        registerStateManager();
-        registerStatefulCommandHandlingComponent();
-        registerEntityModules();
+        registerCommandHandlingComponent();
         return this;
     }
 
-    private void registerEntityModules() {
-        componentRegistry(cr -> {
-            entityModules.values().forEach(cr::registerModule);
-        });
-    }
-
-    private void registerStateManager() {
-        componentRegistry(cr -> cr.registerComponent(StateManager.class, config ->
-                SimpleStateManager.named("StateManager[" + moduleName + "]")));
-    }
-
-    private void registerStatefulCommandHandlingComponent() {
+    private void registerCommandHandlingComponent() {
         componentRegistry(cr -> cr.registerComponent(commandHandlingComponentComponentDefinition()));
     }
 

@@ -21,6 +21,7 @@ import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
@@ -173,9 +174,8 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .build();
     }
 
-
     @Override
-    Module getModule() {
+    protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
         EventSourcedEntityModule<PersonIdentifier, ImmutablePerson> personEntityModule = EventSourcedEntityModule
                 .declarative(PersonIdentifier.class, ImmutablePerson.class)
                 .messagingModel(this::buildEntityMetamodel)
@@ -202,10 +202,13 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                     throw new IllegalArgumentException(
                             format("Unknown command type: %s", message.payloadType().getName()));
                 });
+        return configurer.componentRegistry(cr -> cr.registerModule(personEntityModule));
+    }
+
+    @Override
+    Module getModule() {
         return CommandHandlingModule
                 .named("ImmutableBuilderEntityModelAdministrationTest")
-                .entities()
-                .entity(personEntityModule)
                 .commandHandlers()
                 .build();
     }

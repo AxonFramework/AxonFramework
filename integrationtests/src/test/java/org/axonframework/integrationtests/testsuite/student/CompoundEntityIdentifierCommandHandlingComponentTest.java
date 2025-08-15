@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
@@ -50,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
     @Override
-    protected void registerAdditionalEntities(CommandHandlingModule.EntityPhase entityConfigurer) {
+    protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
         EventSourcedEntityModule<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentSlice =
                 EventSourcedEntityModule
                         .declarative(StudentMentorModelIdentifier.class, StudentMentorAssignment.class)
@@ -61,8 +62,9 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                                                         new QualifiedName(MentorAssignedToStudentEvent.class),
                                                         (entity, event, context) -> {
                                                             Converter converter = c.getComponent(Converter.class);
-                                                            MentorAssignedToStudentEvent payload = converter.convert(event.payload(),
-                                                                                                                     MentorAssignedToStudentEvent.class);
+                                                            MentorAssignedToStudentEvent payload = converter.convert(
+                                                                    event.payload(),
+                                                                    MentorAssignedToStudentEvent.class);
                                                             entity.handle(payload);
                                                             return entity;
                                                         }
@@ -78,8 +80,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                                              .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
                         ))
                         .build();
-
-        entityConfigurer.entity(mentorAssignmentSlice);
+        return configurer.componentRegistry(cr -> cr.registerModule(mentorAssignmentSlice));
     }
 
     @Test

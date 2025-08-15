@@ -48,13 +48,11 @@ class CommandHandlingModuleTest {
 
     private CommandHandlingModule.SetupPhase setupPhase;
     private CommandHandlingModule.CommandHandlerPhase commandHandlerPhase;
-    private CommandHandlingModule.EntityPhase entityPhase;
 
     @BeforeEach
     void setUp() {
         setupPhase = CommandHandlingModule.named("test-subject");
         commandHandlerPhase = setupPhase.commandHandlers();
-        entityPhase = setupPhase.entities();
     }
 
     @Test
@@ -75,18 +73,14 @@ class CommandHandlingModuleTest {
                                               .build())
                                       .entityIdResolver(config -> (message, context) -> "1");
 
-        StubLifecycleRegistry lifecycleRegistry = new StubLifecycleRegistry();
         AxonConfiguration configuration = ModellingConfigurer
                 .create()
-                .componentRegistry(cr -> {
-                    cr.registerModule(setupPhase
-                                              .entities()
-                                              .entity(entityModule)
-                                              .commandHandlers()
-                                              .commandHandler(new QualifiedName(Integer.class),
-                                                              (command, context) -> MessageStream.just(null))
-                                              .build());
-                })
+                .componentRegistry(cr -> cr.registerModule(entityModule))
+                .componentRegistry(cr -> cr.registerModule(setupPhase
+                                          .commandHandlers()
+                                          .commandHandler(new QualifiedName(Integer.class),
+                                                          (command, context) -> MessageStream.just(null))
+                                          .build()))
                 .start();
 
         Configuration resultConfig = configuration.getModuleConfiguration("test-subject").orElseThrow();
@@ -199,17 +193,5 @@ class CommandHandlingModuleTest {
     void commandHandlingThrowsNullPointerExceptionForNullCommandHandlerPhaseConsumer() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandlers(null));
-    }
-
-    @Test
-    void entityThrowsNullPointerExceptionForNullEntityBuilder() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> entityPhase.entity(null));
-    }
-
-    @Test
-    void entityThrowsNullPointerExceptionForNullEntityPhaseConsumer() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> entityPhase.entities(null));
     }
 }

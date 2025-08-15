@@ -113,11 +113,7 @@ public abstract class AbstractStudentTestSuite {
                 .build();
 
         statefulCommandHandlingModule = CommandHandlingModule.named("student-course-module")
-                                                                     .entities()
-                                                                     .entity(studentEntity)
-                                                                     .entity(courseEntity)
-                                                                     .entities(this::registerAdditionalEntities)
-                                                                     .commandHandlers();
+                                                             .commandHandlers();
     }
 
     @AfterEach
@@ -130,8 +126,8 @@ public abstract class AbstractStudentTestSuite {
     /**
      * Test suite implementations can invoke this method to register additional command handlers.
      *
-     * @param handlerConfigurer The command handler phase of the {@link CommandHandlingModule}, allowing for
-     *                          command handler registration.
+     * @param handlerConfigurer The command handler phase of the {@link CommandHandlingModule}, allowing for command
+     *                          handler registration.
      */
     protected void registerCommandHandlers(
             Consumer<CommandHandlingModule.CommandHandlerPhase> handlerConfigurer
@@ -147,13 +143,16 @@ public abstract class AbstractStudentTestSuite {
         axonServerConfiguration.setServers(
                 container.getHost() + ":" + container.getGrpcPort()
         );
-        startedConfiguration = EventSourcingConfigurer
+        EventSourcingConfigurer eventSourcingConfigurer = EventSourcingConfigurer
                 .create()
                 .componentRegistry(cr -> {
                     cr.registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration);
                 })
-                .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
-                .start();
+                .componentRegistry(cr -> cr.registerModule(studentEntity))
+                .componentRegistry(cr -> cr.registerModule(courseEntity))
+                .registerStatefulCommandHandlingModule(statefulCommandHandlingModule);
+        eventSourcingConfigurer = testSuiteConfigurer(eventSourcingConfigurer);
+        startedConfiguration = eventSourcingConfigurer.start();
         commandGateway = startedConfiguration.getComponent(CommandGateway.class);
 
         Configuration moduleConfig = startedConfiguration.getModuleConfigurations().getFirst();
@@ -163,11 +162,11 @@ public abstract class AbstractStudentTestSuite {
     /**
      * Test suites can override this method to register additional entities.
      *
-     * @param entityConfigurer The entity phase of the {@link CommandHandlingModule}, allowing for additional
-     *                         entities to be registered.
+     * @param configurer The entity phase of the {@link CommandHandlingModule}, allowing for additional entities to be
+     *                   registered.
      */
-    protected void registerAdditionalEntities(CommandHandlingModule.EntityPhase entityConfigurer) {
-        // Do nothing by default.
+    protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
+        return configurer;
     }
 
     /**
@@ -176,7 +175,7 @@ public abstract class AbstractStudentTestSuite {
      */
     protected EntityEvolver<Course> courseEvolver(Configuration config) {
         return (course, event, context) -> {
-            if(event.type().name().equals(StudentEnrolledEvent.class.getName())) {
+            if (event.type().name().equals(StudentEnrolledEvent.class.getName())) {
                 // Convert the payload to the expected type
                 Converter converter = config.getComponent(Converter.class);
                 StudentEnrolledEvent convert = converter.convert(event.payload(), StudentEnrolledEvent.class);
@@ -208,8 +207,10 @@ public abstract class AbstractStudentTestSuite {
      * {@link AnnotationBasedEntityEvolvingComponent} to use the annotations placed.
      */
     protected EntityEvolver<Student> studentEvolver(Configuration config) {
-        return new AnnotationBasedEntityEvolvingComponent<>(Student.class, config.getComponent(Converter.class), config.getComponent(
-                MessageTypeResolver.class));
+        return new AnnotationBasedEntityEvolvingComponent<>(Student.class,
+                                                            config.getComponent(Converter.class),
+                                                            config.getComponent(
+                                                                    MessageTypeResolver.class));
     }
 
     protected void changeStudentName(String studentId, String name) {

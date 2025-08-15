@@ -92,14 +92,14 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                         .build();
         ModuleBuilder<CommandHandlingModule> statefulCommandHandlingModule =
                 CommandHandlingModule.named("test")
-                                     .entities(entityPhase -> entityPhase.entity(testEntityBuilder))
                                      .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
-                                                     new QualifiedName(String.class),
-                                                     (command, context) -> MessageStream.empty().cast()
-                                             ));
+                                             new QualifiedName(String.class),
+                                             (command, context) -> MessageStream.empty().cast()
+                                     ));
 
         List<Configuration> moduleConfigurations =
-                testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
+                testSubject.componentRegistry(cr -> cr.registerModule(testEntityBuilder))
+                           .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
                            .build()
                            .getModuleConfigurations();
 

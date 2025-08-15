@@ -41,8 +41,7 @@ import static java.util.Objects.requireNonNull;
  * either order. Entities defined in the registered entity modules will be available in the
  * {@link org.axonframework.modelling.StateManager} of the stateful command handlers defined in this module.
  * <p>
- * To initiate entity registration, you should move into the entity registration phase by invoking
- * {@link SetupPhase#entities()}. To register command handlers, a similar registration phase switch should be made, by
+ * To register command handlers, a similar registration phase switch should be made, by
  * invoking {@link SetupPhase#commandHandlers()}.
  * <p>
  * Here's an example of how to register two stateful command handler lambdas, one state-based entity with a repository
@@ -86,9 +85,8 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
     /**
      * The setup phase of the stateful command handling module.
      * <p>
-     * Allows for two paths when building a stateful command handling module. Firstly, the {@link #commandHandlers()}
-     * method allows users to start configuring all the {@link StatefulCommandHandler StatefulCommandHandlers} for this
-     * module. The second option allows for moving to the {@link #entities() entity} registration flow of this module.
+     * The {@link #commandHandlers()} method allows users to start configuring all the
+     * {@link StatefulCommandHandler StatefulCommandHandlers} for this module.
      */
     interface SetupPhase {
 
@@ -112,27 +110,6 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
             requireNonNull(configurationLambda, "The command handler configuration lambda cannot be null.")
                     .accept(commandHandlerPhase);
             return commandHandlerPhase;
-        }
-
-        /**
-         * Initiates the entity configuration phase for this module.
-         *
-         * @return The entity phase of this module, for a fluent API.
-         */
-        EntityPhase entities();
-
-        /**
-         * Initiates the entity configuration phase for this module, as well as performing the given
-         * {@code configurationLambda} within this phase.
-         *
-         * @param configurationLambda A consumer of the entity phase, performing entity configuration right away.
-         * @return The setup phase of this module, for a fluent API.
-         */
-        default EntityPhase entities(@Nonnull Consumer<EntityPhase> configurationLambda) {
-            EntityPhase entityPhase = entities();
-            requireNonNull(configurationLambda, "The entity configuration lambda cannot be null.")
-                    .accept(entityPhase);
-            return entityPhase;
         }
     }
 
@@ -232,24 +209,5 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
                     c.getComponent(ParameterResolverFactory.class)
             ));
         }
-    }
-
-    /**
-     * The entity phase of the stateful command handling module, where {@link EntityModule entity modules} can be
-     * registered. The entities defined in the registered modules will be available in the
-     * {@link org.axonframework.modelling.StateManager} of the stateful command handlers defined in this module.
-     */
-    interface EntityPhase extends SetupPhase, ModuleBuilder<CommandHandlingModule> {
-
-        /**
-         * Registers the given {@code entityModule} with this module. This will make the entity available in the
-         * {@link org.axonframework.modelling.StateManager} of the stateful command handlers defined in this module.
-         *
-         * @param entityModule The entity module to register with this module.
-         * @param <I>          The type of identifier used to identify the entity that's being built.
-         * @param <E>          The type of the entity being built.
-         * @return The entity phase of this module, for a fluent API.
-         */
-        <I, E> EntityPhase entity(@Nonnull EntityModule<I, E> entityModule);
     }
 }

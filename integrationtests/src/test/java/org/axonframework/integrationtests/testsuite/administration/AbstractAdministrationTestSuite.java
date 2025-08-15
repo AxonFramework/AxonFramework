@@ -88,15 +88,18 @@ public abstract class AbstractAdministrationTestSuite {
                                                            "default",
                                                            AxonServerContainerUtils.DCB_CONTEXT);
         LoggerFactory.getLogger(ServerConnectorConfigurationEnhancer.class)
-                      .info("Using Axon Server at http://localhost:{}", container.getHttpPort());
-        startedConfiguration = EventSourcingConfigurer.create()
-                                                      .componentRegistry(cr -> {
-                                                          cr.registerComponent(AxonServerConfiguration.class,
-                                                                               c -> axonServerConfiguration);
-                                                      })
-                                                      .componentRegistry(cr -> cr.registerModule(getModule()))
-                                                      .start();
+                     .info("Using Axon Server at http://localhost:{}", container.getHttpPort());
+        EventSourcingConfigurer eventSourcingConfigurer = EventSourcingConfigurer
+                .create()
+                .componentRegistry(cr -> cr.registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration))
+                .componentRegistry(cr -> cr.registerModule(getModule()));
+        eventSourcingConfigurer = testSuiteConfigurer(eventSourcingConfigurer);
+        startedConfiguration = eventSourcingConfigurer.start();
         commandGateway = startedConfiguration.getComponent(CommandGateway.class);
+    }
+
+    protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
+        return configurer;
     }
 
     @AfterEach
