@@ -65,7 +65,9 @@ public class PooledStreamingEventProcessorWithStatefulEventHandlingComponentTest
         configurer.componentRegistry(cr -> cr.registerModule(studentEntity));
 
         configurer.modelling(
-                modelling -> modelling.registerStatefulCommandHandlingModule(
+                modelling -> modelling
+                        //.registerEntity(studentEntity) // TODO
+                        .registerStatefulCommandHandlingModule(
                         sendMaxCoursesEnrolledNotificationCommandHandler()
                 )
         );

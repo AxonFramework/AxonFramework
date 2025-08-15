@@ -31,6 +31,7 @@ import org.axonframework.integrationtests.testsuite.student.state.StudentMentorA
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.SimpleEntityEvolvingComponent;
+import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.serialization.Converter;
@@ -95,7 +96,8 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractState
     void canHandleCommandThatTargetsMultipleModelsViaStatefulCommandHandler() {
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(AssignMentorCommand.class),
-                c -> (command, state, context) -> {
+                c -> (command, context) -> {
+//                    StateManager stateManager = StateManager.forContext(context);
                     EventAppender eventAppender = EventAppender.forContext(context, c);
                     AssignMentorCommand payload = (AssignMentorCommand) command.payload();
                     StudentMentorAssignment assignment = state.loadEntity(
