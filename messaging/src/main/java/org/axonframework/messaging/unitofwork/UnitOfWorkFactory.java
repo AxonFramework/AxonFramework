@@ -16,6 +16,11 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import jakarta.annotation.Nonnull;
+
+import java.util.UUID;
+import java.util.function.UnaryOperator;
+
 /**
  * Factory for creating {@link UnitOfWork} instances. Useful to create units of work that are bound to some context,
  * such as a database transaction.
@@ -23,13 +28,24 @@ package org.axonframework.messaging.unitofwork;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@FunctionalInterface
 public interface UnitOfWorkFactory {
+
+    @Nonnull
+    default UnitOfWork create() {
+        return create(UUID.randomUUID().toString(), UnaryOperator.identity());
+    }
+
+    @Nonnull
+    default UnitOfWork create(@Nonnull String identifier) {
+        return create(identifier, UnaryOperator.identity());
+    }
 
     /**
      * Creates a new {@link UnitOfWork}.
      *
      * @return A new unit of work.
      **/
-    UnitOfWork create();
-
+    @Nonnull
+    UnitOfWork create(@Nonnull String identifier, @Nonnull UnaryOperator<UnitOfWork.Configuration> customization);
 }

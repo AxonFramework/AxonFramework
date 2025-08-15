@@ -76,32 +76,32 @@ public class SimpleCommandBus implements CommandBus {
      * Construct a {@code SimpleCommandBus}, using the given {@code processingLifecycleHandlerRegistrars} when
      * constructing a {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle} to handle commands in.
      *
-     * @param workerSupplier                       The {@code Executor} used to handle commands in a dedicated
+     * @param worker                               The {@code Executor} used to handle commands in a dedicated
      *                                             {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle}.
      * @param processingLifecycleHandlerRegistrars A vararg of {@code ProcessingLifecycleHandlerRegistrar} instance,
      *                                             used when constructing a
      *                                             {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle} to
      *                                             handle commands in.
      */
-    public SimpleCommandBus(@Nonnull Executor workerSupplier,
+    public SimpleCommandBus(@Nonnull Executor worker,
                             ProcessingLifecycleHandlerRegistrar... processingLifecycleHandlerRegistrars) {
-        this(workerSupplier, Arrays.asList(processingLifecycleHandlerRegistrars));
+        this(worker, Arrays.asList(processingLifecycleHandlerRegistrars));
     }
 
     /**
      * Construct a {@code SimpleCommandBus}, using the given {@code processingLifecycleHandlerRegistrars} when
      * constructing a {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle} to handle commands in.
      *
-     * @param workerSupplier                       The {@code Executor} used to handle commands in a dedicated
+     * @param worker                               The {@code Executor} used to handle commands in a dedicated
      *                                             {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle}.
      * @param processingLifecycleHandlerRegistrars A vararg of {@code ProcessingLifecycleHandlerRegistrar} instance,
      *                                             used when constructing a
      *                                             {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle} to
      *                                             handle commands in.
      */
-    public SimpleCommandBus(@Nonnull Executor workerSupplier,
+    public SimpleCommandBus(@Nonnull Executor worker,
                             @Nonnull Collection<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars) {
-        this.worker = requireNonNull(workerSupplier, "The given Executor cannot be null.");
+        this.worker = requireNonNull(worker, "The given Executor cannot be null.");
         this.processingLifecycleHandlerRegistrars = requireNonNull(processingLifecycleHandlerRegistrars).isEmpty()
                 ? emptyList()
                 : new ArrayList<>(processingLifecycleHandlerRegistrars);

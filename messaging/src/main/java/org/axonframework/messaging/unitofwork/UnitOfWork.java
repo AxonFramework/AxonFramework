@@ -78,39 +78,30 @@ public class UnitOfWork implements ProcessingLifecycle {
      * @param workScheduler The {@link Executor} used to process the steps attached to the phases in this Unit of Work
      */
     @Internal
-    UnitOfWork(Configuration configuration) {
-        this.identifier = configuration.identifier;
-        this.context = new UnitOfWorkProcessingContext(configuration.identifier,
-                                                       configuration.workScheduler,
-                                                       configuration.applicationContext);
-    }
-
-    // todo: configuration to the factory, always requires those 3 parameters!?
-    public UnitOfWork(String identifier, Executor workScheduler, ApplicationContext applicationContext) {
+    UnitOfWork(String identifier, Configuration configuration) {
         this.identifier = identifier;
-        this.context = new UnitOfWorkProcessingContext(identifier, workScheduler, applicationContext);
+        this.context = new UnitOfWorkProcessingContext(
+                identifier,
+                configuration.workScheduler,
+                configuration.applicationContext
+        );
     }
 
     public record Configuration(
-            String identifier,
             Executor workScheduler,
             ApplicationContext applicationContext
     ) {
 
         static Configuration defaultValues() {
-            return new Configuration(UUID.randomUUID().toString(), Runnable::run, new EmptyApplicationContext());
-        }
-
-        public Configuration identifier(String identifier) {
-            return new Configuration(identifier, workScheduler, applicationContext);
+            return new Configuration(Runnable::run, new EmptyApplicationContext());
         }
 
         public Configuration workScheduler(Executor workScheduler) {
-            return new Configuration(identifier, workScheduler, applicationContext);
+            return new Configuration(workScheduler, applicationContext);
         }
 
         public Configuration applicationContext(ApplicationContext applicationContext) {
-            return new Configuration(identifier, workScheduler, applicationContext);
+            return new Configuration(workScheduler, applicationContext);
         }
     }
 

@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import java.util.UUID;
-import java.util.function.Supplier;
+import jakarta.annotation.Nonnull;
+
 import java.util.function.UnaryOperator;
 
 /**
@@ -31,9 +31,9 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
 
     // todo: CustomizableUnitOfWorkFactory --- a few layers down... I can provide custom IdGenerator by mean of this!!!
     // todo: DecoratingUnitOfWorkFactory - here, just create() method! Maybe Decorating or Delegating???
+    // identifier - IDK if makes sense in Configuration?
 
-    private final static Supplier<String> DEFAULT_UNIT_OF_WORK_ID_GENERATOR = () -> UUID.randomUUID().toString();
-    private final UnaryOperator<UnitOfWork.Configuration> unitOfWorkCustomization; // customizers?
+    private final UnaryOperator<UnitOfWork.Configuration> factoryCustomization; // customizers?
     //TODO: Configuration as a factory concern! and the Customizable part!?
     //Some of them will be Customizable some Decorating, and with many layers, for example in SimpleCommandBus i might just wrap it??? IDK?
 
@@ -41,16 +41,24 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
         this(c -> c);
     }
 
-    public SimpleUnitOfWorkFactory(UnaryOperator<UnitOfWork.Configuration> unitOfWorkCustomization) {
-        this.unitOfWorkCustomization = unitOfWorkCustomization;
+    /**
+     * Initializes a {@link SimpleUnitOfWorkFactory} with the given customization function. Allows customizing the
+     * default configuration used to create {@link UnitOfWork} instances by this factory.
+     *
+     * @param factoryCustomization a function to customize the {@link UnitOfWork.Configuration} used to create
+     *                             {@link UnitOfWork} instances.
+     */
+    public SimpleUnitOfWorkFactory(UnaryOperator<UnitOfWork.Configuration> factoryCustomization) {
+        this.factoryCustomization = factoryCustomization;
     }
 
+    @Nonnull
     @Override
-    public UnitOfWork create() {
-        var defaultConfig = UnitOfWork.Configuration
-                .defaultValues()
-                .identifier(DEFAULT_UNIT_OF_WORK_ID_GENERATOR.get());
-        var configuration = unitOfWorkCustomization.apply(defaultConfig);
-        return new UnitOfWork(configuration);
+    public UnitOfWork create(
+            @Nonnull String identifier,
+            @Nonnull UnaryOperator<UnitOfWork.Configuration> customization
+    ) {
+        var configuration = customization.apply(factoryCustomization.apply(UnitOfWork.Configuration.defaultValues()));
+        return new UnitOfWork(identifier, configuration);
     }
 }
