@@ -25,9 +25,6 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedObjectHolder;
-import org.axonframework.serialization.Serializer;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -57,7 +54,6 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     private final Class<P> payloadType;
     private final MetaData metaData;
 
-    private transient volatile SerializedObjectHolder serializedObjectHolder;
     private final ConversionCache convertedPayloads;
 
     /**
@@ -225,23 +221,6 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     @Nonnull
     protected Message<P> withMetaData(MetaData metaData) {
         return new GenericMessage<>(this, metaData);
-    }
-
-    @Override
-    public <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
-        return serializedObjectHolder().serializePayload(serializer, expectedRepresentation);
-    }
-
-    @Override
-    public <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
-        return serializedObjectHolder().serializeMetaData(serializer, expectedRepresentation);
-    }
-
-    private SerializedObjectHolder serializedObjectHolder() {
-        if (serializedObjectHolder == null) {
-            serializedObjectHolder = new SerializedObjectHolder(this);
-        }
-        return serializedObjectHolder;
     }
 
     @Override
