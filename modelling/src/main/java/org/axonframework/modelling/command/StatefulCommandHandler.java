@@ -33,7 +33,7 @@ import jakarta.annotation.Nonnull;
  *
  * @author Mitchell Herrijgers
  * @see StateManager
- * @see StatefulCommandHandlerRegistry
+ * @see org.axonframework.commandhandling.CommandHandlerRegistry
  * @since 5.0.0
  */
 @FunctionalInterface

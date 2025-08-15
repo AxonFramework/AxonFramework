@@ -265,7 +265,6 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                 .registerComponent(EventSink.class,
                                    c -> c.getComponent(EventStore.class))
                 .registerDecorator(CommandBus.class, 50, (c, name, delegate) -> {
-                    var stateManager = c.getComponent(StateManager.class);
                     var statefulCommandHandler = SimpleCommandHandlingComponent
                             .create("mystatefulCH")
                             .subscribe(
