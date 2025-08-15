@@ -30,11 +30,12 @@ import java.util.function.UnaryOperator;
 public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
 
     // todo: CustomizableUnitOfWorkFactory --- a few layers down... I can provide custom IdGenerator by mean of this!!!
-    // todo: DelegatingUnitOfWorkFactory - here, just create() method!
+    // todo: DecoratingUnitOfWorkFactory - here, just create() method! Maybe Decorating or Delegating???
 
     private final static Supplier<String> DEFAULT_UNIT_OF_WORK_ID_GENERATOR = () -> UUID.randomUUID().toString();
-    private final UnaryOperator<UnitOfWork.Configuration> unitOfWorkCustomization;
+    private final UnaryOperator<UnitOfWork.Configuration> unitOfWorkCustomization; // customizers?
     //TODO: Configuration as a factory concern! and the Customizable part!?
+    //Some of them will be Customizable some Decorating, and with many layers, for example in SimpleCommandBus i might just wrap it??? IDK?
 
     public SimpleUnitOfWorkFactory() {
         this(c -> c);
