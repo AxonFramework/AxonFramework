@@ -17,6 +17,7 @@
 package org.axonframework.test.fixture;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -266,11 +267,12 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                                    c -> c.getComponent(EventStore.class))
                 .registerDecorator(CommandBus.class, 50, (c, name, delegate) -> {
                     var stateManager = c.getComponent(StateManager.class);
-                    var statefulCommandHandler = StatefulCommandHandlingComponent
-                            .create("mystatefulCH", stateManager)
+                    var statefulCommandHandler = SimpleCommandHandlingComponent
+                            .create("mystatefulCH")
                             .subscribe(
                                     new QualifiedName(ChangeStudentNameCommand.class),
-                                    (cmd, sm, ctx) -> {
+                                    (cmd, ctx) -> {
+                                        var sm = ctx.getComponent(StateManager.class);
                                         ChangeStudentNameCommand payload = (ChangeStudentNameCommand) cmd.payload();
                                         var student = sm.loadEntity(Student.class, payload.id(), ctx).join();
                                         if (!Objects.equals(student.getName(), payload.name())) {
