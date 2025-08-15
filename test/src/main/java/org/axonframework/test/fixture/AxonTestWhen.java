@@ -51,7 +51,8 @@ class AxonTestWhen implements AxonTestPhase.When {
             MessageTypeResolver messageTypeResolver,
             RecordingCommandBus commandBus,
             RecordingEventSink eventSink,
-            UnitOfWorkFactory unitOfWorkFactory) {
+            UnitOfWorkFactory unitOfWorkFactory
+    ) {
         this.configuration = configuration;
         this.customization = customization;
         this.messageTypeResolver = messageTypeResolver;

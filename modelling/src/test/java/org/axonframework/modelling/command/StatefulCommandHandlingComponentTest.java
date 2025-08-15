@@ -34,6 +34,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the functionality of the {@link SimpleCommandHandlingComponent} with command handlers that use
+ * {@link StateManager}.
+ */
 class StatefulCommandHandlingComponentTest {
 
     private final StateManager stateManager = SimpleStateManager
@@ -80,7 +84,7 @@ class StatefulCommandHandlingComponentTest {
     }
 
     @Test
-    void reigsteredHandlersAreListedInSupportedCommands() {
+    void registeredHandlersAreListedInSupportedCommands() {
         SimpleCommandHandlingComponent testSubject = SimpleCommandHandlingComponent.create("test");
         testSubject.subscribe(new QualifiedName("test-command"),
                               (command, ctx) -> MessageStream.empty().cast());
