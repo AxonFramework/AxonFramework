@@ -16,6 +16,9 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.messaging.ApplicationContext;
+import org.axonframework.messaging.EmptyApplicationContext;
+
 /**
  * Factory for creating simple {@link UnitOfWork} instances. Create units of work by invoking the {@link UnitOfWork}
  * constructor.
@@ -25,8 +28,18 @@ package org.axonframework.messaging.unitofwork;
  */
 public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
 
+    private final ApplicationContext applicationContext;
+
+    public SimpleUnitOfWorkFactory(){
+        this(new EmptyApplicationContext());
+    }
+
+    public SimpleUnitOfWorkFactory(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
+
     @Override
     public UnitOfWork create() {
-        return new UnitOfWork();
+        return new UnitOfWork(this.applicationContext);
     }
 }

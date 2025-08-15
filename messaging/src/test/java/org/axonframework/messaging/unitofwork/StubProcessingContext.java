@@ -17,11 +17,13 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -177,5 +179,10 @@ public class StubProcessingContext implements ProcessingContext {
      */
     public static ProcessingContext forUnitOfWork(LegacyUnitOfWork<?> uow) {
         return forMessage(uow.getMessage());
+    }
+
+    @Override
+    public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nullable String name) {
+        return Optional.empty();
     }
 }

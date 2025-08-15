@@ -17,11 +17,14 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.messaging.ApplicationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -69,8 +72,8 @@ public class UnitOfWork implements ProcessingLifecycle {
      * Constructs a {@code UnitOfWork} with a {@link UUID#randomUUID() random UUID String}. Will execute provided
      * actions on the same thread invoking this Unit of Work.
      */
-    public UnitOfWork() {
-        this(UUID.randomUUID().toString());
+    public UnitOfWork(ApplicationContext applicationContext) {
+        this(UUID.randomUUID().toString(), applicationContext);
     }
 
     /**
@@ -79,8 +82,8 @@ public class UnitOfWork implements ProcessingLifecycle {
      *
      * @param identifier The identifier of this Unit of Work.
      */
-    public UnitOfWork(String identifier) {
-        this(identifier, Runnable::run);
+    public UnitOfWork(String identifier,  ApplicationContext applicationContext) {
+        this(identifier, Runnable::run, applicationContext);
     }
 
     /**
@@ -90,9 +93,9 @@ public class UnitOfWork implements ProcessingLifecycle {
      * @param identifier    The identifier of this Unit of Work.
      * @param workScheduler The {@link Executor} used to process the steps attached to the phases in this Unit of Work
      */
-    public UnitOfWork(String identifier, Executor workScheduler) {
+    public UnitOfWork(String identifier, Executor workScheduler, ApplicationContext applicationContext) {
         this.identifier = identifier;
-        this.context = new UnitOfWorkProcessingContext(identifier, workScheduler);
+        this.context = new UnitOfWorkProcessingContext(identifier, workScheduler, applicationContext);
     }
 
     @Override
@@ -198,12 +201,14 @@ public class UnitOfWork implements ProcessingLifecycle {
 
         private final String identifier;
         private final Executor workScheduler;
+        private final ApplicationContext applicationContext;
         private final ConcurrentMap<ResourceKey<?>, Object> resources;
 
-        private UnitOfWorkProcessingContext(String identifier, Executor workScheduler) {
+        private UnitOfWorkProcessingContext(String identifier, Executor workScheduler, ApplicationContext applicationContext) {
             this.identifier = identifier;
             this.workScheduler = workScheduler;
             this.resources = new ConcurrentHashMap<>();
+            this.applicationContext = applicationContext;
         }
 
         @Override
@@ -452,6 +457,11 @@ public class UnitOfWork implements ProcessingLifecycle {
         public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
                                           @Nonnull T expectedResource) {
             return resources.remove(key, expectedResource);
+        }
+
+        @Override
+        public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nullable String name) {
+            return applicationContext.getOptionalComponent(type, name);
         }
 
         @Override

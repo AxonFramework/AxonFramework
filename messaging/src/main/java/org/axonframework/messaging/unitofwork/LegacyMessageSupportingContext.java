@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -131,5 +132,10 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
     public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
                                       @Nullable T expectedResource) {
         return expectedResource == null;
+    }
+
+    @Override
+    public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nullable String name) {
+        return Optional.empty();
     }
 }
