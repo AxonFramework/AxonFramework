@@ -21,7 +21,6 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
 import org.junit.jupiter.api.*;

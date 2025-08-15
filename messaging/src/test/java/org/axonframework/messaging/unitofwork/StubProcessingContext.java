@@ -18,6 +18,9 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.configuration.ApplicationConfigurer;
+import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.DefaultComponentRegistry;
 import org.axonframework.messaging.Message;
 
 import java.util.Comparator;
@@ -39,6 +42,7 @@ import java.util.function.UnaryOperator;
  */
 public class StubProcessingContext implements ProcessingContext {
 
+    private final DefaultComponentRegistry componentRegistry = new DefaultComponentRegistry();
     private final Map<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
     private final Map<Phase, List<Function<ProcessingContext, CompletableFuture<?>>>> phaseActions = new ConcurrentHashMap<>();
     private final Phase currentPhase = DefaultPhases.PRE_INVOCATION;
@@ -81,7 +85,7 @@ public class StubProcessingContext implements ProcessingContext {
 
     @Override
     public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
-        if(phase.order() <= currentPhase.order()) {
+        if (phase.order() <= currentPhase.order()) {
             throw new IllegalArgumentException("Cannot register an action for a phase that has already passed");
         }
         phaseActions.computeIfAbsent(phase, p -> new CopyOnWriteArrayList<>()).add(action);
@@ -168,11 +172,24 @@ public class StubProcessingContext implements ProcessingContext {
         return Message.addToContext(new StubProcessingContext(), message);
     }
 
+    public static ProcessingContext withComponents(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+        StubProcessingContext context = new StubProcessingContext();
+        return context.componentRegistry(componentRegistrar);
+    }
+
+    public StubProcessingContext componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+        componentRegistrar.accept(componentRegistry);
+        return this;
+    }
+
+    public ProcessingContext withMessage(Message<?> message) {
+        return Message.addToContext(this, message);
+    }
+
     /**
-     * Creates a new stub {@link ProcessingContext} for the given {@link LegacyUnitOfWork}.
-     * You can use this to create a context compatible with most of the framework.
-     * Do note that this context does not commit or advance phases on its own,
-     * but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
+     * Creates a new stub {@link ProcessingContext} for the given {@link LegacyUnitOfWork}. You can use this to create a
+     * context compatible with most of the framework. Do note that this context does not commit or advance phases on its
+     * own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
      *
      * @param uow The unit of work to create a context for.
      * @return A new {@link ProcessingContext} instance containing the given {@code message} as a resource.
