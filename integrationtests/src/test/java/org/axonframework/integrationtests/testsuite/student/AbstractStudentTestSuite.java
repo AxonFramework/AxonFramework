@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -34,6 +35,7 @@ import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
@@ -223,7 +225,7 @@ public abstract class AbstractStudentTestSuite {
     }
 
     protected void verifyStudentName(String id, String name) {
-        UnitOfWork uow = new UnitOfWork();
+        UnitOfWork uow = aUnitOfWork();
         uow.executeWithResult(context -> stateManager.repository(Student.class, String.class)
                                                      .load(id, context)
                                                      .thenAccept(student -> assertEquals(name,
@@ -232,7 +234,7 @@ public abstract class AbstractStudentTestSuite {
     }
 
     protected void verifyStudentEnrolledInCourse(String id, String courseId) {
-        UnitOfWork uow = new UnitOfWork();
+        UnitOfWork uow = aUnitOfWork();
         uow.executeWithResult(context -> stateManager.repository(Student.class, String.class)
                                                      .load(id, context)
                                                      .thenAccept(student -> assertTrue(student.entity()
@@ -245,5 +247,10 @@ public abstract class AbstractStudentTestSuite {
                                                                                             .getStudentsEnrolled()
                                                                                             .contains(id))))
            .join();
+    }
+
+    @Nonnull
+    protected static UnitOfWork aUnitOfWork() {
+        return new SimpleUnitOfWorkFactory().create();
     }
 }

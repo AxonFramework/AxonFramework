@@ -24,6 +24,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
@@ -150,7 +151,7 @@ class EventProcessorOperationsTest {
         }
 
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages) throws Exception {
-            eventProcessorOperations.processInUnitOfWork(eventMessages, new UnitOfWork());
+            eventProcessorOperations.processInUnitOfWork(eventMessages, new SimpleUnitOfWorkFactory().create());
         }
 
         @Override
