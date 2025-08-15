@@ -83,10 +83,14 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
 
             var loadFuture = loadFromRepository(context, id, messageName);
             return DelayedMessageStream.createSingle(loadFuture.thenApply(me -> {
-                if (me.entity() != null) {
-                    return metamodel.handleInstance(command, me.entity(), context).first();
+                try {
+                    if (me.entity() != null) {
+                        return metamodel.handleInstance(command, me.entity(), context).first();
+                    }
+                    return metamodel.handleCreate(command, context).first();
+                } catch (Exception e) {
+                    return MessageStream.failed(e);
                 }
-                return metamodel.handleCreate(command, context).first();
             }));
         } catch (Exception e) {
             return MessageStream.failed(e);

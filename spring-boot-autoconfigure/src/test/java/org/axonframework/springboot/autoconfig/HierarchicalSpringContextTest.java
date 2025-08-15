@@ -19,6 +19,7 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -90,7 +91,8 @@ public class HierarchicalSpringContextTest {
             assertThat(busFromRegistry).isNotEqualTo(busFromParentRegistry);
 
             assertThat(busFromRegistry).isEqualTo(busFromAppContext);
-            assertThat(busFromRegistry).isInstanceOf(SimpleCommandBus.class);
+            // TODO This test should disable Axon Server and therefore not expect a DistributedCommandBus. Fix with #3076.
+            assertThat(busFromRegistry).isInstanceOf(DistributedCommandBus.class);
 
             assertThat(busFromParentRegistry).isEqualTo(busFromParentAppContext);
             assertThat(busFromParentRegistry).isInstanceOf(InterceptingCommandBus.class);

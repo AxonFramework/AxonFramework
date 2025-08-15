@@ -14,34 +14,33 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed;
-
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.AxonConfigurationException;
+package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.AxonConfigurationException;
 
 /**
- * RoutingStrategy implementation that uses the value in the {@link org.axonframework.messaging.MetaData} of a
- * {@link CommandMessage} assigned to a given key. The value's {@code toString()} is used to convert the
- * {@code MetaData} value to a String.
+ * A {@link RoutingStrategy} implementation that uses the value in the {@link org.axonframework.messaging.MetaData} of a
+ * {@link CommandMessage} assigned to a given key.
+ * <p>
+ * The value's {@code toString()} is used to convert the {@code MetaData} value to a String.
  *
  * @author Allard Buijze
- * @since 2.0
+ * @since 2.0.0
  */
 public class MetaDataRoutingStrategy implements RoutingStrategy {
 
     private final String metaDataKey;
 
     /**
-     * Instantiate a {@link MetaDataRoutingStrategy} based on the fields contained in the give {@code builder}.
+     * Instantiate a {@code MetaDataRoutingStrategy} based on the fields contained in the give {@code builder}.
      * <p>
      * Will assert that the {@code metaDataKey} is not an empty {@link String} or {@code null} and will throw an
      * {@link AxonConfigurationException} if this is the case.
      *
-     * @param metaDataKey
+     * @param metaDataKey The key in the {@link org.axonframework.messaging.MetaData} to use for routing.
      */
-    protected MetaDataRoutingStrategy(String metaDataKey) {
+    public MetaDataRoutingStrategy(String metaDataKey) {
         this.metaDataKey = metaDataKey;
     }
 

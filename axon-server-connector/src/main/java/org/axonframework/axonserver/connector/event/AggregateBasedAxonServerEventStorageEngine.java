@@ -26,6 +26,7 @@ import io.axoniq.axonserver.grpc.event.Event;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import jakarta.annotation.Nonnull;
+import org.axonframework.axonserver.connector.MetaDataConverter;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -251,24 +252,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     private MetaData getMetaData(Map<String, MetaDataValue> metaDataMap) {
-        MetaData metaData = MetaData.emptyInstance();
-        for (Map.Entry<String, MetaDataValue> entry : metaDataMap.entrySet()) {
-            String value = convertFromMetaDataValue(entry.getValue());
-            if (value != null) {
-                metaData = metaData.and(entry.getKey(), value);
-            }
-        }
-        return metaData;
-    }
-
-    private String convertFromMetaDataValue(MetaDataValue value) {
-        return switch (value.getDataCase()) {
-            case TEXT_VALUE -> value.getTextValue();
-            case DOUBLE_VALUE -> Double.toString(value.getDoubleValue());
-            case NUMBER_VALUE -> Long.toString(value.getNumberValue());
-            case BOOLEAN_VALUE -> Boolean.toString(value.getBooleanValue());
-            default -> null;
-        };
+        return new MetaData(MetaDataConverter.convertMetaDataValuesToGrpc(metaDataMap));
     }
 
     @Override

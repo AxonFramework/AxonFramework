@@ -279,7 +279,6 @@ public class SpringComponentRegistry implements
             if (decorator.matches(componentId)) {
                 //noinspection unchecked
                 springComponent = decorator.decorate(springComponent);
-                break;
             }
         }
 
