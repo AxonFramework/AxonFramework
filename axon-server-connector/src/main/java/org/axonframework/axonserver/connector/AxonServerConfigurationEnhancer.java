@@ -53,7 +53,9 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                       c -> new AxonServerConfiguration(),
                                       SearchScope.ALL)
                 .registerIfNotPresent(connectionManagerDefinition(), SearchScope.ALL)
-                .registerIfNotPresent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity(), SearchScope.ALL)
+                .registerIfNotPresent(ManagedChannelCustomizer.class,
+                                      c -> ManagedChannelCustomizer.identity(),
+                                      SearchScope.ALL)
                 .registerIfNotPresent(eventStorageEngineDefinition(), SearchScope.ALL)
                 .registerIfNotPresent(commandBusConnectorDefinition(), SearchScope.ALL)
                 .registerDecorator(CommandBusConnector.class, 0, payloadConvertingConnectorComponentDecorator())
