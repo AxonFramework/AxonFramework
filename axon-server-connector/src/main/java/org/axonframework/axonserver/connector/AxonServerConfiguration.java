@@ -872,6 +872,7 @@ public class AxonServerConfiguration {
      * @return An {@code int} representing the fixed value of load factor sent to Axon Server for any command's
      * subscription if no specific implementation of CommandLoadFactorProvider is configured.
      */
+    // TODO #3074 Ensure this value is taken into account for defaults
     public int getCommandLoadFactor() {
         return commandLoadFactor;
     }
