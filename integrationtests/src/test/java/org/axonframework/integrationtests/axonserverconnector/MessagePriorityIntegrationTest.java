@@ -95,7 +95,8 @@ class MessagePriorityIntegrationTest {
         connectionManager.start();
 
         var localCommandBus = new SimpleCommandBus(Executors.newSingleThreadExecutor());
-        var commandBusConnector = new AxonServerCommandBusConnector(connectionManager.getConnection());
+        var commandBusConnector =
+                new AxonServerCommandBusConnector(connectionManager.getConnection(), new AxonServerConfiguration());
         CommandBusConnector serializingConnector = new PayloadConvertingCommandBusConnector(
                 commandBusConnector,
                 new JacksonConverter(),
