@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBus
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
@@ -65,7 +66,7 @@ class AxonServerConfigurationEnhancerTest {
         assertTrue(serverConfig.getComponentName().contains(serverConfig.getClientId()));
         assertNotNull(result.getComponent(AxonServerConnectionManager.class));
         assertInstanceOf(ManagedChannelCustomizer.class, result.getComponent(ManagedChannelCustomizer.class));
-        assertInstanceOf(AxonServerEventStorageEngine.class, result.getComponent(AxonServerEventStorageEngine.class));
+        assertInstanceOf(AxonServerEventStorageEngine.class, result.getComponent(EventStorageEngine.class));
         assertInstanceOf(PayloadConvertingCommandBusConnector.class, result.getComponent(CommandBusConnector.class));
     }
 }

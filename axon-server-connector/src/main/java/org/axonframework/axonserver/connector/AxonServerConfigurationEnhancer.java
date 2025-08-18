@@ -17,7 +17,6 @@
 package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
-import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
@@ -27,6 +26,7 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.SearchScope;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.serialization.Converter;
 
@@ -79,8 +79,8 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                           .build();
     }
 
-    private ComponentDefinition<AxonServerEventStorageEngine> eventStorageEngineDefinition() {
-        return ComponentDefinition.ofType(AxonServerEventStorageEngine.class)
+    private ComponentDefinition<EventStorageEngine> eventStorageEngineDefinition() {
+        return ComponentDefinition.ofType(EventStorageEngine.class)
                                   .withBuilder(config -> {
                                       String defaultContext = config.getComponent(AxonServerConfiguration.class)
                                                                     .getContext();
