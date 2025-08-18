@@ -91,8 +91,7 @@ public class HierarchicalSpringContextTest {
             assertThat(busFromRegistry).isNotEqualTo(busFromParentRegistry);
 
             assertThat(busFromRegistry).isEqualTo(busFromAppContext);
-            // TODO This test should disable Axon Server and therefore not expect a DistributedCommandBus. Fix with #3076.
-            assertThat(busFromRegistry).isInstanceOf(DistributedCommandBus.class);
+            assertThat(busFromRegistry).isInstanceOf(SimpleCommandBus.class);
 
             assertThat(busFromParentRegistry).isEqualTo(busFromParentAppContext);
             assertThat(busFromParentRegistry).isInstanceOf(InterceptingCommandBus.class);

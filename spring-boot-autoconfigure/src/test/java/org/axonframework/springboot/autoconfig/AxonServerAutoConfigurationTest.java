@@ -66,10 +66,34 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
+    void disablingAxonServerDisabledAllAxonServerComponents() {
+        testContext.withPropertyValues("axon.axonserver.enabled=false").run(context -> {
+            assertThat(context).doesNotHaveBean(AxonServerConnectionManager.class);
+            assertThat(context).doesNotHaveBean(ManagedChannelCustomizer.class);
+            assertThat(context).doesNotHaveBean(AxonServerEventStorageEngine.class);
+            assertThat(context).doesNotHaveBean(PayloadConvertingCommandBusConnector.class);
+        });
+    }
+
+    @Test
+    void axonServerConfigurationContainsApplicationIdAsComponentName() {
+        String expectedComponentName = "my-awesome-app";
+        testContext.withInitializer(context -> context.setId(expectedComponentName)).run(context -> {
+            assertThat(context).hasSingleBean(AxonServerConfiguration.class);
+            // Default name for beans from an @EnableConfigurationProperties contain their prefix.
+            assertThat(context).hasBean("axon.axonserver-" + AxonServerConfiguration.class.getName());
+
+            assertThat(context.getBean(AxonServerConfiguration.class).getComponentName())
+                    .isEqualTo(expectedComponentName);
+        });
+    }
+
+    @Test
     void defaultAxonServerComponentsArePresent() {
         testContext.run(context -> {
             assertThat(context).hasSingleBean(AxonServerConfiguration.class);
-            assertThat(context).hasBean(AxonServerConfiguration.class.getName());
+            // Default name for beans from an @EnableConfigurationProperties contain their prefix.
+            assertThat(context).hasBean("axon.axonserver-" + AxonServerConfiguration.class.getName());
             assertThat(context).hasSingleBean(AxonServerConnectionManager.class);
             assertThat(context).hasBean(AxonServerConnectionManager.class.getName());
             assertThat(context).hasSingleBean(ManagedChannelCustomizer.class);
@@ -84,8 +108,6 @@ class AxonServerAutoConfigurationTest {
     @Test
     void overrideDefaultAxonServerComponents() {
         testContext.withUserConfiguration(CustomContext.class).run(context -> {
-            assertThat(context).hasSingleBean(AxonServerConfiguration.class);
-            assertThat(context).hasBean("customAxonServerConfiguration");
             assertThat(context).hasSingleBean(AxonServerConnectionManager.class);
             assertThat(context).hasBean("customAxonServerConnectionManager");
             assertThat(context).hasSingleBean(ManagedChannelCustomizer.class);
@@ -112,11 +134,6 @@ class AxonServerAutoConfigurationTest {
     @Configuration
     @EnableAutoConfiguration
     public static class CustomContext {
-
-        @Bean
-        public AxonServerConfiguration customAxonServerConfiguration() {
-            return mock(AxonServerConfiguration.class);
-        }
 
         @Bean
         public AxonServerConnectionManager customAxonServerConnectionManager() {
