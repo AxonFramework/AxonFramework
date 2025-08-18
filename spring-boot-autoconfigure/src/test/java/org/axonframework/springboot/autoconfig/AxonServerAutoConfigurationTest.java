@@ -40,7 +40,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
-class AxonServerConfigurationDefaultsAutoconfigTest {
+class AxonServerAutoConfigurationTest {
 
     private ApplicationContextRunner testContext;
 
