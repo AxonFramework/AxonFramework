@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentDefinition;
+import org.axonframework.configuration.ComponentLifecycleHandler;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -97,7 +98,15 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
         return ComponentDefinition.ofType(CommandBusConnector.class)
                                   .withBuilder(config -> new AxonServerCommandBusConnector(
                                           config.getComponent(AxonServerConnectionManager.class).getConnection()
-                                  ));
+                                  ))
+                                  .onStart(Phase.INBOUND_COMMAND_CONNECTOR,
+                                           connector -> ((AxonServerCommandBusConnector) connector).start())
+                                  .onShutdown(Phase.INBOUND_COMMAND_CONNECTOR,
+                                              (ComponentLifecycleHandler<CommandBusConnector>) (config, connector) ->
+                                                      ((AxonServerCommandBusConnector) connector).disconnect())
+                                  .onShutdown(Phase.OUTBOUND_COMMAND_CONNECTORS,
+                                              (ComponentLifecycleHandler<CommandBusConnector>) (config, connector) ->
+                                                      ((AxonServerCommandBusConnector) connector).shutdownDispatching());
     }
 
     private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector> payloadConvertingConnectorComponentDecorator() {
