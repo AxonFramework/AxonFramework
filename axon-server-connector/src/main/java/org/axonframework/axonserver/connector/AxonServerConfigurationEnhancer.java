@@ -60,13 +60,6 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                 .registerFactory(new AxonServerEventStorageEngineFactory());
     }
 
-    private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector<Object>> payloadConvertingConnectorComponentDecorator() {
-        return (config, name, delegate) -> new PayloadConvertingCommandBusConnector<>(
-                delegate,
-                config.getComponent(Converter.class),
-                byte[].class);
-    }
-
     private ComponentDefinition<AxonServerConnectionManager> connectionManagerDefinition() {
         return ComponentDefinition.ofType(AxonServerConnectionManager.class)
                                   .withBuilder(this::buildConnectionManager)
@@ -103,6 +96,14 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                   .withBuilder(config -> new AxonServerCommandBusConnector(
                                           config.getComponent(AxonServerConnectionManager.class).getConnection()
                                   ));
+    }
+
+    private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector> payloadConvertingConnectorComponentDecorator() {
+        return (config, name, delegate) -> new PayloadConvertingCommandBusConnector(
+                delegate,
+                config.getComponent(Converter.class),
+                byte[].class
+        );
     }
 
     @Override
