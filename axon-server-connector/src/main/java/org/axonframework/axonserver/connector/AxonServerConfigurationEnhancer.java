@@ -20,17 +20,20 @@ import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnec
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentLifecycleHandler;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.configuration.SearchScope;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.serialization.Converter;
 
+import java.util.Optional;
 import javax.annotation.Nonnull;
 
 /**
@@ -60,6 +63,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                 .registerIfNotPresent(eventStorageEngineDefinition(), SearchScope.ALL)
                 .registerIfNotPresent(commandBusConnectorDefinition(), SearchScope.ALL)
                 .registerDecorator(CommandBusConnector.class, 0, payloadConvertingConnectorComponentDecorator())
+                .registerDecorator(topologyChangeListenerRegistration())
                 .registerFactory(new AxonServerEventStorageEngineFactory());
     }
 
@@ -115,6 +119,22 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                 config.getComponent(Converter.class),
                 byte[].class
         );
+    }
+
+    private DecoratorDefinition<AxonServerConnectionManager, AxonServerConnectionManager> topologyChangeListenerRegistration() {
+        return DecoratorDefinition.forType(AxonServerConnectionManager.class)
+                                  .with((config, name, delegate) -> delegate)
+                                  .onStart(Phase.INSTRUCTION_COMPONENTS, (config, connectionManager) -> {
+                                      Optional<TopologyChangeListener> topologyChangeListener =
+                                              config.getOptionalComponent(TopologyChangeListener.class);
+                                      topologyChangeListener.ifPresent(
+                                              changeListener -> connectionManager.getConnection()
+                                                                                 .controlChannel()
+                                                                                 .registerTopologyChangeHandler(
+                                                                                         changeListener)
+                                      );
+                                      return FutureUtils.emptyCompletedFuture();
+                                  });
     }
 
     @Override
