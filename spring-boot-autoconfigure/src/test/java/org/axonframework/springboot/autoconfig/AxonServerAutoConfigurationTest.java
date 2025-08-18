@@ -24,6 +24,7 @@ import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.DistributedCommandBusConfiguration;
 import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.springboot.utils.GrpcServerStub;
@@ -85,6 +86,18 @@ class AxonServerAutoConfigurationTest {
 
             assertThat(context.getBean(AxonServerConfiguration.class).getComponentName())
                     .isEqualTo(expectedComponentName);
+        });
+    }
+
+    @Test
+    void distributedCommandBusThreadCountIsAdjustableThroughAxonServerConfiguration() {
+        testContext.withPropertyValues("axon.server.command-threads=42").run(context -> {
+            assertThat(context).hasSingleBean(AxonServerConfiguration.class);
+            assertThat(context).hasSingleBean(DistributedCommandBusConfiguration.class);
+
+            int numberOfThreads = context.getBean(DistributedCommandBusConfiguration.class).numberOfThreads();
+            int commandThreads = context.getBean(AxonServerConfiguration.class).getCommandThreads();
+            assertThat(numberOfThreads).isEqualTo(commandThreads);
         });
     }
 

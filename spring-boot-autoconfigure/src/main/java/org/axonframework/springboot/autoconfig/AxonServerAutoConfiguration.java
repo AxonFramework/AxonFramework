@@ -23,6 +23,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.TopologyChangeListener;
+import org.axonframework.commandhandling.distributed.DistributedCommandBusConfiguration;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.DecoratorDefinition;
@@ -79,13 +80,23 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
     public ConfigurationEnhancer axonServerConfigurationEnhancer() {
         return registry -> registry.registerDecorator(
-                AxonServerConfiguration.class,
-                -100,
-                (config, name, axonServerConfig) -> {
-                    axonServerConfig.setComponentName(clientName(applicationContext.getId()));
-                    return axonServerConfig;
-                }
-        );
+                                           AxonServerConfiguration.class,
+                                           -100,
+                                           (config, name, axonServerConfig) -> {
+                                               axonServerConfig.setComponentName(clientName(applicationContext.getId()));
+                                               return axonServerConfig;
+                                           }
+                                   )
+                                   .registerDecorator(
+                                           DistributedCommandBusConfiguration.class,
+                                           -100,
+                                           (config, name, distributedCommandBusConfig) -> {
+                                               AxonServerConfiguration serverConfig =
+                                                       config.getComponent(AxonServerConfiguration.class);
+                                               int commandThreads = serverConfig.getCommandThreads();
+                                               return distributedCommandBusConfig.numberOfThreads(commandThreads);
+                                           }
+                                   );
     }
 
     private static String clientName(@Nullable String id) {
