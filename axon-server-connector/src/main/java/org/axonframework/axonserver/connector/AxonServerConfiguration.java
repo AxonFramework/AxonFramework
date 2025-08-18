@@ -201,20 +201,6 @@ public class AxonServerConfiguration {
     private double maxMessageSizeWarningThreshold = 0.8;
 
     /**
-     * The timeout (in milliseconds) to wait for response on commit. Defaults to {@code 10_000} milliseconds.
-     */
-    private int commitTimeout = 10_000;
-
-    /**
-     * Flag that allows block-listing of event types to be enabled.
-     * <p>
-     * Disabling this may have serious performance impact, as it requires all {@link EventMessage events} from Axon
-     * Server to be sent to clients, even if a client is unable to process the event. Default is to have block-listing
-     * enabled.
-     */
-    private boolean eventBlockListingEnabled = true;
-
-    /**
      * An {@code int} representing the fixed value of load factor sent to Axon Server for any command's subscription if
      * no specific implementation of CommandLoadFactorProvider is configured. The default value is {@code 100}.
      */
@@ -877,50 +863,6 @@ public class AxonServerConfiguration {
      */
     public void setMaxMessageSizeWarningThreshold(double maxMessageSizeWarningThreshold) {
         this.maxMessageSizeWarningThreshold = maxMessageSizeWarningThreshold;
-    }
-
-    /**
-     * The timeout (in milliseconds) to wait for response on commit. Defaults to {@code 10_000} milliseconds.
-     *
-     * @return The timeout (in milliseconds) to wait for response on commit.
-     */
-    public int getCommitTimeout() {
-        return commitTimeout;
-    }
-
-    /**
-     * Sets the timeout (in milliseconds) to wait for response on commit. Defaults to {@code 10_000} milliseconds.
-     *
-     * @param commitTimeout The timeout (in milliseconds) to wait for response on commit.
-     */
-    public void setCommitTimeout(int commitTimeout) {
-        this.commitTimeout = commitTimeout;
-    }
-
-    /**
-     * Flag that allows block-listing of event types to be enabled.
-     * <p>
-     * Disabling this may have serious performance impact, as it requires all {@link EventMessage events} from Axon
-     * Server to be sent to clients, even if a client is unable to process the event. Default is to have block-listing
-     * enabled.
-     *
-     * @return Flag that allows block-listing of event types to be enabled.
-     */
-    public boolean isEventBlockListingEnabled() {
-        return eventBlockListingEnabled;
-    }
-
-    /**
-     * Sets flag that allows block-listing of event types to be enabled.
-     * <p>
-     * Disabling this may have serious performance impact, as it requires all {@link EventMessage events} from Axon
-     * Server to be sent to clients, even if a client is unable to process the event. Default is to have block-listing
-     * enabled.
-     *
-     * @param eventBlockListingEnabled Flag that allows block-listing of event types to be enabled.
-     */
-    public void setEventBlockListingEnabled(boolean eventBlockListingEnabled) {
-        this.eventBlockListingEnabled = eventBlockListingEnabled;
     }
 
     /**
