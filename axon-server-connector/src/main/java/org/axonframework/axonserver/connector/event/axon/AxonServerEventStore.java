@@ -451,7 +451,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
 
         private void commit(AppendEventsTransaction appendEventTransaction) {
             try {
-                appendEventTransaction.commit().get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
+                appendEventTransaction.commit().get(10_000, TimeUnit.MILLISECONDS);
             } catch (ExecutionException e) {
                 if (e.getCause() instanceof RuntimeException) {
                     throw (RuntimeException) e.getCause();
@@ -544,7 +544,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
                                                           configuration.isForceReadFromLeader()
                                                   );
 
-            return new EventBuffer(stream, upcasterChain, eventSerializer, !configuration.isEventBlockListingEnabled());
+            return new EventBuffer(stream, upcasterChain, eventSerializer, true);
         }
 
         public QueryResultStream query(String query, boolean liveUpdates) {
@@ -569,7 +569,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
                         connectionManager.getConnection(context)
                                          .eventChannel()
                                          .findHighestSequence(aggregateIdentifier)
-                                         .get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
+                                         .get(10_000, TimeUnit.MILLISECONDS);
                 return lastSequenceNumber == null || lastSequenceNumber < 0
                         ? Optional.empty()
                         : Optional.of(lastSequenceNumber);
@@ -587,7 +587,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
                 Long token = connectionManager.getConnection(context)
                                               .eventChannel()
                                               .getFirstToken()
-                                              .get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
+                                              .get(10_000, TimeUnit.MILLISECONDS);
                 return token == null || token < 0 ? null : new GlobalSequenceTrackingToken(token);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -603,7 +603,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
                 Long token = connectionManager.getConnection(context)
                                               .eventChannel()
                                               .getLastToken()
-                                              .get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
+                                              .get(10_000, TimeUnit.MILLISECONDS);
                 return token == null || token < 0 ? null : new GlobalSequenceTrackingToken(token);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -619,7 +619,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
                 Long token = connectionManager.getConnection(context)
                                               .eventChannel()
                                               .getTokenAt(instant.toEpochMilli())
-                                              .get(configuration.getCommitTimeout(), TimeUnit.MILLISECONDS);
+                                              .get(10_000, TimeUnit.MILLISECONDS);
                 return token == null || token < 0 ? null : new GlobalSequenceTrackingToken(token);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
