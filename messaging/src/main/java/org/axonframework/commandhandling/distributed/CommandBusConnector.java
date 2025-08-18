@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -38,7 +39,7 @@ import java.util.function.BiConsumer;
  * @author Steven van Beelen
  * @since 2.0.0
  */
-public interface CommandBusConnector {
+public interface CommandBusConnector extends DescribableComponent {
 
     /**
      * Dispatches the given {@code command} to the appropriate command bus, which may be local or remote.

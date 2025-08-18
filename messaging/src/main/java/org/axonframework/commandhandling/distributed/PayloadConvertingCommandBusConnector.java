@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Converter;
 
@@ -70,6 +71,13 @@ public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusCo
                 commandMessage,
                 new ConvertingResultMessageCallback(callback)
         ));
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
+        descriptor.describeProperty("converter", converter);
+        descriptor.describeProperty("targetType", targetType);
     }
 
     /**

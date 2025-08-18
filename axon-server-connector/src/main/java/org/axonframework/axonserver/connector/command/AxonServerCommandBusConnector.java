@@ -28,6 +28,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.common.Assert;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -182,6 +183,13 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     public CompletableFuture<Void> shutdownDispatching() {
         logger.trace("Shutting down dispatching of AxonServerCommandBusConnector.");
         return shutdownLatch.initiateShutdown();
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("connection", connection);
+        descriptor.describeProperty("clientId", clientId);
+        descriptor.describeProperty("componentName", componentName);
     }
 
     private record FutureResultCallback(
