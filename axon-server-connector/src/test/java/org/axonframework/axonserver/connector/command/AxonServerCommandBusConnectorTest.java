@@ -27,6 +27,7 @@ import io.axoniq.axonserver.grpc.ProcessingKey;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -60,6 +61,8 @@ import static org.mockito.Mockito.*;
  */
 class AxonServerCommandBusConnectorTest {
 
+    private static final String TEST_CLIENT_ID = "my-client-id";
+    private static final String TEST_COMPONENT_NAME = "my-component-name";
     private static final QualifiedName ANY_TEST_COMMAND_NAME = new QualifiedName("TestCommand");
     private static final String ANY_TEST_MESSAGE_ID = "test-message-id";
     private static final String ANY_TEST_COMMAND_TYPE = "TestCommandType";
@@ -81,13 +84,24 @@ class AxonServerCommandBusConnectorTest {
         commandChannel = mock(CommandChannel.class);
         when(connection.commandChannel()).thenReturn(commandChannel);
 
-        testSubject = new AxonServerCommandBusConnector(connection);
+        AxonServerConfiguration serverConfig = new AxonServerConfiguration();
+        serverConfig.setClientId(TEST_CLIENT_ID);
+        serverConfig.setComponentName(TEST_COMPONENT_NAME);
+        testSubject = new AxonServerCommandBusConnector(connection, serverConfig);
     }
 
     @Test
     void constructionWithConnectionNullRefFails() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new AxonServerCommandBusConnector(null));
+        assertThrows(NullPointerException.class,
+                     () -> new AxonServerCommandBusConnector(null, new AxonServerConfiguration()));
+    }
+
+    @Test
+    void constructionWithAxonServerConfigurationNullRefFails() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class,
+                     () -> new AxonServerCommandBusConnector(connection, null));
     }
 
     @Test
@@ -106,14 +120,17 @@ class AxonServerCommandBusConnectorTest {
         // Arrange
         CommandMessage<byte[]> command = createTestCommandMessage();
         CommandResponse response = createSuccessfulCommandResponse();
-
-        when(commandChannel.sendCommand(any(Command.class)))
+        ArgumentCaptor<Command> commandCaptor = ArgumentCaptor.forClass(Command.class);
+        when(commandChannel.sendCommand(commandCaptor.capture()))
                 .thenReturn(CompletableFuture.completedFuture(response));
 
         // Act
         CompletableFuture<CommandResultMessage<?>> result = testSubject.dispatch(command, null);
 
         // Assert
+        Command dispatchedCommand = commandCaptor.getValue();
+        assertThat(dispatchedCommand.getClientId()).isEqualTo(TEST_CLIENT_ID);
+        assertThat(dispatchedCommand.getComponentName()).isEqualTo(TEST_COMPONENT_NAME);
         assertDoesNotThrow(() -> result.get());
         verify(commandChannel).sendCommand(any(Command.class));
     }

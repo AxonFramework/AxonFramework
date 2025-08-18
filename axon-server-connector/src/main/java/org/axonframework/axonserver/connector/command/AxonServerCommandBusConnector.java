@@ -23,6 +23,7 @@ import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
@@ -53,7 +54,10 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     private static final Logger logger = LoggerFactory.getLogger(AxonServerCommandBusConnector.class);
 
     private final AxonServerConnection connection;
-    private CommandBusConnector.Handler incomingHandler;
+    private final String clientId;
+    private final String componentName;
+
+    private Handler incomingHandler;
     private final Map<QualifiedName, Registration> subscriptions = new ConcurrentHashMap<>();
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
 
@@ -61,10 +65,17 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
      * Creates a new {@code AxonServerConnector} that communicate with Axon Server using the provided
      * {@code connection}.
      *
-     * @param connection The {@code AxonServerConnection} to communicate to Axon Server with.
+     * @param connection    The {@code AxonServerConnection} to communicate to Axon Server with.
+     * @param configuration The Axon Server configuration, used to retrieve (e.g.) the
+     *                      {@link AxonServerConfiguration#getClientId()} to be set when
+     *                      {@link #dispatch(CommandMessage, ProcessingContext) dispatching} commands.
      */
-    public AxonServerCommandBusConnector(@Nonnull AxonServerConnection connection) {
+    public AxonServerCommandBusConnector(@Nonnull AxonServerConnection connection,
+                                         @Nonnull AxonServerConfiguration configuration) {
         this.connection = Objects.requireNonNull(connection, "The AxonServerConnection must not be null.");
+        Objects.requireNonNull(configuration, "The AxonServerConfiguration must not be null.");
+        this.clientId = configuration.getClientId();
+        this.componentName = configuration.getComponentName();
     }
 
     /**
@@ -82,7 +93,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         try (ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity()) {
             return connection.commandChannel()
-                             .sendCommand(CommandConverter.convertCommandMessage(command))
+                             .sendCommand(CommandConverter.convertCommandMessage(command, clientId, componentName))
                              .thenCompose(CommandConverter::convertCommandResponse)
                              .whenComplete((commandResponse, throwable) -> commandInTransit.end());
         }
@@ -139,7 +150,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public void onIncomingCommand(@Nonnull CommandBusConnector.Handler handler) {
+    public void onIncomingCommand(@Nonnull Handler handler) {
         this.incomingHandler = handler;
     }
 

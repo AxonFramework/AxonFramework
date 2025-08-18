@@ -101,7 +101,8 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
     private ComponentDefinition<CommandBusConnector> commandBusConnectorDefinition() {
         return ComponentDefinition.ofType(CommandBusConnector.class)
                                   .withBuilder(config -> new AxonServerCommandBusConnector(
-                                          config.getComponent(AxonServerConnectionManager.class).getConnection()
+                                          config.getComponent(AxonServerConnectionManager.class).getConnection(),
+                                          config.getComponent(AxonServerConfiguration.class)
                                   ))
                                   .onStart(Phase.INBOUND_COMMAND_CONNECTOR,
                                            connector -> ((AxonServerCommandBusConnector) connector).start())
