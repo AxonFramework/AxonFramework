@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
@@ -132,6 +133,11 @@ class AggregateBasedJpaEventStorageEngineTest
                         (byte[]) input, byte[].class, ((Class<?>) targetType).getName(), null
                 );
                 return TEST_SERIALIZER.deserialize(serializedObject);
+            }
+
+            @Override
+            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+                throw new UnsupportedOperationException("Not required for testing");
             }
         });
     }
