@@ -63,7 +63,7 @@ class MessageHandlerInterceptorChainTest {
                 new MessageType("message"), "original"
         );
         MessageHandlerInterceptorChain<CommandMessage<?>> testSubject = new CommandMessageHandlerInterceptorChain(
-                mockHandler, asList(interceptor1, interceptor2)
+                asList(interceptor1, interceptor2), mockHandler
         );
 
         String actual = testSubject.proceed(message, StubProcessingContext.forMessage(message))

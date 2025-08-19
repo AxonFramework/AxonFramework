@@ -19,8 +19,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.EventMessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -43,15 +41,14 @@ class UnitOfWorkTimeoutInterceptorBuilderTest {
                 EventTestUtils.asEventMessage("test")
         );
         EventMessageHandlerInterceptorChain interceptorChain = new EventMessageHandlerInterceptorChain(
-                (message, ctx) -> {
+                Collections.singletonList(testSubject), (message, ctx) -> {
                     try {
                         Thread.sleep(300);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
                     return null;
-                },
-                Collections.singletonList(testSubject)
+                }
         );
         uow.executeWithResult((ctx) -> interceptorChain.proceed(uow.getMessage(), ctx));
         assertTrue(uow.isRolledBack());
@@ -68,15 +65,14 @@ class UnitOfWorkTimeoutInterceptorBuilderTest {
                 EventTestUtils.asEventMessage("test")
         );
         EventMessageHandlerInterceptorChain interceptorChain = new EventMessageHandlerInterceptorChain(
-                (message, ctx) -> {
+                Collections.singletonList(testSubject), (message, ctx) -> {
                     try {
                         Thread.sleep(80);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
                     return null;
-                },
-                Collections.singletonList(testSubject)
+                }
 
         );
         uow.executeWithResult((ctx) -> interceptorChain.proceed(uow.getMessage(), ctx));

@@ -77,7 +77,7 @@ public class InterceptingCommandBus implements CommandBus {
                                             @Nonnull CommandHandler commandHandler) {
         CommandHandler handler = requireNonNull(commandHandler, "The command handler cannot be null.");
         delegate.subscribe(name, (command, context)
-                -> new CommandMessageHandlerInterceptorChain(handler, handlerInterceptors)
+                -> new CommandMessageHandlerInterceptorChain(handlerInterceptors, handler)
                 .proceed(command, context)
                 .first()
                 .cast());

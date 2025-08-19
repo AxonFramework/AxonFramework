@@ -17,8 +17,6 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
@@ -31,14 +29,14 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
     private final QueryHandler handler;
     private final Iterator<MessageHandlerInterceptor<QueryMessage<?, ?>>> chain;
 
-    public QueryMessageHandlerInterceptorChain(QueryHandler handler,
-                                               List<MessageHandlerInterceptor<QueryMessage<?, ?>>> handlerInterceptors) {
+    public QueryMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<QueryMessage<?, ?>>> handlerInterceptors,
+                                               @Nonnull QueryHandler handler) {
         this.handler = handler;
         this.chain = handlerInterceptors.iterator();
     }
 
     @Override
-    public MessageStream<?> proceed(
+    public @Nonnull MessageStream<?> proceed(
             @Nonnull QueryMessage<?, ?> message,
             @Nonnull ProcessingContext context
     ) {

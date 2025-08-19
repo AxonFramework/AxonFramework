@@ -29,14 +29,14 @@ public class EventMessageHandlerInterceptorChain implements MessageHandlerInterc
     private final EventHandler handler;
     private final Iterator<MessageHandlerInterceptor<EventMessage<?>>> chain;
 
-    public EventMessageHandlerInterceptorChain(EventHandler handler,
-                                               List<MessageHandlerInterceptor<EventMessage<?>>> handlerInterceptors) {
+    public EventMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<EventMessage<?>>> handlerInterceptors,
+                                               @Nonnull EventHandler handler) {
         this.handler = handler;
         this.chain = handlerInterceptors.iterator();
     }
 
     @Override
-    public MessageStream<?> proceed(
+    public @Nonnull MessageStream<?> proceed(
             @Nonnull EventMessage<?> message,
             @Nonnull ProcessingContext context
     ) {

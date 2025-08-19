@@ -238,8 +238,7 @@ public final class EventProcessorOperations {
 
             MessageHandlerInterceptorChain<EventMessage<?>> chain =
                     new EventMessageHandlerInterceptorChain(
-                            eventHandlingComponent,
-                            interceptors
+                            interceptors, eventHandlingComponent
                     );
             return chain.proceed(message, processingContext)
                         .ignoreEntries()

@@ -30,14 +30,14 @@ public class CommandMessageHandlerInterceptorChain
     private final CommandHandler handler;
     private final Iterator<MessageHandlerInterceptor<CommandMessage<?>>> chain;
 
-    public CommandMessageHandlerInterceptorChain(CommandHandler handler,
-                                                 List<MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors) {
+    public CommandMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors,
+                                                 @Nonnull CommandHandler handler) {
         this.handler = handler;
         this.chain = handlerInterceptors.iterator();
     }
 
     @Override
-    public MessageStream<?> proceed(
+    public @Nonnull MessageStream<?> proceed(
             @Nonnull CommandMessage<?> message,
             @Nonnull ProcessingContext context
     ) {

@@ -23,7 +23,6 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -521,7 +520,7 @@ public class SimpleQueryBus implements QueryBus {
             ResponseType<R> responseType = uow.getMessage().responseType();
             // TODO: reintegrate as part of #3079
             QueryHandler queryHandler = (QueryHandler)handler;
-            Object queryResponse = new QueryMessageHandlerInterceptorChain(queryHandler, handlerInterceptors).proceed(uow.getMessage(), ctx);
+            Object queryResponse = new QueryMessageHandlerInterceptorChain(handlerInterceptors, queryHandler).proceed(uow.getMessage(), ctx);
             if (queryResponse instanceof CompletableFuture) {
                 return ((CompletableFuture<?>) queryResponse).thenCompose(
                         result -> buildCompletableFuture(responseType, result));
@@ -598,7 +597,7 @@ public class SimpleQueryBus implements QueryBus {
             return uow.executeWithResult((ctx) -> {
                 // TODO: reintegrate as part of #3079
                 QueryHandler queryHandler = (QueryHandler)handler;
-                Object queryResponse = new QueryMessageHandlerInterceptorChain(queryHandler, handlerInterceptors)
+                Object queryResponse = new QueryMessageHandlerInterceptorChain(handlerInterceptors, queryHandler)
                         .proceed(uow.getMessage(), ctx);
                 return Flux.from(query.responseType().convert(queryResponse))
                            .map(this::asResponseMessage);
