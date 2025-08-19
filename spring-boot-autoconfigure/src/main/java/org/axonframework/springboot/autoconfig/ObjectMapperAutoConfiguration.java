@@ -36,7 +36,7 @@ public class ObjectMapperAutoConfiguration {
 
     @Bean("defaultAxonObjectMapper")
     @ConditionalOnMissingBean
-    @ConditionalOnExpression("'${axon.serializer.general}' == 'jackson' || '${axon.serializer.events}' == 'jackson' || '${axon.serializer.messages}' == 'jackson'")
+    @ConditionalOnExpression("'${axon.converter.general}' == 'jackson' || '${axon.converter.events}' == 'jackson' || '${axon.converter.messages}' == 'jackson'")
     public ObjectMapper defaultAxonObjectMapper() {
         return new ObjectMapper().findAndRegisterModules();
     }

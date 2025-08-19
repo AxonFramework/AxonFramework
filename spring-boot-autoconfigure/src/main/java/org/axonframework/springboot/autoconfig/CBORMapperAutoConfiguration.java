@@ -17,7 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
-import org.axonframework.springboot.SerializerProperties;
+import org.axonframework.springboot.ConverterProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Bean;
 @AutoConfiguration
 @AutoConfigureBefore(LegacyAxonAutoConfiguration.class)
 @ConditionalOnClass(name = {"com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper"})
-@EnableConfigurationProperties(value = SerializerProperties.class)
+@EnableConfigurationProperties(value = ConverterProperties.class)
 public class CBORMapperAutoConfiguration {
 
     @Bean("defaultAxonCborMapper")

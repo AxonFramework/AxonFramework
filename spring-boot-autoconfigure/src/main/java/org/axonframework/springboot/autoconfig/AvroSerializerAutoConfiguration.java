@@ -117,13 +117,13 @@ public class AvroSerializerAutoConfiguration {
         }
 
         @SuppressWarnings("unused")
-        @ConditionalOnProperty(name = "axon.serializer.messages", havingValue = "avro")
+        @ConditionalOnProperty(name = "axon.converter.messages", havingValue = "avro")
         static class MessagesAvroCondition {
 
         }
 
         @SuppressWarnings("unused")
-        @ConditionalOnProperty(name = "axon.serializer.events", havingValue = "avro")
+        @ConditionalOnProperty(name = "axon.converter.events", havingValue = "avro")
         static class EventsAvroCondition {
 
         }
