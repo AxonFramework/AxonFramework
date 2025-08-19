@@ -26,12 +26,28 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * Autoconfiguration that constructs a default {@link CBORMapper}, typically to be used by a
+ * {@link org.axonframework.serialization.json.JacksonConverter}.
+ *
+ * @author Mitchell Herrijgers
+ * @since 4.9.0
+ */
 @AutoConfiguration
-@AutoConfigureBefore(LegacyAxonAutoConfiguration.class)
+@AutoConfigureBefore(ConverterAutoConfiguration.class)
 @ConditionalOnClass(name = {"com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper"})
 @EnableConfigurationProperties(value = ConverterProperties.class)
 public class CBORMapperAutoConfiguration {
 
+    /**
+     * Returns the default Axon Framework {@link CBORMapper}, if required.
+     * <p>
+     * This {@code CBORMapper} bean is only created when there is no other {@code CBORMapper} bean present
+     * <b>and</b> whenever the user specified the
+     * {@link org.axonframework.springboot.ConverterProperties.ConverterType#CBOR} {@code ConverterType}.
+     *
+     * @return The default Axon Framework {@link CBORMapper}, if required.
+     */
     @Bean("defaultAxonCborMapper")
     @ConditionalOnMissingBean(CBORMapper.class)
     @ConditionalOnExpression("'${axon.converter.general}' == 'cbor' || '${axon.converter.events}' == 'cbor' || '${axon.converter.messages}' == 'cbor'")

@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 4.11.0
  */
 @Disabled("TODO #3496")
-class AvroSerializerAutoConfigurationTest {
+class AvroSchemaStoreAutoConfigurationTest {
 
     private ApplicationContextRunner testApplicationContext;
 
