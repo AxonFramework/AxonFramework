@@ -75,9 +75,9 @@ import org.axonframework.serialization.avro.AvroSerializer;
 import org.axonframework.serialization.avro.AvroSerializerStrategy;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
+import org.axonframework.springboot.ConverterProperties;
 import org.axonframework.springboot.DistributedCommandBusProperties;
 import org.axonframework.springboot.EventProcessorProperties;
-import org.axonframework.springboot.SerializerProperties;
 import org.axonframework.springboot.TagsConfigurationProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.factory.BeanClassLoaderAware;
@@ -112,24 +112,24 @@ import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncl
 @EnableConfigurationProperties(value = {
         EventProcessorProperties.class,
         DistributedCommandBusProperties.class,
-        SerializerProperties.class,
+        ConverterProperties.class,
         TagsConfigurationProperties.class
 })
 public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
 
     private final EventProcessorProperties eventProcessorProperties;
-    private final SerializerProperties serializerProperties;
+    private final ConverterProperties converterProperties;
     private final TagsConfigurationProperties tagsConfigurationProperties;
     private final ApplicationContext applicationContext;
 
     private ClassLoader beanClassLoader;
 
     public LegacyAxonAutoConfiguration(EventProcessorProperties eventProcessorProperties,
-                                       SerializerProperties serializerProperties,
+                                       ConverterProperties converterProperties,
                                        TagsConfigurationProperties tagsConfigurationProperties,
                                        ApplicationContext applicationContext) {
         this.eventProcessorProperties = eventProcessorProperties;
-        this.serializerProperties = serializerProperties;
+        this.converterProperties = converterProperties;
         this.tagsConfigurationProperties = tagsConfigurationProperties;
         this.applicationContext = applicationContext;
     }
@@ -149,25 +149,25 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
     @Primary
     @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "!eventSerializer,messageSerializer")
     public Serializer serializer(RevisionResolver revisionResolver) {
-        if (SerializerProperties.SerializerType.AVRO.equals(serializerProperties.getGeneral())) {
+        if (ConverterProperties.ConverterType.AVRO.equals(converterProperties.getGeneral())) {
             throw new AxonConfigurationException(format(
                     "Invalid serializer type [%s] configured as general serializer. "
                             + "The Avro Serializer can be used as message or event serializer only.",
-                    serializerProperties.getGeneral().name()
+                    converterProperties.getGeneral().name()
             ));
         }
-        return buildSerializer(revisionResolver, serializerProperties.getGeneral(), null);
+        return buildSerializer(revisionResolver, converterProperties.getGeneral(), null);
     }
 
     @Bean
     @Qualifier("messageSerializer")
     @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "messageSerializer")
     public Serializer messageSerializer(Serializer generalSerializer, RevisionResolver revisionResolver) {
-        if (SerializerProperties.SerializerType.DEFAULT.equals(serializerProperties.getMessages())
-                || serializerProperties.getGeneral().equals(serializerProperties.getMessages())) {
+        if (ConverterProperties.ConverterType.DEFAULT.equals(converterProperties.getMessages())
+                || converterProperties.getGeneral().equals(converterProperties.getMessages())) {
             return generalSerializer;
         }
-        return buildSerializer(revisionResolver, serializerProperties.getMessages(), generalSerializer);
+        return buildSerializer(revisionResolver, converterProperties.getMessages(), generalSerializer);
     }
 
     @Bean
@@ -176,13 +176,13 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
     public Serializer eventSerializer(@Qualifier("messageSerializer") Serializer messageSerializer,
                                       Serializer generalSerializer,
                                       RevisionResolver revisionResolver) {
-        if (SerializerProperties.SerializerType.DEFAULT.equals(serializerProperties.getEvents())
-                || serializerProperties.getEvents().equals(serializerProperties.getMessages())) {
+        if (ConverterProperties.ConverterType.DEFAULT.equals(converterProperties.getEvents())
+                || converterProperties.getEvents().equals(converterProperties.getMessages())) {
             return messageSerializer;
-        } else if (serializerProperties.getGeneral().equals(serializerProperties.getEvents())) {
+        } else if (converterProperties.getGeneral().equals(converterProperties.getEvents())) {
             return generalSerializer;
         }
-        return buildSerializer(revisionResolver, serializerProperties.getEvents(), generalSerializer);
+        return buildSerializer(revisionResolver, converterProperties.getEvents(), generalSerializer);
     }
 
     @Bean
@@ -197,9 +197,9 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     private Serializer buildSerializer(RevisionResolver revisionResolver,
-                                       SerializerProperties.SerializerType serializerType,
+                                       ConverterProperties.ConverterType converterType,
                                        Serializer generalSerializer) {
-        switch (serializerType) {
+        switch (converterType) {
             case AVRO:
                 Map<String, SchemaStore> schemaStoreBeans = beansOfTypeIncludingAncestors(applicationContext,
                                                                                           SchemaStore.class);

@@ -17,7 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.axonframework.springboot.SerializerProperties;
+import org.axonframework.springboot.ConverterProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -31,7 +31,7 @@ import org.springframework.context.annotation.Bean;
 @AutoConfigureBefore({LegacyAxonAutoConfiguration.class, CBORMapperAutoConfiguration.class})
 @AutoConfigureAfter(name = "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration")
 @ConditionalOnClass(name = "com.fasterxml.jackson.databind.ObjectMapper")
-@EnableConfigurationProperties(value = SerializerProperties.class)
+@EnableConfigurationProperties(value = ConverterProperties.class)
 public class ObjectMapperAutoConfiguration {
 
     @Bean("defaultAxonObjectMapper")

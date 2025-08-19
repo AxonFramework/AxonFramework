@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(properties = "axon.axonserver.enabled=false")
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = AxonAutoConfigurationWithEventSerializerPropertiesTest.TestContext.class)
+@ContextConfiguration(classes = AxonAutoConfigurationWithEventConverterPropertiesTest.TestContext.class)
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @TestPropertySource("classpath:application.serializertest.properties")
 @Disabled("TODO #3496")
-class AxonAutoConfigurationWithEventSerializerPropertiesTest {
+class AxonAutoConfigurationWithEventConverterPropertiesTest {
 
     @Autowired
     private ApplicationContext applicationContext;

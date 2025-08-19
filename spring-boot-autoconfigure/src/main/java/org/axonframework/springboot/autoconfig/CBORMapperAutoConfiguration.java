@@ -34,7 +34,7 @@ public class CBORMapperAutoConfiguration {
 
     @Bean("defaultAxonCborMapper")
     @ConditionalOnMissingBean(CBORMapper.class)
-    @ConditionalOnExpression("'${axon.serializer.general}' == 'cbor' || '${axon.serializer.events}' == 'cbor' || '${axon.serializer.messages}' == 'cbor'")
+    @ConditionalOnExpression("'${axon.converter.general}' == 'cbor' || '${axon.converter.events}' == 'cbor' || '${axon.converter.messages}' == 'cbor'")
     public CBORMapper defaultAxonCborMapper() {
         return (CBORMapper) new CBORMapper().findAndRegisterModules();
     }
