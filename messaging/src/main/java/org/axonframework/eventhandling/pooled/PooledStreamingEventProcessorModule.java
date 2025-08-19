@@ -72,9 +72,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         implements EventProcessorModule, ModuleBuilder<PooledStreamingEventProcessorModule>,
         EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>,
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
-
-    private static final int EXECUTORS_SHUTDOWN_PHASE = 0;
-
+    
     private final String processorName;
     private List<ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
     private ComponentBuilder<PooledStreamingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
@@ -115,10 +113,10 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                             .orElseGet(() -> defaultExecutor(1, "Coordinator[" + processorName + "]"))
                             );
                             return configuration;
-                        }).onShutdown(EXECUTORS_SHUTDOWN_PHASE, (cfg, processor) -> {
+                        }).onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
                             processor.workerExecutor().shutdown();
                             return FutureUtils.emptyCompletedFuture();
-                        }).onShutdown(EXECUTORS_SHUTDOWN_PHASE, (cfg, processor) -> {
+                        }).onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
                             processor.coordinatorExecutor().shutdown();
                             return FutureUtils.emptyCompletedFuture();
                         })
