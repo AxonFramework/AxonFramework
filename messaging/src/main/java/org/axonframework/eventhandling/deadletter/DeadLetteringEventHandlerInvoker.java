@@ -242,7 +242,7 @@ public class DeadLetteringEventHandlerInvoker
 
     @Override
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
+            @Nonnull MessageHandlerInterceptor<EventMessage<?>> interceptor) {
         interceptors.add(interceptor);
         return () -> interceptors.remove(interceptor);
     }
@@ -345,12 +345,12 @@ public class DeadLetteringEventHandlerInvoker
          * Enabled this {@link DeadLetteringEventHandlerInvoker} to cache sequence identifiers. If enabled, it will
          * create a {@link SequenceIdentifierCache} per segment. The cache prevents calling
          * {@link SequencedDeadLetterQueue#enqueueIfPresent(Object, Supplier)} when we can be sure the sequence
-         * identifier is not present. 
+         * identifier is not present.
          * <p>
-         * This can happen in two cases. Either we start with an empty {@link SequencedDeadLetterQueue}, 
-         * and we haven't enqueued this identifier yet. Or the queue was not empty at the start. 
+         * This can happen in two cases. Either we start with an empty {@link SequencedDeadLetterQueue},
+         * and we haven't enqueued this identifier yet. Or the queue was not empty at the start.
          * In this case, we can skip the identifier once we checked that we did not enqueue it before.
-         * If the identifier might be present, we always call the 
+         * If the identifier might be present, we always call the
          * SequencedDeadLetterQueue#enqueueIfPresent(Object, Supplier)} as the sequence might have been cleaned up in
          * the meantime.
          *
@@ -363,13 +363,13 @@ public class DeadLetteringEventHandlerInvoker
 
         /**
          * Sets the size of the cache. When there are already sequences stored in a dead-letter queue, we need to check
-         * for each sequence identifier if it's already included. This result is stored so we can skip a second "is enqueued" 
-         * check when we encounter the same sequence identifier. This method thus limits memory use of the cache. 
-         * The size defaults to {@code 1024}. 
+         * for each sequence identifier if it's already included. This result is stored so we can skip a second "is enqueued"
+         * check when we encounter the same sequence identifier. This method thus limits memory use of the cache.
+         * The size defaults to {@code 1024}.
          * <p>
          * If you have a lot of long-living aggregates, it might improve performance to increase the
          * cache size at the cost of more memory use. If you only have aggregates that are short-lived, setting it
-         * to a lower value frees up memory, while it might not affect performance. 
+         * to a lower value frees up memory, while it might not affect performance.
          * <p>
          * This setting is applied per {@link Segment}.
          * Note that this setting will only be used in combination with {@link #enableSequenceIdentifierCache()}, and

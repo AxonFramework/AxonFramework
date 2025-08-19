@@ -17,6 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.annotation.QueryHandler;
@@ -247,10 +248,9 @@ class StreamingQueryTest {
     @Test
     void dispatchInterceptor() {
         AtomicBoolean hasBeenCalled = new AtomicBoolean();
-
-        queryBus.registerDispatchInterceptor(messages -> {
+        queryBus.registerDispatchInterceptor((message, context, chain) -> {
             hasBeenCalled.set(true);
-            return (i, m) -> m;
+            return chain.proceed(message, context);
         });
 
         StreamingQueryMessage<String, String> testQuery = new GenericStreamingQueryMessage<>(
@@ -267,7 +267,10 @@ class StreamingQueryTest {
     @Test
     void handlerInterceptor() {
         queryBus.registerHandlerInterceptor(
-                (unitOfWork, context, interceptorChain) -> ((Flux) interceptorChain.proceedSync(context)).map(it -> "a")
+                (message, context, interceptorChain) ->
+                        interceptorChain.proceed(message, context)
+                // TODO reintegrate as part of #3079
+                        // ((Flux) interceptorChain.proceedSync(context)).map(it -> "a")
         );
 
         StreamingQueryMessage<String, String> testQuery = new GenericStreamingQueryMessage<>(

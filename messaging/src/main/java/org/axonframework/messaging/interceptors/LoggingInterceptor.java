@@ -16,20 +16,20 @@
 
 package org.axonframework.messaging.interceptors;
 
-import org.axonframework.messaging.InterceptorChain;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.function.BiFunction;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 /**
  * {@link MessageDispatchInterceptor} and {@link MessageHandlerInterceptor} implementation that logs dispatched and
@@ -42,8 +42,8 @@ import jakarta.annotation.Nullable;
  * @author Allard Buijze
  * @since 0.6
  */
-public class LoggingInterceptor<T extends Message<?>>
-        implements MessageDispatchInterceptor<T>, MessageHandlerInterceptor<T> {
+public class LoggingInterceptor<M extends Message<?>>
+        implements MessageDispatchInterceptor<M>, MessageHandlerInterceptor<M> {
 
     private final Logger logger;
 
@@ -69,17 +69,19 @@ public class LoggingInterceptor<T extends Message<?>>
     }
 
     @Override
-    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnDispatch(@Nonnull M message,
-                                                                                    @Nullable ProcessingContext context,
-                                                                                    @Nonnull InterceptorChain<M, R> interceptorChain) {
+    @Nonnull
+    public MessageStream<?> interceptOnDispatch(@Nonnull M message,
+                                                @Nullable ProcessingContext context,
+                                                @Nonnull MessageDispatchInterceptorChain<M> interceptorChain) {
         logger.info("Dispatched message: [{}]", message.type().name());
         return interceptorChain.proceed(message, context);
     }
 
     @Override
-    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
-                                                                                  @Nonnull ProcessingContext context,
-                                                                                  @Nonnull InterceptorChain<M, R> interceptorChain) {
+    @Nonnull
+    public MessageStream<?> interceptOnHandle(@Nonnull M message,
+                                              @Nonnull ProcessingContext context,
+                                              @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
         logger.info("Incoming message: [{}]", message.type().name());
         return interceptorChain.proceed(message, context)
                                .map(returnValue -> {
@@ -94,34 +96,5 @@ public class LoggingInterceptor<T extends Message<?>>
                                                e);
                                    return MessageStream.failed(e);
                                });
-    }
-
-    @Deprecated
-    @Override
-    @Nonnull
-    public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
-        return (i, message) -> {
-            logger.info("Dispatched messages: [{}]", message.type().name());
-            return message;
-        };
-    }
-
-    @Deprecated
-    @Override
-    public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
-                         @Nonnull ProcessingContext context,
-                         @Nonnull InterceptorChain interceptorChain) throws Exception {
-        T message = unitOfWork.getMessage();
-        logger.info("Incoming message: [{}]", message.payloadType().getSimpleName());
-        try {
-            Object returnValue = interceptorChain.proceedSync(context);
-            logger.info("[{}] executed successfully with a [{}] return value",
-                        message.type().name(),
-                        returnValue == null ? "null" : returnValue.getClass().getSimpleName());
-            return returnValue;
-        } catch (Exception t) {
-            logger.warn("[{}] execution failed:", message.payloadType().getSimpleName(), t);
-            throw t;
-        }
     }
 }

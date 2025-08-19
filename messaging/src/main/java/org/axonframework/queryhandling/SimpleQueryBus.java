@@ -22,14 +22,17 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QueryMessageHandlerInterceptorChain;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
@@ -100,7 +103,7 @@ public class SimpleQueryBus implements QueryBus {
     private final MessageMonitor<? super QueryMessage<?, ?>> messageMonitor;
     private final DuplicateQueryHandlerResolver duplicateQueryHandlerResolver;
     private final QueryInvocationErrorHandler errorHandler;
-    private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
+    private final List<MessageHandlerInterceptor<QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final QueryBusSpanFactory spanFactory;
     private final MessageTypeResolver messageTypeResolver;
@@ -516,7 +519,9 @@ public class SimpleQueryBus implements QueryBus {
     ) {
         return uow.executeWithResult((ctx) -> {
             ResponseType<R> responseType = uow.getMessage().responseType();
-            Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceedSync(ctx);
+            // TODO: reintegrate as part of #3079
+            QueryHandler queryHandler = (QueryHandler)handler;
+            Object queryResponse = new QueryMessageHandlerInterceptorChain(queryHandler, handlerInterceptors).proceed(uow.getMessage(), ctx);
             if (queryResponse instanceof CompletableFuture) {
                 return ((CompletableFuture<?>) queryResponse).thenCompose(
                         result -> buildCompletableFuture(responseType, result));
@@ -591,9 +596,11 @@ public class SimpleQueryBus implements QueryBus {
         try (SpanScope unused = span.makeCurrent()) {
             LegacyDefaultUnitOfWork<StreamingQueryMessage<Q, R>> uow = LegacyDefaultUnitOfWork.startAndGet(query);
             return uow.executeWithResult((ctx) -> {
-                Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceedSync(ctx);
-                return Flux.from(query.responseType()
-                                      .convert(queryResponse))
+                // TODO: reintegrate as part of #3079
+                QueryHandler queryHandler = (QueryHandler)handler;
+                Object queryResponse = new QueryMessageHandlerInterceptorChain(queryHandler, handlerInterceptors)
+                        .proceed(uow.getMessage(), ctx);
+                return Flux.from(query.responseType().convert(queryResponse))
                            .map(this::asResponseMessage);
             });
         }
@@ -639,13 +646,14 @@ public class SimpleQueryBus implements QueryBus {
                 responseType.convert(queryResponse)));
     }
 
-    @SuppressWarnings("unchecked")
     private <Q, R, T extends QueryMessage<Q, R>> T intercept(T query) {
-        T intercepted = query;
-        for (MessageDispatchInterceptor<? super QueryMessage<?, ?>> interceptor : dispatchInterceptors) {
-            intercepted = (T) interceptor.handle(intercepted);
-        }
-        return intercepted;
+        return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
+                .proceed(query, null)
+                .first()
+                .<T>cast()
+                .asMono()
+                .map(MessageStream.Entry::message)
+                .block();
     }
 
     /**
@@ -667,7 +675,7 @@ public class SimpleQueryBus implements QueryBus {
      */
     @Override
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super QueryMessage<?, ?>> interceptor) {
+            @Nonnull MessageHandlerInterceptor<QueryMessage<?, ?>> interceptor) {
         handlerInterceptors.add(interceptor);
         return () -> handlerInterceptors.remove(interceptor);
     }

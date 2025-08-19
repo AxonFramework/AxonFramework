@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.messaging;
+
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.junit.jupiter.api.*;
+
+import static java.util.Arrays.asList;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * @author Allard Buijze
+ * @author Nakul Mishra
+ */
+class MessageHandlerInterceptorChainTest {
+
+    private CommandHandler mockHandler;
+
+    @BeforeEach
+    @SuppressWarnings("unchecked")
+    void setUp() throws Exception {
+        mockHandler = mock();
+        when(mockHandler.handle(isA(CommandMessage.class),
+                                any())).thenReturn(MessageStream.just(new GenericCommandResultMessage<>(
+                new MessageType("result"),
+                "Result")));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void chainWithDifferentProceedCalls() throws Exception {
+        MessageHandlerInterceptor<CommandMessage<?>> interceptor1 = (message, context, interceptorChain) -> {
+            CommandMessage<?> myMessage = new GenericCommandMessage<>(
+                    new MessageType("message"), "testing"
+            );
+            return interceptorChain.proceed(myMessage, context);
+        };
+        MessageHandlerInterceptor<CommandMessage<?>> interceptor2 = (message, context, interceptorChain) -> interceptorChain.proceed(
+                message,
+                context);
+
+        CommandMessage<?> message = new GenericCommandMessage<>(
+                new MessageType("message"), "original"
+        );
+        MessageHandlerInterceptorChain<CommandMessage<?>> testSubject = new CommandMessageHandlerInterceptorChain(
+                mockHandler, asList(interceptor1, interceptor2)
+        );
+
+        String actual = testSubject.proceed(message, StubProcessingContext.forMessage(message))
+                                   .first()
+                                   .<CommandResultMessage<String>>cast()
+                                   .asMono()
+                                   .map(MessageStream.Entry::message)
+                                   .block()
+                                   .payload();
+
+        assertSame("Result", actual);
+        verify(mockHandler).handle(argThat(x -> (x != null) && x.payload().equals("testing")), any());
+    }
+}

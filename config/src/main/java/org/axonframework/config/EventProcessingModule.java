@@ -114,8 +114,8 @@ public class EventProcessingModule
     protected final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
     protected final Map<String, DeadLetteringEventHandlerInvoker> deadLetteringEventHandlerInvokers = new HashMap<>();
 
-    protected final List<BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
-    protected final Map<String, List<Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
+    protected final List<BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
+    protected final Map<String, List<Function<LegacyConfiguration, MessageHandlerInterceptor<EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
     protected final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
     protected final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
     protected final Map<String, Component<SequencingPolicy>> sequencingPolicies = new HashMap<>();
@@ -434,7 +434,7 @@ public class EventProcessingModule
     //</editor-fold>
 
     @Override
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName) {
+    public List<MessageHandlerInterceptor<EventMessage<?>>> interceptorsFor(String processorName) {
         validateConfigInitialization();
         return eventProcessor(processorName).map(EventProcessor::getHandlerInterceptors)
                                             .orElse(Collections.emptyList());
@@ -718,7 +718,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerHandlerInterceptor(String processorName,
-                                                                Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
+                                                                Function<LegacyConfiguration, MessageHandlerInterceptor<EventMessage<?>>> interceptorBuilder) {
         Component<EventProcessor> eps = eventProcessors.get(processorName);
         if (eps != null && eps.isInitialized()) {
             eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
@@ -730,7 +730,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDefaultHandlerInterceptor(
-            BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder
+            BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<EventMessage<?>>> interceptorBuilder
     ) {
         this.defaultHandlerInterceptors.add(interceptorBuilder);
         return this;

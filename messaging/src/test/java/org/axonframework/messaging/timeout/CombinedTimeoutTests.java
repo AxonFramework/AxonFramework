@@ -15,28 +15,15 @@
  */
 package org.axonframework.messaging.timeout;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.junit.jupiter.api.*;
 
-import java.lang.annotation.Annotation;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The different timeout components, {@link TimeoutWrappedMessageHandlingMember} and
- * {@link UnitOfWorkTimeoutInterceptor} are tested in isolation, but this test class combines them to ensure that the
+ * {@link UnitOfWorkTimeoutInterceptorBuilder} are tested in isolation, but this test class combines them to ensure that the
  * timeout behavior works as expected when both are used together.
  */
 @Disabled("TODO #3559")
@@ -204,8 +191,8 @@ class CombinedTimeoutTests {
 //        );
 //    }
 
-    private UnitOfWorkTimeoutInterceptor createTimeoutInterceptor(int timeout) {
-        return new UnitOfWorkTimeoutInterceptor(
+    private UnitOfWorkTimeoutInterceptorBuilder createTimeoutInterceptor(int timeout) {
+        return new UnitOfWorkTimeoutInterceptorBuilder(
                 "TestComponent",
                 timeout,
                 500,

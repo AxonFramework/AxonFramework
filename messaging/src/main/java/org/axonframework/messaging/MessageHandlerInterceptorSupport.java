@@ -39,5 +39,5 @@ public interface MessageHandlerInterceptorSupport<T extends Message<?>> {
      * @param handlerInterceptor The interceptor to register
      * @return A Registration, which may be used to deregister the interceptor.
      */
-    Registration registerHandlerInterceptor(@Nonnull MessageHandlerInterceptor<? super T> handlerInterceptor);
+    Registration registerHandlerInterceptor(@Nonnull MessageHandlerInterceptor<T> handlerInterceptor);
 }

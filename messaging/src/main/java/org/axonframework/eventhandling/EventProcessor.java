@@ -49,7 +49,7 @@ public interface EventProcessor extends MessageHandlerInterceptorSupport<EventMe
      *
      * @return the list of registered interceptors of this event processor
      */
-    List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors();
+    List<MessageHandlerInterceptor<EventMessage<?>>> getHandlerInterceptors();
 
     /**
      * Start processing events.

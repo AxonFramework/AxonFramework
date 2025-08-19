@@ -17,29 +17,20 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * The interceptor chain manages the flow of a message through a chain of interceptors and ultimately to the message
- * handler. Interceptors may continue processing via this chain by calling the {@link #proceedSync(ProcessingContext)} method.
+ * handler. Interceptors may continue processing via this chain by calling the {@link #proceed(Message, ProcessingContext)} method.
  * Alternatively, they can block processing by returning without calling either of these methods.
  *
  * @author Allard Buijze
+ * @author Simon Zambrovski
  * @since 0.5
  */
 @FunctionalInterface
-public interface InterceptorChain<M extends Message<?>, R extends Message<?>> {
-
-    /**
-     * Signals the Interceptor Chain to continue processing the message.
-     *
-     * @param context The {@link ProcessingContext} in which the reset is being prepared.
-     * @return The return value of the message processing.
-     * @throws Exception Any exceptions thrown by interceptors or the message handler.
-     */
-    Object proceedSync(@Nonnull ProcessingContext context) throws Exception;
+public interface MessageHandlerInterceptorChain<M extends Message<?>> {
 
     /**
      * Signals the Interceptor Chain to continue processing the message.
@@ -47,11 +38,6 @@ public interface InterceptorChain<M extends Message<?>, R extends Message<?>> {
      * @param context The {@link ProcessingContext} in which the reset is being prepared.
      * @return A {@link MessageStream} containing the result of the message processing.
      */
-    default MessageStream<R> proceed(@Nonnull M message, @Nonnull ProcessingContext context) {
-        try {
-            return MessageStream.fromFuture(CompletableFuture.completedFuture((R) proceedSync(context)));
-        } catch (Exception e) {
-            return MessageStream.fromFuture(CompletableFuture.failedFuture(e));
-        }
-    }
+    @Nonnull
+    MessageStream<?> proceed(@Nonnull M message, @Nonnull ProcessingContext context);
 }

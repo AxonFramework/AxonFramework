@@ -16,10 +16,13 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -36,10 +39,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.messaging.unitofwork.LegacyUnitOfWork.Phase.*;
@@ -119,7 +120,7 @@ public abstract class AbstractEventBus implements EventBus {
         List<? extends EventMessage<?>> eventsWithContext = events
                 .stream()
                 .map(e -> spanFactory.createPublishEventSpan(e)
-                                     .runSupplier(() -> spanFactory.propagateContext((EventMessage<?>)e)))
+                                     .runSupplier(() -> spanFactory.propagateContext((EventMessage<?>) e)))
                 .collect(Collectors.toList());
         List<MessageMonitor.MonitorCallback> ingested = eventsWithContext.stream()
                                                                          .map(messageMonitor::onMessageIngested)
@@ -241,12 +242,14 @@ public abstract class AbstractEventBus implements EventBus {
      */
     protected List<? extends EventMessage<?>> intercept(List<? extends EventMessage<?>> events) {
         List<EventMessage<?>> preprocessedEvents = new ArrayList<>(events);
-        for (MessageDispatchInterceptor<? super EventMessage<?>> preprocessor : dispatchInterceptors) {
-            BiFunction<Integer, ? super EventMessage<?>, ? super EventMessage<?>> function =
-                    preprocessor.handle(preprocessedEvents);
-            for (int i = 0; i < preprocessedEvents.size(); i++) {
-                preprocessedEvents.set(i, (EventMessage<?>) function.apply(i, preprocessedEvents.get(i)));
-            }
+        for (int i = 0; i < preprocessedEvents.size(); i++) {
+            preprocessedEvents.set(i, new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
+                    .proceed(preprocessedEvents.get(i), null)
+                    .first()
+                    .<EventMessage<?>>cast()
+                    .asMono()
+                    .map(MessageStream.Entry::message)
+                    .block());
         }
         return preprocessedEvents;
     }
@@ -311,7 +314,8 @@ public abstract class AbstractEventBus implements EventBus {
 
         /**
          * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link DefaultEventBusSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         * {@link DefaultEventBusSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no tracing
+         * capabilities.
          *
          * @param spanFactory The {@link EventBusSpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.

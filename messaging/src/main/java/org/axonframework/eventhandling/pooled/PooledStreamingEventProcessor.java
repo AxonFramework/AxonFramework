@@ -221,7 +221,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
     }
 
     @Override
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+    public List<MessageHandlerInterceptor<EventMessage<?>>> getHandlerInterceptors() {
         return eventProcessorOperations.handlerInterceptors();
     }
 
@@ -446,7 +446,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     @Override
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<EventMessage<?>> handlerInterceptor) {
         return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
     }
 

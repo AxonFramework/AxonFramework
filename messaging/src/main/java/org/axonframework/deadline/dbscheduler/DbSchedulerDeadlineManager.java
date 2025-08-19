@@ -30,7 +30,6 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.AbstractDeadlineManager;
-import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DeadlineMessage;
@@ -40,12 +39,9 @@ import org.axonframework.deadline.jobrunr.DeadlineDetails;
 import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerBinaryEventData;
 import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerEventScheduler;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
@@ -355,10 +351,13 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         Span span = spanFactory.createExecuteSpan(deadlineName, deadlineId, deadlineMessage)
                                .start();
         try (SpanScope ignored = span.makeCurrent()) {
-            LegacyUnitOfWork<DeadlineMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(deadlineMessage);
+
+            LegacyUnitOfWork<GenericDeadlineMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
-            InterceptorChain chain = new DefaultInterceptorChain<>(
+            /*
+            // TODO: reintegrate as part of #3065
+            InterceptorChain chain = new MessageHandlerInterceptorChain<>(
                     unitOfWork,
                     handlerInterceptors(),
                     (interceptedDeadlineMessage, ctx) -> {
@@ -372,6 +371,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
                 logger.warn("An error occurred while triggering deadline with name [{}].", deadlineName);
                 throw new DeadlineException("Failed to process", e);
             }
+            */
         } finally {
             span.end();
         }

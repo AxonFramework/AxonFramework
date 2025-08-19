@@ -17,13 +17,12 @@
 package org.axonframework.messaging.interceptors;
 
 import org.axonframework.messaging.Context.ResourceKey;
-import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
 import jakarta.annotation.Nonnull;
 import java.util.*;
@@ -35,11 +34,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * The registered CorrelationDataProviders copy correlation MetaData over from the Message processed by the Unit of Work
  * to new Messages that are created during processing.
  *
- * @param <T> The type of Message that can be intercepted
+ * @param <M> The type of Message that can be intercepted
  * @author Rene de Waele
  * @since 3.0
  */
-public class CorrelationDataInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T> {
+public class CorrelationDataInterceptor<M extends Message<?>> implements MessageHandlerInterceptor<M> {
 
     public static final ResourceKey<Map<String, Object>> CORRELATION_DATA = ResourceKey.withLabel("CorrelationData");
     private final List<CorrelationDataProvider> correlationDataProviders;
@@ -63,17 +62,11 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     }
 
     @Override
-    public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork, @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain)
-            throws Exception {
-        correlationDataProviders.forEach(unitOfWork::registerCorrelationDataProvider);
-        return interceptorChain.proceedSync(context);
-    }
-
-    @Override
-    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(
+    @Nonnull
+    public MessageStream<?> interceptOnHandle(
             @Nonnull M message,
-            ProcessingContext context,
-            InterceptorChain<M, R> interceptorChain
+            @Nonnull ProcessingContext context,
+            @Nonnull MessageHandlerInterceptorChain<M> interceptorChain
     ) {
         Map<String, Object> map = new ConcurrentHashMap<>();
         correlationDataProviders.forEach(c -> map.putAll(c.correlationDataFor(message)));

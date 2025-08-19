@@ -18,11 +18,12 @@ package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.EventMessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
@@ -96,30 +97,29 @@ class DeadLetteredEventProcessingTask
                   .put(DeadLetter.class.getName(), letter);
         unitOfWork.onPrepareCommit(uow -> decision.set(onCommit(letter)));
         unitOfWork.onRollback(uow -> decision.set(onRollback(letter, uow.getExecutionResult().getExceptionResult())));
-        unitOfWork.executeWithResult((ctx) -> handleWithInterceptors(unitOfWork, ctx));
+        unitOfWork.executeWithResult((ctx) -> handleWithInterceptors(unitOfWork.getMessage(), ctx));
 
         return ObjectUtils.getOrDefault(decision.get(), Decisions::ignore);
     }
 
-    private void handle(EventMessage<?> eventMessage, ProcessingContext context) throws Exception {
-        for (EventMessageHandler handler : eventHandlingComponents) {
-            handler.handleSync(eventMessage, context);
-        }
-    }
 
     private Object handleWithInterceptors(
-            LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-            ProcessingContext context) throws Exception {
-        new DefaultInterceptorChain<EventMessage<?>, Message<Void>>(
-                unitOfWork,
-                interceptors,
-                (m, ctx) -> {
-                    handle(m, ctx);
-                    return null;
-                }
-        ).proceedSync(context);
+            EventMessage<?> message,
+            ProcessingContext context) {
+        // TODO reintegrate as part of #3517
         // There's no result of event handling to return here.
         // We use this methods format to be able to define the Error Handler may throw Exceptions.
+        /*
+        return new EventMessageHandlerInterceptorChain(handler,
+                interceptors
+        ).proceed(message, context)
+         .first()
+         .<EventMessage<?>>cast()
+         .asMono()
+         .map(MessageStream.Entry::message)
+         .block();
+
+         */
         return null;
     }
 

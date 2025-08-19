@@ -294,7 +294,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor) {
+            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor) {
         this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
         return this;
     }

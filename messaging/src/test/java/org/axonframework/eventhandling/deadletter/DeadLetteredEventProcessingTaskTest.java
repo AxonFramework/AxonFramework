@@ -23,6 +23,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.DoNotEnqueue;
@@ -148,14 +150,13 @@ class DeadLetteredEventProcessingTaskTest {
     }
 
     private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor(AtomicBoolean invoked) {
-        return (unitOfWork, context, chain) -> {
+        return (message, context, chain) -> {
             invoked.set(true);
             try {
-                chain.proceedSync(context);
+                return chain.proceed(message, context);
             } catch (RuntimeException e) {
-                return unitOfWork;
+                return MessageStream.failed(e);
             }
-            return unitOfWork;
         };
     }
 }

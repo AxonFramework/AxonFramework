@@ -19,16 +19,16 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -54,10 +53,10 @@ class InterceptingCommandBusTest {
 
     private InterceptingCommandBus testSubject;
     private CommandBus mockCommandBus;
-    private MessageHandlerInterceptor<Message<?>> handlerInterceptor1;
+    private MessageHandlerInterceptor<CommandMessage<?>> handlerInterceptor1;
     private MessageHandlerInterceptor<CommandMessage<?>> handlerInterceptor2;
     private MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor1;
-    private MessageDispatchInterceptor<Message<?>> dispatchInterceptor2;
+    private MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor2;
 
     @BeforeEach
     void setUp() {
@@ -79,7 +78,9 @@ class InterceptingCommandBusTest {
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(invocation -> CompletableFuture.completedFuture(
                 asCommandResultMessage("ok")));
 
-        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand,
+                                                                              StubProcessingContext.forMessage(
+                                                                                      testCommand));
 
         ArgumentCaptor<CommandMessage<?>> dispatchedMessage = ArgumentCaptor.forClass(CommandMessage.class);
         verify(mockCommandBus).dispatch(dispatchedMessage.capture(), any());
@@ -103,7 +104,9 @@ class InterceptingCommandBusTest {
                                                                                                          any(),
                                                                                                          any());
 
-        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand,
+                                                                              StubProcessingContext.forMessage(
+                                                                                      testCommand));
 
         assertTrue(result.isCompletedExceptionally());
         assertInstanceOf(MockException.class, result.exceptionNow());
@@ -123,7 +126,9 @@ class InterceptingCommandBusTest {
             return i.callRealMethod();
         }).when(dispatchInterceptor1).interceptOnDispatch(any(), any(), any());
 
-        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand,
+                                                                              StubProcessingContext.forMessage(
+                                                                                      testCommand));
 
         assertTrue(result.isDone());
         verify(dispatchInterceptor1).interceptOnDispatch(any(), any(), any());
@@ -140,7 +145,9 @@ class InterceptingCommandBusTest {
         doThrow(new MockException("Simulating failure in interceptor"))
                 .when(dispatchInterceptor2).interceptOnDispatch(any(), any(), any());
 
-        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand,
+                                                                              StubProcessingContext.forMessage(
+                                                                                      testCommand));
 
         assertTrue(result.isCompletedExceptionally());
         assertInstanceOf(MockException.class, result.exceptionNow());
@@ -261,7 +268,8 @@ class InterceptingCommandBusTest {
         return new GenericCommandResultMessage<>(new MessageType(payload.getClass()), payload);
     }
 
-    private static class AddMetaDataCountInterceptor<M extends Message<?>>
+    @SuppressWarnings("unchecked")
+    private static class AddMetaDataCountInterceptor<M extends CommandMessage<?>>
             implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
 
         private final String key;
@@ -273,38 +281,25 @@ class InterceptingCommandBusTest {
         }
 
         @Override
-        public Object handle(@Nonnull LegacyUnitOfWork<? extends M> unitOfWork,
-                             @Nonnull ProcessingContext context,
-                             @Nonnull InterceptorChain interceptorChain) {
-            throw new UnsupportedOperationException();
+        @Nonnull
+        public MessageStream<?> interceptOnDispatch(@Nonnull M message,
+                                                    @Nullable ProcessingContext context,
+                                                    @Nonnull MessageDispatchInterceptorChain<M> interceptorChain) {
+            return interceptorChain.proceed((M) message.andMetaData(Map.of(key, buildValue(message))), context)
+                                   .mapMessage(m -> ((Message<?>) m).andMetaData(Map.of(key, buildValue(m))));
         }
 
-        @SuppressWarnings("unchecked")
         @Override
-        public <M1 extends M, R extends Message<?>> MessageStream<R> interceptOnDispatch(@Nonnull M1 message,
-                                                                                         @Nullable ProcessingContext context,
-                                                                                         @Nonnull InterceptorChain<M1, R> interceptorChain) {
-            return interceptorChain.proceed((M1) message.andMetaData(Map.of(key, buildValue(message))), context)
-                                   .mapMessage(m -> (R) ((Message<?>) m).andMetaData(Map.of(key, buildValue(m))));
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public <M1 extends M, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M1 message,
-                                                                                       @Nonnull ProcessingContext context,
-                                                                                       @Nonnull InterceptorChain<M1, R> interceptorChain) {
-            return interceptorChain.proceed((M1) message.andMetaData(Map.of(key, buildValue(message))), context)
-                                   .mapMessage(m -> (R) m.andMetaData(Map.of(key, buildValue(m))));
+        @Nonnull
+        public MessageStream<?> interceptOnHandle(@Nonnull M message,
+                                                  @Nonnull ProcessingContext context,
+                                                  @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
+            return interceptorChain.proceed((M) message.andMetaData(Map.of(key, buildValue(message))), context)
+                                   .mapMessage(m -> m.andMetaData(Map.of(key, buildValue(m))));
         }
 
         private String buildValue(Message<?> message) {
             return value + "-" + message.metaData().size();
-        }
-
-        @Nonnull
-        @Override
-        public BiFunction<Integer, M, M> handle(@Nonnull List<? extends M> messages) {
-            throw new UnsupportedOperationException();
         }
     }
 }

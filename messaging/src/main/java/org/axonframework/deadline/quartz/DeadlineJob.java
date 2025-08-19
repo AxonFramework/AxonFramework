@@ -20,18 +20,14 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -135,13 +131,15 @@ public class DeadlineJob implements Job {
                                                   context.getTrigger().getJobKey().getName(),
                                                   deadlineMessage).start();
         try (SpanScope unused = span.makeCurrent()) {
+            // TODO: reintegrate as part of #3065
+            /*
             LegacyDefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(
                     deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult()
                                                                  .getExceptionResult()));
             InterceptorChain chain =
-                    new DefaultInterceptorChain<>(unitOfWork,
+                    new MessageHandlerInterceptorChain<>(unitOfWork,
                                                   handlerInterceptors,
                                                   (interceptedDeadlineMessage, ctx) -> {
                                                       executeScheduledDeadline(
@@ -174,6 +172,7 @@ public class DeadlineJob implements Job {
                 logger.info("Job successfully executed. Deadline message [{}] processed.",
                             deadlineMessage.type().name());
             }
+            */
         } finally {
             span.end();
         }

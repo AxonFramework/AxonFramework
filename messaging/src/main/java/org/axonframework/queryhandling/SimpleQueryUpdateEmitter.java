@@ -16,9 +16,12 @@
 
 package org.axonframework.queryhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.OptionalResponseType;
 import org.axonframework.messaging.responsetypes.PublisherResponseType;
@@ -43,7 +46,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -130,12 +132,13 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     private <U> SubscriptionQueryUpdateMessage<U> intercept(SubscriptionQueryUpdateMessage<U> message) {
-        SubscriptionQueryUpdateMessage<U> intercepted = message;
-        for (MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage<?>> interceptor : dispatchInterceptors) {
-            //noinspection unchecked
-            intercepted = (SubscriptionQueryUpdateMessage<U>) interceptor.handle(intercepted);
-        }
-        return intercepted;
+        return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
+                .proceed(message, null) // TODO: reintegrate as part of #3079
+                .first()
+                .<SubscriptionQueryUpdateMessage<U>>cast()
+                .asMono()
+                .map(MessageStream.Entry::message)
+                .block();
     }
 
     @Override
@@ -220,7 +223,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
             updateHandler.error(cause);
         } catch (Exception e) {
             logger.error("An error happened while trying to inform update handler about the error. Query: {}",
-                                query);
+                         query);
         }
     }
 
@@ -309,8 +312,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         }
 
         /**
-         * Sets the {@link QueryUpdateEmitterSpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link DefaultQueryUpdateEmitterSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no tracing capabilities.
+         * Sets the {@link QueryUpdateEmitterSpanFactory} implementation to use for providing tracing capabilities.
+         * Defaults to a {@link DefaultQueryUpdateEmitterSpanFactory} backed by a {@link NoOpSpanFactory} by default,
+         * which provides no tracing capabilities.
          *
          * @param spanFactory The {@link QueryUpdateEmitterSpanFactory} implementation.
          * @return The current Builder instance, for fluent interfacing.

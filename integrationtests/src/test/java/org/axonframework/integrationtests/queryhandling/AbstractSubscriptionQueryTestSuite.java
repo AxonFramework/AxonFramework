@@ -18,9 +18,11 @@ package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -592,13 +594,13 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // given
         List<String> interceptedResponse = Arrays.asList("fakeReply1", "fakeReply2");
         queryBus.registerDispatchInterceptor(
-                messages -> (i, m) -> m.andMetaData(Collections.singletonMap("key", "value"))
+                (m, c, ch) -> ch.proceed(m.andMetaData(Collections.singletonMap("key", "value")), c)
         );
-        queryBus.registerHandlerInterceptor((unitOfWork, context, interceptorChain) -> {
-            if (unitOfWork.getMessage().metaData().containsKey("key")) {
-                return interceptedResponse;
+        queryBus.registerHandlerInterceptor((m, context, interceptorChain) -> {
+            if (m.metaData().containsKey("key")) {
+                return MessageStream.fromIterable(interceptedResponse.stream().map(p -> new GenericQueryResponseMessage<>(new MessageType("response"), p)).toList());
             }
-            return interceptorChain.proceedSync(context);
+            return interceptorChain.proceed(m, context);
         });
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 new MessageType("chatMessages"), TEST_PAYLOAD,
@@ -620,7 +622,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // given
         Map<String, String> metaData = Collections.singletonMap("key", "value");
         queryUpdateEmitter.registerDispatchInterceptor(
-                messages -> (i, m) -> m.andMetaData(metaData)
+                (m, c, ch) -> ch.proceed(m.andMetaData(metaData), c)
         );
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 new MessageType("chatMessages"), TEST_PAYLOAD,

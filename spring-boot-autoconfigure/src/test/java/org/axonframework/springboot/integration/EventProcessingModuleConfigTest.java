@@ -68,7 +68,7 @@ class EventProcessingModuleConfigTest {
             assertTrue(optionalProcessorOne.isPresent());
             EventProcessor processorOne = optionalProcessorOne.get();
             assertEquals("processor2", processorOne.getName());
-            List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor =
+            List<MessageHandlerInterceptor<EventMessage<?>>> interceptorsFor =
                     eventProcessingConfiguration.interceptorsFor("processor2");
             assertEquals(2, interceptorsFor.size());
             assertTrue(interceptorsFor.stream().anyMatch(i -> i instanceof CorrelationDataInterceptor));

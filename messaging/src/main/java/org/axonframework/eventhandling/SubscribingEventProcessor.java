@@ -98,7 +98,7 @@ public class SubscribingEventProcessor implements EventProcessor {
     }
 
     @Override
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+    public List<MessageHandlerInterceptor<EventMessage<?>>> getHandlerInterceptors() {
         return eventProcessorOperations.handlerInterceptors();
     }
 
@@ -172,7 +172,7 @@ public class SubscribingEventProcessor implements EventProcessor {
 
     @Override
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<EventMessage<?>> handlerInterceptor) {
         return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
     }
 

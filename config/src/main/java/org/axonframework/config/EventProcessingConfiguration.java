@@ -128,7 +128,7 @@ public interface EventProcessingConfiguration {
      * @param processorName a {@link String} specifying a processing group
      * @return a {@link List} of {@link MessageHandlerInterceptor}s for a processor with given {@code processorName}
      */
-    List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor(String processorName);
+    List<MessageHandlerInterceptor<EventMessage<?>>> interceptorsFor(String processorName);
 
     /**
      * Returns the {@link ListenerInvocationErrorHandler} tied to the given {@code processingGroup}.

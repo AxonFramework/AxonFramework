@@ -33,13 +33,11 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
@@ -549,12 +547,13 @@ class PooledStreamingEventProcessorTest {
         testSubject.start();
 
         await().atMost(1, TimeUnit.SECONDS)
-              .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
+               .untilAsserted(() -> assertThat(testSubject.processingStatus()).hasSize(1));
 
         // then - Verify that only String events are handled (Integer events are filtered out by EventCriteria).
         ArgumentCaptor<EventMessage<?>> handledEventsCaptor = ArgumentCaptor.forClass(EventMessage.class);
         await().atMost(1, TimeUnit.SECONDS)
-                .untilAsserted(() -> verify(stubEventHandlingComponent, times(2)).handle(handledEventsCaptor.capture(), any()));
+               .untilAsserted(() -> verify(stubEventHandlingComponent, times(2)).handle(handledEventsCaptor.capture(),
+                                                                                        any()));
 
         // then - Validate that the correct String events were handled.
         List<EventMessage<?>> handledEvents = handledEventsCaptor.getAllValues();
@@ -749,7 +748,7 @@ class PooledStreamingEventProcessorTest {
         testSubject.releaseSegment(testSegmentId);
 
         await().atMost(testTokenClaimInterval + 200, TimeUnit.MILLISECONDS)
-                       .untilAsserted(() -> assertNull(testSubject.processingStatus().get(testSegmentId)));
+               .untilAsserted(() -> assertNull(testSubject.processingStatus().get(testSegmentId)));
 
         // Assert that within twice the tokenClaimInterval, the WorkPackage is in progress again.
         await().atMost((testTokenClaimInterval * 2) + 200, TimeUnit.MILLISECONDS)
@@ -1301,23 +1300,12 @@ class PooledStreamingEventProcessorTest {
         setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
 
         CountDownLatch countDownLatch = new CountDownLatch(3);
-        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<EventMessage<?>>() {
-            @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @Nonnull ProcessingContext context,
-                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
-                unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-                return interceptorChain.proceedSync(context);
-            }
-
-            @Override
-            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message,
-                    @Nonnull ProcessingContext context,
-                    @Nonnull InterceptorChain<M, R> interceptorChain) {
-                context.doFinally(uow -> countDownLatch.countDown());
-                return interceptorChain.proceed(message, context);
-            }
+        testSubject.registerHandlerInterceptor((
+                                                       @Nonnull EventMessage<?> message,
+                                                       @Nonnull ProcessingContext context,
+                                                       @Nonnull MessageHandlerInterceptorChain<EventMessage<?>> interceptorChain) -> {
+            context.doFinally(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed(message, context);
         });
         createEvents(3).forEach(stubMessageSource::publishMessage);
 
@@ -1334,22 +1322,11 @@ class PooledStreamingEventProcessorTest {
         setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
 
         CountDownLatch countDownLatch = new CountDownLatch(3);
-        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<>() {
-            @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @Nonnull ProcessingContext context,
-                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
-                unitOfWork.onCleanup(uow -> countDownLatch.countDown());
-                return interceptorChain.proceedSync(context);
-            }
-
-            @Override
-            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message, @Nonnull ProcessingContext context,
-                    @Nonnull InterceptorChain<M, R> interceptorChain) {
-                context.doFinally(uow -> countDownLatch.countDown());
-                return interceptorChain.proceed(message, context);
-            }
+        testSubject.registerHandlerInterceptor((@Nonnull EventMessage<?> message,
+                                                @Nonnull ProcessingContext context,
+                                                @Nonnull MessageHandlerInterceptorChain<EventMessage<?>> interceptorChain) -> {
+            context.doFinally(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed(message, context);
         });
         stubMessageSource.publishMessage(EventTestUtils.asEventMessage(0));
         stubMessageSource.publishMessage(EventTestUtils.asEventMessage(1));

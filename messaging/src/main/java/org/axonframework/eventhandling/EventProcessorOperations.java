@@ -21,7 +21,8 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.EventMessageHandlerInterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -66,7 +67,7 @@ public final class EventProcessorOperations {
     private final EventHandlingComponent eventHandlingComponent;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
-    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
+    private final List<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
     private final EventProcessorSpanFactory spanFactory;
     private final boolean streamingProcessor;
     private final SegmentMatcher segmentMatcher;
@@ -102,7 +103,7 @@ public final class EventProcessorOperations {
     }
 
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
+            @Nonnull MessageHandlerInterceptor<EventMessage<?>> interceptor) {
         interceptors.add(interceptor);
         return () -> interceptors.remove(interceptor);
     }
@@ -113,7 +114,7 @@ public final class EventProcessorOperations {
      *
      * @return The list of registered interceptors of the event processor.
      */
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> handlerInterceptors() {
+    public List<MessageHandlerInterceptor<EventMessage<?>>> handlerInterceptors() {
         return Collections.unmodifiableList(interceptors);
     }
 
@@ -207,11 +208,11 @@ public final class EventProcessorOperations {
                           }));
     }
 
-    private MessageStream.Empty<?> processMessageInUnitOfWork(Collection<Segment> processingSegments,
+    private MessageStream<?> processMessageInUnitOfWork(Collection<Segment> processingSegments,
                                                               EventMessage<?> message,
                                                               ProcessingContext processingContext,
                                                               MessageMonitor.MonitorCallback monitorCallback
-    ) throws Exception {
+    ) {
         try {
             for (Segment processingSegment : processingSegments) {
                 if (segmentMatcher.matches(processingSegment, message)) {
@@ -235,14 +236,11 @@ public final class EventProcessorOperations {
         try {
             var monitorCallback = messageMonitor.onMessageIngested(message);
 
-            DefaultInterceptorChain<EventMessage<?>, ?> chain =
-                    new DefaultInterceptorChain<>(
-                            null,
-                            interceptors,
-                            (msg, ctx) -> processMessageInUnitOfWork(processingSegments,
-                                                                     msg,
-                                                                     ctx,
-                                                                     monitorCallback));
+            MessageHandlerInterceptorChain<EventMessage<?>> chain =
+                    new EventMessageHandlerInterceptorChain(
+                            eventHandlingComponent,
+                            interceptors
+                    );
             return chain.proceed(message, processingContext)
                         .ignoreEntries()
                         .asCompletableFuture()

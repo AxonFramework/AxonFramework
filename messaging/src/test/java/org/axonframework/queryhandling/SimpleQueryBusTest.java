@@ -19,9 +19,11 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
@@ -115,9 +117,9 @@ class SimpleQueryBusTest {
     @Test
     public void handlerInterceptorThrowsException() throws ExecutionException, InterruptedException {
         testSubject.subscribe("test", String.class, (q, ctx) -> q.payload().toString());
-        testSubject.registerHandlerInterceptor((unitOfWork, context, interceptorChain) -> {
-            throw new RuntimeException("Faking");
-        });
+        testSubject.registerHandlerInterceptor(( message,context, interceptorChain) ->
+            MessageStream.failed(new RuntimeException("Faking"))
+        );
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
                 new MessageType("test"), "hello", instanceOf(String.class)
         );
@@ -445,13 +447,14 @@ class SimpleQueryBusTest {
     @Test
     void queryWithInterceptors() throws Exception {
         testSubject.registerDispatchInterceptor(
-                messages -> (i, m) -> m.andMetaData(Collections.singletonMap("key", "value"))
+                (message, context, chain) ->
+                        chain.proceed(message.andMetaData(Collections.singletonMap("key", "value")), context)
         );
-        testSubject.registerHandlerInterceptor((unitOfWork, context, interceptorChain) -> {
-            if (unitOfWork.getMessage().metaData().containsKey("key")) {
-                return "fakeReply";
+        testSubject.registerHandlerInterceptor((message, context, interceptorChain) -> {
+            if (message.metaData().containsKey("key")) {
+                return MessageStream.just(new GenericQueryResponseMessage<>(new MessageType("response"), "fakeReply"));
             }
-            return interceptorChain.proceedSync(context);
+            return interceptorChain.proceed(message, context);
         });
         testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
 
@@ -680,13 +683,14 @@ class SimpleQueryBusTest {
     @Test
     void scatterGatherWithInterceptors() {
         testSubject.registerDispatchInterceptor(
-                messages -> (i, m) -> m.andMetaData(Collections.singletonMap("key", "value"))
+                (message, context, chain) ->
+                        chain.proceed(message.andMetaData(Collections.singletonMap("key", "value")), context)
         );
-        testSubject.registerHandlerInterceptor((unitOfWork, context, interceptorChain) -> {
-            if (unitOfWork.getMessage().metaData().containsKey("key")) {
-                return "fakeReply";
+        testSubject.registerHandlerInterceptor((message, context, interceptorChain) -> {
+            if (message.metaData().containsKey("key")) {
+                return MessageStream.just(new GenericResultMessage<>(new MessageType("response"), "fakeReply"));
             }
-            return interceptorChain.proceedSync(context);
+            return interceptorChain.proceed(message, context);
         });
         testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
         testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "567");

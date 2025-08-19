@@ -19,10 +19,12 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.AxonException;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
@@ -31,6 +33,7 @@ import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFac
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -238,9 +241,9 @@ class AnnotationEventHandlerAdapterTest {
     public static class SomeInterceptingHandler extends SomeHandler {
 
         @MessageHandlerInterceptor
-        public void intercept(String event, ProcessingContext context, InterceptorChain chain) throws Exception {
+        public void intercept(String event, ProcessingContext context, MessageHandlerInterceptorChain chain) throws Exception {
             invocations.add(event);
-            chain.proceedSync(context);
+            chain.proceed(new GenericMessage<>(new MessageType(new QualifiedName("event", "message")), event), context);
         }
 
         @MessageHandlerInterceptor
@@ -280,7 +283,6 @@ class AnnotationEventHandlerAdapterTest {
         public void handle(String event) {
             // No-op
         }
-
     }
 
     @DisallowReplay
@@ -295,7 +297,6 @@ class AnnotationEventHandlerAdapterTest {
         public void handle(String event) {
             // No-op
         }
-
     }
 
     @DisallowReplay
@@ -311,7 +312,6 @@ class AnnotationEventHandlerAdapterTest {
         public void handle(String event) {
             // No-op
         }
-
     }
 
 

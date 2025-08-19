@@ -17,7 +17,9 @@ package org.axonframework.messaging.timeout;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.EventMessageHandlerInterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.junit.jupiter.api.*;
@@ -27,28 +29,31 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link UnitOfWorkTimeoutInterceptor}.
+ * Test class validating the {@link UnitOfWorkTimeoutInterceptorBuilder}.
  *
  * @author Mitchell Herrijgers
  */
-class UnitOfWorkTimeoutInterceptorTest {
+class UnitOfWorkTimeoutInterceptorBuilderTest {
 
     @Test
     void interruptsUnitOfWorkThatTakesTooLong() {
-        UnitOfWorkTimeoutInterceptor testSubject = new UnitOfWorkTimeoutInterceptor("MyUnitOfWork", 100, 50, 10);
+        MessageHandlerInterceptor<EventMessage<?>> testSubject = new UnitOfWorkTimeoutInterceptorBuilder("MyUnitOfWork", 100, 50, 10).buildEventInterceptor();
 
         LegacyDefaultUnitOfWork<EventMessage<String>> uow = new LegacyDefaultUnitOfWork<>(
                 EventTestUtils.asEventMessage("test")
         );
-        DefaultInterceptorChain<EventMessage<String>, Message<Void>> interceptorChain = new DefaultInterceptorChain<>(
-                uow,
-                Collections.singletonList(testSubject),
+        EventMessageHandlerInterceptorChain interceptorChain = new EventMessageHandlerInterceptorChain(
                 (message, ctx) -> {
-                    Thread.sleep(300);
+                    try {
+                        Thread.sleep(300);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
                     return null;
-                }
+                },
+                Collections.singletonList(testSubject)
         );
-        uow.executeWithResult(interceptorChain::proceedSync);
+        uow.executeWithResult((ctx) -> interceptorChain.proceed(uow.getMessage(), ctx));
         assertTrue(uow.isRolledBack());
         assertTrue(uow.getExecutionResult().isExceptionResult());
         assertInstanceOf(AxonTimeoutException.class, uow.getExecutionResult().getExceptionResult());
@@ -57,20 +62,24 @@ class UnitOfWorkTimeoutInterceptorTest {
 
     @Test
     void doesNotInterruptWorkWithinTime() {
-        UnitOfWorkTimeoutInterceptor testSubject = new UnitOfWorkTimeoutInterceptor("MyUnitOfWork", 100, 50, 10);
+        MessageHandlerInterceptor<EventMessage<?>> testSubject = new UnitOfWorkTimeoutInterceptorBuilder("MyUnitOfWork", 100, 50, 10).buildEventInterceptor();
 
         LegacyDefaultUnitOfWork<EventMessage<String>> uow = new LegacyDefaultUnitOfWork<>(
                 EventTestUtils.asEventMessage("test")
         );
-        DefaultInterceptorChain<EventMessage<String>, Message<Void>> interceptorChain = new DefaultInterceptorChain<>(
-                uow,
-                Collections.singletonList(testSubject),
+        EventMessageHandlerInterceptorChain interceptorChain = new EventMessageHandlerInterceptorChain(
                 (message, ctx) -> {
-                    Thread.sleep(80);
+                    try {
+                        Thread.sleep(80);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
                     return null;
-                }
+                },
+                Collections.singletonList(testSubject)
+
         );
-        uow.executeWithResult(interceptorChain::proceedSync);
+        uow.executeWithResult((ctx) -> interceptorChain.proceed(uow.getMessage(), ctx));
         assertFalse(uow.isRolledBack());
         assertFalse(uow.getExecutionResult().isExceptionResult());
     }

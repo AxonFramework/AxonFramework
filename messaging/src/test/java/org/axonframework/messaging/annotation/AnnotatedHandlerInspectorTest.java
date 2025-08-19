@@ -22,7 +22,7 @@ import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
@@ -242,7 +242,7 @@ class AnnotatedHandlerInspectorTest {
         }
 
         @MessageHandlerInterceptor
-        public void intercept(Integer e, InterceptorChain chain) {
+        public void intercept(Integer e, MessageHandlerInterceptorChain chain) {
             throw new MockException("Faking exception in interceptor");
         }
     }

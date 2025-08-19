@@ -16,9 +16,11 @@
 
 package org.axonframework.deadline;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -32,7 +34,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import jakarta.annotation.Nonnull;
 
 /**
  * Abstract implementation of the {@link DeadlineManager} to be implemented by concrete solutions for the
@@ -75,7 +76,7 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
 
     @Override
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super DeadlineMessage<?>> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<DeadlineMessage<?>> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
     }
@@ -109,11 +110,18 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
      */
     @SuppressWarnings("unchecked")
     protected <T> DeadlineMessage<T> processDispatchInterceptors(DeadlineMessage<T> message) {
-        DeadlineMessage<T> intercepted = message;
-        for (MessageDispatchInterceptor<? super DeadlineMessage<?>> interceptor : dispatchInterceptors()) {
-            intercepted = (DeadlineMessage<T>) interceptor.handle(intercepted);
+        // FIXME: reintegrate #3065
+        try {
+            return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors())
+                    .proceed(message, null)
+                    .first()
+                    .<DeadlineMessage<T>>cast()
+                    .asCompletableFuture()
+                    .get()
+                    .message();
+        } catch (Exception e) {
+            return null;
         }
-        return intercepted;
     }
 
     /**

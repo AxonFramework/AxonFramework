@@ -19,6 +19,8 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorChain;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
@@ -62,7 +64,12 @@ class DefaultQueryGatewayTest {
                                          .queryBus(mockBus)
                                          .dispatchInterceptors(mockDispatchInterceptor)
                                          .build();
-        when(mockDispatchInterceptor.handle(isA(QueryMessage.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        when(mockDispatchInterceptor.interceptOnDispatch(isA(QueryMessage.class),
+                                                         any(),
+                                                         any())).thenAnswer(i -> ((MessageDispatchInterceptorChain<?>) i.getArguments()[2])
+                .proceed(i.getArgument(0), i.getArgument(1))
+        );
     }
 
     @Test
@@ -282,9 +289,12 @@ class DefaultQueryGatewayTest {
     @Test
     void dispatchInterceptor() {
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
-        testSubject.registerDispatchInterceptor(messages -> (integer, queryMessage) -> new GenericQueryMessage<>(
-                new MessageType(queryMessage.type().name()),
-                "dispatch-" + queryMessage.payload(), queryMessage.responseType())
+        testSubject.registerDispatchInterceptor((queryMessage, context, chain)
+                                                        -> MessageStream.just(
+                                                        new GenericQueryMessage<>(
+                                                                new MessageType(queryMessage.type().name()),
+                                                                "dispatch-" + queryMessage.payload(), queryMessage.responseType())
+                                                )
         );
 
         testSubject.query("query", String.class).join();

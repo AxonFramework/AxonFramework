@@ -55,8 +55,9 @@ import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
-import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -1430,7 +1431,7 @@ class EventProcessingModuleTest {
 
         private final String name;
         private final EventHandlerInvoker eventHandlerInvoker;
-        private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
+        private final List<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new ArrayList<>();
 
         public StubEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker) {
             this.name = name;
@@ -1465,13 +1466,13 @@ class EventProcessingModuleTest {
 
         @Override
         public Registration registerHandlerInterceptor(
-                @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> interceptor) {
+                @Nonnull MessageHandlerInterceptor<EventMessage<?>> interceptor) {
             interceptors.add(interceptor);
             return () -> interceptors.remove(interceptor);
         }
 
         @Override
-        public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        public List<MessageHandlerInterceptor<EventMessage<?>>> getHandlerInterceptors() {
             return interceptors;
         }
 
@@ -1509,12 +1510,12 @@ class EventProcessingModuleTest {
 
     private static class StubInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
 
+
+        @Nonnull
         @Override
-        public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                             @Nonnull ProcessingContext context,
-                             @Nonnull InterceptorChain interceptorChain)
-                throws Exception {
-            return interceptorChain.proceedSync(context);
+        public MessageStream<?> interceptOnHandle(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext context,
+                                                  @Nonnull MessageHandlerInterceptorChain<EventMessage<?>> interceptorChain) {
+            return interceptorChain.proceed(message, context);
         }
     }
 

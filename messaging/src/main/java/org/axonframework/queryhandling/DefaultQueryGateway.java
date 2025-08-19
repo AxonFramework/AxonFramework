@@ -15,12 +15,15 @@
  */
 package org.axonframework.queryhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
@@ -33,7 +36,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -152,7 +154,7 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     private <R, Q> QueryMessage<Q, R> asQueryMessage(Q query,
-                                                            ResponseType<R> responseType) {
+                                                     ResponseType<R> responseType) {
         //noinspection unchecked
         return query instanceof Message<?>
                 ? new GenericQueryMessage<>((Message<Q>) query,
@@ -216,11 +218,14 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @SuppressWarnings("unchecked")
     private <Q, R, T extends QueryMessage<Q, R>> T processInterceptors(T query) {
-        T intercepted = query;
-        for (MessageDispatchInterceptor<? super QueryMessage<?, ?>> interceptor : dispatchInterceptors) {
-            intercepted = (T) interceptor.handle(intercepted);
-        }
-        return intercepted;
+        // TODO: reintegrate as part of #3079
+        return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
+                .proceed(query, null)
+                .first()
+                .<T>cast()
+                .asMono()
+                .map(MessageStream.Entry::message)
+                .block();
     }
 
     /**
@@ -278,10 +283,11 @@ public class DefaultQueryGateway implements QueryGateway {
         }
 
         /**
-         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when publishing {@link QueryMessage QueryMessages}.
-         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when publishing
+         * {@link QueryMessage QueryMessages}. If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
-         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for {@link QueryMessage QueryMessages}.
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for
+         *                            {@link QueryMessage QueryMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {

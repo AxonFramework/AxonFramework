@@ -18,11 +18,9 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -78,21 +76,14 @@ class EventProcessorOperationsTest {
         // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
         testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<EventMessage<?>>() {
-            @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
-                                 @Nonnull ProcessingContext context,
-                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
-                unitOfWork.transformMessage(m -> createDomainEvent());
-                return interceptorChain.proceedSync(context);
-            }
+
 
             @Override
-            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message, @Nonnull ProcessingContext context,
-                    @Nonnull InterceptorChain<M, R> interceptorChain) {
+            public MessageStream<?> interceptOnHandle(
+                    @Nonnull EventMessage<?> message, @Nonnull ProcessingContext context,
+                    @Nonnull MessageHandlerInterceptorChain<EventMessage<?>> interceptorChain) {
                 var event = createDomainEvent();
-                //noinspection unchecked
-                return interceptorChain.proceed((M) event, context);
+                return interceptorChain.proceed(event, context);
             }
         });
 
@@ -127,7 +118,7 @@ class EventProcessorOperationsTest {
         }
 
         @Override
-        public List<MessageHandlerInterceptor<? super EventMessage<?>>> getHandlerInterceptors() {
+        public List<MessageHandlerInterceptor<EventMessage<?>>> getHandlerInterceptors() {
             return eventProcessorOperations.handlerInterceptors();
         }
 
@@ -155,7 +146,7 @@ class EventProcessorOperationsTest {
 
         @Override
         public Registration registerHandlerInterceptor(
-                @Nonnull MessageHandlerInterceptor<? super EventMessage<?>> handlerInterceptor) {
+                @Nonnull MessageHandlerInterceptor<EventMessage<?>> handlerInterceptor) {
             return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
         }
 

@@ -23,16 +23,11 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
@@ -366,6 +361,8 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                                    .start();
             try (SpanScope unused = span.makeCurrent()) {
                 Instant triggerInstant = GenericEventMessage.clock.instant();
+                /*
+                // TODO: reintegrate as part of #3065
                 LegacyUnitOfWork<DeadlineMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(new GenericDeadlineMessage<>(
                         deadlineId.getDeadlineName(),
                         deadlineMessage,
@@ -373,7 +370,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                 unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
                 unitOfWork.attachTransaction(transactionManager);
                 InterceptorChain chain =
-                        new DefaultInterceptorChain<>(unitOfWork,
+                        new MessageHandlerInterceptorChain<>(unitOfWork,
                                                       handlerInterceptors(),
                                                       (deadlineMessage, ctx) -> {
                                                           executeScheduledDeadline(deadlineMessage,
@@ -387,6 +384,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                     logger.error("An error occurred while triggering the deadline [{}] with identifier [{}]",
                                  deadlineId.getDeadlineName(), deadlineId.getDeadlineId(), e);
                 }
+                */
             } catch (Exception e) {
                 span.recordException(e);
                 logger.error("An error occurred while triggering the deadline [{}] with identifier [{}]",

@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector;
+package org.axonframework.messaging;
 
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -28,27 +25,26 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link DispatchInterceptors}.
- *
- * @author Sara Pellegrini
  */
-class DispatchInterceptorsTest {
+class DefaultMessageDispatchInterceptorChainTest {
 
     @Test
     void registerInterceptors() {
         List<String> results = new ArrayList<>();
-        DispatchInterceptors<Message<?>> dispatchInterceptors = new DispatchInterceptors<>();
-        dispatchInterceptors.registerDispatchInterceptor(messages -> (a, b) -> {
-                                                             results.add("Interceptor One");
-                                                             return b;
-                                                         }
+        DefaultMessageDispatchInterceptorChain<Message<?>> chain = new DefaultMessageDispatchInterceptorChain<>(
+                List.of(
+                        (m, c, ch) -> {
+                            results.add("Interceptor One");
+                            return ch.proceed(m, c);
+                        },
+                        (m, c, ch) -> {
+                            results.add("Interceptor Two");
+                            return ch.proceed(m, c);
+                        }
+                )
         );
 
-        dispatchInterceptors.registerDispatchInterceptor(messages -> (a, b) -> {
-                                                             results.add("Interceptor Two");
-                                                             return b;
-                                                         }
-        );
-        dispatchInterceptors.intercept(new GenericMessage<>(new MessageType("message"), "payload"));
+        chain.proceed(new GenericMessage<>(new MessageType("message"), "payload"), null);
         assertEquals("Interceptor One", results.get(0));
         assertEquals("Interceptor Two", results.get(1));
         assertEquals(2, results.size());

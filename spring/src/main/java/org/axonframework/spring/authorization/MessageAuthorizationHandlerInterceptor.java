@@ -18,10 +18,10 @@ package org.axonframework.spring.authorization;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,45 +42,53 @@ import java.util.stream.Collectors;
  * @author Roald Bankras
  * @since 4.11.0
  */
-public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T> {
+public class MessageAuthorizationHandlerInterceptor<M extends Message<?>> implements MessageHandlerInterceptor<M> {
 
+    /**
+     * Metadata key for authorities.
+     */
+    public static final String METADATA_AUTHORITIES_KEY = "authorities";
     private static final Logger logger = LoggerFactory.getLogger(MessageAuthorizationHandlerInterceptor.class);
 
     @Override
-    public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
-                         @Nonnull ProcessingContext context,
-                         @Nonnull InterceptorChain interceptorChain
-    ) throws Exception {
-        T message = unitOfWork.getMessage();
+    @Nonnull
+    public MessageStream<?> interceptOnHandle(@Nonnull M message,
+                                              @Nonnull ProcessingContext context,
+                                              @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
         if (!AnnotationUtils.isAnnotationPresent(message.payloadType(), Secured.class)) {
-            return interceptorChain.proceedSync(context);
+            return interceptorChain.proceed(message, context);
         }
-        Secured annotation = message.payloadType()
-                                    .getAnnotation(Secured.class);
+        Secured annotation = message.payloadType().getAnnotation(Secured.class);
+        Set<String> requiredAuthorities = Arrays.stream(annotation.value()).collect(Collectors.toSet());
+        try {
+            Set<String> messageAuthorities =
+                    Optional.ofNullable(message.metaData().get(METADATA_AUTHORITIES_KEY))
+                            .map(authorityMetaData -> {
+                                if (logger.isDebugEnabled()) {
+                                    logger.debug("Found authorities [{}]", authorityMetaData);
+                                }
+                                return new HashSet<>(Arrays.asList(authorityMetaData.split(",")));
+                            })
+                            .orElseThrow(() -> new UnauthorizedMessageException(
+                                    "No authorities found for message with identifier [" + message.identifier() + "]"
+                            ));
 
-        Set<String> authorities =
-                Optional.ofNullable(message.metaData().get("authorities"))
-                        .map(authorityMetaData -> {
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("Found authorities [{}]", authorityMetaData);
-                            }
-                            return new HashSet<>(Arrays.asList(message.metaData().get("authorities").split(",")));
-                        })
-                        .orElseThrow(() -> new UnauthorizedMessageException(
-                                "No authorities found for message with identifier [" + message.identifier() + "]"
-                        ));
+            if (logger.isDebugEnabled()) {
+                logger.debug("Authorizing for [{}] and [{}]", message.type().name(), annotation.value());
+            }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Authorizing for [{}] and [{}]", message.type().name(), annotation.value());
+            messageAuthorities.retainAll(requiredAuthorities);
+            if (!messageAuthorities.isEmpty()) {
+                return interceptorChain.proceed(message, context);
+            }
+            throw new UnauthorizedMessageException(
+                    "Unauthorized message with identifier [" + message.identifier() + "]"
+            );
+        } catch (UnauthorizedMessageException e) {
+            return MessageStream.failed(new UnauthorizedMessageException(
+                    "Unauthorized message with identifier [" + message.identifier() + "]"
+            ));
         }
-
-        authorities.retainAll(Arrays.stream(annotation.value()).collect(Collectors.toSet()));
-        if (!authorities.isEmpty()) {
-            return interceptorChain.proceedSync(context);
-        }
-        throw new UnauthorizedMessageException(
-                "Unauthorized message with identifier [" + message.identifier() + "]"
-        );
     }
 }
 

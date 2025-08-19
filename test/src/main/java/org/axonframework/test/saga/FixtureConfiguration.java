@@ -154,7 +154,7 @@ public interface FixtureConfiguration {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor
+            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor
     );
 
     /**

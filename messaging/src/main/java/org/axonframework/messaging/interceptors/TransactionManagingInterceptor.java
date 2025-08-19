@@ -16,29 +16,29 @@
 
 package org.axonframework.messaging.interceptors;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-
-import jakarta.annotation.Nonnull;
 
 /**
  * Interceptor that uses a {@link TransactionManager} to start a new transaction before a Message is handled. When the
  * Unit of Work is committed or rolled back this Interceptor also completes the Transaction.
  *
+ * @param <M> Type of message to intercept.
  * @author Rene de Waele
+ * @author Simon Zambrovski
  */
-public class TransactionManagingInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T> {
+public class TransactionManagingInterceptor<M extends Message<?>> implements MessageHandlerInterceptor<M> {
 
     private final TransactionManager transactionManager;
 
     /**
-     * Initializes a {@link TransactionManagingInterceptor} that uses the given {@code transactionManager}.
+     * Initializes a TransactionManagingInterceptor that uses the given {@code transactionManager}.
      *
      * @param transactionManager the transaction manager that is used set up a new transaction
      */
@@ -47,19 +47,9 @@ public class TransactionManagingInterceptor<T extends Message<?>> implements Mes
     }
 
     @Override
-    public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
-                         @Nonnull ProcessingContext context,
-                         @Nonnull InterceptorChain interceptorChain) throws Exception {
-        Transaction transaction = transactionManager.startTransaction();
-        unitOfWork.onCommit(u -> transaction.commit());
-        unitOfWork.onRollback(u -> transaction.rollback());
-        return interceptorChain.proceedSync(context);
-    }
-
-    @Override
-    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
-                                                                                  @Nonnull ProcessingContext context,
-                                                                                  @Nonnull InterceptorChain<M, R> interceptorChain) {
+    public MessageStream<?> interceptOnHandle(@Nonnull M message,
+                                              @Nonnull ProcessingContext context,
+                                              @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
         Transaction transaction = transactionManager.startTransaction();
         context.runOnCommit(u -> transaction.commit());
         context.onError((u, p, e) -> transaction.rollback());
