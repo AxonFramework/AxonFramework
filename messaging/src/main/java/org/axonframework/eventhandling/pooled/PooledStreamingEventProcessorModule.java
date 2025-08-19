@@ -170,7 +170,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     @Nonnull
     private String processorEventHandlingComponentName(int index) {
-        return "EventHandlingComponents[" + processorName + "][" + index + "]";
+        return "EventHandlingComponent[" + processorName + "][" + index + "]";
     }
 
     private static ScheduledExecutorService defaultExecutor(int poolSize, String factoryName) {
@@ -277,7 +277,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
          * @param other The customization to apply after this one.
          * @return A composed customization that applies both customizations in sequence.
          */
-        default Customization andThen(Customization other) {
+        default Customization andThen(@Nonnull Customization other) {
+            Objects.requireNonNull(other, "other may not be null");
             return (axonConfig, processorConfig) -> other.apply(axonConfig, this.apply(axonConfig, processorConfig));
         }
     }

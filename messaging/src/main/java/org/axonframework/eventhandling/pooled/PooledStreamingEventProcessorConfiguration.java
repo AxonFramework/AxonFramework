@@ -284,7 +284,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *                           {@link StreamingEventProcessor} may claim per instance.
      * @return The current instance, for fluent interfacing.
      */
-    public PooledStreamingEventProcessorConfiguration maxSegmentProvider(MaxSegmentProvider maxSegmentProvider) {
+    public PooledStreamingEventProcessorConfiguration maxSegmentProvider(@Nonnull MaxSegmentProvider maxSegmentProvider) {
         assertNonNull(maxSegmentProvider,
                       "The max segment provider may not be null. "
                               + "Provide a lambda of type (processorName: String) -> maxSegmentsToClaim");

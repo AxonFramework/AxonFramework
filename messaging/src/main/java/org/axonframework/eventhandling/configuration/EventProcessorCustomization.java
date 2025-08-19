@@ -17,8 +17,10 @@
 package org.axonframework.eventhandling.configuration;
 
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
 
+import java.util.Objects;
 import java.util.function.BiFunction;
 
 /**
@@ -52,7 +54,8 @@ public interface EventProcessorCustomization extends
      * @param other The customization to apply after this one.
      * @return A composed customization that applies both customizations in sequence.
      */
-    default EventProcessorCustomization andThen(EventProcessorCustomization other) {
+    default EventProcessorCustomization andThen(@Nonnull EventProcessorCustomization other) {
+        Objects.requireNonNull(other, "other may not be null");
         return (axonConfig, processorConfig) -> other.apply(axonConfig, this.apply(axonConfig, processorConfig));
     }
 }

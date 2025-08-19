@@ -36,7 +36,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
- * A configuration configurer for managing multiple {@link SubscribingEventProcessor} instances within an application.
+ * A configurer for managing multiple {@link SubscribingEventProcessor} instances within an application.
  * <p>
  * The {@code SubscribingEventProcessorsConfigurer} provides a centralized way to configure and register multiple
  * subscribing event processors. It acts as a container that manages individual {@link SubscribingEventProcessorModule}

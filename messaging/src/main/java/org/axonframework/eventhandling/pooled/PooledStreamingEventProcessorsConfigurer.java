@@ -37,7 +37,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
- * A configuration configurer for managing multiple {@link PooledStreamingEventProcessor} instances within an
+ * A configurer for managing multiple {@link PooledStreamingEventProcessor} instances within an
  * application.
  * <p>
  * The {@code PooledStreamingEventProcessorsModule} provides a centralized way to configure and register multiple pooled
