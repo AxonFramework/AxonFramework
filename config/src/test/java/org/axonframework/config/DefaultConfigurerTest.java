@@ -163,7 +163,7 @@ class DefaultConfigurerTest {
             assertRetryingWithin(Duration.ofSeconds(5),
                                  () -> assertEquals(2,
                                                     config.getComponent(TokenStore.class)
-                                                          .fetchSegments(processor.getName()).length));
+                                                          .fetchSegments(processor.name()).length));
         } finally {
             config.shutdown();
         }
@@ -191,7 +191,7 @@ class DefaultConfigurerTest {
             assertRetryingWithin(Duration.ofSeconds(5),
                                  () -> assertEquals(2,
                                                     config.getComponent(TokenStore.class)
-                                                          .fetchSegments(processor.getName()).length));
+                                                          .fetchSegments(processor.name()).length));
         } finally {
             config.shutdown();
         }

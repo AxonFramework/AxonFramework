@@ -125,7 +125,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         }
 
         @Override
-        public String getName() {
+        public String name() {
             return "test";
         }
 

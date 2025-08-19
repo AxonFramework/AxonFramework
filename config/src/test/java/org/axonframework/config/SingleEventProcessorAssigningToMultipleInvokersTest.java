@@ -146,9 +146,9 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
         EventProcessor saga2Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga2.class).orElse(null);
         EventProcessor saga3Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga3.class).orElse(null);
 
-        assertEquals("myProcessor", saga1Processor.getName());
-        assertEquals("myProcessor", saga2Processor.getName());
-        assertEquals("Saga3Processor", saga3Processor.getName());
+        assertEquals("myProcessor", saga1Processor.name());
+        assertEquals("myProcessor", saga2Processor.name());
+        assertEquals("Saga3Processor", saga3Processor.name());
     }
 
     @Test
@@ -174,9 +174,9 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
         EventProcessor saga2Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga2.class).orElse(null);
         EventProcessor saga3Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga3.class).orElse(null);
 
-        assertEquals("myProcessor", saga1Processor.getName());
-        assertEquals("myProcessor", saga2Processor.getName());
-        assertEquals("myProcessor", saga3Processor.getName());
+        assertEquals("myProcessor", saga1Processor.name());
+        assertEquals("myProcessor", saga2Processor.name());
+        assertEquals("myProcessor", saga3Processor.name());
     }
 
     @ProcessingGroup("processor1")

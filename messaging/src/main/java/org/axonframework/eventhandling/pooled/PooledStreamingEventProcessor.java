@@ -197,7 +197,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     }
 
     @Override
-    public String getName() {
+    public String name() {
         return name;
     }
 

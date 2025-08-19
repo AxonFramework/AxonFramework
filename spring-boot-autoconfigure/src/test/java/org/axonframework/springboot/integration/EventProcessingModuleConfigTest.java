@@ -63,7 +63,7 @@ class EventProcessingModuleConfigTest {
                     eventProcessingConfiguration.eventProcessorByProcessingGroup("processor1");
             assertTrue(optionalProcessorOne.isPresent());
             EventProcessor processorOne = optionalProcessorOne.get();
-            assertEquals("processor2", processorOne.getName());
+            assertEquals("processor2", processorOne.name());
 //            List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor =
 //                    eventProcessingConfiguration.interceptorsFor("processor2");
 //            assertEquals(2, interceptorsFor.size());
@@ -73,20 +73,20 @@ class EventProcessingModuleConfigTest {
             Optional<EventProcessor> optionalProcessorTwo =
                     eventProcessingConfiguration.eventProcessorByProcessingGroup("processor2");
             assertTrue(optionalProcessorTwo.isPresent());
-            assertEquals("processor2", optionalProcessorTwo.get().getName());
+            assertEquals("processor2", optionalProcessorTwo.get().name());
 
             Optional<EventProcessor> optionalProcessorThree =
                     eventProcessingConfiguration.eventProcessorByProcessingGroup("processor3");
             assertTrue(optionalProcessorThree.isPresent());
-            assertEquals("subscribingProcessor", optionalProcessorThree.get().getName());
+            assertEquals("subscribingProcessor", optionalProcessorThree.get().name());
             optionalProcessorThree = eventProcessingConfiguration.eventProcessorByProcessingGroup("Saga3Processor");
             assertTrue(optionalProcessorThree.isPresent());
-            assertEquals("subscribingProcessor", optionalProcessorThree.get().getName());
+            assertEquals("subscribingProcessor", optionalProcessorThree.get().name());
 
             Optional<EventProcessor> optionalProcessorFour =
                     eventProcessingConfiguration.eventProcessorByProcessingGroup("processor4");
             assertTrue(optionalProcessorFour.isPresent());
-            assertEquals("processor4", optionalProcessorFour.get().getName());
+            assertEquals("processor4", optionalProcessorFour.get().name());
         });
     }
 

@@ -37,7 +37,6 @@ import org.axonframework.eventhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
@@ -55,7 +54,6 @@ import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
@@ -87,7 +85,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
-import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -796,7 +793,7 @@ class EventProcessingModuleTest {
 
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
-        assertEquals(testName, result.getName());
+        assertEquals(testName, result.name());
 //        DefaultEventProcessingPipeline operations = getField("eventProcessorOperations", result);
 //        assertEquals(PropagatingErrorHandler.INSTANCE, getField("errorHandler", operations));
 //        assertEquals(testTokenStore, getField("tokenStore", result));
@@ -825,7 +822,7 @@ class EventProcessingModuleTest {
 
         assertTrue(optionalResult.isPresent());
         PooledStreamingEventProcessor result = optionalResult.get();
-        assertEquals(testName, result.getName());
+        assertEquals(testName, result.name());
 //        DefaultEventProcessingPipeline operations = getField("eventProcessorOperations", result);
 //        assertEquals(PropagatingErrorHandler.INSTANCE, getField("errorHandler", operations));
 //        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
@@ -1442,7 +1439,7 @@ class EventProcessingModuleTest {
         }
 
         @Override
-        public String getName() {
+        public String name() {
             return name;
         }
 

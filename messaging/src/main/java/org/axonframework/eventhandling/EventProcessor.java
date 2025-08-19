@@ -37,7 +37,7 @@ public interface EventProcessor {
      *
      * @return the name of this event processor
      */
-    String getName();
+    String name();
 
     /**
      * Start processing events.

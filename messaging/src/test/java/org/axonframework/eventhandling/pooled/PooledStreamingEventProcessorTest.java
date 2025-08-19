@@ -147,7 +147,7 @@ class PooledStreamingEventProcessorTest {
         tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2);
         tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3);
-        when(tokenStore.fetchAvailableSegments(testSubject.getName()))
+        when(tokenStore.fetchAvailableSegments(testSubject.name()))
                 .thenReturn(Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3)));
 
         testSubject.start();
@@ -155,7 +155,7 @@ class PooledStreamingEventProcessorTest {
         assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(1, testSubject.processingStatus().size()));
         assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(testSubject.processingStatus().containsKey(2)));
         verify(tokenStore, never())
-                .fetchToken(eq(testSubject.getName()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
+                .fetchToken(eq(testSubject.name()), intThat(i -> Arrays.asList(0, 1, 3).contains(i)));
     }
 
 
@@ -450,7 +450,7 @@ class PooledStreamingEventProcessorTest {
             assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
             assertWithin(6, TimeUnit.SECONDS, () -> {
                 long lowestToken = IntStream.range(0, 8)
-                                            .mapToObj(i -> tokenStore.fetchToken(testSubject.getName(), i))
+                                            .mapToObj(i -> tokenStore.fetchToken(testSubject.name(), i))
                                             .mapToLong(token -> token == null ? 0 : token.position().orElse(0))
                                             .min()
                                             .orElse(-1);
@@ -460,8 +460,8 @@ class PooledStreamingEventProcessorTest {
 
         @Test
         void tokenStoreReturningSingleNullToken() {
-            tokenStore.initializeTokenSegments(testSubject.getName(), 2);
-            tokenStore.storeToken(new GlobalSequenceTrackingToken(0), testSubject.getName(), 1);
+            tokenStore.initializeTokenSegments(testSubject.name(), 2);
+            tokenStore.storeToken(new GlobalSequenceTrackingToken(0), testSubject.name(), 1);
 
             testSubject.start();
 
@@ -682,7 +682,7 @@ class PooledStreamingEventProcessorTest {
             testSubject.start();
             assertWithin(
                     250, TimeUnit.MILLISECONDS,
-                    () -> verify(tokenStore, atLeastOnce()).extendClaim(testSubject.getName(), 0)
+                    () -> verify(tokenStore, atLeastOnce()).extendClaim(testSubject.name(), 0)
             );
             assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().isEmpty()));
         }
