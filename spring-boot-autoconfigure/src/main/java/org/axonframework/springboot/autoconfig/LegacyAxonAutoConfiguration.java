@@ -16,10 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import jakarta.annotation.Nonnull;
-import org.apache.avro.message.SchemaStore;
 import org.axonframework.axonserver.connector.TagsConfiguration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
@@ -30,7 +27,6 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventBus;
@@ -68,20 +64,13 @@ import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.RevisionResolver;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.avro.AvroSerializer;
-import org.axonframework.serialization.avro.AvroSerializerStrategy;
-import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
 import org.axonframework.springboot.ConverterProperties;
 import org.axonframework.springboot.DistributedCommandBusProperties;
 import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.TagsConfigurationProperties;
-import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.factory.BeanClassLoaderAware;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -91,17 +80,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 
 import static java.lang.String.format;
-import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
 
 /**
  * @author Allard Buijze
@@ -112,26 +98,17 @@ import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncl
 @EnableConfigurationProperties(value = {
         EventProcessorProperties.class,
         DistributedCommandBusProperties.class,
-        ConverterProperties.class,
         TagsConfigurationProperties.class
 })
-public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
+public class LegacyAxonAutoConfiguration {
 
     private final EventProcessorProperties eventProcessorProperties;
-    private final ConverterProperties converterProperties;
     private final TagsConfigurationProperties tagsConfigurationProperties;
-    private final ApplicationContext applicationContext;
-
-    private ClassLoader beanClassLoader;
 
     public LegacyAxonAutoConfiguration(EventProcessorProperties eventProcessorProperties,
-                                       ConverterProperties converterProperties,
-                                       TagsConfigurationProperties tagsConfigurationProperties,
-                                       ApplicationContext applicationContext) {
+                                       TagsConfigurationProperties tagsConfigurationProperties) {
         this.eventProcessorProperties = eventProcessorProperties;
-        this.converterProperties = converterProperties;
         this.tagsConfigurationProperties = tagsConfigurationProperties;
-        this.applicationContext = applicationContext;
     }
 
     @Bean
@@ -143,117 +120,6 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean
     public RevisionResolver revisionResolver() {
         return new AnnotationRevisionResolver();
-    }
-
-    @Bean
-    @Primary
-    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "!eventSerializer,messageSerializer")
-    public Serializer serializer(RevisionResolver revisionResolver) {
-        if (ConverterProperties.ConverterType.AVRO.equals(converterProperties.getGeneral())) {
-            throw new AxonConfigurationException(format(
-                    "Invalid serializer type [%s] configured as general serializer. "
-                            + "The Avro Serializer can be used as message or event serializer only.",
-                    converterProperties.getGeneral().name()
-            ));
-        }
-        return buildSerializer(revisionResolver, converterProperties.getGeneral(), null);
-    }
-
-    @Bean
-    @Qualifier("messageSerializer")
-    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "messageSerializer")
-    public Serializer messageSerializer(Serializer generalSerializer, RevisionResolver revisionResolver) {
-        if (ConverterProperties.ConverterType.DEFAULT.equals(converterProperties.getMessages())
-                || converterProperties.getGeneral().equals(converterProperties.getMessages())) {
-            return generalSerializer;
-        }
-        return buildSerializer(revisionResolver, converterProperties.getMessages(), generalSerializer);
-    }
-
-    @Bean
-    @Qualifier("eventSerializer")
-    @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "eventSerializer")
-    public Serializer eventSerializer(@Qualifier("messageSerializer") Serializer messageSerializer,
-                                      Serializer generalSerializer,
-                                      RevisionResolver revisionResolver) {
-        if (ConverterProperties.ConverterType.DEFAULT.equals(converterProperties.getEvents())
-                || converterProperties.getEvents().equals(converterProperties.getMessages())) {
-            return messageSerializer;
-        } else if (converterProperties.getGeneral().equals(converterProperties.getEvents())) {
-            return generalSerializer;
-        }
-        return buildSerializer(revisionResolver, converterProperties.getEvents(), generalSerializer);
-    }
-
-    @Bean
-    public ConfigurerModule serializerConfigurer(@Qualifier("eventSerializer") Serializer eventSerializer,
-                                                 @Qualifier("messageSerializer") Serializer messageSerializer,
-                                                 Serializer generalSerializer) {
-        return configurer -> {
-            configurer.configureEventSerializer(c -> eventSerializer);
-            configurer.configureMessageSerializer(c -> messageSerializer);
-            configurer.configureSerializer(c -> generalSerializer);
-        };
-    }
-
-    private Serializer buildSerializer(RevisionResolver revisionResolver,
-                                       ConverterProperties.ConverterType converterType,
-                                       Serializer generalSerializer) {
-        switch (converterType) {
-            case AVRO:
-                Map<String, SchemaStore> schemaStoreBeans = beansOfTypeIncludingAncestors(applicationContext,
-                                                                                          SchemaStore.class);
-                SchemaStore schemaStore = schemaStoreBeans.containsKey("defaultAxonSchemaStore")
-                        ? schemaStoreBeans.get("defaultAxonSchemaStore")
-                        : schemaStoreBeans.values().stream().findFirst()
-                                          .orElseThrow(() -> new NoSuchBeanDefinitionException(SchemaStore.class));
-
-                if (generalSerializer == null) {
-                    throw new AxonConfigurationException(
-                            "General serializer is mandatory as a fallback Avro Serializer, but none was provided."
-                    );
-                }
-                Map<String, AvroSerializerStrategy> serializationStrategies = beansOfTypeIncludingAncestors(
-                        applicationContext,
-                        AvroSerializerStrategy.class);
-                AvroSerializer.Builder builder = AvroSerializer.builder()
-                                                               .schemaStore(schemaStore)
-                                                               .serializerDelegate(generalSerializer)
-                                                               .revisionResolver(revisionResolver);
-                serializationStrategies.values().forEach(builder::addSerializerStrategy);
-                return builder.build();
-
-            case JACKSON:
-                Map<String, ObjectMapper> objectMapperBeans = beansOfTypeIncludingAncestors(applicationContext,
-                                                                                            ObjectMapper.class);
-                ObjectMapper objectMapper = objectMapperBeans.containsKey("defaultAxonObjectMapper")
-                        ? objectMapperBeans.get("defaultAxonObjectMapper")
-                        : objectMapperBeans.values().stream().findFirst()
-                                           .orElseThrow(() -> new NoSuchBeanDefinitionException(ObjectMapper.class));
-                ChainingContentTypeConverter converter = new ChainingContentTypeConverter(beanClassLoader);
-                return JacksonSerializer.builder()
-                                        .revisionResolver(revisionResolver)
-                                        .converter(converter)
-                                        .objectMapper(objectMapper)
-                                        .build();
-            case CBOR:
-                Map<String, CBORMapper> cborMapperBeans = beansOfTypeIncludingAncestors(applicationContext,
-                                                                                        CBORMapper.class);
-                ObjectMapper cborMapper = cborMapperBeans.containsKey("defaultAxonCborObjectMapper")
-                        ? cborMapperBeans.get("defaultAxonCborObjectMapper")
-                        : cborMapperBeans.values().stream().findFirst()
-                                         .orElseThrow(() -> new NoSuchBeanDefinitionException(CBORMapper.class));
-                ChainingContentTypeConverter cborConverter = new ChainingContentTypeConverter(beanClassLoader);
-                return JacksonSerializer.builder()
-                                        .revisionResolver(revisionResolver)
-                                        .converter(cborConverter)
-                                        .objectMapper(cborMapper)
-                                        .build();
-            case XSTREAM:
-            case DEFAULT:
-            default:
-                return null;
-        }
     }
 
     @Bean
@@ -472,10 +338,5 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
                                        ))
                                        .spanFactory(configuration.getComponent(QueryUpdateEmitterSpanFactory.class))
                                        .build();
-    }
-
-    @Override
-    public void setBeanClassLoader(@Nonnull ClassLoader classLoader) {
-        this.beanClassLoader = classLoader;
     }
 }

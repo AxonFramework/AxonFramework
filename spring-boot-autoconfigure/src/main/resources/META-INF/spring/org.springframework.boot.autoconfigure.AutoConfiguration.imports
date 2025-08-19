@@ -15,3 +15,4 @@
 #
 
 org.axonframework.springboot.autoconfig.AxonAutoConfiguration
+org.axonframework.springboot.autoconfig.ConverterAutoConfiguration
