@@ -48,7 +48,11 @@ public interface MessageHandler<T extends Message<?>, R extends Message<?>> {
      */
     default MessageStream<R> handle(@Nonnull T message, @Nonnull ProcessingContext context) {
         try {
-            return MessageStream.just((R) GenericResultMessage.asResultMessage(handleSync(message, context)));
+            var result = handleSync(message, context);
+            if (result instanceof MessageStream<?> messageStream) {
+                return (MessageStream<R>) messageStream;
+            }
+            return MessageStream.just((R) GenericResultMessage.asResultMessage(result));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.pooled;
 
-import org.axonframework.common.FutureUtils;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
@@ -27,18 +27,17 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalLong;
@@ -545,14 +544,11 @@ class WorkPackageTest {
         private final List<ContextMessage> processedEvents = new ArrayList<>();
 
         @Override
-        public void processBatch(List<? extends EventMessage<?>> eventMessages, UnitOfWork unitOfWork,
-                                 Collection<Segment> processingSegments) {
-            FutureUtils.joinAndUnwrap(unitOfWork.executeWithResult(ctx -> {
-                if (batchProcessorPredicate.test(eventMessages, TrackingToken.fromContext(ctx).orElse(null))) {
-                    processedEvents.addAll(eventMessages.stream().map(m -> new ContextMessage(m, ctx)).toList());
-                }
-                return null;
-            }));
+        public MessageStream.Empty<Message<Void>> process(@Nonnull List<? extends EventMessage<?>> events, ProcessingContext context) {
+            if (batchProcessorPredicate.test(events, TrackingToken.fromContext(context).orElse(null))) {
+                processedEvents.addAll(events.stream().map(m -> new ContextMessage(m, context)).toList());
+            }
+            return MessageStream.empty();
         }
 
         public List<ContextMessage> getProcessedEvents() {
