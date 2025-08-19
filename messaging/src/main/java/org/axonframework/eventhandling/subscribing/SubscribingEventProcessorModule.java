@@ -112,10 +112,10 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                         getEventHandlingComponents(cfg),
                         cfg.getComponent(SubscribingEventProcessorConfiguration.class)
                 ))
-                .onStart(Phase.INBOUND_EVENT_CONNECTORS, (cfg, processor) -> {
+                .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
                     processor.start();
                     return FutureUtils.emptyCompletedFuture();
-                }).onShutdown(Phase.INBOUND_EVENT_CONNECTORS, (cfg, processor) -> {
+                }).onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
                     return processor.shutdownAsync();
                 });
 
