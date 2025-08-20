@@ -29,11 +29,13 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
@@ -51,16 +53,18 @@ import org.axonframework.serialization.json.JacksonConverter;
  * <p>
  * Will only register the following components <b>if</b> there is no component registered for the given class yet:
  * <ul>
- *     <li>Registers a {@link org.axonframework.messaging.ClassBasedMessageTypeResolver} for class {@link org.axonframework.messaging.MessageTypeResolver}</li>
- *     <li>Registers a {@link org.axonframework.serialization.json.JacksonConverter} for class {@link org.axonframework.serialization.Converter}</li>
- *     <li>Registers a {@link org.axonframework.commandhandling.gateway.DefaultCommandGateway} for class {@link org.axonframework.commandhandling.gateway.CommandGateway}</li>
- *     <li>Registers a {@link org.axonframework.commandhandling.SimpleCommandBus} for class {@link CommandBus}</li>
- *     <li>Registers a {@link org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy} for class {@link RoutingStrategy}</li>
- *     <li>Registers a {@link org.axonframework.eventhandling.gateway.DefaultEventGateway} for class {@link org.axonframework.eventhandling.gateway.EventGateway}</li>
- *     <li>Registers a {@link org.axonframework.eventhandling.SimpleEventBus} for class {@link org.axonframework.eventhandling.EventBus}</li>
- *     <li>Registers a {@link org.axonframework.queryhandling.DefaultQueryGateway} for class {@link org.axonframework.queryhandling.QueryGateway}</li>
- *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryBus} for class {@link QueryBus}</li>
- *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryUpdateEmitter} for class {@link QueryUpdateEmitter}</li>
+ *     <li>Registers a {@link org.axonframework.messaging.ClassBasedMessageTypeResolver} for class {@link org.axonframework.messaging.MessageTypeResolver}.</li>
+ *     <li>Registers a {@link org.axonframework.serialization.json.JacksonConverter} for class {@link org.axonframework.serialization.Converter}.</li>
+ *     <li>Registers a {@link org.axonframework.serialization.json.JacksonConverter} for class {@link org.axonframework.serialization.Converter} under the {@link #MESSAGE_CONVERTER_NAME}.</li>
+ *     <li>Registers a {@link org.axonframework.serialization.json.JacksonConverter} for class {@link org.axonframework.serialization.Converter} under the {@link #EVENT_CONVERTER_NAME}.</li>
+ *     <li>Registers a {@link org.axonframework.commandhandling.gateway.DefaultCommandGateway} for class {@link org.axonframework.commandhandling.gateway.CommandGateway}.</li>
+ *     <li>Registers a {@link org.axonframework.commandhandling.SimpleCommandBus} for class {@link CommandBus}.</li>
+ *     <li>Registers a {@link org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy} for class {@link RoutingStrategy}.</li>
+ *     <li>Registers a {@link org.axonframework.eventhandling.gateway.DefaultEventGateway} for class {@link org.axonframework.eventhandling.gateway.EventGateway}.</li>
+ *     <li>Registers a {@link org.axonframework.eventhandling.SimpleEventBus} for class {@link org.axonframework.eventhandling.EventBus}.</li>
+ *     <li>Registers a {@link org.axonframework.queryhandling.DefaultQueryGateway} for class {@link org.axonframework.queryhandling.QueryGateway}.</li>
+ *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryBus} for class {@link QueryBus}.</li>
+ *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryUpdateEmitter} for class {@link QueryUpdateEmitter}.</li>
  * </ul>
  *
  * @author Steven van Beelen
@@ -81,6 +85,21 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
      */
     public static final int CONVERTING_COMMAND_GATEWAY_ORDER = Integer.MIN_VALUE + 100;
 
+    /**
+     * Name used to register the messaging-specific {@link Converter} with the {@link ComponentRegistry}.
+     * <p>
+     * This {@code Converter} is used to convert <b>all</b> {@link Message#payload() Message payloads} by default. The
+     * payload for {@link EventMessage EventMessages} may be overwritten by the {@code Converter} configured under the
+     * {@link #EVENT_CONVERTER_NAME}.
+     */
+    public static final String MESSAGE_CONVERTER_NAME = "messageConverter";
+    /**
+     * Name used to register the event-specific {@link Converter} with the {@link ComponentRegistry}.
+     * <p>
+     * This {@code Converter} is used to convert <b>all</b> {@link EventMessage#payload() Message payloads} by default.
+     */
+    public static final String EVENT_CONVERTER_NAME = "eventConverter";
+
     @Override
     public int order() {
         return Integer.MAX_VALUE;
@@ -91,6 +110,10 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         registry.registerIfNotPresent(MessageTypeResolver.class,
                                       MessagingConfigurationDefaults::defaultMessageTypeResolver)
                 .registerIfNotPresent(Converter.class, c -> new JacksonConverter())
+                .registerIfNotPresent(Converter.class, MESSAGE_CONVERTER_NAME,
+                                      c -> c.getComponent(Converter.class))
+                .registerIfNotPresent(Converter.class, EVENT_CONVERTER_NAME,
+                                      c -> c.getComponent(Converter.class, MESSAGE_CONVERTER_NAME))
                 .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(CommandBus.class, MessagingConfigurationDefaults::defaultCommandBus)
                 .registerIfNotPresent(RoutingStrategy.class, MessagingConfigurationDefaults::defaultRoutingStrategy)

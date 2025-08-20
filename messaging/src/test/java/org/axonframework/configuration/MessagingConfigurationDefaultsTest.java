@@ -22,7 +22,9 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -40,10 +42,13 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletableFuture;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -72,6 +77,10 @@ class MessagingConfigurationDefaultsTest {
         Configuration resultConfig = configurer.build();
 
         assertInstanceOf(ClassBasedMessageTypeResolver.class, resultConfig.getComponent(MessageTypeResolver.class));
+        Converter generalConverter = resultConfig.getComponent(Converter.class);
+        assertInstanceOf(JacksonConverter.class, generalConverter);
+        assertThat(generalConverter).isEqualTo(resultConfig.getComponent(Converter.class, "messageConverter"));
+        assertThat(generalConverter).isEqualTo(resultConfig.getComponent(Converter.class, "eventConverter"));
         // The specific CommandGateway-implementation registered by default may be overridden by the serviceloader-mechanism.
         // So we just check if _any_ CommandGateway has been added to the configuration.
         assertTrue(resultConfig.hasComponent(CommandGateway.class));
