@@ -31,7 +31,7 @@ import java.util.function.UnaryOperator;
  */
 public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
 
-    private final UnaryOperator<UnitOfWork.Configuration> factoryCustomization;
+    private final UnaryOperator<UnitOfWorkConfiguration> factoryCustomization;
 
     /**
      * Initializes a {@link SimpleUnitOfWorkFactory} with the default configuration. This constructor uses the default
@@ -45,10 +45,10 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
      * Initializes a {@link SimpleUnitOfWorkFactory} with the given customization function. Allows customizing the
      * default configuration used to create {@link UnitOfWork} instances by this factory.
      *
-     * @param factoryCustomization The function to customize the {@link UnitOfWork.Configuration} used to create
+     * @param factoryCustomization The function to customize the {@link UnitOfWorkConfiguration} used to create
      *                             {@link UnitOfWork} instances.
      */
-    public SimpleUnitOfWorkFactory(@Nonnull UnaryOperator<UnitOfWork.Configuration> factoryCustomization) {
+    public SimpleUnitOfWorkFactory(@Nonnull UnaryOperator<UnitOfWorkConfiguration> factoryCustomization) {
         Objects.requireNonNull(factoryCustomization, "The factoryCustomization may not be null");
         this.factoryCustomization = factoryCustomization;
     }
@@ -57,9 +57,9 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
     @Override
     public UnitOfWork create(
             @Nonnull String identifier,
-            @Nonnull UnaryOperator<UnitOfWork.Configuration> customization
+            @Nonnull UnaryOperator<UnitOfWorkConfiguration> customization
     ) {
-        var configuration = customization.apply(factoryCustomization.apply(UnitOfWork.Configuration.defaultValues()));
-        return new UnitOfWork(identifier, configuration);
+        var configuration = customization.apply(factoryCustomization.apply(UnitOfWorkConfiguration.defaultValues()));
+        return new UnitOfWork(identifier, configuration.workScheduler(), configuration.applicationContext());
     }
 }

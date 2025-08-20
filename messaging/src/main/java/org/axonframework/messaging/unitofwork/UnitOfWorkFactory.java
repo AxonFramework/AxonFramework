@@ -61,5 +61,5 @@ public interface UnitOfWorkFactory {
      * @return A new {@link UnitOfWork} instance.
      */
     @Nonnull
-    UnitOfWork create(@Nonnull String identifier, @Nonnull UnaryOperator<UnitOfWork.Configuration> customization);
+    UnitOfWork create(@Nonnull String identifier, @Nonnull UnaryOperator<UnitOfWorkConfiguration> customization);
 }

@@ -18,11 +18,9 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.ApplicationContext;
-import org.axonframework.messaging.EmptyApplicationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,70 +69,27 @@ public class UnitOfWork implements ProcessingLifecycle {
     private final UnitOfWorkProcessingContext context;
 
     /**
-     * Constructs a {@code UnitOfWork} with the given {@code identifier}, processing actions through the given
-     * {@code workScheduler}.
+     * Constructs a {@code UnitOfWork} with the given paremeters.
      *
-     * @param identifier    The identifier of this Unit of Work.
-     * @param workScheduler The {@link Executor} used to process the steps attached to the phases in this Unit of Work
-     */
-    @Internal
-    UnitOfWork(@Nonnull String identifier, @Nonnull Configuration configuration) {
-        Objects.requireNonNull(identifier, "identifier may not be null");
-        Objects.requireNonNull(configuration, "configuration may not be null");
-        this.identifier = identifier;
-        this.context = new UnitOfWorkProcessingContext(
-                identifier,
-                configuration.workScheduler,
-                configuration.applicationContext
-        );
-    }
-
-    /**
-     * Configuration record for {@link UnitOfWork} construction parameters.
-     * <p>
-     * Defines the work scheduler and application context used during unit of work processing.
-     *
+     * @param identifier         The identifier of this Unit of Work.
      * @param workScheduler      The {@link Executor} for processing unit of work actions.
      * @param applicationContext The {@link ApplicationContext} for component resolution.
      */
-    public record Configuration(
+    @Internal
+    UnitOfWork(
+            @Nonnull String identifier,
             @Nonnull Executor workScheduler,
             @Nonnull ApplicationContext applicationContext
     ) {
-
-        /**
-         * Creates default configuration with direct execution and empty application context.
-         *
-         * @return Default {@link Configuration} instance.
-         */
-        @Nonnull
-        public static Configuration defaultValues() {
-            return new Configuration(DirectExecutor.instance(), new EmptyApplicationContext());
-        }
-
-        /**
-         * Creates new configuration with specified work scheduler.
-         *
-         * @param workScheduler The {@link Executor} for processing actions.
-         * @return New {@link Configuration} with updated work scheduler.
-         */
-        @Nonnull
-        public Configuration workScheduler(@Nonnull Executor workScheduler) {
-            Objects.requireNonNull(workScheduler, "workScheduler may not be null");
-            return new Configuration(workScheduler, applicationContext);
-        }
-
-        /**
-         * Creates new configuration with specified application context.
-         *
-         * @param applicationContext The {@link ApplicationContext} for component access.
-         * @return New {@link Configuration} with updated application context.
-         */
-        @Nonnull
-        public Configuration applicationContext(@Nonnull ApplicationContext applicationContext) {
-            Objects.requireNonNull(applicationContext, "applicationContext may not be null");
-            return new Configuration(workScheduler, applicationContext);
-        }
+        Objects.requireNonNull(identifier, "identifier may not be null");
+        Objects.requireNonNull(workScheduler, "workScheduler may not be null");
+        Objects.requireNonNull(applicationContext, "applicationContext may not be null");
+        this.identifier = identifier;
+        this.context = new UnitOfWorkProcessingContext(
+                identifier,
+                workScheduler,
+                applicationContext
+        );
     }
 
     @Override
@@ -217,8 +172,9 @@ public class UnitOfWork implements ProcessingLifecycle {
     private <R> CompletableFuture<R> safe(Callable<CompletableFuture<R>> action) {
         try {
             CompletableFuture<R> result = action.call();
-            if(result == null) {
-                return CompletableFuture.failedFuture(new NullPointerException("The action returned a null CompletableFuture."));
+            if (result == null) {
+                return CompletableFuture.failedFuture(new NullPointerException(
+                        "The action returned a null CompletableFuture."));
             }
             return result;
         } catch (Exception e) {
