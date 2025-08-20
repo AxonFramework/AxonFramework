@@ -171,7 +171,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         this.entityManagerProvider =
                 requireNonNull(entityManagerProvider, "The entityManagerProvider may not be null.");
         this.transactionManager = requireNonNull(transactionManager, "The transactionManager may not be null.");
-        this.converter = requireNonNull(converter, "The converter may not be null");
+        this.converter = requireNonNull(converter, "The converter may not be null.");
 
         var config = requireNonNull(configurer, "the configurationOverride may not be null.")
                 .apply(AggregateBasedJpaEventStorageEngineConfiguration.DEFAULT);
