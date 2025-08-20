@@ -31,6 +31,7 @@ import org.axonframework.eventstreaming.LegacyStreamableEventSource;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +112,7 @@ public abstract class AbstractEventStoreBenchmark {
                 "benchmark",
                 List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                 cfg -> cfg.eventSource(new LegacyStreamableEventSource<>(eventStore))
-                        .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                        .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
                         .tokenStore(new InMemoryTokenStore())
                         .coordinatorExecutor(coordinatorExecutor)
                         .workerExecutor(workerExecutor)

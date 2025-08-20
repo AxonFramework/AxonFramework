@@ -34,6 +34,7 @@ import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.configuration.InstantiatedComponentDefinition;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.Module;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.spring.config.SpringAxonApplication;
 import org.axonframework.spring.config.SpringComponentRegistry;
@@ -306,7 +307,7 @@ public class AxonAutoConfigurationTest {
         CommandBus commandBus(LifecycleRegistry lifecycleRegistry,
                               AtomicBoolean startHandlerInvoked,
                               AtomicBoolean shutdownHandlerInvoked) {
-            CommandBus simpleCommandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
+            CommandBus simpleCommandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE), Collections.emptyList());
             lifecycleRegistry.onStart(10, () -> startHandlerInvoked.set(true));
             lifecycleRegistry.onShutdown(12, () -> shutdownHandlerInvoked.set(true));
             return simpleCommandBus;

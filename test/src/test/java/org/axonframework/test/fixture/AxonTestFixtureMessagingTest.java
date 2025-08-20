@@ -25,6 +25,7 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
@@ -247,7 +248,7 @@ class AxonTestFixtureMessagingTest {
 
         @Nonnull
         private static SimpleCommandBus aCommandBus() {
-            return new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
+            return new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE), Collections.emptyList());
         }
 
         @Test

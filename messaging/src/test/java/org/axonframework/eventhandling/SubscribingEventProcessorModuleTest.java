@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -199,7 +200,7 @@ class SubscribingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             // and - shared customization
-            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
             ErrorHandler sharedErrorHandler = PropagatingErrorHandler.instance();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.errorHandler(sharedErrorHandler)
                                                                .unitOfWorkFactory(sharedUnitOfWorkFactory)));
@@ -254,7 +255,7 @@ class SubscribingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             // and - shared customization
-            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
             ErrorHandler sharedErrorHandler = PropagatingErrorHandler.instance();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.errorHandler(sharedErrorHandler)
                                                                .unitOfWorkFactory(sharedUnitOfWorkFactory)));
@@ -311,7 +312,7 @@ class SubscribingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             // and - shared customization
-            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
             ErrorHandler sharedErrorHandler = PropagatingErrorHandler.instance();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.errorHandler(sharedErrorHandler)
                                                                .unitOfWorkFactory(sharedUnitOfWorkFactory)));

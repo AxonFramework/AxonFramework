@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -176,11 +177,11 @@ class AccessSerializingRepositoryTest {
 
     @Nonnull
     private static UnitOfWork aUnitOfWork() {
-        return new SimpleUnitOfWorkFactory().create();
+        return UnitOfWorkTestUtils.SIMPLE_FACTORY.create();
     }
 
     @Nonnull
     private static UnitOfWork aUnitOfWork(String identifier) {
-        return new SimpleUnitOfWorkFactory().create(identifier);
+        return UnitOfWorkTestUtils.SIMPLE_FACTORY.create(identifier);
     }
 }

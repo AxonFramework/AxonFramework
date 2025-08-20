@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.messaging.ConfigurationApplicationContext;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -81,8 +82,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             );
         }
         this.eventSink = (RecordingEventSink) eventSinkComponent;
-        this.unitOfWorkFactory = configuration.getOptionalComponent(UnitOfWorkFactory.class).orElseGet(
-                SimpleUnitOfWorkFactory::new);
+        this.unitOfWorkFactory = configuration.getOptionalComponent(UnitOfWorkFactory.class)
+                                              .orElse(new SimpleUnitOfWorkFactory(new ConfigurationApplicationContext(configuration)));
     }
 
     /**

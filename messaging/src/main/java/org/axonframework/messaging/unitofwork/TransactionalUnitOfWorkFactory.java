@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.EmptyApplicationContext;
 
 import java.util.Objects;
 import java.util.function.UnaryOperator;
@@ -52,7 +53,7 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
     public TransactionalUnitOfWorkFactory(@Nonnull TransactionManager transactionManager) {
         Objects.requireNonNull(transactionManager, "Transaction Manager cannot be null");
         this.transactionManager = transactionManager;
-        this.delegate = new SimpleUnitOfWorkFactory();
+        this.delegate = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
     }
 
     /**

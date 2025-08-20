@@ -56,6 +56,7 @@ import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.ScopeAwareProvider;
@@ -454,7 +455,9 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         return defaultComponent(CommandBus.class, config)
                 .orElseGet(() -> {
                     TransactionManager txManager = config.getComponent(TransactionManager.class);
-                    UnitOfWorkFactory unitOfWorkFactory = txManager != null ? new TransactionalUnitOfWorkFactory(txManager) : new SimpleUnitOfWorkFactory();
+                    UnitOfWorkFactory unitOfWorkFactory = txManager != null
+                            ? new TransactionalUnitOfWorkFactory(txManager)
+                            : new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
                     SimpleCommandBus commandBus = new SimpleCommandBus(unitOfWorkFactory, Collections.emptyList());
                     if (!config.correlationDataProviders().isEmpty()) {
                         CorrelationDataInterceptor<Message<?>> interceptor =

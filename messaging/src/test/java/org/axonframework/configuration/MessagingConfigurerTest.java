@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -45,6 +46,7 @@ import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.axonframework.commandhandling.CommandBusTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -131,7 +133,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
     @Test
     void registerCommandBusOverridesDefault() {
-        CommandBus expected = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
+        CommandBus expected = aCommandBus();
 
         Configuration result = testSubject.registerCommandBus(c -> expected)
                                           .build();

@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -204,7 +205,7 @@ class PooledStreamingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             // and - shared customization
-            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
             ErrorHandler sharedErrorHandler = PropagatingErrorHandler.instance();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.errorHandler(sharedErrorHandler)
                                                                .unitOfWorkFactory(sharedUnitOfWorkFactory)));
@@ -261,7 +262,7 @@ class PooledStreamingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             // and - shared customization
-            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
             ErrorHandler sharedErrorHandler = PropagatingErrorHandler.instance();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.errorHandler(sharedErrorHandler)
                                                                .unitOfWorkFactory(sharedUnitOfWorkFactory)));
@@ -322,7 +323,7 @@ class PooledStreamingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             // and - shared customization
-            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
             ErrorHandler sharedErrorHandler = PropagatingErrorHandler.instance();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.errorHandler(sharedErrorHandler)
                                                                .unitOfWorkFactory(sharedUnitOfWorkFactory)));
