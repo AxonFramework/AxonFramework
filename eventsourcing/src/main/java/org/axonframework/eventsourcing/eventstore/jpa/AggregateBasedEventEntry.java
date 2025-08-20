@@ -78,7 +78,7 @@ public class AggregateBasedEventEntry {
     private String identifier;
 
     /**
-     * Constructors for a {@code AggregateBasedEventEntry} when <b>appending</b> events, since the
+     * Constructor for a {@code AggregateBasedEventEntry} when <b>appending</b> events, since the
      * {@link #globalIndex()} will be defined by the storage layer.
      *
      * @param identifier              The identifier of the {@link EventMessage}.
