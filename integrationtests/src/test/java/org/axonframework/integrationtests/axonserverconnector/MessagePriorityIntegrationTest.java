@@ -35,6 +35,7 @@ import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
@@ -43,6 +44,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -94,7 +96,8 @@ class MessagePriorityIntegrationTest {
                                                        .build();
         connectionManager.start();
 
-        var localCommandBus = new SimpleCommandBus(Executors.newSingleThreadExecutor());
+        var unitOfWorkFactory = new SimpleUnitOfWorkFactory(c -> c.workScheduler(Executors.newSingleThreadExecutor()));
+        var localCommandBus = new SimpleCommandBus(unitOfWorkFactory, Collections.emptyList());
         var commandBusConnector = new AxonServerCommandBusConnector(connectionManager.getConnection());
         CommandBusConnector serializingConnector = new PayloadConvertingCommandBusConnector<>(
                 commandBusConnector,

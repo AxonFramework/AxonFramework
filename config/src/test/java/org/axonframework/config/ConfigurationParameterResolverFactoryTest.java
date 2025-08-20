@@ -22,6 +22,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.configuration.reflection.ConfigurationParameterResolverFactory;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,7 +55,10 @@ class ConfigurationParameterResolverFactoryTest {
         method = getClass().getMethod("donorMethod", String.class, CommandBus.class);
         parameters = method.getParameters();
         configuration = mock(Configuration.class);
-        commandBus = new SimpleCommandBus();
+        commandBus = new SimpleCommandBus(
+                new SimpleUnitOfWorkFactory(),
+                Collections.emptyList()
+        );
         when(configuration.getOptionalComponent(CommandBus.class)).thenReturn(Optional.of(commandBus));
 
         testSubject = new ConfigurationParameterResolverFactory(configuration);

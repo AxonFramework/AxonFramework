@@ -42,28 +42,6 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
     }
 
     @Test
-    void registerCommandHandlingModuleAddsAModuleConfiguration() {
-        StateBasedEntityModule<String, Object> testEntityBuilder =
-                StateBasedEntityModule.declarative(String.class, Object.class)
-                                      .loader(c -> (id, context) -> null)
-                                      .persister(c -> (id, entity, context) -> null)
-                                      .build();
-        ModuleBuilder<CommandHandlingModule> statefulCommandHandlingModule =
-                CommandHandlingModule.named("test")
-                                     .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
-                                             new QualifiedName(String.class),
-                                             (command, context) -> MessageStream.empty().cast()
-                                     ));
-
-        Configuration configuration =
-                testSubject.componentRegistry(cr -> cr.registerModule(testEntityBuilder))
-                           .registerCommandHandlingModule(statefulCommandHandlingModule)
-                           .build();
-
-        assertThat(configuration.getModuleConfiguration("test")).isPresent();
-    }
-
-    @Test
     void messagingDelegatesTasks() {
         TestComponent result =
                 testSubject.componentRegistry(cr -> cr.registerComponent(
@@ -84,5 +62,27 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
                            .getComponent(TestComponent.class);
 
         assertEquals(TEST_COMPONENT, result);
+    }
+
+    @Test
+    void registerCommandHandlingModuleAddsAModuleConfiguration() {
+        StateBasedEntityModule<String, Object> testEntityBuilder =
+                StateBasedEntityModule.declarative(String.class, Object.class)
+                                      .loader(c -> (id, context) -> null)
+                                      .persister(c -> (id, entity, context) -> null)
+                                      .build();
+        ModuleBuilder<CommandHandlingModule> statefulCommandHandlingModule =
+                CommandHandlingModule.named("test")
+                                     .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
+                                             new QualifiedName(String.class),
+                                             (command, context) -> MessageStream.empty().cast()
+                                     ));
+
+        Configuration configuration =
+                testSubject.componentRegistry(cr -> cr.registerModule(testEntityBuilder))
+                           .registerCommandHandlingModule(statefulCommandHandlingModule)
+                           .build();
+
+        assertThat(configuration.getModuleConfiguration("test")).isPresent();
     }
 }

@@ -18,6 +18,7 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.Configuration;
 
 import java.util.Objects;
@@ -29,6 +30,7 @@ import java.util.Optional;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Internal
 public class ConfigurationApplicationContext implements ApplicationContext {
 
     private final Configuration configuration;

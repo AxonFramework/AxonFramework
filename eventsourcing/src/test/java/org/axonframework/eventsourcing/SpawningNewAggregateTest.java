@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
@@ -38,6 +39,7 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.*;
 import org.mockito.quality.*;
 
+import java.util.Collections;
 import java.util.concurrent.Callable;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -69,7 +71,7 @@ class SpawningNewAggregateTest {
     @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() throws Exception {
-        commandBus = new SimpleCommandBus();
+        commandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
 
         aggregate1Model = AnnotatedAggregateMetaModelFactory.inspectAggregate(Aggregate1.class);
         AggregateModel<Aggregate2> aggregate2Model = AnnotatedAggregateMetaModelFactory

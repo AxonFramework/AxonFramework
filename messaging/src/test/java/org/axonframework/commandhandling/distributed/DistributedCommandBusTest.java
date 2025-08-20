@@ -30,8 +30,10 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,7 +62,7 @@ class DistributedCommandBusTest {
         testCommand = new GenericCommandMessage<>(new MessageType("command"), "test");
 
         connector = new StubConnector();
-        delegate = new SimpleCommandBus();
+        delegate = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
         DistributedCommandBusConfiguration configuration = DistributedCommandBusConfiguration.DEFAULT;
         // Create virtual threads for the test, so we don't have to manage the thread pool.
         configuration.executorService(Executors.newVirtualThreadPerTaskExecutor());

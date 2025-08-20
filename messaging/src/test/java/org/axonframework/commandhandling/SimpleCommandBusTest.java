@@ -31,6 +31,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -60,7 +61,9 @@ class SimpleCommandBusTest {
     @BeforeEach
     void setUp() {
         this.executor = new StubExecutor();
-        this.testSubject = new SimpleCommandBus(executor);
+        this.testSubject = new SimpleCommandBus(
+                new SimpleUnitOfWorkFactory(c -> c.workScheduler(executor)),
+                Collections.emptyList());
     }
 
     @Test
@@ -220,7 +223,8 @@ class SimpleCommandBusTest {
     @Test
     void lifecycleHandlersAreInvokedOnEachInvocation() {
         ProcessingLifecycleHandlerRegistrar lifecycleHandlerRegistrar = mock(ProcessingLifecycleHandlerRegistrar.class);
-        testSubject = new SimpleCommandBus(executor, List.of(lifecycleHandlerRegistrar));
+        var unitOfWorkFactory = new SimpleUnitOfWorkFactory(c -> c.workScheduler(executor));
+        testSubject = new SimpleCommandBus(unitOfWorkFactory, List.of(lifecycleHandlerRegistrar));
 
         var commandHandler = new StubCommandHandler("ok");
         CommandMessage<String> command = TEST_COMMAND;

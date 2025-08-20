@@ -31,10 +31,12 @@ import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -48,7 +50,7 @@ class EventPublicationOrderTest {
 
     @BeforeEach
     void setUp() {
-        this.commandBus = new SimpleCommandBus();
+        this.commandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
         eventStore = spy(LegacyEmbeddedEventStore.builder()
                                                  .storageEngine(new LegacyInMemoryEventStorageEngine())
                                                  .build());

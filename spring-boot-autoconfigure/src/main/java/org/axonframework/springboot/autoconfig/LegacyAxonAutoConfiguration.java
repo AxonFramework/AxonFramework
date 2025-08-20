@@ -58,6 +58,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
@@ -451,7 +452,7 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
     @Qualifier("localSegment")
     @Bean
     public CommandBus commandBus(TransactionManager txManager, LegacyConfiguration axonConfiguration) {
-        SimpleCommandBus commandBus = new SimpleCommandBus(txManager);
+        SimpleCommandBus commandBus = new SimpleCommandBus(new TransactionalUnitOfWorkFactory(txManager), Collections.emptyList());
         return new InterceptingCommandBus(
                 commandBus,
                 List.of(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())),

@@ -34,6 +34,7 @@ import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
@@ -48,6 +49,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -80,7 +82,7 @@ class AggregateAnnotationCommandHandlerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        commandBus = new SimpleCommandBus();
+        commandBus = aSimpleCommandBus();
         commandBus = spy(commandBus);
         mockRepository = mock(LegacyRepository.class);
         newInstanceCallableFactoryCaptor = ArgumentCaptor.forClass(Callable.class);
@@ -116,6 +118,11 @@ class AggregateAnnotationCommandHandlerTest {
                                                        .creationPolicyAggregateFactory(creationPolicyFactory)
                                                        .build();
         commandBus.subscribe(testSubject);
+    }
+
+    @Nonnull
+    private static SimpleCommandBus aSimpleCommandBus() {
+        return new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
     }
 
     @Test
@@ -682,7 +689,7 @@ class AggregateAnnotationCommandHandlerTest {
     @Test
     @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void rejectsDuplicateRegistrations() {
-        commandBus = new SimpleCommandBus();
+        commandBus = aSimpleCommandBus();
         commandBus = spy(commandBus);
         mockRepository = mock(LegacyRepository.class);
 
@@ -740,7 +747,7 @@ class AggregateAnnotationCommandHandlerTest {
 
     @Test
     void duplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
-        commandBus = new SimpleCommandBus();
+        commandBus = aSimpleCommandBus();
 
         LegacyRepository<RootAggregate> repository = mock(LegacyRepository.class);
 

@@ -35,6 +35,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -46,6 +47,8 @@ import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
+
+import java.util.Collections;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
@@ -71,7 +74,7 @@ class CommandHandlerInterceptorTest {
         LegacyRepository<MyAggregate> myAggregateRepository = LegacyEventSourcingRepository.builder(MyAggregate.class)
                                                                                            .eventStore(eventStore)
                                                                                            .build();
-        CommandBus commandBus = new SimpleCommandBus();
+        CommandBus commandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
         MessageTypeResolver nameResolver = new ClassBasedMessageTypeResolver();
         commandGateway = new DefaultCommandGateway(commandBus, nameResolver);
         commandBus.subscribe(AggregateAnnotationCommandHandler.<MyAggregate>builder()

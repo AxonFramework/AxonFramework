@@ -31,6 +31,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -73,7 +74,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
 
         transactionManager = new EntityManagerTransactionManager(entityManager);
 
-        commandBus = new SimpleCommandBus(transactionManager);
+        commandBus = new SimpleCommandBus(new TransactionalUnitOfWorkFactory(transactionManager), Collections.emptyList());
         commandGateway = new DefaultCommandGateway(commandBus, new ClassBasedMessageTypeResolver());
 
         Set<Class<? extends ParentAggregate>> subtypes =

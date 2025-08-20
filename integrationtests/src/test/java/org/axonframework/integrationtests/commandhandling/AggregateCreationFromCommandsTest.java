@@ -28,10 +28,12 @@ import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventSt
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.junit.jupiter.api.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -55,7 +57,7 @@ class AggregateCreationFromCommandsTest {
 
     @BeforeEach
     void setUp() {
-        this.commandBus = new SimpleCommandBus();
+        this.commandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
         eventStore = spy(LegacyEmbeddedEventStore.builder()
                                                  .storageEngine(new LegacyInMemoryEventStorageEngine())
                                                  .build());

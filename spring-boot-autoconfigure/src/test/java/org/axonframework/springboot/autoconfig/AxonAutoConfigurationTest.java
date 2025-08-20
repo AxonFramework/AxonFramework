@@ -34,6 +34,7 @@ import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.configuration.InstantiatedComponentDefinition;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.Module;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.spring.config.SpringAxonApplication;
 import org.axonframework.spring.config.SpringComponentRegistry;
 import org.axonframework.spring.config.SpringLifecycleRegistry;
@@ -48,6 +49,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -304,7 +306,7 @@ public class AxonAutoConfigurationTest {
         CommandBus commandBus(LifecycleRegistry lifecycleRegistry,
                               AtomicBoolean startHandlerInvoked,
                               AtomicBoolean shutdownHandlerInvoked) {
-            SimpleCommandBus simpleCommandBus = new SimpleCommandBus();
+            SimpleCommandBus simpleCommandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
             lifecycleRegistry.onStart(10, () -> startHandlerInvoked.set(true));
             lifecycleRegistry.onShutdown(12, () -> shutdownHandlerInvoked.set(true));
             return simpleCommandBus;
