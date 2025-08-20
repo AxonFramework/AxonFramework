@@ -53,7 +53,7 @@ public class StreamingEventProcessorInfoMessage {
                                                             .collect(toList());
 
         return EventProcessorInfo.newBuilder()
-                                 .setProcessorName(eventProcessor.getName())
+                                 .setProcessorName(eventProcessor.name())
                                  .setTokenStoreIdentifier(eventProcessor.getTokenStoreIdentifier())
                                  .setMode(defineMode(eventProcessor.getClass()))
                                  .setActiveThreads(eventProcessor.processingStatus().size())
