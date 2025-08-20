@@ -108,7 +108,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      *
      * @param delegate The delegate {@code ModellingConfigurer} the {@code EventSourcingConfigurer} is based on.
      */
-    public EventSourcingConfigurer(@Nonnull ModellingConfigurer delegate) {
+    private EventSourcingConfigurer(@Nonnull ModellingConfigurer delegate) {
         Objects.requireNonNull(delegate, "The delegate ModellingConfigurer may not be null.");
         this.delegate = delegate;
     }

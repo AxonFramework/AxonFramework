@@ -18,6 +18,7 @@ package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.DescribableComponent;
 
 import java.lang.reflect.Type;
 
@@ -31,7 +32,7 @@ import java.lang.reflect.Type;
  * @author Rene de Waele
  * @since 3.0.0
  */
-public interface Converter {
+public interface Converter extends DescribableComponent {
 
     /**
      * Indicates whether this {@code Converter} is capable of converting the given {@code sourceType} to the

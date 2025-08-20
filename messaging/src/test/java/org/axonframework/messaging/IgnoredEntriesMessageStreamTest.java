@@ -85,4 +85,11 @@ class IgnoredEntriesMessageStreamTest extends MessageStreamTest<Message<String>>
         assertTrue(actual.isCompletedExceptionally());
         assertInstanceOf(MockException.class, actual.exceptionNow());
     }
+
+    @Test
+    void shouldKeepOriginalExceptionAsFailure() {
+        var testSubject = MessageStream.failed(new MockException()).ignoreEntries();
+
+        assertTrue(testSubject.error().isPresent());
+    }
 }

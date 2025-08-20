@@ -17,9 +17,13 @@
 package org.axonframework.config;
 
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -97,11 +101,12 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerSaga(Saga2.class)
                   .registerSaga(Saga3.class)
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                          SubscribingEventProcessor.builder()
-                                                   .name(name)
-                                                   .eventHandlerInvoker(eventHandlerInvoker)
-                                                   .messageSource(conf.eventBus())
-                                                   .build()
+                          new SubscribingEventProcessor(
+                                  name,
+                                  List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
+                                  cfg -> cfg.messageSource(conf.eventBus())
+                                          .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                          )
                   );
         LegacyConfiguration configuration = configurer.buildConfiguration();
 
@@ -124,11 +129,13 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
         LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                          SubscribingEventProcessor.builder()
-                                                   .name(name)
-                                                   .eventHandlerInvoker(eventHandlerInvoker)
-                                                   .messageSource(conf.eventBus())
-                                                   .build())
+                          new SubscribingEventProcessor(
+                                  name,
+                                  List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
+                                  cfg -> cfg.messageSource(conf.eventBus())
+                                            .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                          )
+                  )
                   .assignProcessingGroup("processor1", "myProcessor")
                   .registerSaga(Saga1.class)
                   .registerSaga(Saga2.class)
@@ -139,9 +146,9 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
         EventProcessor saga2Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga2.class).orElse(null);
         EventProcessor saga3Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga3.class).orElse(null);
 
-        assertEquals("myProcessor", saga1Processor.getName());
-        assertEquals("myProcessor", saga2Processor.getName());
-        assertEquals("Saga3Processor", saga3Processor.getName());
+        assertEquals("myProcessor", saga1Processor.name());
+        assertEquals("myProcessor", saga2Processor.name());
+        assertEquals("Saga3Processor", saga3Processor.name());
     }
 
     @Test
@@ -153,12 +160,13 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerSaga(Saga2.class)
                   .registerSaga(Saga3.class)
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
-                          SubscribingEventProcessor.builder()
-                                                   .name(name)
-                                                   .eventHandlerInvoker(eventHandlerInvoker)
-                                                   .messageSource(conf.eventBus())
-                                                   .build())
-                  .assignProcessingGroup(group -> "myProcessor");
+                          new SubscribingEventProcessor(
+                                  name,
+                                  List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
+                                  cfg -> cfg.messageSource(conf.eventBus())
+                                            .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                          )
+                  ).assignProcessingGroup(group -> "myProcessor");
 
         LegacyConfiguration configuration = configurer.buildConfiguration();
 
@@ -166,9 +174,9 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
         EventProcessor saga2Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga2.class).orElse(null);
         EventProcessor saga3Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga3.class).orElse(null);
 
-        assertEquals("myProcessor", saga1Processor.getName());
-        assertEquals("myProcessor", saga2Processor.getName());
-        assertEquals("myProcessor", saga3Processor.getName());
+        assertEquals("myProcessor", saga1Processor.name());
+        assertEquals("myProcessor", saga2Processor.name());
+        assertEquals("myProcessor", saga3Processor.name());
     }
 
     @ProcessingGroup("processor1")
