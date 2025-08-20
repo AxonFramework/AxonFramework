@@ -117,7 +117,7 @@ public class AggregateBasedEventEntry {
     }
 
     /**
-     * Constructors for an {@code AggregateBasedEventEntry} when <b>reading</b> events, since all parameters should be
+     * Constructor for an {@code AggregateBasedEventEntry} when <b>reading</b> events, since all parameters should be
      * given.
      *
      * @param globalIndex             The position of the {@link EventMessage} in the event store.
