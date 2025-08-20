@@ -442,7 +442,7 @@ described shortly [here](#generic-eventstorageengine-changes).
 We have introduced an entirely new JPA entry for the `AggregateBasedJpaEventStorageEngine`, called the
 `AggregateBasedJpaEntry`. This entry has numerous difference compared to the `DomainEventEntry` used by the
 `JpaEventStorageEngine`. For one, the layering of the `DomainEventEntry`, which had four abstract classes and two
-interface (marked for removal [here](#removed-classes)), will not return for the `AggregateBasedJpaEntry`. Furthermore,
+interfaces (marked for removal [here](#removed-classes)) and will not return for the `AggregateBasedJpaEntry`. Furthermore,
 next to the class name, resolution in a table rename, several columns have been renamed. Please see
 the [Stored Format Changes](#stored-format-changes) section for more details on the actual changes.
 
