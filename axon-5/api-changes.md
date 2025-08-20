@@ -81,6 +81,9 @@ Major API Changes
   In addition, entities have been redesigned to make them more flexible, allowing for immutable
   entities, declarative modeling, and a more fluent API. For more on this, check the
   [Aggregates to Entities](#aggregates-to-entities) section.
+* We have switched the `Serializer` for the lower-level `Converter` API throughout Axon Framework. Furthermore, we
+  stopped support for the `XStreamSerializer` altogether, making the `JacksonConverter` the default. For more details on
+  the `Serializer`-to-`Converter` switch, please check [here](#serialization--conversion-changes).
 
 ## Unit of Work
 
@@ -1242,6 +1245,27 @@ solution towards integration testing an Axon Framework application.
 We acknowledge that this shift is a massive breaking changes between Axon Framework 4 and 5. Given the importance of
 test suites, we will provide a legacy installment of the old fixtures, albeit deprecated. This way, users are able to
 migrate the tests on their own pass.
+
+## Serialization / Conversion changes
+
+The `Serializer` and all `Serializer`-specific components have been removed entirely from Axon Framework 5. For
+conversion, Axon Framework uses the `Converter` interface (present since Axon Framework 3), with several
+implementations, instead. We have made this shift to simplify the overall conversion flow within Axon Framework.
+Although this is not directly noticeable for the end-user, it will enable the Axon Framework team more flexibility in
+the foreseeable future. 
+
+From a configuration perspective, this change means that any usages of `Serializer` can be replaced for the `Converter`.
+For example, instead of a `JacksonSerializer`, Axon Framework 5 uses a `JacksonConverter`.
+
+Furthermore, the default `Converter` switched, from XStream to Jackson. We have made this choice as XStream is most
+likely nearing end of life (check [this link](https://github.com/x-stream/xstream/issues/262) for details). Due to that
+we deemed it unwise to keep support for XStream. For those using an XML-based format, it is suggested to configure the
+`JacksonConverter` with an `XmlMapper` (from artifact `jackson-dataformat-xml`). 
+
+This `Serializer`-to-`Converter` shift goes hand-in-hand with the `MetaData` value switch to `String` (as
+described [here](#metadata-with-string-values)) and the conversion support on the `Message` directly (as
+described [here](#message-conversion--serialization)). The changes on the `Message` directly are more apparent to the
+user and worthwhile to be aware of.
 
 Minor API Changes
 =================
