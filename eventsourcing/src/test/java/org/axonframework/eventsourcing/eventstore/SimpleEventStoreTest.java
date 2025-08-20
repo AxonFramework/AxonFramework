@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.eventhandling.EventTestUtils.createEvent;
+import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
 import static org.axonframework.utils.AssertUtils.awaitSuccessfulCompletion;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -321,8 +322,4 @@ class SimpleEventStoreTest {
         }
     }
 
-    @Nonnull
-    private static UnitOfWork aUnitOfWork() {
-        return new SimpleUnitOfWorkFactory().create();
-    }
 }

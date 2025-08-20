@@ -40,6 +40,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
 import static org.axonframework.utils.AssertUtils.awaitExceptionalCompletion;
 import static org.axonframework.utils.AssertUtils.awaitSuccessfulCompletion;
 import static org.junit.jupiter.api.Assertions.*;
@@ -356,11 +357,6 @@ class DefaultEventStoreTransactionTest {
             assertFalse(onAfterCommitExecuted.get(), "After commit step should not execute after an error");
             assertTrue(onPostInvocationExecuted.get(), "Post invocation step should be executed after an error");
         }
-    }
-
-    @Nonnull
-    private static UnitOfWork aUnitOfWork() {
-        return new SimpleUnitOfWorkFactory().create();
     }
 
     private EventStoreTransaction defaultEventStoreTransactionFor(ProcessingContext processingContext) {

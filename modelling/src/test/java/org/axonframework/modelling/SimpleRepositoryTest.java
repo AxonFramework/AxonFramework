@@ -30,6 +30,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleRepositoryTest {
@@ -145,10 +146,5 @@ class SimpleRepositoryTest {
 
             return CompletableFuture.completedFuture(null);
         }).get(5, TimeUnit.SECONDS);
-    }
-
-    @Nonnull
-    private static UnitOfWork aUnitOfWork() {
-        return new SimpleUnitOfWorkFactory().create();
     }
 }

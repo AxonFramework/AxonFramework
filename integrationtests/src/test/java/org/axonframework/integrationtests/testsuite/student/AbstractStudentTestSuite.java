@@ -47,6 +47,7 @@ import org.junit.jupiter.api.*;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -223,10 +224,5 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
                                                                                        .getStudentsEnrolled()
                                                                                        .contains(id))))
            .join();
-    }
-
-    @Nonnull
-    protected static UnitOfWork aUnitOfWork() {
-        return new SimpleUnitOfWorkFactory().create();
     }
 }

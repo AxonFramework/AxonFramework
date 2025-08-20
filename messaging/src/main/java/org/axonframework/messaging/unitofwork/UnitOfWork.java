@@ -18,6 +18,7 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.ApplicationContext;
@@ -27,9 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Queue;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -110,7 +109,7 @@ public class UnitOfWork implements ProcessingLifecycle {
          */
         @Nonnull
         public static Configuration defaultValues() {
-            return new Configuration(Runnable::run, new EmptyApplicationContext());
+            return new Configuration(DirectExecutor.instance(), new EmptyApplicationContext());
         }
 
         /**
