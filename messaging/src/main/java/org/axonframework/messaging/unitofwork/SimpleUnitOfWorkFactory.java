@@ -18,6 +18,7 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 /**
@@ -47,7 +48,8 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
      * @param factoryCustomization The function to customize the {@link UnitOfWork.Configuration} used to create
      *                             {@link UnitOfWork} instances.
      */
-    public SimpleUnitOfWorkFactory(UnaryOperator<UnitOfWork.Configuration> factoryCustomization) {
+    public SimpleUnitOfWorkFactory(@Nonnull UnaryOperator<UnitOfWork.Configuration> factoryCustomization) {
+        Objects.requireNonNull(factoryCustomization, "The factoryCustomization may not be null");
         this.factoryCustomization = factoryCustomization;
     }
 

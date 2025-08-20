@@ -68,7 +68,7 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
     protected CommandGateway commandGateway;
     protected StateManager stateManager;
 
-    private CommandHandlingModule.CommandHandlerPhase statefulCommandHandlingModule;
+    private CommandHandlingModule.CommandHandlerPhase commandHandlingModule;
     private EventSourcedEntityModule<String, Course> courseEntity;
     private EventSourcedEntityModule<String, Student> studentEntity;
 
@@ -92,8 +92,8 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
                 .criteriaResolver(this::courseCriteriaResolver)
                 .build();
 
-        statefulCommandHandlingModule = CommandHandlingModule.named("student-course-module")
-                                                             .commandHandlers();
+        commandHandlingModule = CommandHandlingModule.named("student-course-module")
+                                                     .commandHandlers();
     }
 
     @Override
@@ -101,7 +101,7 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
         var configurer = EventSourcingConfigurer.create()
                                                 .componentRegistry(cr -> cr.registerModule(studentEntity))
                                                 .componentRegistry(cr -> cr.registerModule(courseEntity))
-                                                .registerCommandHandlingModule(statefulCommandHandlingModule);
+                                                .registerCommandHandlingModule(commandHandlingModule);
         return testSuiteConfigurer(configurer);
     }
 
@@ -114,7 +114,7 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
     protected void registerCommandHandlers(
             @Nonnull Consumer<CommandHandlingModule.CommandHandlerPhase> handlerConfigurer
     ) {
-        statefulCommandHandlingModule.commandHandlers(handlerConfigurer);
+        commandHandlingModule.commandHandlers(handlerConfigurer);
     }
 
     /**

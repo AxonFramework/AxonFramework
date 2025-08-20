@@ -587,7 +587,7 @@ public class UniversityAxonApplication {
 
 }
 ----
-<1> We register the `CommandHandlingModule` as a child of the `EventSourcingConfigurer`.
+<1> We register the `StatefulCommandHandlingModule` as a child of the `EventSourcingConfigurer`.
 
 Now what's better for a developer than seeing the green bar flash in your IDE after running the tests?
 Let's do it! Remember to mark the slice as completed in the Event Modeling diagram if you use this approach.

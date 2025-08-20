@@ -65,12 +65,22 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
     }
 
     @Test
-    void registerCommandHandlingModuleAddsAModuleConfiguration() {
+    void registerEntityModuleAddsAModuleConfiguration() {
         StateBasedEntityModule<String, Object> testEntityBuilder =
                 StateBasedEntityModule.declarative(String.class, Object.class)
                                       .loader(c -> (id, context) -> null)
                                       .persister(c -> (id, entity, context) -> null)
                                       .build();
+
+        Configuration configuration =
+                testSubject.componentRegistry(cr -> cr.registerModule(testEntityBuilder))
+                           .build();
+
+        assertThat(configuration.getModuleConfiguration("SimpleStateBasedEntityModule<String, Object>")).isPresent();
+    }
+
+    @Test
+    void registerCommandHandlingModuleAddsAModuleConfiguration() {
         ModuleBuilder<CommandHandlingModule> statefulCommandHandlingModule =
                 CommandHandlingModule.named("test")
                                      .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
@@ -79,8 +89,7 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
                                      ));
 
         Configuration configuration =
-                testSubject.componentRegistry(cr -> cr.registerModule(testEntityBuilder))
-                           .registerCommandHandlingModule(statefulCommandHandlingModule)
+                testSubject.registerCommandHandlingModule(statefulCommandHandlingModule)
                            .build();
 
         assertThat(configuration.getModuleConfiguration("test")).isPresent();

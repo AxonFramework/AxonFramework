@@ -20,7 +20,6 @@ import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -29,14 +28,12 @@ import org.axonframework.eventsourcing.eventstore.PayloadBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.modelling.entity.EntityMetamodel;
+import org.axonframework.modelling.configuration.StateBasedEntityModule;
 import org.junit.jupiter.api.*;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -79,31 +76,6 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
 
         Optional<Snapshotter> snapshotter = result.getOptionalComponent(Snapshotter.class);
         assertTrue(snapshotter.isPresent());
-    }
-
-    @Test
-    void registerCommandHandlingModuleAddsAModuleConfiguration() {
-        EventSourcedEntityModule<String, Object> testEntityBuilder =
-                EventSourcedEntityModule.declarative(String.class, Object.class)
-                                        .messagingModel((c, b) -> EntityMetamodel.forEntityType(Object.class)
-                                                                                 .entityEvolver((entity, event, context) -> entity)
-                                                                                 .build())
-                                        .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(id -> null))
-                                        .criteriaResolver(c -> (event, ctx) -> EventCriteria.havingAnyTag())
-                                        .build();
-        ModuleBuilder<CommandHandlingModule> statefulCommandHandlingModule =
-                CommandHandlingModule.named("test")
-                                     .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
-                                             new QualifiedName(String.class),
-                                             (command, context) -> MessageStream.empty().cast()
-                                     ));
-
-        Configuration configuration =
-                testSubject.componentRegistry(cr -> cr.registerModule(testEntityBuilder))
-                           .registerCommandHandlingModule(statefulCommandHandlingModule)
-                           .build();
-
-        assertThat(configuration.getModuleConfiguration("test")).isPresent();
     }
 
     @Test
@@ -180,5 +152,36 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                            .getComponent(TestComponent.class);
 
         assertEquals(TEST_COMPONENT, result);
+    }
+
+    @Test
+    void registerEntityModuleAddsAModuleConfiguration() {
+        StateBasedEntityModule<String, Object> testEntityBuilder =
+                StateBasedEntityModule.declarative(String.class, Object.class)
+                                      .loader(c -> (id, context) -> null)
+                                      .persister(c -> (id, entity, context) -> null)
+                                      .build();
+
+        Configuration configuration =
+                testSubject.componentRegistry(cr -> cr.registerModule(testEntityBuilder))
+                           .build();
+
+        assertThat(configuration.getModuleConfiguration("SimpleStateBasedEntityModule<String, Object>")).isPresent();
+    }
+
+    @Test
+    void registerCommandHandlingModuleAddsAModuleConfiguration() {
+        ModuleBuilder<CommandHandlingModule> statefulCommandHandlingModule =
+                CommandHandlingModule.named("test")
+                                     .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
+                                             new QualifiedName(String.class),
+                                             (command, context) -> MessageStream.empty().cast()
+                                     ));
+
+        Configuration configuration =
+                testSubject.registerCommandHandlingModule(statefulCommandHandlingModule)
+                           .build();
+
+        assertThat(configuration.getModuleConfiguration("test")).isPresent();
     }
 }

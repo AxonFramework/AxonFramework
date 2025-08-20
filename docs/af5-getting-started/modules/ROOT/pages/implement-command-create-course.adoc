@@ -264,7 +264,7 @@ public class CreateCourseConfiguration {
 }
 ----
 
-<.> The `CommandHandlingModule` is a component that allows us to register the command handler for the `CreateCourse` command.
+<.> The `StatefulCommandHandlingModule` is a component that allows us to register the command handler for the `CreateCourse` command.
 For our current needs we skip `entities` configuration, because we don't need the state yet.
 <.> The `annotatedCommandHandlingComponent` method allows us to register the `CreateCourseCommandHandler` as the command handler for the `CreateCourse` command.
 <.> The `registerStatefulCommandHandlingModule` method registers the command handler module in the Axon Framework configuration.

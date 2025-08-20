@@ -99,8 +99,8 @@ public class UnitOfWork implements ProcessingLifecycle {
      * @param applicationContext The {@link ApplicationContext} for component resolution.
      */
     public record Configuration(
-            Executor workScheduler,
-            ApplicationContext applicationContext
+            @Nonnull Executor workScheduler,
+            @Nonnull ApplicationContext applicationContext
     ) {
 
         /**
