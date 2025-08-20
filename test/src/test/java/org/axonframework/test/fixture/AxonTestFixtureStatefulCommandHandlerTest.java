@@ -44,6 +44,7 @@ import org.junit.jupiter.api.*;
 import java.util.List;
 import java.util.Objects;
 
+import static org.axonframework.configuration.MessagingConfigurationDefaults.EVENT_CONVERTER_NAME;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -253,8 +254,9 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                                     (id, context) -> EventCriteria.havingTags("Student", id),
                                     new AnnotationBasedEntityEvolvingComponent<>(
                                             Student.class,
-                                            c.getComponent(Converter.class),
-                                            c.getComponent(MessageTypeResolver.class))
+                                            c.getComponent(Converter.class, EVENT_CONVERTER_NAME),
+                                            c.getComponent(MessageTypeResolver.class)
+                                    )
                             );
                             return SimpleStateManager.named("testfixture")
                                                      .register(repository);

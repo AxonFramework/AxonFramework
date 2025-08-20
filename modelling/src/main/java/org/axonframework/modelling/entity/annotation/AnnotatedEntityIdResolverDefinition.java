@@ -24,14 +24,16 @@ import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.serialization.Converter;
 
+import static org.axonframework.configuration.MessagingConfigurationDefaults.MESSAGE_CONVERTER_NAME;
+
 /**
  * {@link EntityIdResolverDefinition} that converts the payload of incoming messages based on the
  * {@link AnnotatedEntityMetamodel#getExpectedRepresentation(QualifiedName) expected payload type} of the message
  * handler in the model, and then looks for a {@link org.axonframework.modelling.annotation.TargetEntityId}-annotated
  * member in the payload, through the {@link AnnotationBasedEntityIdResolver}.
  *
- * @since 5.0.0
  * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
 public class AnnotatedEntityIdResolverDefinition implements EntityIdResolverDefinition {
 
@@ -43,7 +45,7 @@ public class AnnotatedEntityIdResolverDefinition implements EntityIdResolverDefi
         return new AnnotatedEntityIdResolver<>(
                 entityMetamodel,
                 idType,
-                configuration.getComponent(Converter.class),
+                configuration.getComponent(Converter.class, MESSAGE_CONVERTER_NAME),
                 new AnnotationBasedEntityIdResolver<>()
         );
     }

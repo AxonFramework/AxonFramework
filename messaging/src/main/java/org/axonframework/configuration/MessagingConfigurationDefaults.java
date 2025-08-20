@@ -127,7 +127,10 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         registry.registerDecorator(
                 CommandGateway.class,
                 CONVERTING_COMMAND_GATEWAY_ORDER,
-                (config, name, delegate) -> new ConvertingCommandGateway(delegate, config.getComponent(Converter.class))
+                (config, name, delegate) -> new ConvertingCommandGateway(
+                        delegate,
+                        config.getComponent(Converter.class, MESSAGE_CONVERTER_NAME)
+                )
         );
     }
 

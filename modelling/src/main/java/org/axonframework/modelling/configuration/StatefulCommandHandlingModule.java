@@ -32,6 +32,7 @@ import org.axonframework.serialization.Converter;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
+import static org.axonframework.configuration.MessagingConfigurationDefaults.MESSAGE_CONVERTER_NAME;
 
 /**
  * A {@link Module} and {@link ModuleBuilder} implementation providing operation to construct a stateful command
@@ -251,7 +252,7 @@ public interface StatefulCommandHandlingModule extends Module, ModuleBuilder<Sta
             return commandHandlingComponent(c -> new AnnotatedCommandHandlingComponent<>(
                     handlingComponentBuilder.build(c),
                     c.getComponent(ParameterResolverFactory.class),
-                    c.getComponent(Converter.class)
+                    c.getComponent(Converter.class, MESSAGE_CONVERTER_NAME)
             ));
         }
     }

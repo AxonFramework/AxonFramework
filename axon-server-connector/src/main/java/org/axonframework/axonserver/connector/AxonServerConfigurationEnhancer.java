@@ -32,6 +32,8 @@ import org.axonframework.serialization.Converter;
 
 import javax.annotation.Nonnull;
 
+import static org.axonframework.configuration.MessagingConfigurationDefaults.MESSAGE_CONVERTER_NAME;
+
 /**
  * A {@link ConfigurationEnhancer} that is auto-loadable by the
  * {@link org.axonframework.configuration.ApplicationConfigurer}, setting sensible defaults when using Axon Server.
@@ -53,7 +55,9 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                       c -> new AxonServerConfiguration(),
                                       SearchScope.ALL)
                 .registerIfNotPresent(connectionManagerDefinition(), SearchScope.ALL)
-                .registerIfNotPresent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity(), SearchScope.ALL)
+                .registerIfNotPresent(ManagedChannelCustomizer.class,
+                                      c -> ManagedChannelCustomizer.identity(),
+                                      SearchScope.ALL)
                 .registerIfNotPresent(eventStorageEngineDefinition(), SearchScope.ALL)
                 .registerIfNotPresent(commandBusConnectorDefinition(), SearchScope.ALL)
                 .registerDecorator(CommandBusConnector.class, 0, payloadConvertingConnectorComponentDecorator())
@@ -63,8 +67,9 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
     private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector<Object>> payloadConvertingConnectorComponentDecorator() {
         return (config, name, delegate) -> new PayloadConvertingCommandBusConnector<>(
                 delegate,
-                config.getComponent(Converter.class),
-                byte[].class);
+                config.getComponent(Converter.class, MESSAGE_CONVERTER_NAME),
+                byte[].class
+        );
     }
 
     private ComponentDefinition<AxonServerConnectionManager> connectionManagerDefinition() {

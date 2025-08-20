@@ -29,6 +29,8 @@ import org.axonframework.serialization.Converter;
 
 import java.util.Optional;
 
+import static org.axonframework.configuration.MessagingConfigurationDefaults.EVENT_CONVERTER_NAME;
+
 /**
  * A {@link ComponentFactory} implementation that generates {@link AxonServerEventStorageEngine} instances.
  *
@@ -69,7 +71,8 @@ public class AxonServerEventStorageEngineFactory implements ComponentFactory<Axo
                                                                    @Nonnull Configuration config) {
         AxonServerConnection connection = config.getComponent(AxonServerConnectionManager.class)
                                                 .getConnection(context);
-        return new AxonServerEventStorageEngine(connection, config.getComponent(Converter.class));
+        Converter eventConverter = config.getComponent(Converter.class, EVENT_CONVERTER_NAME);
+        return new AxonServerEventStorageEngine(connection, eventConverter);
     }
 
     @Override

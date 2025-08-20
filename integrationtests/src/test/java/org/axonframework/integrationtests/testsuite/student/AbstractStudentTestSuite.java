@@ -46,6 +46,7 @@ import org.junit.jupiter.api.*;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import static org.axonframework.configuration.MessagingConfigurationDefaults.EVENT_CONVERTER_NAME;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -177,9 +178,11 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
      * {@link AnnotationBasedEntityEvolvingComponent} to use the annotations placed.
      */
     protected EntityEvolver<Student> studentEvolver(Configuration config) {
-        return new AnnotationBasedEntityEvolvingComponent<>(Student.class,
-                                                            config.getComponent(Converter.class),
-                                                            config.getComponent(MessageTypeResolver.class));
+        return new AnnotationBasedEntityEvolvingComponent<>(
+                Student.class,
+                config.getComponent(Converter.class, EVENT_CONVERTER_NAME),
+                config.getComponent(MessageTypeResolver.class)
+        );
     }
 
     protected void changeStudentName(String studentId, String name) {

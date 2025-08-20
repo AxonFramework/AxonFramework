@@ -22,6 +22,7 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.MessagingConfigurationDefaults;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
@@ -41,6 +42,7 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.ConstructorUtils.getConstructorFunctionWithZeroArguments;
+import static org.axonframework.configuration.MessagingConfigurationDefaults.EVENT_CONVERTER_NAME;
 
 /**
  * Annotation-based implementation of the {@link EventSourcedEntityModule}. Expects the {@link EventSourcedEntity}
@@ -92,7 +94,7 @@ class AnnotatedEventSourcedEntityModule<I, E>
                     concreteTypes,
                     c.getComponent(ParameterResolverFactory.class),
                     c.getComponent(MessageTypeResolver.class),
-                    c.getComponent(Converter.class)
+                    c.getComponent(Converter.class, EVENT_CONVERTER_NAME)
             );
         }
 
@@ -100,7 +102,7 @@ class AnnotatedEventSourcedEntityModule<I, E>
                 entityType,
                 c.getComponent(ParameterResolverFactory.class),
                 c.getComponent(MessageTypeResolver.class),
-                c.getComponent(Converter.class)
+                c.getComponent(Converter.class, EVENT_CONVERTER_NAME)
         );
     }
 

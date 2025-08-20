@@ -49,6 +49,8 @@ import org.axonframework.serialization.Converter;
 
 import java.util.Objects;
 
+import static org.axonframework.configuration.MessagingConfigurationDefaults.EVENT_CONVERTER_NAME;
+
 /**
  * Runs the administration test suite using the builders of {@link EntityMetamodel} and related classes.
  */
@@ -57,7 +59,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
     EntityMetamodel<MutablePerson> buildEntityMetamodel(Configuration configuration,
                                                         EntityMetamodelBuilder<MutablePerson> builder) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
-        Converter converter = configuration.getComponent(Converter.class);
+        Converter converter = configuration.getComponent(Converter.class, EVENT_CONVERTER_NAME);
 
         // Task is the list-based child-model of Employee
         EntityMetamodel<MutableTask> taskMetamodel = ConcreteEntityMetamodel

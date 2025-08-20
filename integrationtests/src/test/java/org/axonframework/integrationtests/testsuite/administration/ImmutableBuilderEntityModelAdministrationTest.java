@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.testsuite.administration;
 
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.MessagingConfigurationDefaults;
 import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
@@ -51,6 +52,7 @@ import org.axonframework.serialization.Converter;
 import java.util.Objects;
 
 import static java.lang.String.format;
+import static org.axonframework.configuration.MessagingConfigurationDefaults.EVENT_CONVERTER_NAME;
 
 /**
  * Runs the administration test suite using the builders of {@link EntityMetamodel} and related classes.
@@ -60,7 +62,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
     EntityMetamodel<ImmutablePerson> buildEntityMetamodel(Configuration configuration,
                                                           EntityMetamodelBuilder<ImmutablePerson> builder) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
-        Converter converter = configuration.getComponent(Converter.class);
+        Converter converter = configuration.getComponent(Converter.class, EVENT_CONVERTER_NAME);
 
         // Task is the list-based child-metamodel of Employee
         EntityMetamodel<ImmutableTask> taskMetamodel = ConcreteEntityMetamodel

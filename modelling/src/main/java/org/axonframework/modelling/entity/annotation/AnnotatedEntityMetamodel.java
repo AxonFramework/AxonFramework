@@ -106,6 +106,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * @param parameterResolverFactory The {@link ParameterResolverFactory} to use for resolving parameters.
      * @param messageTypeResolver      The {@link MessageTypeResolver} to use for resolving message types from payload
      *                                 classes.
+     * @param converter                The converter used to convert the {@link EventMessage#payload()} to the desired
+     *                                 format.
      * @param <E>                      The type of entity this metamodel describes.
      * @return An annotated {@link EntityMetamodel} backed by a {@link ConcreteEntityMetamodel} for the given entity
      * type.
@@ -134,6 +136,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * @param parameterResolverFactory The {@link ParameterResolverFactory} to use for resolving parameters.
      * @param messageTypeResolver      The {@link MessageTypeResolver} to use for resolving message types from payload
      *                                 classes.
+     * @param converter                The converter used to convert the {@link EventMessage#payload()} to the desired
+     *                                 format.
      * @param <E>                      The type of the polymorphic entity.
      * @return An annotated {@link EntityMetamodel} backed by a {@link PolymorphicEntityMetamodel} for the given entity
      * type.
@@ -166,6 +170,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * @param messageTypeResolver      The {@link MessageTypeResolver} to use for resolving message types from payload
      *                                 classes.
      * @param concreteTypes            The concrete types of the polymorphic entity type.
+     * @param converter                The converter used to convert the {@link EventMessage#payload()} to the desired
+     *                                 format.
      * @param commandsToSkip           The commands to skip when initializing the metamodel. This is useful to prevent
      *                                 concrete implementations from registering commands that are already registered by
      *                                 the abstract entity type, as this will lead to problems.
