@@ -22,6 +22,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.avro.AvroSerializer;
 import org.axonframework.serialization.avro.AvroSerializerStrategy;
@@ -29,6 +30,7 @@ import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.springboot.ConverterProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -56,9 +58,10 @@ import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncl
 @AutoConfiguration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @EnableConfigurationProperties(ConverterProperties.class)
-public class ConverterAutoConfiguration implements ApplicationContextAware {
+public class ConverterAutoConfiguration implements ApplicationContextAware, BeanClassLoaderAware {
 
     private ApplicationContext applicationContext;
+    private ClassLoader classLoader;
 
     @Bean(name = "converter")
     @Primary
@@ -140,9 +143,7 @@ public class ConverterAutoConfiguration implements ApplicationContextAware {
                                          .stream()
                                          .findFirst()
                                          .orElseThrow(() -> new NoSuchBeanDefinitionException(CBORMapper.class));
-                // FIXME add Converter constructor option...
-//                ChainingContentTypeConverter converter = new ChainingContentTypeConverter(beanClassLoader);
-                return new JacksonConverter(cborMapper);
+                return new JacksonConverter(cborMapper, new ChainingContentTypeConverter(classLoader));
             case JACKSON:
             case DEFAULT:
             default:
@@ -154,9 +155,7 @@ public class ConverterAutoConfiguration implements ApplicationContextAware {
                                            .stream()
                                            .findFirst()
                                            .orElseThrow(() -> new NoSuchBeanDefinitionException(ObjectMapper.class));
-                // FIXME add Converter constructor option...
-//                ChainingContentTypeConverter converter = new ChainingContentTypeConverter(beanClassLoader);
-                return new JacksonConverter(objectMapper);
+                return new JacksonConverter(objectMapper, new ChainingContentTypeConverter(classLoader));
         }
     }
 
@@ -171,5 +170,17 @@ public class ConverterAutoConfiguration implements ApplicationContextAware {
     @Override
     public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = requireNonNull(applicationContext, "The ApplicationContext cannot be null.");
+    }
+
+    /**
+     * Sets the class loader used by the {@link ChainingContentTypeConverter} to load
+     * {@link org.axonframework.serialization.ContentTypeConverter ContentTypeConverters}.
+     *
+     * @param classLoader The class loader used by the {@link ChainingContentTypeConverter} to load
+     *                    {@link org.axonframework.serialization.ContentTypeConverter ContentTypeConverters}.
+     */
+    @Override
+    public void setBeanClassLoader(@Nonnull ClassLoader classLoader) {
+        this.classLoader = requireNonNull(classLoader, "The ClassLoader cannot be null.");
     }
 }

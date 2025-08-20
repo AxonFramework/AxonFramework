@@ -76,7 +76,7 @@ public class ChainingContentTypeConverter implements Converter {
      *
      * @param classLoader The class loader used to load the {@link ContentTypeConverter ContentTypeConverters}.
      */
-    public ChainingContentTypeConverter(ClassLoader classLoader) {
+    public ChainingContentTypeConverter(@Nonnull ClassLoader classLoader) {
         //noinspection rawtypes
         ServiceLoader<ContentTypeConverter> converterLoader =
                 ServiceLoader.load(ContentTypeConverter.class, classLoader);
