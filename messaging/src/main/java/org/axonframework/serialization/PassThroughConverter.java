@@ -18,6 +18,7 @@ package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
 
 import java.lang.reflect.Type;
 
@@ -68,5 +69,10 @@ public final class PassThroughConverter implements Converter {
                         + sourceType + "] and target type [" + targetType.getTypeName()
                         + "] have been given."
         );
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        // Nothing internal to describe about this component
     }
 }

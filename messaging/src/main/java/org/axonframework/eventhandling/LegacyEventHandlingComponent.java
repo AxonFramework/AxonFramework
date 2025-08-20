@@ -80,7 +80,7 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
 
     @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
         return switch (eventHandlerInvoker) {
             case MultiEventHandlerInvoker multiInvoker when !multiInvoker.delegates().isEmpty() ->
                     Optional.ofNullable(multiInvoker.delegates().getFirst())

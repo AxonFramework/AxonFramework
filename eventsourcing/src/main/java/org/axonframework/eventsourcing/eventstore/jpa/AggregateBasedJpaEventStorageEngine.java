@@ -108,27 +108,18 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
             FROM AggregateBasedEventEntry e \
             WHERE e.timestamp >= :dateTime""";
     private static final String EVENTS_BY_AGGREGATE_QUERY = """
-            SELECT new org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry(
-               e.identifier, e.type, e.version, e.payload, e.metaData, e.timestamp, e.aggregateType, \
-               e.aggregateIdentifier, e.aggregateSequenceNumber
-            ) \
+            SELECT e \
             FROM AggregateBasedEventEntry e \
             WHERE e.aggregateIdentifier = :id \
             AND e.aggregateSequenceNumber >= :seq \
             ORDER BY e.aggregateSequenceNumber ASC""";
     private static final String EVENTS_BY_TOKEN_QUERY = """
-            SELECT new org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry(
-                e.globalIndex, e.identifier, e.type, e.version, e.payload, e.metaData, e.timestamp, e.aggregateType,
-                e.aggregateIdentifier, e.aggregateSequenceNumber
-            ) \
+            SELECT e \
             FROM AggregateBasedEventEntry e \
             WHERE e.globalIndex > :token \
             ORDER BY e.globalIndex ASC""";
     private static final String EVENTS_BY_GAPPED_TOKEN = """
-            SELECT new org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry(
-                e.globalIndex, e.identifier, e.type, e.version, e.payload, e.metaData, e.timestamp, e.aggregateType,
-                e.aggregateIdentifier, e.aggregateSequenceNumber
-            ) \
+            SELECT e \
             FROM AggregateBasedEventEntry e \
             WHERE e.globalIndex > :token \
             OR e.globalIndex \
@@ -171,7 +162,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         this.entityManagerProvider =
                 requireNonNull(entityManagerProvider, "The entityManagerProvider may not be null.");
         this.transactionManager = requireNonNull(transactionManager, "The transactionManager may not be null.");
-        this.converter = requireNonNull(converter, "The converter may not be null");
+        this.converter = requireNonNull(converter, "The converter may not be null.");
 
         var config = requireNonNull(configurer, "the configurationOverride may not be null.")
                 .apply(AggregateBasedJpaEventStorageEngineConfiguration.DEFAULT);

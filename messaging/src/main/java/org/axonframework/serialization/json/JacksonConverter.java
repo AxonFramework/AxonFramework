@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
@@ -155,5 +156,11 @@ public class JacksonConverter implements Converter {
                             + targetType.getTypeName() + "'", e
             );
         }
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("objectMapper", objectMapper);
+        descriptor.describeProperty("chaining-content-type-converter", converter);
     }
 }
