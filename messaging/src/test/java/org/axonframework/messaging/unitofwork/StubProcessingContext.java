@@ -60,7 +60,7 @@ public class StubProcessingContext implements ProcessingContext {
      * its own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
      */
     public StubProcessingContext() {
-        this(new EmptyApplicationContext());
+        this(EmptyApplicationContext.INSTANCE);
     }
 
     /**

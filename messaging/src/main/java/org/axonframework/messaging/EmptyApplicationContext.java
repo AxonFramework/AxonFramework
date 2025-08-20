@@ -25,7 +25,9 @@ import java.util.Optional;
 
 /**
  * An {@link ApplicationContext} implementation that does not provide any components.
- * It is useful as a placeholder or default context when no components are available.
+ * <p>
+ * It is useful as a placeholder in tests, but you should never use it if you want to be able to retrieve components
+ * from the {@link org.axonframework.messaging.unitofwork.ProcessingContext} in your components.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -33,9 +35,20 @@ import java.util.Optional;
 @Internal
 public class EmptyApplicationContext implements ApplicationContext {
 
+    /**
+     * Returns the singleton instance of the empty application context.
+     */
+    public static final EmptyApplicationContext INSTANCE = new EmptyApplicationContext();
+
+    private EmptyApplicationContext() {
+    }
+
     @Nonnull
     @Override
     public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
-        throw new ComponentNotFoundException(type, name);
+        throw new UnsupportedOperationException(
+                "EmptyApplicationContext does not provide any components. " +
+                        "You should never use it if you want to be able to retrieve components from the ProcessingContext."
+        );
     }
 }

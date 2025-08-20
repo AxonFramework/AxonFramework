@@ -18,8 +18,6 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.messaging.ApplicationContext;
-import org.axonframework.messaging.EmptyApplicationContext;
 
 import java.util.Objects;
 import java.util.concurrent.Executor;
@@ -27,27 +25,22 @@ import java.util.concurrent.Executor;
 /**
  * Configuration used for the {@link UnitOfWork} creation in the {@link UnitOfWorkFactory}.
  * <p>
- * Defines the work scheduler and application context used during unit of work processing.
+ * Defines the work scheduler used during unit of work processing.
  *
- * @param workScheduler      The {@link Executor} for processing unit of work actions.
- * @param applicationContext The {@link ApplicationContext} for component resolution.
- *
- * @since 5.0.0
+ * @param workScheduler The {@link Executor} for processing unit of work actions.
  * @author Mateusz Nowak
+ * @since 5.0.0
  */
-public record UnitOfWorkConfiguration(
-        @Nonnull Executor workScheduler,
-        @Nonnull ApplicationContext applicationContext
-) {
+public record UnitOfWorkConfiguration(@Nonnull Executor workScheduler) {
 
     /**
-     * Creates default configuration with direct execution and empty application context.
+     * Creates default configuration with direct execution.
      *
      * @return Default {@link UnitOfWorkConfiguration} instance.
      */
     @Nonnull
     public static UnitOfWorkConfiguration defaultValues() {
-        return new UnitOfWorkConfiguration(DirectExecutor.instance(), new EmptyApplicationContext());
+        return new UnitOfWorkConfiguration(DirectExecutor.instance());
     }
 
     /**
@@ -59,18 +52,6 @@ public record UnitOfWorkConfiguration(
     @Nonnull
     public UnitOfWorkConfiguration workScheduler(@Nonnull Executor workScheduler) {
         Objects.requireNonNull(workScheduler, "workScheduler may not be null");
-        return new UnitOfWorkConfiguration(workScheduler, applicationContext);
-    }
-
-    /**
-     * Creates new configuration with specified application context.
-     *
-     * @param applicationContext The {@link ApplicationContext} for component access.
-     * @return New {@link UnitOfWorkConfiguration} with updated application context.
-     */
-    @Nonnull
-    public UnitOfWorkConfiguration applicationContext(@Nonnull ApplicationContext applicationContext) {
-        Objects.requireNonNull(applicationContext, "applicationContext may not be null");
-        return new UnitOfWorkConfiguration(workScheduler, applicationContext);
+        return new UnitOfWorkConfiguration(workScheduler);
     }
 }

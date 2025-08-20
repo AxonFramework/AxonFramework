@@ -19,6 +19,7 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StubExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -62,7 +63,7 @@ class SimpleCommandBusTest {
     void setUp() {
         this.executor = new StubExecutor();
         this.testSubject = new SimpleCommandBus(
-                new SimpleUnitOfWorkFactory(c -> c.workScheduler(executor)),
+                new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE, c -> c.workScheduler(executor)),
                 Collections.emptyList());
     }
 
@@ -223,7 +224,7 @@ class SimpleCommandBusTest {
     @Test
     void lifecycleHandlersAreInvokedOnEachInvocation() {
         ProcessingLifecycleHandlerRegistrar lifecycleHandlerRegistrar = mock(ProcessingLifecycleHandlerRegistrar.class);
-        var unitOfWorkFactory = new SimpleUnitOfWorkFactory(c -> c.workScheduler(executor));
+        var unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE, c -> c.workScheduler(executor));
         testSubject = new SimpleCommandBus(unitOfWorkFactory, List.of(lifecycleHandlerRegistrar));
 
         var commandHandler = new StubCommandHandler("ok");
@@ -260,7 +261,7 @@ class SimpleCommandBusTest {
     @Test
     void describeReturnsRegisteredComponents() {
         ProcessingLifecycleHandlerRegistrar lifecycleHandlerRegistrar = mock(ProcessingLifecycleHandlerRegistrar.class);
-        UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory();
+        UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
         testSubject = new SimpleCommandBus(unitOfWorkFactory, List.of(lifecycleHandlerRegistrar));
         var handler1 = mock(CommandHandler.class);
         var handler2 = mock(CommandHandler.class);

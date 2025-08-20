@@ -128,9 +128,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                         TransactionManager.class,
                         NoTransactionManager::instance
                 ),
-                new SimpleUnitOfWorkFactory(
-                        c -> c.applicationContext(new ConfigurationApplicationContext(config))
-                )
+                new SimpleUnitOfWorkFactory(new ConfigurationApplicationContext(config))
         );
     }
 

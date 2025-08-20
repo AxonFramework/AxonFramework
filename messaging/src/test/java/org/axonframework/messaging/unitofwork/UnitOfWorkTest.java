@@ -40,7 +40,7 @@ class UnitOfWorkTest extends ProcessingLifecycleTest<UnitOfWork> {
 
     @Override
     UnitOfWork createTestSubject() {
-        return new UnitOfWork("unit-of-work-id", DirectExecutor.instance(), new EmptyApplicationContext());
+        return new UnitOfWork("unit-of-work-id", DirectExecutor.instance(), EmptyApplicationContext.INSTANCE);
     }
 
     @Override

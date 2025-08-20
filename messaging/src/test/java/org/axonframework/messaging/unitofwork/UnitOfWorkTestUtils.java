@@ -29,7 +29,7 @@ import java.util.UUID;
 public final class UnitOfWorkTestUtils {
 
     public static final SimpleUnitOfWorkFactory SIMPLE_FACTORY = new SimpleUnitOfWorkFactory(
-            c -> c.applicationContext(new EmptyApplicationContext())
+            EmptyApplicationContext.INSTANCE
     );
 
     /**
