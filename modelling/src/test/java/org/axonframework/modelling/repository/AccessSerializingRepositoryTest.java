@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 
 import static org.awaitility.Awaitility.await;
+import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -173,15 +174,5 @@ class AccessSerializingRepositoryTest {
         public String applyStateChange(UnaryOperator<String> change) {
             throw new UnsupportedOperationException("Not implemented");
         }
-    }
-
-    @Nonnull
-    private static UnitOfWork aUnitOfWork() {
-        return UnitOfWorkTestUtils.SIMPLE_FACTORY.create();
-    }
-
-    @Nonnull
-    private static UnitOfWork aUnitOfWork(String identifier) {
-        return UnitOfWorkTestUtils.SIMPLE_FACTORY.create(identifier);
     }
 }

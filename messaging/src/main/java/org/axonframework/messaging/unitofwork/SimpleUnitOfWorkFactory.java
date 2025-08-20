@@ -41,7 +41,7 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
      * @param applicationContext The {@link ApplicationContext} for component resolution in created {@link UnitOfWork}
      *                           instances.
      */
-    public SimpleUnitOfWorkFactory(ApplicationContext applicationContext) {
+    public SimpleUnitOfWorkFactory(@Nonnull ApplicationContext applicationContext) {
         this(applicationContext, c -> c);
     }
 
@@ -59,6 +59,7 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
             @Nonnull ApplicationContext applicationContext,
             @Nonnull UnaryOperator<UnitOfWorkConfiguration> factoryCustomization
     ) {
+        Objects.requireNonNull(applicationContext, "The applicationContext may not be null");
         Objects.requireNonNull(factoryCustomization, "The factoryCustomization may not be null");
         this.applicationContext = applicationContext;
         this.factoryCustomization = factoryCustomization;

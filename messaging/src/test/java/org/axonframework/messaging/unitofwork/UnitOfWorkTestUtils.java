@@ -47,6 +47,22 @@ public final class UnitOfWorkTestUtils {
         return SIMPLE_FACTORY.create(UUID.randomUUID().toString());
     }
 
+    /**
+     * Creates a new {@link UnitOfWork} with the given identifier.
+     * <p>
+     * Please note this instance will be created using the {@link SimpleUnitOfWorkFactory} with an
+     * {@link EmptyApplicationContext}, so you will not be able to get any components from the
+     * {@link ProcessingContext#component} method - it will always throw a
+     * {@link org.axonframework.configuration.ComponentNotFoundException}.
+     *
+     * @param identifier The identifier for the {@link UnitOfWork}.
+     * @return A new {@link UnitOfWork} with the given identifier.
+     */
+    @Nonnull
+    public static UnitOfWork aUnitOfWork(@Nonnull String identifier) {
+        return SIMPLE_FACTORY.create(identifier);
+    }
+
     private UnitOfWorkTestUtils() {
         // Utility class
     }
