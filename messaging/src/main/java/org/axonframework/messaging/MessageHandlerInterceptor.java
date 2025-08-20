@@ -29,7 +29,7 @@ import jakarta.annotation.Nonnull;
  * @author Allard Buijze
  * @since 0.5
  */
-public interface MessageHandlerInterceptor<T extends Message<?>> {
+public interface MessageHandlerInterceptor<T extends Message> {
 
     /**
      * Invoked before a Message is handled by a designated {@link org.axonframework.messaging.MessageHandler}.
@@ -54,7 +54,7 @@ public interface MessageHandlerInterceptor<T extends Message<?>> {
                   @Nonnull ProcessingContext context,
                   @Nonnull InterceptorChain interceptorChain) throws Exception;
 
-    default <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
+    default <M extends T, R extends Message> MessageStream<R> interceptOnHandle(@Nonnull M message,
                                                                                    @Nonnull ProcessingContext context,
                                                                                    @Nonnull InterceptorChain<M, R> interceptorChain) {
         throw new UnsupportedOperationException("Not implemented yet");

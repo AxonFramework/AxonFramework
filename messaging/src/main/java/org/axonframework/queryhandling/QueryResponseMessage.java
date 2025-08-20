@@ -27,34 +27,33 @@ import java.util.Map;
 /**
  * A {@link ResultMessage} implementation that contains the result of query handling.
  *
- * @param <R> The type of {@link #payload() payload} contained in this {@link QueryResponseMessage}.
  * @author Allard Buijze
  * @since 3.2.0
  */
-public interface QueryResponseMessage<R> extends ResultMessage<R> {
+public interface QueryResponseMessage extends ResultMessage {
 
     @Override
     @Nonnull
-    QueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData);
+    QueryResponseMessage withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     @Nonnull
-    QueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData);
+    QueryResponseMessage andMetaData(@Nonnull Map<String, String> additionalMetaData);
 
     @Override
     @Nonnull
-    default <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+    default QueryResponseMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
     @Nonnull
-    default <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type,
-                                                             @Nonnull Converter converter) {
+    default QueryResponseMessage withConvertedPayload(@Nonnull TypeReference<?> type,
+                                                      @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @Nonnull
-    <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    QueryResponseMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

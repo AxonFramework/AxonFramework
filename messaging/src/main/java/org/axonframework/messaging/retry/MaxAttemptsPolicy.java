@@ -42,7 +42,7 @@ public class MaxAttemptsPolicy implements RetryPolicy {
     }
 
     @Override
-    public Outcome defineFor(@Nonnull Message<?> message, @Nonnull Throwable cause,
+    public Outcome defineFor(@Nonnull Message message, @Nonnull Throwable cause,
                              @Nonnull List<Class<? extends Throwable>[]> previousFailures) {
         if (previousFailures.size() < maxAttempts) {
             return delegate.defineFor(message, cause, previousFailures);

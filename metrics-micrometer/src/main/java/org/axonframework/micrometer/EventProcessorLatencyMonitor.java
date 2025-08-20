@@ -52,11 +52,11 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Allard Buijze
  * @since 4.1
  */
-public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage<?>> {
+public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage> {
 
     private final String meterNamePrefix;
     private final MeterRegistry meterRegistry;
-    private final Function<Message<?>, Iterable<Tag>> tagsBuilder;
+    private final Function<Message, Iterable<Tag>> tagsBuilder;
     private final Clock clock;
 
     private final ConcurrentMap<Tags, AtomicLong> gauges = new ConcurrentHashMap<>();
@@ -92,7 +92,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
 
     @SuppressWarnings("PackageAccessibility")
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull EventMessage<?> message) {
+    public MonitorCallback onMessageIngested(@Nonnull EventMessage message) {
         //noinspection ConstantConditions
         if (message != null) {
             Tags tags = Tags.of(tagsBuilder.apply(message));
@@ -117,7 +117,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
 
         private String meterNamePrefix;
         private MeterRegistry meterRegistry;
-        private Function<Message<?>, Iterable<Tag>> tagsBuilder = message -> Tags.empty();
+        private Function<Message, Iterable<Tag>> tagsBuilder = message -> Tags.empty();
         private Clock clock = Clock.SYSTEM;
 
         /**
@@ -167,7 +167,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
          *                    monitored
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder tagsBuilder(Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+        public Builder tagsBuilder(Function<Message, Iterable<Tag>> tagsBuilder) {
             assertNonNull(tagsBuilder, "TagsBuilder may not be null");
             this.tagsBuilder = tagsBuilder;
             return this;

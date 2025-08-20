@@ -45,7 +45,7 @@ import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
  * @deprecated In favor of the {@link UnitOfWork}.
  */
 @Deprecated(since = "5.0.0", forRemoval = true)
-public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLegacyUnitOfWork<T> {
+public class LegacyBatchingUnitOfWork<T extends Message> extends AbstractLegacyUnitOfWork<T> {
 
     private final List<MessageProcessingContext<T>> processingContexts;
     private MessageProcessingContext<T> processingContext;
@@ -79,7 +79,7 @@ public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLega
      * the last executed task.
      */
     @Override
-    public <R> ResultMessage<R> executeWithResult(ProcessingContextCallable<R> task,
+    public <R> ResultMessage executeWithResult(ProcessingContextCallable<R> task,
                                                   @Nonnull RollbackConfiguration rollbackConfiguration) {
         if (phase() == Phase.NOT_STARTED) {
             start();
@@ -87,7 +87,7 @@ public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLega
         Assert.state(phase() == Phase.STARTED,
                      () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result = null;
-        ResultMessage<R> resultMessage = asResultMessage(result);
+        ResultMessage resultMessage = asResultMessage(result);
         Throwable cause = null;
         for (MessageProcessingContext<T> processingContext : processingContexts) {
             this.processingContext = processingContext;
@@ -96,13 +96,13 @@ public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLega
                 result = task.call(new LegacyMessageSupportingContext(processingContext.getMessage()));
                 if (result instanceof ResultMessage) {
                     //noinspection unchecked
-                    resultMessage = (ResultMessage<R>) result;
+                    resultMessage = (ResultMessage) result;
                 } else if (result instanceof Message) {
-                    resultMessage = new GenericResultMessage<>(((Message<?>) result).type(),
+                    resultMessage = new GenericResultMessage(((Message) result).type(),
                                                                result,
-                                                               ((Message<?>) result).metaData());
+                                                               ((Message) result).metaData());
                 } else {
-                    resultMessage = new GenericResultMessage<>(
+                    resultMessage = new GenericResultMessage(
                             new MessageType(ObjectUtils.nullSafeTypeOf(result)), result
                     );
                 }
@@ -136,7 +136,7 @@ public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLega
      *
      * @return a Map of ExecutionResult per Message processed by this Unit of Work
      */
-    public Map<Message<?>, ExecutionResult> getExecutionResults() {
+    public Map<Message, ExecutionResult> getExecutionResults() {
         return processingContexts.stream().collect(
                 Collectors.toMap(MessageProcessingContext::getMessage, MessageProcessingContext::getExecutionResult));
     }
@@ -147,7 +147,7 @@ public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLega
     }
 
     @Override
-    public LegacyUnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
+    public LegacyUnitOfWork<T> transformMessage(Function<T, ? extends Message> transformOperator) {
         processingContext.transformMessage(transformOperator);
         return this;
     }
@@ -173,7 +173,7 @@ public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLega
     @Override
     protected void setRollbackCause(Throwable cause) {
         processingContexts.forEach(context -> context.setExecutionResult(new ExecutionResult(
-                new GenericResultMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(cause)), cause)
+                new GenericResultMessage(new MessageType(ObjectUtils.nullSafeTypeOf(cause)), cause)
         )));
     }
 
@@ -197,7 +197,7 @@ public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLega
      * @param message the message to check for
      * @return {@code true} if the message is the last of this batch, {@code false} otherwise
      */
-    public boolean isLastMessage(Message<?> message) {
+    public boolean isLastMessage(Message message) {
         return processingContexts.get(processingContexts.size() - 1).getMessage().equals(message);
     }
 
@@ -216,7 +216,7 @@ public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLega
      * @param message the message to check
      * @return {@code true} if the message is the first of this batch, {@code false} otherwise
      */
-    public boolean isFirstMessage(Message<?> message) {
+    public boolean isFirstMessage(Message message) {
         return processingContexts.get(0).getMessage().equals(message);
     }
 

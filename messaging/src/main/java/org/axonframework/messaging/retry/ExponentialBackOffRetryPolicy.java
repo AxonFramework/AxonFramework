@@ -44,7 +44,7 @@ public class ExponentialBackOffRetryPolicy implements RetryPolicy {
     }
 
     @Override
-    public Outcome defineFor(@Nonnull Message<?> message, @Nonnull Throwable failure,
+    public Outcome defineFor(@Nonnull Message message, @Nonnull Throwable failure,
                              @Nonnull List<Class<? extends Throwable>[]> previousFailures) {
         if (Long.numberOfLeadingZeros(initialWaitTime) <= previousFailures.size()) {
             return Outcome.rescheduleIn(Long.MAX_VALUE, TimeUnit.MILLISECONDS);

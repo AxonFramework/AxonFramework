@@ -27,7 +27,7 @@ class DefaultQueryUpdateEmitterSpanFactoryTest extends
 
     @Test
     void createsDefaultScheduleSpan() {
-        SubscriptionQueryUpdateMessage<?> message = Mockito.mock(SubscriptionQueryUpdateMessage.class);
+        SubscriptionQueryUpdateMessage message = Mockito.mock(SubscriptionQueryUpdateMessage.class);
         test(spanFactory -> spanFactory.createUpdateScheduleEmitSpan(message),
              expectedSpan("QueryUpdateEmitter.scheduleQueryUpdateMessage", TestSpanFactory.TestSpanType.INTERNAL)
                      .withMessage(message)
@@ -36,7 +36,7 @@ class DefaultQueryUpdateEmitterSpanFactoryTest extends
 
     @Test
     void createsDefaultEmitSpan() {
-        SubscriptionQueryUpdateMessage<?> message = Mockito.mock(SubscriptionQueryUpdateMessage.class);
+        SubscriptionQueryUpdateMessage message = Mockito.mock(SubscriptionQueryUpdateMessage.class);
         test(spanFactory -> spanFactory.createUpdateEmitSpan(message),
              expectedSpan("QueryUpdateEmitter.emitQueryUpdateMessage", TestSpanFactory.TestSpanType.DISPATCH)
                      .withMessage(message)
@@ -45,7 +45,7 @@ class DefaultQueryUpdateEmitterSpanFactoryTest extends
 
     @Test
     void propagateContext() {
-        SubscriptionQueryUpdateMessage<?> message = Mockito.mock(SubscriptionQueryUpdateMessage.class);
+        SubscriptionQueryUpdateMessage message = Mockito.mock(SubscriptionQueryUpdateMessage.class);
         testContextPropagation(message, DefaultQueryUpdateEmitterSpanFactory::propagateContext);
     }
 

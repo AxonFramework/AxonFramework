@@ -19,13 +19,11 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.Context;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Decorator for {@link EventHandlingComponent}. This implementation acts as a performance optimization layer by caching
@@ -63,7 +61,7 @@ public class SequenceCachingEventHandlingComponent extends DelegatingEventHandli
 
     @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         String eventIdentifier = event.identifier();
 
         SequenceIdentifiersCache cache = context.computeResourceIfAbsent(

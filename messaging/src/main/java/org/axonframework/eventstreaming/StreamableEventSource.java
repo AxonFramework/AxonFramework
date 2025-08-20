@@ -33,7 +33,7 @@ import org.axonframework.messaging.MessageStream;
  * @author Steven van Beelen
  * @since 3.0
  */
-public interface StreamableEventSource<E extends EventMessage<?>> extends TrackingTokenSource {
+public interface StreamableEventSource<E extends EventMessage> extends TrackingTokenSource {
 
     /**
      * Open an {@link MessageStream event stream} containing all {@link EventMessage events} matching the given

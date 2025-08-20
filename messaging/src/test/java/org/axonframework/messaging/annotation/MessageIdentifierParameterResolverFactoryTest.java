@@ -66,7 +66,7 @@ class MessageIdentifierParameterResolverFactoryTest {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         assertNotNull(resolver);
-        final EventMessage<Object> eventMessage = EventTestUtils.asEventMessage("test");
+        final EventMessage eventMessage = EventTestUtils.asEventMessage("test");
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
         assertTrue(resolver.matches(context));
         assertEquals(eventMessage.identifier(), resolver.resolveParameterValue(context));
@@ -77,8 +77,8 @@ class MessageIdentifierParameterResolverFactoryTest {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         assertNotNull(resolver);
-        CommandMessage<Object> commandMessage =
-                new GenericCommandMessage<>(new MessageType("command"), "test");
+        CommandMessage commandMessage =
+                new GenericCommandMessage(new MessageType("command"), "test");
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         assertTrue(resolver.matches(context));
         assertEquals(commandMessage.identifier(), resolver.resolveParameterValue(context));

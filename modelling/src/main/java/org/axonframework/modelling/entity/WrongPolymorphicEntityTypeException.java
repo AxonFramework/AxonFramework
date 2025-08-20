@@ -41,7 +41,7 @@ public class WrongPolymorphicEntityTypeException extends RuntimeException {
      * @param givenEntityType       The entity type that was passed to the command handler.
      * @param <E>                   The type of the polymorphic entity.
      */
-    public <E> WrongPolymorphicEntityTypeException(@Nonnull CommandMessage<?> commandMessage,
+    public <E> WrongPolymorphicEntityTypeException(@Nonnull CommandMessage commandMessage,
                                                    @Nonnull Class<E> polymorphicEntityType,
                                                    @Nonnull List<Class<E>> supportedEntityTypes,
                                                    @Nonnull Class<E> givenEntityType

@@ -89,11 +89,11 @@ class EventConverterTest {
     @Test
     void convertTaggedEventMessageWorksAsExpected() {
         // given...
-        EventMessage<TestEvent> eventMessage = new GenericEventMessage<>(
+        EventMessage eventMessage = new GenericEventMessage(
                 EVENT_ID, EVENT_TYPE, eventPayload, EVENT_METADATA, Instant.ofEpochMilli(EVENT_TIMESTAMP)
         );
         Set<Tag> tags = Set.of(Tag.of("key", "value"), Tag.of("key2", "value2"), Tag.of("key3", "value3"));
-        TaggedEventMessage<EventMessage<TestEvent>> taggedEventMessage =
+        TaggedEventMessage<EventMessage> taggedEventMessage =
                 new GenericTaggedEventMessage<>(eventMessage, tags);
         // when...
         TaggedEvent result = testSubject.convertTaggedEventMessage(taggedEventMessage);
@@ -144,8 +144,8 @@ class EventConverterTest {
                 "Byte", "4",
                 "Boolean", "false"
         ));
-        EventMessage<TestEvent> eventMessage = new GenericEventMessage<>(EVENT_TYPE, eventPayload, metaData);
-        TaggedEventMessage<EventMessage<TestEvent>> taggedEventMessage =
+        EventMessage eventMessage = new GenericEventMessage(EVENT_TYPE, eventPayload, metaData);
+        TaggedEventMessage<EventMessage> taggedEventMessage =
                 new GenericTaggedEventMessage<>(eventMessage, Set.of(Tag.of("key", "value")));
         // when...
         Map<String, String> result = testSubject.convertTaggedEventMessage(taggedEventMessage)
@@ -181,11 +181,11 @@ class EventConverterTest {
                                .putAllMetadata(EVENT_METADATA)
                                .build();
         // when...
-        EventMessage<byte[]> result = testSubject.convertEvent(testEvent);
+        EventMessage result = testSubject.convertEvent(testEvent);
         // then...
         assertEquals(EVENT_ID, result.identifier());
         assertEquals(EVENT_TYPE, result.type());
-        assertArrayEquals(eventPayloadByteArray, result.payload());
+        assertArrayEquals(eventPayloadByteArray, result.payloadAs(byte[].class));
         assertEquals(EVENT_METADATA, result.metaData());
         assertEquals(EVENT_TIMESTAMP, result.timestamp().toEpochMilli());
     }

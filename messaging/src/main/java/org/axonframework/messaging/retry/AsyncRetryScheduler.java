@@ -61,7 +61,7 @@ public class AsyncRetryScheduler implements RetryScheduler, DescribableComponent
     }
 
     @Override
-    public <M extends Message<?>, R extends Message<?>> MessageStream<R> scheduleRetry(@Nonnull M message,
+    public <M extends Message, R extends Message> MessageStream<R> scheduleRetry(@Nonnull M message,
                                                                                        @Nullable ProcessingContext processingContext,
                                                                                        @Nonnull Throwable cause,
                                                                                        @Nonnull Dispatcher<M, R> dispatcher) {
@@ -82,14 +82,14 @@ public class AsyncRetryScheduler implements RetryScheduler, DescribableComponent
         descriptor.describeProperty("executor", this.executor);
     }
 
-    private class RetryTask<T extends Message<?>> implements Runnable {
+    private class RetryTask<T extends Message> implements Runnable {
 
         private final CompletableFuture<MessageStream<T>> finalResult = new CompletableFuture<>();
         private final List<Class<? extends Throwable>[]> history;
-        private final Message<?> message;
+        private final Message message;
         private final Supplier<MessageStream<T>> dispatcher;
 
-        public RetryTask(Message<?> message,
+        public RetryTask(Message message,
                          Throwable initialFailure,
                          Supplier<MessageStream<T>> dispatcher) {
             this.message = message;

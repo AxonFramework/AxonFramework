@@ -33,7 +33,7 @@ public interface QueryPriorityCalculator {
      * @param query a {@link QueryMessage} to prioritize
      * @return an {@code int} defining the priority of the given {@code query}
      */
-    int determinePriority(QueryMessage<?, ?> query);
+    int determinePriority(QueryMessage query);
 
     /**
      * Returns a default implementation of the {@link QueryPriorityCalculator}, always returning priority {@code 0}.

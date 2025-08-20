@@ -77,8 +77,8 @@ class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeAnnotatedHandlers> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedHandlers.class);
 
-        CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "ok");
-        CommandMessage<String> faultyCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "ko");
+        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "ok");
+        CommandMessage faultyCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "ko");
 
         assertEquals(true,
                      getHandler(inspector, testCommand).handleSync(testCommand,
@@ -95,8 +95,8 @@ class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeSubclass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
-        CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "sub");
-        CommandMessage<String> faultyCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "ok");
+        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "sub");
+        CommandMessage faultyCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "ok");
         SomeSubclass target = new SomeSubclass();
 
         assertEquals(true,
@@ -114,7 +114,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeAnnotatedFactoryMethodClass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedFactoryMethodClass.class);
 
-        CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "string");
+        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "string");
         final MessageHandlingMember<? super SomeAnnotatedFactoryMethodClass> messageHandlingMember =
                 getHandler(inspector, testCommand);
         final Optional<CommandMessageHandlingMember> unwrap =
@@ -249,8 +249,8 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
         AtomicLong payload = new AtomicLong();
 
-        EventMessage<AtomicLong> testEvent =
-                new GenericEventMessage<>(new MessageType("event"), payload);
+        EventMessage testEvent =
+                new GenericEventMessage(new MessageType("event"), payload);
         inspector.publish(testEvent, new SomeSubclass());
 
         assertEquals(2L, payload.get());
@@ -261,8 +261,8 @@ class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeSubclass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
-        CommandMessage<?> message =
-                new GenericCommandMessage<>(new MessageType(BigDecimal.class), BigDecimal.ONE);
+        CommandMessage message =
+                new GenericCommandMessage(new MessageType(BigDecimal.class), BigDecimal.ONE);
         SomeSubclass target = new SomeSubclass();
         MessageHandlingMember<? super SomeSubclass> handler = getHandler(inspector, message);
         assertEquals("1", handler.handleSync(message, StubProcessingContext.forMessage(message), target));
@@ -437,7 +437,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> MessageHandlingMember<T> getHandler(AggregateModel<T> member, CommandMessage<?> message) {
+    private <T> MessageHandlingMember<T> getHandler(AggregateModel<T> member, CommandMessage message) {
         ProcessingContext processingContext = StubProcessingContext.forMessage(message);
         return (MessageHandlingMember<T>) member.commandHandlers(member.entityClass())
                                                 .filter(ch -> ch.canHandle(message, processingContext))

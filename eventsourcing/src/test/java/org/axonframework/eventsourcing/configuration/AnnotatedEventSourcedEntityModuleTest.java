@@ -212,7 +212,7 @@ class AnnotatedEventSourcedEntityModuleTest {
         @Override
         public @Nullable CustomEntityFactoryCourse create(
                 @Nonnull CourseId courseId,
-                @Nullable EventMessage<?> firstEventMessage, @Nonnull ProcessingContext context) {
+                @Nullable EventMessage firstEventMessage, @Nonnull ProcessingContext context) {
             return new CustomEntityFactoryCourse(courseId);
         }
     }

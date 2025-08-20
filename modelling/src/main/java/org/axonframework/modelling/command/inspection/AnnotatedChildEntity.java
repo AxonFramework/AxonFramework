@@ -40,7 +40,7 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
 
     private final EntityModel<C> entityModel;
     private final List<MessageHandlingMember<? super P>> commandHandlers;
-    private final BiFunction<EventMessage<?>, P, Stream<C>> eventTargetResolver;
+    private final BiFunction<EventMessage, P, Stream<C>> eventTargetResolver;
 
     /**
      * Initiates a new AnnotatedChildEntity instance that uses the provided {@code entityModel} to delegate command and
@@ -53,8 +53,8 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
      */
     public AnnotatedChildEntity(EntityModel<C> entityModel,
                                 boolean forwardCommands,
-                                BiFunction<CommandMessage<?>, P, C> commandTargetResolver,
-                                BiFunction<EventMessage<?>, P, Stream<C>> eventTargetResolver) {
+                                BiFunction<CommandMessage, P, C> commandTargetResolver,
+                                BiFunction<EventMessage, P, Stream<C>> eventTargetResolver) {
         this.entityModel = entityModel;
         this.eventTargetResolver = eventTargetResolver;
         this.commandHandlers = new ArrayList<>();
@@ -74,7 +74,7 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     }
 
     @Override
-    public void publish(EventMessage<?> msg, P declaringInstance) {
+    public void publish(EventMessage msg, P declaringInstance) {
         eventTargetResolver.apply(msg, declaringInstance)
                            .collect(Collectors.toList()) // Creates copy to prevent ConcurrentModificationException.
                            .forEach(target -> entityModel.publish(msg, target));

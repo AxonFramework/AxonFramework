@@ -47,7 +47,7 @@ class StubAggregateCommandHandler {
     public void handleStubAggregateUpdatedWithExtraEvent(UpdateStubAggregateWithExtraEventCommand command) {
         Aggregate<StubAggregate> aggregate = repository.load(command.getAggregateId().toString());
         aggregate.execute(StubAggregate::makeAChange);
-        eventBus.publish(new GenericEventMessage<>(new MessageType("event"), new MyEvent()));
+        eventBus.publish(new GenericEventMessage(new MessageType("event"), new MyEvent()));
         aggregate.execute(StubAggregate::makeAChange);
     }
 

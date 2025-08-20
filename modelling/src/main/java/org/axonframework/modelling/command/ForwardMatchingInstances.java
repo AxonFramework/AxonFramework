@@ -39,7 +39,7 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
  * @author Steven van Beelen
  * @since 3.1
  */
-public class ForwardMatchingInstances<T extends Message<?>> implements ForwardingMode<T> {
+public class ForwardMatchingInstances<T extends Message> implements ForwardingMode<T> {
 
     private static final String EMPTY_STRING = "";
     /**

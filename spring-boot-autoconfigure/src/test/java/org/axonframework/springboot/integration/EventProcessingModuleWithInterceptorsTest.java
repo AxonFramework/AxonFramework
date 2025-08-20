@@ -57,9 +57,9 @@ class EventProcessingModuleWithInterceptorsTest {
                                                                .withUserConfiguration(TestContext.class);
     }
 
-    private static <P> EventMessage<P> asEventMessage(P event) {
-        return new GenericEventMessage<>(
-                new GenericMessage<>(new MessageType(event.getClass()), (P) event),
+    private static <P> EventMessage asEventMessage(P event) {
+        return new GenericEventMessage(
+                new GenericMessage(new MessageType(event.getClass()), (P) event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -89,10 +89,10 @@ class EventProcessingModuleWithInterceptorsTest {
             return eventProcessingModule;
         }
 
-        static class MyInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
+        static class MyInterceptor implements MessageHandlerInterceptor<EventMessage> {
 
             @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage> unitOfWork,
                                  @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain)
                     throws Exception {
                 unitOfWork.transformMessage(event -> event
@@ -101,7 +101,7 @@ class EventProcessingModuleWithInterceptorsTest {
             }
 
             @Override
-            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+            public <M extends EventMessage, R extends Message> MessageStream<R> interceptOnHandle(
                     @Nonnull M message, @Nonnull ProcessingContext context,
                     @Nonnull InterceptorChain<M, R> interceptorChain) {
                 //noinspection unchecked

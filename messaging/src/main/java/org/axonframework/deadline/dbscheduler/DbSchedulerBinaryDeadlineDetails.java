@@ -101,7 +101,6 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
      *                     {@code metadata}, as well as the whole {@link DbSchedulerBinaryDeadlineDetails}.
      * @return The serialized {@link String} representation of the details.
      */
-    @SuppressWarnings("rawtypes")
     static DbSchedulerBinaryDeadlineDetails serialized(@Nonnull String deadlineName,
                                                        @Nonnull ScopeDescriptor descriptor,
                                                        @Nonnull DeadlineMessage message,
@@ -198,12 +197,11 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
      *
      * @return the {@link GenericDeadlineMessage} with all the properties of this pojo, and a timestamp.
      */
-    @SuppressWarnings("rawtypes")
     public GenericDeadlineMessage asDeadLineMessage(Serializer serializer) {
-        return new GenericDeadlineMessage<>(d,
-                                            MessageType.fromString(t),
-                                            getDeserializedPayload(serializer),
-                                            getDeserializedMetaData(serializer));
+        return new GenericDeadlineMessage(d,
+                                          MessageType.fromString(t),
+                                          getDeserializedPayload(serializer),
+                                          getDeserializedMetaData(serializer));
     }
 
     private Object getDeserializedPayload(Serializer serializer) {

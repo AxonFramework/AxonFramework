@@ -75,11 +75,11 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
+    public boolean canHandle(@Nonnull EventMessage eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
         return delegates.stream().anyMatch(i -> canHandle(i, eventMessage, context, segment));
     }
 
-    private boolean canHandle(EventHandlerInvoker invoker, EventMessage<?> eventMessage, ProcessingContext context, Segment segment) {
+    private boolean canHandle(EventHandlerInvoker invoker, EventMessage eventMessage, ProcessingContext context, Segment segment) {
         return (invoker.supportsReset() || !ReplayToken.isReplay(eventMessage))
                 && invoker.canHandle(eventMessage, context, segment);
     }
@@ -90,7 +90,7 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public void handle(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext context, @Nonnull Segment segment) throws Exception {
+    public void handle(@Nonnull EventMessage message, @Nonnull ProcessingContext context, @Nonnull Segment segment) throws Exception {
         for (EventHandlerInvoker i : delegates) {
             if (canHandle(i, message, context, segment)) {
                 i.handle(message, context, segment);

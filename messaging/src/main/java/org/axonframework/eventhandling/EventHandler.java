@@ -42,6 +42,6 @@ public interface EventHandler extends MessageHandler {
      * @return An {@link MessageStream.Empty empty stream} containing nothing.
      */
     @Nonnull
-    MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
-                                              @Nonnull ProcessingContext context);
+    MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
+                                        @Nonnull ProcessingContext context);
 }

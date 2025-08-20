@@ -65,7 +65,7 @@ public class ProcessingContextEventAppender implements EventAppender, Describabl
     @Override
     public void append(@Nonnull List<?> events) {
         Objects.requireNonNull(events, "Events may not be null");
-        List<EventMessage<?>> eventMessages = events
+        List<EventMessage> eventMessages = events
                 .stream()
                 .map(e -> EventPublishingUtils.asEventMessage(e, messageTypeResolver))
                 .collect(Collectors.toList());

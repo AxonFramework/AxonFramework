@@ -177,7 +177,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
         @EventSourcingHandler
         protected void handle(EventMessage event) {
-            identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
+            identifier = ((DomainEventMessage) event).getAggregateIdentifier();
         }
 
         public String getIdentifier() {

@@ -47,8 +47,8 @@ import static org.mockito.Mockito.*;
  */
 class LockingRepositoryTest {
 
-    private static final Message<?> MESSAGE =
-            new GenericMessage<Object>(new MessageType("message"), "test");
+    private static final Message MESSAGE =
+            new GenericMessage(new MessageType("message"), "test");
 
     private EventBus eventBus;
     private LockFactory lockFactory;

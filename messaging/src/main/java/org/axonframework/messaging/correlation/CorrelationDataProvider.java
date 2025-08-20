@@ -43,5 +43,5 @@ public interface CorrelationDataProvider {
      * @return The data to attach as correlation data to generated messages.
      */
     @Nonnull
-    Map<String, String> correlationDataFor(@Nonnull Message<?> message);
+    Map<String, String> correlationDataFor(@Nonnull Message message);
 }

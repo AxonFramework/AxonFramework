@@ -41,7 +41,7 @@ class SequentialPerAggregatePolicyTest {
         Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier)).orElse(null);
         Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier)).orElse(null);
         Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID().toString())).orElse(null);
-        Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<>(
+        Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage(
                 new MessageType("event"), "bla"
         )).orElse(null);
 
@@ -51,8 +51,8 @@ class SequentialPerAggregatePolicyTest {
         assertNull(id4);
     }
 
-    private DomainEventMessage<Object> newStubDomainEvent(String aggregateIdentifier) {
-        return new GenericDomainEventMessage<>(
+    private DomainEventMessage newStubDomainEvent(String aggregateIdentifier) {
+        return new GenericDomainEventMessage(
                 "aggregateType", aggregateIdentifier, 0L, new MessageType("event"), new Object()
         );
     }

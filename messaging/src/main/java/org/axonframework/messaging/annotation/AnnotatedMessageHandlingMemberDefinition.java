@@ -57,8 +57,8 @@ public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefiniti
         return findAnnotationAttributes(method, MessageHandler.class)
                 .map(attr -> new MethodInvokingMessageHandlingMember<>(
                         method,
-                        (Class<? extends Message<?>>) attr.getOrDefault("messageType", Message.class),
-                        (Class<? extends Message<?>>) attr.getOrDefault("payloadType", Object.class),
+                        (Class<? extends Message>) attr.getOrDefault("messageType", Message.class),
+                        (Class<? extends Message>) attr.getOrDefault("payloadType", Object.class),
                         parameterResolverFactory,
                         returnTypeConverter
                 ));

@@ -33,5 +33,5 @@ public interface MessageMonitorFactory {
      * @param componentName The name of the component for which the Message Monitor must be created
      * @return the Message Monitor for the component
      */
-    MessageMonitor<Message<?>> create(LegacyConfiguration configuration, Class<?> componentType, String componentName);
+    MessageMonitor<Message> create(LegacyConfiguration configuration, Class<?> componentType, String componentName);
 }

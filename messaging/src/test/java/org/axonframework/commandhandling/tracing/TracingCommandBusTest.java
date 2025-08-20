@@ -56,8 +56,8 @@ class TracingCommandBusTest {
 
     @Test
     void dispatchIsCorrectlyTraced() {
-        CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), "Say hi!");
+        CommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), "Say hi!");
 
         when(delegate.dispatch(any(), any())).thenAnswer(
                 i -> {
@@ -75,8 +75,8 @@ class TracingCommandBusTest {
 
     @Test
     void dispatchIsCorrectlyTracedDuringException() {
-        CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), "Say hi!");
+        CommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), "Say hi!");
 
         when(delegate.dispatch(any(), any())).thenAnswer(i -> {
             spanFactory.verifySpanPropagated("CommandBus.dispatchCommand",
@@ -98,8 +98,8 @@ class TracingCommandBusTest {
 
     @Test
     void verifyHandlerSpansAreCreatedOnHandlerInvocation() {
-        CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), "Test");
+        CommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), "Test");
         ArgumentCaptor<CommandHandler> captor = ArgumentCaptor.forClass(CommandHandler.class);
         when(delegate.subscribe(any(QualifiedName.class), captor.capture())).thenReturn(null);
 
@@ -117,7 +117,7 @@ class TracingCommandBusTest {
 
     @Test
     void verifyHandlerSpansAreCompletedOnExceptionInHandlerInvocation() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(new MessageType("command"), "Test");
+        CommandMessage testCommand = new GenericCommandMessage(new MessageType("command"), "Test");
         ArgumentCaptor<CommandHandler> captor = ArgumentCaptor.forClass(CommandHandler.class);
         when(delegate.subscribe(any(QualifiedName.class), captor.capture())).thenReturn(null);
 

@@ -42,7 +42,7 @@ import java.time.Instant;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?>> {
+class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage> {
 
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 64;
 
@@ -78,17 +78,17 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     }
 
     @Override
-    public DeadLetter<EventMessage<?>> generateInitialLetter() {
+    public DeadLetter<EventMessage> generateInitialLetter() {
         return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable());
     }
 
     @Override
-    protected DeadLetter<EventMessage<?>> generateFollowUpLetter() {
+    protected DeadLetter<EventMessage> generateFollowUpLetter() {
         return new GenericDeadLetter<>("sequenceIdentifier", generateEvent());
     }
 
     @Override
-    protected DeadLetter<EventMessage<?>> mapToQueueImplementation(DeadLetter<EventMessage<?>> deadLetter) {
+    protected DeadLetter<EventMessage> mapToQueueImplementation(DeadLetter<EventMessage> deadLetter) {
         if (deadLetter instanceof JpaDeadLetter) {
             return deadLetter;
         }
@@ -96,7 +96,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
             return new JpaDeadLetter<>(
                     IdentifierFactory.getInstance().generateIdentifier(),
                     0L,
-                    ((GenericDeadLetter<EventMessage<?>>) deadLetter).getSequenceIdentifier().toString(),
+                    ((GenericDeadLetter<EventMessage>) deadLetter).getSequenceIdentifier().toString(),
                     deadLetter.enqueuedAt(),
                     deadLetter.lastTouched(),
                     deadLetter.cause().orElse(null),
@@ -108,7 +108,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     }
 
     @Override
-    protected DeadLetter<EventMessage<?>> generateRequeuedLetter(DeadLetter<EventMessage<?>> original,
+    protected DeadLetter<EventMessage> generateRequeuedLetter(DeadLetter<EventMessage> original,
                                                                  Instant lastTouched,
                                                                  Throwable requeueCause,
                                                                  MetaData diagnostics) {
@@ -117,8 +117,8 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     }
 
     @Override
-    protected void assertLetter(DeadLetter<? extends EventMessage<?>> expected,
-                                DeadLetter<? extends EventMessage<?>> actual) {
+    protected void assertLetter(DeadLetter<? extends EventMessage> expected,
+                                DeadLetter<? extends EventMessage> actual) {
 
         assertEquals(expected.message().payload(), actual.message().payload());
         assertEquals(expected.message().payloadType(), actual.message().payloadType());
@@ -131,7 +131,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     }
 
     @Override
-    public SequencedDeadLetterQueue<EventMessage<?>> buildTestSubject() {
+    public SequencedDeadLetterQueue<EventMessage> buildTestSubject() {
         EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
         return JpaSequencedDeadLetterQueue
                 .builder()
@@ -147,73 +147,73 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
     @Test
     void buildWithNegativeMaxQueuesThrowsAxonConfigurationException() {
-        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject = JpaSequencedDeadLetterQueue.builder();
+        JpaSequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject = JpaSequencedDeadLetterQueue.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(-1));
     }
 
     @Test
     void buildWithZeroMaxQueuesThrowsAxonConfigurationException() {
-        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject = JpaSequencedDeadLetterQueue.builder();
+        JpaSequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject = JpaSequencedDeadLetterQueue.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(0));
     }
 
     @Test
     void buildWithNegativeMaxQueueSizeThrowsAxonConfigurationException() {
-        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject = JpaSequencedDeadLetterQueue.builder();
+        JpaSequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject = JpaSequencedDeadLetterQueue.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(-1));
     }
 
     @Test
     void buildWithZeroMaxQueueSizeThrowsAxonConfigurationException() {
-        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject = JpaSequencedDeadLetterQueue.builder();
+        JpaSequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject = JpaSequencedDeadLetterQueue.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(0));
     }
 
     @Test
     void canNotSetNegativeQueryPageSize() {
-        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue.builder();
+        JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue.builder();
         assertThrows(AxonConfigurationException.class, () -> builder.queryPageSize(-1));
     }
 
     @Test
     void canNotSetZeroQueryPageSize() {
-        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue.builder();
+        JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue.builder();
         assertThrows(AxonConfigurationException.class, () -> builder.queryPageSize(0));
     }
 
     @Test
     void cannotRequeueGenericDeadLetter() {
-        SequencedDeadLetterQueue<EventMessage<?>> queue = buildTestSubject();
-        DeadLetter<EventMessage<?>> letter = generateInitialLetter();
+        SequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
+        DeadLetter<EventMessage> letter = generateInitialLetter();
         assertThrows(WrongDeadLetterTypeException.class, () -> queue.requeue(letter, d -> d));
     }
 
     @Test
     void cannotEvictGenericDeadLetter() {
-        SequencedDeadLetterQueue<EventMessage<?>> queue = buildTestSubject();
-        DeadLetter<EventMessage<?>> letter = generateInitialLetter();
+        SequencedDeadLetterQueue<EventMessage> queue = buildTestSubject();
+        DeadLetter<EventMessage> letter = generateInitialLetter();
         assertThrows(WrongDeadLetterTypeException.class, () -> queue.evict(letter));
     }
 
     @Test
     void canNotSetProcessingGroupToEmpty() {
-        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue.builder();
+        JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue.builder();
         assertThrows(AxonConfigurationException.class, () -> builder.processingGroup(""));
     }
 
     @Test
     void canNotSetProcessingGroupToNull() {
-        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue.builder();
+        JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue.builder();
         assertThrows(AxonConfigurationException.class, () -> builder.processingGroup(""));
     }
 
     @Test
     void canNotBuildWithoutProcessingGroup() {
-        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue
+        JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
                 .builder()
                 .transactionManager(transactionManager)
                 .entityManagerProvider(() -> entityManager)
@@ -223,7 +223,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
     @Test
     void canNotBuildWithoutTransactionManager() {
-        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue
+        JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
                 .builder()
                 .processingGroup("my_processing_Group")
                 .entityManagerProvider(() -> entityManager)
@@ -234,7 +234,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
     @Test
     void canNotBuildWithoutEntityManagerProvider() {
-        JpaSequencedDeadLetterQueue.Builder<EventMessage<?>> builder = JpaSequencedDeadLetterQueue
+        JpaSequencedDeadLetterQueue.Builder<EventMessage> builder = JpaSequencedDeadLetterQueue
                 .builder()
                 .processingGroup("my_processing_Group")
                 .transactionManager(transactionManager)

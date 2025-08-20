@@ -72,13 +72,13 @@ class AsynchronousEventProcessingStrategyTest {
 
         final List<EventMessage> ackedMessages = Collections.synchronizedList(new ArrayList<>());
 
-        EventMessage<?> event1 = createDomainEvent(1);
-        EventMessage<?> event2 = createDomainEvent(2);
+        EventMessage event1 = createDomainEvent(1);
+        EventMessage event2 = createDomainEvent(2);
 
-        final Consumer<List<? extends EventMessage<?>>> processor = mock(Consumer.class);
+        final Consumer<List<? extends EventMessage>> processor = mock(Consumer.class);
         CountDownLatch latch = new CountDownLatch(2);
         doAnswer(invocation -> {
-            List<? extends EventMessage<?>> events = (List) invocation.getArguments()[0];
+            List<? extends EventMessage> events = (List) invocation.getArguments()[0];
             events.forEach(e -> {
                 ackedMessages.add(e);
                 latch.countDown();
@@ -103,8 +103,8 @@ class AsynchronousEventProcessingStrategyTest {
 
     @Test
     void eventsScheduledForHandling() {
-        EventMessage<?> message1 = createDomainEvent("aggregate1", 1);
-        EventMessage<?> message2 = createDomainEvent("aggregate2", 1);
+        EventMessage message1 = createDomainEvent("aggregate1", 1);
+        EventMessage message2 = createDomainEvent("aggregate2", 1);
 
         testSubject.handle(Arrays.asList(message1, message2), mock(Consumer.class));
 
@@ -113,10 +113,10 @@ class AsynchronousEventProcessingStrategyTest {
 
     @Test
     void eventsScheduledForHandlingWhenSurroundingUnitOfWorkCommits() {
-        EventMessage<?> message1 = createDomainEvent("aggregate1", 1);
-        EventMessage<?> message2 = createDomainEvent("aggregate2", 1);
+        EventMessage message1 = createDomainEvent("aggregate1", 1);
+        EventMessage message2 = createDomainEvent("aggregate2", 1);
 
-        LegacyUnitOfWork<EventMessage<?>> uow = LegacyDefaultUnitOfWork.startAndGet(message1);
+        LegacyUnitOfWork<EventMessage> uow = LegacyDefaultUnitOfWork.startAndGet(message1);
         uow.onPrepareCommit(u -> verify(executor, never()).execute(isA(Runnable.class)));
 
         testSubject.handle(Arrays.asList(message1, message2), mock(Consumer.class));

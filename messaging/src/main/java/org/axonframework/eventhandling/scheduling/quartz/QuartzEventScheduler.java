@@ -144,17 +144,16 @@ public class QuartzEventScheduler implements EventScheduler {
         return tr;
     }
 
-    @SuppressWarnings("unchecked")
-    private <E> EventMessage<E> asEventMessage(@Nonnull Object event) {
-        if (event instanceof EventMessage<?>) {
-            return (EventMessage<E>) event;
-        } else if (event instanceof Message<?>) {
-            Message<E> message = (Message<E>) event;
-            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+    private EventMessage asEventMessage(@Nonnull Object event) {
+        if (event instanceof EventMessage e) {
+            return e;
         }
-        return new GenericEventMessage<>(
+        if (event instanceof Message message) {
+            return new GenericEventMessage(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage(
                 messageTypeResolver.resolveOrThrow(event),
-                (E) event,
+                event,
                 MetaData.emptyInstance()
         );
     }
@@ -292,7 +291,7 @@ public class QuartzEventScheduler implements EventScheduler {
         public JobDataMap toJobData(Object event) {
             JobDataMap jobData = new JobDataMap();
 
-            EventMessage<?> eventMessage = (EventMessage<?>) event;
+            EventMessage eventMessage = (EventMessage) event;
 
             jobData.put(MESSAGE_ID, eventMessage.identifier());
             jobData.put(TYPE, eventMessage.type().toString());
@@ -313,7 +312,7 @@ public class QuartzEventScheduler implements EventScheduler {
 
         @Override
         public Object fromJobData(JobDataMap jobDataMap) {
-            return new GenericEventMessage<>((String) jobDataMap.get(MESSAGE_ID),
+            return new GenericEventMessage((String) jobDataMap.get(MESSAGE_ID),
                                              MessageType.fromString((String) jobDataMap.get(TYPE)),
                                              deserializePayload(jobDataMap),
                                              deserializeMetaData(jobDataMap),

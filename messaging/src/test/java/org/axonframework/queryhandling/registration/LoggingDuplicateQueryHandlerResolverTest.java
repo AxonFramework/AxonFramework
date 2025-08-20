@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class LoggingDuplicateQueryHandlerResolverTest {
 
@@ -38,8 +37,8 @@ class LoggingDuplicateQueryHandlerResolverTest {
 
     @Test
     void throwsNoErrorOnDuplicateHandlerAndAddsItToList() {
-        QuerySubscription<?> existingHandler = mockSubscription();
-        QuerySubscription<?> addedHandler = mockSubscription();
+        QuerySubscription<?> existingHandler = new QuerySubscription<>(MyResponse.class, (m, ctx) -> null);
+        QuerySubscription<?> addedHandler = new QuerySubscription<>(MyResponse.class, (m, ctx) -> null);
 
         CopyOnWriteArrayList<QuerySubscription<?>> existingHandlers = new CopyOnWriteArrayList<>();
         existingHandlers.add(existingHandler);
@@ -50,12 +49,5 @@ class LoggingDuplicateQueryHandlerResolverTest {
         assertEquals(2, resolvedList.size());
         assertTrue(resolvedList.contains(existingHandler));
         assertTrue(resolvedList.contains(addedHandler));
-    }
-
-    private QuerySubscription<?> mockSubscription() {
-        QuerySubscription<?> mock = mock(QuerySubscription.class);
-        when(mock.getQueryHandler()).thenReturn((message, ctx) -> null);
-        when(mock.getResponseType()).thenReturn(MyResponse.class);
-        return mock;
     }
 }

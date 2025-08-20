@@ -72,7 +72,7 @@ public class ConvertingCommandGateway implements CommandGateway {
     ) implements CommandResult {
 
         @Override
-        public CompletableFuture<? extends Message<?>> getResultMessage() {
+        public CompletableFuture<? extends Message> getResultMessage() {
             return delegate.getResultMessage();
         }
 
@@ -85,7 +85,7 @@ public class ConvertingCommandGateway implements CommandGateway {
 
         @Override
         public <R> CommandResult onSuccess(@Nonnull Class<R> resultType,
-                                           @Nonnull BiConsumer<R, Message<?>> successHandler) {
+                                           @Nonnull BiConsumer<R, Message> successHandler) {
             requireNonNull(successHandler, "The success handler must not be null.");
             delegate.getResultMessage()
                     .whenComplete((message, e) -> {

@@ -83,7 +83,7 @@ public interface Aggregate<T> {
      * {@link CommandMessage} yields no results.
      * @throws Exception in case one is triggered during message processing.
      */
-    Object handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) throws Exception;
+    Object handle(@Nonnull Message message, @Nonnull ProcessingContext context) throws Exception;
 
     /**
      * Invoke a method on the underlying aggregate root or one of its instances. Use this over

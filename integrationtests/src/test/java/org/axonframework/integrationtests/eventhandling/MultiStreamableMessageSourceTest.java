@@ -72,11 +72,11 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void simplePublishAndConsume() throws InterruptedException {
-        EventMessage<?> publishedEvent = EventTestUtils.asEventMessage("Event1");
+        EventMessage publishedEvent = EventTestUtils.asEventMessage("Event1");
 
         eventStoreA.publish(publishedEvent);
 
-        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+        BlockingStream<TrackedEventMessage> singleEventStream =
                 testSubject.openStream(testSubject.createTailToken());
 
         assertTrue(singleEventStream.hasNextAvailable());
@@ -88,13 +88,13 @@ class MultiStreamableMessageSourceTest {
     @SuppressWarnings({"unchecked", "resource"})
     @Test
     void connectionsAreClosedWhenOpeningFails() {
-        StreamableMessageSource<TrackedEventMessage<?>> source1 = mock(StreamableMessageSource.class);
-        StreamableMessageSource<TrackedEventMessage<?>> source2 = mock(StreamableMessageSource.class);
+        StreamableMessageSource<TrackedEventMessage> source1 = mock(StreamableMessageSource.class);
+        StreamableMessageSource<TrackedEventMessage> source2 = mock(StreamableMessageSource.class);
         testSubject = MultiStreamableMessageSource.builder()
                                                   .addMessageSource("source1", source1)
                                                   .addMessageSource("source2", source2)
                                                   .build();
-        BlockingStream<TrackedEventMessage<?>> mockStream = mock(BlockingStream.class);
+        BlockingStream<TrackedEventMessage> mockStream = mock(BlockingStream.class);
         when(source1.openStream(any())).thenReturn(mockStream);
         when(source2.openStream(any())).thenThrow(new RuntimeException());
 
@@ -107,16 +107,16 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void simplePublishAndConsumeDomainEventMessage() throws InterruptedException {
-        EventMessage<?> publishedEvent = new GenericDomainEventMessage<>(
+        EventMessage publishedEvent = new GenericDomainEventMessage(
                 "Aggregate", "id", 0, new MessageType("event"), "Event1"
         );
 
         eventStoreA.publish(publishedEvent);
-        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+        BlockingStream<TrackedEventMessage> singleEventStream =
                 testSubject.openStream(testSubject.createTailToken());
 
         assertTrue(singleEventStream.hasNextAvailable());
-        TrackedEventMessage<?> actual = singleEventStream.nextAvailable();
+        TrackedEventMessage actual = singleEventStream.nextAvailable();
 
         assertEquals(publishedEvent.payload(), actual.payload());
         assertTrue(actual instanceof DomainEventMessage);
@@ -127,12 +127,12 @@ class MultiStreamableMessageSourceTest {
     @SuppressWarnings("resource")
     @Test
     void peekingLastMessageKeepsItAvailable() throws InterruptedException {
-        EventMessage<?> publishedEvent1 = EventTestUtils.asEventMessage("Event1");
+        EventMessage publishedEvent1 = EventTestUtils.asEventMessage("Event1");
 
 
         eventStoreA.publish(publishedEvent1);
 
-        BlockingStream<TrackedEventMessage<?>> stream = testSubject.openStream(null);
+        BlockingStream<TrackedEventMessage> stream = testSubject.openStream(null);
         assertEquals("Event1", stream.peek().map(Message::payload).map(Object::toString).orElse("None"));
         assertTrue(stream.hasNextAvailable());
         assertTrue(stream.hasNextAvailable(10, TimeUnit.SECONDS));
@@ -146,19 +146,19 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void openStreamWithNullTokenReturnsFirstEvent() throws InterruptedException {
-        EventMessage<Object> message = EventTestUtils.asEventMessage("Event1");
+        EventMessage message = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(message);
 
-        BlockingStream<TrackedEventMessage<?>> actual = testSubject.openStream(null);
+        BlockingStream<TrackedEventMessage> actual = testSubject.openStream(null);
         assertNotNull(actual);
-        TrackedEventMessage<?> trackedEventMessage = actual.nextAvailable();
+        TrackedEventMessage trackedEventMessage = actual.nextAvailable();
         assertEquals(message.identifier(), trackedEventMessage.identifier());
         assertEquals(message.payload(), trackedEventMessage.payload());
     }
 
     @Test
     void longPoll() throws InterruptedException {
-        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+        BlockingStream<TrackedEventMessage> singleEventStream =
                 testSubject.openStream(testSubject.createTokenAt(Instant.now()));
 
         long beforePollTime = System.currentTimeMillis();
@@ -173,10 +173,10 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void longPollMessageImmediatelyAvailable() throws InterruptedException {
-        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+        BlockingStream<TrackedEventMessage> singleEventStream =
                 testSubject.openStream(testSubject.createTokenAt(Instant.now()));
 
-        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event1");
+        EventMessage pubToStreamB = EventTestUtils.asEventMessage("Event1");
         eventStoreB.publish(pubToStreamB);
 
         long beforePollTime = System.currentTimeMillis();
@@ -190,15 +190,15 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void multiPublishAndConsume() throws InterruptedException {
-        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
+        EventMessage pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
         Thread.sleep(20);
 
-        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event2");
+        EventMessage pubToStreamB = EventTestUtils.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
-        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+        BlockingStream<TrackedEventMessage> singleEventStream =
                 testSubject.openStream(testSubject.createTokenAt(recentTimeStamp()));
 
         assertTrue(singleEventStream.hasNextAvailable());
@@ -213,11 +213,11 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void peek() throws InterruptedException {
-        EventMessage<?> publishedEvent = EventTestUtils.asEventMessage("Event1");
+        EventMessage publishedEvent = EventTestUtils.asEventMessage("Event1");
 
         eventStoreA.publish(publishedEvent);
 
-        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+        BlockingStream<TrackedEventMessage> singleEventStream =
                 testSubject.openStream(testSubject.createTokenAt(recentTimeStamp()));
 
         assertTrue(singleEventStream.peek().isPresent());
@@ -231,19 +231,19 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void peekWithMultipleStreams() throws InterruptedException {
-        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
+        EventMessage pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
         Thread.sleep(20);
 
-        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event2");
+        EventMessage pubToStreamB = EventTestUtils.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
-        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+        BlockingStream<TrackedEventMessage> singleEventStream =
                 testSubject.openStream(testSubject.createTokenAt(recentTimeStamp()));
 
         assertTrue(singleEventStream.peek().isPresent());
-        TrackedEventMessage<?> peekedMessageA = singleEventStream.peek().get();
+        TrackedEventMessage peekedMessageA = singleEventStream.peek().get();
         MultiSourceTrackingToken tokenA = (MultiSourceTrackingToken) peekedMessageA.trackingToken();
         assertEquals(pubToStreamA.payload(), peekedMessageA.payload());
 
@@ -252,7 +252,7 @@ class MultiStreamableMessageSourceTest {
 
         //peek and consume another
         assertTrue(singleEventStream.peek().isPresent());
-        TrackedEventMessage<?> peekedMessageB = singleEventStream.peek().get();
+        TrackedEventMessage peekedMessageB = singleEventStream.peek().get();
         MultiSourceTrackingToken tokenB = (MultiSourceTrackingToken) peekedMessageB.trackingToken();
         assertEquals(pubToStreamB.payload(), peekedMessageB.payload());
 
@@ -278,10 +278,10 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void createLatestToken() {
-        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
+        EventMessage pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
-        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event2");
+        EventMessage pubToStreamB = EventTestUtils.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
         MultiSourceTrackingToken tailToken = testSubject.createTailToken();
@@ -296,10 +296,10 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void createFirstToken() {
-        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
+        EventMessage pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
-        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event2");
+        EventMessage pubToStreamB = EventTestUtils.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
         eventStoreB.publish(pubToStreamB);
 
@@ -315,13 +315,13 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void createTokenAt() throws InterruptedException {
-        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
+        EventMessage pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
         eventStoreA.publish(pubToStreamA);
 
         Thread.sleep(20);
 
-        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event2");
+        EventMessage pubToStreamB = EventTestUtils.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
         // Token should track events in eventStoreB and skip those in eventStoreA
@@ -336,13 +336,13 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void createTokenSince() throws InterruptedException {
-        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
+        EventMessage pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
         eventStoreA.publish(pubToStreamA);
 
         Thread.sleep(20);
 
-        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event2");
+        EventMessage pubToStreamB = EventTestUtils.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
         // Token should track events in eventStoreB and skip those in eventStoreA
@@ -358,8 +358,8 @@ class MultiStreamableMessageSourceTest {
     @SuppressWarnings("resource")
     @Test
     void configuredDifferentComparator() throws InterruptedException {
-        Comparator<Map.Entry<String, TrackedEventMessage<?>>> eventStoreAPriority =
-                Comparator.comparing((Map.Entry<String, TrackedEventMessage<?>> e) -> !e.getKey().equals("eventStoreA"))
+        Comparator<Map.Entry<String, TrackedEventMessage>> eventStoreAPriority =
+                Comparator.comparing((Map.Entry<String, TrackedEventMessage> e) -> !e.getKey().equals("eventStoreA"))
                           .thenComparing(e -> e.getValue().timestamp());
 
         LegacyEmbeddedEventStore eventStoreC = LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine())
@@ -373,20 +373,20 @@ class MultiStreamableMessageSourceTest {
                                             .trackedEventComparator(eventStoreAPriority)
                                             .build();
 
-        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
+        EventMessage pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
         eventStoreA.publish(pubToStreamA);
         eventStoreA.publish(pubToStreamA);
 
-        EventMessage<?> pubToStreamC = EventTestUtils.asEventMessage("Event2");
+        EventMessage pubToStreamC = EventTestUtils.asEventMessage("Event2");
         eventStoreC.publish(pubToStreamC);
 
         Thread.sleep(5);
 
-        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event3");
+        EventMessage pubToStreamB = EventTestUtils.asEventMessage("Event3");
         eventStoreB.publish(pubToStreamB);
 
-        BlockingStream<TrackedEventMessage<?>> singleEventStream =
+        BlockingStream<TrackedEventMessage> singleEventStream =
                 prioritySourceTestSubject.openStream(prioritySourceTestSubject.createTailToken());
 
         singleEventStream.nextAvailable();
@@ -399,20 +399,20 @@ class MultiStreamableMessageSourceTest {
     @SuppressWarnings({"unchecked", "resource"})
     @Test
     void skipMessagesWithPayloadTypeOfInvokesAllConfiguredStreams() {
-        TrackedEventMessage<String> testEvent = new GenericTrackedEventMessage<>(
+        TrackedEventMessage testEvent = new GenericTrackedEventMessage(
                 new GlobalSequenceTrackingToken(1), EventTestUtils.asEventMessage("some-payload")
         );
 
-        StreamableMessageSource<TrackedEventMessage<?>> sourceOne = mock(StreamableMessageSource.class);
-        BlockingStream<TrackedEventMessage<?>> streamOne = mock(BlockingStream.class);
+        StreamableMessageSource<TrackedEventMessage> sourceOne = mock(StreamableMessageSource.class);
+        BlockingStream<TrackedEventMessage> streamOne = mock(BlockingStream.class);
         when(sourceOne.openStream(any())).thenReturn(streamOne);
 
-        StreamableMessageSource<TrackedEventMessage<?>> sourceTwo = mock(StreamableMessageSource.class);
-        BlockingStream<TrackedEventMessage<?>> streamTwo = mock(BlockingStream.class);
+        StreamableMessageSource<TrackedEventMessage> sourceTwo = mock(StreamableMessageSource.class);
+        BlockingStream<TrackedEventMessage> streamTwo = mock(BlockingStream.class);
         when(sourceTwo.openStream(any())).thenReturn(streamTwo);
 
-        StreamableMessageSource<TrackedEventMessage<?>> sourceThree = mock(StreamableMessageSource.class);
-        BlockingStream<TrackedEventMessage<?>> streamThree = mock(BlockingStream.class);
+        StreamableMessageSource<TrackedEventMessage> sourceThree = mock(StreamableMessageSource.class);
+        BlockingStream<TrackedEventMessage> streamThree = mock(BlockingStream.class);
         when(sourceThree.openStream(any())).thenReturn(streamThree);
 
         MultiStreamableMessageSource multiStream =
@@ -421,7 +421,7 @@ class MultiStreamableMessageSourceTest {
                                             .addMessageSource("two", sourceTwo)
                                             .addMessageSource("three", sourceThree)
                                             .build();
-        BlockingStream<TrackedEventMessage<?>> testSubject = multiStream.openStream(null);
+        BlockingStream<TrackedEventMessage> testSubject = multiStream.openStream(null);
 
         testSubject.skipMessagesWithPayloadTypeOf(testEvent);
 
@@ -437,17 +437,17 @@ class MultiStreamableMessageSourceTest {
         Runnable testCallback = () -> invoked.set(true);
 
         CallbackSupportingBlockingStream streamOne = spy(new CallbackSupportingBlockingStream());
-        StreamableMessageSource<TrackedEventMessage<?>> sourceOne = mock(StreamableMessageSource.class);
+        StreamableMessageSource<TrackedEventMessage> sourceOne = mock(StreamableMessageSource.class);
         when(sourceOne.openStream(any())).thenReturn(streamOne);
 
-        BlockingStream<TrackedEventMessage<?>> streamTwo = mock(BlockingStream.class);
+        BlockingStream<TrackedEventMessage> streamTwo = mock(BlockingStream.class);
         when(streamTwo.setOnAvailableCallback(any())).thenReturn(true);
-        StreamableMessageSource<TrackedEventMessage<?>> sourceTwo = mock(StreamableMessageSource.class);
+        StreamableMessageSource<TrackedEventMessage> sourceTwo = mock(StreamableMessageSource.class);
         when(sourceTwo.openStream(any())).thenReturn(streamTwo);
 
-        BlockingStream<TrackedEventMessage<?>> streamThree = mock(BlockingStream.class);
+        BlockingStream<TrackedEventMessage> streamThree = mock(BlockingStream.class);
         when(streamThree.setOnAvailableCallback(any())).thenReturn(true);
-        StreamableMessageSource<TrackedEventMessage<?>> sourceThree = mock(StreamableMessageSource.class);
+        StreamableMessageSource<TrackedEventMessage> sourceThree = mock(StreamableMessageSource.class);
         when(sourceThree.openStream(any())).thenReturn(streamThree);
 
         MultiStreamableMessageSource multiStream =
@@ -456,7 +456,7 @@ class MultiStreamableMessageSourceTest {
                                             .addMessageSource("two", sourceTwo)
                                             .addMessageSource("three", sourceThree)
                                             .build();
-        BlockingStream<TrackedEventMessage<?>> testSubject = multiStream.openStream(null);
+        BlockingStream<TrackedEventMessage> testSubject = multiStream.openStream(null);
 
         assertTrue(testSubject.setOnAvailableCallback(testCallback));
 
@@ -475,18 +475,18 @@ class MultiStreamableMessageSourceTest {
         Runnable testCallback = () -> invoked.set(true);
 
         CallbackSupportingBlockingStream streamOne = spy(new CallbackSupportingBlockingStream());
-        StreamableMessageSource<TrackedEventMessage<?>> sourceOne = mock(StreamableMessageSource.class);
+        StreamableMessageSource<TrackedEventMessage> sourceOne = mock(StreamableMessageSource.class);
         when(sourceOne.openStream(any())).thenReturn(streamOne);
 
         // Stream two does not support callbacks
-        BlockingStream<TrackedEventMessage<?>> streamTwo = mock(BlockingStream.class);
+        BlockingStream<TrackedEventMessage> streamTwo = mock(BlockingStream.class);
         when(streamTwo.setOnAvailableCallback(any())).thenReturn(false);
-        StreamableMessageSource<TrackedEventMessage<?>> sourceTwo = mock(StreamableMessageSource.class);
+        StreamableMessageSource<TrackedEventMessage> sourceTwo = mock(StreamableMessageSource.class);
         when(sourceTwo.openStream(any())).thenReturn(streamTwo);
 
-        BlockingStream<TrackedEventMessage<?>> streamThree = mock(BlockingStream.class);
+        BlockingStream<TrackedEventMessage> streamThree = mock(BlockingStream.class);
         when(streamThree.setOnAvailableCallback(any())).thenReturn(true);
-        StreamableMessageSource<TrackedEventMessage<?>> sourceThree = mock(StreamableMessageSource.class);
+        StreamableMessageSource<TrackedEventMessage> sourceThree = mock(StreamableMessageSource.class);
         when(sourceThree.openStream(any())).thenReturn(streamThree);
 
         MultiStreamableMessageSource multiStream =
@@ -495,7 +495,7 @@ class MultiStreamableMessageSourceTest {
                                             .addMessageSource("two", sourceTwo)
                                             .addMessageSource("three", sourceThree)
                                             .build();
-        BlockingStream<TrackedEventMessage<?>> testSubject = multiStream.openStream(null);
+        BlockingStream<TrackedEventMessage> testSubject = multiStream.openStream(null);
 
         assertFalse(testSubject.setOnAvailableCallback(testCallback));
 
@@ -508,12 +508,12 @@ class MultiStreamableMessageSourceTest {
         assertTrue(invoked.get());
     }
 
-    private static class CallbackSupportingBlockingStream implements BlockingStream<TrackedEventMessage<?>> {
+    private static class CallbackSupportingBlockingStream implements BlockingStream<TrackedEventMessage> {
 
         private Runnable callback;
 
         @Override
-        public Optional<TrackedEventMessage<?>> peek() {
+        public Optional<TrackedEventMessage> peek() {
             throw new UnsupportedOperationException();
         }
 
@@ -524,7 +524,7 @@ class MultiStreamableMessageSourceTest {
 
         @SuppressWarnings("RedundantThrows")
         @Override
-        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+        public TrackedEventMessage nextAvailable() throws InterruptedException {
             throw new UnsupportedOperationException();
         }
 

@@ -31,7 +31,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public class ShouldEnqueue<M extends Message<?>> implements EnqueueDecision<M> {
+public class ShouldEnqueue<M extends Message> implements EnqueueDecision<M> {
 
     private final Throwable enqueueCause;
     private final Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder;

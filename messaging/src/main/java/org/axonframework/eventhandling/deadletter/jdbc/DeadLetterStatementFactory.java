@@ -39,7 +39,7 @@ import jakarta.annotation.Nonnull;
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public interface DeadLetterStatementFactory<E extends EventMessage<?>> {
+public interface DeadLetterStatementFactory<E extends EventMessage> {
 
     /**
      * Constructs the {@link PreparedStatement} used for the

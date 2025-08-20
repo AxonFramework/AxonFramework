@@ -48,11 +48,11 @@ import java.util.concurrent.ConcurrentMap;
 public class RecordingCommandBus implements CommandBus {
 
     private final ConcurrentMap<QualifiedName, CommandHandler> subscriptions = new ConcurrentHashMap<>();
-    private final List<CommandMessage<?>> dispatchedCommands = new ArrayList<>();
+    private final List<CommandMessage> dispatchedCommands = new ArrayList<>();
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                @Nullable ProcessingContext processingContext) {
         dispatchedCommands.add(command);
         try {
@@ -77,7 +77,7 @@ public class RecordingCommandBus implements CommandBus {
         if (commandResult instanceof CommandResultMessage) {
             return (CommandResultMessage<R>) commandResult;
         } else if (commandResult instanceof Message) {
-            Message<R> commandResultMessage = (Message<R>) commandResult;
+            Message commandResultMessage = (Message) commandResult;
             return new GenericCommandResultMessage<>(commandResultMessage);
         }
         MessageType type = new MessageType(ObjectUtils.nullSafeTypeOf(commandResult));
@@ -135,7 +135,7 @@ public class RecordingCommandBus implements CommandBus {
      *
      * @return a list with all commands that have been dispatched
      */
-    public List<CommandMessage<?>> getDispatchedCommands() {
+    public List<CommandMessage> getDispatchedCommands() {
         return dispatchedCommands;
     }
 

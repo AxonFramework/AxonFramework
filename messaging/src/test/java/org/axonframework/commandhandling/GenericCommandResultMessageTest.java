@@ -31,7 +31,7 @@ class GenericCommandResultMessageTest extends MessageTestSuite<CommandResultMess
 
     @Override
     protected CommandResultMessage<?> buildDefaultMessage() {
-        return new GenericCommandResultMessage<>(new GenericMessage<>(
+        return new GenericCommandResultMessage<>(new GenericMessage(
                 TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA
         ));
     }

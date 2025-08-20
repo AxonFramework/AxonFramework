@@ -36,7 +36,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class SingleValueMessageStream<M extends Message<?>> implements MessageStream.Single<M> {
+class SingleValueMessageStream<M extends Message> implements MessageStream.Single<M> {
 
     private final CompletableFuture<Entry<M>> source;
     private final AtomicBoolean read = new AtomicBoolean(false);
@@ -121,7 +121,7 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream.Si
     }
 
     @Override
-    public <RM extends Message<?>> Single<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+    public <RM extends Message> Single<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         return new SingleValueMessageStream<>(source.thenApply(mapper));
     }
 

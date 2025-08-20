@@ -33,8 +33,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class MultiTagResolverTest {
 
-    private static final GenericEventMessage<String> TEST_EVENT =
-            new GenericEventMessage<>(new MessageType("test", "event", "0.0.1"), "payload");
+    private static final GenericEventMessage TEST_EVENT =
+            new GenericEventMessage(new MessageType("test", "event", "0.0.1"), "payload");
 
     @Test
     void resolveCombinesTagsFromMultipleResolvers() {

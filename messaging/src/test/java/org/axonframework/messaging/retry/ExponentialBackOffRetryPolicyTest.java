@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ExponentialBackOffRetryPolicyTest {
 
-    private final Message<?> message = new GenericMessage<>(new MessageType("message"), "test");
+    private final Message message = new GenericMessage(new MessageType("message"), "test");
     private final MockException failure = new MockException("Simulating failure");
 
     private ExponentialBackOffRetryPolicy testSubject;

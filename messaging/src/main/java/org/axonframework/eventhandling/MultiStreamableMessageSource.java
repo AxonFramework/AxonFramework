@@ -49,12 +49,12 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * @author Greg Woods
  * @since 4.2
  */
-public class MultiStreamableMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
+public class MultiStreamableMessageSource implements StreamableMessageSource<TrackedEventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MultiStreamableMessageSource.class);
 
     private final List<IdentifiedStreamableMessageSource> eventStreams;
-    private final Comparator<Map.Entry<String, TrackedEventMessage<?>>> trackedEventComparator;
+    private final Comparator<Map.Entry<String, TrackedEventMessage>> trackedEventComparator;
 
     /**
      * Instantiate a Builder to be able to create an {@link MultiStreamableMessageSource}. The configurable field
@@ -137,9 +137,9 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
      */
     public static class Builder {
 
-        private Comparator<Map.Entry<String, TrackedEventMessage<?>>> trackedEventComparator =
-                Comparator.comparing((Map.Entry<String, TrackedEventMessage<?>> t) -> t.getValue().timestamp());
-        private final Map<String, StreamableMessageSource<TrackedEventMessage<?>>> messageSourceMap = new LinkedHashMap<>();
+        private Comparator<Map.Entry<String, TrackedEventMessage>> trackedEventComparator =
+                Comparator.comparing((Map.Entry<String, TrackedEventMessage> t) -> t.getValue().timestamp());
+        private final Map<String, StreamableMessageSource<TrackedEventMessage>> messageSourceMap = new LinkedHashMap<>();
         private String longPollingSource = "";
 
         /**
@@ -150,7 +150,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder addMessageSource(String messageSourceId,
-                                        StreamableMessageSource<TrackedEventMessage<?>> messageSource) {
+                                        StreamableMessageSource<TrackedEventMessage> messageSource) {
             assertThat(messageSourceId, sourceName -> !messageSourceMap.containsKey(sourceName),
                        "the messageSource name must be unique");
             messageSourceMap.put(messageSourceId, messageSource);
@@ -165,7 +165,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder trackedEventComparator(
-                Comparator<Map.Entry<String, TrackedEventMessage<?>>> trackedEventComparator) {
+                Comparator<Map.Entry<String, TrackedEventMessage>> trackedEventComparator) {
             this.trackedEventComparator = trackedEventComparator;
             return this;
         }
@@ -219,19 +219,19 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
     /**
      * Wrapper around a {@link StreamableMessageSource} that hold the name of the source.
      */
-    private static class IdentifiedStreamableMessageSource implements StreamableMessageSource<TrackedEventMessage<?>> {
+    private static class IdentifiedStreamableMessageSource implements StreamableMessageSource<TrackedEventMessage> {
 
-        private final StreamableMessageSource<TrackedEventMessage<?>> delegate;
+        private final StreamableMessageSource<TrackedEventMessage> delegate;
         private final String sourceId;
 
         public IdentifiedStreamableMessageSource(String sourceId,
-                                                 StreamableMessageSource<TrackedEventMessage<?>> delegate) {
+                                                 StreamableMessageSource<TrackedEventMessage> delegate) {
             this.delegate = delegate;
             this.sourceId = sourceId;
         }
 
         @Override
-        public BlockingStream<TrackedEventMessage<?>> openStream(TrackingToken trackingToken) {
+        public BlockingStream<TrackedEventMessage> openStream(TrackingToken trackingToken) {
             return delegate.openStream(trackingToken);
         }
 
@@ -263,12 +263,12 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
     /**
      * Wrapper around a {@link BlockingStream} that keeps track of the name of the source in its container.
      */
-    private static class SourceIdAwareBlockingStream implements BlockingStream<TrackedEventMessage<?>> {
+    private static class SourceIdAwareBlockingStream implements BlockingStream<TrackedEventMessage> {
 
         private final String sourceId;
-        private final BlockingStream<TrackedEventMessage<?>> delegate;
+        private final BlockingStream<TrackedEventMessage> delegate;
 
-        public SourceIdAwareBlockingStream(String sourceId, BlockingStream<TrackedEventMessage<?>> delegate) {
+        public SourceIdAwareBlockingStream(String sourceId, BlockingStream<TrackedEventMessage> delegate) {
             this.sourceId = sourceId;
             this.delegate = delegate;
         }
@@ -279,7 +279,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         }
 
         @Override
-        public Optional<TrackedEventMessage<?>> peek() {
+        public Optional<TrackedEventMessage> peek() {
             return delegate.peek();
         }
 
@@ -289,7 +289,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         }
 
         @Override
-        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+        public TrackedEventMessage nextAvailable() throws InterruptedException {
             return delegate.nextAvailable();
         }
 
@@ -299,12 +299,12 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         }
 
         @Override
-        public Stream<TrackedEventMessage<?>> asStream() {
+        public Stream<TrackedEventMessage> asStream() {
             return delegate.asStream();
         }
 
         @Override
-        public void skipMessagesWithPayloadTypeOf(TrackedEventMessage<?> ignoredMessage) {
+        public void skipMessagesWithPayloadTypeOf(TrackedEventMessage ignoredMessage) {
             delegate.skipMessagesWithPayloadTypeOf(ignoredMessage);
         }
 
@@ -317,13 +317,13 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
     /**
      * A {@link BlockingStream} implementation that delegates requests to one or more underlying streams.
      */
-    private static class MultiSourceBlockingStream implements BlockingStream<TrackedEventMessage<?>> {
+    private static class MultiSourceBlockingStream implements BlockingStream<TrackedEventMessage> {
 
         private final List<SourceIdAwareBlockingStream> messageStreams;
         private final Map<String, SourceIdAwareBlockingStream> streamBySourceId;
-        private final Comparator<? super Map.Entry<String, TrackedEventMessage<?>>> trackedEventComparator;
+        private final Comparator<? super Map.Entry<String, TrackedEventMessage>> trackedEventComparator;
         private MultiSourceTrackingToken trackingToken;
-        private TrackedEventMessage<?> peekedMessage;
+        private TrackedEventMessage peekedMessage;
 
         /**
          * Construct a new {@link MultiSourceBlockingStream} from the message sources provided using the
@@ -337,7 +337,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          */
         public MultiSourceBlockingStream(Iterable<IdentifiedStreamableMessageSource> messageSources,
                                          MultiSourceTrackingToken trackingToken,
-                                         Comparator<? super Map.Entry<String, TrackedEventMessage<?>>> trackedEventComparator) {
+                                         Comparator<? super Map.Entry<String, TrackedEventMessage>> trackedEventComparator) {
             this.trackedEventComparator = trackedEventComparator;
             this.messageStreams = new ArrayList<>();
             this.trackingToken = trackingToken;
@@ -375,7 +375,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          * @return message chosen using the trackedEventComparator.
          */
         @Override
-        public Optional<TrackedEventMessage<?>> peek() {
+        public Optional<TrackedEventMessage> peek() {
             if (peekedMessage == null) {
                 peekedMessage = doConsumeNext();
             }
@@ -383,19 +383,19 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
             return Optional.ofNullable(peekedMessage);
         }
 
-        private TrackedEventMessage<?> doConsumeNext() {
-            HashMap<String, TrackedEventMessage<?>> candidateMessagesToReturn = new HashMap<>();
+        private TrackedEventMessage doConsumeNext() {
+            HashMap<String, TrackedEventMessage> candidateMessagesToReturn = new HashMap<>();
 
             peekForMessages(candidateMessagesToReturn);
 
             //select message to return from candidates
-            final Optional<Map.Entry<String, TrackedEventMessage<?>>> chosenMessage =
+            final Optional<Map.Entry<String, TrackedEventMessage>> chosenMessage =
                     candidateMessagesToReturn.entrySet().stream().min(trackedEventComparator);
 
             // Ensure the chosen message is actually consumed from the stream
             return chosenMessage.map(e -> {
                 String streamId = e.getKey();
-                TrackedEventMessage<?> message = e.getValue();
+                TrackedEventMessage message = e.getValue();
                 try {
                     MultiSourceTrackingToken advancedToken =
                             this.trackingToken.advancedTo(streamId, message.trackingToken());
@@ -408,7 +408,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
             }).orElse(null);
         }
 
-        private BlockingStream<TrackedEventMessage<?>> messageSource(String sourceId) {
+        private BlockingStream<TrackedEventMessage> messageSource(String sourceId) {
             return streamBySourceId.get(sourceId);
         }
 
@@ -476,16 +476,16 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
          * @throws InterruptedException thrown if polling is interrupted during polling a stream.
          */
         @Override
-        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+        public TrackedEventMessage nextAvailable() throws InterruptedException {
             //Return peekedMessage if available.
             if (peekedMessage != null) {
-                TrackedEventMessage<?> next = peekedMessage;
+                TrackedEventMessage next = peekedMessage;
                 peekedMessage = null;
                 trackingToken = (MultiSourceTrackingToken) next.trackingToken();
                 return next;
             }
 
-            HashMap<String, TrackedEventMessage<?>> candidateMessagesToReturn = new HashMap<>();
+            HashMap<String, TrackedEventMessage> candidateMessagesToReturn = new HashMap<>();
 
             //block until there is a message to consume
             while (candidateMessagesToReturn.size() == 0) {
@@ -499,7 +499,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
                                              .map(Map.Entry::getKey).orElse(null);
 
             // Actually consume the message from the stream
-            TrackedEventMessage<?> messageToReturn = messageSource(streamIdOfMessage).nextAvailable();
+            TrackedEventMessage messageToReturn = messageSource(streamIdOfMessage).nextAvailable();
 
             //update the composite token
             final MultiSourceTrackingToken newTrackingToken = trackingToken.advancedTo(streamIdOfMessage,
@@ -510,9 +510,9 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
             return messageToReturn.withTrackingToken(newTrackingToken);
         }
 
-        private void peekForMessages(Map<String, TrackedEventMessage<?>> candidateMessagesToReturn) {
+        private void peekForMessages(Map<String, TrackedEventMessage> candidateMessagesToReturn) {
             for (SourceIdAwareBlockingStream singleMessageSource : messageStreams) {
-                Optional<TrackedEventMessage<?>> currentPeekedMessage = singleMessageSource.peek();
+                Optional<TrackedEventMessage> currentPeekedMessage = singleMessageSource.peek();
                 currentPeekedMessage.ifPresent(
                         trackedEventMessage -> candidateMessagesToReturn
                                 .put(singleMessageSource.sourceId, trackedEventMessage));
@@ -528,7 +528,7 @@ public class MultiStreamableMessageSource implements StreamableMessageSource<Tra
         }
 
         @Override
-        public void skipMessagesWithPayloadTypeOf(TrackedEventMessage<?> ignoredMessage) {
+        public void skipMessagesWithPayloadTypeOf(TrackedEventMessage ignoredMessage) {
             messageStreams.forEach(stream -> stream.skipMessagesWithPayloadTypeOf(ignoredMessage));
         }
 

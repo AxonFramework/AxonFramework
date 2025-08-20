@@ -49,7 +49,7 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
 
     private final String name;
     private final SubscribingEventProcessorConfiguration configuration;
-    private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
+    private final SubscribableMessageSource<? extends EventMessage> messageSource;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final EventProcessingStrategy processingStrategy;
     private final ErrorHandler errorHandler;
@@ -152,7 +152,7 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
      *
      * @param eventMessages The messages to process
      */
-    protected void process(List<? extends EventMessage<?>> eventMessages) {
+    protected void process(List<? extends EventMessage> eventMessages) {
         try {
             var unitOfWork = this.configuration.unitOfWorkFactory().create();
             unitOfWork.onInvocation(processingContext -> processWithErrorHandling(eventMessages,
@@ -165,8 +165,8 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
         }
     }
 
-    private MessageStream.Empty<Message<Void>> processWithErrorHandling(List<? extends EventMessage<?>> events,
-                                                                        ProcessingContext context) {
+    private MessageStream.Empty<Message> processWithErrorHandling(List<? extends EventMessage> events,
+                                                                  ProcessingContext context) {
         return eventHandlingComponents.handle(events, context)
                                       .onErrorContinue(ex -> {
                                           try {
@@ -203,7 +203,7 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
      *
      * @return the MessageSource from which the processor receives its events
      */
-    public SubscribableMessageSource<? extends EventMessage<?>> getMessageSource() {
+    public SubscribableMessageSource<? extends EventMessage> getMessageSource() {
         return messageSource;
     }
 

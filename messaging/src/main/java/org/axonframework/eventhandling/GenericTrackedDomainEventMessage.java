@@ -32,9 +32,9 @@ import jakarta.annotation.Nonnull;
  * {@link EventMessage}.
  */
 @Deprecated
-public class GenericTrackedDomainEventMessage<T>
-        extends GenericDomainEventMessage<T>
-        implements TrackedEventMessage<T> {
+public class GenericTrackedDomainEventMessage
+        extends GenericDomainEventMessage
+        implements TrackedEventMessage {
 
     private final TrackingToken trackingToken;
 
@@ -44,7 +44,7 @@ public class GenericTrackedDomainEventMessage<T>
      * @param trackingToken Tracking token of the event
      * @param delegate      Delegate domain event containing other event data
      */
-    public GenericTrackedDomainEventMessage(TrackingToken trackingToken, DomainEventMessage<T> delegate) {
+    public GenericTrackedDomainEventMessage(TrackingToken trackingToken, DomainEventMessage delegate) {
         this(trackingToken, delegate.getType(), delegate.getAggregateIdentifier(), delegate.getSequenceNumber(),
              delegate, delegate.timestamp());
     }
@@ -61,7 +61,7 @@ public class GenericTrackedDomainEventMessage<T>
      * @param timestamp           The event's timestamp supplier
      */
     public GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
-                                            long sequenceNumber, Message<T> delegate, Supplier<Instant> timestamp) {
+                                            long sequenceNumber, Message delegate, Supplier<Instant> timestamp) {
         super(type, aggregateIdentifier, sequenceNumber, delegate, timestamp);
         this.trackingToken = trackingToken;
     }
@@ -77,7 +77,7 @@ public class GenericTrackedDomainEventMessage<T>
      * @param timestamp           The event's timestamp
      */
     protected GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
-                                               long sequenceNumber, Message<T> delegate, Instant timestamp) {
+                                               long sequenceNumber, Message delegate, Instant timestamp) {
         super(type, aggregateIdentifier, sequenceNumber, delegate, timestamp);
         this.trackingToken = trackingToken;
     }
@@ -89,16 +89,16 @@ public class GenericTrackedDomainEventMessage<T>
 
     @Override
     @Nonnull
-    public GenericTrackedDomainEventMessage<T> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericTrackedDomainEventMessage<>(trackingToken, getType(), getAggregateIdentifier(),
+    public GenericTrackedDomainEventMessage withMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericTrackedDomainEventMessage(trackingToken, getType(), getAggregateIdentifier(),
                                                       getSequenceNumber(), delegate().withMetaData(metaData),
                                                       timestamp());
     }
 
     @Override
     @Nonnull
-    public GenericTrackedDomainEventMessage<T> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericTrackedDomainEventMessage<>(trackingToken, getType(), getAggregateIdentifier(),
+    public GenericTrackedDomainEventMessage andMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericTrackedDomainEventMessage(trackingToken, getType(), getAggregateIdentifier(),
                                                       getSequenceNumber(), delegate().andMetaData(metaData),
                                                       timestamp());
     }
@@ -112,8 +112,8 @@ public class GenericTrackedDomainEventMessage<T>
     }
 
     @Override
-    public GenericTrackedDomainEventMessage<T> withTrackingToken(TrackingToken trackingToken) {
-        return new GenericTrackedDomainEventMessage<>(trackingToken, this);
+    public GenericTrackedDomainEventMessage withTrackingToken(TrackingToken trackingToken) {
+        return new GenericTrackedDomainEventMessage(trackingToken, this);
     }
 
     @Override

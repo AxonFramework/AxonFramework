@@ -32,7 +32,7 @@ import java.sql.SQLException;
  * @since 4.8.0
  */
 @FunctionalInterface
-public interface DeadLetterJdbcConverter<E extends EventMessage<?>, D extends JdbcDeadLetter<E>> {
+public interface DeadLetterJdbcConverter<E extends EventMessage, D extends JdbcDeadLetter<E>> {
 
     /**
      * Converts the given {@code resultSet} in an implementation of {@link JdbcDeadLetter}.

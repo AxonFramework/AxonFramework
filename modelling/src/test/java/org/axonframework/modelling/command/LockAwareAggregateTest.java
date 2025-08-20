@@ -85,7 +85,7 @@ class LockAwareAggregateTest {
 
     @Test
     void handleMethodInvokesWrappedAggregateAndInspectsLock() throws Exception {
-        Message<?> testMessage = new GenericMessage<>(new MessageType("message"), "some-message");
+        Message testMessage = new GenericMessage(new MessageType("message"), "some-message");
         ProcessingContext context = StubProcessingContext.forMessage(testMessage);
 
         testSubject.handle(testMessage, context);

@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Allard Buijze
  * @since 5.0.0
  */
-class TruncateFirstMessageStream<M extends Message<?>>
+class TruncateFirstMessageStream<M extends Message>
         extends DelegatingMessageStream<M, M>
         implements MessageStream.Single<M> {
 

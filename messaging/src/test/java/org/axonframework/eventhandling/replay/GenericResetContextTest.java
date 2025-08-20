@@ -30,22 +30,22 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-class GenericResetContextTest extends MessageTestSuite<ResetContext<?>> {
+class GenericResetContextTest extends MessageTestSuite<ResetContext> {
 
     @Override
-    protected ResetContext<?> buildDefaultMessage() {
-        return new GenericResetContext<>(new GenericMessage<>(
+    protected ResetContext buildDefaultMessage() {
+        return new GenericResetContext(new GenericMessage(
                 TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA
         ));
     }
 
     @Override
-    protected <P> ResetContext<?> buildMessage(@Nullable P payload) {
-        return new GenericResetContext<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    protected <P> ResetContext buildMessage(@Nullable P payload) {
+        return new GenericResetContext(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 
     @Test
     void describeType() {
-        assertEquals("GenericResetContext", new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD).describeType());
+        assertEquals("GenericResetContext", new GenericResetContext(TEST_TYPE, TEST_PAYLOAD).describeType());
     }
 }

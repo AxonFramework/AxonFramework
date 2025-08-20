@@ -54,7 +54,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements SequencedDeadLetterQueue<M> {
+public class InMemorySequencedDeadLetterQueue<M extends Message> implements SequencedDeadLetterQueue<M> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -85,7 +85,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
      *            {@link SequencedDeadLetterQueue}.
      * @return A Builder that can construct an {@link InMemorySequencedDeadLetterQueue}.
      */
-    public static <M extends Message<?>> Builder<M> builder() {
+    public static <M extends Message> Builder<M> builder() {
         return new Builder<>();
     }
 
@@ -99,7 +99,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
      *            {@link SequencedDeadLetterQueue}.
      * @return A default {@link InMemorySequencedDeadLetterQueue}.
      */
-    public static <M extends Message<?>> InMemorySequencedDeadLetterQueue<M> defaultQueue() {
+    public static <M extends Message> InMemorySequencedDeadLetterQueue<M> defaultQueue() {
         return InMemorySequencedDeadLetterQueue.<M>builder().build();
     }
 
@@ -334,7 +334,7 @@ public class InMemorySequencedDeadLetterQueue<M extends Message<?>> implements S
      * @param <M> The type of {@link Message} maintained in the {@link DeadLetter dead letter} of this
      *            {@link SequencedDeadLetterQueue}.
      */
-    public static class Builder<M extends Message<?>> {
+    public static class Builder<M extends Message> {
 
         private int maxSequences = 1024;
         private int maxSequenceSize = 1024;

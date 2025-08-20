@@ -28,8 +28,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class UnresolvedRoutingKeyPolicyTest {
 
-    private final CommandMessage<String> testCommand =
-            new GenericCommandMessage<>(new MessageType("command"), "some-payload");
+    private final CommandMessage testCommand =
+            new GenericCommandMessage(new MessageType("command"), "some-payload");
 
     @Test
     void errorStrategy() {

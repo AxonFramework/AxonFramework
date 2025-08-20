@@ -35,8 +35,8 @@ import jakarta.annotation.Nonnull;
  * @since 0.1
  */
 @Deprecated // TODO #3392 - Replace for actual EventSink implementation.
-public interface EventBus extends SubscribableMessageSource<EventMessage<?>>,
-                                  MessageDispatchInterceptorSupport<EventMessage<?>> {
+public interface EventBus extends SubscribableMessageSource<EventMessage>,
+                                  MessageDispatchInterceptorSupport<EventMessage> {
 
     /**
      * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
@@ -47,7 +47,7 @@ public interface EventBus extends SubscribableMessageSource<EventMessage<?>>,
      *
      * @param events The collection of events to publish
      */
-    default void publish(EventMessage<?>... events) {
+    default void publish(EventMessage... events) {
         publish(Arrays.asList(events));
     }
 
@@ -60,6 +60,6 @@ public interface EventBus extends SubscribableMessageSource<EventMessage<?>>,
      *
      * @param events The collection of events to publish
      */
-    void publish(@Nonnull List<? extends EventMessage<?>> events);
+    void publish(@Nonnull List<? extends EventMessage> events);
 
 }

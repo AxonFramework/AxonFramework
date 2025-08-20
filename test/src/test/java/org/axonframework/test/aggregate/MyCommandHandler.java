@@ -53,7 +53,7 @@ class MyCommandHandler {
     @CommandHandler
     public void handleStrangeCommand(StrangeCommand testCommand) {
         repository.load(testCommand.getAggregateIdentifier().toString()).execute(StandardAggregate::doSomething);
-        eventBus.publish(new GenericEventMessage<>(
+        eventBus.publish(new GenericEventMessage(
                 new MessageType("event"), new MyApplicationEvent()
         ));
         throw new StrangeCommandReceivedException("Strange command received");
@@ -61,7 +61,7 @@ class MyCommandHandler {
 
     @CommandHandler
     public void handleEventPublishingCommand(PublishEventCommand testCommand) {
-        eventBus.publish(new GenericEventMessage<>(
+        eventBus.publish(new GenericEventMessage(
                 new MessageType("event"), new MyApplicationEvent()
         ));
     }

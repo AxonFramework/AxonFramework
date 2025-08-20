@@ -30,7 +30,7 @@ import java.util.function.Consumer;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class OnNextMessageStream<M extends Message<?>> extends DelegatingMessageStream<M, M> {
+class OnNextMessageStream<M extends Message> extends DelegatingMessageStream<M, M> {
 
     private final MessageStream<M> delegate;
     private final Consumer<Entry<M>> onNext;
@@ -68,7 +68,7 @@ class OnNextMessageStream<M extends Message<?>> extends DelegatingMessageStream<
      *
      * @param <M> The type of {@link Message} contained in the {@link Entry} of this stream.
      */
-    static class Single<M extends Message<?>> extends OnNextMessageStream<M> implements MessageStream.Single<M> {
+    static class Single<M extends Message> extends OnNextMessageStream<M> implements MessageStream.Single<M> {
 
         /**
          * Construct an {@link MessageStream stream} that invokes the given {@code onNext} {@link Consumer} once, for

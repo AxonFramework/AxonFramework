@@ -29,7 +29,7 @@ import java.util.Optional;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class IteratorMessageStream<M extends Message<?>> implements MessageStream<M> {
+class IteratorMessageStream<M extends Message> implements MessageStream<M> {
 
     private final Iterator<? extends Entry<M>> source;
     private Entry<M> peeked = null;

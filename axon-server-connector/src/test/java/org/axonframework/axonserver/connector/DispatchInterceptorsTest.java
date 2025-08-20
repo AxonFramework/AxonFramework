@@ -36,7 +36,7 @@ class DispatchInterceptorsTest {
     @Test
     void registerInterceptors() {
         List<String> results = new ArrayList<>();
-        DispatchInterceptors<Message<?>> dispatchInterceptors = new DispatchInterceptors<>();
+        DispatchInterceptors<Message> dispatchInterceptors = new DispatchInterceptors<>();
         dispatchInterceptors.registerDispatchInterceptor(messages -> (a, b) -> {
                                                              results.add("Interceptor One");
                                                              return b;
@@ -48,7 +48,7 @@ class DispatchInterceptorsTest {
                                                              return b;
                                                          }
         );
-        dispatchInterceptors.intercept(new GenericMessage<>(new MessageType("message"), "payload"));
+        dispatchInterceptors.intercept(new GenericMessage(new MessageType("message"), "payload"));
         assertEquals("Interceptor One", results.get(0));
         assertEquals("Interceptor Two", results.get(1));
         assertEquals(2, results.size());

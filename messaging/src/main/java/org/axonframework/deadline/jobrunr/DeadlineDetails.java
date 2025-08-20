@@ -96,7 +96,6 @@ public class DeadlineDetails {
      *                     {@code metadata}, as well as the whole {@link DeadlineDetails}.
      * @return The serialized {@link String} representation of the details.
      */
-    @SuppressWarnings("rawtypes")
     static String serialized(@Nonnull String deadlineName,
                              @Nonnull ScopeDescriptor descriptor,
                              @Nonnull DeadlineMessage message,
@@ -194,12 +193,11 @@ public class DeadlineDetails {
      *
      * @return the {@link GenericDeadlineMessage} with all the properties of this pojo, and a timestamp.
      */
-    @SuppressWarnings("rawtypes")
     public GenericDeadlineMessage asDeadLineMessage(Serializer serializer) {
-        return new GenericDeadlineMessage<>(deadlineName,
-                                            MessageType.fromString(type),
-                                            getDeserializedPayload(serializer),
-                                            getDeserializedMetaData(serializer));
+        return new GenericDeadlineMessage(deadlineName,
+                                          MessageType.fromString(type),
+                                          getDeserializedPayload(serializer),
+                                          getDeserializedMetaData(serializer));
     }
 
     private Object getDeserializedPayload(Serializer serializer) {

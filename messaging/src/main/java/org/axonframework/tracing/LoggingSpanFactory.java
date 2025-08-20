@@ -56,8 +56,8 @@ public class LoggingSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
-                                  boolean isChildTrace, Message<?>... linkedParents) {
+    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message parentMessage,
+                                  boolean isChildTrace, Message... linkedParents) {
         return new Slf4jSpan(operationNameSupplier,
                              () -> String.format("Handler span started for message of type [%s] and identifier [%s]",
                                                  parentMessage.getClass().getSimpleName(),
@@ -65,12 +65,12 @@ public class LoggingSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
-                                   Message<?>... linkedSiblings) {
+    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message parentMessage,
+                                   Message... linkedSiblings) {
         return new Slf4jSpan(operationNameSupplier, () -> getSpanMessage("Dispatch", parentMessage));
     }
 
-    private String getSpanMessage(String spanType, Message<?> parentMessage) {
+    private String getSpanMessage(String spanType, Message parentMessage) {
         return CurrentUnitOfWork
                 .map(uow -> String.format(
                         "%s span started for message of type [%s] and identifier [%s] while handling message of type [%s] and identifier [%s]",
@@ -98,7 +98,7 @@ public class LoggingSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message<?> message) {
+    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message message) {
         return new Slf4jSpan(operationNameSupplier, () -> getSpanMessage("Internal", message));
     }
 
@@ -108,7 +108,7 @@ public class LoggingSpanFactory implements SpanFactory {
     }
 
     @Override
-    public <M extends Message<?>> M propagateContext(M message) {
+    public <M extends Message> M propagateContext(M message) {
         return message;
     }
 

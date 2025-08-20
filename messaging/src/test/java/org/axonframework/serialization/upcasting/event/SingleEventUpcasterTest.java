@@ -56,7 +56,7 @@ class SingleEventUpcasterTest {
     void upcastsKnownType() {
         String newValue = "newNameValue";
         MetaData metaData = MetaData.with("key", "value");
-        DomainEventMessage<StubDomainEvent> testEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"),
                 new StubDomainEvent("oldName"), metaData
         );
@@ -105,7 +105,7 @@ class SingleEventUpcasterTest {
 
     @Test
     void ignoresUnknownType() {
-        DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"), "someString"
         );
         EventData<?> eventData = new TestDomainEventEntry(
@@ -122,7 +122,7 @@ class SingleEventUpcasterTest {
 
     @Test
     void ignoresWrongVersion() {
-        DomainEventMessage<StubDomainEvent> testEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"), new StubDomainEvent("oldName")
         );
         EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);

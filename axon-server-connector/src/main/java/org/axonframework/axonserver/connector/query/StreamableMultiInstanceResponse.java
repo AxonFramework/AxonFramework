@@ -41,7 +41,7 @@ import static java.util.Collections.emptyIterator;
  */
 class StreamableMultiInstanceResponse<T> implements StreamableResponse {
 
-    private final QueryResponseMessage<List<T>> resultMessage;
+    private final QueryResponseMessage resultMessage;
     private final Class<T> responseType;
     private final Iterator<T> result;
     private final ReplyChannel<QueryResponse> responseHandler;
@@ -62,7 +62,7 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
      * @param serializer      The serializer used to serialize items/
      * @param requestId       The identifier of the request these responses refer to/
      */
-    public StreamableMultiInstanceResponse(QueryResponseMessage<List<T>> resultMessage,
+    public StreamableMultiInstanceResponse(QueryResponseMessage resultMessage,
                                            Class<T> responseType,
                                            ReplyChannel<QueryResponse> responseHandler,
                                            QuerySerializer serializer,
@@ -72,7 +72,7 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
         this.responseHandler = responseHandler;
         this.serializer = serializer;
         this.requestId = requestId;
-        List<T> payload = resultMessage.payload();
+        List<T> payload = (List<T>)resultMessage.payload();
         this.result = payload != null ? payload.iterator() : emptyIterator();
     }
 
@@ -116,21 +116,21 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
     }
 
     private void send() {
-        GenericMessage<?> delegate;
+        GenericMessage delegate;
         if (firstResponseToBeSent.compareAndSet(true, false)) {
-            delegate = new GenericMessage<>(resultMessage.identifier(),
+            delegate = new GenericMessage(resultMessage.identifier(),
                                             new MessageType(responseType),
                                             result.next(),
                                             responseType,
                                             resultMessage.metaData()
             );
         } else {
-            delegate = new GenericMessage<>(new MessageType(responseType),
+            delegate = new GenericMessage(new MessageType(responseType),
                                             result.next(),
                                             responseType,
                                             MetaData.emptyInstance());
         }
-        GenericQueryResponseMessage<?> message = new GenericQueryResponseMessage<>(delegate);
+        GenericQueryResponseMessage message = new GenericQueryResponseMessage(delegate);
         responseHandler.send(serializer.serializeResponse(message, requestId));
     }
 }

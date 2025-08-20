@@ -34,32 +34,32 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Steven van Beelen
  */
-class GenericStreamingQueryMessageTest extends MessageTestSuite<StreamingQueryMessage<?, ?>> {
+class GenericStreamingQueryMessageTest extends MessageTestSuite<StreamingQueryMessage> {
 
     private static final ResponseType<Publisher<String>> TEST_RESPONSE_TYPE = ResponseTypes.publisherOf(String.class);
 
     @Override
-    protected StreamingQueryMessage<?, ?> buildDefaultMessage() {
-        Message<String> delegate =
-                new GenericMessage<>(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
-        return new GenericStreamingQueryMessage<>(delegate, TEST_RESPONSE_TYPE);
+    protected StreamingQueryMessage buildDefaultMessage() {
+        Message delegate =
+                new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+        return new GenericStreamingQueryMessage(delegate, TEST_RESPONSE_TYPE);
     }
 
     @Override
-    protected <P> StreamingQueryMessage<?, ?> buildMessage(@Nullable P payload) {
-        return new GenericStreamingQueryMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
-                                                  payload,
-                                                  String.class);
+    protected <P> StreamingQueryMessage buildMessage(@Nullable P payload) {
+        return new GenericStreamingQueryMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
+                                                payload,
+                                                String.class);
     }
 
     @Override
-    protected void validateDefaultMessage(@Nonnull StreamingQueryMessage<?, ?> result) {
+    protected void validateDefaultMessage(@Nonnull StreamingQueryMessage result) {
         assertThat(TEST_RESPONSE_TYPE).isEqualTo(result.responseType());
     }
 
     @Override
-    protected void validateMessageSpecifics(@Nonnull StreamingQueryMessage<?, ?> actual,
-                                            @Nonnull StreamingQueryMessage<?, ?> result) {
+    protected void validateMessageSpecifics(@Nonnull StreamingQueryMessage actual,
+                                            @Nonnull StreamingQueryMessage result) {
         assertThat(actual.responseType()).isEqualTo(result.responseType());
     }
 }

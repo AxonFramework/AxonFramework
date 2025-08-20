@@ -62,7 +62,7 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
         @Nullable
         @Override
         public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-            if(Message.fromContext(context) instanceof TrackedEventMessage<?> trackedEventMessage) {
+            if(Message.fromContext(context) instanceof TrackedEventMessage trackedEventMessage) {
                 return ReplayToken.replayContext(trackedEventMessage, this.type).orElse(null);
             }
             return false;

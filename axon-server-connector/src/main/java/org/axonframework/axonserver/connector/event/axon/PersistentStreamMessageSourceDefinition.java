@@ -33,7 +33,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * @author Marc Gathier
  * @since 4.10.0
  */
-public class PersistentStreamMessageSourceDefinition implements SubscribableMessageSourceDefinition<EventMessage<?>> {
+public class PersistentStreamMessageSourceDefinition implements SubscribableMessageSourceDefinition<EventMessage> {
 
     private final String name;
     private final PersistentStreamProperties persistentStreamProperties;
@@ -69,7 +69,7 @@ public class PersistentStreamMessageSourceDefinition implements SubscribableMess
     }
 
     @Override
-    public SubscribableMessageSource<EventMessage<?>> create(Configuration configuration) {
+    public SubscribableMessageSource<EventMessage> create(Configuration configuration) {
         return messageSourceFactory.build(name,
                                           persistentStreamProperties,
                                           scheduler,

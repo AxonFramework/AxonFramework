@@ -128,16 +128,16 @@ public abstract class EmbeddedEventStoreTest {
 
     @Test
     void existingEventIsPassedToReader() throws Exception {
-        DomainEventMessage<?> expected = createDomainEvent();
+        DomainEventMessage expected = createDomainEvent();
         testSubject.publish(expected);
         //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
         assertTrue(stream.hasNextAvailable());
-        TrackedEventMessage<?> actual = stream.nextAvailable();
+        TrackedEventMessage actual = stream.nextAvailable();
         assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.payload(), actual.payload());
-        assertTrue(actual instanceof DomainEventMessage<?>);
-        assertEquals(expected.getAggregateIdentifier(), ((DomainEventMessage<?>) actual).getAggregateIdentifier());
+        assertTrue(actual instanceof DomainEventMessage);
+        assertEquals(expected.getAggregateIdentifier(), ((DomainEventMessage) actual).getAggregateIdentifier());
     }
 
     @Test
@@ -146,7 +146,7 @@ public abstract class EmbeddedEventStoreTest {
         //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
         assertFalse(stream.hasNextAvailable());
-        DomainEventMessage<?> expected = createDomainEvent();
+        DomainEventMessage expected = createDomainEvent();
         Thread t = new Thread(() -> {
             try {
                 assertEquals(expected.identifier(), stream.nextAvailable().identifier());
@@ -198,13 +198,13 @@ public abstract class EmbeddedEventStoreTest {
     @Test
     @Timeout(value = 5)
     void readingCanBeContinuedUsingLastToken() throws Exception {
-        List<? extends EventMessage<?>> events = createDomainEvents(2);
+        List<? extends EventMessage> events = createDomainEvents(2);
         testSubject.publish(events);
         //noinspection resource
-        TrackedEventMessage<?> first = testSubject.openStream(null).nextAvailable();
+        TrackedEventMessage first = testSubject.openStream(null).nextAvailable();
         TrackingToken firstToken = first.trackingToken();
         //noinspection resource
-        TrackedEventMessage<?> second = testSubject.openStream(firstToken).nextAvailable();
+        TrackedEventMessage second = testSubject.openStream(firstToken).nextAvailable();
         assertEquals(events.get(0).identifier(), first.identifier());
         assertEquals(events.get(1).identifier(), second.identifier());
     }
@@ -213,7 +213,7 @@ public abstract class EmbeddedEventStoreTest {
     @Timeout(value = 5)
     void eventIsFetchedFromCacheWhenFetchedASecondTime() throws Exception {
         CountDownLatch lock = new CountDownLatch(2);
-        List<TrackedEventMessage<?>> events = new CopyOnWriteArrayList<>();
+        List<TrackedEventMessage> events = new CopyOnWriteArrayList<>();
 
         //noinspection resource
         Thread t = new Thread(() -> testSubject.openStream(null)
@@ -231,7 +231,7 @@ public abstract class EmbeddedEventStoreTest {
         assertFalse(t.isAlive());
 
         //noinspection resource
-        TrackedEventMessage<?> second = testSubject.openStream(events.get(0).trackingToken())
+        TrackedEventMessage second = testSubject.openStream(events.get(0).trackingToken())
                                                    .nextAvailable();
         assertSame(events.get(1), second);
     }
@@ -269,7 +269,7 @@ public abstract class EmbeddedEventStoreTest {
                .atMost(Duration.ofMillis(500))
                .until(stream::hasNextAvailable);
         reset(storageEngine);
-        TrackedEventMessage<?> firstEvent = stream.nextAvailable();
+        TrackedEventMessage firstEvent = stream.nextAvailable();
         verifyNoInteractions(storageEngine);
         testSubject.publish(createDomainEvent(CACHED_EVENTS), createDomainEvent(CACHED_EVENTS + 1));
         Thread.sleep(100); //allow the cleaner thread to evict the consumer
@@ -282,7 +282,7 @@ public abstract class EmbeddedEventStoreTest {
     void loadWithoutSnapshot() {
         String aggregateId = UUID.randomUUID().toString();
         testSubject.publish(createDomainEvents(() -> aggregateId, 110));
-        List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(aggregateId).asStream().collect(toList());
+        List<DomainEventMessage> eventMessages = testSubject.readEvents(aggregateId).asStream().collect(toList());
         assertEquals(110, eventMessages.size());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
     }
@@ -292,7 +292,7 @@ public abstract class EmbeddedEventStoreTest {
         String aggregateId = UUID.randomUUID().toString();
         testSubject.publish(createDomainEvents(() -> aggregateId, 110));
         transactionManager.executeInTransaction(() -> storageEngine.storeSnapshot(createDomainEvent(aggregateId, 30)));
-        List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(aggregateId).asStream().collect(toList());
+        List<DomainEventMessage> eventMessages = testSubject.readEvents(aggregateId).asStream().collect(toList());
         assertEquals(110 - 30, eventMessages.size());
         assertEquals(30, eventMessages.get(0).getSequenceNumber());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
@@ -305,13 +305,13 @@ public abstract class EmbeddedEventStoreTest {
         //noinspection rawtypes
         Stream mockStream = mock(Stream.class);
         //noinspection unchecked
-        Iterator<GenericTrackedEventMessage<String>> mockIterator = mock(Iterator.class);
+        Iterator<GenericTrackedEventMessage> mockIterator = mock(Iterator.class);
         when(mockStream.iterator()).thenReturn(mockIterator);
         //noinspection unchecked
         when(storageEngine.readEvents(any(TrackingToken.class), eq(false))).thenReturn(mockStream);
         when(mockIterator.hasNext()).thenAnswer(new SynchronizedBooleanAnswer(false))
                                     .thenAnswer(new SynchronizedBooleanAnswer(true));
-        when(mockIterator.next()).thenReturn(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(1),
+        when(mockIterator.next()).thenReturn(new GenericTrackedEventMessage(new GlobalSequenceTrackingToken(1),
                                                                               createDomainEvent()));
         //noinspection resource
         TrackingEventStream stream = testSubject.openStream(null);
@@ -329,7 +329,7 @@ public abstract class EmbeddedEventStoreTest {
         testSubject.publish(createDomainEvents(() -> aggregateId, 110));
         transactionManager.executeInTransaction(() -> storageEngine.storeSnapshot(createDomainEvent(aggregateId, 30)));
         when(storageEngine.readSnapshot(aggregateId)).thenThrow(new MockException());
-        List<DomainEventMessage<?>> eventMessages = testSubject.readEvents(aggregateId).asStream().collect(toList());
+        List<DomainEventMessage> eventMessages = testSubject.readEvents(aggregateId).asStream().collect(toList());
         assertEquals(110, eventMessages.size());
         assertEquals(0, eventMessages.get(0).getSequenceNumber());
         assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
@@ -338,7 +338,7 @@ public abstract class EmbeddedEventStoreTest {
     @Test
     void loadEventsAfterPublishingInSameUnitOfWork() {
         String aggregateId = UUID.randomUUID().toString();
-        List<DomainEventMessage<?>> events = createDomainEvents(() -> aggregateId, 10);
+        List<DomainEventMessage> events = createDomainEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
         LegacyDefaultUnitOfWork.startAndGet(null)
                                .execute((ctx) -> {
@@ -352,7 +352,7 @@ public abstract class EmbeddedEventStoreTest {
     @Test
     void loadEventsWithOffsetAfterPublishingInSameUnitOfWork() {
         String aggregateId = UUID.randomUUID().toString();
-        List<DomainEventMessage<?>> events = createDomainEvents(() -> aggregateId, 10);
+        List<DomainEventMessage> events = createDomainEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
         LegacyDefaultUnitOfWork.startAndGet(null)
                                .execute((ctx) -> {
@@ -366,9 +366,9 @@ public abstract class EmbeddedEventStoreTest {
     @Test
     void eventsAppendedInvisibleUntilUnitOfWorkIsCommitted() {
         String aggregateId = UUID.randomUUID().toString();
-        List<DomainEventMessage<?>> events = createDomainEvents(() -> aggregateId, 10);
+        List<DomainEventMessage> events = createDomainEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
-        LegacyDefaultUnitOfWork<Message<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events.subList(2, events.size()));
 
         CurrentUnitOfWork.clear(unitOfWork);
@@ -385,7 +385,7 @@ public abstract class EmbeddedEventStoreTest {
 
     @Test
     void appendEventsCreatesCorrectSpans() {
-        List<DomainEventMessage<?>> events = createDomainEvents(10);
+        List<DomainEventMessage> events = createDomainEvents(10);
         LegacyDefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events);
         events.forEach(e -> {
@@ -403,14 +403,14 @@ public abstract class EmbeddedEventStoreTest {
     @Test
     void stagedEventsNotDuplicatedAfterCommit() {
         String aggregateId = UUID.randomUUID().toString();
-        List<DomainEventMessage<?>> events = createDomainEvents(() -> aggregateId, 10);
+        List<DomainEventMessage> events = createDomainEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
-        LegacyDefaultUnitOfWork<Message<?>> outerUoW = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message> outerUoW = LegacyDefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events.subList(2, 4));
-        LegacyDefaultUnitOfWork<Message<?>> innerUoW = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message> innerUoW = LegacyDefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events.subList(4, events.size()));
 
-        Consumer<LegacyUnitOfWork<Message<?>>> assertCorrectEventCount =
+        Consumer<LegacyUnitOfWork<Message>> assertCorrectEventCount =
                 uow -> assertEquals(10, testSubject.readEvents(aggregateId).asStream().count());
 
         innerUoW.onPrepareCommit(assertCorrectEventCount);

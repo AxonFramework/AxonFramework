@@ -74,7 +74,7 @@ class CoordinatorTest {
     private final TokenStore tokenStore = mock(TokenStore.class);
     private final ScheduledThreadPoolExecutor executorService = mock(ScheduledThreadPoolExecutor.class);
     @SuppressWarnings("unchecked")
-    private final StreamableEventSource<EventMessage<?>> messageSource = mock(StreamableEventSource.class);
+    private final StreamableEventSource<EventMessage> messageSource = mock(StreamableEventSource.class);
 
     private final WorkPackage workPackage = mock(WorkPackage.class);
 
@@ -144,7 +144,7 @@ class CoordinatorTest {
         var testEventTwo = EventTestUtils.asEventMessage("this-event");
         var testEntryOne = new SimpleEntry<>(testEventOne, trackingTokenContext(testToken));
         var testEntryTwo = new SimpleEntry<>(testEventTwo, trackingTokenContext(testToken));
-        List<MessageStream.Entry<? extends EventMessage<?>>> testEntries = List.of(testEntryOne, testEntryTwo);
+        List<MessageStream.Entry<? extends EventMessage>> testEntries = List.of(testEntryOne, testEntryTwo);
 
         when(workPackage.hasRemainingCapacity()).thenReturn(true)
                                                 .thenReturn(false);
@@ -153,7 +153,7 @@ class CoordinatorTest {
         when(workPackage.scheduleEvents(testEntries)).thenReturn(true);
         when(workPackage.scheduleEvents(any())).thenReturn(true);
 
-        MessageStream<EventMessage<?>> testStream = MessageStream.fromIterable(
+        MessageStream<EventMessage> testStream = MessageStream.fromIterable(
                 List.of(testEventOne, testEventTwo),
                 (e) -> trackingTokenContext(testToken)
         );
@@ -173,7 +173,7 @@ class CoordinatorTest {
                      () -> verify(messageSource).open(streamingFrom(testToken)));
 
         //noinspection unchecked
-        ArgumentCaptor<List<MessageStream.Entry<? extends EventMessage<?>>>> eventsCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<MessageStream.Entry<? extends EventMessage>>> eventsCaptor = ArgumentCaptor.forClass(List.class);
         assertWithin(500, TimeUnit.MILLISECONDS, () -> verify(workPackage).scheduleEvents(eventsCaptor.capture()));
 
         var resultEvents = eventsCaptor.getValue();

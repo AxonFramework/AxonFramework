@@ -36,7 +36,7 @@ import java.util.function.BiFunction;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class DelayedMessageStream<M extends Message<?>> implements MessageStream<M> {
+public class DelayedMessageStream<M extends Message> implements MessageStream<M> {
 
     private final CompletableFuture<? extends MessageStream<M>> delegate;
 
@@ -57,7 +57,7 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
      * @return A {@link MessageStream stream} that delegates all actions to the {@code delegate} when it becomes
      * available.
      */
-    public static <M extends Message<?>> MessageStream<M> create(
+    public static <M extends Message> MessageStream<M> create(
             @Nonnull CompletableFuture<? extends MessageStream<M>> delegate) {
         CompletableFuture<MessageStream<M>> safeDelegate = delegate
                 .exceptionallyCompose(CompletableFuture::failedFuture)
@@ -88,7 +88,7 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
      * @return A {@link MessageStream.Single stream} that delegates all actions to the {@code delegate} when it becomes
      * available.
      */
-    public static <M extends Message<?>> MessageStream.Single<M> createSingle(
+    public static <M extends Message> MessageStream.Single<M> createSingle(
             @Nonnull CompletableFuture<MessageStream.Single<M>> delegate) {
         CompletableFuture<MessageStream.Single<M>> safeDelegate = delegate
                 .exceptionallyCompose(CompletableFuture::failedFuture)
@@ -187,7 +187,7 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
      *
      * @param <M> The type of {@link Message} contained in the {@link Entry} of this stream.
      */
-    static class Single<M extends Message<?>> extends DelayedMessageStream<M>
+    static class Single<M extends Message> extends DelayedMessageStream<M>
             implements MessageStream.Single<M> {
 
         /**
@@ -207,7 +207,7 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
      *
      * @param <M> The type of {@link Message} for the empty {@link Entry} of this stream.
      */
-    static class Empty<M extends Message<?>> extends DelayedMessageStream<M> implements MessageStream.Empty<M> {
+    static class Empty<M extends Message> extends DelayedMessageStream<M> implements MessageStream.Empty<M> {
 
         /**
          * Construct a {@code DelayedMessageStream.Empty} for the given {@code delegate}.

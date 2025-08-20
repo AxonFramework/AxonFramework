@@ -126,15 +126,15 @@ class NewMessageHandlerRegistrationTest {
 
     @Test
     void handlingCommandMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
-        CommandMessage<Object> testMessage = new GenericCommandMessage<>(COMMAND_TYPE, COMMAND_TYPE);
+        CommandMessage testMessage = new GenericCommandMessage(COMMAND_TYPE, COMMAND_TYPE);
 
-        MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, StubProcessingContext.forMessage(testMessage));
+        MessageStream<? extends Message> result = testSubject.handle(testMessage, StubProcessingContext.forMessage(testMessage));
 
-        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.first().asCompletableFuture();
+        CompletableFuture<? extends Entry<? extends Message>> resultFuture = result.first().asCompletableFuture();
 
         assertTrue(resultFuture.isDone());
         assertFalse(resultFuture.isCompletedExceptionally());
-        Entry<? extends Message<?>> resultEntry = resultFuture.get();
+        Entry<? extends Message> resultEntry = resultFuture.get();
         assertNull(resultEntry);
 
         assertTrue(commandHandlerInvoked.get());
@@ -144,15 +144,15 @@ class NewMessageHandlerRegistrationTest {
 
     @Test
     void handlingEventMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
-        EventMessage<?> testMessage = new GenericEventMessage<>(EVENT_TYPE, "payload");
+        EventMessage testMessage = new GenericEventMessage(EVENT_TYPE, "payload");
 
-        MessageStream.Empty<Message<Void>> result = testSubject.handle(testMessage, StubProcessingContext.forMessage(testMessage));
+        MessageStream.Empty<Message> result = testSubject.handle(testMessage, StubProcessingContext.forMessage(testMessage));
 
-        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.first().asCompletableFuture();
+        CompletableFuture<? extends Entry<? extends Message>> resultFuture = result.first().asCompletableFuture();
 
         assertTrue(resultFuture.isDone());
         assertFalse(resultFuture.isCompletedExceptionally());
-        Entry<? extends Message<?>> resultEntry = resultFuture.get();
+        Entry<? extends Message> resultEntry = resultFuture.get();
         assertNull(resultEntry);
 
         assertFalse(commandHandlerInvoked.get());
@@ -162,17 +162,17 @@ class NewMessageHandlerRegistrationTest {
 
     @Test
     void handlingQueryMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
-        QueryMessage<?, ?> testMessage =
-                new GenericQueryMessage<>(QUERY_TYPE, "payload", ResponseTypes.instanceOf(String.class));
+        QueryMessage testMessage =
+                new GenericQueryMessage(QUERY_TYPE, "payload", ResponseTypes.instanceOf(String.class));
 
-        MessageStream<? extends QueryResponseMessage<?>> result =
+        MessageStream<? extends QueryResponseMessage> result =
                 testSubject.handle(testMessage, StubProcessingContext.forMessage(testMessage));
 
-        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.first().asCompletableFuture();
+        CompletableFuture<? extends Entry<? extends Message>> resultFuture = result.first().asCompletableFuture();
 
         assertTrue(resultFuture.isDone());
         assertFalse(resultFuture.isCompletedExceptionally());
-        Entry<? extends Message<?>> resultEntry = resultFuture.get();
+        Entry<? extends Message> resultEntry = resultFuture.get();
         assertNull(resultEntry);
 
         assertFalse(commandHandlerInvoked.get());
@@ -182,10 +182,10 @@ class NewMessageHandlerRegistrationTest {
 
     @Test
     void subscribingMessageHandlingComponentEnsuresMessageDelegation() {
-        CommandMessage<?> testCommandMessage = new GenericCommandMessage<>(COMMAND_TYPE, COMMAND_TYPE);
-        EventMessage<?> testEventMessage = new GenericEventMessage<>(EVENT_TYPE, "payload");
-        QueryMessage<?, ?> testQueryMessage =
-                new GenericQueryMessage<>(QUERY_TYPE, "payload", ResponseTypes.instanceOf(String.class));
+        CommandMessage testCommandMessage = new GenericCommandMessage(COMMAND_TYPE, COMMAND_TYPE);
+        EventMessage testEventMessage = new GenericEventMessage(EVENT_TYPE, "payload");
+        QueryMessage testQueryMessage =
+                new GenericQueryMessage(QUERY_TYPE, "payload", ResponseTypes.instanceOf(String.class));
 
         MessageHandlingComponent testSubjectWithRegisteredMHC =
                 new GenericMessageHandlingComponent().subscribe(testSubject);
@@ -203,7 +203,7 @@ class NewMessageHandlerRegistrationTest {
 
         @Override
         @Nonnull
-        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
                                                                     @Nonnull ProcessingContext context) {
             return MessageStream.just(new GenericCommandResultMessage<>(new MessageType("command-response"), "done!"));
         }
@@ -213,7 +213,7 @@ class NewMessageHandlerRegistrationTest {
 
         @Override
         @Nonnull
-        public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+        public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                          @Nonnull ProcessingContext context) {
             return MessageStream.empty();
         }
@@ -225,12 +225,12 @@ class NewMessageHandlerRegistrationTest {
 
         @Nonnull
         @Override
-        public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> message,
+        public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage message,
                                                              @Nonnull ProcessingContext context) {
             return MessageStream.fromIterable(Sets.newSet(
-                    new GenericQueryResponseMessage<>(responseType, "one"),
-                    new GenericQueryResponseMessage<>(responseType, "two"),
-                    new GenericQueryResponseMessage<>(responseType, "three")
+                    new GenericQueryResponseMessage(responseType, "one"),
+                    new GenericQueryResponseMessage(responseType, "two"),
+                    new GenericQueryResponseMessage(responseType, "three")
             ));
         }
     }
@@ -272,21 +272,21 @@ class NewMessageHandlerRegistrationTest {
 
         @Nonnull
         @Override
-        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
                                                                               @Nonnull ProcessingContext context) {
             return MessageStream.empty().cast();
         }
 
         @Nonnull
         @Override
-        public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+        public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                          @Nonnull ProcessingContext context) {
             return MessageStream.empty();
         }
 
         @Nonnull
         @Override
-        public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
+        public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
                                                              @Nonnull ProcessingContext context) {
             return MessageStream.empty().cast();
         }

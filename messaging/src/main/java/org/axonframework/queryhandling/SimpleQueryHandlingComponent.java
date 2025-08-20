@@ -41,7 +41,7 @@ public class SimpleQueryHandlingComponent implements QueryHandlingComponent {
 
     @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
+    public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
                                                          @Nonnull ProcessingContext context) {
         QualifiedName name = query.type().qualifiedName();
         // TODO #3103 - add interceptor knowledge

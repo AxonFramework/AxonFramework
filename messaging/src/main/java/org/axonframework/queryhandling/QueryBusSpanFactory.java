@@ -34,7 +34,7 @@ public interface QueryBusSpanFactory {
      * @param distributed  Whether the query is from a distributed source.
      * @return The span for the handling of the query.
      */
-    Span createQuerySpan(QueryMessage<?, ?> queryMessage, boolean distributed);
+    Span createQuerySpan(QueryMessage queryMessage, boolean distributed);
 
     /**
      * Creates a span for a subscription query.
@@ -52,7 +52,7 @@ public interface QueryBusSpanFactory {
      * @param queryMessage  The subscription query message that the update is for.
      * @return The span for the processing of the subscription query update.
      */
-    Span createSubscriptionQueryProcessUpdateSpan(SubscriptionQueryUpdateMessage<?> updateMessage,
+    Span createSubscriptionQueryProcessUpdateSpan(SubscriptionQueryUpdateMessage updateMessage,
                                                   SubscriptionQueryMessage<?, ?, ?> queryMessage);
 
     /**
@@ -62,7 +62,7 @@ public interface QueryBusSpanFactory {
      * @param distributed  Whether the query is from a distributed source.
      * @return The span for the handling of the scatter-gather query.
      */
-    Span createScatterGatherSpan(QueryMessage<?, ?> queryMessage, boolean distributed);
+    Span createScatterGatherSpan(QueryMessage queryMessage, boolean distributed);
 
     /**
      * Creates a span for one of the handlers of a scatter-gather query. There can be multiple for the same within one
@@ -72,7 +72,7 @@ public interface QueryBusSpanFactory {
      * @param handlerIndex The index of the handler. Starts at 0.
      * @return The span for the handling of the scatter-gather query.
      */
-    Span createScatterGatherHandlerSpan(QueryMessage<?, ?> queryMessage, int handlerIndex);
+    Span createScatterGatherHandlerSpan(QueryMessage queryMessage, int handlerIndex);
 
     /**
      * Creates a span for a streaming query.
@@ -81,7 +81,7 @@ public interface QueryBusSpanFactory {
      * @param distributed  Whether the query is from a distributed source.
      * @return The span for the handling of the streaming query.
      */
-    Span createStreamingQuerySpan(QueryMessage<?, ?> queryMessage, boolean distributed);
+    Span createStreamingQuerySpan(QueryMessage queryMessage, boolean distributed);
 
     /**
      * Creates a span for processing a query. Distributed implementations can use this to create a span for the entire
@@ -90,7 +90,7 @@ public interface QueryBusSpanFactory {
      * @param queryMessage The query message being handled.
      * @return The span for the processing of the query.
      */
-    Span createQueryProcessingSpan(QueryMessage<?, ?> queryMessage);
+    Span createQueryProcessingSpan(QueryMessage queryMessage);
 
     /**
      * Creates a span for processing a response. Distributed implementations can use this to create a span for the
@@ -99,16 +99,14 @@ public interface QueryBusSpanFactory {
      * @param queryMessage The query message the response is for.
      * @return The span for the processing of the response.
      */
-    Span createResponseProcessingSpan(QueryMessage<?, ?> queryMessage);
+    Span createResponseProcessingSpan(QueryMessage queryMessage);
 
     /**
      * Propagates the context of the current span to the given {@code queryMessage}.
      *
      * @param queryMessage The query message to propagate the context to.
-     * @param <T>          The type of the payload of the query message.
-     * @param <R>          The type of the response of the query message.
      * @param <M>          The type of the query message.
      * @return The query message with the context of the current span.
      */
-    <T, R, M extends QueryMessage<T, R>> M propagateContext(M queryMessage);
+    <M extends QueryMessage> M propagateContext(M queryMessage);
 }

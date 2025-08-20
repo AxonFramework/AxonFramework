@@ -32,7 +32,7 @@ import jakarta.annotation.Nonnull;
  * @author Marijn van Zelst
  * @since 3.0
  */
-public class MessageCountingMonitor implements MessageMonitor<Message<?>>, MetricSet {
+public class MessageCountingMonitor implements MessageMonitor<Message>, MetricSet {
 
     private final Counter ingestedCounter = new Counter();
     private final Counter successCounter = new Counter();
@@ -41,7 +41,7 @@ public class MessageCountingMonitor implements MessageMonitor<Message<?>>, Metri
     private final Counter ignoredCounter = new Counter();
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message<?> message) {
+    public MonitorCallback onMessageIngested(@Nonnull Message message) {
         ingestedCounter.inc();
         return new MessageMonitor.MonitorCallback() {
             @Override

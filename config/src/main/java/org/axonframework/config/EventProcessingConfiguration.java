@@ -184,7 +184,7 @@ public interface EventProcessingConfiguration {
      * @param componentName a {@link String} specifying the name of the component to be monitored
      * @return the {@link MessageMonitor} registered to the given {@code componentType} and {@code componentName}
      */
-    MessageMonitor<? super Message<?>> messageMonitor(Class<?> componentType, String componentName);
+    MessageMonitor<? super Message> messageMonitor(Class<?> componentType, String componentName);
 
     /**
      * Returns the {@link TokenStore} tied to the given {@code processorName}.
@@ -211,7 +211,7 @@ public interface EventProcessingConfiguration {
      * @return The {@link SequencedDeadLetterQueue} tied to the given {@code processingGroup}, {@link Optional#empty()}
      * if there is none.
      */
-    default Optional<SequencedDeadLetterQueue<EventMessage<?>>> deadLetterQueue(
+    default Optional<SequencedDeadLetterQueue<EventMessage>> deadLetterQueue(
             @Nonnull String processingGroup
     ) {
         return Optional.empty();
@@ -225,7 +225,7 @@ public interface EventProcessingConfiguration {
      * @param processingGroup The name of the processing group for which to return an {@link EnqueuePolicy}.
      * @return The {@link EnqueuePolicy} belonging to the given {@code processingGroup}.
      */
-    default Optional<EnqueuePolicy<EventMessage<?>>> deadLetterPolicy(@Nonnull String processingGroup) {
+    default Optional<EnqueuePolicy<EventMessage>> deadLetterPolicy(@Nonnull String processingGroup) {
         return Optional.empty();
     }
 
@@ -238,7 +238,7 @@ public interface EventProcessingConfiguration {
      * @return The {@link SequencedDeadLetterProcessor} tied to the given {@code processingGroup} in an
      * {@link Optional}, {@link Optional#empty()} if there is none.
      */
-    default Optional<SequencedDeadLetterProcessor<EventMessage<?>>> sequencedDeadLetterProcessor(
+    default Optional<SequencedDeadLetterProcessor<EventMessage>> sequencedDeadLetterProcessor(
             @Nonnull String processingGroup
     ) {
         return Optional.empty();

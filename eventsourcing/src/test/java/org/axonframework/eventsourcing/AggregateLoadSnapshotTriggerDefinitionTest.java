@@ -55,7 +55,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         mockSnapshotter = mock(Snapshotter.class);
         testSubject = new AggregateLoadTimeSnapshotTriggerDefinition(mockSnapshotter, 1000);
         aggregateIdentifier = "aggregateIdentifier";
-        LegacyDefaultUnitOfWork.startAndGet(new GenericMessage<>(new MessageType("message"), "test"));
+        LegacyDefaultUnitOfWork.startAndGet(new GenericMessage(new MessageType("message"), "test"));
         aggregate = AnnotatedAggregate.initialize(
                 new StubAggregate(aggregateIdentifier),
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(StubAggregate.class),
@@ -75,7 +75,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
     @Test
     void snapshotterTriggeredOnUnitOfWorkCleanup() {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
-        DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "type", aggregateIdentifier, 0, new MessageType("event"), "Mock contents"
         );
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
@@ -95,7 +95,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
-        DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "type", aggregateIdentifier, 0, new MessageType("event"), "Mock contents"
         );
         trigger.initializationFinished();
@@ -111,7 +111,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
-        DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "type", aggregateIdentifier, 0, new MessageType("event"), "Mock contents"
         );
         trigger.initializationFinished();
@@ -127,7 +127,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
-        DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "type", aggregateIdentifier, 0, new MessageType("event"), "Mock contents"
         );
         trigger.eventHandled(testEvent);
@@ -143,7 +143,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1000), ZoneId.of("UTC"));
 
-        DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "type", aggregateIdentifier, 0, new MessageType("event"), "Mock contents"
         );
         trigger.eventHandled(testEvent);
@@ -158,7 +158,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
         AggregateLoadTimeSnapshotTriggerDefinition.clock = Clock.fixed(now.plusMillis(1001), ZoneId.of("UTC"));
 
-        DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "type", aggregateIdentifier, 0, new MessageType("event"), "Mock contents"
         );
         CurrentUnitOfWork.commit();

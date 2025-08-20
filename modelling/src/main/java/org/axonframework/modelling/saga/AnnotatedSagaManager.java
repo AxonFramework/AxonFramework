@@ -93,14 +93,14 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
 
     @Override
-    public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
+    public boolean canHandle(@Nonnull EventMessage eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
         // The segment is used to filter Saga instances, so all events match when there's a handler
         return sagaMetaModel.hasHandlerMethod(eventMessage, context);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event, ProcessingContext context) {
+    protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage event, ProcessingContext context) {
         return sagaMetaModel.findHandlerMethods(event, context).stream()
                             .map(h -> h.unwrap(SagaMethodMessageHandlingMember.class).orElse(null))
                             .filter(Objects::nonNull)
@@ -114,7 +114,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event, ProcessingContext context) {
+    protected Set<AssociationValue> extractAssociationValues(EventMessage event, ProcessingContext context) {
         return sagaMetaModel.findHandlerMethods(event, context).stream()
                             .map(h -> h.unwrap(SagaMethodMessageHandlingMember.class).orElse(null))
                             .filter(Objects::nonNull)

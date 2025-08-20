@@ -22,7 +22,6 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.Configuration;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * An {@link ApplicationContext} implementation that retrieves components from a given {@link Configuration}.

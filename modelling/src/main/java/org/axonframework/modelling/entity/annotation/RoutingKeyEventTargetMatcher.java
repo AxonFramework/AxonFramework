@@ -61,7 +61,7 @@ public class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
 
     @Override
     public boolean matches(@Nonnull E childEntity,
-                           @Nonnull EventMessage<?> message,
+                           @Nonnull EventMessage message,
                            @Nonnull ProcessingContext processingContext) {
         return routingKeyEntityMatcher.matches(childEntity, message);
     }

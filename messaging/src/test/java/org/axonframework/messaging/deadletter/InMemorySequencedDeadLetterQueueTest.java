@@ -31,13 +31,13 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage<?>> {
+class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<EventMessage> {
 
     private static final int MAX_SEQUENCES_AND_SEQUENCE_SIZE = 128;
 
     @Override
-    protected SequencedDeadLetterQueue<EventMessage<?>> buildTestSubject() {
-        return InMemorySequencedDeadLetterQueue.<EventMessage<?>>builder()
+    protected SequencedDeadLetterQueue<EventMessage> buildTestSubject() {
+        return InMemorySequencedDeadLetterQueue.<EventMessage>builder()
                                                .maxSequences(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                                                .maxSequenceSize(MAX_SEQUENCES_AND_SEQUENCE_SIZE)
                                                .build();
@@ -54,17 +54,17 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     }
 
     @Override
-    public DeadLetter<EventMessage<?>> generateInitialLetter() {
+    public DeadLetter<EventMessage> generateInitialLetter() {
         return new GenericDeadLetter<>("sequenceIdentifier", generateEvent(), generateThrowable());
     }
 
     @Override
-    protected DeadLetter<EventMessage<?>> generateFollowUpLetter() {
+    protected DeadLetter<EventMessage> generateFollowUpLetter() {
         return new GenericDeadLetter<>("sequenceIdentifier", generateEvent());
     }
 
     @Override
-    protected DeadLetter<EventMessage<?>> generateRequeuedLetter(DeadLetter<EventMessage<?>> original,
+    protected DeadLetter<EventMessage> generateRequeuedLetter(DeadLetter<EventMessage> original,
                                                                  Instant lastTouched,
                                                                  Throwable requeueCause,
                                                                  MetaData diagnostics) {
@@ -86,7 +86,7 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
 
     @Test
     void buildWithNegativeMaxSequencesThrowsAxonConfigurationException() {
-        InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
+        InMemorySequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject =
                 InMemorySequencedDeadLetterQueue.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(-1));
@@ -94,7 +94,7 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
 
     @Test
     void buildWithZeroMaxSequencesThrowsAxonConfigurationException() {
-        InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
+        InMemorySequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject =
                 InMemorySequencedDeadLetterQueue.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequences(0));
@@ -102,7 +102,7 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
 
     @Test
     void buildWithNegativeMaxSequenceSizeThrowsAxonConfigurationException() {
-        InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
+        InMemorySequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject =
                 InMemorySequencedDeadLetterQueue.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(-1));
@@ -110,7 +110,7 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
 
     @Test
     void buildWithZeroMaxSequenceSizeThrowsAxonConfigurationException() {
-        InMemorySequencedDeadLetterQueue.Builder<EventMessage<?>> builderTestSubject =
+        InMemorySequencedDeadLetterQueue.Builder<EventMessage> builderTestSubject =
                 InMemorySequencedDeadLetterQueue.builder();
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.maxSequenceSize(0));

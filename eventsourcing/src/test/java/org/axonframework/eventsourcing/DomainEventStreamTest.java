@@ -36,10 +36,10 @@ class DomainEventStreamTest {
 
     @Test
     void peek() {
-        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+        DomainEventMessage event1 = new GenericDomainEventMessage(
                 "type", UUID.randomUUID().toString(), 0L, new MessageType("event"), "Mock contents"
         );
-        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+        DomainEventMessage event2 = new GenericDomainEventMessage(
                 "type", UUID.randomUUID().toString(), 0L, new MessageType("event"), "Mock contents"
         );
         DomainEventStream testSubject = DomainEventStream.of(event1, event2);
@@ -61,10 +61,10 @@ class DomainEventStreamTest {
 
     @Test
     void nextAndHasNext() {
-        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+        DomainEventMessage event1 = new GenericDomainEventMessage(
                 "type", UUID.randomUUID().toString(), 0L, new MessageType("event"), "Mock contents"
         );
-        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+        DomainEventMessage event2 = new GenericDomainEventMessage(
                 "type", UUID.randomUUID().toString(), 0L, new MessageType("event"), "Mock contents"
         );
         DomainEventStream testSubject = DomainEventStream.of(event1, event2);
@@ -77,7 +77,7 @@ class DomainEventStreamTest {
 
     @Test
     void next_ReadBeyondEnd() {
-        DomainEventMessage<String> event = new GenericDomainEventMessage<>(
+        DomainEventMessage event = new GenericDomainEventMessage(
                 "type", UUID.randomUUID().toString(), 0L, new MessageType("event"), "Mock contents"
         );
         DomainEventStream testSubject = DomainEventStream.of(event);

@@ -43,7 +43,7 @@ public class NoHandlerForQueryException extends AxonNonTransientException {
      *
      * @param query the {@link QueryMessage query} for which no handler was found
      */
-    public NoHandlerForQueryException(QueryMessage<?, ?> query) {
+    public NoHandlerForQueryException(QueryMessage query) {
         super(format(
                 "No matching handler is available to handle query [%s] with response type [%s]. "
                         + "To find a matching handler, note that the query handler's name should match the query's name, "

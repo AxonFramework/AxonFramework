@@ -50,7 +50,7 @@ public interface LegacyEventStorageEngine {
      *
      * @param events Events to append to the event storage
      */
-    default void appendEvents(@Nonnull EventMessage<?>... events) {
+    default void appendEvents(@Nonnull EventMessage... events) {
         appendEvents(asList(events));
     }
 
@@ -62,7 +62,7 @@ public interface LegacyEventStorageEngine {
      *
      * @param events Events to append to the event storage
      */
-    void appendEvents(@Nonnull List<? extends EventMessage<?>> events);
+    void appendEvents(@Nonnull List<? extends EventMessage> events);
 
     /**
      * Store an event that contains a snapshot of an aggregate. If the event storage already contains a snapshot for the
@@ -70,7 +70,7 @@ public interface LegacyEventStorageEngine {
      *
      * @param snapshot The snapshot event of the aggregate that is to be stored
      */
-    void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot);
+    void storeSnapshot(@Nonnull DomainEventMessage snapshot);
 
     /**
      * Open an event stream containing all events stored since given tracking token. The returned stream is comprised of
@@ -86,7 +86,7 @@ public interface LegacyEventStorageEngine {
      *                      messages if the end of the stream is reached.
      * @return A stream containing all tracked event messages stored since the given tracking token
      */
-    Stream<? extends TrackedEventMessage<?>> readEvents(@Nullable TrackingToken trackingToken, boolean mayBlock);
+    Stream<? extends TrackedEventMessage> readEvents(@Nullable TrackingToken trackingToken, boolean mayBlock);
 
     /**
      * Get a {@link DomainEventStream} containing all events published by the aggregate with given {@code
@@ -124,7 +124,7 @@ public interface LegacyEventStorageEngine {
      * @param aggregateIdentifier The identifier of the aggregate
      * @return An optional with a snapshot of the aggregate
      */
-    Optional<DomainEventMessage<?>> readSnapshot(@Nonnull String aggregateIdentifier);
+    Optional<DomainEventMessage> readSnapshot(@Nonnull String aggregateIdentifier);
 
     /**
      * Returns the last known sequence number for the given {@code aggregateIdentifier}.

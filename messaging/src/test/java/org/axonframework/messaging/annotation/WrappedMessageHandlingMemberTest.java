@@ -37,7 +37,7 @@ class WrappedMessageHandlingMemberTest {
         //noinspection unchecked
         mockedHandlingMember = mock(MessageHandlingMember.class);
 
-        testSubject = new WrappedMessageHandlingMember<Object>(mockedHandlingMember) {
+        testSubject = new WrappedMessageHandlingMember<>(mockedHandlingMember) {
         };
     }
 

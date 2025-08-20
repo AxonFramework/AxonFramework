@@ -51,8 +51,8 @@ public class StubAggregate {
     }
 
     @EventSourcingHandler
-    protected void handle(EventMessage<?> event) {
-        identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
+    protected void handle(EventMessage event) {
+        identifier = ((DomainEventMessage) event).getAggregateIdentifier();
         invocationCount++;
     }
 
@@ -62,8 +62,8 @@ public class StubAggregate {
     }
 
     @SuppressWarnings("unused")
-    public DomainEventMessage<?> createSnapshotEvent() {
-        return new GenericDomainEventMessage<>(
+    public DomainEventMessage createSnapshotEvent() {
+        return new GenericDomainEventMessage(
                 "test", identifier, 5L, new MessageType("snapshot"), new StubDomainEvent()
         );
     }

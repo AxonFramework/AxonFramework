@@ -43,9 +43,9 @@ class EventValidatorTest {
         testSubject.assertPublishedEventsMatching(Matchers.noEvents());
     }
 
-    private static <P> EventMessage<P> asEventMessage(P event) {
-        return new GenericEventMessage<>(
-                new GenericMessage<>(new MessageType(event.getClass()), (P) event),
+    private static <P> EventMessage asEventMessage(P event) {
+        return new GenericEventMessage(
+                new GenericMessage(new MessageType(event.getClass()), (P) event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -57,7 +57,7 @@ class EventValidatorTest {
 
     @Test
     void assertPublishedEventsWithNoEventsMatcherThrowsAssertionErrorIfEventWasPublished() {
-        EventMessage<MyOtherEvent> eventMessage = asEventMessage(new MyOtherEvent());
+        EventMessage eventMessage = asEventMessage(new MyOtherEvent());
         testSubject.handleSync(eventMessage, new LegacyMessageSupportingContext(eventMessage));
 
         assertThrows(AxonAssertionError.class, () -> testSubject.assertPublishedEventsMatching(Matchers.noEvents()));
@@ -65,7 +65,7 @@ class EventValidatorTest {
 
     @Test
     void assertPublishedEventsThrowsAssertionErrorIfEventWasPublished() {
-        EventMessage<MyOtherEvent> eventMessage = asEventMessage(new MyOtherEvent());
+        EventMessage eventMessage = asEventMessage(new MyOtherEvent());
         testSubject.handleSync(eventMessage, new LegacyMessageSupportingContext(eventMessage));
 
         assertThrows(AxonAssertionError.class, testSubject::assertPublishedEvents);
@@ -73,7 +73,7 @@ class EventValidatorTest {
 
     @Test
     void assertPublishedEventsForEventMessages() {
-        EventMessage<MyOtherEvent> eventMessage = asEventMessage(new MyOtherEvent());
+        EventMessage eventMessage = asEventMessage(new MyOtherEvent());
         testSubject.handleSync(eventMessage, new LegacyMessageSupportingContext(eventMessage));
 
         testSubject.assertPublishedEvents(eventMessage);

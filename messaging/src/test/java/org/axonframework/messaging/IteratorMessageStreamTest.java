@@ -27,35 +27,35 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class IteratorMessageStreamTest extends MessageStreamTest<Message<String>> {
+class IteratorMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
+    MessageStream<Message> completedTestSubject(List<Message> messages) {
         return MessageStream.fromIterable(messages);
     }
 
     @Override
-    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         Assumptions.abort("IteratorMessageStream doesn't support explicit single-value streams");
         return null;
     }
 
     @Override
-    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("IteratorMessageStream doesn't support explicitly empty streams");
         return null;
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+    MessageStream<Message> failingTestSubject(List<Message> messages,
                                                       Exception failure) {
         Assumptions.abort("IterableMessageStream doesn't support failures");
         return null;
     }
 
     @Override
-    Message<String> createRandomMessage() {
-        return new GenericMessage<>(new MessageType("message"),
+    Message createRandomMessage() {
+        return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

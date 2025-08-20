@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -25,11 +24,8 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.ConversionException;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +38,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Rene de Waele
  */
-class GenericMessageTest extends MessageTestSuite<Message<?>> {
+class GenericMessageTest extends MessageTestSuite<Message> {
 
     private final Map<String, String> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
 
@@ -56,13 +52,13 @@ class GenericMessageTest extends MessageTestSuite<Message<?>> {
     }
 
     @Override
-    protected Message<?> buildDefaultMessage() {
-        return new GenericMessage<>(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+    protected Message buildDefaultMessage() {
+        return new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
     }
 
     @Override
-    protected <P> Message<?> buildMessage(@Nullable P payload) {
-        return new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    protected <P> Message buildMessage(@Nullable P payload) {
+        return new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 
     @AfterEach
@@ -74,25 +70,25 @@ class GenericMessageTest extends MessageTestSuite<Message<?>> {
 
     @Test
     void correlationDataAddedToNewMessage() {
-        Message<Object> testMessage = new GenericMessage<>(new MessageType("message"), new Object());
+        Message testMessage = new GenericMessage(new MessageType("message"), new Object());
         assertEquals(correlationData, new HashMap<>(testMessage.metaData()));
 
         MetaData newMetaData = MetaData.from(Collections.singletonMap("what", "ever"));
-        Message<Object> testMessageWithMetaData =
-                new GenericMessage<>(new MessageType("message"), new Object(), newMetaData);
+        Message testMessageWithMetaData =
+                new GenericMessage(new MessageType("message"), new Object(), newMetaData);
         assertEquals(newMetaData.mergedWith(correlationData), testMessageWithMetaData.metaData());
     }
 
     @Test
     void whenCorrelationDataProviderThrowsException_thenCatchException() {
         unitOfWork = new LegacyDefaultUnitOfWork<>(
-                new GenericEventMessage<>(new MessageType("event"), "Input 1")
+                new GenericEventMessage(new MessageType("event"), "Input 1")
         );
         CurrentUnitOfWork.set(unitOfWork);
         unitOfWork.registerCorrelationDataProvider(new ThrowingCorrelationDataProvider());
         ConversionException exception = new ConversionException("foo");
 
-        Message<?> result = new GenericMessage<>(new MessageType("exception"), exception);
+        Message result = new GenericMessage(new MessageType("exception"), exception);
 
         assertNotNull(result);
     }

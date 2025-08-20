@@ -30,7 +30,7 @@ import java.util.function.Predicate;
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public interface SequencedDeadLetterProcessor<M extends Message<?>> {
+public interface SequencedDeadLetterProcessor<M extends Message> {
 
     /**
      * Process a sequence of {@link DeadLetter dead letters} matching the given {@code sequenceFilter}.

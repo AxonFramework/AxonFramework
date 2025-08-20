@@ -48,7 +48,7 @@ class AbstractRepositoryTest {
     private AbstractLegacyRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>> testSubject;
 
     private AnnotatedAggregate<JpaAggregate> spiedAggregate;
-    private final Message<?> failureMessage = null;
+    private final Message failureMessage = null;
 
     @BeforeEach
     void setUp() {
@@ -174,7 +174,7 @@ class AbstractRepositoryTest {
 
     @Test
     void sendWorksAsExpected() throws Exception {
-        DeadlineMessage<String> testMsg = aDeadlineMessage();
+        DeadlineMessage testMsg = aDeadlineMessage();
         ProcessingContext context = StubProcessingContext.forMessage(testMsg);
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
@@ -186,7 +186,7 @@ class AbstractRepositoryTest {
 
     @Test
     void sendThrowsIllegalArgumentExceptionIfHandleFails() throws Exception {
-        DeadlineMessage<String> testMsg = aDeadlineMessage();
+        DeadlineMessage testMsg = aDeadlineMessage();
         ProcessingContext context = StubProcessingContext.forMessage(testMsg);
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
@@ -200,7 +200,7 @@ class AbstractRepositoryTest {
 
     @Test
     void sendFailsSilentlyOnAggregateNotFoundException() throws Exception {
-        DeadlineMessage<String> testMsg = aDeadlineMessage();
+        DeadlineMessage testMsg = aDeadlineMessage();
         ProcessingContext context = StubProcessingContext.forMessage(testMsg);
         AggregateScopeDescriptor testDescriptor =
                 new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), "some-other-aggregate-id");
@@ -224,11 +224,11 @@ class AbstractRepositoryTest {
         assertEquals("Throwing checked exception", uow.getExecutionResult().getExceptionResult().getMessage());
     }
 
-    private static DeadlineMessage<String> aDeadlineMessage() {
+    private static DeadlineMessage aDeadlineMessage() {
         var payload = "payload";
-        return new GenericDeadlineMessage<>(
+        return new GenericDeadlineMessage(
                 "deadline-name",
-                new GenericMessage<>(new MessageType(payload.getClass()), payload),
+                new GenericMessage(new MessageType(payload.getClass()), payload),
                 Instant::now
         );
     }

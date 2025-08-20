@@ -65,7 +65,7 @@ class SourceIdParameterResolverFactoryTest {
     void resolvesToAggregateIdentifierWhenAnnotatedForDomainEventMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
-        final GenericDomainEventMessage<Object> eventMessage = new GenericDomainEventMessage<>(
+        final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage(
                 "test", UUID.randomUUID().toString(), 0L, new MessageType("event"), "event"
         );
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
@@ -77,8 +77,8 @@ class SourceIdParameterResolverFactoryTest {
     void doesNotMatchWhenAnnotatedForCommandMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
-        CommandMessage<Object> commandMessage =
-                new GenericCommandMessage<>(new MessageType("command"), "test");
+        CommandMessage commandMessage =
+                new GenericCommandMessage(new MessageType("command"), "test");
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         assertFalse(resolver.matches(context));
     }

@@ -42,7 +42,7 @@ public abstract class Decisions {
      * @param <M> The type of message contained in the {@link DeadLetter} that's been made a decision on.
      * @return An {@link Ignore} defining that a {@link DeadLetter dead letter} should remain in the queue.
      */
-    public static <M extends Message<?>> Ignore<M> ignore() {
+    public static <M extends Message> Ignore<M> ignore() {
         return new Ignore<>();
     }
 
@@ -54,7 +54,7 @@ public abstract class Decisions {
      * @param <M> The type of message contained in the {@link DeadLetter} that's been made a decision on.
      * @return A {@link DoNotEnqueue} defining that a {@link DeadLetter dead letter} should not be enqueued at all.
      */
-    public static <M extends Message<?>> DoNotEnqueue<M> doNotEnqueue() {
+    public static <M extends Message> DoNotEnqueue<M> doNotEnqueue() {
         return new DoNotEnqueue<>();
     }
 
@@ -68,7 +68,7 @@ public abstract class Decisions {
      * @param <M> The type of message contained in the {@link DeadLetter} that's been made a decision on.
      * @return A {@link DoNotEnqueue} defining that a {@link DeadLetter dead letter} should be evicted from the queue.
      */
-    public static <M extends Message<?>> DoNotEnqueue<M> evict() {
+    public static <M extends Message> DoNotEnqueue<M> evict() {
         return new DoNotEnqueue<>();
     }
 
@@ -80,7 +80,7 @@ public abstract class Decisions {
      * @param <M> The type of message contained in the {@link DeadLetter} that's been made a decision on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be enqueued.
      */
-    public static <M extends Message<?>> ShouldEnqueue<M> enqueue() {
+    public static <M extends Message> ShouldEnqueue<M> enqueue() {
         return enqueue(null);
     }
 
@@ -96,7 +96,7 @@ public abstract class Decisions {
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be enqueued because of the
      * given {@code enqueueCause}.
      */
-    public static <M extends Message<?>> ShouldEnqueue<M> enqueue(Throwable enqueueCause) {
+    public static <M extends Message> ShouldEnqueue<M> enqueue(Throwable enqueueCause) {
         return enqueue(enqueueCause, DeadLetter::diagnostics);
     }
 
@@ -115,7 +115,7 @@ public abstract class Decisions {
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be enqueued because of the
      * given {@code enqueueCause}.
      */
-    public static <M extends Message<?>> ShouldEnqueue<M> enqueue(
+    public static <M extends Message> ShouldEnqueue<M> enqueue(
             Throwable enqueueCause,
             Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder
     ) {
@@ -134,7 +134,7 @@ public abstract class Decisions {
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be requeued because of the
      * given {@code requeueCause}.
      */
-    public static <M extends Message<?>> ShouldEnqueue<M> requeue(Throwable requeueCause) {
+    public static <M extends Message> ShouldEnqueue<M> requeue(Throwable requeueCause) {
         return requeue(requeueCause, DeadLetter::diagnostics);
     }
 
@@ -153,7 +153,7 @@ public abstract class Decisions {
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be requeued because of the
      * given {@code requeueCause}.
      */
-    public static <M extends Message<?>> ShouldEnqueue<M> requeue(
+    public static <M extends Message> ShouldEnqueue<M> requeue(
             Throwable requeueCause,
             Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder
     ) {

@@ -38,7 +38,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface TaggedEventMessage<E extends EventMessage<?>> {
+public interface TaggedEventMessage<E extends EventMessage> {
 
     /**
      * Return the {@link EventMessage} of generic type {@code E} carried by this {@code TaggedEventMessage}.

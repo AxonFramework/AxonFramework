@@ -36,7 +36,7 @@ class MessageNameSpanAttributesProviderTest {
 
     @Test
     void extractsForEvent() {
-        EventMessage<Object> event = EventTestUtils.asEventMessage("Some event");
+        EventMessage event = EventTestUtils.asEventMessage("Some event");
         Map<String, String> map = provider.provideForMessage(event);
         assertEquals(1, map.size());
         assertEquals("java.lang.String#0.0.1", map.get("axon_message_name"));
@@ -44,7 +44,7 @@ class MessageNameSpanAttributesProviderTest {
 
     @Test
     void extractsForQuery() {
-        Message<?> genericQueryMessage = new GenericQueryMessage<>(
+        Message genericQueryMessage = new GenericQueryMessage(
                 new MessageType("query"), "MyQuery", instanceOf(String.class)
         );
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
@@ -54,7 +54,7 @@ class MessageNameSpanAttributesProviderTest {
 
     @Test
     void extractsForCommand() {
-        Message<?> genericQueryMessage = new GenericCommandMessage<>(new GenericCommandMessage<>(
+        Message genericQueryMessage = new GenericCommandMessage(new GenericCommandMessage(
                 new MessageType("MyAwesomeCommand"), "payload"
         ));
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);

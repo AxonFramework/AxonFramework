@@ -43,20 +43,18 @@ class EventPublishingUtils {
      *
      * @param event               The event to convert.
      * @param messageTypeResolver The {@link MessageTypeResolver} to resolve the type of the event.
-     * @param <E>                 The type of the event.
      * @return The event as an {@link EventMessage}.
      */
-    @SuppressWarnings("unchecked")
-    static <E> EventMessage<E> asEventMessage(@Nonnull Object event, MessageTypeResolver messageTypeResolver) {
-        if (event instanceof EventMessage<?>) {
-            return (EventMessage<E>) event;
-        } else if (event instanceof Message<?>) {
-            Message<E> message = (Message<E>) event;
-            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+    static EventMessage asEventMessage(@Nonnull Object event, MessageTypeResolver messageTypeResolver) {
+        if (event instanceof EventMessage e) {
+            return e;
         }
-        return new GenericEventMessage<>(
+        if (event instanceof Message message) {
+            return new GenericEventMessage(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage(
                 messageTypeResolver.resolveOrThrow(event),
-                (E) event,
+                event,
                 MetaData.emptyInstance()
         );
     }

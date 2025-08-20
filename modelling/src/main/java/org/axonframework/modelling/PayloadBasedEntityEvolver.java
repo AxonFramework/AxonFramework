@@ -58,7 +58,7 @@ public class PayloadBasedEntityEvolver<P, E> implements EntityEvolver<E> {
 
     @Override
     public E evolve(@Nonnull E entity,
-                    @Nonnull EventMessage<?> event,
+                    @Nonnull EventMessage event,
                     @Nonnull ProcessingContext context) {
         P payload = payloadType.cast(requireNonNull(event, "The event must not be null.").payload());
         return evolver.apply(requireNonNull(entity, "The entity must not be null."), payload);

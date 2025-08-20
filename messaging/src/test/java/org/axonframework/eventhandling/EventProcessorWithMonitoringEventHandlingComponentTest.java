@@ -26,7 +26,6 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
@@ -44,9 +43,9 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
 
     @Test
     void expectCallbackForAllMessages() throws Exception {
-        List<EventMessage<Integer>> events = EventTestUtils.createEvents(2);
-        Set<EventMessage<Integer>> pending = new HashSet<>(events);
-        MessageMonitor<EventMessage<?>> messageMonitor = (message) -> new MessageMonitor.MonitorCallback() {
+        List<EventMessage> events = EventTestUtils.createEvents(2);
+        Set<EventMessage> pending = new HashSet<>(events);
+        MessageMonitor<EventMessage> messageMonitor = (message) -> new MessageMonitor.MonitorCallback() {
             @Override
             public void reportSuccess() {
                 if (!pending.contains(message)) {
@@ -71,14 +70,14 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
 
         // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
-        MessageHandlerInterceptor<EventMessage<?>> interceptor = new MessageHandlerInterceptor<>() {
+        MessageHandlerInterceptor<EventMessage> interceptor = new MessageHandlerInterceptor<>() {
             @Override
             public Object handle(
-                    @Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                    @Nonnull LegacyUnitOfWork<? extends EventMessage> unitOfWork,
                     @Nonnull ProcessingContext context,
                     @Nonnull InterceptorChain interceptorChain)
                     throws Exception {
-                unitOfWork.transformMessage(m -> new GenericEventMessage<>(
+                unitOfWork.transformMessage(m -> new GenericEventMessage(
                         new MessageType(new QualifiedName(Integer.class)),
                         123
                 ));
@@ -87,11 +86,11 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
             }
 
             @Override
-            public <M extends EventMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
+            public <M extends EventMessage, R extends Message> MessageStream<R> interceptOnHandle(
                     @Nonnull M message,
                     @Nonnull ProcessingContext context,
                     @Nonnull InterceptorChain<M, R> interceptorChain) {
-                var event = new GenericEventMessage<>(
+                var event = new GenericEventMessage(
                         new MessageType(new QualifiedName(Integer.class)),
                         123
                 );
@@ -147,7 +146,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
             return false;
         }
 
-        void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages)
+        void processInBatchingUnitOfWork(List<? extends EventMessage> eventMessages)
                 throws ExecutionException, InterruptedException, TimeoutException {
             var unitOfWork = UnitOfWorkTestUtils.aUnitOfWork();
             unitOfWork.executeWithResult(ctx -> processorEventHandlingComponents.handle(eventMessages, ctx)

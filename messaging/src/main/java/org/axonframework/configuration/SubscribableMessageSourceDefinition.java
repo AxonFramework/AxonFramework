@@ -26,7 +26,7 @@ import org.axonframework.messaging.SubscribableMessageSource;
  * @author Marc Gathier
  * @since 4.10.0
  */
-public interface SubscribableMessageSourceDefinition<M extends Message<?>> {
+public interface SubscribableMessageSourceDefinition<M extends Message> {
 
     /**
      * Creates a {@link SubscribableMessageSource} based on this definition and the provided configuration.

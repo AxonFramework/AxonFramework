@@ -45,7 +45,7 @@ class DbSchedulerHumanReadableDeadlineDetailsTest {
     private static final String TEST_DEADLINE_NAME = "deadline-name";
     private static final String TEST_DEADLINE_PAYLOAD = "deadline-payload";
     private static final MetaData META_DATA = getMetaData();
-    private static final DeadlineMessage<?> MESSAGE = getMessage();
+    private static final DeadlineMessage MESSAGE = getMessage();
 
     @MethodSource("dbSchedulerSerializers")
     @ParameterizedTest
@@ -78,7 +78,7 @@ class DbSchedulerHumanReadableDeadlineDetailsTest {
 
         assertEquals(TEST_DEADLINE_NAME, result.getDeadlineName());
         assertEquals(descriptor, result.getDeserializedScopeDescriptor(serializer));
-        DeadlineMessage<?> resultMessage = result.asDeadLineMessage(serializer);
+        DeadlineMessage resultMessage = result.asDeadLineMessage(serializer);
 
         assertNotNull(resultMessage);
         assertEquals(TEST_DEADLINE_PAYLOAD, resultMessage.payload());
@@ -106,10 +106,10 @@ class DbSchedulerHumanReadableDeadlineDetailsTest {
         return new MetaData(map);
     }
 
-    private static DeadlineMessage<?> getMessage() {
-        return new GenericDeadlineMessage<>(
+    private static DeadlineMessage getMessage() {
+        return new GenericDeadlineMessage(
                 TEST_DEADLINE_NAME,
-                new GenericMessage<>(new MessageType(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
+                new GenericMessage(new MessageType(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
                 Instant::now
         ).withMetaData(getMetaData());
     }

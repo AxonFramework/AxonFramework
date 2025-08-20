@@ -33,5 +33,5 @@ public interface CommandPriorityCalculator {
      * @param command A {@link CommandMessage} to prioritize.
      * @return An {@code int} defining the priority of the given {@code command}.
      */
-    int determinePriority(@Nonnull CommandMessage<?> command);
+    int determinePriority(@Nonnull CommandMessage command);
 }

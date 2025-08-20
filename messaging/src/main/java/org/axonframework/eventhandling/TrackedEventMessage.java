@@ -25,7 +25,7 @@ package org.axonframework.eventhandling;
  * @deprecated In favor of returning entries that contain a token and event message separately
  */
 @Deprecated
-public interface TrackedEventMessage<T> extends EventMessage<T> {
+public interface TrackedEventMessage extends EventMessage {
 
     /**
      * Returns the {@link TrackingToken} of the event message.
@@ -43,5 +43,5 @@ public interface TrackedEventMessage<T> extends EventMessage<T> {
      * @param trackingToken The tracking token to replace
      * @return a new instance of a message with a different tracking token
      */
-    TrackedEventMessage<T> withTrackingToken(TrackingToken trackingToken);
+    TrackedEventMessage withTrackingToken(TrackingToken trackingToken);
 }

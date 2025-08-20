@@ -38,10 +38,10 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @since 5.0.0
  */
-class AxonServerMessageStream implements MessageStream<EventMessage<?>> {
+class AxonServerMessageStream implements MessageStream<EventMessage> {
 
     private final EventStream stream;
-    private final Function<Event, EventMessage<byte[]>> messageConverter;
+    private final Function<Event, EventMessage> messageConverter;
 
     /**
      * Constructs the MessageStream, backed by given {@code stream} to AxonServer, using given {@code messageConverter}
@@ -51,25 +51,25 @@ class AxonServerMessageStream implements MessageStream<EventMessage<?>> {
      * @param messageConverter The function to convert Axon Server events to Event Messages
      */
     public AxonServerMessageStream(@Nonnull EventStream stream,
-                                   @Nonnull Function<Event, EventMessage<byte[]>> messageConverter) {
+                                   @Nonnull Function<Event, EventMessage> messageConverter) {
         this.stream = stream;
         this.messageConverter = messageConverter;
     }
 
     @Override
-    public Optional<Entry<EventMessage<?>>> next() {
+    public Optional<Entry<EventMessage>> next() {
         EventWithToken eventWithToken = stream.nextIfAvailable();
         if (eventWithToken == null) {
             return Optional.empty();
         }
-        SimpleEntry<EventMessage<?>> entry = toSimpleEntry(eventWithToken);
+        SimpleEntry<EventMessage> entry = toSimpleEntry(eventWithToken);
         return Optional.of(entry);
     }
 
     @Nonnull
-    private SimpleEntry<EventMessage<?>> toSimpleEntry(EventWithToken eventWithToken) {
+    private SimpleEntry<EventMessage> toSimpleEntry(EventWithToken eventWithToken) {
         Event event = eventWithToken.getEvent();
-        EventMessage<byte[]> message = messageConverter.apply(event);
+        EventMessage message = messageConverter.apply(event);
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(eventWithToken.getToken());
         Context context = Context.with(TrackingToken.RESOURCE_KEY, token);
         if (StringUtils.nonEmptyOrNull(event.getAggregateIdentifier())) {
@@ -82,12 +82,12 @@ class AxonServerMessageStream implements MessageStream<EventMessage<?>> {
     }
 
     @Override
-    public Optional<Entry<EventMessage<?>>> peek() {
+    public Optional<Entry<EventMessage>> peek() {
         EventWithToken eventWithToken = stream.peek();
         if (eventWithToken == null) {
             return Optional.empty();
         }
-        SimpleEntry<EventMessage<?>> entry = toSimpleEntry(eventWithToken);
+        SimpleEntry<EventMessage> entry = toSimpleEntry(eventWithToken);
         return Optional.of(entry);
     }
 

@@ -71,9 +71,9 @@ public class PersistentStreamConnection {
 
     private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
 
-    private static final Consumer<List<? extends EventMessage<?>>> NO_OP_CONSUMER = events -> {
+    private static final Consumer<List<? extends EventMessage>> NO_OP_CONSUMER = events -> {
     };
-    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer =
+    private final AtomicReference<Consumer<List<? extends EventMessage>>> consumer =
             new AtomicReference<>(NO_OP_CONSUMER);
     private final ScheduledExecutorService scheduler;
     private final int batchSize;
@@ -137,7 +137,7 @@ public class PersistentStreamConnection {
      * @param consumer The consumer of batches of event messages.
      * @throws IllegalStateException if the stream was already opened.
      */
-    public void open(Consumer<List<? extends EventMessage<?>>> consumer) {
+    public void open(Consumer<List<? extends EventMessage>> consumer) {
         if (!this.consumer.compareAndSet(NO_OP_CONSUMER, consumer)) {
             throw new IllegalStateException(
                     String.format("%s: Persistent Stream has already been opened.", streamId));
@@ -330,7 +330,7 @@ public class PersistentStreamConnection {
         }
 
         private void processBatch(List<PersistentStreamEvent> batch) {
-            List<TrackedEventMessage<?>> eventMessages = upcastAndDeserialize(batch);
+            List<TrackedEventMessage> eventMessages = upcastAndDeserialize(batch);
             if (!persistentStreamSegment.isClosed()) {
                 long token = batch.get(batch.size() - 1).getEvent().getToken();
                 consumer.get().accept(eventMessages);
@@ -354,7 +354,7 @@ public class PersistentStreamConnection {
             currentState.get().readMessages();
         }
 
-        private List<TrackedEventMessage<?>> upcastAndDeserialize(List<PersistentStreamEvent> batch) {
+        private List<TrackedEventMessage> upcastAndDeserialize(List<PersistentStreamEvent> batch) {
             // TODO #3520 - Be sure to fix this part to support persistent streams correctly.
             return null;
 //            EventUtils.upcastAndDeserializeTrackedEvents(

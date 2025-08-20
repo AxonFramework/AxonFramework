@@ -291,12 +291,12 @@ class AxonTestFixtureStatefulCommandHandlerTest {
         );
     }
 
-    private static GenericEventMessage<StudentNameChangedEvent> studentNameChangedEventMessage(
+    private static GenericEventMessage studentNameChangedEventMessage(
             String id,
             String name,
             int change
     ) {
-        return new GenericEventMessage<>(new MessageType(StudentNameChangedEvent.class),
+        return new GenericEventMessage(new MessageType(StudentNameChangedEvent.class),
                                          new StudentNameChangedEvent(id, name, change));
     }
 }

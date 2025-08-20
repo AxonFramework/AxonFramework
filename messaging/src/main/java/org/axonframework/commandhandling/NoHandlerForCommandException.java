@@ -48,7 +48,7 @@ public class NoHandlerForCommandException extends AxonTransientException {
      *
      * @param commandMessage The {@link CommandMessage command} for which no handler was found.
      */
-    public NoHandlerForCommandException(CommandMessage<?> commandMessage) {
+    public NoHandlerForCommandException(CommandMessage commandMessage) {
         this(format(
                 "No matching handler available to handle command of type [%s]. To find a matching handler, "
                         + "note that the command handler's name should match the command's name, "
@@ -65,7 +65,7 @@ public class NoHandlerForCommandException extends AxonTransientException {
      * @param message    The {@link CommandMessage} that was handled.
      * @param entityType The {@link Class} of the entity that was expected to handle the command.
      */
-    public NoHandlerForCommandException(@Nonnull CommandMessage<?> message, @Nonnull Class<?> entityType) {
+    public NoHandlerForCommandException(@Nonnull CommandMessage message, @Nonnull Class<?> entityType) {
         this(String.format(
                 "No command handler was found for command of type [%s] for entity [%s]",
                 message.type(),

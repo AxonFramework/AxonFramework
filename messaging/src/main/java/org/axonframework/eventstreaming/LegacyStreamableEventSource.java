@@ -47,7 +47,7 @@ import java.util.concurrent.CompletableFuture;
  * @since 5.0.0
  */
 @Deprecated(since = "5.0.0")
-public class LegacyStreamableEventSource<E extends EventMessage<?>> implements StreamableEventSource<E> {
+public class LegacyStreamableEventSource<E extends EventMessage> implements StreamableEventSource<E> {
 
     private final StreamableMessageSource<E> delegate;
 
@@ -88,7 +88,7 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
      *
      * @param <E> The type of {@link EventMessage} in the stream.
      */
-    private static class BlockingMessageStream<E extends EventMessage<?>> implements MessageStream<E> {
+    private static class BlockingMessageStream<E extends EventMessage> implements MessageStream<E> {
 
         private final BlockingStream<E> stream;
 
@@ -149,7 +149,7 @@ public class LegacyStreamableEventSource<E extends EventMessage<?>> implements S
 
         private Entry<E> createEntryForMessage(E message) {
             Context context = Context.empty();
-            if (message instanceof TrackedEventMessage<?> trackedMessage) {
+            if (message instanceof TrackedEventMessage trackedMessage) {
                 context = TrackingToken.addToContext(context, trackedMessage.trackingToken());
             }
             context = context.withResource(Message.RESOURCE_KEY, message);

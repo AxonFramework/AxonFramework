@@ -43,7 +43,7 @@ class TrackingTokenParameterResolverFactoryTest {
         ParameterResolver<?> resolver = testSubject.createInstance(method, method.getParameters(), 1);
 
         assertNotNull(resolver);
-        EventMessage<String> message = new GenericEventMessage<>(new MessageType("event"), "test");
+        EventMessage message = new GenericEventMessage(new MessageType("event"), "test");
         ProcessingContext contextWithGenericMessage = StubProcessingContext.forMessage(message);
         assertFalse(resolver.matches(contextWithGenericMessage));
     }
@@ -52,9 +52,9 @@ class TrackingTokenParameterResolverFactoryTest {
     void returnsTrackingTokenForTrackedEventMessage() {
         ParameterResolver<?> resolver = testSubject.createInstance(method, method.getParameters(), 1);
         GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(1L);
-        GenericTrackedEventMessage<String> trackedEventMessage = new GenericTrackedEventMessage<>(
+        GenericTrackedEventMessage trackedEventMessage = new GenericTrackedEventMessage(
                 trackingToken,
-                new GenericEventMessage<>(new MessageType("event"), "test"));
+                new GenericEventMessage(new MessageType("event"), "test"));
         ProcessingContext contextWithTrackedMessage = StubProcessingContext.forMessage(trackedEventMessage);
         assertTrue(resolver.matches(contextWithTrackedMessage));
         assertSame(trackingToken, resolver.resolveParameterValue(contextWithTrackedMessage));

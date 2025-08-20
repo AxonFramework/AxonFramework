@@ -55,7 +55,7 @@ public interface EntityModel<T> {
      * @param message The event message to publish
      * @param target  The target entity for the event
      */
-    void publish(EventMessage<?> message, T target);
+    void publish(EventMessage message, T target);
 
     /**
      * Gets all command handlers per type in this aggregate hierarchy.

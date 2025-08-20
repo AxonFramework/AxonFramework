@@ -48,9 +48,9 @@ class CapacityMonitorTest {
                                                                    TimeUnit.SECONDS,
                                                                    testClock);
 
-        EventMessage<Object> foo = asEventMessage(1);
-        EventMessage<Object> bar = asEventMessage("bar");
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+        EventMessage foo = asEventMessage(1);
+        EventMessage bar = asEventMessage("bar");
+        Map<? super Message, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(foo, bar));
 
         testClock.addSeconds(1);
@@ -76,9 +76,9 @@ class CapacityMonitorTest {
                                                                                message.payloadType()
                                                                                       .getSimpleName()));
 
-        EventMessage<Object> foo = asEventMessage(1);
-        EventMessage<Object> bar = asEventMessage("bar");
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+        EventMessage foo = asEventMessage(1);
+        EventMessage bar = asEventMessage("bar");
+        Map<? super Message, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(foo, bar));
 
         testClock.addSeconds(1);
@@ -111,11 +111,11 @@ class CapacityMonitorTest {
                                                                                              .get("myMetadataKey")
                                                                                              .toString()));
 
-        EventMessage<Object> foo = asEventMessage(1).withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage foo = asEventMessage(1).withMetaData(Collections.singletonMap("myMetadataKey",
                                                                                            "myMetadataValue1"));
-        EventMessage<Object> bar = asEventMessage("bar").withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage bar = asEventMessage("bar").withMetaData(Collections.singletonMap("myMetadataKey",
                                                                                                "myMetadataValue2"));
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+        Map<? super Message, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(foo, bar));
 
         testClock.addSeconds(1);
@@ -137,7 +137,7 @@ class CapacityMonitorTest {
                                          .equals(gauge.getId().getTag("myMetaData"), "myMetadataValue2")));
     }
 
-    private static EventMessage<Object> asEventMessage(Object payload) {
-        return new GenericEventMessage<>(new MessageType("event"), payload);
+    private static EventMessage asEventMessage(Object payload) {
+        return new GenericEventMessage(new MessageType("event"), payload);
     }
 }

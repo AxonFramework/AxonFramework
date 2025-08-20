@@ -53,7 +53,7 @@ public class ChildEntityNotFoundException extends RuntimeException {
      * @param commandMessage The {@link CommandMessage} that was handled.
      * @param parentEntity   The parent entity instance that was expected to handle the command.
      */
-    public ChildEntityNotFoundException(@Nonnull CommandMessage<?> commandMessage,
+    public ChildEntityNotFoundException(@Nonnull CommandMessage commandMessage,
                                         @Nonnull Object parentEntity) {
         super("No available child entity found for command of type [%s]. State of parent entity [%s]: [%s]"
                       .formatted(commandMessage.type(), parentEntity.getClass().getName(), parentEntity)

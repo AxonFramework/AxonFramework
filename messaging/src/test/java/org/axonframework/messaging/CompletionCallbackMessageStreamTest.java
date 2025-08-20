@@ -27,30 +27,30 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class CompletionCallbackMessageStreamTest extends MessageStreamTest<Message<String>> {
+class CompletionCallbackMessageStreamTest extends MessageStreamTest<Message> {
 
     private static final Runnable NO_OP_COMPLETION_CALLBACK = () -> {
     };
 
     @Override
-    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
+    MessageStream<Message> completedTestSubject(List<Message> messages) {
         return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages), NO_OP_COMPLETION_CALLBACK);
     }
 
     @Override
-    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         Assumptions.abort("CompletionCallbackMessageStream does not support explicit single-item streams");
         return null;
     }
 
     @Override
-    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("CompletionCallbackMessageStream does not support explicit zero-item streams");
         return null;
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+    MessageStream<Message> failingTestSubject(List<Message> messages,
                                                       Exception failure) {
         return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages)
                                                                   .concatWith(MessageStream.failed(failure)),
@@ -58,8 +58,8 @@ class CompletionCallbackMessageStreamTest extends MessageStreamTest<Message<Stri
     }
 
     @Override
-    Message<String> createRandomMessage() {
-        return new GenericMessage<>(new MessageType("message"),
+    Message createRandomMessage() {
+        return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

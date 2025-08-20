@@ -48,14 +48,14 @@ public class TagsUtil {
     /**
      * The function for creating the Micrometer {@link Tag}s based on the message payload type.
      */
-    public static final Function<Message<?>, Iterable<Tag>> PAYLOAD_TYPE_TAGGER_FUNCTION = message -> Tags.of(
+    public static final Function<Message, Iterable<Tag>> PAYLOAD_TYPE_TAGGER_FUNCTION = message -> Tags.of(
             PAYLOAD_TYPE_TAG,
             message.payloadType().getSimpleName());
 
     /**
      * The function for creating the Micrometer {@link Tag}s based on the message metadata.
      */
-    public static final Function<Message<?>, Iterable<Tag>> META_DATA_TAGGER_FUNCTION = message -> message
+    public static final Function<Message, Iterable<Tag>> META_DATA_TAGGER_FUNCTION = message -> message
             .metaData().entrySet().stream().map(it -> Tag.of(it.getKey(), it.getValue().toString()))
             .collect(Collectors.toList());
 }

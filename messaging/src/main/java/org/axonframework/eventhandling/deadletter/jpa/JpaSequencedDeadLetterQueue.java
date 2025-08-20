@@ -75,7 +75,7 @@ import static org.axonframework.common.BuilderUtils.*;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
-public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements SequencedDeadLetterQueue<M> {
+public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements SequencedDeadLetterQueue<M> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -84,7 +84,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
 
     private final String processingGroup;
     private final EntityManagerProvider entityManagerProvider;
-    private final List<DeadLetterJpaConverter<EventMessage<?>>> converters;
+    private final List<DeadLetterJpaConverter<EventMessage>> converters;
     private final TransactionManager transactionManager;
     private final int maxSequences;
     private final int maxSequenceSize;
@@ -98,7 +98,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
      *
      * @param builder The {@link Builder} used to instantiate a {@link JpaSequencedDeadLetterQueue} instance.
      */
-    protected <T extends EventMessage<?>> JpaSequencedDeadLetterQueue(Builder<T> builder) {
+    protected <T extends EventMessage> JpaSequencedDeadLetterQueue(Builder<T> builder) {
         builder.validate();
         this.processingGroup = builder.processingGroup;
         this.maxSequences = builder.maxSequences;
@@ -121,7 +121,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
      * @param <M> An implementation of {@link Message} contained in the {@link DeadLetter dead-letters} within this queue.
      * @return The builder
      */
-    public static <M extends EventMessage<?>> Builder<M> builder() {
+    public static <M extends EventMessage> Builder<M> builder() {
         return new Builder<>();
     }
 
@@ -208,7 +208,6 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void requeue(@Nonnull DeadLetter<? extends M> letter,
                         @Nonnull UnaryOperator<DeadLetter<? extends M>> letterUpdater)
             throws NoSuchDeadLetterException {
@@ -279,7 +278,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
 
         return () -> {
             Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
-            return new Iterator<Iterable<DeadLetter<? extends M>>>() {
+            return new Iterator<>() {
                 @Override
                 public boolean hasNext() {
                     return sequenceIterator.hasNext();
@@ -606,9 +605,9 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
      *
      * @param <T> The type of {@link Message} maintained in this {@link JpaSequencedDeadLetterQueue}.
      */
-    public static class Builder<T extends EventMessage<?>> {
+    public static class Builder<T extends EventMessage> {
 
-        private final List<DeadLetterJpaConverter<EventMessage<?>>> converters = new LinkedList<>();
+        private final List<DeadLetterJpaConverter<EventMessage>> converters = new LinkedList<>();
         private String processingGroup = null;
         private int maxSequences = 1024;
         private int maxSequenceSize = 1024;
@@ -754,7 +753,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage<?>> implements S
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> addConverter(DeadLetterJpaConverter<EventMessage<?>> converter) {
+        public Builder<T> addConverter(DeadLetterJpaConverter<EventMessage> converter) {
             assertNonNull(converter, "Can not add a null DeadLetterJpaConverter.");
             this.converters.add(converter);
             return this;

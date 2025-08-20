@@ -56,7 +56,7 @@ public class SegmentMatcher {
      * @param event The event to check.
      * @return {@code true} if the event matches the segment, {@code false} otherwise.
      */
-    public boolean matches(@Nonnull Segment segment, @Nonnull EventMessage<?> event) {
+    public boolean matches(@Nonnull Segment segment, @Nonnull EventMessage event) {
         Objects.requireNonNull(segment, "Segment may not be null");
         Objects.requireNonNull(event, "EventMessage may not be null");
         return segment.matches(Objects.hashCode(sequenceIdentifier(event)));
@@ -69,7 +69,7 @@ public class SegmentMatcher {
      * @param event The event to get the sequence identifier for.
      * @return The sequence identifier for the event, never {@code null}.
      */
-    public Object sequenceIdentifier(@Nonnull EventMessage<?> event) {
+    public Object sequenceIdentifier(@Nonnull EventMessage event) {
         Objects.requireNonNull(event, "EventMessage may not be null");
         return sequencingPolicy.getSequenceIdentifierFor(event).orElseGet(event::identifier);
     }

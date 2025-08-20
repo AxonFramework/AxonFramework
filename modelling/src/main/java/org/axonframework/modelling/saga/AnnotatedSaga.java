@@ -98,7 +98,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
-    public final boolean canHandle(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    public final boolean canHandle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return isActive && metaModel.findHandlerMethods(event, context).stream()
                                     .anyMatch(h -> h.unwrap(SagaMethodMessageHandlingMember.class)
                                                     .map(sh -> getAssociationValues().contains(
@@ -109,7 +109,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     @SuppressWarnings("unchecked") // Suppress warning for SagaMethodMessageHandlingMember generic
     @Override
-    public final Object handleSync(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    public final Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         if (isActive) {
             return metaModel.findHandlerMethods(event, context).stream()
                             .filter(handler -> handler.unwrap(SagaMethodMessageHandlingMember.class)
@@ -123,7 +123,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
         return null;
     }
 
-    private Object handle(MessageHandlingMember<? super T> handler, EventMessage<?> event, ProcessingContext context) {
+    private Object handle(MessageHandlingMember<? super T> handler, EventMessage event, ProcessingContext context) {
         try {
             return executeWithResult(() -> chainedInterceptor.handleSync(
                     event, context, sagaInstance, handler)

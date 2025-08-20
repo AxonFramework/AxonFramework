@@ -39,7 +39,7 @@ import java.util.function.Consumer;
  * @deprecated This class will be removed.
  */
 @Deprecated(since = "5.0.0", forRemoval = true)
-public abstract class AbstractLegacyUnitOfWork<T extends Message<?>> implements LegacyUnitOfWork<T> {
+public abstract class AbstractLegacyUnitOfWork<T extends Message> implements LegacyUnitOfWork<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractLegacyUnitOfWork.class);
     private final Map<String, Object> resources = new HashMap<>();

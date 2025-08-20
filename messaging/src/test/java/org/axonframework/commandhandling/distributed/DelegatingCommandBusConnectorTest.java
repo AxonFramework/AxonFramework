@@ -55,7 +55,7 @@ class DelegatingCommandBusConnectorTest {
     @Test
     void testDispatchDelegatesToWrappedConnector() {
         // Given
-        CommandMessage<String> command = asCommandMessage("command");
+        CommandMessage command = asCommandMessage("command");
         CompletableFuture<CommandResultMessage<?>> expectedResult =
                 CompletableFuture.completedFuture(asCommandResultMessage("result"));
 
@@ -72,7 +72,7 @@ class DelegatingCommandBusConnectorTest {
     @Test
     void testDispatchWithNullProcessingContext() {
         // Given
-        CommandMessage<String> command = asCommandMessage("command");
+        CommandMessage command = asCommandMessage("command");
         CompletableFuture<CommandResultMessage<?>> expectedResult =
                 CompletableFuture.completedFuture(asCommandResultMessage("result"));
 
@@ -120,8 +120,8 @@ class DelegatingCommandBusConnectorTest {
         verifyNoMoreInteractions(delegate);
     }
 
-    private CommandMessage<String> asCommandMessage(String payload) {
-        return new GenericCommandMessage<>(MessageType.fromString("commandmessage#1.0"), payload);
+    private CommandMessage asCommandMessage(String payload) {
+        return new GenericCommandMessage(MessageType.fromString("commandmessage#1.0"), payload);
     }
 
     private CommandResultMessage<String> asCommandResultMessage(String payload) {

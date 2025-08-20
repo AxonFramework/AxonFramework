@@ -82,7 +82,7 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
      * @param message The message to match against.
      * @return {@code true} if the routing keys match, {@code false} otherwise.
      */
-    public boolean matches(@Nonnull E entity, @Nonnull Message<?> message) {
+    public boolean matches(@Nonnull E entity, @Nonnull Message message) {
         Class<?> payloadType = metamodel.getExpectedRepresentation(message.type().qualifiedName());
         if (payloadType == null) {
             // This message is not handled in this entity metamodel, so we cannot match it.

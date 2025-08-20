@@ -39,7 +39,7 @@ public abstract class Matchers {
      * @param matcher The mather to match against the Message payloads
      * @return a Matcher that matches against the Message payloads
      */
-    public static Matcher<List<Message<?>>> payloadsMatching(final Matcher<? extends List<?>> matcher) {
+    public static Matcher<List<Message>> payloadsMatching(final Matcher<? extends List<?>> matcher) {
         return new PayloadsMatcher(matcher);
     }
 
@@ -49,7 +49,7 @@ public abstract class Matchers {
      * @param payloadMatcher The matcher to match against the Message's payload
      * @return a Matcher that evaluates a Message's payload.
      */
-    public static Matcher<Message<?>> messageWithPayload(Matcher<?> payloadMatcher) {
+    public static Matcher<Message> messageWithPayload(Matcher<?> payloadMatcher) {
         return new PayloadMatcher<>(payloadMatcher);
     }
 
@@ -142,7 +142,7 @@ public abstract class Matchers {
      *
      * @return a matcher that matches an empty list of events
      */
-    public static Matcher<List<EventMessage<?>>> noEvents() {
+    public static Matcher<List<EventMessage>> noEvents() {
         return new EmptyCollectionMatcher<>("events");
     }
 
@@ -151,7 +151,7 @@ public abstract class Matchers {
      *
      * @return a matcher that matches an empty list of Commands
      */
-    public static Matcher<List<CommandMessage<?>>> noCommands() {
+    public static Matcher<List<CommandMessage>> noCommands() {
         return new EmptyCollectionMatcher<>("commands");
     }
 

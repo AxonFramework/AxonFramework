@@ -75,13 +75,13 @@ class CommandValidatorTest {
         assertThrows(AxonAssertionError.class, () -> testSubject.assertDispatchedEqualTo("some-other-string"));
     }
 
-    private List<CommandMessage<?>> emptyCommandMessageList() {
+    private List<CommandMessage> emptyCommandMessageList() {
         return Collections.emptyList();
     }
 
-    private List<CommandMessage<?>> listOfOneCommandMessage(Object msg) {
+    private List<CommandMessage> listOfOneCommandMessage(Object msg) {
         return Collections.singletonList(
-                new GenericCommandMessage<>(new MessageType("command"), msg)
+                new GenericCommandMessage(new MessageType("command"), msg)
         );
     }
 

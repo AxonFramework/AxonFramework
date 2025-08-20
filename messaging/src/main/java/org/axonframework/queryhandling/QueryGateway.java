@@ -36,7 +36,7 @@ import jakarta.annotation.Nonnull;
  * @author Milan Savic
  * @since 3.1
  */
-public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMessage<?, ?>> {
+public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMessage> {
 
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response with

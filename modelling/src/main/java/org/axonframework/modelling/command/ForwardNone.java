@@ -28,7 +28,7 @@ import jakarta.annotation.Nonnull;
  * @author Steven van Beelen
  * @since 3.1
  */
-public class ForwardNone<T extends Message<?>> implements ForwardingMode<T> {
+public class ForwardNone<T extends Message> implements ForwardingMode<T> {
 
     @Override
     public <E> Stream<E> filterCandidates(@Nonnull T message, @Nonnull Stream<E> candidates) {

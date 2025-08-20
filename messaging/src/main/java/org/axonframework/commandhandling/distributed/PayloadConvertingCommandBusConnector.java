@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Converter;
 
@@ -60,9 +59,9 @@ public class PayloadConvertingCommandBusConnector<T> extends DelegatingCommandBu
 
     @Nonnull
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                @Nullable ProcessingContext processingContext) {
-        CommandMessage<?> serializedCommand = command.withConvertedPayload(targetType, converter);
+        CommandMessage serializedCommand = command.withConvertedPayload(targetType, converter);
         return delegate.dispatch(serializedCommand, processingContext);
     }
 

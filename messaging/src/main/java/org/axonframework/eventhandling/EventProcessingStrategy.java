@@ -38,7 +38,7 @@ public interface EventProcessingStrategy {
      * @param events    Events to be processed
      * @param processor Callback method on the processor that carries out the actual processing of events
      */
-    void handle(@Nonnull List<? extends EventMessage<?>> events,
-                @Nonnull Consumer<List<? extends EventMessage<?>>> processor);
+    void handle(@Nonnull List<? extends EventMessage> events,
+                @Nonnull Consumer<List<? extends EventMessage>> processor);
 
 }

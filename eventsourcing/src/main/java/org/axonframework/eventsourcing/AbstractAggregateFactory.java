@@ -87,12 +87,12 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
     }
 
     @Override
-    public final T createAggregateRoot(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
+    public final T createAggregateRoot(String aggregateIdentifier, DomainEventMessage firstEvent) {
         return postProcessInstance(fromSnapshot(firstEvent).orElseGet(() -> doCreateAggregate(aggregateIdentifier, firstEvent)));
     }
 
     @SuppressWarnings("unchecked")
-    private Optional<T> fromSnapshot(DomainEventMessage<?> firstEvent) {
+    private Optional<T> fromSnapshot(DomainEventMessage firstEvent) {
         if (aggregateModel.types().anyMatch(firstEvent.payloadType()::equals)) {
             return (Optional<T>) Optional.of(firstEvent.payload());
         }

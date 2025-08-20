@@ -228,7 +228,7 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
-    protected PreparedStatement appendEvents(Connection connection, List<? extends EventMessage<?>> events,
+    protected PreparedStatement appendEvents(Connection connection, List<? extends EventMessage> events,
                                              Serializer serializer) throws SQLException {
         return appendEvents.build(connection, schema, dataType, events, serializer, this::writeTimestamp);
     }
@@ -277,7 +277,7 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
      */
-    protected PreparedStatement appendSnapshot(Connection connection, DomainEventMessage<?> snapshot,
+    protected PreparedStatement appendSnapshot(Connection connection, DomainEventMessage snapshot,
                                                Serializer serializer) throws SQLException {
         return appendSnapshot.build(connection, schema, dataType, snapshot, serializer, this::writeTimestamp);
     }
@@ -390,7 +390,7 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
     }
 
     @Override
-    protected void appendEvents(List<? extends EventMessage<?>> events, Serializer serializer) {
+    protected void appendEvents(List<? extends EventMessage> events, Serializer serializer) {
         if (events.isEmpty()) {
             return;
         }
@@ -402,7 +402,7 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
     }
 
     @Override
-    protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
+    protected void storeSnapshot(DomainEventMessage snapshot, Serializer serializer) {
         transactionManager.executeInTransaction(() -> {
             try {
                 executeUpdates(

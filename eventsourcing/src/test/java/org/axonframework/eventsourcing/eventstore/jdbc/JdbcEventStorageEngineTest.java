@@ -260,8 +260,8 @@ class JdbcEventStorageEngineTest
                 .executeUpdate();
         }
 
-        Stream<? extends TrackedEventMessage<?>> actual = testSubject.readEvents(null, false);
-        List<? extends TrackedEventMessage<?>> actualEvents = actual.collect(toList());
+        Stream<? extends TrackedEventMessage> actual = testSubject.readEvents(null, false);
+        List<? extends TrackedEventMessage> actualEvents = actual.collect(toList());
         assertEquals(80, actualEvents.size());
     }
 
@@ -287,8 +287,8 @@ class JdbcEventStorageEngineTest
                 .executeUpdate();
         }
 
-        Stream<? extends TrackedEventMessage<?>> actual = testSubject.readEvents(null, false);
-        List<? extends TrackedEventMessage<?>> actualEvents = actual.collect(toList());
+        Stream<? extends TrackedEventMessage> actual = testSubject.readEvents(null, false);
+        List<? extends TrackedEventMessage> actualEvents = actual.collect(toList());
         assertEquals(20, actualEvents.size());
     }
 
@@ -304,8 +304,8 @@ class JdbcEventStorageEngineTest
                 .executeUpdate();
         }
 
-        Stream<? extends TrackedEventMessage<?>> actual = testSubject.readEvents(null, false);
-        List<? extends TrackedEventMessage<?>> actualEvents = actual.collect(toList());
+        Stream<? extends TrackedEventMessage> actual = testSubject.readEvents(null, false);
+        List<? extends TrackedEventMessage> actualEvents = actual.collect(toList());
         assertEquals(80, actualEvents.size());
     }
 
@@ -314,15 +314,15 @@ class JdbcEventStorageEngineTest
         int testBatchSize = 10;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
-        DomainEventMessage<String> testEventOne = createDomainEvent(0);
-        DomainEventMessage<String> testEventTwo = createDomainEvent(1);
-        DomainEventMessage<String> testEventThree = createDomainEvent(2);
-        DomainEventMessage<String> testEventFour = createDomainEvent(3);
-        DomainEventMessage<String> testEventFive = createDomainEvent(4);
+        DomainEventMessage testEventOne = createDomainEvent(0);
+        DomainEventMessage testEventTwo = createDomainEvent(1);
+        DomainEventMessage testEventThree = createDomainEvent(2);
+        DomainEventMessage testEventFour = createDomainEvent(3);
+        DomainEventMessage testEventFive = createDomainEvent(4);
 
         testSubject.appendEvents(testEventOne, testEventTwo, testEventThree, testEventFour, testEventFive);
 
-        List<? extends DomainEventMessage<?>> result = testSubject.readEvents(AGGREGATE, 0L).asStream()
+        List<? extends DomainEventMessage> result = testSubject.readEvents(AGGREGATE, 0L).asStream()
                                                                   .collect(toList());
 
         assertEquals(5, result.size());
@@ -338,15 +338,15 @@ class JdbcEventStorageEngineTest
         int testBatchSize = 10;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
-        DomainEventMessage<String> testEventOne = createDomainEvent(0);
-        DomainEventMessage<String> testEventTwo = createDomainEvent(1);
+        DomainEventMessage testEventOne = createDomainEvent(0);
+        DomainEventMessage testEventTwo = createDomainEvent(1);
         // Event with sequence number 2 is missing -> the gap
-        DomainEventMessage<String> testEventFour = createDomainEvent(3);
-        DomainEventMessage<String> testEventFive = createDomainEvent(4);
+        DomainEventMessage testEventFour = createDomainEvent(3);
+        DomainEventMessage testEventFive = createDomainEvent(4);
 
         testSubject.appendEvents(testEventOne, testEventTwo, testEventFour, testEventFive);
 
-        List<? extends DomainEventMessage<?>> result = testSubject.readEvents(AGGREGATE, 0L).asStream()
+        List<? extends DomainEventMessage> result = testSubject.readEvents(AGGREGATE, 0L).asStream()
                                                                   .collect(toList());
 
         assertEquals(4, result.size());
@@ -362,21 +362,21 @@ class JdbcEventStorageEngineTest
         int testBatchSize = 5;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
-        DomainEventMessage<String> testEventOne = createDomainEvent(0);
-        DomainEventMessage<String> testEventTwo = createDomainEvent(1);
-        DomainEventMessage<String> testEventThree = createDomainEvent(2);
-        DomainEventMessage<String> testEventFour = createDomainEvent(3);
-        DomainEventMessage<String> testEventFive = createDomainEvent(4);
-        DomainEventMessage<String> testEventSix = createDomainEvent(5);
-        DomainEventMessage<String> testEventSeven = createDomainEvent(6);
-        DomainEventMessage<String> testEventEight = createDomainEvent(7);
+        DomainEventMessage testEventOne = createDomainEvent(0);
+        DomainEventMessage testEventTwo = createDomainEvent(1);
+        DomainEventMessage testEventThree = createDomainEvent(2);
+        DomainEventMessage testEventFour = createDomainEvent(3);
+        DomainEventMessage testEventFive = createDomainEvent(4);
+        DomainEventMessage testEventSix = createDomainEvent(5);
+        DomainEventMessage testEventSeven = createDomainEvent(6);
+        DomainEventMessage testEventEight = createDomainEvent(7);
 
         testSubject.appendEvents(
                 testEventOne, testEventTwo, testEventThree, testEventFour, testEventFive, testEventSix, testEventSeven,
                 testEventEight
         );
 
-        List<? extends DomainEventMessage<?>> result = testSubject.readEvents(AGGREGATE, 0L).asStream()
+        List<? extends DomainEventMessage> result = testSubject.readEvents(AGGREGATE, 0L).asStream()
                                                                   .collect(toList());
 
         assertEquals(8, result.size());
@@ -396,21 +396,21 @@ class JdbcEventStorageEngineTest
         int testBatchSize = 5;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
 
-        DomainEventMessage<String> testEventOne = createDomainEvent(0);
-        DomainEventMessage<String> testEventTwo = createDomainEvent(1);
+        DomainEventMessage testEventOne = createDomainEvent(0);
+        DomainEventMessage testEventTwo = createDomainEvent(1);
         // Event with sequence number 2 is missing -> the gap
-        DomainEventMessage<String> testEventFour = createDomainEvent(3);
-        DomainEventMessage<String> testEventFive = createDomainEvent(4);
-        DomainEventMessage<String> testEventSix = createDomainEvent(5);
-        DomainEventMessage<String> testEventSeven = createDomainEvent(6);
-        DomainEventMessage<String> testEventEight = createDomainEvent(7);
+        DomainEventMessage testEventFour = createDomainEvent(3);
+        DomainEventMessage testEventFive = createDomainEvent(4);
+        DomainEventMessage testEventSix = createDomainEvent(5);
+        DomainEventMessage testEventSeven = createDomainEvent(6);
+        DomainEventMessage testEventEight = createDomainEvent(7);
 
         testSubject.appendEvents(
                 testEventOne, testEventTwo, testEventFour, testEventFive, testEventSix, testEventSeven,
                 testEventEight
         );
 
-        List<? extends DomainEventMessage<?>> result = testSubject.readEvents(AGGREGATE, 0L).asStream()
+        List<? extends DomainEventMessage> result = testSubject.readEvents(AGGREGATE, 0L).asStream()
                                                                   .collect(toList());
 
         assertEquals(7, result.size());

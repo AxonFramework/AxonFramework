@@ -26,7 +26,7 @@ public class ThrowingCorrelationDataProvider implements CorrelationDataProvider 
 
     @Nonnull
     @Override
-    public Map<String, String> correlationDataFor(@Nonnull Message<?> message) {
+    public Map<String, String> correlationDataFor(@Nonnull Message message) {
         throw new AxonConfigurationException("correlation is not clear");
     }
 }

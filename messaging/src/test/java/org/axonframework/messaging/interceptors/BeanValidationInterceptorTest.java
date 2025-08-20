@@ -40,10 +40,10 @@ import static org.mockito.Mockito.*;
  */
 class BeanValidationInterceptorTest {
 
-    private BeanValidationInterceptor<Message<?>> testSubject;
+    private BeanValidationInterceptor<Message> testSubject;
 
     private InterceptorChain interceptorChain;
-    private LegacyUnitOfWork<Message<?>> uow;
+    private LegacyUnitOfWork<Message> uow;
 
     @BeforeEach
     void setUp() {
@@ -55,7 +55,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateSimpleObject() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<>(
+        uow.transformMessage(m -> new GenericMessage(
                 new MessageType("message"), "Simple instance"
         ));
 
@@ -68,7 +68,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateAnnotatedObject_IllegalNullValue() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<>(
+        uow.transformMessage(m -> new GenericMessage(
                 new MessageType("message"), new JSR303AnnotatedInstance(null)
         ));
         ProcessingContext context = StubProcessingContext.forUnitOfWork(uow);
@@ -83,7 +83,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateAnnotatedObject_LegalValue() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<>(
+        uow.transformMessage(m -> new GenericMessage(
                 new MessageType("message"), new JSR303AnnotatedInstance("abc")
         ));
         ProcessingContext context = StubProcessingContext.forUnitOfWork(uow);
@@ -95,7 +95,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateAnnotatedObject_IllegalValue() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<>(
+        uow.transformMessage(m -> new GenericMessage(
                 new MessageType("message"), new JSR303AnnotatedInstance("bea")
         ));
         ProcessingContext context = StubProcessingContext.forUnitOfWork(uow);
@@ -112,7 +112,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void customValidatorFactory() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<Object>(new MessageType("message"),
+        uow.transformMessage(m -> new GenericMessage(new MessageType("message"),
                                                              new JSR303AnnotatedInstance("abc")));
         ProcessingContext context = StubProcessingContext.forUnitOfWork(uow);
         ValidatorFactory mockValidatorFactory = spy(Validation.buildDefaultValidatorFactory());

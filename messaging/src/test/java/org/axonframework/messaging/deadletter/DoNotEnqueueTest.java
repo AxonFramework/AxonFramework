@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class DoNotEnqueueTest {
 
-    private DeadLetter<EventMessage<String>> testLetter;
+    private DeadLetter<EventMessage> testLetter;
 
     @BeforeEach
     void setUp() {
@@ -46,34 +46,34 @@ class DoNotEnqueueTest {
 
     @Test
     void constructorDoNotEnqueueDoesNotAllowEnqueueing() {
-        DoNotEnqueue<Message<?>> testSubject = new DoNotEnqueue<>();
+        DoNotEnqueue<Message> testSubject = new DoNotEnqueue<>();
 
         assertFalse(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
+        DeadLetter<? extends Message> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
     @Test
     void decisionsDoNotEnqueueDoesNotAllowEnqueueing() {
-        DoNotEnqueue<Message<?>> testSubject = Decisions.doNotEnqueue();
+        DoNotEnqueue<Message> testSubject = Decisions.doNotEnqueue();
 
         assertFalse(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
+        DeadLetter<? extends Message> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
     @Test
     void decisionsEvictDoesNotAllowEnqueueing() {
-        DoNotEnqueue<Message<?>> testSubject = Decisions.evict();
+        DoNotEnqueue<Message> testSubject = Decisions.evict();
 
         assertFalse(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
+        DeadLetter<? extends Message> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 }

@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Rene de Waele
  * @since 3.0
  */
-public class CorrelationDataInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T> {
+public class CorrelationDataInterceptor<T extends Message> implements MessageHandlerInterceptor<T> {
 
     public static final ResourceKey<Map<String, Object>> CORRELATION_DATA = ResourceKey.withLabel("CorrelationData");
     private final List<CorrelationDataProvider> correlationDataProviders;
@@ -70,7 +70,7 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     }
 
     @Override
-    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(
+    public <M extends T, R extends Message> MessageStream<R> interceptOnHandle(
             @Nonnull M message,
             ProcessingContext context,
             InterceptorChain<M, R> interceptorChain

@@ -45,10 +45,10 @@ class MessageCountingMonitorTest {
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
         MessageCountingMonitor testSubject = MessageCountingMonitor.buildMonitor(PROCESSOR_NAME,
                                                                                  meterRegistry);
-        EventMessage<Object> foo = asEventMessage(1);
-        EventMessage<Object> bar = asEventMessage("bar");
-        EventMessage<Object> baz = asEventMessage("baz");
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+        EventMessage foo = asEventMessage(1);
+        EventMessage bar = asEventMessage("bar");
+        EventMessage baz = asEventMessage("baz");
+        Map<? super Message, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(foo, bar, baz));
         callbacks.get(foo).reportSuccess();
         callbacks.get(bar).reportFailure(null);
@@ -76,10 +76,10 @@ class MessageCountingMonitorTest {
                                                                                          .of(TagsUtil.PAYLOAD_TYPE_TAG,
                                                                                              message.payloadType()
                                                                                                     .getSimpleName()));
-        EventMessage<Object> foo = asEventMessage(1);
-        EventMessage<Object> bar = asEventMessage("bar");
-        EventMessage<Object> baz = asEventMessage("baz");
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+        EventMessage foo = asEventMessage(1);
+        EventMessage bar = asEventMessage("bar");
+        EventMessage baz = asEventMessage("baz");
+        Map<? super Message, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(foo, bar, baz));
         callbacks.get(foo).reportSuccess();
         callbacks.get(bar).reportFailure(null);
@@ -148,15 +148,15 @@ class MessageCountingMonitorTest {
                                                                                              message.metaData()
                                                                                                     .get("myMetadataKey")
                                                                                                     .toString()));
-        EventMessage<Object> foo = asEventMessage(1).withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage foo = asEventMessage(1).withMetaData(Collections.singletonMap("myMetadataKey",
                                                                                            "myMetadataValue1"));
-        EventMessage<Object> bar = asEventMessage("bar").withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage bar = asEventMessage("bar").withMetaData(Collections.singletonMap("myMetadataKey",
                                                                                                "myMetadataValue2"));
         ;
-        EventMessage<Object> baz = asEventMessage("baz").withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage baz = asEventMessage("baz").withMetaData(Collections.singletonMap("myMetadataKey",
                                                                                                "myMetadataValue2"));
         ;
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+        Map<? super Message, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(foo, bar, baz));
         callbacks.get(foo).reportSuccess();
         callbacks.get(bar).reportFailure(null);
@@ -225,7 +225,7 @@ class MessageCountingMonitorTest {
                                   .allMatch(counter -> counter.count() == 1));
     }
 
-    private static EventMessage<Object> asEventMessage(Object payload) {
-        return new GenericEventMessage<>(new MessageType("event"), payload);
+    private static EventMessage asEventMessage(Object payload) {
+        return new GenericEventMessage(new MessageType("event"), payload);
     }
 }

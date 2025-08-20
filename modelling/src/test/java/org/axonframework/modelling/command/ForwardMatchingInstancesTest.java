@@ -35,7 +35,7 @@ class ForwardMatchingInstancesTest {
     @SuppressWarnings("unchecked")
     private final EntityModel<Object> entityModel = mock();
 
-    private ForwardMatchingInstances<Message<?>> testSubject;
+    private ForwardMatchingInstances<Message> testSubject;
 
     @AggregateMember
     private final Object stubEntityWithImplicitRoutingKey = null;
@@ -66,7 +66,7 @@ class ForwardMatchingInstancesTest {
         verify(entityModel).routingKey();
 
         String candidate1 = "Candidate1";
-        Message<String> testMessage = new GenericMessage<>(new MessageType("message"), "Mock");
+        Message testMessage = new GenericMessage(new MessageType("message"), "Mock");
 
         Stream<String> result = testSubject.filterCandidates(testMessage, Stream.of(candidate1));
 
@@ -83,7 +83,7 @@ class ForwardMatchingInstancesTest {
         verify(entityModel).routingKey();
 
         String candidate1 = "Candidate1";
-        Message<String> testMessage = new GenericMessage<>(new MessageType("message"), "Mock");
+        Message testMessage = new GenericMessage(new MessageType("message"), "Mock");
 
         Stream<String> result = testSubject.filterCandidates(testMessage, Stream.of(candidate1));
 
@@ -105,7 +105,7 @@ class ForwardMatchingInstancesTest {
 
         String candidate1 = "Candidate1";
         String payload = "Mock";
-        Message<String> testMessage = new GenericMessage<>(new MessageType("message"), payload);
+        Message testMessage = new GenericMessage(new MessageType("message"), payload);
 
         Stream<String> result = testSubject.filterCandidates(testMessage, Stream.of(candidate1));
 
@@ -128,7 +128,7 @@ class ForwardMatchingInstancesTest {
 
         String candidate1 = "Candidate1";
         String payload = "Mock";
-        Message<String> testMessage = new GenericMessage<>(new MessageType("message"), payload);
+        Message testMessage = new GenericMessage(new MessageType("message"), payload);
 
         Stream<String> result = testSubject.filterCandidates(testMessage, Stream.of(candidate1));
 
@@ -152,8 +152,8 @@ class ForwardMatchingInstancesTest {
         String candidate1 = "Candidate1";
         String payload1 = "Mock1";
         String payload2 = "Mock2";
-        Message<String> testMessageOne = new GenericMessage<>(new MessageType("message"), payload1);
-        Message<String> testMessageTwo = new GenericMessage<>(new MessageType("message"), payload2);
+        Message testMessageOne = new GenericMessage(new MessageType("message"), payload1);
+        Message testMessageTwo = new GenericMessage(new MessageType("message"), payload2);
 
         Stream<String> result1 = testSubject.filterCandidates(testMessageOne, Stream.of(candidate1));
         Stream<String> result2 = testSubject.filterCandidates(testMessageTwo, Stream.of(candidate1));
@@ -184,8 +184,8 @@ class ForwardMatchingInstancesTest {
         String candidate1 = "Candidate1";
         String payload1 = "Mock1";
         Long payload2 = 2L;
-        Message<String> testMessageOne = new GenericMessage<>(new MessageType("message"), payload1);
-        Message<Long> testMessageTwo = new GenericMessage<>(new MessageType("message"), payload2);
+        Message testMessageOne = new GenericMessage(new MessageType("message"), payload1);
+        Message testMessageTwo = new GenericMessage(new MessageType("message"), payload2);
 
         Stream<String> result1 = testSubject.filterCandidates(testMessageOne, Stream.of(candidate1));
         Stream<String> result2 = testSubject.filterCandidates(testMessageTwo, Stream.of(candidate1));

@@ -98,8 +98,8 @@ class SagaManagerTest {
 
     @Test
     void sagasLoaded() throws Exception {
-        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
-        LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(event);
+        EventMessage event = new GenericEventMessage(new MessageType("event"), new Object());
+        LegacyUnitOfWork<? extends EventMessage> unitOfWork = new LegacyDefaultUnitOfWork<>(event);
         unitOfWork.executeWithResult((ctx) -> {
             testSubject.handle(event, ctx, Segment.ROOT_SEGMENT);
             return null;
@@ -112,8 +112,8 @@ class SagaManagerTest {
 
     @Test
     void sagaIsTraced() {
-        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
-        LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(event);
+        EventMessage event = new GenericEventMessage(new MessageType("event"), new Object());
+        LegacyUnitOfWork<? extends EventMessage> unitOfWork = new LegacyDefaultUnitOfWork<>(event);
         unitOfWork.executeWithResult((ctx) -> {
             testSubject.handle(event, ctx, Segment.ROOT_SEGMENT);
             return null;
@@ -136,7 +136,7 @@ class SagaManagerTest {
                                                                                            .build())
                                                  .build();
 
-        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
+        EventMessage event = new GenericEventMessage(new MessageType("event"), new Object());
         when(mockSagaRepository.createInstance(any(), any())).thenReturn(mockSaga1);
         when(mockSagaRepository.find(any())).thenReturn(Collections.emptySet());
 
@@ -148,12 +148,12 @@ class SagaManagerTest {
 
     @Test
     void exceptionPropagated() throws Exception {
-        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
+        EventMessage event = new GenericEventMessage(new MessageType("event"), new Object());
         MockException toBeThrown = new MockException();
         doThrow(toBeThrown).when(mockSaga1).handleSync(eq(event), any());
         doThrow(toBeThrown).when(mockErrorHandler).onError(toBeThrown, event, mockSaga1);
-        LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(event);
-        ResultMessage<Object> resultMessage = unitOfWork.executeWithResult((ctx) -> {
+        LegacyUnitOfWork<? extends EventMessage> unitOfWork = new LegacyDefaultUnitOfWork<>(event);
+        ResultMessage resultMessage = unitOfWork.executeWithResult((ctx) -> {
             testSubject.handle(event, ctx, Segment.ROOT_SEGMENT);
             return null;
         });
@@ -176,7 +176,7 @@ class SagaManagerTest {
                                                  .associationValue(new AssociationValue("someKey", "someValue"))
                                                  .build();
 
-        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
+        EventMessage event = new GenericEventMessage(new MessageType("event"), new Object());
         ProcessingContext context = StubProcessingContext.forMessage(event);
         when(mockSagaRepository.createInstance(any(), any())).thenReturn(mockSaga1);
         when(mockSagaRepository.find(any())).thenReturn(Collections.emptySet());
@@ -198,7 +198,7 @@ class SagaManagerTest {
         Segment matchingSegment = segments[0].matches("someValue") ? segments[0] : segments[1];
         Segment otherSegment = segments[0].matches("someValue") ? segments[1] : segments[0];
 
-        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
+        EventMessage event = new GenericEventMessage(new MessageType("event"), new Object());
         ProcessingContext context = StubProcessingContext.forMessage(event);
         ArgumentCaptor<String> createdSaga = ArgumentCaptor.forClass(String.class);
         when(mockSagaRepository.createInstance(createdSaga.capture(), any())).thenReturn(mockSaga1);
@@ -234,7 +234,7 @@ class SagaManagerTest {
         assumeTrue((associationValue.hashCode() & Integer.MAX_VALUE) !=
                            (mockSaga1.getSagaIdentifier().hashCode() & Integer.MAX_VALUE));
 
-        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
+        EventMessage event = new GenericEventMessage(new MessageType("event"), new Object());
         ProcessingContext context = StubProcessingContext.forMessage(event);
 
         String sagaId = mockSaga1.getSagaIdentifier();
@@ -257,7 +257,7 @@ class SagaManagerTest {
 
     @Test
     void exceptionSuppressed() throws Exception {
-        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
+        EventMessage event = new GenericEventMessage(new MessageType("event"), new Object());
         ProcessingContext context = StubProcessingContext.forMessage(event);
         MockException toBeThrown = new MockException();
         doThrow(toBeThrown).when(mockSaga1).handleSync(event, context);
@@ -289,17 +289,17 @@ class SagaManagerTest {
         }
 
         @Override
-        public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
+        public boolean canHandle(@Nonnull EventMessage eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
             return true;
         }
 
         @Override
-        protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event, ProcessingContext context) {
+        protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage event, ProcessingContext context) {
             return new SagaInitializationPolicy(sagaCreationPolicy, associationValue);
         }
 
         @Override
-        protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event, ProcessingContext context) {
+        protected Set<AssociationValue> extractAssociationValues(EventMessage event, ProcessingContext context) {
             return singleton(associationValue);
         }
 

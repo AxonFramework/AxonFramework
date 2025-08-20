@@ -118,7 +118,7 @@ class FixtureTest_Generic {
         DomainEventStream events = fixture.getEventStore().readEvents("AggregateId");
         for (int t = 0; t < 3; t++) {
             assertTrue(events.hasNext());
-            DomainEventMessage<?> next = events.next();
+            DomainEventMessage next = events.next();
             assertEquals("AggregateId", next.getAggregateIdentifier());
             assertEquals(t, next.getSequenceNumber());
         }
@@ -138,11 +138,11 @@ class FixtureTest_Generic {
 
     @Test
     void fixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
-        DomainEventMessage<StubDomainEvent> testEventOne = new GenericDomainEventMessage<>(
+        DomainEventMessage testEventOne = new GenericDomainEventMessage(
                 "test", UUID.randomUUID().toString(), 0, new MessageType("event"),
                 new StubDomainEvent()
         );
-        DomainEventMessage<StubDomainEvent> testEventTwo = new GenericDomainEventMessage<>(
+        DomainEventMessage testEventTwo = new GenericDomainEventMessage(
                 "test", UUID.randomUUID().toString(), 0, new MessageType("event"),
                 new StubDomainEvent()
         );
@@ -153,10 +153,10 @@ class FixtureTest_Generic {
     @Test
     void fixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
-        DomainEventMessage<StubDomainEvent> testEventOne = new GenericDomainEventMessage<>(
+        DomainEventMessage testEventOne = new GenericDomainEventMessage(
                 "test", identifier, 0, new MessageType("event"), new StubDomainEvent()
         );
-        DomainEventMessage<StubDomainEvent> testEventTwo = new GenericDomainEventMessage<>(
+        DomainEventMessage testEventTwo = new GenericDomainEventMessage(
                 "test", identifier, 2, new MessageType("event"), new StubDomainEvent()
         );
 

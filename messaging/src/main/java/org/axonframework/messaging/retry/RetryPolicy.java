@@ -39,7 +39,7 @@ public interface RetryPolicy extends DescribableComponent {
      * @param previousFailures a summary of all previous failures
      * @return the outcome describing the expected rescheduling behavior
      */
-    RetryPolicy.Outcome defineFor(@Nonnull Message<?> message, @Nonnull Throwable failure,
+    RetryPolicy.Outcome defineFor(@Nonnull Message message, @Nonnull Throwable failure,
                                   @Nonnull List<Class<? extends Throwable>[]> previousFailures);
 
     /**

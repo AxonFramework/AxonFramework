@@ -26,7 +26,7 @@ import org.axonframework.serialization.Serializer;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
-public interface DeadLetterJpaConverter<M extends EventMessage<?>> {
+public interface DeadLetterJpaConverter<M extends EventMessage> {
 
     /**
      * Converts an {@link EventMessage} implementation to a {@link DeadLetterEventEntry}.

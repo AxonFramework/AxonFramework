@@ -25,7 +25,6 @@ import org.axonframework.updates.configuration.UsagePropertyProvider;
 import org.axonframework.updates.detection.AxonVersionDetector;
 import org.axonframework.updates.detection.KotlinVersion;
 import org.axonframework.updates.detection.MachineId;
-import org.axonframework.updates.detection.TestEnvironmentDetector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

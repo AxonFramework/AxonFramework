@@ -134,7 +134,7 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer configureDefaultStreamableMessageSource(
-            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource
+            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage>> defaultSource
     );
 
     /**
@@ -151,7 +151,7 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer configureDefaultSubscribableMessageSource(
-            Function<LegacyConfiguration, SubscribableMessageSource<EventMessage<?>>> defaultSource
+            Function<LegacyConfiguration, SubscribableMessageSource<EventMessage>> defaultSource
     );
 
     /**
@@ -254,7 +254,7 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerSubscribingEventProcessor(String name,
-                                                                Function<LegacyConfiguration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource);
+                                                                Function<LegacyConfiguration, SubscribableMessageSource<? extends EventMessage>> messageSource);
 
     /**
      * Registers a {@link Function} that builds the default {@link ErrorHandler}. Defaults to a
@@ -409,7 +409,7 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerHandlerInterceptor(String processorName,
-                                                         Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder);
+                                                         Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder);
 
     /**
      * Register the given {@code interceptorBuilder} as a default to build a {@link MessageHandlerInterceptor} for
@@ -423,7 +423,7 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerDefaultHandlerInterceptor(
-            BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder
+            BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     );
 
     /**
@@ -460,7 +460,7 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     default EventProcessingConfigurer registerMessageMonitor(String eventProcessorName,
-                                                             Function<LegacyConfiguration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+                                                             Function<LegacyConfiguration, MessageMonitor<Message>> messageMonitorBuilder) {
         return registerMessageMonitorFactory(
                 eventProcessorName,
                 (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration)
@@ -516,7 +516,7 @@ public interface EventProcessingConfigurer {
                 );
             }
             //noinspection unchecked
-            return (StreamableMessageSource<TrackedEventMessage<?>>) eventBus;
+            return (StreamableMessageSource<TrackedEventMessage>) eventBus;
         });
     }
 
@@ -532,7 +532,7 @@ public interface EventProcessingConfigurer {
      */
     default EventProcessingConfigurer registerPooledStreamingEventProcessor(
             String name,
-            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource
+            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage>> messageSource
     ) {
         return registerPooledStreamingEventProcessor(name, messageSource, PooledStreamingProcessorConfiguration.noOp());
     }
@@ -557,7 +557,7 @@ public interface EventProcessingConfigurer {
      */
     EventProcessingConfigurer registerPooledStreamingEventProcessor(
             String name,
-            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource,
+            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage>> messageSource,
             PooledStreamingProcessorConfiguration processorConfiguration
     );
 
@@ -600,7 +600,7 @@ public interface EventProcessingConfigurer {
      */
     default EventProcessingConfigurer registerDeadLetterQueue(
             @Nonnull String processingGroup,
-            @Nonnull Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>> queueBuilder
+            @Nonnull Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage>> queueBuilder
     ) {
         return this;
     }
@@ -618,7 +618,7 @@ public interface EventProcessingConfigurer {
      * @return The current {@link EventProcessingConfigurer} instance, for fluent interfacing.
      */
     default EventProcessingConfigurer registerDefaultDeadLetterPolicy(
-            @Nonnull Function<LegacyConfiguration, EnqueuePolicy<EventMessage<?>>> policyBuilder
+            @Nonnull Function<LegacyConfiguration, EnqueuePolicy<EventMessage>> policyBuilder
     ) {
         return this;
     }
@@ -639,7 +639,7 @@ public interface EventProcessingConfigurer {
      */
     default EventProcessingConfigurer registerDeadLetterPolicy(
             @Nonnull String processingGroup,
-            @Nonnull Function<LegacyConfiguration, EnqueuePolicy<EventMessage<?>>> policyBuilder
+            @Nonnull Function<LegacyConfiguration, EnqueuePolicy<EventMessage>> policyBuilder
     ) {
         return this;
     }
@@ -759,7 +759,7 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     default EventProcessingConfigurer registerDeadLetterQueueProvider(
-            Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider) {
+            Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage>>> deadLetterQueueProvider) {
         return this;
     }
     // end::RegisterDeadLetterQueueProvider[]
@@ -789,6 +789,6 @@ public interface EventProcessingConfigurer {
          * @param processingGroupName The name of processing group for which definition is about to be created.
          * @return A {@code SubscribableMessageSourceDefinition} for the given {@code processingGroupName}.
          */
-        SubscribableMessageSourceDefinition<EventMessage<?>> build(String processingGroupName);
+        SubscribableMessageSourceDefinition<EventMessage> build(String processingGroupName);
     }
 }

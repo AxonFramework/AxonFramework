@@ -57,7 +57,7 @@ public class DefaultEventGateway implements EventGateway {
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                            @Nonnull List<?> events) {
-        List<EventMessage<?>> eventMessages =
+        List<EventMessage> eventMessages =
                 events.stream()
                       .map(event -> EventPublishingUtils.asEventMessage(event, messageTypeResolver))
                       .collect(Collectors.toList());

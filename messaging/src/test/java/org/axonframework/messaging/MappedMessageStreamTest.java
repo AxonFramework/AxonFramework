@@ -29,12 +29,12 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class MappedMessageStreamTest extends MessageStreamTest<Message<String>> {
+class MappedMessageStreamTest extends MessageStreamTest<Message> {
 
-    private static final Function<Entry<Message<String>>, Entry<Message<String>>> NO_OP_MAPPER = entry -> entry;
+    private static final Function<Entry<Message>, Entry<Message>> NO_OP_MAPPER = entry -> entry;
 
     @Override
-    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
+    MessageStream<Message> completedTestSubject(List<Message> messages) {
         if (messages.size() == 1) {
             return new MappedMessageStream.Single<>(MessageStream.just(messages.getFirst()), NO_OP_MAPPER);
         }
@@ -42,25 +42,25 @@ class MappedMessageStreamTest extends MessageStreamTest<Message<String>> {
     }
 
     @Override
-    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         return new MappedMessageStream.Single<>(MessageStream.just(message), NO_OP_MAPPER);
     }
 
     @Override
-    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("MappedMessageStream does not support empty streams");
         return null;
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> entries, Exception failure) {
+    MessageStream<Message> failingTestSubject(List<Message> entries, Exception failure) {
         return new MappedMessageStream<>(MessageStream.fromIterable(entries)
                                                       .concatWith(MessageStream.failed(failure)), NO_OP_MAPPER);
     }
 
     @Override
-    Message<String> createRandomMessage() {
-        return new GenericMessage<>(new MessageType("message"),
+    Message createRandomMessage() {
+        return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

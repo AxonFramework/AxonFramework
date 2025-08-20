@@ -46,7 +46,7 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
 
     @Nonnull
     @Override
-    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                      @Nonnull ProcessingContext context) {
         QualifiedName name = event.type().qualifiedName();
         // TODO #3103 - add interceptor knowledge
@@ -57,7 +57,7 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
                     "No handler found for event with name [" + name + "]"
             ));
         }
-        MessageStream<Message<Void>> result = MessageStream.empty();
+        MessageStream<Message> result = MessageStream.empty();
         for (var handler : handlers) {
             var handlerResult = handler.handle(event, context);
             result = result.concatWith(handlerResult);

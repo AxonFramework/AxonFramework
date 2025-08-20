@@ -38,7 +38,7 @@ import java.util.Optional;
  * @see Decisions
  * @since 4.6.0
  */
-public interface EnqueueDecision<M extends Message<?>> {
+public interface EnqueueDecision<M extends Message> {
 
     /**
      * The decision whether the {@link DeadLetter dead letter} should be enqueued in a queue. When {@code false} the

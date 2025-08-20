@@ -56,7 +56,7 @@ public interface EventSink {
      * successful completion of this future means the {@code events} where published.
      */
     default CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                            EventMessage<?>... events) {
+                                            EventMessage... events) {
         return publish(context, Arrays.asList(events));
     }
 
@@ -77,5 +77,5 @@ public interface EventSink {
      * successful completion of this future means the {@code events} where published.
      */
     CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                    @Nonnull List<EventMessage<?>> events);
+                                    @Nonnull List<EventMessage> events);
 }

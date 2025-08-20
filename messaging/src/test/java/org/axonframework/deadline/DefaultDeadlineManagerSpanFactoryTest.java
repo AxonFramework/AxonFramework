@@ -28,7 +28,7 @@ class DefaultDeadlineManagerSpanFactoryTest
 
     @Test
     void createScheduleSpanWithDefaultSettings() {
-        DeadlineMessage<?> message = Mockito.mock(DeadlineMessage.class);
+        DeadlineMessage message = Mockito.mock(DeadlineMessage.class);
         test(
                 spanFactory -> spanFactory.createScheduleSpan("myDeadline", "myDeadlineId", message),
                 expectedSpan("DeadlineManager.scheduleDeadline(myDeadline)", TestSpanFactory.TestSpanType.DISPATCH)
@@ -39,7 +39,7 @@ class DefaultDeadlineManagerSpanFactoryTest
 
     @Test
     void createScheduleSpanWithModifiedDeadlineIdAtrribute() {
-        DeadlineMessage<?> message = Mockito.mock(DeadlineMessage.class);
+        DeadlineMessage message = Mockito.mock(DeadlineMessage.class);
         test(
                 builder -> builder.deadlineIdAttribute("this-is-a-stupidly-long-attribute-name"),
                 spanFactory -> spanFactory.createScheduleSpan("myDeadline", "myDeadlineId", message),
@@ -101,7 +101,7 @@ class DefaultDeadlineManagerSpanFactoryTest
 
     @Test
     void createExecuteSpanWithDefaultSettings() {
-        DeadlineMessage<?> message = Mockito.mock(DeadlineMessage.class);
+        DeadlineMessage message = Mockito.mock(DeadlineMessage.class);
         test(spanFactory -> spanFactory.createExecuteSpan("myDeadline", "myDeadlineId", message),
                 expectedSpan("DeadlineManager.executeDeadline(myDeadline)", TestSpanFactory.TestSpanType.HANDLER_LINK)
                         .withMessage(message)
@@ -111,7 +111,7 @@ class DefaultDeadlineManagerSpanFactoryTest
 
     @Test
     void createExecuteSpanWithModifiedDeadlineIdAtrribute() {
-        DeadlineMessage<?> message = Mockito.mock(DeadlineMessage.class);
+        DeadlineMessage message = Mockito.mock(DeadlineMessage.class);
         test(
                 builder -> builder.deadlineIdAttribute("this-is-a-stupidly-long-attribute-name"),
                 spanFactory -> spanFactory.createExecuteSpan("myDeadline", "myDeadlineId", message),
@@ -123,7 +123,7 @@ class DefaultDeadlineManagerSpanFactoryTest
 
     @Test
     void propagateContext() {
-        DeadlineMessage<?> message = Mockito.mock(DeadlineMessage.class);
+        DeadlineMessage message = Mockito.mock(DeadlineMessage.class);
         testContextPropagation(message, DeadlineManagerSpanFactory::propagateContext);
     }
 

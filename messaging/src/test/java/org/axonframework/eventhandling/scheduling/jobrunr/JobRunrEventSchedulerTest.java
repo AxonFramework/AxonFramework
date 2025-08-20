@@ -51,7 +51,7 @@ import static org.mockito.Mockito.*;
 
 class JobRunrEventSchedulerTest {
 
-    private List<EventMessage<?>> publishedMessages;
+    private List<EventMessage> publishedMessages;
     private JobRunrEventScheduler eventScheduler;
     private BackgroundJobServer backgroundJobServer;
     private JobScheduler jobScheduler;
@@ -98,7 +98,7 @@ class JobRunrEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.getFirst();
+        EventMessage publishedMessage = publishedMessages.getFirst();
 
         assertEquals(1, publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
@@ -112,7 +112,7 @@ class JobRunrEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.getFirst();
+        EventMessage publishedMessage = publishedMessages.getFirst();
 
         assertEquals(1, publishedMessage.payload());
     }
@@ -121,15 +121,15 @@ class JobRunrEventSchedulerTest {
     void whenScheduleIsCalledWithEventMessageMetadataShouldBePreserved() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("foo", "bar");
-        EventMessage<?> originalMessage =
-                new GenericEventMessage<>(new MessageType("event"), 2, metadata);
+        EventMessage originalMessage =
+                new GenericEventMessage(new MessageType("event"), 2, metadata);
         eventScheduler.schedule(Instant.now(), originalMessage);
         Instant rightAfterSchedule = Instant.now();
 
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.getFirst();
+        EventMessage publishedMessage = publishedMessages.getFirst();
 
         assertEquals(2, publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
@@ -144,7 +144,7 @@ class JobRunrEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.getFirst();
+        EventMessage publishedMessage = publishedMessages.getFirst();
 
         assertEquals(new PayloadWithRevision(), publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
@@ -155,7 +155,7 @@ class JobRunrEventSchedulerTest {
     void whenScheduleIsCalledWithEventThatHasARevisionPayloadMessageMetadataShouldBePreserved() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("foo", "bar");
-        EventMessage<?> originalMessage = new GenericEventMessage<>(
+        EventMessage originalMessage = new GenericEventMessage(
                 new MessageType("message"), new PayloadWithRevision(), metadata
         );
         eventScheduler.schedule(Instant.now(), originalMessage);
@@ -164,7 +164,7 @@ class JobRunrEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.getFirst();
+        EventMessage publishedMessage = publishedMessages.getFirst();
 
         assertEquals(new PayloadWithRevision(), publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
@@ -179,7 +179,7 @@ class JobRunrEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.getFirst();
+        EventMessage publishedMessage = publishedMessages.getFirst();
         assertEquals(4, publishedMessage.payload());
     }
 
@@ -191,7 +191,7 @@ class JobRunrEventSchedulerTest {
         await().atMost(Duration.ofSeconds(2)).until(() -> !publishedMessages.isEmpty());
         assertEquals(1, publishedMessages.size());
 
-        EventMessage<?> publishedMessage = publishedMessages.getFirst();
+        EventMessage publishedMessage = publishedMessages.getFirst();
         assertEquals(6, publishedMessage.payload());
     }
 
@@ -209,25 +209,25 @@ class JobRunrEventSchedulerTest {
 
     private static class InMemoryEventBus implements EventBus {
 
-        private final List<EventMessage<?>> publishedMessages;
+        private final List<EventMessage> publishedMessages;
 
-        private InMemoryEventBus(List<EventMessage<?>> publishedMessages) {
+        private InMemoryEventBus(List<EventMessage> publishedMessages) {
             this.publishedMessages = publishedMessages;
         }
 
         @Override
-        public void publish(@Nonnull List<? extends EventMessage<?>> events) {
+        public void publish(@Nonnull List<? extends EventMessage> events) {
             publishedMessages.addAll(events);
         }
 
         @Override
-        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventProcessor) {
             throw new UnsupportedOperationException();
         }
 
         @Override
         public Registration registerDispatchInterceptor(
-                @Nonnull MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
+                @Nonnull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
             throw new UnsupportedOperationException();
         }
     }

@@ -36,6 +36,6 @@ public interface AssociationResolver {
     /**
      * Resolves the associationPropertyName as a value.
      */
-    <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage<?> message,
+    <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage message,
                        @Nonnull MessageHandlingMember<T> handler);
 }

@@ -43,8 +43,8 @@ public interface MessageTypeResolver {
      * @throws MessageTypeNotResolvedException if the {@link MessageType type} could not be resolved.
      */
     default MessageType resolveOrThrow(Object payload) {
-        if (payload instanceof Message<?>) {
-            return ((Message<?>) payload).type();
+        if (payload instanceof Message) {
+            return ((Message) payload).type();
         }
         return resolveOrThrow(ObjectUtils.nullSafeTypeOf(payload));
     }
@@ -74,8 +74,8 @@ public interface MessageTypeResolver {
      *         or empty if the type could not be resolved.
      */
     default Optional<MessageType> resolve(@Nonnull Object payload) {
-        if (payload instanceof Message<?>) {
-            return Optional.of(((Message<?>) payload).type());
+        if (payload instanceof Message) {
+            return Optional.of(((Message) payload).type());
         }
         return resolve(ObjectUtils.nullSafeTypeOf(payload));
     }

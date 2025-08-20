@@ -29,7 +29,7 @@ import org.axonframework.queryhandling.QueryResponseMessage;
  */
 class StreamableInstanceResponse implements StreamableResponse {
 
-    private final QueryResponseMessage<?> result;
+    private final QueryResponseMessage result;
     private final ReplyChannel<QueryResponse> responseHandler;
     private final QuerySerializer serializer;
     private final String requestId;
@@ -43,7 +43,7 @@ class StreamableInstanceResponse implements StreamableResponse {
      * @param serializer      the serializer used to serialize items
      * @param requestId       the identifier of the request these responses refer to
      */
-    public StreamableInstanceResponse(QueryResponseMessage<?> result,
+    public StreamableInstanceResponse(QueryResponseMessage result,
                                       ReplyChannel<QueryResponse> responseHandler,
                                       QuerySerializer serializer,
                                       String requestId) {

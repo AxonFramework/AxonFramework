@@ -36,26 +36,26 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
+class DelayedMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
-        MessageStream<Message<String>> testStream = MessageStream.fromIterable(messages);
+    MessageStream<Message> completedTestSubject(List<Message> messages) {
+        MessageStream<Message> testStream = MessageStream.fromIterable(messages);
         return DelayedMessageStream.create(CompletableFuture.completedFuture(testStream));
     }
 
     @Override
-    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         return DelayedMessageStream.createSingle(CompletableFuture.completedFuture(MessageStream.just(message)));
     }
 
     @Override
-    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         return new DelayedMessageStream.Empty<>(CompletableFuture.completedFuture(MessageStream.empty().cast()));
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+    MessageStream<Message> failingTestSubject(List<Message> messages,
                                                       Exception failure) {
         return DelayedMessageStream.create(CompletableFuture.completedFuture(
                 MessageStream.fromIterable(messages)
@@ -64,8 +64,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
     }
 
     @Override
-    Message<String> createRandomMessage() {
-        return new GenericMessage<>(new MessageType("message"),
+    Message createRandomMessage() {
+        return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
@@ -87,7 +87,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
         @Test
         void entryBecomeVisibleWhenFutureCompletes_asCompletableFuture() {
             AtomicBoolean invoked = new AtomicBoolean(false);
-            CompletableFuture<MessageStream<Message<String>>> testFuture = new CompletableFuture<>();
+            CompletableFuture<MessageStream<Message>> testFuture = new CompletableFuture<>();
 
             MessageStream<?> testSubject = DelayedMessageStream.create(testFuture)
                                                                .whenComplete(() -> invoked.set(true));
@@ -106,10 +106,10 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
         @Test
         void createEntryBecomeVisibleWhenFutureCompletes_asFlux() {
             AtomicBoolean invoked = new AtomicBoolean(false);
-            Message<String> expected = createRandomMessage();
-            CompletableFuture<MessageStream<Message<String>>> testFuture = new CompletableFuture<>();
+            Message expected = createRandomMessage();
+            CompletableFuture<MessageStream<Message>> testFuture = new CompletableFuture<>();
 
-            MessageStream<Message<String>> testSubject = DelayedMessageStream.create(testFuture)
+            MessageStream<Message> testSubject = DelayedMessageStream.create(testFuture)
                                                                              .whenComplete(() -> invoked.set(true));
 
             StepVerifier.create(testSubject.asFlux())
@@ -129,12 +129,12 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void reduceResultBecomesVisibleWhenFutureCompletes() {
-            Message<String> randomMessage = createRandomMessage();
-            String expected = randomMessage.payload() + randomMessage.payload();
-            MessageStream<Message<String>> futureStream = completedTestSubject(List.of(randomMessage, randomMessage));
-            CompletableFuture<MessageStream<Message<String>>> testFuture = new CompletableFuture<>();
+            Message randomMessage = createRandomMessage();
+            String expected = randomMessage.payloadAs(String.class) + randomMessage.payloadAs(String.class);
+            MessageStream<Message> futureStream = completedTestSubject(List.of(randomMessage, randomMessage));
+            CompletableFuture<MessageStream<Message>> testFuture = new CompletableFuture<>();
 
-            MessageStream<Message<String>> testSubject = DelayedMessageStream.create(testFuture);
+            MessageStream<Message> testSubject = DelayedMessageStream.create(testFuture);
 
             CompletableFuture<String> result = testSubject.reduce(
                     "",
@@ -150,8 +150,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void closeWillCloseTheUnderlyingStreamWhenItResolves() {
-            CompletableFuture<MessageStream<Message<?>>> futureStream = new CompletableFuture<>();
-            MessageStream<Message<?>> testSubject = DelayedMessageStream.create(futureStream);
+            CompletableFuture<MessageStream<Message>> futureStream = new CompletableFuture<>();
+            MessageStream<Message> testSubject = DelayedMessageStream.create(futureStream);
 
             testSubject.close();
 
@@ -161,10 +161,10 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void closeWillCloseTheUnderlyingStreamImmediatelyWhenItHasResolved() {
-            CompletableFuture<MessageStream<Message<?>>> futureStream = new CompletableFuture<>();
-            MessageStream<Message<?>> testSubject = DelayedMessageStream.create(futureStream);
+            CompletableFuture<MessageStream<Message>> futureStream = new CompletableFuture<>();
+            MessageStream<Message> testSubject = DelayedMessageStream.create(futureStream);
 
-            MessageStream<Message<?>> mock = mock();
+            MessageStream<Message> mock = mock();
             futureStream.complete(mock);
 
             testSubject.close();
@@ -173,8 +173,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void closeIsNotPropagatedWhenCompletableFutureCompletesExceptionally() {
-            CompletableFuture<MessageStream<Message<?>>> futureStream = new CompletableFuture<>();
-            MessageStream<Message<?>> testSubject = DelayedMessageStream.create(futureStream);
+            CompletableFuture<MessageStream<Message>> futureStream = new CompletableFuture<>();
+            MessageStream<Message> testSubject = DelayedMessageStream.create(futureStream);
 
             futureStream.completeExceptionally(new MockException("Simulating failure"));
 
@@ -183,8 +183,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void shouldReturnEmptyWhenCallingNextOnFailingFuture() {
-            CompletableFuture<MessageStream<Message<?>>> future = new CompletableFuture<>();
-            MessageStream<Message<?>> testSubject = DelayedMessageStream.create(future);
+            CompletableFuture<MessageStream<Message>> future = new CompletableFuture<>();
+            MessageStream<Message> testSubject = DelayedMessageStream.create(future);
 
             assertFalse(testSubject.error().isPresent());
             assertFalse(testSubject.hasNextAvailable());
@@ -199,8 +199,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void shouldReturnEmptyWhenCallingNextOnCancelledFuture() {
-            CompletableFuture<MessageStream<Message<?>>> future = new CompletableFuture<>();
-            MessageStream<Message<?>> testSubject = DelayedMessageStream.create(future);
+            CompletableFuture<MessageStream<Message>> future = new CompletableFuture<>();
+            MessageStream<Message> testSubject = DelayedMessageStream.create(future);
 
             assertFalse(testSubject.error().isPresent());
             assertFalse(testSubject.hasNextAvailable());
@@ -215,8 +215,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void shouldForwardNextCallAsSoonAsDelegateResolved() {
-            CompletableFuture<MessageStream<Message<?>>> future = new CompletableFuture<>();
-            MessageStream<Message<?>> testSubject = DelayedMessageStream.create(future);
+            CompletableFuture<MessageStream<Message>> future = new CompletableFuture<>();
+            MessageStream<Message> testSubject = DelayedMessageStream.create(future);
             assertFalse(testSubject.next().isPresent());
             assertFalse(testSubject.isCompleted());
 
@@ -245,7 +245,7 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
         @Test
         void entryBecomeVisibleWhenFutureCompletes_asCompletableFuture() {
             AtomicBoolean invoked = new AtomicBoolean(false);
-            CompletableFuture<MessageStream.Single<Message<String>>> testFuture = new CompletableFuture<>();
+            CompletableFuture<MessageStream.Single<Message>> testFuture = new CompletableFuture<>();
 
             MessageStream<?> testSubject = DelayedMessageStream.createSingle(testFuture)
                                                                .whenComplete(() -> invoked.set(true));
@@ -264,10 +264,10 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
         @Test
         void createEntryBecomeVisibleWhenFutureCompletes_asFlux() {
             AtomicBoolean invoked = new AtomicBoolean(false);
-            Message<String> expected = createRandomMessage();
-            CompletableFuture<MessageStream.Single<Message<String>>> testFuture = new CompletableFuture<>();
+            Message expected = createRandomMessage();
+            CompletableFuture<MessageStream.Single<Message>> testFuture = new CompletableFuture<>();
 
-            MessageStream<Message<String>> testSubject = DelayedMessageStream.createSingle(testFuture)
+            MessageStream<Message> testSubject = DelayedMessageStream.createSingle(testFuture)
                                                                              .whenComplete(() -> invoked.set(true));
 
             StepVerifier.create(testSubject.asFlux())
@@ -287,12 +287,12 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void reduceResultBecomesVisibleWhenFutureCompletes() {
-            Message<String> randomMessage = createRandomMessage();
-            String expected = randomMessage.payload();
-            MessageStream.Single<Message<String>> futureStream = completedSingleStreamTestSubject(randomMessage);
-            CompletableFuture<MessageStream.Single<Message<String>>> testFuture = new CompletableFuture<>();
+            Message randomMessage = createRandomMessage();
+            String expected = randomMessage.payloadAs(String.class);
+            MessageStream.Single<Message> futureStream = completedSingleStreamTestSubject(randomMessage);
+            CompletableFuture<MessageStream.Single<Message>> testFuture = new CompletableFuture<>();
 
-            MessageStream<Message<String>> testSubject = DelayedMessageStream.createSingle(testFuture);
+            MessageStream<Message> testSubject = DelayedMessageStream.createSingle(testFuture);
 
             CompletableFuture<String> result = testSubject.reduce(
                     "",
@@ -308,8 +308,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void closeWillCloseTheUnderlyingStreamWhenItResolves() {
-            CompletableFuture<MessageStream.Single<Message<?>>> futureStream = new CompletableFuture<>();
-            MessageStream<Message<?>> testSubject = DelayedMessageStream.createSingle(futureStream);
+            CompletableFuture<MessageStream.Single<Message>> futureStream = new CompletableFuture<>();
+            MessageStream<Message> testSubject = DelayedMessageStream.createSingle(futureStream);
 
             testSubject.close();
 
@@ -319,10 +319,10 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void closeWillCloseTheUnderlyingStreamImmediatelyWhenItHasResolved() {
-            CompletableFuture<MessageStream.Single<Message<?>>> futureStream = new CompletableFuture<>();
-            MessageStream<Message<?>> testSubject = DelayedMessageStream.createSingle(futureStream);
+            CompletableFuture<MessageStream.Single<Message>> futureStream = new CompletableFuture<>();
+            MessageStream<Message> testSubject = DelayedMessageStream.createSingle(futureStream);
 
-            MessageStream.Single<Message<?>> mock = mock();
+            MessageStream.Single<Message> mock = mock();
             futureStream.complete(mock);
 
             testSubject.close();
@@ -331,8 +331,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void closeIsNotPropagatedWhenCompletableFutureCompletesExceptionally() {
-            CompletableFuture<MessageStream.Single<Message<?>>> futureStream = new CompletableFuture<>();
-            MessageStream<Message<?>> testSubject = DelayedMessageStream.createSingle(futureStream);
+            CompletableFuture<MessageStream.Single<Message>> futureStream = new CompletableFuture<>();
+            MessageStream<Message> testSubject = DelayedMessageStream.createSingle(futureStream);
 
             futureStream.completeExceptionally(new MockException("Simulating failure"));
 
@@ -341,8 +341,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void shouldReturnEmptyWhenCallingNextOnFailingFuture() {
-            CompletableFuture<MessageStream.Single<Message<?>>> future = new CompletableFuture<>();
-            MessageStream<Message<?>> testSubject = DelayedMessageStream.createSingle(future);
+            CompletableFuture<MessageStream.Single<Message>> future = new CompletableFuture<>();
+            MessageStream<Message> testSubject = DelayedMessageStream.createSingle(future);
 
             assertFalse(testSubject.error().isPresent());
             assertFalse(testSubject.hasNextAvailable());
@@ -357,8 +357,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void shouldReturnEmptyWhenCallingNextOnCancelledFuture() {
-            CompletableFuture<MessageStream.Single<Message<?>>> future = new CompletableFuture<>();
-            MessageStream<Message<?>> testSubject = DelayedMessageStream.createSingle(future);
+            CompletableFuture<MessageStream.Single<Message>> future = new CompletableFuture<>();
+            MessageStream<Message> testSubject = DelayedMessageStream.createSingle(future);
 
             assertFalse(testSubject.error().isPresent());
             assertFalse(testSubject.hasNextAvailable());
@@ -373,8 +373,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void shouldForwardNextCallAsSoonAsDelegateResolved() {
-            CompletableFuture<MessageStream.Single<Message<?>>> future = new CompletableFuture<>();
-            MessageStream<Message<?>> testSubject = DelayedMessageStream.createSingle(future);
+            CompletableFuture<MessageStream.Single<Message>> future = new CompletableFuture<>();
+            MessageStream<Message> testSubject = DelayedMessageStream.createSingle(future);
             assertFalse(testSubject.next().isPresent());
             assertFalse(testSubject.isCompleted());
 

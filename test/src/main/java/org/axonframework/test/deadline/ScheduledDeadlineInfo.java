@@ -35,7 +35,7 @@ public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> 
     private final String deadlineName;
     private final String scheduleId;
     private final int counter;
-    private final DeadlineMessage<?> deadlineMessage;
+    private final DeadlineMessage deadlineMessage;
     private final ScopeDescriptor deadlineScope;
 
     /**
@@ -55,7 +55,7 @@ public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> 
                                  String deadlineName,
                                  String scheduleId,
                                  int counter,
-                                 DeadlineMessage<?> deadlineMessage,
+                                 DeadlineMessage deadlineMessage,
                                  ScopeDescriptor deadlineScope) {
         this.scheduleTime = scheduleTime;
         this.deadlineName = deadlineName;
@@ -72,7 +72,7 @@ public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> 
      * @param deadlineMessage New deadline message
      * @return new instance with given {@code deadlineMessage}
      */
-    public ScheduledDeadlineInfo recreateWithNewMessage(DeadlineMessage<?> deadlineMessage) {
+    public ScheduledDeadlineInfo recreateWithNewMessage(DeadlineMessage deadlineMessage) {
         return new ScheduledDeadlineInfo(scheduleTime,
                                          deadlineName,
                                          scheduleId,
@@ -135,7 +135,7 @@ public class ScheduledDeadlineInfo implements Comparable<ScheduledDeadlineInfo> 
      *
      * @return a {@link DeadlineMessage} constructed out of the {@code deadlineName} and {@code deadlineInfo}
      */
-    public DeadlineMessage<?> deadlineMessage() {
+    public DeadlineMessage deadlineMessage() {
         return deadlineMessage;
     }
 

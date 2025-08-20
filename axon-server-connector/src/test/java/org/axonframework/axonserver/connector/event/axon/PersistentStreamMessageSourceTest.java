@@ -64,7 +64,7 @@ class PersistentStreamMessageSourceTest {
                                .build();
 
     @Mock
-    private Consumer<List<? extends EventMessage<?>>> eventConsumer;
+    private Consumer<List<? extends EventMessage>> eventConsumer;
 
     private PersistentStreamMessageSource messageSource;
 
@@ -115,7 +115,7 @@ class PersistentStreamMessageSourceTest {
     void subscribingWithDifferentConsumerShouldThrowException() {
         // given
         messageSource.subscribe(eventConsumer);
-        Consumer<List<? extends EventMessage<?>>> anotherConsumer = mock(Consumer.class);
+        Consumer<List<? extends EventMessage>> anotherConsumer = mock(Consumer.class);
 
         // when/then
         assertThrows(IllegalStateException.class,
@@ -127,7 +127,7 @@ class PersistentStreamMessageSourceTest {
         // given
         Registration registration = messageSource.subscribe(eventConsumer);
         registration.cancel();
-        Consumer<List<? extends EventMessage<?>>> newConsumer = mock(Consumer.class);
+        Consumer<List<? extends EventMessage>> newConsumer = mock(Consumer.class);
 
         // when/then
         assertDoesNotThrow(() -> messageSource.subscribe(newConsumer));
@@ -192,7 +192,7 @@ class PersistentStreamMessageSourceTest {
                                       CONCURRENT_TEST_EXECUTOR.submit(() -> {
                                           try {
                                               startLatch.await();
-                                              Consumer<List<? extends EventMessage<?>>> consumer = mock(
+                                              Consumer<List<? extends EventMessage>> consumer = mock(
                                                       Consumer.class);
                                               messageSource.subscribe(consumer);
                                               successfulSubscriptions.incrementAndGet();

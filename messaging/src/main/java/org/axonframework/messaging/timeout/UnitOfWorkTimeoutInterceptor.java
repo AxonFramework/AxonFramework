@@ -38,7 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * @author Mitchell Herrijgers
  * @since 4.11.0
  */
-public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<Message<?>> {
+public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<Message> {
 
     private static final String TRANSACTION_TIME_LIMIT_RESOURCE_KEY = "_transactionTimeLimit";
     private static final Context.ResourceKey<AxonTimeLimitedTask> TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY =
@@ -106,7 +106,7 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
     }
 
     @Override
-    public Object handle(@Nonnull LegacyUnitOfWork<? extends Message<?>> unitOfWork,
+    public Object handle(@Nonnull LegacyUnitOfWork<? extends Message> unitOfWork,
                          @Nonnull ProcessingContext context,
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
         LegacyUnitOfWork<?> root = unitOfWork.root();
@@ -130,7 +130,7 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
     }
 
     @Override
-    public <M extends Message<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
+    public <M extends Message, R extends Message> MessageStream<R> interceptOnHandle(@Nonnull M message,
                                                                                            @Nonnull ProcessingContext context,
                                                                                            @Nonnull InterceptorChain<M, R> interceptorChain) {
         String taskName = "UnitOfWork of " + componentName;

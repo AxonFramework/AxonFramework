@@ -56,7 +56,7 @@ class SpringPrototypeAggregateFactoryTest {
 
     @Test
     void createNewAggregateInstance() {
-        GenericDomainEventMessage<String> domainEvent = new GenericDomainEventMessage<>(
+        GenericDomainEventMessage domainEvent = new GenericDomainEventMessage(
                 "SpringWiredAggregate", "id2", 0, new MessageType("event"), "FirstEvent"
         );
         SpringWiredAggregate aggregate = testSubject.createAggregateRoot("id2", domainEvent);
@@ -66,7 +66,7 @@ class SpringPrototypeAggregateFactoryTest {
 
     @Test
     void processSnapshotAggregateInstance() {
-        DomainEventMessage<SpringWiredAggregate> snapshotEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage snapshotEvent = new GenericDomainEventMessage(
                 "SpringWiredAggregate", "id2", 5, new MessageType("event"),
                 new SpringWiredAggregate()
         );

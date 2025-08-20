@@ -99,10 +99,10 @@ public class PersistentStreamSequencingPolicyProvider
         return event -> Optional.ofNullable(sequencingIdentifier(event));
     }
 
-    private Object sequencingIdentifier(EventMessage<?> event) {
+    private Object sequencingIdentifier(EventMessage event) {
         if (SEQUENTIAL_PER_AGGREGATE_POLICY.equals(sequencingPolicy)) {
             if (event instanceof DomainEventMessage) {
-                return ((DomainEventMessage<?>) event).getAggregateIdentifier();
+                return ((DomainEventMessage) event).getAggregateIdentifier();
             }
             return event.identifier();
         }

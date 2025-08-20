@@ -44,11 +44,11 @@ public abstract class DomainEventTestUtils {
         // Utility class
     }
 
-    public static List<DomainEventMessage<?>> createDomainEvents(int numberOfEvents) {
+    public static List<DomainEventMessage> createDomainEvents(int numberOfEvents) {
         return createDomainEvents(() -> AGGREGATE, numberOfEvents);
     }
 
-    public static List<DomainEventMessage<?>> createDomainEvents(Supplier<String> aggregateId, int numberOfEvents) {
+    public static List<DomainEventMessage> createDomainEvents(Supplier<String> aggregateId, int numberOfEvents) {
         return IntStream.range(0, numberOfEvents)
                         .mapToObj(sequenceNumber -> createDomainEvent(AGGREGATE_TYPE,
                                                                       IdentifierFactory.getInstance()
@@ -60,27 +60,27 @@ public abstract class DomainEventTestUtils {
                         .collect(Collectors.toList());
     }
 
-    public static DomainEventMessage<String> createDomainEvent() {
+    public static DomainEventMessage createDomainEvent() {
         return createDomainEvent(0);
     }
 
-    public static DomainEventMessage<String> createDomainEvent(long sequenceNumber) {
+    public static DomainEventMessage createDomainEvent(long sequenceNumber) {
         return createDomainEvent(AGGREGATE, sequenceNumber);
     }
 
-    public static DomainEventMessage<String> createDomainEvent(long sequenceNumber, Instant timestamp) {
-        return new GenericDomainEventMessage<>(
+    public static DomainEventMessage createDomainEvent(long sequenceNumber, Instant timestamp) {
+        return new GenericDomainEventMessage(
                 AGGREGATE_TYPE, AGGREGATE, sequenceNumber,
                 IdentifierFactory.getInstance().generateIdentifier(), TYPE,
                 PAYLOAD, METADATA, timestamp
         );
     }
 
-    public static DomainEventMessage<String> createDomainEvent(String aggregateId, long sequenceNumber) {
+    public static DomainEventMessage createDomainEvent(String aggregateId, long sequenceNumber) {
         return createDomainEvent(aggregateId, sequenceNumber, PAYLOAD);
     }
 
-    public static DomainEventMessage<String> createDomainEvent(String aggregateId, long sequenceNumber,
+    public static DomainEventMessage createDomainEvent(String aggregateId, long sequenceNumber,
                                                                String payload) {
         return createDomainEvent(AGGREGATE_TYPE,
                                  IdentifierFactory.getInstance().generateIdentifier(),
@@ -90,18 +90,18 @@ public abstract class DomainEventTestUtils {
                                  METADATA);
     }
 
-    public static DomainEventMessage<String> createDomainEvent(String eventId, String aggregateId,
+    public static DomainEventMessage createDomainEvent(String eventId, String aggregateId,
                                                                long sequenceNumber) {
         return createDomainEvent(AGGREGATE_TYPE, eventId, aggregateId, sequenceNumber, PAYLOAD, METADATA);
     }
 
-    public static DomainEventMessage<String> createDomainEvent(String type,
+    public static DomainEventMessage createDomainEvent(String type,
                                                                String eventId,
                                                                String aggregateId,
                                                                long sequenceNumber,
                                                                String payload,
                                                                MetaData metaData) {
-        return new GenericDomainEventMessage<>(type,
+        return new GenericDomainEventMessage(type,
                                                aggregateId,
                                                sequenceNumber,
                                                eventId,

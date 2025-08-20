@@ -67,7 +67,7 @@ class CommandHandlingTest {
         repository.load(aggregateIdentifier).execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();
 
-        Iterator<? extends DomainEventMessage<?>> es = stubEventStore.readEvents(aggregateIdentifier);
+        Iterator<? extends DomainEventMessage> es = stubEventStore.readEvents(aggregateIdentifier);
         assertTrue(es.hasNext());
         assertEquals((Object) 0L, es.next().getSequenceNumber());
         assertTrue(es.hasNext());
@@ -79,7 +79,7 @@ class CommandHandlingTest {
 
     private static class StubEventStore extends AbstractEventBus implements LegacyEventStore {
 
-        private final List<DomainEventMessage<?>> storedEvents = new LinkedList<>();
+        private final List<DomainEventMessage> storedEvents = new LinkedList<>();
 
         private StubEventStore(Builder builder) {
             super(builder);
@@ -95,18 +95,18 @@ class CommandHandlingTest {
         }
 
         @Override
-        protected void commit(List<? extends EventMessage<?>> events) {
+        protected void commit(List<? extends EventMessage> events) {
             storedEvents.addAll(events.stream().map(StubEventStore::asDomainEventMessage).collect(Collectors.toList()));
         }
 
-        private static DomainEventMessage<?> asDomainEventMessage(EventMessage<?> event) {
-            return event instanceof DomainEventMessage<?> e
+        private static DomainEventMessage asDomainEventMessage(EventMessage event) {
+            return event instanceof DomainEventMessage e
                     ? e
-                    : new GenericDomainEventMessage<>(null, event.identifier(), 0L, event, event::timestamp);
+                    : new GenericDomainEventMessage(null, event.identifier(), 0L, event, event::timestamp);
         }
 
         @Override
-        public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
+        public void storeSnapshot(@Nonnull DomainEventMessage snapshot) {
         }
 
         @Override
@@ -115,7 +115,7 @@ class CommandHandlingTest {
         }
 
         @Override
-        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventProcessor) {
             throw new UnsupportedOperationException();
         }
 

@@ -225,15 +225,14 @@ public class SimpleEventScheduler implements EventScheduler {
             this.tokenId = tokenId;
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            EventMessage<?> eventMessage = createMessage();
+            EventMessage eventMessage = createMessage();
             if (logger.isDebugEnabled()) {
                 logger.debug("Triggered the publication of event [{}]", eventMessage.type().name());
             }
             try {
-                LegacyUnitOfWork<EventMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(null);
+                LegacyUnitOfWork<EventMessage> unitOfWork = new LegacyDefaultUnitOfWork<>(null);
                 unitOfWork.attachTransaction(transactionManager);
                 unitOfWork.execute((ctx) -> eventBus.publish(eventMessage));
             } finally {
@@ -247,12 +246,12 @@ public class SimpleEventScheduler implements EventScheduler {
          *
          * @return the message to publish
          */
-        private EventMessage<?> createMessage() {
+        private EventMessage createMessage() {
             return event instanceof EventMessage
-                    ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
-                                                ((EventMessage<?>) event).payload(),
-                                                ((EventMessage<?>) event).metaData())
-                    : new GenericEventMessage<>(messageTypeResolver.resolveOrThrow(event), event);
+                    ? new GenericEventMessage(((EventMessage) event).type(),
+                                                ((EventMessage) event).payload(),
+                                                ((EventMessage) event).metaData())
+                    : new GenericEventMessage(messageTypeResolver.resolveOrThrow(event), event);
         }
     }
 }

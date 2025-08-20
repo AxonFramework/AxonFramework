@@ -65,7 +65,7 @@ public class RoutingKeyCommandTargetResolver<E> implements CommandTargetResolver
 
     @Override
     public E getTargetChildEntity(@Nonnull List<E> childEntities,
-                                  @Nonnull CommandMessage<?> message,
+                                  @Nonnull CommandMessage message,
                                   @Nonnull ProcessingContext context) {
         List<E> matchingCandidates = childEntities.stream()
                                                   .filter(entity -> routingKeyEntityMatcher.matches(entity, message))

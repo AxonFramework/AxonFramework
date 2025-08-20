@@ -38,7 +38,7 @@ import java.util.function.Function;
  * @deprecated This instance will be removed.
  */
 @Deprecated(since ="5.0.0")
-public class MessageProcessingContext<T extends Message<?>> {
+public class MessageProcessingContext<T extends Message> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageProcessingContext.class);
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
@@ -146,7 +146,7 @@ public class MessageProcessingContext<T extends Message<?>> {
      *
      * @param transformOperator The transform operator to apply to the stored message
      */
-    public void transformMessage(Function<T, ? extends Message<?>> transformOperator) {
+    public void transformMessage(Function<T, ? extends Message> transformOperator) {
         message = (T) transformOperator.apply(message);
     }
 

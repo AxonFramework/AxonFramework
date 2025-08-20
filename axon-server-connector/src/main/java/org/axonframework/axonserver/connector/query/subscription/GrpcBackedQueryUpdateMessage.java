@@ -42,10 +42,10 @@ import java.util.function.Supplier;
  * @author Sara Pellegrini
  * @since 4.0.0
  */
-class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<U> {
+class GrpcBackedQueryUpdateMessage implements SubscriptionQueryUpdateMessage {
 
     private final QueryUpdate queryUpdate;
-    private final LazyDeserializingObject<U> serializedPayload;
+    private final LazyDeserializingObject<?> serializedPayload;
     private final Throwable exception;
     private final Supplier<MetaData> metaDataSupplier;
     private final MessageType type;
@@ -83,7 +83,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     }
 
     private GrpcBackedQueryUpdateMessage(QueryUpdate queryUpdate,
-                                         LazyDeserializingObject<U> serializedPayload,
+                                         LazyDeserializingObject<?> serializedPayload,
                                          Throwable exception,
                                          Supplier<MetaData> metaDataSupplier,
                                          MessageType type) {
@@ -114,7 +114,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
 
     @Override
     @Nullable
-    public U payload() {
+    public Object payload() {
         if (isExceptional()) {
             throw new IllegalPayloadAccessException(
                     "This result completed exceptionally, payload is not available. "
@@ -134,7 +134,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
 
     @Override
     @Nonnull
-    public Class<U> payloadType() {
+    public Class<?> payloadType() {
         return serializedPayload.getType();
     }
 
@@ -150,8 +150,8 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
 
     @Override
     @Nonnull
-    public GrpcBackedQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GrpcBackedQueryUpdateMessage<>(queryUpdate,
+    public GrpcBackedQueryUpdateMessage withMetaData(@Nonnull Map<String, String> metaData) {
+        return new GrpcBackedQueryUpdateMessage(queryUpdate,
                                                   serializedPayload,
                                                   exception,
                                                   () -> MetaData.from(metaData),
@@ -160,13 +160,13 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
 
     @Override
     @Nonnull
-    public GrpcBackedQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData) {
+    public GrpcBackedQueryUpdateMessage andMetaData(@Nonnull Map<String, String> metaData) {
         return withMetaData(metaData().mergedWith(metaData));
     }
 
     @Override
     @Nonnull
-    public <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Type type,
+    public SubscriptionQueryUpdateMessage withConvertedPayload(@Nonnull Type type,
                                                                       @Nonnull Converter converter) {
         // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
         return null;

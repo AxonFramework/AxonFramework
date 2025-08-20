@@ -48,7 +48,7 @@ class StreamableFluxResponse implements StreamableResponse {
      * @param clientId        the identifier of the client
      * @param <T>             the type of items to be sent
      */
-    public <T> StreamableFluxResponse(Flux<QueryResponseMessage<T>> result,
+    public <T> StreamableFluxResponse(Flux<QueryResponseMessage> result,
                                       ReplyChannel<QueryResponse> responseHandler,
                                       QuerySerializer serializer,
                                       String requestId,
