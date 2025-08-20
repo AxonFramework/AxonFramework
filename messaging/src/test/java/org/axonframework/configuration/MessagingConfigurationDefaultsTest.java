@@ -85,6 +85,7 @@ class MessagingConfigurationDefaultsTest {
         // So we just check if _any_ CommandGateway has been added to the configuration.
         assertTrue(resultConfig.hasComponent(CommandGateway.class));
         assertInstanceOf(SimpleCommandBus.class, resultConfig.getComponent(CommandBus.class));
+        assertInstanceOf(AnnotationRoutingStrategy.class, resultConfig.getComponent(RoutingStrategy.class));
         assertInstanceOf(DefaultEventGateway.class, resultConfig.getComponent(EventGateway.class));
         assertInstanceOf(SimpleEventBus.class, resultConfig.getComponent(EventBus.class));
         assertInstanceOf(DefaultQueryGateway.class, resultConfig.getComponent(QueryGateway.class));
