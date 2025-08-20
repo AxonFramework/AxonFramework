@@ -22,20 +22,20 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.annotation.Internal;
-import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.avro.AvroSerializer;
 import org.axonframework.serialization.avro.AvroSerializerStrategy;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.springboot.ConverterProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
@@ -56,32 +56,14 @@ import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncl
 @AutoConfiguration
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @EnableConfigurationProperties(ConverterProperties.class)
-public class ConverterAutoConfiguration {
+public class ConverterAutoConfiguration implements ApplicationContextAware {
 
-    private final ApplicationContext applicationContext;
-    private final ConverterProperties converterProperties;
+    private ApplicationContext applicationContext;
 
-    /**
-     * Constructs an {@code ConverterAutoConfiguration} for the given {@code applicationContext} and
-     * {@code converterProperties}.
-     *
-     * @param applicationContext  The application context used to validate for the existence of other required
-     *                            properties to construct the specified
-     *                            {@link org.axonframework.serialization.Converter Converters}.
-     * @param converterProperties The {@link org.axonframework.serialization.Converter} properties defining which
-     *                            {@code Converters} to register.
-     */
-    @Internal
-    public ConverterAutoConfiguration(@Nonnull ApplicationContext applicationContext,
-                                      @Nonnull ConverterProperties converterProperties) {
-        this.applicationContext = requireNonNull(applicationContext, "The ApplicationContext cannot be null.");
-        this.converterProperties = requireNonNull(converterProperties, "The ConverterProperties  cannot be null.");
-    }
-
-    @Bean
+    @Bean(name = "converter")
     @Primary
     @ConditionalOnMissingQualifiedBean(beanClass = Converter.class, qualifier = "!eventConverter,messageConverter")
-    public Converter generalConverter() {
+    public Converter generalConverter(ConverterProperties converterProperties) {
         ConverterProperties.ConverterType generalConverterType = converterProperties.getGeneral();
         if (ConverterProperties.ConverterType.AVRO == generalConverterType) {
             throw new AxonConfigurationException(format(
@@ -96,7 +78,7 @@ public class ConverterAutoConfiguration {
     @Bean
     @Qualifier("messageConverter")
     @ConditionalOnMissingQualifiedBean(beanClass = Converter.class, qualifier = "messageConverter")
-    public Converter messageConverter(Converter generalConverter) {
+    public Converter messageConverter(Converter generalConverter, ConverterProperties converterProperties) {
         ConverterProperties.ConverterType messagesConverterType = converterProperties.getMessages();
         if (ConverterProperties.ConverterType.DEFAULT == messagesConverterType
                 || converterProperties.getGeneral() == messagesConverterType) {
@@ -109,7 +91,8 @@ public class ConverterAutoConfiguration {
     @Qualifier("eventConverter")
     @ConditionalOnMissingQualifiedBean(beanClass = Converter.class, qualifier = "eventConverter")
     public Converter eventConverter(Converter generalConverter,
-                                    @Qualifier("messageConverter") Converter messageConverter) {
+                                    @Qualifier("messageConverter") Converter messageConverter,
+                                    ConverterProperties converterProperties) {
         ConverterProperties.ConverterType eventsConverterType = converterProperties.getEvents();
         if (ConverterProperties.ConverterType.DEFAULT == eventsConverterType
                 || converterProperties.getMessages() == eventsConverterType) {
@@ -118,18 +101,6 @@ public class ConverterAutoConfiguration {
             return generalConverter;
         }
         return buildSerializer(eventsConverterType, generalConverter);
-    }
-
-    @Bean
-    public ConfigurationEnhancer converterConfigurerEnhancer(Converter generalConverter,
-                                                             @Qualifier("messageConverter") Converter messageConverter,
-                                                             @Qualifier("eventConverter") Converter eventConverter) {
-        // TODO I don't think we need this anymore...validate through tests
-        return registry -> {
-            registry.registerComponent(Converter.class, c -> generalConverter);
-            registry.registerComponent(Converter.class, "messageConverter", c -> messageConverter);
-            registry.registerComponent(Converter.class, "eventConverter", c -> eventConverter);
-        };
     }
 
     private Converter buildSerializer(@Nonnull ConverterProperties.ConverterType converterType,
@@ -155,7 +126,7 @@ public class ConverterAutoConfiguration {
                         AvroSerializerStrategy.class);
                 AvroSerializer.Builder builder = AvroSerializer.builder()
                                                                .schemaStore(schemaStore);
-                                                               //.serializerDelegate(generalConverter);
+                //.serializerDelegate(generalConverter);
                 serializationStrategies.values().forEach(builder::addSerializerStrategy);
                 // TODO #3609 - Rewrite to use the AvroConverter once that's in place.
                 //return builder.build();
@@ -187,5 +158,18 @@ public class ConverterAutoConfiguration {
 //                ChainingContentTypeConverter converter = new ChainingContentTypeConverter(beanClassLoader);
                 return new JacksonConverter(objectMapper);
         }
+    }
+
+    /**
+     * Sets the application context used to validate for the existence of other required properties to construct the
+     * specified {@link org.axonframework.serialization.Converter Converters}.
+     *
+     * @param applicationContext The application context used to validate for the existence of other required properties
+     *                           to construct the specified
+     *                           {@link org.axonframework.serialization.Converter Converters}.
+     */
+    @Override
+    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = requireNonNull(applicationContext, "The ApplicationContext cannot be null.");
     }
 }
