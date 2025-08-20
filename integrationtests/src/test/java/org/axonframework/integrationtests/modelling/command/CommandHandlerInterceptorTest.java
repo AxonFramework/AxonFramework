@@ -50,6 +50,7 @@ import org.mockito.*;
 
 import java.util.Collections;
 
+import static org.axonframework.commandhandling.CommandBusTestUtils.aCommandBus;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -74,7 +75,7 @@ class CommandHandlerInterceptorTest {
         LegacyRepository<MyAggregate> myAggregateRepository = LegacyEventSourcingRepository.builder(MyAggregate.class)
                                                                                            .eventStore(eventStore)
                                                                                            .build();
-        CommandBus commandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
+        CommandBus commandBus = aCommandBus();
         MessageTypeResolver nameResolver = new ClassBasedMessageTypeResolver();
         commandGateway = new DefaultCommandGateway(commandBus, nameResolver);
         commandBus.subscribe(AggregateAnnotationCommandHandler.<MyAggregate>builder()

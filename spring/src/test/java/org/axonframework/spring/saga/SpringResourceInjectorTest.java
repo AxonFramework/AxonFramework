@@ -17,6 +17,7 @@
 package org.axonframework.spring.saga;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -31,6 +32,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Collections;
 
+import static org.axonframework.commandhandling.CommandBusTestUtils.aCommandBus;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -107,7 +109,7 @@ public class SpringResourceInjectorTest {
 
         @Bean
         public CommandBus commandBus() {
-            return new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
+            return aCommandBus();
         }
     }
 }

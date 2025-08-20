@@ -58,6 +58,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
+import static org.axonframework.commandhandling.CommandBusTestUtils.aCommandBus;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -82,7 +83,7 @@ class AggregateAnnotationCommandHandlerTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        commandBus = aSimpleCommandBus();
+        commandBus = aCommandBus();
         commandBus = spy(commandBus);
         mockRepository = mock(LegacyRepository.class);
         newInstanceCallableFactoryCaptor = ArgumentCaptor.forClass(Callable.class);
@@ -118,11 +119,6 @@ class AggregateAnnotationCommandHandlerTest {
                                                        .creationPolicyAggregateFactory(creationPolicyFactory)
                                                        .build();
         commandBus.subscribe(testSubject);
-    }
-
-    @Nonnull
-    private static SimpleCommandBus aSimpleCommandBus() {
-        return new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
     }
 
     @Test
@@ -689,7 +685,7 @@ class AggregateAnnotationCommandHandlerTest {
     @Test
     @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void rejectsDuplicateRegistrations() {
-        commandBus = aSimpleCommandBus();
+        commandBus = aCommandBus();
         commandBus = spy(commandBus);
         mockRepository = mock(LegacyRepository.class);
 
@@ -747,7 +743,7 @@ class AggregateAnnotationCommandHandlerTest {
 
     @Test
     void duplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
-        commandBus = aSimpleCommandBus();
+        commandBus = aCommandBus();
 
         LegacyRepository<RootAggregate> repository = mock(LegacyRepository.class);
 

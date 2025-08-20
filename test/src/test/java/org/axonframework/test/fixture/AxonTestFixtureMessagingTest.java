@@ -222,7 +222,7 @@ class AxonTestFixtureMessagingTest {
                 return FutureUtils.emptyCompletedFuture();
             });
             configurer.registerCommandBus(
-                    c -> aSimpleCommandBus()
+                    c -> aCommandBus()
                             .subscribe(
                                     new QualifiedName(ChangeStudentNameCommand.class),
                                     (command, context) -> {
@@ -246,7 +246,7 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Nonnull
-        private static SimpleCommandBus aSimpleCommandBus() {
+        private static SimpleCommandBus aCommandBus() {
             return new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
         }
 

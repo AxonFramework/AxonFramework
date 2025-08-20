@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.GenericMessage;
@@ -33,6 +34,7 @@ import java.lang.reflect.Parameter;
 import java.util.Collections;
 import java.util.Optional;
 
+import static org.axonframework.commandhandling.CommandBusTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -55,10 +57,7 @@ class ConfigurationParameterResolverFactoryTest {
         method = getClass().getMethod("donorMethod", String.class, CommandBus.class);
         parameters = method.getParameters();
         configuration = mock(Configuration.class);
-        commandBus = new SimpleCommandBus(
-                new SimpleUnitOfWorkFactory(),
-                Collections.emptyList()
-        );
+        commandBus = aCommandBus();
         when(configuration.getOptionalComponent(CommandBus.class)).thenReturn(Optional.of(commandBus));
 
         testSubject = new ConfigurationParameterResolverFactory(configuration);

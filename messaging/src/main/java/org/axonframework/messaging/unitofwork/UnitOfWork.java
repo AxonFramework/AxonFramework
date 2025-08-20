@@ -69,7 +69,7 @@ public class UnitOfWork implements ProcessingLifecycle {
     private final UnitOfWorkProcessingContext context;
 
     /**
-     * Constructs a {@code UnitOfWork} with the given paremeters.
+     * Constructs a {@code UnitOfWork} with the given parameters.
      *
      * @param identifier         The identifier of this Unit of Work.
      * @param workScheduler      The {@link Executor} for processing unit of work actions.

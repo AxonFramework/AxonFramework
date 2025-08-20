@@ -306,7 +306,7 @@ public class AxonAutoConfigurationTest {
         CommandBus commandBus(LifecycleRegistry lifecycleRegistry,
                               AtomicBoolean startHandlerInvoked,
                               AtomicBoolean shutdownHandlerInvoked) {
-            SimpleCommandBus simpleCommandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
+            CommandBus simpleCommandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
             lifecycleRegistry.onStart(10, () -> startHandlerInvoked.set(true));
             lifecycleRegistry.onShutdown(12, () -> shutdownHandlerInvoked.set(true));
             return simpleCommandBus;

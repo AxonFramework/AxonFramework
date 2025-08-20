@@ -19,7 +19,6 @@ package org.axonframework.integrationtests.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
@@ -27,18 +26,16 @@ import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.junit.jupiter.api.*;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.axonframework.commandhandling.CommandBusTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -57,7 +54,7 @@ class AggregateCreationFromCommandsTest {
 
     @BeforeEach
     void setUp() {
-        this.commandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
+        this.commandBus = aCommandBus();
         eventStore = spy(LegacyEmbeddedEventStore.builder()
                                                  .storageEngine(new LegacyInMemoryEventStorageEngine())
                                                  .build());

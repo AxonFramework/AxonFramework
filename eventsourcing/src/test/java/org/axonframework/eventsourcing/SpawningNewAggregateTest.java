@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -42,6 +43,7 @@ import org.mockito.quality.*;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 
+import static org.axonframework.commandhandling.CommandBusTestUtils.*;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.axonframework.modelling.command.AggregateLifecycle.createNew;
 import static org.junit.jupiter.api.Assertions.*;
@@ -71,7 +73,7 @@ class SpawningNewAggregateTest {
     @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() throws Exception {
-        commandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
+        commandBus = aCommandBus();
 
         aggregate1Model = AnnotatedAggregateMetaModelFactory.inspectAggregate(Aggregate1.class);
         AggregateModel<Aggregate2> aggregate2Model = AnnotatedAggregateMetaModelFactory

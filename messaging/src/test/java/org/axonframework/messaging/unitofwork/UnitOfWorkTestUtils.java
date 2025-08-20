@@ -21,9 +21,14 @@ import org.axonframework.messaging.EmptyApplicationContext;
 
 import java.util.UUID;
 
-public class UnitOfWorkTestUtils {
+/**
+ * Test utilities when dealing with {@link UnitOfWork}.
+ *
+ * @author Mateusz Nowak
+ */
+public final class UnitOfWorkTestUtils {
 
-    public static final SimpleUnitOfWorkFactory UNIT_OF_WORK_FACTORY = new SimpleUnitOfWorkFactory(
+    public static final SimpleUnitOfWorkFactory SIMPLE_FACTORY = new SimpleUnitOfWorkFactory(
             c -> c.applicationContext(new EmptyApplicationContext())
     );
 
@@ -39,7 +44,7 @@ public class UnitOfWorkTestUtils {
      */
     @Nonnull
     public static UnitOfWork aUnitOfWork() {
-        return UNIT_OF_WORK_FACTORY.create(UUID.randomUUID().toString());
+        return SIMPLE_FACTORY.create(UUID.randomUUID().toString());
     }
 
     private UnitOfWorkTestUtils() {

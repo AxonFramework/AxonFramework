@@ -30,10 +30,8 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.awaitility.Awaitility.await;
+import static org.axonframework.commandhandling.CommandBusTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -62,7 +61,7 @@ class DistributedCommandBusTest {
         testCommand = new GenericCommandMessage<>(new MessageType("command"), "test");
 
         connector = new StubConnector();
-        delegate = new SimpleCommandBus(new SimpleUnitOfWorkFactory(), Collections.emptyList());
+        delegate = aCommandBus();
         DistributedCommandBusConfiguration configuration = DistributedCommandBusConfiguration.DEFAULT;
         // Create virtual threads for the test, so we don't have to manage the thread pool.
         configuration.executorService(Executors.newVirtualThreadPerTaskExecutor());
