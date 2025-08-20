@@ -66,7 +66,6 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
             new GenericCommandResultMessage<>(new MessageType("empty"), "successful");
 
     protected CommandGateway commandGateway;
-    protected StateManager stateManager;
 
     private CommandHandlingModule.CommandHandlerPhase commandHandlingModule;
     private EventSourcedEntityModule<String, Course> courseEntity;
@@ -125,7 +124,6 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
         commandGateway = startedConfiguration.getComponent(CommandGateway.class);
 
         Configuration moduleConfig = startedConfiguration.getModuleConfigurations().getFirst();
-        stateManager = moduleConfig.getComponent(StateManager.class);
     }
 
     /**
@@ -201,26 +199,29 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
 
     protected void verifyStudentName(String id, String name) {
         UnitOfWork uow = aUnitOfWork();
-        uow.executeWithResult(context -> stateManager.repository(Student.class, String.class)
-                                                     .load(id, context)
-                                                     .thenAccept(student -> assertEquals(name,
-                                                                                         student.entity().getName())))
+        uow.executeWithResult(context -> context.component(StateManager.class)
+                                                .repository(Student.class, String.class)
+                                                .load(id, context)
+                                                .thenAccept(student -> assertEquals(name,
+                                                                                    student.entity().getName())))
            .join();
     }
 
     protected void verifyStudentEnrolledInCourse(String id, String courseId) {
         UnitOfWork uow = aUnitOfWork();
-        uow.executeWithResult(context -> stateManager.repository(Student.class, String.class)
-                                                     .load(id, context)
-                                                     .thenAccept(student -> assertTrue(student.entity()
-                                                                                              .getCoursesEnrolled()
-                                                                                              .contains(courseId)))
-                                                     .thenCompose(v -> stateManager.repository(Course.class,
-                                                                                               String.class)
-                                                                                   .load(courseId, context))
-                                                     .thenAccept(course -> assertTrue(course.entity()
-                                                                                            .getStudentsEnrolled()
-                                                                                            .contains(id))))
+        uow.executeWithResult(context -> context.component(StateManager.class)
+                                                .repository(Student.class, String.class)
+                                                .load(id, context)
+                                                .thenAccept(student -> assertTrue(student.entity()
+                                                                                         .getCoursesEnrolled()
+                                                                                         .contains(courseId)))
+                                                .thenCompose(v -> context.component(StateManager.class)
+                                                                         .repository(Course.class,
+                                                                                     String.class)
+                                                                         .load(courseId, context))
+                                                .thenAccept(course -> assertTrue(course.entity()
+                                                                                       .getStudentsEnrolled()
+                                                                                       .contains(id))))
            .join();
     }
 
