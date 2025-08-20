@@ -16,7 +16,9 @@
 
 package org.axonframework.eventhandling.pooled;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Segment;
@@ -24,6 +26,7 @@ import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -36,8 +39,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
@@ -333,6 +334,8 @@ class WorkPackage {
                     ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
                 });
 
+                unitOfWork.onInvocation(ctx -> batchProcessor.process(eventBatch, ctx).asCompletableFuture());
+
                 unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
                 unitOfWork.runOnAfterCommit(
                         u -> {
@@ -340,7 +343,7 @@ class WorkPackage {
                             batchProcessedCallback.run();
                         }
                 );
-                batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
+                FutureUtils.joinAndUnwrap(unitOfWork.execute());
             } finally {
                 processingEvents.set(false);
             }
@@ -363,7 +366,7 @@ class WorkPackage {
 
     /**
      * Extend the claim of the {@link TrackingToken} owned by this {@code WorkPackage}, if the configurable
-     * {@link PooledStreamingEventProcessor.Builder#claimExtensionThreshold(long) claim extension threshold} is met.
+     * {@link PooledStreamingEventProcessorConfiguration#claimExtensionThreshold(long) claim extension threshold} is met.
      */
     public void extendClaimIfThresholdIsMet() {
         if (now() > nextClaimExtension.get()) {
@@ -527,25 +530,19 @@ class WorkPackage {
     }
 
     /**
-     * Functional interface defining the processing of a batch of {@link EventMessage}s within a {@link UnitOfWork}.
+     * Functional interface defining the processing of a batch of {@link EventMessage}s within a {@link ProcessingContext}.
      */
     @FunctionalInterface
     interface BatchProcessor {
 
         /**
-         * Processes a given batch of {@code eventMessages}. These {@code eventMessages} will be processed within the
-         * given {@code unitOfWork}. The collection of {@link Segment} instances defines the segments for which the
-         * {@code eventMessages} should be processed.
+         * Processes a batch of events in the processing context.
          *
-         * @param eventMessages      the batch of {@link EventMessage}s that is to be processed
-         * @param unitOfWork         the {@link UnitOfWork} that has been prepared to process the {@code eventMessages}
-         * @param processingSegments the {@link Segment}s for which the {@code eventMessages} should be processed in the
-         *                           given {@code unitOfWork}
-         * @throws Exception when an exception occurred during processing of the batch of {@code eventMessages}
+         * @param events  The batch of event messages to be processed.
+         * @param context The processing context in which the event messages are processed.
+         * @return A stream of messages resulting from the processing of the event messages.
          */
-        void processBatch(List<? extends EventMessage<?>> eventMessages,
-                          UnitOfWork unitOfWork,
-                          Collection<Segment> processingSegments) throws Exception;
+        MessageStream.Empty<Message<Void>> process(@Nonnull List<? extends EventMessage<?>> events, ProcessingContext context);
     }
 
     /**

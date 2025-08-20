@@ -58,6 +58,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ProcessUtils.executeUntilTrue;
@@ -553,6 +554,8 @@ class Coordinator {
          */
         Builder maxSegmentProvider(MaxSegmentProvider maxSegmentProvider) {
             this.maxSegmentProvider = maxSegmentProvider;
+            assertStrictPositive(maxSegmentProvider.getMaxSegments(name),
+                                 "Max claimed segments should be a higher valuer than zero");
             return this;
         }
 
@@ -630,7 +633,7 @@ class Coordinator {
          * and potentially improving performance.
          * <p>
          * By default, this is set to {@link EventCriteria#havingAnyTag()}, which means all events are processed.
-         * 
+         *
          * @param eventCriteria the {@link EventCriteria} to use for filtering events
          * @return the current Builder instance, for fluent interfacing
          */
@@ -972,7 +975,10 @@ class Coordinator {
             if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
                 var startStreamingFrom = Objects.requireNonNullElse(trackingToken, new GlobalSequenceTrackingToken(-1));
                 eventStream = eventSource.open(StreamingCondition.conditionFor(startStreamingFrom, eventCriteria));
-                logger.debug("Processor [{}] opened stream with tracking token [{}] and criteria [{}].", name, trackingToken, eventCriteria);
+                logger.debug("Processor [{}] opened stream with tracking token [{}] and criteria [{}].",
+                             name,
+                             trackingToken,
+                             eventCriteria);
                 availabilityCallbackSupported = true;
                 eventStream.onAvailable(this::scheduleImmediateCoordinationTask);
                 lastScheduledToken = trackingToken;

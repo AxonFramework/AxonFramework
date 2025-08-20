@@ -224,7 +224,7 @@ public class EventProcessorControlService {
 
     private EventProcessorInfo subscribingProcessorInfo(EventProcessor eventProcessor) {
         return EventProcessorInfo.newBuilder()
-                                 .setProcessorName(eventProcessor.getName())
+                                 .setProcessorName(eventProcessor.name())
                                  .setMode(SUBSCRIBING_EVENT_PROCESSOR_MODE)
                                  .setIsStreamingProcessor(false)
                                  .build();
@@ -232,7 +232,7 @@ public class EventProcessorControlService {
 
     private EventProcessorInfo unknownProcessorTypeInfo(EventProcessor eventProcessor) {
         return EventProcessorInfo.newBuilder()
-                                 .setProcessorName(eventProcessor.getName())
+                                 .setProcessorName(eventProcessor.name())
                                  .setMode(UNKNOWN_EVENT_PROCESSOR_MODE)
                                  .setIsStreamingProcessor(false)
                                  .build();

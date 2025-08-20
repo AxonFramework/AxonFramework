@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -37,7 +38,7 @@ class SequenceOverridingEventHandlingComponentTest {
 
     @Test
     void sequenceIdentifierForUsesPolicyWhenItProvidesSequence() {
-        //given
+        // given
         var policySequenceId = "policy-sequence-id";
         var delegateSequenceId = "delegate-sequence-id";
         SequencingPolicy policy = event -> Optional.of(policySequenceId);
@@ -48,16 +49,16 @@ class SequenceOverridingEventHandlingComponentTest {
                 "test-payload"
         );
 
-        //when
-        var result = testSubject.sequenceIdentifierFor(testEvent);
+        // when
+        var result = testSubject.sequenceIdentifierFor(testEvent, new StubProcessingContext());
 
-        //then
+        // then
         assertThat(result).isEqualTo(policySequenceId);
     }
 
     @Test
     void sequenceIdentifierForUsesDelegateWhenPolicyReturnsEmpty() {
-        //given
+        // given
         var delegateSequenceId = "delegate-sequence-id";
         SequencingPolicy policy = event -> Optional.empty();
         EventHandlingComponent delegate = getEventHandlingComponentWithSequenceId(delegateSequenceId);
@@ -67,10 +68,10 @@ class SequenceOverridingEventHandlingComponentTest {
                 "test-payload"
         );
 
-        //when
-        var result = testSubject.sequenceIdentifierFor(testEvent);
+        // when
+        var result = testSubject.sequenceIdentifierFor(testEvent, new StubProcessingContext());
 
-        //then
+        // then
         assertThat(result).isEqualTo(delegateSequenceId);
     }
 
@@ -79,7 +80,7 @@ class SequenceOverridingEventHandlingComponentTest {
         return new EventHandlingComponent() {
             @Nonnull
             @Override
-            public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event) {
+            public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
                 return delegateSequenceId;
             }
 

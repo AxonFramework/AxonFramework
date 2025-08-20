@@ -147,9 +147,9 @@ class SagaCustomizeIntegrationTest {
                             processorGroupName,
                             LegacyConfiguration::eventStore,
                             (config, builder) -> builder
-                                    .workerExecutor(name -> Executors.newScheduledThreadPool(
+                                    .workerExecutor(Executors.newScheduledThreadPool(
                                             2,
-                                            new AxonThreadFactory("Worker - " + name))
+                                            new AxonThreadFactory("Worker - " + processorGroupName))
                                     ).initialSegmentCount(2)
                     );
 
