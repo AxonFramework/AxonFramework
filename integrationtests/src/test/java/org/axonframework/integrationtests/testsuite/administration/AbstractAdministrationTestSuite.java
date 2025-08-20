@@ -56,12 +56,9 @@ public abstract class AbstractAdministrationTestSuite extends AbstractAxonServer
         super.startApp();
     }
 
-    abstract Module getModule();
-
     @Override
     protected ApplicationConfigurer createConfigurer() {
-        var configurer = EventSourcingConfigurer.create()
-                                      .componentRegistry(cr -> cr.registerModule(getModule()));
+        var configurer = EventSourcingConfigurer.create();
         return testSuiteConfigurer(configurer);
     }
 

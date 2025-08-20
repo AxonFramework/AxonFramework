@@ -17,7 +17,6 @@
 package org.axonframework.integrationtests.testsuite.administration;
 
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
@@ -41,7 +40,6 @@ import org.axonframework.integrationtests.testsuite.administration.state.immutab
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
@@ -202,13 +200,5 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .criteriaResolver(c -> (s, ctx) -> EventCriteria.havingTags("Person", s.key()))
                 .entityIdResolver(PersonIdentifierEntityIdResolver::new);
         return configurer.componentRegistry(cr -> cr.registerModule(personEntityModule));
-    }
-
-    @Override
-    Module getModule() {
-        return CommandHandlingModule
-                .named("ImmutableBuilderEntityModelAdministrationTest")
-                .commandHandlers()
-                .build();
     }
 }
