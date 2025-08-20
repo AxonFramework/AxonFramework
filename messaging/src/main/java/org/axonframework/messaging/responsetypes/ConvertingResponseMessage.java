@@ -23,8 +23,6 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -41,10 +39,10 @@ import java.util.Optional;
  * @author Allard Buijze
  * @since 4.3.0
  */
-public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
+public class ConvertingResponseMessage<R> implements QueryResponseMessage {
 
     private final ResponseType<R> expectedResponseType;
-    private final QueryResponseMessage<?> responseMessage;
+    private final QueryResponseMessage responseMessage;
 
     /**
      * Initialize a response message, using {@code expectedResponseType} to convert the payload from the
@@ -54,7 +52,7 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
      * @param responseMessage      The message containing the actual response from the handler.
      */
     public ConvertingResponseMessage(ResponseType<R> expectedResponseType,
-                                     QueryResponseMessage<?> responseMessage) {
+                                     QueryResponseMessage responseMessage) {
         this.expectedResponseType = expectedResponseType;
         this.responseMessage = responseMessage;
     }
@@ -121,19 +119,19 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage<R> {
 
     @Override
     @Nonnull
-    public QueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
+    public QueryResponseMessage withMetaData(@Nonnull Map<String, String> metaData) {
         return new ConvertingResponseMessage<>(expectedResponseType, responseMessage.withMetaData(metaData));
     }
 
     @Override
     @Nonnull
-    public QueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
+    public QueryResponseMessage andMetaData(@Nonnull Map<String, String> additionalMetaData) {
         return new ConvertingResponseMessage<>(expectedResponseType, responseMessage.andMetaData(additionalMetaData));
     }
 
     @Override
     @Nonnull
-    public <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+    public QueryResponseMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         return responseMessage.withConvertedPayload(type, converter);
     }
 }

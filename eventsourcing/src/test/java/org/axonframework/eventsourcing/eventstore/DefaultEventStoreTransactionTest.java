@@ -75,8 +75,8 @@ class DefaultEventStoreTransactionTest {
             var sourcingCondition = SourcingCondition.conditionFor(eventCriteria);
 
             // when
-            var beforeCommitEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
-            var afterCommitEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
+            var beforeCommitEvents = new AtomicReference<MessageStream<? extends EventMessage>>();
+            var afterCommitEvents = new AtomicReference<MessageStream<? extends EventMessage>>();
             var consistencyMarker = new AtomicReference<ConsistencyMarker>();
             var uow = aUnitOfWork();
             uow.runOnPreInvocation(context -> {
@@ -118,8 +118,8 @@ class DefaultEventStoreTransactionTest {
             var event1 = eventMessage(0);
             var event2 = eventMessage(1);
             var sourcingCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA);
-            var beforeCommitEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
-            var afterCommitEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
+            var beforeCommitEvents = new AtomicReference<MessageStream<? extends EventMessage>>();
+            var afterCommitEvents = new AtomicReference<MessageStream<? extends EventMessage>>();
 
             // when
             var uow = aUnitOfWork();
@@ -171,7 +171,7 @@ class DefaultEventStoreTransactionTest {
         private ConsistencyMarker appendEventForTag(Tag tag) {
             return eventStorageEngine.appendEvents(AppendCondition.none(),
                                                    new GenericTaggedEventMessage<>(
-                                                           new GenericEventMessage<>(new MessageType(String.class),
+                                                           new GenericEventMessage(new MessageType(String.class),
                                                                                      "my payload"),
                                                            Set.of(tag)
                                                    )).join().commit().join();
@@ -190,7 +190,7 @@ class DefaultEventStoreTransactionTest {
                 transaction.source(SourcingCondition.conditionFor(nonExistingCriteria)).asFlux().blockLast();
                 transaction.source(SourcingCondition.conditionFor(existingCriteria)).asFlux().blockLast();
 
-                transaction.appendEvent(new GenericEventMessage<>(new MessageType(String.class), "my payload"));
+                transaction.appendEvent(new GenericEventMessage(new MessageType(String.class), "my payload"));
 
                 return MessageStream.empty().asCompletableFuture();
             }));
@@ -204,8 +204,8 @@ class DefaultEventStoreTransactionTest {
         void appendEventNotifiesRegisteredCallbacks() {
             // given
             var event1 = eventMessage(0);
-            var onAppendCallback1 = new ArrayList<EventMessage<?>>();
-            var onAppendCallback2 = new ArrayList<EventMessage<?>>();
+            var onAppendCallback1 = new ArrayList<EventMessage>();
+            var onAppendCallback2 = new ArrayList<EventMessage>();
 
             // when
             var uow = aUnitOfWork();
@@ -314,7 +314,7 @@ class DefaultEventStoreTransactionTest {
             assertThrows(CompletionException.class, () -> awaitExceptionalCompletion(uow.execute()));
 
             var verificationUow = aUnitOfWork();
-            var eventsAfterRollback = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
+            var eventsAfterRollback = new AtomicReference<MessageStream<? extends EventMessage>>();
             verificationUow.runOnPreInvocation(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 eventsAfterRollback.set(transaction.source(sourcingCondition));
@@ -374,13 +374,13 @@ class DefaultEventStoreTransactionTest {
         );
     }
 
-    protected static EventMessage<?> eventMessage(int seq) {
-        return new GenericEventMessage<>(new MessageType("test", "event", "0.0.1"), "event-" + seq);
+    protected static EventMessage eventMessage(int seq) {
+        return new GenericEventMessage(new MessageType("test", "event", "0.0.1"), "event-" + seq);
     }
 
-    private static void assertPositionAndEvent(MessageStream.Entry<? extends EventMessage<?>> actual,
+    private static void assertPositionAndEvent(MessageStream.Entry<? extends EventMessage> actual,
                                                long expectedPosition,
-                                               EventMessage<?> expectedEvent) {
+                                               EventMessage expectedEvent) {
         Optional<TrackingToken> actualToken = TrackingToken.fromContext(actual);
         assertTrue(actualToken.isPresent());
         OptionalLong actualPosition = actualToken.get().position();
@@ -389,7 +389,7 @@ class DefaultEventStoreTransactionTest {
         assertEvent(actual.message(), expectedEvent);
     }
 
-    private static void assertEvent(EventMessage<?> actual, EventMessage<?> expected) {
+    private static void assertEvent(EventMessage actual, EventMessage expected) {
         assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.payload(), actual.payload());
         assertEquals(expected.timestamp(), actual.timestamp());

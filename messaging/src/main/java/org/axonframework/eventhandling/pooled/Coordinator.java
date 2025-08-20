@@ -84,12 +84,12 @@ class Coordinator {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final String name;
-    private final StreamableEventSource<? extends EventMessage<?>> eventSource;
+    private final StreamableEventSource<? extends EventMessage> eventSource;
     private final TokenStore tokenStore;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final ScheduledExecutorService executorService;
     private final BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
-    private final Consumer<? super EventMessage<?>> ignoredMessageHandler;
+    private final Consumer<? super EventMessage> ignoredMessageHandler;
     private final BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
     private final long tokenClaimInterval;
     private final long claimExtensionThreshold;
@@ -393,12 +393,12 @@ class Coordinator {
     static class Builder {
 
         private String name;
-        private StreamableEventSource<? extends EventMessage<?>> eventSource;
+        private StreamableEventSource<? extends EventMessage> eventSource;
         private TokenStore tokenStore;
         private UnitOfWorkFactory unitOfWorkFactory;
         private ScheduledExecutorService executorService;
         private BiFunction<Segment, TrackingToken, WorkPackage> workPackageFactory;
-        private Consumer<? super EventMessage<?>> ignoredMessageHandler = i -> {
+        private Consumer<? super EventMessage> ignoredMessageHandler = i -> {
         };
         private BiConsumer<Integer, UnaryOperator<TrackerStatus>> processingStatusUpdater;
         private long tokenClaimInterval = 5000;
@@ -431,7 +431,7 @@ class Coordinator {
          * @param eventSource The source of events this coordinator should schedule per work package.
          * @return The current Builder instance, for fluent interfacing.
          */
-        Builder eventSource(StreamableEventSource<? extends EventMessage<?>> eventSource) {
+        Builder eventSource(StreamableEventSource<? extends EventMessage> eventSource) {
             this.eventSource = eventSource;
             return this;
         }
@@ -491,7 +491,7 @@ class Coordinator {
          *                              this {@link Coordinator} controls
          * @return the current Builder instance, for fluent interfacing
          */
-        Builder onMessageIgnored(Consumer<? super EventMessage<?>> ignoredMessageHandler) {
+        Builder onMessageIgnored(Consumer<? super EventMessage> ignoredMessageHandler) {
             this.ignoredMessageHandler = ignoredMessageHandler;
             return this;
         }
@@ -697,7 +697,7 @@ class Coordinator {
         private final AtomicBoolean processingGate = new AtomicBoolean();
         private final AtomicBoolean scheduledGate = new AtomicBoolean();
         private final AtomicBoolean interruptibleScheduledGate = new AtomicBoolean();
-        private MessageStream<? extends EventMessage<?>> eventStream;
+        private MessageStream<? extends EventMessage> eventStream;
         private TrackingToken lastScheduledToken = NoToken.INSTANCE;
         private boolean availabilityCallbackSupported;
         private long unclaimedSegmentValidationThreshold;
@@ -995,7 +995,7 @@ class Coordinator {
                                .allMatch(WorkPackage::isDone);
         }
 
-        private MessageStream.Entry<? extends EventMessage<?>> nextEventOrNull() {
+        private MessageStream.Entry<? extends EventMessage> nextEventOrNull() {
             if (eventStream == null) {
                 return null;
             }
@@ -1007,7 +1007,7 @@ class Coordinator {
         }
 
         private boolean eventsEqualingLastScheduledToken(TrackingToken lastScheduledToken) {
-            MessageStream.Entry<? extends EventMessage<?>> nextEntry = eventStream.peek().orElse(null);
+            MessageStream.Entry<? extends EventMessage> nextEntry = eventStream.peek().orElse(null);
             if (nextEntry == null || lastScheduledToken == null) {
                 return false;
             }
@@ -1042,7 +1042,7 @@ class Coordinator {
             for (int fetched = 0;
                  fetched < WorkPackage.BUFFER_SIZE && isSpaceAvailable() && hasNextEvent();
                  fetched++) {
-                MessageStream.Entry<? extends EventMessage<?>> eventEntry = nextEventOrNull();
+                MessageStream.Entry<? extends EventMessage> eventEntry = nextEventOrNull();
                 if (eventEntry == null) {
                     break; // No more events available
                 }
@@ -1053,10 +1053,10 @@ class Coordinator {
                 // Make sure all subsequent events with the same token as the last are added as well.
                 // These are the result of upcasting and should always be scheduled in one go.
                 if (eventsEqualingLastScheduledToken(eventToken)) {
-                    List<MessageStream.Entry<? extends EventMessage<?>>> eventEntries = new ArrayList<>();
+                    List<MessageStream.Entry<? extends EventMessage>> eventEntries = new ArrayList<>();
                     eventEntries.add(eventEntry);
                     while (eventsEqualingLastScheduledToken(eventToken)) {
-                        MessageStream.Entry<? extends EventMessage<?>> nextEntry = nextEventOrNull();
+                        MessageStream.Entry<? extends EventMessage> nextEntry = nextEventOrNull();
                         if (nextEntry != null) {
                             eventEntries.add(nextEntry);
                         } else {
@@ -1082,19 +1082,19 @@ class Coordinator {
                         .forEach(WorkPackage::scheduleWorker);
         }
 
-        private void offerEventToWorkPackages(MessageStream.Entry<? extends EventMessage<?>> eventEntry) {
+        private void offerEventToWorkPackages(MessageStream.Entry<? extends EventMessage> eventEntry) {
             boolean anyScheduled = false;
             for (WorkPackage workPackage : workPackages.values()) {
                 boolean scheduled = workPackage.scheduleEvent(eventEntry);
                 anyScheduled = anyScheduled || scheduled;
             }
             if (!anyScheduled) {
-                EventMessage<?> event = eventEntry.message();
+                EventMessage event = eventEntry.message();
                 ignoredMessageHandler.accept(event);
             }
         }
 
-        private void offerEventsToWorkPackages(List<MessageStream.Entry<? extends EventMessage<?>>> eventEntries) {
+        private void offerEventsToWorkPackages(List<MessageStream.Entry<? extends EventMessage>> eventEntries) {
             boolean anyScheduled = false;
             for (WorkPackage workPackage : workPackages.values()) {
                 boolean scheduled = workPackage.scheduleEvents(eventEntries);
@@ -1102,7 +1102,7 @@ class Coordinator {
             }
             if (!anyScheduled) {
                 eventEntries.forEach(eventEntry -> {
-                    EventMessage<?> event = eventEntry.message();
+                    EventMessage event = eventEntry.message();
                     ignoredMessageHandler.accept(event);
                 });
             }

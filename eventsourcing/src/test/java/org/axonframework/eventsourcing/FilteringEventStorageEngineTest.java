@@ -37,16 +37,16 @@ class FilteringEventStorageEngineTest {
 
     @BeforeEach
     void setUp() {
-        Predicate<EventMessage<?>> filter = m -> m.payload().toString().contains("accept");
+        Predicate<EventMessage> filter = m -> m.payload().toString().contains("accept");
         mockStorage = mock(LegacyEventStorageEngine.class);
         testSubject = new LegacyFilteringEventStorageEngine(mockStorage, filter);
     }
 
     @Test
     void eventsFromArrayMatchingAreForwarded() {
-        EventMessage<String> event1 = EventTestUtils.asEventMessage("accept");
-        EventMessage<String> event2 = EventTestUtils.asEventMessage("fail");
-        EventMessage<String> event3 = EventTestUtils.asEventMessage("accept");
+        EventMessage event1 = EventTestUtils.asEventMessage("accept");
+        EventMessage event2 = EventTestUtils.asEventMessage("fail");
+        EventMessage event3 = EventTestUtils.asEventMessage("accept");
 
         testSubject.appendEvents(event1, event2, event3);
 
@@ -55,9 +55,9 @@ class FilteringEventStorageEngineTest {
 
     @Test
     void eventsFromListMatchingAreForwarded() {
-        EventMessage<String> event1 = EventTestUtils.asEventMessage("accept");
-        EventMessage<String> event2 = EventTestUtils.asEventMessage("fail");
-        EventMessage<String> event3 = EventTestUtils.asEventMessage("accept");
+        EventMessage event1 = EventTestUtils.asEventMessage("accept");
+        EventMessage event2 = EventTestUtils.asEventMessage("fail");
+        EventMessage event3 = EventTestUtils.asEventMessage("accept");
 
         testSubject.appendEvents(asList(event1, event2, event3));
 
@@ -66,7 +66,7 @@ class FilteringEventStorageEngineTest {
 
     @Test
     void storeSnapshotDelegated() {
-        DomainEventMessage<Object> snapshot = new GenericDomainEventMessage<>(
+        DomainEventMessage snapshot = new GenericDomainEventMessage(
                 "type", "id", 0, new MessageType("snapshot"), "fail"
         );
         testSubject.storeSnapshot(snapshot);

@@ -22,7 +22,6 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.TestSerializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -43,12 +42,12 @@ class DirectEventJobDataBinderTest {
 
     private static final String TEST_EVENT_PAYLOAD = "event-payload";
 
-    private final EventMessage<String> testEventMessage;
+    private final EventMessage testEventMessage;
     private final MetaData testMetaData;
 
     DirectEventJobDataBinderTest() {
         this.testMetaData = MetaData.with("some-key", "some-value");
-        this.testEventMessage = EventTestUtils.<String>asEventMessage(TEST_EVENT_PAYLOAD)
+        this.testEventMessage = EventTestUtils.asEventMessage(TEST_EVENT_PAYLOAD)
                                               .withMetaData(testMetaData);
     }
 
@@ -87,7 +86,6 @@ class DirectEventJobDataBinderTest {
         verify(serializer).serialize(testMetaData, byte[].class);
     }
 
-    @SuppressWarnings("unchecked")
     @MethodSource("serializerImplementationAndAssertionSpecifics")
     @ParameterizedTest
     void eventMessageFromJobData(
@@ -102,7 +100,7 @@ class DirectEventJobDataBinderTest {
 
         assertTrue(result instanceof EventMessage);
 
-        EventMessage<String> resultEventMessage = (EventMessage<String>) result;
+        EventMessage resultEventMessage = (EventMessage) result;
 
         assertEquals(testEventMessage.identifier(), resultEventMessage.identifier());
         assertEquals(testEventMessage.timestamp(), resultEventMessage.timestamp());

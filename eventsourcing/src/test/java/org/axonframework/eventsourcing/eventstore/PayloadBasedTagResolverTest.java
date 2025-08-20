@@ -34,8 +34,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class PayloadBasedTagResolverTest {
 
-    private static final GenericEventMessage<TestPayload> TEST_EVENT =
-            new GenericEventMessage<>(new MessageType("test", "event", "0.0.1"), TestPayload.INSTANCE);
+    private static final GenericEventMessage TEST_EVENT =
+            new GenericEventMessage(new MessageType("test", "event", "0.0.1"), TestPayload.INSTANCE);
 
     @Test
     void resolveSetsExpectedTags() {

@@ -53,7 +53,7 @@ public class RecordingListenerInvocationErrorHandler implements ListenerInvocati
     }
 
     @Override
-    public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+    public void onError(@Nonnull Exception exception, @Nonnull EventMessage event,
                         @Nonnull EventMessageHandler eventHandler) throws Exception {
         if (!started && failOnErrorInPreparation) {
             throw exception;

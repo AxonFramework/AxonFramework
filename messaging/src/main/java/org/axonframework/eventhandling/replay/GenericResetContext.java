@@ -33,11 +33,10 @@ import java.util.Map;
 /**
  * Generic implementation of the {@link ResetContext} interface.
  *
- * @param <P> The type of {@link #payload()} contained in this {@link GenericResetContext}.
  * @author Steven van Beelen
  * @since 4.4.0
  */
-public class GenericResetContext<P> extends MessageDecorator<P> implements ResetContext<P> {
+public class GenericResetContext extends MessageDecorator implements ResetContext {
 
     /**
      * Constructs a {@code GenericResetContext} for the given {@code type} and {@code payload}.
@@ -45,10 +44,10 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
      * The {@link MetaData} defaults to an empty instance.
      *
      * @param type    The {@link MessageType type} for this {@link ResetContext}.
-     * @param payload The payload of type {@code P} for this {@link ResetContext}.
+     * @param payload The payload for this {@link ResetContext}.
      */
     public GenericResetContext(@Nonnull MessageType type,
-                               @Nullable P payload) {
+                               @Nullable Object payload) {
         this(type, payload, MetaData.emptyInstance());
     }
 
@@ -56,13 +55,13 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
      * Constructs a {@code GenericResetContext} for the given {@code type}, {@code payload}, and {@code metaData}.
      *
      * @param type     The {@link MessageType type} for this {@link ResetContext}.
-     * @param payload  The payload of type {@code P} for this {@link ResetContext}.
+     * @param payload  The payload for this {@link ResetContext}.
      * @param metaData The metadata for this {@link ResetContext}.
      */
     public GenericResetContext(@Nonnull MessageType type,
-                               @Nullable P payload,
+                               @Nullable Object payload,
                                @Nonnull Map<String, String> metaData) {
-        this(new GenericMessage<>(type, payload, metaData));
+        this(new GenericMessage(type, payload, metaData));
     }
 
     /**
@@ -76,35 +75,34 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
      *                 {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
      *                 {@link EventMessage} to reconstruct.
      */
-    public GenericResetContext(@Nonnull Message<P> delegate) {
+    public GenericResetContext(@Nonnull Message delegate) {
         super(delegate);
     }
 
     @Override
     @Nonnull
-    public ResetContext<P> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericResetContext<>(delegate().withMetaData(metaData));
+    public ResetContext withMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericResetContext(delegate().withMetaData(metaData));
     }
 
     @Override
     @Nonnull
-    public ResetContext<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
-        return new GenericResetContext<>(delegate().andMetaData(additionalMetaData));
+    public ResetContext andMetaData(@Nonnull Map<String, String> additionalMetaData) {
+        return new GenericResetContext(delegate().andMetaData(additionalMetaData));
     }
 
     @Override
     @Nonnull
-    public <T> ResetContext<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
-        T convertedPayload = this.payloadAs(type, converter);
+    public ResetContext withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        Object convertedPayload = this.payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
-            //noinspection unchecked
-            return (ResetContext<T>) this;
+            return this;
         }
-        Message<P> delegate = delegate();
-        return new GenericResetContext<>(new GenericMessage<>(delegate.identifier(),
-                                                              delegate.type(),
-                                                              convertedPayload,
-                                                              delegate.metaData()));
+        Message delegate = delegate();
+        return new GenericResetContext(new GenericMessage(delegate.identifier(),
+                                                          delegate.type(),
+                                                          convertedPayload,
+                                                          delegate.metaData()));
     }
 
     @Override

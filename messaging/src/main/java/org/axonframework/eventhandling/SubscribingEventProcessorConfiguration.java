@@ -46,7 +46,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
-    private SubscribableMessageSource<? extends EventMessage<?>> messageSource;
+    private SubscribableMessageSource<? extends EventMessage> messageSource;
     private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
 
     /**
@@ -73,7 +73,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
 
     @Override
     public SubscribingEventProcessorConfiguration messageMonitor(
-            @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            @Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
         super.messageMonitor(messageMonitor);
         return this;
     }
@@ -94,7 +94,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * @return The current instance, for fluent interfacing.
      */
     public SubscribingEventProcessorConfiguration messageSource(
-            @Nonnull SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+            @Nonnull SubscribableMessageSource<? extends EventMessage> messageSource) {
         assertNonNull(messageSource, "SubscribableMessageSource may not be null");
         this.messageSource = messageSource;
         return this;
@@ -123,7 +123,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
 
     @Override
     public SubscribingEventProcessorConfiguration interceptors(
-            @Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+            @Nonnull List<MessageHandlerInterceptor<? super EventMessage>> interceptors) {
         super.interceptors(interceptors);
         return this;
     }
@@ -145,7 +145,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      *
      * @return The {@link SubscribableMessageSource} for receiving events.
      */
-    public SubscribableMessageSource<? extends EventMessage<?>> messageSource() {
+    public SubscribableMessageSource<? extends EventMessage> messageSource() {
         return messageSource;
     }
 

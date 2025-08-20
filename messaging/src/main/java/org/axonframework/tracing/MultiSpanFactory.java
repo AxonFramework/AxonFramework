@@ -53,8 +53,8 @@ public class MultiSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
-                                  boolean isChildTrace, Message<?>... linkedParents) {
+    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message parentMessage,
+                                  boolean isChildTrace, Message... linkedParents) {
         return new MultiSpan(
                 spanFactories.stream()
                              .map(sf -> sf.createHandlerSpan(operationNameSupplier,
@@ -66,8 +66,8 @@ public class MultiSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
-                                   Message<?>... linkedSiblings) {
+    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message parentMessage,
+                                   Message... linkedSiblings) {
         return new MultiSpan(
                 spanFactories.stream()
                              .map(sf -> sf.createDispatchSpan(operationNameSupplier,
@@ -87,7 +87,7 @@ public class MultiSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message<?> message) {
+    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message message) {
         return new MultiSpan(
                 spanFactories.stream()
                              .map(sf -> sf.createInternalSpan(operationNameSupplier, message))
@@ -101,7 +101,7 @@ public class MultiSpanFactory implements SpanFactory {
     }
 
     @Override
-    public <M extends Message<?>> M propagateContext(M message) {
+    public <M extends Message> M propagateContext(M message) {
         M adjustedMessage = message;
         for (SpanFactory spanFactory : spanFactories) {
             adjustedMessage = spanFactory.propagateContext(adjustedMessage);

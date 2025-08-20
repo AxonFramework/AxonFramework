@@ -31,11 +31,10 @@ import java.util.OptionalInt;
  * <p>
  * These messages carry an intention to change application state.
  *
- * @param <P> The type of {@link #payload() payload} contained in this {@link CommandMessage}.
  * @author Allard Buijze
  * @since 2.0.0
  */
-public interface CommandMessage<P> extends Message<P> {
+public interface CommandMessage extends Message {
 
     /**
      * Returns the routing key for this command message, if any is applicable.
@@ -59,25 +58,25 @@ public interface CommandMessage<P> extends Message<P> {
 
     @Override
     @Nonnull
-    CommandMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
+    CommandMessage withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     @Nonnull
-    CommandMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
+    CommandMessage andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     @Nonnull
-    default <T> CommandMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+    default CommandMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
     @Nonnull
-    default <T> CommandMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+    default CommandMessage withConvertedPayload(@Nonnull TypeReference<?> type, @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @Nonnull
-    <T> CommandMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    CommandMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

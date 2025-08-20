@@ -42,7 +42,7 @@ import jakarta.annotation.Nonnull;
  * @deprecated In favor of the {@link ProcessingLifecycle}.
  */
 @Deprecated(since = "5.0.0", forRemoval = true)
-public interface LegacyUnitOfWork<T extends Message<?>> {
+public interface LegacyUnitOfWork<T extends Message> {
 
     /**
      * Starts the current unit of work. The UnitOfWork instance is registered with the CurrentUnitOfWork.
@@ -191,7 +191,7 @@ public interface LegacyUnitOfWork<T extends Message<?>> {
      * @param transformOperator The transform operator to apply to the stored message
      * @return this Unit of Work
      */
-    LegacyUnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator);
+    LegacyUnitOfWork<T> transformMessage(Function<T, ? extends Message> transformOperator);
 
     /**
      * Get the correlation data contained in the {@link #getMessage() message} being processed by the Unit of Work.
@@ -306,7 +306,7 @@ public interface LegacyUnitOfWork<T extends Message<?>> {
      *                              execution fails
      */
     default void execute(Consumer<ProcessingContext> task, RollbackConfiguration rollbackConfiguration) {
-        ResultMessage<?> resultMessage = executeWithResult((ctx) -> {
+        ResultMessage resultMessage = executeWithResult((ctx) -> {
             task.accept(ctx);
             return null;
         }, rollbackConfiguration);
@@ -329,7 +329,7 @@ public interface LegacyUnitOfWork<T extends Message<?>> {
      * @param task the task to execute
      * @return The result of the task wrapped in Result Message
      */
-    default <R> ResultMessage<R> executeWithResult(ProcessingContextCallable<R> task) {
+    default <R> ResultMessage executeWithResult(ProcessingContextCallable<R> task) {
         return executeWithResult(task, RollbackConfigurationType.ANY_THROWABLE);
     }
 
@@ -347,7 +347,7 @@ public interface LegacyUnitOfWork<T extends Message<?>> {
      *                              execution fails
      * @return The result of the task wrapped in Result Message
      */
-    <R> ResultMessage<R> executeWithResult(ProcessingContextCallable<R> task,
+    <R> ResultMessage executeWithResult(ProcessingContextCallable<R> task,
                                            @Nonnull RollbackConfiguration rollbackConfiguration);
 
     /**

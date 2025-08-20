@@ -44,7 +44,7 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
     private static final String AGGREGATE_TYPE = "stubAggregate";
 
     private Runnable registration;
-    private final List<EventMessage<?>> appliedMessages = new CopyOnWriteArrayList<>();
+    private final List<EventMessage> appliedMessages = new CopyOnWriteArrayList<>();
     private boolean deleted;
 
     /**
@@ -98,22 +98,22 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
     }
 
     @SuppressWarnings("unchecked")
-    private static <P> EventMessage<P> asEventMessage(Object event) {
+    private static <P> EventMessage asEventMessage(Object event) {
         if (event instanceof EventMessage) {
-            return (EventMessage<P>) event;
+            return (EventMessage) event;
         } else if (event instanceof Message) {
-            Message<P> message = (Message<P>) event;
-            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+            Message message = (Message) event;
+            return new GenericEventMessage(message, () -> GenericEventMessage.clock.instant());
         }
-        return new GenericEventMessage<>(
-                new GenericMessage<>(new MessageType(event.getClass()), (P) event),
+        return new GenericEventMessage(
+                new GenericMessage(new MessageType(event.getClass()), (P) event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
 
     @Override
     protected <T> ApplyMore doApply(T payload, MetaData metaData) {
-        appliedMessages.add(new GenericEventMessage<>(new MessageType(payload.getClass()), payload, metaData));
+        appliedMessages.add(new GenericEventMessage(new MessageType(payload.getClass()), payload, metaData));
 
         return new ApplyMore() {
             @Override
@@ -137,7 +137,7 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
      *
      * @return the list of messages applied while this lifecycle instance was active
      */
-    public List<EventMessage<?>> getAppliedEvents() {
+    public List<EventMessage> getAppliedEvents() {
         return appliedMessages;
     }
 

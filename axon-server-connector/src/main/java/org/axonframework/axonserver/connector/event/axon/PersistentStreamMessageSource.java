@@ -35,13 +35,13 @@ import jakarta.annotation.Nonnull;
  * @author Marc Gathier
  * @since 4.10.0
  */
-public class PersistentStreamMessageSource implements SubscribableMessageSource<EventMessage<?>> {
+public class PersistentStreamMessageSource implements SubscribableMessageSource<EventMessage> {
 
     private final PersistentStreamConnection persistentStreamConnection;
     private final String name;
 
-    private Consumer<List<? extends EventMessage<?>>> consumer = NO_OP_CONSUMER;
-    private static final Consumer<List<? extends EventMessage<?>>> NO_OP_CONSUMER = events -> {
+    private Consumer<List<? extends EventMessage>> consumer = NO_OP_CONSUMER;
+    private static final Consumer<List<? extends EventMessage>> NO_OP_CONSUMER = events -> {
     };
 
     /**
@@ -92,7 +92,7 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
     }
 
     @Override
-    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> consumer) {
+    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> consumer) {
         synchronized (this) {
             boolean noConsumer = this.consumer.equals(NO_OP_CONSUMER);
             if (noConsumer) {

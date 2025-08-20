@@ -57,13 +57,13 @@ public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDe
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
-            return message instanceof DeadlineMessage
-                    && deadlineNameMatch((DeadlineMessage<?>) message)
+        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
+            return message instanceof DeadlineMessage dm
+                    && deadlineNameMatch(dm)
                     && super.canHandle(message, context);
         }
 
-        private boolean deadlineNameMatch(DeadlineMessage<?> message) {
+        private boolean deadlineNameMatch(DeadlineMessage message) {
             return deadlineNameMatchesAll() || deadlineName.equals(message.getDeadlineName());
         }
 

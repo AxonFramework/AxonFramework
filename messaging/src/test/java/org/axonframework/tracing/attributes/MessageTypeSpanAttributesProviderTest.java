@@ -34,7 +34,7 @@ class MessageTypeSpanAttributesProviderTest {
 
     @Test
     void correctTypeForQueryMessage() {
-        Message<?> genericQueryMessage = new GenericQueryMessage<>(
+        Message genericQueryMessage = new GenericQueryMessage(
                 new MessageType("myQueryName"), "MyQuery", instanceOf(String.class)
         );
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
@@ -44,8 +44,8 @@ class MessageTypeSpanAttributesProviderTest {
 
     @Test
     void correctTypeForCommandMessage() {
-        Message<?> genericQueryMessage =
-                new GenericCommandMessage<>(new MessageType("command"), "payload");
+        Message genericQueryMessage =
+                new GenericCommandMessage(new MessageType("command"), "payload");
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
         assertEquals("GenericCommandMessage", map.get("axon_message_type"));

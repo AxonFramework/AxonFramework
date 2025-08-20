@@ -279,7 +279,7 @@ public class EventSourcingRepository<ID, E> implements Repository.LifecycleManag
             }
         }
 
-        private M evolve(EventMessage<?> event,
+        private M evolve(EventMessage event,
                          EntityEvolver<M> evolver,
                          ProcessingContext processingContext) {
             this.initialized = true;

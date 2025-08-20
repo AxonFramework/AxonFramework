@@ -50,7 +50,7 @@ class AnnotationSagaMetaModelFactoryTest {
     void inspectSaga() {
         SagaModel<MySaga> sagaModel = testSubject.modelOf(MySaga.class);
 
-        EventMessage<Object> event = asEventMessage(new MySagaStartEvent("value"));
+        EventMessage event = asEventMessage(new MySagaStartEvent("value"));
         Optional<AssociationValue> actual = sagaModel.resolveAssociation(event, StubProcessingContext.forMessage(event));
         assertTrue(actual.isPresent());
         assertEquals("value", actual.get().getValue());
@@ -62,7 +62,7 @@ class AnnotationSagaMetaModelFactoryTest {
         SagaModel<MySaga> sagaModel = testSubject.modelOf(MySaga.class);
 
         MySaga saga = new MySaga();
-        EventMessage<MySagaStartEvent> event = asEventMessage(new MySagaStartEvent("foo"));
+        EventMessage event = asEventMessage(new MySagaStartEvent("foo"));
         Optional<MessageHandlingMember<? super MySaga>> handler = sagaModel
                 .findHandlerMethods(event, StubProcessingContext.forMessage(event)).stream().findFirst();
         assertTrue(handler.isPresent());
@@ -76,7 +76,7 @@ class AnnotationSagaMetaModelFactoryTest {
         SagaModel<MySagaWithErrorHandler> sagaModel = testSubject.modelOf(MySagaWithErrorHandler.class);
 
         MySagaWithErrorHandler saga = new MySagaWithErrorHandler();
-        EventMessage<MySagaStartEvent> event = asEventMessage(new MySagaStartEvent("foo"));
+        EventMessage event = asEventMessage(new MySagaStartEvent("foo"));
         Optional<MessageHandlingMember<? super MySagaWithErrorHandler>> handler = sagaModel
                 .findHandlerMethods(event, StubProcessingContext.forMessage(event)).stream().findFirst();
         assertTrue(handler.isPresent());

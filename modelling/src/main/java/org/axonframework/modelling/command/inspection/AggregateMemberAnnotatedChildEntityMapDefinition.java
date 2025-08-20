@@ -77,7 +77,7 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition extends AbstractCh
     }
 
     @Override
-    protected <T> Object resolveCommandTarget(CommandMessage<?> msg,
+    protected <T> Object resolveCommandTarget(CommandMessage msg,
                                               T parent,
                                               Member member,
                                               EntityModel<Object> childEntityModel) {

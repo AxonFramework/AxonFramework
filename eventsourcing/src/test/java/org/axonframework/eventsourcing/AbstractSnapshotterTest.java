@@ -104,7 +104,7 @@ class AbstractSnapshotterTest {
 
     @Test
     void scheduleSnapshotIsPostponedUntilUnitOfWorkAfterCommit() {
-        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(createDomainEvents(2)));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
@@ -117,7 +117,7 @@ class AbstractSnapshotterTest {
 
     @Test
     void scheduleSnapshotOnlyOnce() {
-        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(createDomainEvents(2)));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
@@ -222,7 +222,7 @@ class AbstractSnapshotterTest {
     }
 
     @SuppressWarnings("SameParameterValue")
-    private ArgumentMatcher<DomainEventMessage<?>> event(final Object aggregateIdentifier, final long i) {
+    private ArgumentMatcher<DomainEventMessage> event(final Object aggregateIdentifier, final long i) {
         return x -> aggregateIdentifier.equals(x.getAggregateIdentifier()) && x.getSequenceNumber() == i;
     }
 
@@ -237,14 +237,14 @@ class AbstractSnapshotterTest {
         }
 
         @Override
-        protected DomainEventMessage<?> createSnapshot(Class<?> aggregateType,
+        protected DomainEventMessage createSnapshot(Class<?> aggregateType,
                                                        String aggregateIdentifier,
                                                        DomainEventStream eventStream) {
             long lastIdentifier = getLastIdentifierFrom(eventStream);
             if (lastIdentifier <= 0) {
                 return null;
             }
-            return new GenericDomainEventMessage<>("test", aggregateIdentifier, lastIdentifier,
+            return new GenericDomainEventMessage("test", aggregateIdentifier, lastIdentifier,
                                                    new MessageType("event"), "Mock contents");
         }
 

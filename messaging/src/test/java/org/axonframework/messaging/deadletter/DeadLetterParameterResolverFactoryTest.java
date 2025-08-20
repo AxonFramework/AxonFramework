@@ -88,10 +88,10 @@ class DeadLetterParameterResolverFactoryTest {
 
     @Test
     void resolverMatchesForAnyMessageType() {
-        CommandMessage<Object> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), "some-command");
-        EventMessage<Object> testEvent = EventTestUtils.asEventMessage("some-command");
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+        CommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), "some-command");
+        EventMessage testEvent = EventTestUtils.asEventMessage("some-command");
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "some-query", instanceOf(String.class)
         );
 
@@ -105,11 +105,11 @@ class DeadLetterParameterResolverFactoryTest {
 
     @Test
     void resolvesDeadLetterFromUnitOfWorkResources() {
-        EventMessage<String> testMessage = EventTestUtils.asEventMessage("some-event");
-        DeadLetter<EventMessage<String>> expected = new GenericDeadLetter<>(
+        EventMessage testMessage = EventTestUtils.asEventMessage("some-event");
+        DeadLetter<EventMessage> expected = new GenericDeadLetter<>(
                 "sequenceId", testMessage, new RuntimeException("some-cause")
         );
-        LegacyUnitOfWork<EventMessage<String>> uow = LegacyDefaultUnitOfWork.startAndGet(testMessage);
+        LegacyUnitOfWork<EventMessage> uow = LegacyDefaultUnitOfWork.startAndGet(testMessage);
         uow.resources().put(DeadLetter.class.getName(), expected);
 
         ParameterResolver<DeadLetter<?>> resolver =
@@ -122,7 +122,7 @@ class DeadLetterParameterResolverFactoryTest {
 
     @Test
     void resolvesNullWhenNoUnitOfWorkIsActive() {
-        Message<Object> testMessage = EventTestUtils.asEventMessage("some-event");
+        Message testMessage = EventTestUtils.asEventMessage("some-event");
 
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);
@@ -132,7 +132,7 @@ class DeadLetterParameterResolverFactoryTest {
 
     @Test
     void resolvesNullWhenNoDeadLetterIsPresentInTheUnitOfWorkResources() {
-        EventMessage<String> testMessage = EventTestUtils.asEventMessage("some-event");
+        EventMessage testMessage = EventTestUtils.asEventMessage("some-event");
         LegacyDefaultUnitOfWork.startAndGet(testMessage);
 
         ParameterResolver<DeadLetter<?>> resolver =

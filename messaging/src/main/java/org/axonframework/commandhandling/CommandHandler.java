@@ -43,6 +43,6 @@ public interface CommandHandler extends MessageHandler {
      * @return A {@code MessagesStream.Single} of a {@link CommandResultMessage}.
      */
     @Nonnull
-    MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+    MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
                                                          @Nonnull ProcessingContext context);
 }

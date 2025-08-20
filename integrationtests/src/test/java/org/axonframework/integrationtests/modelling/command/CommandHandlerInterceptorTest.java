@@ -88,15 +88,15 @@ class CommandHandlerInterceptorTest {
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptor() {
-        CommandMessage<CreateMyAggregateCommand> createCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
-        CommandMessage<UpdateMyAggregateStateCommand> updateCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new UpdateMyAggregateStateCommand("id", "state"));
+        CommandMessage createCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
+        CommandMessage updateCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new UpdateMyAggregateStateCommand("id", "state"));
 
         commandGateway.sendAndWait(createCommand);
         String result = commandGateway.sendAndWait(updateCommand, String.class);
 
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
+        ArgumentCaptor<EventMessage> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
 
         verify(eventStore, times(3)).publish(eventCaptor.capture());
         assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).payload());
@@ -112,15 +112,15 @@ class CommandHandlerInterceptorTest {
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorWithChainProceeding() {
-        CommandMessage<CreateMyAggregateCommand> createCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
-        CommandMessage<ClearMyAggregateStateCommand> updateCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new ClearMyAggregateStateCommand("id", true));
+        CommandMessage createCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
+        CommandMessage updateCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new ClearMyAggregateStateCommand("id", true));
 
         commandGateway.sendAndWait(createCommand);
         commandGateway.sendAndWait(updateCommand);
 
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
+        ArgumentCaptor<EventMessage> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(3)).publish(eventCaptor.capture());
         assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).payload());
         assertEquals(new AnyCommandInterceptedEvent(ClearMyAggregateStateCommand.class.getName()),
@@ -132,15 +132,15 @@ class CommandHandlerInterceptorTest {
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorWithoutChainProceeding() {
-        CommandMessage<CreateMyAggregateCommand> createCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
-        CommandMessage<ClearMyAggregateStateCommand> updateCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new ClearMyAggregateStateCommand("id", false));
+        CommandMessage createCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
+        CommandMessage updateCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new ClearMyAggregateStateCommand("id", false));
 
         commandGateway.sendAndWait(createCommand);
         commandGateway.sendAndWait(updateCommand);
 
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
+        ArgumentCaptor<EventMessage> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(2)).publish(eventCaptor.capture());
         assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).payload());
         assertEquals(new MyAggregateStateNotClearedEvent("id"), eventCaptor.getAllValues().get(1).payload());
@@ -150,15 +150,15 @@ class CommandHandlerInterceptorTest {
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorWithNestedEntity() {
-        CommandMessage<CreateMyAggregateCommand> createCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
-        CommandMessage<MyNestedCommand> nestedCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new MyNestedCommand("id", "state"));
+        CommandMessage createCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
+        CommandMessage nestedCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new MyNestedCommand("id", "state"));
 
         commandGateway.sendAndWait(createCommand);
         commandGateway.sendAndWait(nestedCommand);
 
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
+        ArgumentCaptor<EventMessage> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(4)).publish(eventCaptor.capture());
         assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).payload());
         assertEquals(new AnyCommandMatchingPatternInterceptedEvent(MyNestedCommand.class.getName()),
@@ -172,15 +172,15 @@ class CommandHandlerInterceptorTest {
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorWithNestedNestedEntity() {
-        CommandMessage<CreateMyAggregateCommand> createCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
-        CommandMessage<MyNestedNestedCommand> nestedCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new MyNestedNestedCommand("id", "state"));
+        CommandMessage createCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
+        CommandMessage nestedCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new MyNestedNestedCommand("id", "state"));
 
         commandGateway.sendAndWait(createCommand);
         commandGateway.sendAndWait(nestedCommand);
 
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
+        ArgumentCaptor<EventMessage> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(6)).publish(eventCaptor.capture());
         assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).payload());
         assertEquals(new AnyCommandMatchingPatternInterceptedEvent(MyNestedNestedCommand.class.getName()),
@@ -215,14 +215,14 @@ class CommandHandlerInterceptorTest {
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorThrowingAnException() {
-        CommandMessage<CreateMyAggregateCommand> createCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
-        CommandMessage<InterceptorThrowingCommand> interceptorCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new InterceptorThrowingCommand("id"));
+        CommandMessage createCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
+        CommandMessage interceptorCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new InterceptorThrowingCommand("id"));
 
         commandGateway.sendAndWait(createCommand);
         assertThrows(InterceptorException.class, () -> commandGateway.sendAndWait(interceptorCommand));
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
+        ArgumentCaptor<EventMessage> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
         verify(eventStore, times(1)).publish(eventCaptor.capture());
         assertEquals(new MyAggregateCreatedEvent("id"), eventCaptor.getAllValues().get(0).payload());
     }

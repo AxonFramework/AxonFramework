@@ -50,7 +50,7 @@ public abstract class DelegatingCommandBusConnector implements CommandBusConnect
 
     @Nonnull
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                @Nullable ProcessingContext processingContext) {
         return delegate.dispatch(command, processingContext);
     }

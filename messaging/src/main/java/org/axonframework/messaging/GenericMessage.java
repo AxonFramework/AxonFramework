@@ -43,15 +43,14 @@ import java.util.Map;
  * type-and-converter combination. If this optimization should be disabled, the {@code "AXON_CONVERSION_CACHE_ENABLED"}
  * system property can be set to {@code false}.
  *
- * @param <P> The type of {@link #payload() payload} contained in this {@link Message}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 2.0.0
  */
-public class GenericMessage<P> extends AbstractMessage<P> {
+public class GenericMessage extends AbstractMessage {
 
-    private final P payload;
-    private final Class<P> payloadType;
+    private final Object payload;
+    private final Class<?> payloadType;
     private final MetaData metaData;
 
     private final ConversionCache convertedPayloads;
@@ -62,10 +61,10 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * Uses the correlation data of the current Unit of Work, if present.
      *
      * @param type    The {@link MessageType type} for this {@link Message}.
-     * @param payload The payload of type {@code P} for this {@link Message}.
+     * @param payload The payload for this {@link Message}.
      */
     public GenericMessage(@Nonnull MessageType type,
-                          @Nullable P payload) {
+                          @Nullable Object payload) {
         this(type, payload, MetaData.emptyInstance());
     }
 
@@ -76,11 +75,11 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * Work, if present. In case the {@code payload == null}, {@link Void} will be used as the {@code payloadType}.
      *
      * @param type     The {@link MessageType type} for this {@link Message}.
-     * @param payload  The payload of type {@code P} for this {@link Message}.
+     * @param payload  The payload for this {@link Message}.
      * @param metaData The metadata for this {@link Message}.
      */
     public GenericMessage(@Nonnull MessageType type,
-                          @Nullable P payload,
+                          @Nullable Object payload,
                           @Nonnull Map<String, String> metaData) {
         this(type, payload, getDeclaredPayloadType(payload), metaData);
     }
@@ -92,15 +91,16 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * The given {@code metaData} is merged with the MetaData from the correlation data of the current Unit of Work, if
      * present.
      *
+     * @param <P>                 The generic type of the expected payload of the resulting object.
      * @param type                The {@link MessageType type} for this {@link Message}.
      * @param payload             The payload of type {@code P} for this {@link Message}.
      * @param declaredPayloadType The declared type of the {@code payload} of this {@link Message}.
      * @param metaData            The metadata for this {@link Message}.
      */
-    public GenericMessage(@Nonnull MessageType type,
-                          @Nullable P payload,
-                          @Nonnull Class<P> declaredPayloadType,
-                          @Nonnull Map<String, ?> metaData) {
+    public <P> GenericMessage(@Nonnull MessageType type,
+                              @Nullable P payload,
+                              @Nonnull Class<P> declaredPayloadType,
+                              @Nonnull Map<String, ?> metaData) {
         this(IdentifierFactory.getInstance().generateIdentifier(),
              type,
              payload,
@@ -118,12 +118,12 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      *
      * @param identifier The identifier of this {@link Message}.
      * @param type       The {@link MessageType type} for this {@link Message}.
-     * @param payload    The payload of type {@code P} for this {@link Message}.
+     * @param payload    The payload for this {@link Message}.
      * @param metaData   The metadata for this {@link Message}.
      */
     public GenericMessage(@Nonnull String identifier,
                           @Nonnull MessageType type,
-                          @Nullable P payload,
+                          @Nullable Object payload,
                           @Nonnull Map<String, String> metaData) {
         this(identifier, type, payload, getDeclaredPayloadType(payload), metaData);
     }
@@ -136,17 +136,18 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * of Work. If you in tend to construct a new {@code GenericMessage}, please use
      * {@link #GenericMessage(MessageType, Object)} instead.
      *
+     * @param <P>                 The generic type of the expected payload of the resulting object.
      * @param identifier          The identifier of this {@link Message}.
      * @param type                The {@link MessageType type} for this {@link Message}.
      * @param payload             The payload of type {@code P} for this {@link Message}.
      * @param declaredPayloadType The declared type of the {@code payload} of this {@link Message}.
      * @param metaData            The metadata for this {@link Message}.
      */
-    public GenericMessage(@Nonnull String identifier,
-                          @Nonnull MessageType type,
-                          @Nullable P payload,
-                          @Nonnull Class<P> declaredPayloadType,
-                          @Nonnull Map<String, String> metaData) {
+    public <P> GenericMessage(@Nonnull String identifier,
+                              @Nonnull MessageType type,
+                              @Nullable P payload,
+                              @Nonnull Class<P> declaredPayloadType,
+                              @Nonnull Map<String, String> metaData) {
         super(identifier, type);
         this.payload = payload;
         this.payloadType = declaredPayloadType;
@@ -154,7 +155,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
         this.convertedPayloads = new ConversionCache(payload);
     }
 
-    private GenericMessage(@Nonnull GenericMessage<P> original,
+    private GenericMessage(@Nonnull GenericMessage original,
                            @Nonnull MetaData metaData) {
         super(original.identifier(), original.type());
         this.payload = original.payload();
@@ -180,13 +181,13 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * @return A message with {@code null} {@link Message#payload()}, no {@link MetaData}, and a {@link Message#type()}
      * of {@code "empty"}.
      */
-    public static Message<Void> emptyMessage() {
-        return new GenericMessage<>(new MessageType("empty"), null);
+    public static Message emptyMessage() {
+        return new GenericMessage(new MessageType("empty"), null);
     }
 
     @Override
     @Nullable
-    public P payload() {
+    public Object payload() {
         return this.payload;
     }
 
@@ -207,7 +208,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
 
     @Override
     @Nonnull
-    public Class<P> payloadType() {
+    public Class<?> payloadType() {
         return this.payloadType;
     }
 
@@ -219,18 +220,18 @@ public class GenericMessage<P> extends AbstractMessage<P> {
 
     @Override
     @Nonnull
-    protected Message<P> withMetaData(MetaData metaData) {
-        return new GenericMessage<>(this, metaData);
+    protected Message withMetaData(MetaData metaData) {
+        return new GenericMessage(this, metaData);
     }
 
     @Override
     @Nonnull
-    public <T> Message<T> withConvertedPayload(@Nonnull Type type,
-                                               @Nonnull Converter converter) {
-        T convertedPayload = payloadAs(type, converter);
-        //noinspection unchecked
+    public Message withConvertedPayload(@Nonnull Type type,
+                                        @Nonnull Converter converter) {
+        Object convertedPayload = payloadAs(type, converter);
+
         return ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())
-                ? (Message<T>) this
-                : new GenericMessage<>(identifier(), type(), convertedPayload, metaData());
+                ? (Message) this
+                : new GenericMessage(identifier(), type(), convertedPayload, metaData());
     }
 }

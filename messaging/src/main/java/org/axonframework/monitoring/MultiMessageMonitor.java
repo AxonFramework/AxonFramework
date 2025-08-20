@@ -31,7 +31,7 @@ import jakarta.annotation.Nonnull;
  * @author Marijn van Zelst
  * @since 3.0
  */
-public class MultiMessageMonitor<T extends Message<?>> implements MessageMonitor<T> {
+public class MultiMessageMonitor<T extends Message> implements MessageMonitor<T> {
 
     private final List<MessageMonitor<? super T>> messageMonitors;
 

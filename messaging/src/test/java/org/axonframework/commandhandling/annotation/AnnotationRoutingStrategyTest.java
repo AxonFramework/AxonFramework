@@ -39,12 +39,12 @@ class AnnotationRoutingStrategyTest {
 
     @Test
     void getRoutingKeyFromField() {
-        CommandMessage<SomeFieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(
+        CommandMessage testCommand = new GenericCommandMessage(
                 new MessageType(SomeFieldAnnotatedCommand.class), new SomeFieldAnnotatedCommand()
         );
         assertEquals("Target", testSubject.getRoutingKey(testCommand));
 
-        CommandMessage<SomeOtherFieldAnnotatedCommand> otherTestCommand = new GenericCommandMessage<>(
+        CommandMessage otherTestCommand = new GenericCommandMessage(
                 new MessageType(SomeOtherFieldAnnotatedCommand.class), new SomeOtherFieldAnnotatedCommand()
         );
         assertEquals("Target", testSubject.getRoutingKey(otherTestCommand));
@@ -52,12 +52,12 @@ class AnnotationRoutingStrategyTest {
 
     @Test
     void getRoutingKeyFromMethod() {
-        CommandMessage<SomeMethodAnnotatedCommand> testCommand = new GenericCommandMessage<>(
+        CommandMessage testCommand = new GenericCommandMessage(
                 new MessageType(SomeMethodAnnotatedCommand.class), new SomeMethodAnnotatedCommand()
         );
         assertEquals("Target", testSubject.getRoutingKey(testCommand));
 
-        CommandMessage<SomeOtherMethodAnnotatedCommand> otherTestCommand = new GenericCommandMessage<>(
+        CommandMessage otherTestCommand = new GenericCommandMessage(
                 new MessageType(SomeOtherMethodAnnotatedCommand.class), new SomeOtherMethodAnnotatedCommand()
         );
 
@@ -69,7 +69,7 @@ class AnnotationRoutingStrategyTest {
         AnnotationRoutingStrategy testSubjectWithMockedFallbackStrategy =
                 new AnnotationRoutingStrategy();
 
-        CommandMessage<SomeFieldAnnotatedCommand> testCommand = new GenericCommandMessage<>(
+        CommandMessage testCommand = new GenericCommandMessage(
                 new MessageType(SomeFieldAnnotatedCommand.class), new SomeFieldAnnotatedCommand()
         );
 
@@ -81,7 +81,7 @@ class AnnotationRoutingStrategyTest {
         AnnotationRoutingStrategy testSubjectWithMockedFallbackStrategy =
                 new AnnotationRoutingStrategy();
 
-        CommandMessage<SomeCommandWithoutTheRoutingAnnotation> testCommand = new GenericCommandMessage<>(
+        CommandMessage testCommand = new GenericCommandMessage(
                 new MessageType(SomeCommandWithoutTheRoutingAnnotation.class),
                 new SomeCommandWithoutTheRoutingAnnotation("target")
         );

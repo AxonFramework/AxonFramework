@@ -32,7 +32,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class EmptyMessageStream implements MessageStream.Empty<Message<Void>> {
+class EmptyMessageStream implements MessageStream.Empty<Message> {
 
     private static final EmptyMessageStream INSTANCE = new EmptyMessageStream();
 
@@ -45,22 +45,22 @@ class EmptyMessageStream implements MessageStream.Empty<Message<Void>> {
      *
      * @return The singular instance of the {@code EmptyMessageStream} to be used throughout.
      */
-    public static Empty<Message<Void>> instance() {
+    public static Empty<Message> instance() {
         return INSTANCE;
     }
 
     @Override
-    public CompletableFuture<Entry<Message<Void>>> asCompletableFuture() {
+    public CompletableFuture<Entry<Message>> asCompletableFuture() {
         return FutureUtils.emptyCompletedFuture();
     }
 
     @Override
-    public Flux<Entry<Message<Void>>> asFlux() {
+    public Flux<Entry<Message>> asFlux() {
         return Flux.empty();
     }
 
     @Override
-    public Optional<Entry<Message<Void>>> next() {
+    public Optional<Entry<Message>> next() {
         return Optional.empty();
     }
 
@@ -90,17 +90,17 @@ class EmptyMessageStream implements MessageStream.Empty<Message<Void>> {
     }
 
     @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, Entry<Message<Void>>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, Entry<Message>, R> accumulator) {
         return CompletableFuture.completedFuture(identity);
     }
 
     @Override
-    public MessageStream<Message<Void>> onErrorContinue(@Nonnull Function<Throwable, MessageStream<Message<Void>>> onError) {
+    public MessageStream<Message> onErrorContinue(@Nonnull Function<Throwable, MessageStream<Message>> onError) {
         return this;
     }
 
     @Override
-    public Empty<Message<Void>> whenComplete(@Nonnull Runnable completeHandler) {
+    public Empty<Message> whenComplete(@Nonnull Runnable completeHandler) {
         try {
             completeHandler.run();
             return this;
@@ -110,7 +110,7 @@ class EmptyMessageStream implements MessageStream.Empty<Message<Void>> {
     }
 
     @Override
-    public Optional<Entry<Message<Void>>> peek() {
+    public Optional<Entry<Message>> peek() {
         return Optional.empty();
     }
 }

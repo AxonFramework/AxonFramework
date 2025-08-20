@@ -259,7 +259,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     private static AggregateBasedEventEntry mapToEntry(TaggedEventMessage<?> taggedEvent,
                                                        AggregateSequencer aggregateSequencer,
                                                        Converter converter) {
-        EventMessage<?> event = taggedEvent.event();
+        EventMessage event = taggedEvent.event();
         Set<Tag> tags = taggedEvent.tags();
         String aggregateIdentifier = resolveAggregateIdentifier(tags);
         return new AggregateBasedEventEntry(
@@ -276,7 +276,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
         CompletableFuture<Void> endOfStreams = new CompletableFuture<>();
         List<AggregateSource> aggregateSources = condition.criteria()
                                                           .flatten()
@@ -314,7 +314,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                 finalBatchPredicate
         );
 
-        MessageStream<EventMessage<?>> source =
+        MessageStream<EventMessage> source =
                 MessageStream.fromStream(StreamSupport.stream(entrySpliterator, false),
                                          this::convertToEventMessage,
                                          entry -> setMarkerAndBuildContext(entry, markerReference))
@@ -354,7 +354,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
         GapAwareTrackingToken trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
         StreamSpliterator<? extends TokenAndEvent> entrySpliterator = new StreamSpliterator<>(
                 lastItem -> queryTokensAndEventsBy(lastItem == null ? trackingToken : lastItem.token()),
@@ -436,12 +436,12 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                 : Collections.emptySortedSet();
     }
 
-    private GenericEventMessage<?> convertToEventMessage(AggregateBasedEventEntry event) {
-        return new GenericEventMessage<>(event.identifier(),
-                                         new MessageType(event.type(), event.version()),
-                                         event.payload(),
-                                         converter.convert(event.metaData(), METADATA_MAP_TYPE_REF.getType()),
-                                         event.timestamp());
+    private GenericEventMessage convertToEventMessage(AggregateBasedEventEntry event) {
+        return new GenericEventMessage(event.identifier(),
+                                       new MessageType(event.type(), event.version()),
+                                       event.payload(),
+                                       converter.convert(event.metaData(), METADATA_MAP_TYPE_REF.getType()),
+                                       event.timestamp());
     }
 
     private static Context buildTrackedContext(@Nonnull TokenAndEvent tokenAndEvent) {
@@ -513,7 +513,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
      */
     private record AggregateSource(
             AtomicReference<AggregateBasedConsistencyMarker> markerReference,
-            MessageStream<EventMessage<?>> source
+            MessageStream<EventMessage> source
     ) {
 
     }

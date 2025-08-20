@@ -88,15 +88,15 @@ public class StubEventScheduler implements EventScheduler {
 
 
     @SuppressWarnings("unchecked")
-    private static <P> EventMessage<P> asEventMessage(Object event) {
+    private static <P> EventMessage asEventMessage(Object event) {
         if (event instanceof EventMessage) {
-            return (EventMessage<P>) event;
+            return (EventMessage) event;
         } else if (event instanceof Message) {
-            Message<P> message = (Message<P>) event;
-            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+            Message message = (Message) event;
+            return new GenericEventMessage(message, () -> GenericEventMessage.clock.instant());
         }
-        return new GenericEventMessage<>(
-                new GenericMessage<>(new MessageType(event.getClass()), (P) event),
+        return new GenericEventMessage(
+                new GenericMessage(new MessageType(event.getClass()), (P) event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -170,7 +170,7 @@ public class StubEventScheduler implements EventScheduler {
      * @param newDateTime   The time to advance the "current time" of the scheduler to
      * @param eventConsumer The function to invoke for each event to trigger
      */
-    public void advanceTimeTo(Instant newDateTime, EventConsumer<EventMessage<?>> eventConsumer) {
+    public void advanceTimeTo(Instant newDateTime, EventConsumer<EventMessage> eventConsumer) {
         while (!scheduledEvents.isEmpty() && !scheduledEvents.first().getScheduleTime().isAfter(newDateTime)) {
             eventConsumer.accept(advanceToNextTrigger());
         }
@@ -186,7 +186,7 @@ public class StubEventScheduler implements EventScheduler {
      * @param duration      The amount of time to advance the "current time" of the scheduler with
      * @param eventConsumer The function to invoke for each event to trigger
      */
-    public void advanceTimeBy(Duration duration, EventConsumer<EventMessage<?>> eventConsumer) {
+    public void advanceTimeBy(Duration duration, EventConsumer<EventMessage> eventConsumer) {
         advanceTimeTo(currentDateTime.plus(duration), eventConsumer);
     }
 }

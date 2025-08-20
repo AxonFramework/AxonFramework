@@ -36,7 +36,7 @@ public interface ChildEntity<T> {
      * @param msg               the message to publish
      * @param declaringInstance the instance of this entity to invoke handlers on
      */
-    void publish(EventMessage<?> msg, T declaringInstance);
+    void publish(EventMessage msg, T declaringInstance);
 
     /**
      * Returns the command handlers declared in this entity.

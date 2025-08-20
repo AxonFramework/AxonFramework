@@ -113,7 +113,7 @@ class AggregateBasedJpaEventStorageEngineTest
     }
 
     @Override
-    protected EventMessage<String> convertPayload(EventMessage<?> original) {
+    protected EventMessage convertPayload(EventMessage original) {
         return original.withConvertedPayload(String.class, converter);
     }
 
@@ -269,7 +269,7 @@ class AggregateBasedJpaEventStorageEngineTest
                                     .collect(toList());
         GapAwareTrackingToken startPosition = GapAwareTrackingToken.newInstance(secondLastEventIndex, gaps);
 
-        MessageStream<EventMessage<?>> eventStream =
+        MessageStream<EventMessage> eventStream =
                 gapConfigTestSubject.stream(StreamingCondition.startingFrom(startPosition));
         assertThat(eventStream.hasNextAvailable()).isTrue();
         TrackingToken token = eventStream.next()

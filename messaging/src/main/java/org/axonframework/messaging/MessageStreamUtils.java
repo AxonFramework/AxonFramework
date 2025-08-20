@@ -47,7 +47,7 @@ public abstract class MessageStreamUtils {
      * @param <M>    The type of Message returned by the source.
      * @return A Flux with the elements provided by the source.
      */
-    public static <M extends Message<?>> Flux<MessageStream.Entry<M>> asFlux(@Nonnull MessageStream<M> source) {
+    public static <M extends Message> Flux<MessageStream.Entry<M>> asFlux(@Nonnull MessageStream<M> source) {
         return Flux.create(emitter -> {
             FluxStreamAdapter<M> fluxTask = new FluxStreamAdapter<>(source, emitter);
             emitter.onRequest(i -> fluxTask.process());
@@ -80,7 +80,7 @@ public abstract class MessageStreamUtils {
      * @param <R>         The type of result expected from the reduction operation.
      * @return A {@code CompletableFuture} that completes with the result of the reduction operation.
      */
-    public static <M extends Message<?>, R> CompletableFuture<R> reduce(@Nonnull MessageStream<M> source,
+    public static <M extends Message, R> CompletableFuture<R> reduce(@Nonnull MessageStream<M> source,
                                                                         @Nonnull R identity,
                                                                         @Nonnull BiFunction<R, MessageStream.Entry<M>, R> accumulator) {
         Reducer<M, R> reducer = new Reducer<>(source, identity, accumulator);
@@ -104,7 +104,7 @@ public abstract class MessageStreamUtils {
      * @return A {@code CompletableFuture} that completes with the first {@link MessageStream.Entry entry} from the
      * stream.
      */
-    public static <M extends Message<?>> CompletableFuture<MessageStream.Entry<M>> asCompletableFuture(
+    public static <M extends Message> CompletableFuture<MessageStream.Entry<M>> asCompletableFuture(
             @Nonnull MessageStream<M> source
     ) {
         FirstResult<M> firstResult = new FirstResult<>(source);
@@ -112,7 +112,7 @@ public abstract class MessageStreamUtils {
         return firstResult.result();
     }
 
-    private static class FluxStreamAdapter<M extends Message<?>> {
+    private static class FluxStreamAdapter<M extends Message> {
 
         private final AtomicBoolean processingGate = new AtomicBoolean(false);
         private final MessageStream<M> source;
@@ -144,7 +144,7 @@ public abstract class MessageStreamUtils {
         }
     }
 
-    private static class Reducer<M extends Message<?>, R> {
+    private static class Reducer<M extends Message, R> {
 
 
         private final CompletableFuture<R> result;
@@ -190,7 +190,7 @@ public abstract class MessageStreamUtils {
         }
     }
 
-    private static class FirstResult<M extends Message<?>> {
+    private static class FirstResult<M extends Message> {
 
         private final MessageStream<M> source;
         private final AtomicBoolean processingGate = new AtomicBoolean(false);

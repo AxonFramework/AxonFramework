@@ -42,7 +42,7 @@ import jakarta.annotation.Nullable;
  * @author Allard Buijze
  * @since 0.6
  */
-public class LoggingInterceptor<T extends Message<?>>
+public class LoggingInterceptor<T extends Message>
         implements MessageDispatchInterceptor<T>, MessageHandlerInterceptor<T> {
 
     private final Logger logger;
@@ -69,7 +69,7 @@ public class LoggingInterceptor<T extends Message<?>>
     }
 
     @Override
-    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnDispatch(@Nonnull M message,
+    public <M extends T, R extends Message> MessageStream<R> interceptOnDispatch(@Nonnull M message,
                                                                                     @Nullable ProcessingContext context,
                                                                                     @Nonnull InterceptorChain<M, R> interceptorChain) {
         logger.info("Dispatched message: [{}]", message.type().name());
@@ -77,7 +77,7 @@ public class LoggingInterceptor<T extends Message<?>>
     }
 
     @Override
-    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
+    public <M extends T, R extends Message> MessageStream<R> interceptOnHandle(@Nonnull M message,
                                                                                   @Nonnull ProcessingContext context,
                                                                                   @Nonnull InterceptorChain<M, R> interceptorChain) {
         logger.info("Incoming message: [{}]", message.type().name());

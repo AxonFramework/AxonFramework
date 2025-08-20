@@ -35,9 +35,9 @@ import static java.util.Collections.singletonMap;
 public class AggregateIdentifierSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message<?> message) {
+    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message message) {
         if (message instanceof DomainEventMessage) {
-            DomainEventMessage<?> domainEventMessage = (DomainEventMessage<?>) message;
+            DomainEventMessage domainEventMessage = (DomainEventMessage) message;
             return singletonMap("axon_aggregate_identifier", domainEventMessage.getAggregateIdentifier());
         }
         return emptyMap();

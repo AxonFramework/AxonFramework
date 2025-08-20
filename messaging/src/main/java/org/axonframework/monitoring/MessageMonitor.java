@@ -38,7 +38,7 @@ import jakarta.annotation.Nonnull;
  * @since 3.0
  */
 @Deprecated
-public interface MessageMonitor<T extends Message<?>> {
+public interface MessageMonitor<T extends Message> {
 
     /**
      * Takes a message and returns a callback that should be used to inform the message monitor about the result of

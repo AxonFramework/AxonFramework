@@ -32,7 +32,7 @@ import jakarta.annotation.Nonnull;
 public class MessageTypeSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message<?> message) {
+    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message message) {
         return Collections.singletonMap("axon_message_type", message.getClass().getSimpleName());
     }
 }

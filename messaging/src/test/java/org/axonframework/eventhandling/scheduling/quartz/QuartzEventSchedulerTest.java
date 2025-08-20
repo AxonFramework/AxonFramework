@@ -225,7 +225,7 @@ class QuartzEventSchedulerTest {
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
-    private EventMessage<Object> buildTestEvent() {
-        return new GenericEventMessage<>(new MessageType("message"), "test-event");
+    private EventMessage buildTestEvent() {
+        return new GenericEventMessage(new MessageType("message"), "test-event");
     }
 }
