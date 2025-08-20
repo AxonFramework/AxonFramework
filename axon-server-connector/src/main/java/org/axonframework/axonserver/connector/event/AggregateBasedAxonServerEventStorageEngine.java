@@ -82,9 +82,9 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
      * @param converter The converter to use to serialize payloads to bytes
      */
     public AggregateBasedAxonServerEventStorageEngine(@Nonnull AxonServerConnection connection,
-                                                      @Nonnull Converter payloadConverter) {
-        this.connection = connection;
-        this.payloadConverter = payloadConverter;
+                                                      @Nonnull Converter converter) {
+        this.connection = Objects.requireNonNull(connection, "The connection must not be null.");
+        this.converter = Objects.requireNonNull(converter, "The converter must not be null.");
     }
 
     @Override
