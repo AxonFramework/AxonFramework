@@ -68,7 +68,8 @@ public class JacksonConverter implements Converter {
      * Constructs a {@code JacksonConverter} with the given {@code objectMapper} and {@code converter}.
      * <p>
      * This constructor should only be used when a specific {@link ClassLoader} should be give to the
-     * {@link ChainingContentTypeConverter}.
+     * {@link ChainingContentTypeConverter} to ensure it loads the right set of
+     * {@link org.axonframework.serialization.ContentTypeConverter ContentTypeConverters}.
      *
      * @param objectMapper The mapper used to convert objects into and from a JSON format.
      * @param converter    The converter used for simpler conversions.

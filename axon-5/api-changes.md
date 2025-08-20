@@ -1377,11 +1377,13 @@ This section contains five tables:
 | org.axonframework.serialization.CannotConvertBetweenTypesException                                     | org.axonframework.serialization.ConversionException                              | No                               |
 | org.axonframework.commandhandling.distributed.CommandDispatchException                                 | org.axonframework.commandhandling.CommandDispatchException                       | No                               |
 | org.axonframework.axonserver.connector.command.CommandPriorityCalculator                               | org.axonframework.commandhandling.CommandPriorityCalculator                      | Yes. Moved to `axon-messaging`   |
-| org.axonframework.co| org.axonframework.serialization.json.JacksonSerializer                                                 | org.axonframework.serialization.json.JacksonConverter                            | No                             |mmandhandling.distribute.MetaDataRoutingStrategy                                   | org.axonframework.commandhandling.MetaDataRoutingStrategy                        | Yes. Moved to `axon-messaging`   |
+| org.axonframework.commandhandling.distribute.MetaDataRoutingStrategy                                   | org.axonframework.commandhandling.MetaDataRoutingStrategy                        | Yes. Moved to `axon-messaging`   |
 | org.axonframework.commandhandling.distribute.RoutingStrategy                                           | org.axonframework.commandhandling.RoutingStrategy                                | Yes. Moved to `axon-messaging`   |
 | org.axonframework.commandhandling.distribute.UnresolvedRoutingKeyPolicy                                | org.axonframework.commandhandling.UnresolvedRoutingKeyPolicy                     | Yes. Moved to `axon-messaging`   |
 | org.axonframework.commandhandling.distribute.AnnotationRoutingStrategy                                 | org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy           | Yes. Moved to `axon-messaging`   |
 | org.axonframework.serialization.json.JacksonSerializer                                                 | org.axonframework.serialization.json.JacksonConverter                            | No                               |
+| org.axonframework.springboot.SerializerProperties                                                      | org.axonframework.springboot.ConverterProperties                                 | No                               |
+| org.axonframework.springboot.SerializerProperties.SerializerType                                       | org.axonframework.springboot.ConverterProperties.ConverterType                   | No                               |
 
 ### Removed Classes
 

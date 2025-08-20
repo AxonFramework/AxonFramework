@@ -162,21 +162,6 @@ public class ConverterProperties {
          */
         AVRO,
         /**
-         * Uses the XStream based serializer, which is the default serializer. This serializer will serialize an object
-         * into XML. The serialized format is not highly interoperable, but the XStream based serializer is capable of
-         * serializing just about any object. This makes it a very suitable implementation to use as the "general
-         * serializer".
-         */
-        XSTREAM,
-        /**
-         * Uses Jackson's {@link com.fasterxml.jackson.databind.ObjectMapper} to convert objects into JSON.
-         * <p>
-         * Provides highly interoperable JSON output, but does require the objects to adhere to a certain structure. The
-         * Jackson based serializer is generally suitable as a <b>messages</b>
-         * {@link org.axonframework.serialization.Converter}.
-         */
-        JACKSON,
-        /**
          * Uses Jackson's {@link com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper} to convert objects into
          * CBOR.
          * <p>
@@ -185,6 +170,14 @@ public class ConverterProperties {
          * converting the {@code byte[]} to a {@code String} will corrupt the data.
          */
         CBOR,
+        /**
+         * Uses Jackson's {@link com.fasterxml.jackson.databind.ObjectMapper} to convert objects into JSON.
+         * <p>
+         * Provides highly interoperable JSON output, but does require the objects to adhere to a certain structure. The
+         * Jackson based serializer is generally suitable as a <b>messages</b>
+         * {@link org.axonframework.serialization.Converter}.
+         */
+        JACKSON,
         /**
          * Defines that the default serializer should be used.
          * <p>
