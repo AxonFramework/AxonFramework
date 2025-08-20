@@ -35,8 +35,8 @@ import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
@@ -47,7 +47,6 @@ import org.junit.jupiter.api.*;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -67,6 +66,7 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
             new GenericCommandResultMessage<>(new MessageType("empty"), "successful");
 
     protected CommandGateway commandGateway;
+    protected UnitOfWorkFactory unitOfWorkFactory;
 
     private CommandHandlingModule.CommandHandlerPhase commandHandlingModule;
     private EventSourcedEntityModule<String, Course> courseEntity;
@@ -123,8 +123,7 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
     protected void startApp() {
         super.startApp();
         commandGateway = startedConfiguration.getComponent(CommandGateway.class);
-
-        Configuration moduleConfig = startedConfiguration.getModuleConfigurations().getFirst();
+        unitOfWorkFactory = startedConfiguration.getComponent(UnitOfWorkFactory.class);
     }
 
     /**
@@ -199,7 +198,7 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
     }
 
     protected void verifyStudentName(String id, String name) {
-        UnitOfWork uow = aUnitOfWork();
+        UnitOfWork uow = unitOfWorkFactory.create();
         uow.executeWithResult(context -> context.component(StateManager.class)
                                                 .repository(Student.class, String.class)
                                                 .load(id, context)
@@ -209,7 +208,7 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
     }
 
     protected void verifyStudentEnrolledInCourse(String id, String courseId) {
-        UnitOfWork uow = aUnitOfWork();
+        UnitOfWork uow = unitOfWorkFactory.create();
         uow.executeWithResult(context -> context.component(StateManager.class)
                                                 .repository(Student.class, String.class)
                                                 .load(id, context)
