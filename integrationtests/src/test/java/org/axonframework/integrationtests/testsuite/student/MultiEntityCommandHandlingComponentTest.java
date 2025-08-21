@@ -37,7 +37,6 @@ import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.*;
 
 import java.util.concurrent.ExecutionException;
 
@@ -49,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
+class MultiEntityCommandHandlingComponentTest extends AbstractCommandHandlingStudentTestSuite {
 
     @Test
     void canCombineModelsInAnnotatedCommandHandlerViaStateManagerParameter() {

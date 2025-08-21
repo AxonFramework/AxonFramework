@@ -40,12 +40,10 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -68,7 +66,6 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
     protected CommandGateway commandGateway;
     protected UnitOfWorkFactory unitOfWorkFactory;
 
-    private CommandHandlingModule.CommandHandlerPhase commandHandlingModule;
     private EventSourcedEntityModule<String, Course> courseEntity;
     private EventSourcedEntityModule<String, Student> studentEntity;
 
@@ -91,30 +88,14 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
                 .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(Course::new))
                 .criteriaResolver(this::courseCriteriaResolver)
                 .build();
-
-        commandHandlingModule = CommandHandlingModule.named("student-course-module")
-                                                     .commandHandlers();
     }
 
     @Override
     protected ApplicationConfigurer createConfigurer() {
         var configurer = EventSourcingConfigurer.create()
                                                 .componentRegistry(cr -> cr.registerModule(studentEntity))
-                                                .componentRegistry(cr -> cr.registerModule(courseEntity))
-                                                .registerCommandHandlingModule(commandHandlingModule);
+                                                .componentRegistry(cr -> cr.registerModule(courseEntity));
         return testSuiteConfigurer(configurer);
-    }
-
-    /**
-     * Test suite implementations can invoke this method to register additional command handlers.
-     *
-     * @param handlerConfigurer The command handler phase of the {@link CommandHandlingModule}, allowing for command
-     *                          handler registration.
-     */
-    protected void registerCommandHandlers(
-            @Nonnull Consumer<CommandHandlingModule.CommandHandlerPhase> handlerConfigurer
-    ) {
-        commandHandlingModule.commandHandlers(handlerConfigurer);
     }
 
     /**
