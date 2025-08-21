@@ -63,7 +63,6 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
     protected static final GenericCommandResultMessage<String> SUCCESSFUL_COMMAND_RESULT =
             new GenericCommandResultMessage<>(new MessageType("empty"), "successful");
 
-    protected CommandGateway commandGateway;
     protected UnitOfWorkFactory unitOfWorkFactory;
 
     private EventSourcedEntityModule<String, Course> courseEntity;
@@ -103,7 +102,6 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
      */
     protected void startApp() {
         super.startApp();
-        commandGateway = startedConfiguration.getComponent(CommandGateway.class);
         unitOfWorkFactory = startedConfiguration.getComponent(UnitOfWorkFactory.class);
     }
 
@@ -160,22 +158,6 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
         return new AnnotationBasedEntityEvolvingComponent<>(Student.class,
                                                             config.getComponent(Converter.class),
                                                             config.getComponent(MessageTypeResolver.class));
-    }
-
-    protected void changeStudentName(String studentId, String name) {
-        sendCommand(new ChangeStudentNameCommand(studentId, name));
-    }
-
-    protected void enrollStudentToCourse(String studentId, String courseId) {
-        sendCommand(new EnrollStudentToCourseCommand(studentId, courseId));
-    }
-
-    protected <T> void sendCommand(T payload) {
-        commandGateway.sendAndWait(payload);
-    }
-
-    protected <T, R> R sendCommand(T payload, Class<R> expectedResultType) {
-        return commandGateway.sendAndWait(payload, expectedResultType);
     }
 
     protected void verifyStudentName(String id, String name) {

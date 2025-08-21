@@ -18,7 +18,10 @@ package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
+import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 
 import java.util.function.Consumer;
 
@@ -36,10 +39,18 @@ public abstract class AbstractCommandHandlingStudentTestSuite extends AbstractSt
     private final CommandHandlingModule.CommandHandlerPhase commandHandlingModule = CommandHandlingModule.named("student-course-module")
             .commandHandlers();
 
+    protected CommandGateway commandGateway;
+
     @Override
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
         return super.testSuiteConfigurer(configurer)
                 .registerCommandHandlingModule(commandHandlingModule);
+    }
+
+    @Override
+    protected void startApp() {
+        super.startApp();
+        commandGateway = startedConfiguration.getComponent(CommandGateway.class);
     }
 
     /**
@@ -52,5 +63,21 @@ public abstract class AbstractCommandHandlingStudentTestSuite extends AbstractSt
             @Nonnull Consumer<CommandHandlingModule.CommandHandlerPhase> handlerConfigurer
     ) {
         commandHandlingModule.commandHandlers(handlerConfigurer);
+    }
+
+    protected void changeStudentName(String studentId, String name) {
+        sendCommand(new ChangeStudentNameCommand(studentId, name));
+    }
+
+    protected void enrollStudentToCourse(String studentId, String courseId) {
+        sendCommand(new EnrollStudentToCourseCommand(studentId, courseId));
+    }
+
+    protected <T> void sendCommand(T payload) {
+        commandGateway.sendAndWait(payload);
+    }
+
+    protected <T, R> R sendCommand(T payload, Class<R> expectedResultType) {
+        return commandGateway.sendAndWait(payload, expectedResultType);
     }
 }
