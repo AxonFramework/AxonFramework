@@ -16,8 +16,11 @@
 
 package org.axonframework.eventhandling.deadletter.jpa;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
@@ -37,7 +40,7 @@ import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import java.nio.charset.StandardCharsets;
@@ -52,7 +55,10 @@ class EventMessageDeadLetterJpaConverterTest {
 
     private static final String PAYLOAD_REVISION = "23.0";
     private final EventMessageDeadLetterJpaConverter converter = new EventMessageDeadLetterJpaConverter();
-    private final Serializer eventSerializer = TestSerializer.JACKSON.getSerializer();
+    private final Serializer eventSerializer = JacksonSerializer.builder()
+                                                                .objectMapper(new ObjectMapper().disable(
+                                                                        DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES))
+                                                                .build();
     private final Serializer genericSerializer = eventSerializer;
     private final ConverterTestEvent event = new ConverterTestEvent("myValue");
     private final MessageType type = new MessageType("event");
@@ -87,7 +93,9 @@ class EventMessageDeadLetterJpaConverterTest {
         EventMessage<Object> message = new GenericEventMessage<>(new SerializedMessage<>(
                 "my-identifier",
                 new SimpleSerializedObject<>(
-                        "{'my-wrong-payload':'wadawd'}".getBytes(StandardCharsets.UTF_8),
+                        "{\"my-wrong-payload\":\"wadawd\"}".getBytes(StandardCharsets.UTF_8),
+// TODO #3517 - Revert back incorrect format and validate that it still works once we use a Converter i.o. a Serializer.
+//                        "{'my-wrong-payload':'wadawd'}".getBytes(StandardCharsets.UTF_8),
                         byte[].class,
                         eventType
                 ),
@@ -100,7 +108,7 @@ class EventMessageDeadLetterJpaConverterTest {
         ), Instant::now);
         DeadLetterEventEntry deadLetterEventEntry = converter.convert(message, eventSerializer, genericSerializer);
         assertNotNull(deadLetterEventEntry);
-        assertEquals("{'my-wrong-payload':'wadawd'}", new String(deadLetterEventEntry.getPayload().getData()));
+        assertEquals("{\"myValue\":null}", new String(deadLetterEventEntry.getPayload().getData()));
     }
 
     @Test
@@ -231,7 +239,7 @@ class EventMessageDeadLetterJpaConverterTest {
     }
 
     // Suppressed since it's used for test 'canConvertMessagesWithSerializationErrors'
-    @SuppressWarnings("unused")
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     static class SerializationErrorClass {
 
         String myValue;

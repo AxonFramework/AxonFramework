@@ -187,14 +187,6 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
     }
 
     @Override
-    public <S> SerializedObject<S> serializePayload(Serializer serializer, Class<S> expectedRepresentation) {
-        if (isExceptional()) {
-            return serializer.serialize(exceptionDetails().orElse(null), expectedRepresentation);
-        }
-        return super.serializePayload(serializer, expectedRepresentation);
-    }
-
-    @Override
     @Nonnull
     public ResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericResultMessage<>(delegate().withMetaData(metaData), exception);
