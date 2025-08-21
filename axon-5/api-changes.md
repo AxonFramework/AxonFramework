@@ -74,8 +74,6 @@ Major API Changes
   resolves the predicament that you need to configure your application twice (for production and testing), making the
   chance slimmer that parts will be skipped. For more on this change, please check the [Test Fixtures](#test-fixtures)
   section of this document.
-* The annotation logic of all modules is moved to a separate `annotation` package.
-* All reflection logic is moved to a dedicated "reflection" package per module.
 * Aggregates are now referred to as Entities, as the Dynamic Consistency Boundary allows for more fluid boundaries
   around entities.
   In addition, entities have been redesigned to make them more flexible, allowing for immutable
@@ -1301,8 +1299,11 @@ Minor API Changes
   allows component construction to be lazy instead of eager, since we do not require an active instance anymore (as was
   the case with the `Lifecycle` interface). Please read
   the [Component Lifecycle Management](#component-lifecycle-management) section for more details on this.
-* The SequencingPolicy interface no longer uses generics and now operates directly on EventMessage<?>. This simplifies
-  its usage and implementation, as many implementations do not depend on the payload type and can ignore it entirely.
+* The `Sequencing`Policy interface no longer uses generics and now operates directly on `EventMessage<?>`. This
+  simplifies its usage and implementation, as many implementations do not depend on the payload type and can ignore it
+  entirely.
+* The annotation logic of all modules is moved to a separate `annotation` package.
+* All reflection logic is moved to a dedicated "reflection" package per module.
 
 Stored Format Changes
 =====================
