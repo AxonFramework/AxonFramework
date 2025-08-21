@@ -38,7 +38,7 @@ import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils;
+import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
@@ -60,7 +60,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils.*;
+import static org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils.*;
 
 /**
  * Event Storage Engine implementation that uses the aggregate-oriented APIs of Axon Server, allowing it to interact
@@ -72,19 +72,19 @@ import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEve
 public class AggregateBasedAxonServerEventStorageEngine implements EventStorageEngine {
 
     private final AxonServerConnection connection;
-    private final Converter payloadConverter;
+    private final Converter converter;
 
     /**
      * Initialize the {@code LegacyAxonServerEventStorageEngine} with given {@code connection} to Axon Server and given
      * {@code payloadConverter} to convert payloads of appended messages (to bytes).
      *
      * @param connection       The backing connection to Axon Server
-     * @param payloadConverter The converter to use to serialize payloads to bytes
+     * @param converter The converter to use to serialize payloads to bytes
      */
     public AggregateBasedAxonServerEventStorageEngine(@Nonnull AxonServerConnection connection,
-                                                      @Nonnull Converter payloadConverter) {
-        this.connection = connection;
-        this.payloadConverter = payloadConverter;
+                                                      @Nonnull Converter converter) {
+        this.connection = Objects.requireNonNull(connection, "The connection must not be null.");
+        this.converter = Objects.requireNonNull(converter, "The converter must not be null.");
     }
 
     @Override
@@ -107,10 +107,10 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         try {
             events.forEach(taggedEvent -> {
                 EventMessage<?> event = taggedEvent.event();
-                byte[] payload = payloadConverter.convert(event.payload(), byte[].class);
+                ByteString payloadData = ByteString.copyFrom(event.payloadAs(byte[].class, converter));
                 Event.Builder builder = Event.newBuilder()
                                              .setPayload(SerializedObject.newBuilder()
-                                                                         .setData(ByteString.copyFrom(payload))
+                                                                         .setData(payloadData)
                                                                          .setType(event.type().name())
                                                                          .setRevision(event.type().version())
                                                                          .build())
@@ -144,12 +144,9 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
 
             private Throwable translateConflictException(Throwable e) {
                 Predicate<Throwable> isConflictException = (ex) -> ex instanceof StatusRuntimeException sre
-                        && Objects.equals(
-                        sre.getStatus().getCode(),
-                        Status.OUT_OF_RANGE.getCode());
-                return LegacyAggregateBasedEventStorageEngineUtils.translateConflictException(consistencyMarker,
-                                                                                              e,
-                                                                                              isConflictException);
+                        && Objects.equals(sre.getStatus().getCode(), Status.OUT_OF_RANGE.getCode());
+                return AggregateBasedEventStorageEngineUtils
+                        .translateConflictException(consistencyMarker, e, isConflictException);
             }
 
             @Override
@@ -277,7 +274,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("connection", connection);
-        descriptor.describeProperty("payloadConverter", payloadConverter);
+        descriptor.describeProperty("converter", converter);
     }
 
     /**
