@@ -19,10 +19,12 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.CommandMessageHandlerInterceptorChain;
+import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -39,13 +41,14 @@ import static java.util.Objects.requireNonNull;
  * by a delegate.
  *
  * @author Allad Buijze
+ * @author Simon Zambrovski
  * @since 5.0.0
  */
 public class InterceptingCommandBus implements CommandBus {
 
     private final CommandBus delegate;
     private final List<MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors;
-    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
+    private final List<MessageDispatchInterceptor<? super Message<?>>> dispatchInterceptors;
 
 
     /**
@@ -55,13 +58,13 @@ public class InterceptingCommandBus implements CommandBus {
      * before dispatching is provided to the given {@code delegate}.
      *
      * @param delegate             The delegate {@code CommandBus} that will handle all dispatching and handling logic.
-     * @param handlerInterceptors  The interceptors to invoke before handling a command.
-     * @param dispatchInterceptors The interceptors to invoke before dispatching a command.
+     * @param handlerInterceptors  The interceptors to invoke before handling a command and if present on the command result.
+     * @param dispatchInterceptors The interceptors to invoke before dispatching a command and on the command result.
      */
     public InterceptingCommandBus(
             @Nonnull CommandBus delegate,
             @Nonnull List<MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors,
-            @Nonnull List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
+            @Nonnull List<MessageDispatchInterceptor<? super Message<?>>> dispatchInterceptors
     ) {
         this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
         this.handlerInterceptors = new ArrayList<>(
@@ -87,12 +90,16 @@ public class InterceptingCommandBus implements CommandBus {
     @Override
     public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                                @Nullable ProcessingContext processingContext) {
-        return new DefaultMessageDispatchInterceptorChain<CommandMessage<?>>(dispatchInterceptors)
+        return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors, this::dispatchMessage)
                 .proceed(requireNonNull(command, "The command message cannot be null."), processingContext)
                 .first()
                 .<CommandResultMessage<?>>cast()
                 .asCompletableFuture()
                 .thenApply(Entry::message);
+    }
+
+    MessageStream<?> dispatchMessage(@Nonnull Message<?> message, @Nullable ProcessingContext processingContext) {
+        return MessageStream.fromFuture(delegate.dispatch((CommandMessage<?>) message, processingContext));
     }
 
     @Override

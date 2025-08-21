@@ -29,6 +29,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -52,27 +53,30 @@ class BeanValidationInterceptorTest {
     }
 
     @Test
-    void validateSimpleObject() throws Exception {
+    void validateSimpleObject() {
         Message<?> message = new GenericMessage<>(
                 new MessageType("message"), "Simple instance"
         );
         ProcessingContext context = StubProcessingContext.forMessage(message);
         testSubject.interceptOnHandle(message, context, handlerInterceptorChain);
-        verify(handlerInterceptorChain).proceed(message, null);
+        verify(handlerInterceptorChain).proceed(message, context);
     }
 
     @Test
-    void validateAnnotatedObject_IllegalNullValue() throws Exception {
+    void validateAnnotatedObject_IllegalNullValue() {
         Message<?> message = new GenericMessage<>(
                 new MessageType("message"), new JSR303AnnotatedInstance(null)
         );
-        try {
-            testSubject.interceptOnDispatch(message, null, dispatchInterceptorChain);
-            fail("Expected exception");
-        } catch (org.axonframework.messaging.interceptors.JSR303ViolationException e) {
-            assertFalse(e.getViolations().isEmpty());
-        }
-        verify(handlerInterceptorChain, never()).proceed(message, null);
+        ProcessingContext context = null;
+        testSubject
+                .interceptOnDispatch(message, context, dispatchInterceptorChain)
+                .error()
+                .ifPresentOrElse(e -> {
+                                     assertThat(e).isInstanceOf(JSR303ViolationException.class);
+                                     assertThat(((JSR303ViolationException) e).getViolations()).isNotEmpty();
+                                 }, () -> fail("Expected exception, but got none.")
+                );
+        verify(dispatchInterceptorChain, never()).proceed(message, context);
     }
 
     @Test
@@ -80,9 +84,9 @@ class BeanValidationInterceptorTest {
         Message<?> message = new GenericMessage<>(
                 new MessageType("message"), new JSR303AnnotatedInstance("abc")
         );
-
-        testSubject.interceptOnDispatch(message, null, dispatchInterceptorChain);
-        verify(handlerInterceptorChain).proceed(message, null);
+        ProcessingContext context = null;
+        testSubject.interceptOnDispatch(message, context, dispatchInterceptorChain);
+        verify(dispatchInterceptorChain).proceed(message, context);
     }
 
     @Test
@@ -90,14 +94,14 @@ class BeanValidationInterceptorTest {
         Message<?> message = new GenericMessage<>(
                 new MessageType("message"), new JSR303AnnotatedInstance("bea")
         );
-        try {
-            testSubject.interceptOnDispatch(message, null, dispatchInterceptorChain);
-            fail("Expected exception");
-        } catch (JSR303ViolationException e) {
-            assertFalse(e.getViolations().isEmpty());
-        }
-
-        verify(handlerInterceptorChain, never()).proceed(message, null);
+        testSubject.interceptOnDispatch(message, null, dispatchInterceptorChain)
+                   .error()
+                   .ifPresentOrElse(e -> {
+                                        assertThat(e).isInstanceOf(JSR303ViolationException.class);
+                                        assertThat(((JSR303ViolationException) e).getViolations()).isNotEmpty();
+                                    }, () -> fail("Expected exception, but got none.")
+                   );
+        verify(dispatchInterceptorChain, never()).proceed(message, null);
     }
 
     @Test

@@ -490,6 +490,7 @@ class FixtureTest_CommandInterceptors {
 
          */
 
+        @Nonnull
         @Override
         public @NotNull MessageStream<?> interceptOnHandle(@NotNull CommandMessage<?> message,
                                                            @NotNull ProcessingContext context,

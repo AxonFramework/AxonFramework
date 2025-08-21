@@ -24,11 +24,22 @@ import org.axonframework.queryhandling.QueryMessage;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Query message handler interceptor chain.
+ *
+ * @since 5.0.0
+ * @author Simon Zambrovski
+ */
 public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterceptorChain<QueryMessage<?, ?>> {
 
     private final QueryHandler handler;
     private final Iterator<MessageHandlerInterceptor<QueryMessage<?, ?>>> chain;
 
+    /**
+     * Constructs a new chain with a list of interceptors and a target query handler.
+     * @param handlerInterceptors list of handler interceptors.
+     * @param handler query handler.
+     */
     public QueryMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<QueryMessage<?, ?>>> handlerInterceptors,
                                                @Nonnull QueryHandler handler) {
         this.handler = handler;
@@ -40,10 +51,14 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
             @Nonnull QueryMessage<?, ?> message,
             @Nonnull ProcessingContext context
     ) {
-        if (chain.hasNext()) {
-            return chain.next().interceptOnHandle(message, context, this);
-        } else {
-            return handler.handle(message, context);
+        try {
+            if (chain.hasNext()) {
+                return chain.next().interceptOnHandle(message, context, this);
+            } else {
+                return handler.handle(message, context);
+            }
+        } catch (Exception e) {
+            return MessageStream.failed(e);
         }
     }
 }

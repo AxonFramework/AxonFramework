@@ -39,8 +39,8 @@ public interface MessageHandlerInterceptor<M extends Message<?>> {
      * The given {@code context} contains contextual information. Any information gathered by interceptors may be
      * attached to the context.
      * <p/>
-     * Interceptors are highly recommended not to change the type of the message handling result, as the dispatching
-     * component might expect a result of a specific type.
+     * Interceptors are not allowed to change the type of the message handling result, as the dispatching
+     * component expects a result of a specific type.
      *
      * @param message          The message to intercept.
      * @param context          The context of the message being processed.

@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
@@ -243,15 +244,21 @@ public abstract class AbstractEventBus implements EventBus {
     protected List<? extends EventMessage<?>> intercept(List<? extends EventMessage<?>> events) {
         List<EventMessage<?>> preprocessedEvents = new ArrayList<>(events);
         for (int i = 0; i < preprocessedEvents.size(); i++) {
-            preprocessedEvents.set(i, new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
-                    .proceed(preprocessedEvents.get(i), null)
-                    .first()
-                    .<EventMessage<?>>cast()
-                    .asMono()
-                    .map(MessageStream.Entry::message)
-                    .block());
+            try {
+                // TODO improve this, currently
+                preprocessedEvents.set(i, new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
+                        .proceed(preprocessedEvents.get(i), null)
+                        .first()
+                        .<EventMessage<?>>cast()
+                        .asCompletableFuture()
+                        .exceptionally(exception -> null) // TODO validate this
+                        .thenApply(MessageStream.Entry::message)
+                        .get());
+            } catch (Exception e) {
+                throw new RuntimeException("Exception during message dispatch interception", e);
+            }
         }
-        return preprocessedEvents;
+        return preprocessedEvents.stream().filter(Objects::nonNull).toList();
     }
 
     private void doWithEvents(Consumer<List<? extends EventMessage<?>>> eventsConsumer,

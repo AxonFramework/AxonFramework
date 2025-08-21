@@ -39,6 +39,7 @@ import java.util.function.BiFunction;
  * Dispatched, incoming messages and successful executions are logged at the {@code INFO} level. Processing errors are
  * logged using the {@code WARN} level.
  *
+ * @param <M> Type of message to operate on.
  * @author Allard Buijze
  * @since 0.6
  */
@@ -87,11 +88,11 @@ public class LoggingInterceptor<M extends Message<?>>
                                .map(returnValue -> {
                                    logger.info("[{}] executed successfully with a [{}] return value",
                                                message.type().name(),
-                                               returnValue == null ? "null" : returnValue.getClass().getSimpleName());
+                                               returnValue.message().payloadType().getSimpleName());
                                    return returnValue;
                                })
                                .onErrorContinue(e -> {
-                                   logger.info("[{}] resulted in an error",
+                                   logger.warn("[{}] resulted in an error",
                                                message.type().name(),
                                                e);
                                    return MessageStream.failed(e);

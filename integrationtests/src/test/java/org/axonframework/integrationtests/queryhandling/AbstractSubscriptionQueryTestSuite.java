@@ -301,7 +301,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         unitOfWork.start();
 
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new MessageType(testQueryName) , testQueryPayload,
+                new MessageType(testQueryName), testQueryPayload,
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
         SubscriptionQueryResult<QueryResponseMessage<List<String>>, SubscriptionQueryUpdateMessage<String>> result =
@@ -594,13 +594,17 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // given
         List<String> interceptedResponse = Arrays.asList("fakeReply1", "fakeReply2");
         queryBus.registerDispatchInterceptor(
-                (m, c, ch) -> ch.proceed(m.andMetaData(Collections.singletonMap("key", "value")), c)
+                (message, context, chain)
+                        -> chain.proceed(message.andMetaData(Collections.singletonMap("key", "value")),
+                                         context)
         );
-        queryBus.registerHandlerInterceptor((m, context, interceptorChain) -> {
-            if (m.metaData().containsKey("key")) {
-                return MessageStream.fromIterable(interceptedResponse.stream().map(p -> new GenericQueryResponseMessage<>(new MessageType("response"), p)).toList());
+        queryBus.registerHandlerInterceptor((message, context, chain) -> {
+            if (message.metaData().containsKey("key")) {
+                return MessageStream.fromIterable(interceptedResponse.stream()
+                                                                     .map(p -> new GenericQueryResponseMessage<>(new MessageType(
+                                                                             "response"), p)).toList());
             }
-            return interceptorChain.proceed(m, context);
+            return chain.proceed(message, context);
         });
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 new MessageType("chatMessages"), TEST_PAYLOAD,
@@ -622,7 +626,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // given
         Map<String, String> metaData = Collections.singletonMap("key", "value");
         queryUpdateEmitter.registerDispatchInterceptor(
-                (m, c, ch) -> ch.proceed(m.andMetaData(metaData), c)
+                (message, context, chain) -> chain.proceed(message.andMetaData(metaData), context)
         );
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 new MessageType("chatMessages"), TEST_PAYLOAD,

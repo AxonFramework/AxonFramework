@@ -34,7 +34,6 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -72,7 +71,6 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -1301,11 +1299,11 @@ class PooledStreamingEventProcessorTest {
 
         CountDownLatch countDownLatch = new CountDownLatch(3);
         testSubject.registerHandlerInterceptor((
-                                                       @Nonnull EventMessage<?> message,
-                                                       @Nonnull ProcessingContext context,
-                                                       @Nonnull MessageHandlerInterceptorChain<EventMessage<?>> interceptorChain) -> {
+                                                       message,
+                                                       context,
+                                                       chain) -> {
             context.doFinally(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed(message, context);
+            return chain.proceed(message, context);
         });
         createEvents(3).forEach(stubMessageSource::publishMessage);
 
@@ -1322,11 +1320,11 @@ class PooledStreamingEventProcessorTest {
         setTestSubject(createTestSubject(b -> b.initialSegmentCount(1)));
 
         CountDownLatch countDownLatch = new CountDownLatch(3);
-        testSubject.registerHandlerInterceptor((@Nonnull EventMessage<?> message,
-                                                @Nonnull ProcessingContext context,
-                                                @Nonnull MessageHandlerInterceptorChain<EventMessage<?>> interceptorChain) -> {
+        testSubject.registerHandlerInterceptor((message,
+                                                context,
+                                                chain) -> {
             context.doFinally(uow -> countDownLatch.countDown());
-            return interceptorChain.proceed(message, context);
+            return chain.proceed(message, context);
         });
         stubMessageSource.publishMessage(EventTestUtils.asEventMessage(0));
         stubMessageSource.publishMessage(EventTestUtils.asEventMessage(1));

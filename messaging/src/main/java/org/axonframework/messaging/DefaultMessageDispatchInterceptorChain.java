@@ -22,33 +22,64 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
+import java.util.function.BiFunction;
 
+/**
+ * Default implementation for a dispatch handler interceptor chain.
+ *
+ * @param <M> type of message to intercept.
+ * @author Simon Zambrovski
+ * @since 5.0.0
+ */
 public class DefaultMessageDispatchInterceptorChain<M extends Message<?>>
         implements MessageDispatchInterceptorChain<M> {
 
     private final Iterator<MessageDispatchInterceptor<M>> chain;
+    private final BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal;
 
+    /**
+     * Constructs a message dispatch interceptor chain without a target handler.
+     * <p/>
+     *
+     * @param dispatchInterceptors list of interceptors.
+     */
     public DefaultMessageDispatchInterceptorChain(
             @Nonnull Collection<MessageDispatchInterceptor<? super M>> dispatchInterceptors
+    ) {
+        this(dispatchInterceptors, (message, processingContext) -> MessageStream.just(message).cast());
+    }
+
+    /**
+     * Constructs a message dispatch interceptor chain with a list of interceptors and a target handler.
+     *
+     * @param dispatchInterceptors list of dispatch interceptors.
+     * @param terminal             function to be invoked after the chain processing.
+     */
+    public DefaultMessageDispatchInterceptorChain(
+            @Nonnull Collection<MessageDispatchInterceptor<? super M>> dispatchInterceptors,
+            BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal
     ) {
         // Safe cast: each interceptor in the list can handle M,
         // because they accept "M or a supertype of M".
         //noinspection unchecked
         this.chain = (Iterator<MessageDispatchInterceptor<M>>) (Iterator<?>) dispatchInterceptors.iterator();
+        this.terminal = terminal;
     }
 
     @Override
-    public MessageStream<?> proceed(
+    public @Nonnull MessageStream<?> proceed(
             @Nonnull M message,
             @Nullable ProcessingContext context
     ) {
-        if (chain.hasNext()) {
-            return chain.next().interceptOnDispatch(message,
-                                                    context,
-                                                    this);
-        } else {
-            return MessageStream.just(message);
+        try {
+            if (chain.hasNext()) {
+                return chain.next().interceptOnDispatch(message,
+                                                        context, this);
+            } else {
+                return terminal.apply(message, context);
+            }
+        } catch (Exception e) {
+            return MessageStream.failed(e);
         }
     }
 }

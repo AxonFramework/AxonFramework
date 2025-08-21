@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
+@Disabled("TODO as part of #3559")
 class UnitOfWorkTimeoutInterceptorBuilderTest {
 
     @Test

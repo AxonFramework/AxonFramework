@@ -24,15 +24,26 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Event handler interceptor chain.
+ *
+ * @since 5.0.0
+ * @author Simon Zambrovski
+ */
 public class EventMessageHandlerInterceptorChain implements MessageHandlerInterceptorChain<EventMessage<?>> {
 
     private final EventHandler handler;
     private final Iterator<MessageHandlerInterceptor<EventMessage<?>>> chain;
 
+    /**
+     * Constructs a new chain with a list of interceptors and a query handler.
+     * @param handlerInterceptors list of interceptors.
+     * @param handler query handler.
+     */
     public EventMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<EventMessage<?>>> handlerInterceptors,
                                                @Nonnull EventHandler handler) {
-        this.handler = handler;
         this.chain = handlerInterceptors.iterator();
+        this.handler = handler;
     }
 
     @Override
@@ -40,10 +51,14 @@ public class EventMessageHandlerInterceptorChain implements MessageHandlerInterc
             @Nonnull EventMessage<?> message,
             @Nonnull ProcessingContext context
     ) {
-        if (chain.hasNext()) {
-            return chain.next().interceptOnHandle(message, context, this);
-        } else {
-            return handler.handle(message, context);
+        try {
+            if (chain.hasNext()) {
+                return chain.next().interceptOnHandle(message, context, this);
+            } else {
+                return handler.handle(message, context);
+            }
+        } catch (Exception e) {
+            return MessageStream.failed(e);
         }
     }
 }

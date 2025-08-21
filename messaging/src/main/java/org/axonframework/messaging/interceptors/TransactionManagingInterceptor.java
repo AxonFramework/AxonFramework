@@ -31,8 +31,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  *
  * @param <M> Type of message to intercept.
  * @author Rene de Waele
- * @author Simon Zambrovski
  */
+@Deprecated(forRemoval = true)
 public class TransactionManagingInterceptor<M extends Message<?>> implements MessageHandlerInterceptor<M> {
 
     private final TransactionManager transactionManager;
@@ -47,6 +47,7 @@ public class TransactionManagingInterceptor<M extends Message<?>> implements Mes
     }
 
     @Override
+    @Nonnull
     public MessageStream<?> interceptOnHandle(@Nonnull M message,
                                               @Nonnull ProcessingContext context,
                                               @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {

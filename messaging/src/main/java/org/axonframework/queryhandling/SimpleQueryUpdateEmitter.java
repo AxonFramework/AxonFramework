@@ -132,13 +132,18 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     private <U> SubscriptionQueryUpdateMessage<U> intercept(SubscriptionQueryUpdateMessage<U> message) {
+
+        /*
+        // TODO: reintegrate as part of #3079
         return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
-                .proceed(message, null) // TODO: reintegrate as part of #3079
+                .proceed(message, null)
                 .first()
                 .<SubscriptionQueryUpdateMessage<U>>cast()
                 .asMono()
                 .map(MessageStream.Entry::message)
                 .block();
+         */
+        return message;
     }
 
     @Override

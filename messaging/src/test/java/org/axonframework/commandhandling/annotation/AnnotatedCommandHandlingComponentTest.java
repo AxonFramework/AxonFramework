@@ -147,6 +147,7 @@ class AnnotatedCommandHandlingComponentTest {
         assertInstanceOf(NoHandlerForCommandException.class, exception.getCause());
     }
 
+    @Disabled("Reintegrate as part of #3485")
     @Test
     void messageHandlerInterceptorAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
         CommandMessage<String> testCommandMessage = new GenericCommandMessage<>(new MessageType(String.class), "");

@@ -19,9 +19,7 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
@@ -45,7 +43,7 @@ class EventProcessorOperationsTest {
             @Override
             public void reportSuccess() {
                 if (!pending.contains(message)) {
-                    fail("Message was presented to monitor twice: " + message);
+                    fail("Message was presented to monitor twice: " + message + " or message was unknown.");
                 }
                 pending.remove(message);
             }
@@ -72,21 +70,12 @@ class EventProcessorOperationsTest {
                                                            .eventHandlingComponent(mockEventHandlingComponent)
                                                            .messageMonitor(messageMonitor)
                                                            .build();
-
         // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
-        testSubject.registerHandlerInterceptor(new MessageHandlerInterceptor<EventMessage<?>>() {
-
-
-            @Override
-            public MessageStream<?> interceptOnHandle(
-                    @Nonnull EventMessage<?> message, @Nonnull ProcessingContext context,
-                    @Nonnull MessageHandlerInterceptorChain<EventMessage<?>> interceptorChain) {
-                var event = createDomainEvent();
-                return interceptorChain.proceed(event, context);
-            }
+        testSubject.registerHandlerInterceptor((message, context, interceptorChain) -> {
+            var event = createDomainEvent();
+            return interceptorChain.proceed(event, context);
         });
-
         testSubject.processInBatchingUnitOfWork(events);
 
         assertTrue(pending.isEmpty(), "Not all events were presented to monitor");

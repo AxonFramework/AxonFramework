@@ -19,10 +19,12 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageDispatchInterceptorChain;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -171,21 +173,26 @@ class AbstractEventBusTest {
 
     @Test
     void dispatchInterceptor() {
+
+        final List<Integer> seenMessages = new ArrayList<>();
+
         //noinspection unchecked
         MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptorMock = mock(MessageDispatchInterceptor.class);
         String key = "additional", value = "metaData";
         when(dispatchInterceptorMock.interceptOnDispatch(any(), any(), any())).thenAnswer(invocation -> {
-            //noinspection unchecked
-            /*
-            EventMessage<?> eventMessage = (EventMessage<?>) invocation.getArguments()[0];
-            return (BiFunction<Integer, Object, Object>) (index, message) -> {
-                if (eventMessages.get(index).metaData().containsKey(key)) {
-                    throw new AssertionError("MessageProcessor is asked to process the same event message twice");
+            EventMessage<?> message = invocation.getArgument(0);
+            synchronized (seenMessages) {
+                if (seenMessages.contains(message.hashCode())) {
+                    return MessageStream.failed(
+                            new AssertionError("MessageProcessor is asked to process the same event message twice")
+                    );
+                } else {
+                    seenMessages.add(message.hashCode());
                 }
-                return eventMessages.get(index).andMetaData(Collections.singletonMap(key, value));
-            };
-             */
-            return ((MessageDispatchInterceptorChain)invocation.getArgument(2)).proceed(invocation.getArgument(0), invocation.getArgument(1));
+            }
+            ProcessingContext processingContext = invocation.getArgument(1);
+            MessageDispatchInterceptorChain<EventMessage<?>> chain = invocation.getArgument(2);
+            return chain.proceed(message, processingContext);
         });
         testSubject.registerDispatchInterceptor(dispatchInterceptorMock);
         testSubject.publish(newEvent(), newEvent());
@@ -194,14 +201,9 @@ class AbstractEventBusTest {
         unitOfWork.commit();
         //noinspection unchecked
         ArgumentCaptor<EventMessage<?>> argumentCaptor = ArgumentCaptor.forClass(EventMessage.class);
-        verify(dispatchInterceptorMock).interceptOnDispatch(argumentCaptor.capture(), any(), any()); //prepare commit, commit, and after commit
-       /*
-       FIXME SZA
-        assertEquals(1, argumentCaptor.getAllValues().size());
-        assertEquals(2, argumentCaptor.getValue().size());
-        assertEquals(value, argumentCaptor.getValue().get(0).metaData().get(key));
-
-        */
+        verify(dispatchInterceptorMock, times(2)).interceptOnDispatch(argumentCaptor.capture(), any(), any()); //prepare commit, commit, and after commit
+        assertEquals(2, argumentCaptor.getAllValues().size());
+        assertEquals(2, seenMessages.size());
     }
 
     private static EventMessage<Object> newEvent() {

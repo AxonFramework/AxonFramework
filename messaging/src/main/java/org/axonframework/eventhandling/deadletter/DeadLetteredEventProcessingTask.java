@@ -54,12 +54,12 @@ class DeadLetteredEventProcessingTask
     private final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final List<EventMessageHandler> eventHandlingComponents;
-    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors;
+    private final List<MessageHandlerInterceptor<EventMessage<?>>> interceptors;
     private final EnqueuePolicy<EventMessage<?>> enqueuePolicy;
     private final TransactionManager transactionManager;
 
     DeadLetteredEventProcessingTask(List<EventMessageHandler> eventHandlingComponents,
-                                    List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors,
+                                    List<MessageHandlerInterceptor<EventMessage<?>>> interceptors,
                                     EnqueuePolicy<EventMessage<?>> enqueuePolicy,
                                     TransactionManager transactionManager) {
         this.eventHandlingComponents = eventHandlingComponents;
@@ -118,8 +118,10 @@ class DeadLetteredEventProcessingTask
          .asMono()
          .map(MessageStream.Entry::message)
          .block();
-
          */
+        for (EventMessageHandler handler: eventHandlingComponents) {
+            handler.handle(message, context);
+        }
         return null;
     }
 

@@ -51,6 +51,7 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
         this.target = target;
     }
 
+    @Nonnull
     @Override
     public MessageStream<?> interceptOnHandle(
             @Nonnull CommandMessage<?> message,

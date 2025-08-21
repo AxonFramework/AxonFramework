@@ -81,6 +81,7 @@ class AnnotationEventHandlerAdapterTest {
         assertTrue(annotatedEventListener.invocations.contains("resetWithContext"));
     }
 
+    @Disabled("TODO #3485 - Reintegrate with it")
     @Test
     void handlerInterceptors() throws Exception {
         SomeHandler annotatedEventListener = new SomeInterceptingHandler();

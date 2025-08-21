@@ -753,6 +753,7 @@ class InterceptorConfigurationTest {
 
         public static class MyCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
+            @Nonnull
             @Override
             public @NotNull MessageStream<?> interceptOnHandle(@NotNull CommandMessage<?> message,
                                                                @NotNull ProcessingContext context,

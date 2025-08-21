@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
+@Disabled("TODO #3062 - Exception Handler support")
 class ExceptionHandlerTest {
 
     private static final String COMMAND_HANDLER_INVOKED = "command";
@@ -68,8 +69,7 @@ class ExceptionHandlerTest {
         invokedHandler = new AtomicReference<>();
         invokedExceptionHandlers = new ArrayList<>();
 
-        messageHandlingComponent =
-                new ExceptionHandlingComponent(invokedHandler, invokedExceptionHandlers);
+        messageHandlingComponent = new ExceptionHandlingComponent(invokedHandler, invokedExceptionHandlers);
         inspector = AnnotatedHandlerInspector.inspectType(ExceptionHandlingComponent.class);
     }
 

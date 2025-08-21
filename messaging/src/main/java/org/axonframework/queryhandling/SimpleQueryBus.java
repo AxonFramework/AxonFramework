@@ -37,6 +37,7 @@ import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
@@ -519,8 +520,18 @@ public class SimpleQueryBus implements QueryBus {
         return uow.executeWithResult((ctx) -> {
             ResponseType<R> responseType = uow.getMessage().responseType();
             // TODO: reintegrate as part of #3079
-            QueryHandler queryHandler = (QueryHandler)handler;
+            /*
+            QueryHandler queryHandler = new QueryHandler() {
+                @Nonnull
+                @Override
+                public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
+                                                                     @Nonnull ProcessingContext context) {
+                    return handler.handle((QueryMessage<?, R>)query, context).cast();
+                }
+            };
             Object queryResponse = new QueryMessageHandlerInterceptorChain(handlerInterceptors, queryHandler).proceed(uow.getMessage(), ctx);
+             */
+            Object queryResponse = handler.handleSync(uow.getMessage(), ctx);
             if (queryResponse instanceof CompletableFuture) {
                 return ((CompletableFuture<?>) queryResponse).thenCompose(
                         result -> buildCompletableFuture(responseType, result));
@@ -595,10 +606,21 @@ public class SimpleQueryBus implements QueryBus {
         try (SpanScope unused = span.makeCurrent()) {
             LegacyDefaultUnitOfWork<StreamingQueryMessage<Q, R>> uow = LegacyDefaultUnitOfWork.startAndGet(query);
             return uow.executeWithResult((ctx) -> {
+                /*
                 // TODO: reintegrate as part of #3079
-                QueryHandler queryHandler = (QueryHandler)handler;
+                QueryHandler queryHandler = new QueryHandler() {
+                    @Nonnull
+                    @Override
+                    public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
+                                                                         @Nonnull ProcessingContext context) {
+                        return handler.handle((StreamingQueryMessage<Q, R>)query, context).cast();
+                    }
+                };
                 Object queryResponse = new QueryMessageHandlerInterceptorChain(handlerInterceptors, queryHandler)
                         .proceed(uow.getMessage(), ctx);
+
+                 */
+                Object queryResponse = handler.handleSync(uow.getMessage(), ctx);
                 return Flux.from(query.responseType().convert(queryResponse))
                            .map(this::asResponseMessage);
             });
@@ -646,6 +668,8 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     private <Q, R, T extends QueryMessage<Q, R>> T intercept(T query) {
+        /*
+        // TODO: reintegrate as part of #3079
         return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
                 .proceed(query, null)
                 .first()
@@ -653,6 +677,8 @@ public class SimpleQueryBus implements QueryBus {
                 .asMono()
                 .map(MessageStream.Entry::message)
                 .block();
+         */
+        return query;
     }
 
     /**

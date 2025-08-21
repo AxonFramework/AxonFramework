@@ -84,7 +84,7 @@ public class DeadLetteringEventHandlerInvoker
     private final boolean sequenceIdentifierCacheEnabled;
     private final int sequenceIdentifierCacheSize;
     private final Map<Segment, SequenceIdentifierCache> sequenceIdentifierCache;
-    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
+    private final List<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
 
     /**
      * Instantiate a dead-lettering {@link EventHandlerInvoker} based on the given {@link Builder builder}. Uses a

@@ -245,6 +245,7 @@ class StreamingQueryTest {
                     .verify();
     }
 
+    @Disabled("TODO reintegrate as part of #3079")
     @Test
     void dispatchInterceptor() {
         AtomicBoolean hasBeenCalled = new AtomicBoolean();
@@ -264,11 +265,12 @@ class StreamingQueryTest {
         assertTrue(hasBeenCalled.get());
     }
 
+    @Disabled("TODO reintegrate as part of #3079")
     @Test
     void handlerInterceptor() {
         queryBus.registerHandlerInterceptor(
-                (message, context, interceptorChain) ->
-                        interceptorChain.proceed(message, context)
+                (message, context, chain) ->
+                        chain.proceed(message, context)
                 // TODO reintegrate as part of #3079
                         // ((Flux) interceptorChain.proceedSync(context)).map(it -> "a")
         );

@@ -24,16 +24,29 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Command message handler interceptor chain.
+ *
+ * @author Simon Zambrovski
+ * @since 5.0.0
+ */
 public class CommandMessageHandlerInterceptorChain
         implements MessageHandlerInterceptorChain<CommandMessage<?>> {
 
-    private final CommandHandler handler;
     private final Iterator<MessageHandlerInterceptor<CommandMessage<?>>> chain;
+    private final CommandHandler handler;
 
-    public CommandMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors,
-                                                 @Nonnull CommandHandler handler) {
-        this.handler = handler;
+    /**
+     * Constructs a new chain with a list of interceptors and a command handler.
+     *
+     * @param handlerInterceptors list of interceptors.
+     * @param handler             command handler.
+     */
+    public CommandMessageHandlerInterceptorChain(
+            @Nonnull List<MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors,
+            @Nonnull CommandHandler handler) {
         this.chain = handlerInterceptors.iterator();
+        this.handler = handler;
     }
 
     @Override
@@ -41,11 +54,17 @@ public class CommandMessageHandlerInterceptorChain
             @Nonnull CommandMessage<?> message,
             @Nonnull ProcessingContext context
     ) {
-        if (chain.hasNext()) {
-            return chain.next().interceptOnHandle(message, context, this); // command message -> single(command message)
-        } else {
-            return handler.handle(message, context); // command message -> single(command response message)
+        try {
+            if (chain.hasNext()) {
+                return this.chain.next()
+                                 .interceptOnHandle(message, context, this)
+                                 .first()
+                                 .<CommandMessage<?>>cast();
+            } else {
+                return this.handler.handle(message, context);
+            }
+        } catch (Exception e) {
+            return MessageStream.failed(e);
         }
     }
-
 }

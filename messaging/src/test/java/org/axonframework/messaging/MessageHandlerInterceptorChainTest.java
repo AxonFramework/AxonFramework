@@ -18,63 +18,53 @@ package org.axonframework.messaging;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import static java.util.Arrays.asList;
+import static org.axonframework.messaging.MessagingTestHelper.command;
+import static org.axonframework.messaging.MessagingTestHelper.commandResult;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * @author Allard Buijze
- * @author Nakul Mishra
+ * Message handler chain interceptor test.
  */
 class MessageHandlerInterceptorChainTest {
 
     private CommandHandler mockHandler;
 
     @BeforeEach
-    @SuppressWarnings("unchecked")
     void setUp() throws Exception {
         mockHandler = mock();
-        when(mockHandler.handle(isA(CommandMessage.class),
-                                any())).thenReturn(MessageStream.just(new GenericCommandResultMessage<>(
-                new MessageType("result"),
-                "Result")));
+        when(mockHandler.handle(any(), any()))
+                .thenReturn(MessageStream.just(commandResult("result", "Result")));
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void chainWithDifferentProceedCalls() throws Exception {
-        MessageHandlerInterceptor<CommandMessage<?>> interceptor1 = (message, context, interceptorChain) -> {
-            CommandMessage<?> myMessage = new GenericCommandMessage<>(
-                    new MessageType("message"), "testing"
-            );
-            return interceptorChain.proceed(myMessage, context);
-        };
-        MessageHandlerInterceptor<CommandMessage<?>> interceptor2 = (message, context, interceptorChain) -> interceptorChain.proceed(
-                message,
-                context);
+        MessageHandlerInterceptor<CommandMessage<?>> interceptor1 = (message, context, chain) ->
+                chain.proceed(command("message", "testing"), context);
 
-        CommandMessage<?> message = new GenericCommandMessage<>(
-                new MessageType("message"), "original"
-        );
+        MessageHandlerInterceptor<CommandMessage<?>> interceptor2 = (message, context, chain) ->
+                chain.proceed(message, context);
+
+        CommandMessage<?> message = command("message", "original");
+
         MessageHandlerInterceptorChain<CommandMessage<?>> testSubject = new CommandMessageHandlerInterceptorChain(
                 asList(interceptor1, interceptor2), mockHandler
         );
 
-        String actual = testSubject.proceed(message, StubProcessingContext.forMessage(message))
-                                   .first()
-                                   .<CommandResultMessage<String>>cast()
-                                   .asMono()
-                                   .map(MessageStream.Entry::message)
-                                   .block()
-                                   .payload();
 
-        assertSame("Result", actual);
-        verify(mockHandler).handle(argThat(x -> (x != null) && x.payload().equals("testing")), any());
+        Message<?> actual = testSubject
+                .proceed(message, StubProcessingContext.forMessage(message))
+                .first()
+                // .<CommandResultMessage<String>>cast()
+                .asMono()
+                .map(MessageStream.Entry::message)
+                .block();
+        assertNotNull(actual);
+        assertSame("Result", actual.payload());
+        verify(mockHandler).handle(argThat(x -> (x != null) && "testing".equals(x.payload())), any());
     }
 }

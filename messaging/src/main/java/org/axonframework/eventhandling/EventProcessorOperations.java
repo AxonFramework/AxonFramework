@@ -243,6 +243,7 @@ public final class EventProcessorOperations {
             return chain.proceed(message, processingContext)
                         .ignoreEntries()
                         .asCompletableFuture()
+                        .thenRun(monitorCallback::reportSuccess)
                         .thenApply(e -> null);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);

@@ -372,7 +372,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     void failedExecution() {
         configuration.getComponent(DeadlineManager.class)
-                     .registerHandlerInterceptor((message, context, interceptorChain) ->
+                     .registerHandlerInterceptor((message, context, chain) ->
                                                          MessageStream.failed(new AxonNonTransientException(
                                                                  "Simulating handling error") {
                                                          })

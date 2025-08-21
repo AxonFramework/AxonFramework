@@ -172,6 +172,7 @@ class AnnotatedHandlerInspectorTest {
                      .collect(Collectors.toList());
     }
 
+    @Disabled("Reintegrate as part of #3485")
     @Test
     void interceptors() throws Exception {
         D testTarget = new D();

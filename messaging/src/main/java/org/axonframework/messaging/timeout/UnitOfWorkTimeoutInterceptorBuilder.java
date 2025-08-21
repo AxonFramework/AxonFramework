@@ -19,6 +19,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
@@ -39,6 +40,8 @@ import java.util.concurrent.ScheduledExecutorService;
  * @author Mitchell Herrijgers
  * @since 4.11.0
  */
+// TODO remove as part of #3559
+@Deprecated(forRemoval = true)
 public class UnitOfWorkTimeoutInterceptorBuilder {
 
     private static final String TRANSACTION_TIME_LIMIT_RESOURCE_KEY = "_transactionTimeLimit";
@@ -107,55 +110,25 @@ public class UnitOfWorkTimeoutInterceptorBuilder {
     }
 
     public MessageHandlerInterceptor<EventMessage<?>> buildEventInterceptor() {
-        return new MessageHandlerInterceptor<>() {
-
-            @Nonnull
-            @Override
-            public MessageStream<?> interceptOnHandle(@Nonnull EventMessage<?> message,
-                                                      @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<EventMessage<?>> interceptorChain) {
-                initializeTimeoutIfNotInitialized(context);
-                AxonTimeLimitedTask task = context.getResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY);
-                try {
-                    MessageStream<?> proceed = interceptorChain.proceed(message, context);
-                    task.ensureNoInterruptionWasSwallowed();
-                    return proceed;
-                } catch (Exception e) {
-                    return MessageStream.failed(task.detectInterruptionInsteadOfException(e));
-                }
-            }
-        };
+        return build();
     }
 
     public MessageHandlerInterceptor<QueryMessage<?, ?>> buildQueryInterceptor() {
-        return new MessageHandlerInterceptor<>() {
-
-            @Nonnull
-            @Override
-            public MessageStream<?> interceptOnHandle(@Nonnull QueryMessage<?, ?> message,
-                                                      @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<QueryMessage<?, ?>> interceptorChain) {
-                initializeTimeoutIfNotInitialized(context);
-                AxonTimeLimitedTask task = context.getResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY);
-                try {
-                    MessageStream<?> proceed = interceptorChain.proceed(message, context);
-                    task.ensureNoInterruptionWasSwallowed();
-                    return proceed;
-                } catch (Exception e) {
-                    return MessageStream.failed(task.detectInterruptionInsteadOfException(e));
-                }
-            }
-        };
+        return build();
     }
 
     public MessageHandlerInterceptor<DeadlineMessage<?>> buildDeadlineInterceptor() {
+        return build();
+    }
+
+    <T extends Message<?>> MessageHandlerInterceptor<T> build() {
         return new MessageHandlerInterceptor<>() {
 
             @Nonnull
             @Override
-            public MessageStream<?> interceptOnHandle(@Nonnull DeadlineMessage<?> message,
+            public MessageStream<?> interceptOnHandle(@Nonnull T message,
                                                       @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<DeadlineMessage<?>> interceptorChain) {
+                                                      @Nonnull MessageHandlerInterceptorChain<T> interceptorChain) {
                 initializeTimeoutIfNotInitialized(context);
                 AxonTimeLimitedTask task = context.getResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY);
                 try {
@@ -168,7 +141,6 @@ public class UnitOfWorkTimeoutInterceptorBuilder {
             }
         };
     }
-
 
     void initializeTimeoutIfNotInitialized(ProcessingContext context) {
         String taskName = "UnitOfWork of " + componentName;

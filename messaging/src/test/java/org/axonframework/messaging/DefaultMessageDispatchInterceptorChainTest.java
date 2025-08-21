@@ -21,30 +21,31 @@ import org.junit.jupiter.api.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.axonframework.messaging.MessagingTestHelper.message;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link DispatchInterceptors}.
+ * Test class validating the {@link DefaultMessageDispatchInterceptorChain}.
  */
 class DefaultMessageDispatchInterceptorChainTest {
 
     @Test
     void registerInterceptors() {
         List<String> results = new ArrayList<>();
-        DefaultMessageDispatchInterceptorChain<Message<?>> chain = new DefaultMessageDispatchInterceptorChain<>(
+        DefaultMessageDispatchInterceptorChain<Message<Object>> testSubject = new DefaultMessageDispatchInterceptorChain<>(
                 List.of(
-                        (m, c, ch) -> {
+                        (message, context, chain) -> {
                             results.add("Interceptor One");
-                            return ch.proceed(m, c);
+                            return chain.proceed(message, context);
                         },
-                        (m, c, ch) -> {
+                        (message, context, chain) -> {
                             results.add("Interceptor Two");
-                            return ch.proceed(m, c);
+                            return chain.proceed(message, context);
                         }
                 )
         );
 
-        chain.proceed(new GenericMessage<>(new MessageType("message"), "payload"), null);
+        testSubject.proceed(message("message", "payload"), null);
         assertEquals("Interceptor One", results.get(0));
         assertEquals("Interceptor Two", results.get(1));
         assertEquals(2, results.size());

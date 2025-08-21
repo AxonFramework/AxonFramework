@@ -69,6 +69,7 @@ class FixtureMessageHandlerInterceptorTest {
             this.value = value;
         }
 
+        @Nonnull
         @Override
         public @NotNull MessageStream<?> interceptOnHandle(@NotNull EventMessage<?> message,
                                                            @NotNull ProcessingContext context,

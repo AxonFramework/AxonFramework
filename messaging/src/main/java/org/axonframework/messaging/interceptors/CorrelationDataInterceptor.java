@@ -40,6 +40,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CorrelationDataInterceptor<M extends Message<?>> implements MessageHandlerInterceptor<M> {
 
+    /**
+     * Resource key the correlation data is stored in the processing context.
+     */
     public static final ResourceKey<Map<String, Object>> CORRELATION_DATA = ResourceKey.withLabel("CorrelationData");
     private final List<CorrelationDataProvider> correlationDataProviders;
 

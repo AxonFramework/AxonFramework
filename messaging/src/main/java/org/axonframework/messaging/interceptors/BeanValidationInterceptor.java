@@ -41,6 +41,7 @@ import java.util.function.Function;
  * {@link JSR303ViolationException} is thrown, holding the constraint violations. This interceptor can either be used as
  * a {@link MessageHandlerInterceptor} or as a {@link MessageDispatchInterceptor}.
  *
+ * @param <M> Type of message the interceptor works with.
  * @author Allard Buijze
  * @since 1.1
  */

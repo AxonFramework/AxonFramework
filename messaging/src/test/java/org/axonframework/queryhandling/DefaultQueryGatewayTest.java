@@ -289,11 +289,11 @@ class DefaultQueryGatewayTest {
     @Test
     void dispatchInterceptor() {
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
-        testSubject.registerDispatchInterceptor((queryMessage, context, chain)
+        testSubject.registerDispatchInterceptor((message, context, chain)
                                                         -> MessageStream.just(
                                                         new GenericQueryMessage<>(
-                                                                new MessageType(queryMessage.type().name()),
-                                                                "dispatch-" + queryMessage.payload(), queryMessage.responseType())
+                                                                new MessageType(message.type().name()),
+                                                                "dispatch-" + message.payload(), message.responseType())
                                                 )
         );
 

@@ -24,6 +24,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
+import java.util.Map;
 
 import static org.axonframework.messaging.interceptors.CorrelationDataInterceptor.CORRELATION_DATA;
 import static org.mockito.Mockito.*;
@@ -34,25 +35,30 @@ import static org.mockito.Mockito.*;
 class CorrelationDataInterceptorTest {
 
     private CorrelationDataInterceptor<Message<?>> subject;
-    private MessageHandlerInterceptorChain mockInterceptorChain;
+    private MessageHandlerInterceptorChain<Message<?>> mockInterceptorChain;
     private CorrelationDataProvider mockProvider1;
     private CorrelationDataProvider mockProvider2;
 
     @BeforeEach
-    @SuppressWarnings("unchecked")
     void setUp() {
         mockProvider1 = mock(CorrelationDataProvider.class);
         mockProvider2 = mock(CorrelationDataProvider.class);
         subject = new CorrelationDataInterceptor<>(Arrays.asList(mockProvider1, mockProvider2));
-        mockInterceptorChain = mock(MessageHandlerInterceptorChain.class);
+        mockInterceptorChain = mock();
     }
 
     @Test
-    void attachesCorrelationDataProvidersToUnitOfWork() throws Exception {
+    void attachesCorrelationDataProvidersToProcessingContext() throws Exception {
         ProcessingContext context = new StubProcessingContext();
         Message<?> message = mock(Message.class);
+
+        when(mockProvider1.correlationDataFor(any())).thenReturn(Map.of("key1", "value"));
+        when(mockProvider2.correlationDataFor(any())).thenReturn(Map.of("key1", "value2", "key2", "value2"));
+        Map<String, Object> expected = Map.of("key1", "value2", "key2", "value2");
+
         subject.interceptOnHandle(message, context, mockInterceptorChain);
-        // FIXME
-        verify(mockInterceptorChain).proceed(eq(message), context.withResource(CORRELATION_DATA, any()));
+        verify(mockProvider1).correlationDataFor(message);
+        verify(mockProvider2).correlationDataFor(message);
+        verify(mockInterceptorChain).proceed(message, context.withResource(CORRELATION_DATA, expected));
     }
 }

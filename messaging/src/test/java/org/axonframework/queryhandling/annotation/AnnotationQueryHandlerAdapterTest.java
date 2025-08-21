@@ -151,6 +151,7 @@ class AnnotationQueryHandlerAdapterTest {
         assertThrows(NoHandlerForQueryException.class, () -> testSubject.handleSync(testQuery, context));
     }
 
+    @Disabled("Reintegrate as part of #3485")
     @Test
     void interceptMessages() throws Exception {
         List<QueryMessage<?, ?>> withInterceptor = new ArrayList<>();

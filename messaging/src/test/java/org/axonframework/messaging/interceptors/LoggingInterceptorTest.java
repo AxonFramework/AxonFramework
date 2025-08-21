@@ -32,7 +32,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
+import static org.axonframework.messaging.MessagingTestHelper.message;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -43,8 +45,6 @@ import static org.mockito.Mockito.*;
  */
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
 class LoggingInterceptorTest {
-
-    private static final MessageType TYPE = new MessageType("message");
 
     private LoggingInterceptor<Message<?>> testSubject;
     private ExtendedLogger mockLogger;
@@ -65,7 +65,7 @@ class LoggingInterceptorTest {
 
         handlerChain = mock();
 
-        message = new GenericMessage<>(TYPE, new StubMessage());
+        message = message(new StubMessage());
         context = StubProcessingContext.forMessage(message);
     }
 
@@ -81,79 +81,68 @@ class LoggingInterceptorTest {
     }
 
     @Test
-    void handlerInterceptorWithIncomingLoggingNullReturnValue() throws Exception {
+    void handlerInterceptorWithIncomingLoggingNullReturnValue() {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        when(handlerChain.proceed(message, context)).thenReturn(null);
+        when(handlerChain.proceed(message, context)).thenReturn(MessageStream.empty().cast());
 
-        testSubject.interceptOnHandle(message, context, handlerChain);
+        MessageStream<?> stream = testSubject.interceptOnHandle(message, context, handlerChain);
 
-        verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
-        verify(mockLogger).logIfEnabled(
-                anyString(), eq(Level.INFO), isNull(), anyString(), contains(TYPE.name()), contains("null")
-        );
+        verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), eq("Incoming message: [{}]"), contains("StubMessage"));
+        stream.next(); // consume
         verifyNoMoreInteractions(mockLogger);
     }
 
     @Test
-    void handlerInterceptorWithSuccessfulExecutionVoidReturnValue() throws Exception {
+    void handlerInterceptorWithSuccessfulExecutionVoidReturnValue() {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
-        when(handlerChain.proceed(message, context)).thenReturn(null);
+        when(handlerChain.proceed(message, context)).thenReturn(MessageStream.just(message(Void.TYPE.getSimpleName(), null)).cast());
 
-        testSubject.interceptOnHandle(message, context, handlerChain);
+        MessageStream<?> stream = testSubject.interceptOnHandle(message, context, handlerChain);
+        verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), eq("Incoming message: [{}]"), contains("StubMessage"));
 
-        verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
-        verify(mockLogger).logIfEnabled(
-                anyString(), eq(Level.INFO), isNull(), anyString(), contains(TYPE.name()), contains("null")
-        );
+        stream.next(); // consume
+        verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"), contains("Void"));
         verifyNoMoreInteractions(mockLogger);
     }
 
     @Test
     void handlerInterceptorWithSuccessfulExecutionCustomReturnValue() throws Exception {
-        // FIXME SZA
-        // when(handlerChain.proceed(message, context)).thenReturn(MessageStream.just(new GenericMessage<>(new MessageType("response"), new StubResponse())));
+        when(handlerChain.proceed(message, context)).thenReturn(MessageStream.just(message(new StubResponse())).cast());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        testSubject.interceptOnHandle(message, context, handlerChain);
+        MessageStream<?> stream = testSubject.interceptOnHandle(message, context, handlerChain);
 
-        verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
-        verify(mockLogger).logIfEnabled(
-                anyString(), eq(Level.INFO), isNull(), anyString(), contains(TYPE.name()), contains("StubResponse")
-        );
+        verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), eq("Incoming message: [{}]"), contains("StubMessage"));
+        stream.next(); // consume
+        verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"), contains("StubResponse"));
         verifyNoMoreInteractions(mockLogger);
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
-    void handlerInterceptorWithFailedExecution() throws Exception {
+    void handlerInterceptorWithFailedExecution() {
         RuntimeException exception = new RuntimeException();
-        when(handlerChain.proceed(message, context)).thenThrow(exception);
+        when(handlerChain.proceed(message, context)).thenReturn(MessageStream.failed(exception).cast());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        try {
-            testSubject.interceptOnHandle(message, context, handlerChain);
-            fail("Expected exception to be propagated");
-        } catch (RuntimeException e) {
-            // expected
-        }
-
+        MessageStream<?> stream = testSubject.interceptOnHandle(message, context, handlerChain);
         verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
-        verify(mockLogger).logIfEnabled(
-                anyString(), eq(Level.WARN), isNull(), contains("failed"), contains("StubMessage"), eq(exception)
-        );
+
+        stream.next();
+        verify(mockLogger).logIfEnabled(anyString(), eq(Level.WARN), isNull(), contains("resulted in an error"), contains("StubMessage"), eq(exception));
         verifyNoMoreInteractions(mockLogger);
     }
 
     @Test
     void dispatchInterceptorLogging() {
         MessageDispatchInterceptorChain<Message<?>> dispatchChain = mock();
-        // FIXME SZA
-        // when(dispatchChain.proceed(message, context)).thenReturn(MessageStream.just(new GenericMessage<>(new MessageType("response"), new StubResponse())));
+        when(dispatchChain.proceed(message, null)).thenReturn(MessageStream.just(message(new StubResponse())).cast());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        testSubject.interceptOnDispatch(new GenericMessage<>(TYPE, new StubMessage()), null, dispatchChain);
+        MessageStream<?> stream = testSubject.interceptOnDispatch(message, null, dispatchChain);
 
-        verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains(TYPE.name()));
+        verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
+        stream.next();
         verifyNoMoreInteractions(mockLogger);
     }
 

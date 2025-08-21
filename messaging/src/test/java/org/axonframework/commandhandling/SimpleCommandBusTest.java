@@ -23,9 +23,9 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
@@ -36,6 +36,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.axonframework.messaging.MessagingTestHelper.asCommandResultMessage;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -65,7 +66,9 @@ class SimpleCommandBusTest {
     void dispatchCommandHandlerSubscribed() throws Exception {
         testSubject.subscribe(COMMAND_NAME, new StubCommandHandler("Hi!"));
 
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(TEST_COMMAND, StubProcessingContext.forMessage(TEST_COMMAND));
+        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(TEST_COMMAND,
+                                                                              StubProcessingContext.forMessage(
+                                                                                      TEST_COMMAND));
 
         assertEquals("Hi!", actual.get().payload());
     }
@@ -74,7 +77,9 @@ class SimpleCommandBusTest {
     void dispatchCommandHandlerSubscribedAndReturnEmpty() throws Exception {
         testSubject.subscribe(COMMAND_NAME, (m, c) -> MessageStream.empty().cast());
 
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(TEST_COMMAND, StubProcessingContext.forMessage(TEST_COMMAND));
+        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(TEST_COMMAND,
+                                                                              StubProcessingContext.forMessage(
+                                                                                      TEST_COMMAND));
 
         assertNull(actual.get());
     }
@@ -183,7 +188,9 @@ class SimpleCommandBusTest {
         CommandMessage<String> command = TEST_COMMAND;
         testSubject.subscribe(command.type().qualifiedName(), commandHandler);
 
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(command, StubProcessingContext.forMessage(TEST_COMMAND));
+        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(command,
+                                                                              StubProcessingContext.forMessage(
+                                                                                      TEST_COMMAND));
 
         assertTrue(actual.isCompletedExceptionally());
         ExecutionException exception = assertThrows(ExecutionException.class, actual::get);
@@ -208,7 +215,9 @@ class SimpleCommandBusTest {
 
     @Test
     void exceptionIsThrownWhenNoHandlerIsRegistered() {
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(TEST_COMMAND, StubProcessingContext.forMessage(TEST_COMMAND));
+        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(TEST_COMMAND,
+                                                                              StubProcessingContext.forMessage(
+                                                                                      TEST_COMMAND));
 
         assertTrue(actual.isCompletedExceptionally());
         ExecutionException exception = assertThrows(ExecutionException.class, actual::get);
@@ -281,7 +290,7 @@ class SimpleCommandBusTest {
         @Nonnull
         @Override
         public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                              @Nonnull ProcessingContext processingContext) {
+                                                                    @Nonnull ProcessingContext processingContext) {
             if (result instanceof Throwable error) {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> future) {
@@ -294,10 +303,5 @@ class SimpleCommandBusTest {
                 );
             }
         }
-    }
-
-    private static GenericCommandResultMessage<?> asCommandResultMessage(CommandMessage<?> message) {
-        var payload = message.payload();
-        return new GenericCommandResultMessage<>(new MessageType(payload.getClass()), payload);
     }
 }
