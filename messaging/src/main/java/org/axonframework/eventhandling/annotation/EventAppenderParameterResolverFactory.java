@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.gateway;
+package org.axonframework.eventhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -49,7 +50,9 @@ public class EventAppenderParameterResolverFactory implements ParameterResolverF
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable,
+                                               @Nonnull Parameter[] parameters,
+                                               int parameterIndex) {
         if (EventAppender.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return new ParameterResolver<>() {
                 @Nullable

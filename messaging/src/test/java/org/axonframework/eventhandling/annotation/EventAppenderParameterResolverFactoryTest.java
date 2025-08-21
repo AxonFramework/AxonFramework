@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.gateway;
+package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.eventhandling.gateway.ProcessingContextEventAppender;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.ParameterResolver;

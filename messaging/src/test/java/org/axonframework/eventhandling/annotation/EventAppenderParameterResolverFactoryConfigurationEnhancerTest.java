@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.gateway;
+package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.DefaultComponentRegistry;
