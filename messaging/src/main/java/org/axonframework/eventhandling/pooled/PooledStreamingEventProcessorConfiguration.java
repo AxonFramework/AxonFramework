@@ -139,7 +139,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
 
     @Override
     public PooledStreamingEventProcessorConfiguration interceptors(
-            @Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+            @Nonnull List<MessageHandlerInterceptor<EventMessage<?>>> interceptors) {
         super.interceptors(interceptors);
         return this;
     }
