@@ -34,6 +34,8 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.configuration.StateBasedEntityModule;
+import org.axonframework.modelling.repository.InMemoryRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.core.convert.converter.Converter;
 
@@ -49,36 +51,23 @@ public class PooledStreamingEventHandlingComponentTest extends AbstractStudentTe
 
     private final List<String> notificationSentToStudents = new CopyOnWriteArrayList<>();
 
-    @Test
-    void sample() {
-        // given
-        startApp();
-
-        // when
-        var studentId = "student-id-1";
-        studentEnrolledToCourse(studentId, "my-courseId-1");
-        studentEnrolledToCourse(studentId, "my-courseId-2");
-        studentEnrolledToCourse(studentId, "my-courseId-3");
-
-        // then
-        await().atMost(2, TimeUnit.SECONDS)
-               .untilAsserted(() -> assertThat(notificationSentToStudents).containsAnyOf(studentId));
+    record StudentCoursesReadModel(String studentId, List<String> courses) {
     }
-
 
     @Override
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
-        configurer.modelling(
-                modelling -> modelling.registerCommandHandlingModule(
-                        sendMaxCoursesEnrolledNotificationCommandHandler()
-                )
-        );
+        var studentCoursesRepository = new InMemoryRepository<>(String.class, StudentCoursesReadModel.class);
+        StateBasedEntityModule<String, StudentCoursesReadModel> studentCoursesEntity =
+                StateBasedEntityModule.declarative(String.class, StudentCoursesReadModel.class)
+                        .repository(cfg -> studentCoursesRepository)
+                        .build();
+        configurer.componentRegistry(cr -> cr.registerModule(studentCoursesEntity));
 
         var studentRegisteredCoursesProcessor = EventProcessorModule
-                .pooledStreaming("student-registered-courses-processor")
+                .pooledStreaming("student-courses-readmodel-processor")
                 .eventHandlingComponents(components -> components.declarative(
                         cfg -> studentMaxCoursesEnrolledNotifier(cfg.getComponent(StateManager.class),
-                                                                 cfg.getComponent(CommandGateway.class))
+                                cfg.getComponent(CommandGateway.class))
                 )).notCustomized();
         configurer.messaging(
                 messaging -> messaging.eventProcessing(
@@ -98,6 +87,25 @@ public class PooledStreamingEventHandlingComponentTest extends AbstractStudentTe
         );
     }
 
+
+
+    @Test
+    void sample() {
+        // given
+        startApp();
+
+        // when
+        var studentId = "student-id-1";
+        studentEnrolledToCourse(studentId, "my-courseId-1");
+        studentEnrolledToCourse(studentId, "my-courseId-2");
+        studentEnrolledToCourse(studentId, "my-courseId-3");
+
+        // then
+        await().atMost(2, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertThat(notificationSentToStudents).containsAnyOf(studentId));
+    }
+
+
     private CommandHandlingModule.CommandHandlerPhase sendMaxCoursesEnrolledNotificationCommandHandler() {
         return CommandHandlingModule
                 .named("student-max-courses-notifier")
@@ -116,7 +124,6 @@ public class PooledStreamingEventHandlingComponentTest extends AbstractStudentTe
 
     @Nonnull
     private static EventHandlingComponent studentMaxCoursesEnrolledNotifier(
-            StateManager stateManager,
             CommandGateway commandGateway
     ) {
         var eventHandlingComponent = new SimpleEventHandlingComponent();
