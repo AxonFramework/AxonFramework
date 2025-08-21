@@ -30,9 +30,9 @@ import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.stereotype.Saga;
 import org.axonframework.springboot.autoconfig.LegacyAxonAutoConfiguration;
-import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -131,7 +131,7 @@ class SagaCustomizeIntegrationTest {
         @Bean
         @Primary
         public Serializer serializer() {
-            return TestSerializer.xStreamSerializer();
+            return JacksonSerializer.defaultSerializer();
         }
 
         @Autowired
@@ -147,9 +147,9 @@ class SagaCustomizeIntegrationTest {
                             processorGroupName,
                             LegacyConfiguration::eventStore,
                             (config, builder) -> builder
-                                    .workerExecutor(name -> Executors.newScheduledThreadPool(
+                                    .workerExecutor(Executors.newScheduledThreadPool(
                                             2,
-                                            new AxonThreadFactory("Worker - " + name))
+                                            new AxonThreadFactory("Worker - " + processorGroupName))
                                     ).initialSegmentCount(2)
                     );
 

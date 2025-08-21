@@ -43,6 +43,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -67,6 +68,7 @@ import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateNotFoundException;
@@ -77,6 +79,9 @@ import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.PassThroughConverter;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.deadline.StubDeadlineManager;
@@ -94,6 +99,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -153,7 +159,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      */
     public AggregateTestFixture(Class<T> aggregateType) {
         deadlineManager = new StubDeadlineManager();
-        commandBus = new SimpleCommandBus();
+        commandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE), Collections.emptyList());
         eventStore = new RecordingEventStore();
         resources.add(commandBus);
         resources.add(eventStore);
@@ -223,7 +229,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 annotatedCommandHandler,
                 getParameterResolverFactory(),
                 getHandlerDefinition(),
-                new ClassBasedMessageTypeResolver()
+                new ClassBasedMessageTypeResolver(),
+                PassThroughConverter.INSTANCE
         ));
         return this;
     }

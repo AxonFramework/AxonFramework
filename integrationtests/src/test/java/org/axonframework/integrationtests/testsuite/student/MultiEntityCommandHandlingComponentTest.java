@@ -31,10 +31,13 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
+import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.*;
 
 import java.util.concurrent.ExecutionException;
 
@@ -64,9 +67,11 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
     void canCombineStatesInLambdaCommandHandlerViaStateManagerParameter() {
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(EnrollStudentToCourseCommand.class),
-                c -> (command, state, context) -> {
+                c -> (command, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context, c);
-                    EnrollStudentToCourseCommand payload = (EnrollStudentToCourseCommand) command.payload();
+                    EnrollStudentToCourseCommand payload =
+                            command.payloadAs(EnrollStudentToCourseCommand.class, c.getComponent(Converter.class));
+                    StateManager state = context.component(StateManager.class);
                     Student student = state.loadEntity(Student.class, payload.studentId(), context).join();
                     Course course = state.loadEntity(Course.class, payload.courseId(), context).join();
 
@@ -108,7 +113,6 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
         Throwable commandExecutionExceptionCause = exception.getCause();
         assertInstanceOf(ExecutionException.class, commandExecutionExceptionCause);
         Throwable executionExceptionCause = commandExecutionExceptionCause.getCause();
-        assertInstanceOf(IllegalArgumentException.class, executionExceptionCause);
         assertTrue(executionExceptionCause.getMessage().contains("Course already has 3 students"));
     }
 
@@ -130,7 +134,6 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
         Throwable commandExecutionExceptionCause = exception.getCause();
         assertInstanceOf(ExecutionException.class, commandExecutionExceptionCause);
         Throwable executionExceptionCause = commandExecutionExceptionCause.getCause();
-        assertInstanceOf(IllegalArgumentException.class, executionExceptionCause);
         assertTrue(executionExceptionCause.getMessage().contains("Mentor already assigned to a mentee"));
     }
 

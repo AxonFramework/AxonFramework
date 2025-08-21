@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
@@ -26,6 +27,7 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
@@ -38,6 +40,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
 import static org.axonframework.utils.AssertUtils.awaitExceptionalCompletion;
 import static org.axonframework.utils.AssertUtils.awaitSuccessfulCompletion;
 import static org.junit.jupiter.api.Assertions.*;
@@ -75,7 +78,7 @@ class DefaultEventStoreTransactionTest {
             var beforeCommitEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
             var afterCommitEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
             var consistencyMarker = new AtomicReference<ConsistencyMarker>();
-            var uow = new UnitOfWork();
+            var uow = aUnitOfWork();
             uow.runOnPreInvocation(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                    beforeCommitEvents.set(transaction.source(sourcingCondition));
@@ -119,7 +122,7 @@ class DefaultEventStoreTransactionTest {
             var afterCommitEvents = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
 
             // when
-            var uow = new UnitOfWork();
+            var uow = aUnitOfWork();
             uow.runOnPreInvocation(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                    transaction.appendEvent(event1);
@@ -177,7 +180,7 @@ class DefaultEventStoreTransactionTest {
         private void testCanCommitTag(EventCriteria nonExistingCriteria, EventCriteria existingCriteria,
                                       Tag tagToCommitOn) {
 
-            var uow = new UnitOfWork();
+            var uow = aUnitOfWork();
             awaitSuccessfulCompletion(uow.executeWithResult(context -> {
                 // Transaction which will result in even being appended for non-existent tag
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context,
@@ -205,7 +208,7 @@ class DefaultEventStoreTransactionTest {
             var onAppendCallback2 = new ArrayList<EventMessage<?>>();
 
             // when
-            var uow = new UnitOfWork();
+            var uow = aUnitOfWork();
             uow.runOnPreInvocation(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 transaction.onAppend(onAppendCallback1::add);
@@ -228,7 +231,7 @@ class DefaultEventStoreTransactionTest {
             var callbackInvoked = new AtomicBoolean(false);
 
             // when
-            var uow = new UnitOfWork();
+            var uow = aUnitOfWork();
             uow.runOnPreInvocation(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 transaction.onAppend(event -> callbackInvoked.set(true));
@@ -250,7 +253,7 @@ class DefaultEventStoreTransactionTest {
         void appendPositionReturnsMinusOneWhenNoEventsAppended() {
             // when
             var result = new AtomicReference<ConsistencyMarker>();
-            var uow = new UnitOfWork();
+            var uow = aUnitOfWork();
             uow.runOnAfterCommit(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 result.set(transaction.appendPosition());
@@ -265,7 +268,7 @@ class DefaultEventStoreTransactionTest {
         void appendPositionReturnsConsistencyMarkerOfTheResultWhenEventsAppended() {
             // when
             var result = new AtomicReference<ConsistencyMarker>();
-            var uow = new UnitOfWork();
+            var uow = aUnitOfWork();
             uow.runOnPreInvocation(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 transaction.appendEvent(eventMessage(0));
@@ -297,7 +300,7 @@ class DefaultEventStoreTransactionTest {
             var sourcingCondition = SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA);
 
             // when
-            var uow = new UnitOfWork();
+            var uow = aUnitOfWork();
             uow.runOnPreInvocation(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                    transaction.appendEvent(event1);
@@ -310,7 +313,7 @@ class DefaultEventStoreTransactionTest {
             // then
             assertThrows(CompletionException.class, () -> awaitExceptionalCompletion(uow.execute()));
 
-            var verificationUow = new UnitOfWork();
+            var verificationUow = aUnitOfWork();
             var eventsAfterRollback = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
             verificationUow.runOnPreInvocation(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
@@ -332,7 +335,7 @@ class DefaultEventStoreTransactionTest {
             var onPostInvocationExecuted = new AtomicBoolean(false);
 
             // when
-            var uow = new UnitOfWork();
+            var uow = aUnitOfWork();
             uow.onError((context, phase, error) -> capturedError.set(error)).runOnPreInvocation(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                    transaction.appendEvent(event1);

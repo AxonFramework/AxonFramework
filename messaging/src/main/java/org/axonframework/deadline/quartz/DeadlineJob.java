@@ -50,7 +50,8 @@ import java.util.function.Predicate;
 
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineMessage;
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineScope;
-import static org.axonframework.messaging.Headers.*;
+import static org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler.DirectEventJobDataBinder.*;
+import static org.axonframework.messaging.HandlerAttributes.DEADLINE_NAME;
 
 /**
  * Quartz job which depicts handling of a scheduled deadline message. The {@link DeadlineMessage} and
@@ -214,6 +215,34 @@ public class DeadlineJob implements Job {
          * Key pointing to the {@link Message#type()} as a {@code String} of the deadline in the {@link JobDataMap}.
          */
         public static final String TYPE = "type";
+        /**
+         * Key pointing to a message identifier.
+         */
+        public static final String MESSAGE_ID = "axon-message-id";
+        /**
+         * Key pointing to the serialized payload of a message.
+         */
+        public static final String SERIALIZED_MESSAGE_PAYLOAD = "axon-serialized-message-payload";
+        /**
+         * Key pointing to the payload type of a message.
+         */
+        public static final String MESSAGE_TYPE = "axon-message-type";
+        /**
+         * Key pointing to the revision of a message.
+         */
+        public static final String MESSAGE_REVISION = "axon-message-revision";
+        /**
+         * Key pointing to the timestamp of a message.
+         */
+        public static final String MESSAGE_TIMESTAMP = "axon-message-timestamp";
+        /**
+         * Key pointing to the {@link MetaData} of a message.
+         */
+        public static final String MESSAGE_METADATA = "axon-metadata";
+        /**
+         * Key pointing to the deadline name of a {@link org.axonframework.deadline.DeadlineMessage}.
+         */
+        public static final String DEADLINE_NAME = "axon-deadline-name";
 
         /**
          * Serializes the provided {@code deadlineMessage} and {@code deadlineScope} and puts them in a

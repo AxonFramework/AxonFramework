@@ -17,9 +17,11 @@
 package org.axonframework.configuration;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
@@ -27,8 +29,11 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.NamespaceMessageTypeResolver;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
@@ -37,8 +42,11 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.junit.jupiter.api.*;
 
+import java.util.Collections;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.axonframework.commandhandling.CommandBusTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -63,7 +71,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Optional<CommandGateway> commandGateway = result.getOptionalComponent(CommandGateway.class);
         assertTrue(commandGateway.isPresent());
-        assertInstanceOf(DefaultCommandGateway.class, commandGateway.get());
+        assertInstanceOf(ConvertingCommandGateway.class, commandGateway.get());
 
         Optional<CommandBus> commandBus = result.getOptionalComponent(CommandBus.class);
         assertTrue(commandBus.isPresent());
@@ -125,7 +133,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
     @Test
     void registerCommandBusOverridesDefault() {
-        CommandBus expected = new SimpleCommandBus();
+        CommandBus expected = aCommandBus();
 
         Configuration result = testSubject.registerCommandBus(c -> expected)
                                           .build();
@@ -172,6 +180,22 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                            .getComponent(TestComponent.class);
 
         assertEquals(tc, result);
+    }
+
+    @Test
+    void registerCommandHandlingModuleAddsAModuleConfiguration() {
+        ModuleBuilder<CommandHandlingModule> statelessCommandHandlingModule =
+                CommandHandlingModule.named("test")
+                                     .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
+                                             new QualifiedName(String.class),
+                                             (command, context) -> MessageStream.empty().cast()
+                                     ));
+
+        Configuration configuration =
+                testSubject.registerCommandHandlingModule(statelessCommandHandlingModule)
+                           .build();
+
+        assertThat(configuration.getModuleConfiguration("test")).isPresent();
     }
 
     private static class TestComponent {

@@ -33,6 +33,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericResultMessageTest extends MessageTestSuite<ResultMessage<?>> {
 
     @Override
+    protected ResultMessage<?> buildDefaultMessage() {
+        return new GenericResultMessage<>(new GenericMessage<>(
+                TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA
+        ));
+    }
+
+    @Override
     protected <P> ResultMessage<?> buildMessage(@Nullable P payload) {
         return new GenericResultMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
@@ -46,16 +53,5 @@ class GenericResultMessageTest extends MessageTestSuite<ResultMessage<?>> {
         } catch (IllegalPayloadAccessException ipae) {
             assertEquals(t, ipae.getCause());
         }
-    }
-
-    @Test
-    void exceptionSerialization() {
-        Throwable expected = new Throwable("oops");
-        ResultMessage<?> resultMessage = asResultMessage(expected);
-        JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
-        SerializedObject<String> serializedObject =
-                resultMessage.serializeExceptionResult(jacksonSerializer, String.class);
-        RemoteExceptionDescription actual = jacksonSerializer.deserialize(serializedObject);
-        assertEquals("java.lang.Throwable: oops", actual.getDescriptions().get(0));
     }
 }

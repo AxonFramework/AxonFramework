@@ -26,11 +26,11 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 class AxonTestWhen implements AxonTestPhase.When {
@@ -40,6 +40,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     private final MessageTypeResolver messageTypeResolver;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
+    private final UnitOfWorkFactory unitOfWorkFactory;
 
     private Message<?> actualResult;
     private Throwable actualException;
@@ -49,13 +50,15 @@ class AxonTestWhen implements AxonTestPhase.When {
             AxonTestFixture.Customization customization,
             MessageTypeResolver messageTypeResolver,
             RecordingCommandBus commandBus,
-            RecordingEventSink eventSink
+            RecordingEventSink eventSink,
+            UnitOfWorkFactory unitOfWorkFactory
     ) {
         this.configuration = configuration;
         this.customization = customization;
         this.messageTypeResolver = messageTypeResolver;
         this.commandBus = commandBus.reset();
         this.eventSink = eventSink.reset();
+        this.unitOfWorkFactory = unitOfWorkFactory;
     }
 
     @Override
@@ -109,7 +112,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     private void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
-        var unitOfWork = new UnitOfWork();
+        var unitOfWork = unitOfWorkFactory.create();
         unitOfWork.onInvocation(action);
         awaitCompletion(unitOfWork.execute());
     }

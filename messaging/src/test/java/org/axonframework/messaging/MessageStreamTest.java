@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -857,6 +858,73 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
+    void shouldConcatWithMultipleStreamsSequentially() {
+        M first = createRandomMessage();
+        M second = createRandomMessage();
+        M third = createRandomMessage();
+        
+        MessageStream<M> stream1 = completedTestSubject(List.of(first));
+        MessageStream<M> stream2 = completedTestSubject(List.of(second));  
+        MessageStream<M> stream3 = completedTestSubject(List.of(third));
+
+        MessageStream<M> concatenated = stream1.concatWith(stream2).concatWith(stream3);
+
+        StepVerifier.create(concatenated.asFlux())
+                    .expectNextMatches(entry -> entry.message().equals(first))
+                    .expectNextMatches(entry -> entry.message().equals(second))
+                    .expectNextMatches(entry -> entry.message().equals(third))
+                    .verifyComplete();
+    }
+
+    @Test
+    void shouldFailConcatWithIfFirstStreamFails() {
+        RuntimeException testException = new RuntimeException("First stream failed");
+        MessageStream<M> firstStream = failingTestSubject(List.of(), testException);
+        MessageStream<M> secondStream = completedTestSubject(List.of(createRandomMessage()));
+
+        MessageStream<M> concatenated = firstStream.concatWith(secondStream);
+
+        StepVerifier.create(concatenated.asFlux())
+                    .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("First stream failed"))
+                    .verify();
+    }
+
+    @Test
+    void shouldFailConcatWithIfSecondStreamFails() {
+        RuntimeException testException = new RuntimeException("Second stream failed");
+        M firstMessage = createRandomMessage();
+        MessageStream<M> firstStream = completedTestSubject(List.of(firstMessage));
+        MessageStream<M> secondStream = failingTestSubject(List.of(), testException);
+
+        MessageStream<M> concatenated = firstStream.concatWith(secondStream);
+
+        StepVerifier.create(concatenated.asFlux())
+                    .expectNextMatches(entry -> entry.message().equals(firstMessage))
+                    .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("Second stream failed"))
+                    .verify();
+    }
+
+    @Test
+    void shouldPreserveOrderInConcatWithStreams() {
+        M first1 = createRandomMessage();
+        M first2 = createRandomMessage();
+        M second1 = createRandomMessage();
+        M second2 = createRandomMessage();
+        
+        MessageStream<M> stream1 = completedTestSubject(List.of(first1, first2));
+        MessageStream<M> stream2 = completedTestSubject(List.of(second1, second2));
+
+        MessageStream<M> concatenated = stream1.concatWith(stream2);
+
+        StepVerifier.create(concatenated.asFlux())
+                    .expectNextMatches(entry -> entry.message().equals(first1))
+                    .expectNextMatches(entry -> entry.message().equals(first2))
+                    .expectNextMatches(entry -> entry.message().equals(second1))
+                    .expectNextMatches(entry -> entry.message().equals(second2))
+                    .verifyComplete();
+    }
+
+    @Test
     void shouldInvokeCompletionCallback_asCompletableFuture() {
         AtomicBoolean invoked = new AtomicBoolean();
 
@@ -948,6 +1016,96 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                                        .asFlux())
                     .expectNextMatches(entry -> entry.message().equals(expectedMessage))
                     .verifyErrorMatches(expected::equals);
+    }
+
+    @Test
+    void shouldExecuteWhenCompleteCallbackOnlyAfterAllMessagesProcessed() {
+        AtomicBoolean callbackExecuted = new AtomicBoolean(false);
+        AtomicInteger processedCount = new AtomicInteger(0);
+        
+        List<M> messages = List.of(createRandomMessage(), createRandomMessage(), createRandomMessage());
+        MessageStream<M> testSubject = completedTestSubject(messages)
+            .onNext(entry -> {
+                processedCount.incrementAndGet();
+                assertFalse(callbackExecuted.get(), "Callback should not execute until completion");
+            })
+            .whenComplete(() -> callbackExecuted.set(true));
+        
+        StepVerifier.create(testSubject.asFlux())
+                    .expectNextCount(3)
+                    .verifyComplete();
+        
+        assertEquals(3, processedCount.get());
+        assertTrue(callbackExecuted.get());
+    }
+
+    @Test
+    void shouldNotExecuteWhenCompleteCallbackOnError() {
+        RuntimeException testException = new RuntimeException("Stream failed");
+        AtomicBoolean callbackExecuted = new AtomicBoolean(false);
+        
+        MessageStream<M> testSubject = failingTestSubject(List.of(), testException)
+            .whenComplete(() -> callbackExecuted.set(true));
+        
+        StepVerifier.create(testSubject.asFlux())
+                    .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("Stream failed"))
+                    .verify();
+        
+        assertFalse(callbackExecuted.get());
+    }
+
+    @Test
+    void shouldNotChangeStreamContentWithWhenComplete() {
+        List<M> originalMessages = List.of(createRandomMessage(), createRandomMessage(), createRandomMessage());
+        AtomicBoolean callbackExecuted = new AtomicBoolean(false);
+        
+        MessageStream<M> original = completedTestSubject(originalMessages);
+        MessageStream<M> withCallback = original.whenComplete(() -> callbackExecuted.set(true));
+        
+        StepVerifier.create(withCallback.asFlux())
+                    .expectNextMatches(entry -> entry.message().equals(originalMessages.get(0)))
+                    .expectNextMatches(entry -> entry.message().equals(originalMessages.get(1)))
+                    .expectNextMatches(entry -> entry.message().equals(originalMessages.get(2)))
+                    .verifyComplete();
+        
+        assertTrue(callbackExecuted.get());
+    }
+
+    @Test
+    void shouldChainMultipleWhenCompleteCallbacks() {
+        AtomicInteger callbackCount = new AtomicInteger(0);
+        
+        MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage()))
+            .whenComplete(callbackCount::incrementAndGet)
+            .whenComplete(callbackCount::incrementAndGet)
+            .whenComplete(callbackCount::incrementAndGet);
+        
+        StepVerifier.create(testSubject.asFlux())
+                    .expectNextCount(1)
+                    .verifyComplete();
+        
+        assertEquals(3, callbackCount.get());
+    }
+
+    @Test
+    void shouldShowDifferentPurposesOfConcatWithAndWhenComplete() {
+        AtomicBoolean stream1Completed = new AtomicBoolean(false);
+        AtomicBoolean stream2Completed = new AtomicBoolean(false);
+        
+        MessageStream<M> stream1 = completedTestSubject(List.of(createRandomMessage()))
+            .whenComplete(() -> stream1Completed.set(true));
+        
+        MessageStream<M> stream2 = completedTestSubject(List.of(createRandomMessage()))
+            .whenComplete(() -> stream2Completed.set(true));
+
+        MessageStream<M> concatenated = stream1.concatWith(stream2);
+        
+        StepVerifier.create(concatenated.asFlux())
+                    .expectNextCount(2)
+                    .verifyComplete();
+        
+        assertTrue(stream1Completed.get());
+        assertTrue(stream2Completed.get());
     }
 
     @Test

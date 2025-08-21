@@ -16,27 +16,29 @@
 
 package org.axonframework.integrationtests.eventsourcing.eventstore.jpa;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
+import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.json.JacksonConverter;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.eventstreaming.Tag;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -54,32 +56,48 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.lang.reflect.Type;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.LongStream;
 import javax.sql.DataSource;
 
+import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link AggregateBasedJpaEventStorageEngine}.
+ *
+ * @author Mateusz Nowak
+ */
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = AggregateBasedJpaEventStorageEngineTest.TestContext.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class AggregateBasedJpaEventStorageEngineTest
         extends AggregateBasedStorageEngineTestSuite<AggregateBasedJpaEventStorageEngine> {
 
-    private static final JacksonSerializer TEST_SERIALIZER = JacksonSerializer.defaultSerializer();
-    private static final ObjectMapper OBJECT_MAPPER = TEST_SERIALIZER.getObjectMapper();
-
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
     @Autowired
     private EntityManagerProvider entityManagerProvider;
 
+    private TransactionManager transactionManager;
+
     @Override
     protected AggregateBasedJpaEventStorageEngine buildStorageEngine() {
+        transactionManager = spy(new SpringTransactionManager(platformTransactionManager));
         return new AggregateBasedJpaEventStorageEngine(
                 entityManagerProvider,
-                new SpringTransactionManager(platformTransactionManager),
-                TEST_SERIALIZER,
+                transactionManager,
+                converter,
                 config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver())
         );
     }
@@ -91,28 +109,12 @@ class AggregateBasedJpaEventStorageEngineTest
 
     @Override
     protected TrackingToken trackingTokenAt(long position) {
-        return GapAwareTrackingToken.newInstance(globalSequenceOfEvent(position), Collections.emptySet());
+        return GapAwareTrackingToken.newInstance(globalSequenceOfEvent(position), emptySet());
     }
 
     @Override
     protected EventMessage<String> convertPayload(EventMessage<?> original) {
-        // TODO 3102 - This should be entirely removed once the AggregateBasedJpaEventStorageEngine uses a Converter instead of a Serializer
-        return original.withConvertedPayload(String.class, new Converter() {
-            @Override
-            public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
-                return TEST_SERIALIZER.canSerializeTo((Class) targetType);
-            }
-
-            @Nullable
-            @Override
-            public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
-                //noinspection removal,unchecked
-                SerializedObject<T> serializedObject = (SimpleSerializedObject<T>) new SimpleSerializedObject<>(
-                        (byte[]) input, byte[].class, ((Class<?>) targetType).getName(), null
-                );
-                return TEST_SERIALIZER.deserialize(serializedObject);
-            }
-        });
+        return original.withConvertedPayload(String.class, converter);
     }
 
     @Test
@@ -121,6 +123,178 @@ class AggregateBasedJpaEventStorageEngineTest
                 IllegalArgumentException.class,
                 () -> testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(5)))
         );
+    }
+
+    @Test
+    void appendEventsIsPerformedInATransaction() {
+        appendCommitAndWait(testSubject, AppendCondition.none(), taggedEventMessage("event-2", emptySet()));
+
+        verify(transactionManager).startTransaction();
+    }
+
+    @Test
+    void gapsForVeryOldEventsAreNotIncluded() {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        Transaction transaction = transactionManager.startTransaction();
+        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee").executeUpdate();
+        entityManager.clear();
+        transaction.commit();
+
+        GenericEventMessage.clock =
+                Clock.fixed(Clock.systemUTC().instant().minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
+        appendCommitAndWait(testSubject, AppendCondition.none(),
+                            taggedEventMessage("-1", Set.of()), taggedEventMessage("0", Set.of()));
+        GenericEventMessage.clock =
+                Clock.fixed(Clock.systemUTC().instant().minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
+        appendCommitAndWait(testSubject, AppendCondition.none(),
+                            taggedEventMessage("-2", Set.of()), taggedEventMessage("1", Set.of()));
+
+        GenericEventMessage.clock =
+                Clock.fixed(Clock.systemUTC().instant().minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
+        appendCommitAndWait(testSubject, AppendCondition.none(),
+                            taggedEventMessage("-3", Set.of()), taggedEventMessage("2", Set.of()));
+
+        GenericEventMessage.clock = Clock.fixed(Clock.systemUTC().instant(), Clock.systemUTC().getZone());
+        appendCommitAndWait(testSubject, AppendCondition.none(),
+                            taggedEventMessage("-4", Set.of()), taggedEventMessage("3", Set.of()));
+
+        entityManager.clear();
+        transaction.commit();
+        transaction = transactionManager.startTransaction();
+        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee WHERE dee.aggregateSequenceNumber < 0")
+                     .executeUpdate();
+        transaction.commit();
+
+        testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())))
+                   .reduce(
+                           new ArrayList<TrackingToken>(), (tokens, entry) -> {
+                               Optional<TrackingToken> optionalToken = TrackingToken.fromContext(entry);
+                               assertThat(optionalToken).isPresent();
+                               tokens.add(optionalToken.get());
+                               return tokens;
+                           }
+                   )
+                   .join()
+                   .forEach(token -> {
+                       assertThat(token).isInstanceOf(GapAwareTrackingToken.class);
+                       GapAwareTrackingToken gapAwareToken = (GapAwareTrackingToken) token;
+                       assertThat(!gapAwareToken.hasGaps() || gapAwareToken.getGaps().first() >= 5L).isTrue();
+                   });
+
+        transaction.commit();
+    }
+
+    @Test
+    void oldGapsAreRemovedFromProvidedTrackingToken() {
+        AggregateBasedJpaEventStorageEngine gapConfigTestSubject = new AggregateBasedJpaEventStorageEngine(
+                entityManagerProvider,
+                transactionManager,
+                converter,
+                config -> config.maxGapOffset(10000)
+                                .gapTimeout(50001)
+                                .gapCleaningThreshold(50)
+        );
+
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        Transaction transaction = transactionManager.startTransaction();
+        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee").executeUpdate();
+        entityManager.clear();
+        transaction.commit();
+
+        Instant now = Clock.systemUTC().instant();
+        Tag aggregateToRemove = Tag.of("MyAggregate", "remove");
+        AppendCondition removeAggregateCondition =
+                AppendCondition.withCriteria(EventCriteria.havingTags(aggregateToRemove));
+        Tag aggregateToKeep = Tag.of("MyAggregate", "keep");
+        AppendCondition keepAggregateCondition =
+                AppendCondition.withCriteria(EventCriteria.havingTags(aggregateToKeep));
+        GenericEventMessage.clock = Clock.fixed(now.minus(1, ChronoUnit.HOURS), Clock.systemUTC().getZone());
+        appendCommitAndWait(gapConfigTestSubject, removeAggregateCondition,
+                            taggedEventMessage("-1", Set.of(aggregateToRemove)));
+        appendCommitAndWait(gapConfigTestSubject, keepAggregateCondition,
+                            taggedEventMessage("1", Set.of(aggregateToKeep)));
+        GenericEventMessage.clock = Clock.fixed(now.minus(2, ChronoUnit.MINUTES), Clock.systemUTC().getZone());
+        appendCommitAndWait(gapConfigTestSubject,
+                            removeAggregateCondition.withMarker(new AggregateBasedConsistencyMarker("remove", 1)),
+                            taggedEventMessage("-2", Set.of(aggregateToRemove)));
+        appendCommitAndWait(gapConfigTestSubject,
+                            keepAggregateCondition.withMarker(new AggregateBasedConsistencyMarker("keep", 1)),
+                            taggedEventMessage("2", Set.of(aggregateToKeep)));
+        GenericEventMessage.clock = Clock.fixed(now.minus(50, ChronoUnit.SECONDS), Clock.systemUTC().getZone());
+        appendCommitAndWait(gapConfigTestSubject,
+                            removeAggregateCondition.withMarker(new AggregateBasedConsistencyMarker("remove", 3)),
+                            taggedEventMessage("-3", Set.of(aggregateToRemove)));
+        appendCommitAndWait(gapConfigTestSubject,
+                            keepAggregateCondition.withMarker(new AggregateBasedConsistencyMarker("keep", 3)),
+                            taggedEventMessage("3", Set.of(aggregateToKeep)));
+        GenericEventMessage.clock = Clock.fixed(now, Clock.systemUTC().getZone());
+        appendCommitAndWait(gapConfigTestSubject,
+                            keepAggregateCondition.withMarker(new AggregateBasedConsistencyMarker("remove", 5)),
+                            taggedEventMessage("-4", Set.of(aggregateToRemove)));
+        appendCommitAndWait(gapConfigTestSubject,
+                            keepAggregateCondition.withMarker(new AggregateBasedConsistencyMarker("keep", 5)),
+                            taggedEventMessage("4", Set.of(aggregateToKeep)));
+
+        // Let's create some gaps by removing all events where the aggregate identifier is not "remove"
+        transaction = transactionManager.startTransaction();
+        entityManager.createQuery(
+                             "DELETE FROM AggregateBasedEventEntry entry WHERE entry.aggregateIdentifier = :aggregateIdentifier"
+                     )
+                     .setParameter("aggregateIdentifier", "remove")
+                     .executeUpdate();
+        entityManager.clear();
+        transaction.commit();
+
+        transaction = transactionManager.startTransaction();
+        // Some "magic" because sequences aren't reset between tests. Finding the sequence positions to use in assertions
+        List<Long> sequences =
+                entityManager.createQuery(
+                                     "SELECT e.globalIndex FROM AggregateBasedEventEntry e WHERE e.aggregateIdentifier = :aggregateIdentifier",
+                                     Long.class
+                             )
+                             .setParameter("aggregateIdentifier", "keep")
+                             .getResultList();
+        entityManager.clear();
+        transaction.commit();
+        Optional<Long> maxResult = sequences.stream().max(Long::compareTo);
+        assertThat(maxResult).isPresent();
+
+        long largestIndex = maxResult.get();
+        long secondLastEventIndex = largestIndex - 2;
+        // create a lot of gaps most of them fake (< 0), but some of them real
+        List<Long> gaps = LongStream.range(-50, largestIndex)
+                                    .boxed()
+                                    .filter(g -> !sequences.contains(g))
+                                    .filter(g -> g < secondLastEventIndex)
+                                    .collect(toList());
+        GapAwareTrackingToken startPosition = GapAwareTrackingToken.newInstance(secondLastEventIndex, gaps);
+
+        MessageStream<EventMessage<?>> eventStream =
+                gapConfigTestSubject.stream(StreamingCondition.startingFrom(startPosition));
+        assertThat(eventStream.hasNextAvailable()).isTrue();
+        TrackingToken token = eventStream.next()
+                                         .flatMap(TrackingToken::fromContext)
+                                         .orElseThrow(AssertionError::new);
+        // We should've received a single event.
+        assertThat(eventStream.hasNextAvailable()).isFalse();
+
+        assertThat(token).isInstanceOf(GapAwareTrackingToken.class);
+        GapAwareTrackingToken resultToken = (GapAwareTrackingToken) token;
+
+        // we expect the gap before the last event we had read previously
+        assertThat(resultToken.getGaps().first()).isEqualTo(secondLastEventIndex - 1);
+        // and we've got a new gap in this batch
+        assertThat(resultToken.getGaps().size()).isEqualTo(2);
+
+        transaction.commit();
+    }
+
+    private static void appendCommitAndWait(AggregateBasedJpaEventStorageEngine subject,
+                                            AppendCondition condition,
+                                            TaggedEventMessage<?>... events) {
+        subject.appendEvents(condition, events)
+               .thenCompose(EventStorageEngine.AppendTransaction::commit)
+               .join();
     }
 
     @Configuration
@@ -140,10 +314,9 @@ class AggregateBasedJpaEventStorageEngineTest
 
         @Bean
         public DataSource dataSource() {
-            DriverManagerDataSource driverManagerDataSource
-                    = new DriverManagerDataSource("jdbc:hsqldb:mem:legacyjpaeventstoreageenginetest",
-                                                  "sa",
-                                                  "password");
+            String uniqueDbName = "jdbc:hsqldb:mem:aggregatebasedjpaeventstorageenginetest-" + System.nanoTime();
+            DriverManagerDataSource driverManagerDataSource =
+                    new DriverManagerDataSource(uniqueDbName, "sa", "password");
             driverManagerDataSource.setDriverClassName("org.hsqldb.jdbcDriver");
             return driverManagerDataSource;
         }

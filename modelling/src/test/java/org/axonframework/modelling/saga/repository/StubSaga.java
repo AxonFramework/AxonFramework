@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.saga.repository;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.SagaLifecycle;
 
@@ -25,6 +26,7 @@ import static org.axonframework.modelling.saga.SagaLifecycle.removeAssociationWi
 /**
 * @author Allard Buijze
 */
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class StubSaga {
 
     public void registerAssociationValue(AssociationValue associationValue) {

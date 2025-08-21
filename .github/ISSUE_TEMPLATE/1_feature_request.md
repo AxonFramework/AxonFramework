@@ -2,7 +2,7 @@
 name: 'Feature request'
 about: 'Suggest a feature for Axon Framework'
 title:
-labels: 'Type: Feature'
+type: 'Feature'
 ---
 
 <!-- Please use markdown (https://guides.github.com/features/mastering-markdown/) semantics throughout the feature description. -->

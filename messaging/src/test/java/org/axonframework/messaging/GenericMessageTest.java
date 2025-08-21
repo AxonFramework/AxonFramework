@@ -56,6 +56,11 @@ class GenericMessageTest extends MessageTestSuite<Message<?>> {
     }
 
     @Override
+    protected Message<?> buildDefaultMessage() {
+        return new GenericMessage<>(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+    }
+
+    @Override
     protected <P> Message<?> buildMessage(@Nullable P payload) {
         return new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
@@ -68,21 +73,6 @@ class GenericMessageTest extends MessageTestSuite<Message<?>> {
     }
 
     @Test
-    void containsDataAsExpected() {
-        String testIdentifier = "testIdentifier";
-        MessageType testType = new MessageType("message");
-        String testPayload = "payload";
-        MetaData testMetaData = MetaData.emptyInstance();
-
-        Message<String> testSubject = new GenericMessage<>(testIdentifier, testType, testPayload, testMetaData);
-
-        assertEquals(testIdentifier, testSubject.identifier());
-        assertEquals(testType, testSubject.type());
-        assertEquals(testPayload, testSubject.payload());
-        assertEquals(testMetaData, testSubject.metaData());
-    }
-
-    @Test
     void correlationDataAddedToNewMessage() {
         Message<Object> testMessage = new GenericMessage<>(new MessageType("message"), new Object());
         assertEquals(correlationData, new HashMap<>(testMessage.metaData()));
@@ -91,28 +81,6 @@ class GenericMessageTest extends MessageTestSuite<Message<?>> {
         Message<Object> testMessageWithMetaData =
                 new GenericMessage<>(new MessageType("message"), new Object(), newMetaData);
         assertEquals(newMetaData.mergedWith(correlationData), testMessageWithMetaData.metaData());
-    }
-
-    @Test
-    void messageSerialization() throws IOException {
-        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
-
-        Message<String> message =
-                new GenericMessage<>(new MessageType("message"), "payload", metaDataMap);
-
-        JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
-
-
-        SerializedObject<String> serializedPayload = message.serializePayload(jacksonSerializer, String.class);
-        SerializedObject<String> serializedMetaData = message.serializeMetaData(jacksonSerializer, String.class);
-
-        assertEquals("\"payload\"", serializedPayload.getData());
-
-
-        ObjectMapper objectMapper = jacksonSerializer.getObjectMapper();
-        Map<String, String> actualMetaData = objectMapper.readValue(serializedMetaData.getData(), Map.class);
-
-        assertTrue(actualMetaData.entrySet().containsAll(metaDataMap.entrySet()));
     }
 
     @Test

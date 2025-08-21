@@ -55,7 +55,6 @@ import java.util.function.Supplier;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.eventhandling.GenericEventMessage.clock;
 import static org.axonframework.eventhandling.scheduling.quartz.FireEventJob.*;
-import static org.axonframework.messaging.Headers.*;
 import static org.quartz.JobKey.jobKey;
 
 /**
@@ -248,6 +247,30 @@ public class QuartzEventScheduler implements EventScheduler {
      */
     public static class DirectEventJobDataBinder implements EventJobDataBinder {
 
+        /**
+         * Key pointing to a message identifier.
+         */
+        public static final String MESSAGE_ID = "axon-message-id";
+        /**
+         * Key pointing to the serialized payload of a message.
+         */
+        public static final String SERIALIZED_MESSAGE_PAYLOAD = "axon-serialized-message-payload";
+        /**
+         * Key pointing to the payload type of a message.
+         */
+        public static final String MESSAGE_TYPE = "axon-message-type";
+        /**
+         * Key pointing to the revision of a message.
+         */
+        public static final String MESSAGE_REVISION = "axon-message-revision";
+        /**
+         * Key pointing to the timestamp of a message.
+         */
+        public static final String MESSAGE_TIMESTAMP = "axon-message-timestamp";
+        /**
+         * Key pointing to the {@link MetaData} of a message.
+         */
+        public static final String MESSAGE_METADATA = "axon-metadata";
         /**
          * Key pointing to the {@link Message#type()} as a {@code String} of the deadline in the {@link JobDataMap}.
          */

@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.HashMap;
@@ -57,7 +57,7 @@ class SplitTaskTest {
         result = new CompletableFuture<>();
 
         testSubject = new SplitTask(
-                result, PROCESSOR_NAME, SEGMENT_ID, workPackages, tokenStore, new SimpleUnitOfWorkFactory()
+                result, PROCESSOR_NAME, SEGMENT_ID, workPackages, tokenStore, UnitOfWorkTestUtils.SIMPLE_FACTORY
         );
     }
 

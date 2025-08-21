@@ -17,10 +17,10 @@
 package org.axonframework.integrationtests.eventsourcing.eventstore.benchmark;
 
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -30,6 +30,8 @@ import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventstreaming.LegacyStreamableEventSource;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +92,7 @@ public abstract class AbstractEventStoreBenchmark {
         this.coordinatorExecutor = Executors.newSingleThreadScheduledExecutor(
                 new AxonThreadFactory("benchmark-coordinator"));
         this.workerExecutor = Executors.newScheduledThreadPool(2,
-                new AxonThreadFactory("benchmark-worker"));
+                                                               new AxonThreadFactory("benchmark-worker"));
 
         SimpleEventHandlerInvoker eventHandlerInvoker =
                 SimpleEventHandlerInvoker.builder()
@@ -106,15 +108,15 @@ public abstract class AbstractEventStoreBenchmark {
                                                  }
 
                                          ).build();
-        this.eventProcessor = PooledStreamingEventProcessor.builder()
-                                                    .name("benchmark")
-                                                    .eventHandlerInvoker(eventHandlerInvoker)
-                                                    .eventSource(new LegacyStreamableEventSource<>(eventStore))
-                                                    .tokenStore(new InMemoryTokenStore())
-                                                    .transactionManager(NoTransactionManager.INSTANCE)
-                                                    .coordinatorExecutor(coordinatorExecutor)
-                                                    .workerExecutor(workerExecutor)
-                                                    .build();
+        this.eventProcessor = new PooledStreamingEventProcessor(
+                "benchmark",
+                List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
+                cfg -> cfg.eventSource(new LegacyStreamableEventSource<>(eventStore))
+                        .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
+                        .tokenStore(new InMemoryTokenStore())
+                        .coordinatorExecutor(coordinatorExecutor)
+                        .workerExecutor(workerExecutor)
+        );
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }
 
@@ -187,8 +189,8 @@ public abstract class AbstractEventStoreBenchmark {
         return IntStream.range(startSequenceNumber, startSequenceNumber + count)
                         .mapToObj(sequenceNumber -> createDomainEvent(aggregateId, sequenceNumber))
                         .peek(event -> serializer().ifPresent(serializer -> {
-                            event.serializePayload(serializer, byte[].class);
-                            event.serializeMetaData(serializer, byte[].class);
+                            serializer.serialize(event.payload(), byte[].class);
+                            serializer.serialize(event.metaData(), byte[].class);
                         })).toArray(EventMessage[]::new);
     }
 

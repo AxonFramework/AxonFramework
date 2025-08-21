@@ -29,7 +29,6 @@ import org.axonframework.commandhandling.tracing.DefaultCommandBusSpanFactory;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -56,9 +55,9 @@ import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.ScopeAwareProvider;
@@ -72,6 +71,10 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
 import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.saga.DefaultSagaManagerSpanFactory;
@@ -95,11 +98,11 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
@@ -284,7 +287,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     /**
      * Returns a Configurer instance which has JPA versions of building blocks configured, such as a JPA based Event
-     * Store (see {@link LegacyJpaEventStorageEngine}), a {@link JpaTokenStore} and {@link JpaSagaStore}.
+     * Store, a {@link JpaTokenStore} and {@link JpaSagaStore}.
      * <br>
      * This method allows to provide a transaction manager for usage in JTA-managed entity manager.
      *
@@ -297,19 +300,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         return new LegacyDefaultConfigurer()
                 .registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
                 .registerComponent(TransactionManager.class, c -> transactionManager)
-                .configureEmbeddedEventStore(
-                        c -> LegacyJpaEventStorageEngine.builder()
-                                                        .snapshotSerializer(c.serializer())
-                                                        .upcasterChain(c.upcasterChain())
-                                                        .persistenceExceptionResolver(
-                                                                c.getComponent(PersistenceExceptionResolver.class)
-                                                        )
-                                                        .eventSerializer(c.eventSerializer())
-                                                        .snapshotFilter(c.snapshotFilter())
-                                                        .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
-                                                        .transactionManager(c.getComponent(TransactionManager.class))
-                                                        .build()
-                )
                 .registerComponent(TokenStore.class,
                                    c -> JpaTokenStore.builder()
                                                      .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
@@ -318,13 +308,12 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                 .registerComponent(SagaStore.class,
                                    c -> JpaSagaStore.builder()
                                                     .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
-                                                    .serializer(c.serializer())
                                                     .build());
     }
 
     /**
      * Returns a Configurer instance which has JPA versions of building blocks configured, such as a JPA based Event
-     * Store (see {@link LegacyJpaEventStorageEngine}), a {@link JpaTokenStore} and {@link JpaSagaStore}.
+     * Store, a {@link JpaTokenStore} and {@link JpaSagaStore}.
      * <br>
      * This configuration should be used with an entity manager running without JTA transaction. If you are using a
      * entity manager in JTA mode, please provide the corresponding {@link TransactionManager} in the
@@ -465,9 +454,11 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         return defaultComponent(CommandBus.class, config)
                 .orElseGet(() -> {
                     TransactionManager txManager = config.getComponent(TransactionManager.class);
-                    SimpleCommandBus commandBus = txManager != null
-                            ? new SimpleCommandBus(txManager)
-                            : new SimpleCommandBus();
+                    SimpleUnitOfWorkFactory simpleUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
+                    UnitOfWorkFactory unitOfWorkFactory = txManager != null
+                            ? new TransactionalUnitOfWorkFactory(txManager, simpleUnitOfWorkFactory)
+                            : simpleUnitOfWorkFactory;
+                    SimpleCommandBus commandBus = new SimpleCommandBus(unitOfWorkFactory, Collections.emptyList());
                     if (!config.correlationDataProviders().isEmpty()) {
                         CorrelationDataInterceptor<CommandMessage<?>> interceptor =
                                 new CorrelationDataInterceptor<>(config.correlationDataProviders());
@@ -700,11 +691,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @return The default Serializer to use.
      */
     protected Serializer defaultSerializer(LegacyConfiguration config) {
-        return defaultComponent(Serializer.class, config)
-                .orElseGet(() -> XStreamSerializer.builder()
-                                                  .revisionResolver(config.getComponent(RevisionResolver.class,
-                                                                                        AnnotationRevisionResolver::new))
-                                                  .build());
+        return defaultComponent(Serializer.class, config).orElseThrow();
     }
 
     /**
@@ -865,7 +852,8 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                                           commandHandler,
                                           config.parameterResolverFactory(),
                                           config.handlerDefinition(commandHandler.getClass()),
-                                          messageTypeResolver
+                                          messageTypeResolver,
+                                          config.getComponent(Converter.class)
                                   ));
                             // TODO AnnotationCommandHandlerAdapter#subscribe does not use a Registration anymore
                             // If we support automated unsubscribe, we need to figure out another way.

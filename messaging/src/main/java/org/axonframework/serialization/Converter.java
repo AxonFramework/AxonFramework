@@ -18,6 +18,7 @@ package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.DescribableComponent;
 
 import java.lang.reflect.Type;
 
@@ -31,7 +32,7 @@ import java.lang.reflect.Type;
  * @author Rene de Waele
  * @since 3.0.0
  */
-public interface Converter {
+public interface Converter extends DescribableComponent {
 
     /**
      * Indicates whether this {@code Converter} is capable of converting the given {@code sourceType} to the
@@ -78,22 +79,4 @@ public interface Converter {
      */
     @Nullable
     <T> T convert(@Nullable Object input, @Nonnull Type targetType);
-
-    /**
-     * Converts the data format of the given {@code original} IntermediateRepresentation to the target data type.
-     *
-     * @param original   The source to convert
-     * @param targetType The type of data to convert to
-     * @param <T>        the target data type
-     * @return the converted representation
-     * @deprecated As we will stop using the {@link SerializedObject}.
-     */
-    @Deprecated(forRemoval = true, since = "5.0.0")
-    @SuppressWarnings("unchecked")
-    default <T, S> SerializedObject<T> convert(SerializedObject<S> original, Class<T> targetType) {
-        if (original.getContentType().equals(targetType)) {
-            return (SerializedObject<T>) original;
-        }
-        return new SimpleSerializedObject<>(convert(original.getData(), targetType), targetType, original.getType());
-    }
 }

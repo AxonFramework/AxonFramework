@@ -19,16 +19,20 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StubExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -59,7 +63,9 @@ class SimpleCommandBusTest {
     @BeforeEach
     void setUp() {
         this.executor = new StubExecutor();
-        this.testSubject = new SimpleCommandBus(executor);
+        this.testSubject = new SimpleCommandBus(
+                new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE, c -> c.workScheduler(executor)),
+                Collections.emptyList());
     }
 
     @Test
@@ -227,7 +233,8 @@ class SimpleCommandBusTest {
     @Test
     void lifecycleHandlersAreInvokedOnEachInvocation() {
         ProcessingLifecycleHandlerRegistrar lifecycleHandlerRegistrar = mock(ProcessingLifecycleHandlerRegistrar.class);
-        testSubject = new SimpleCommandBus(executor, List.of(lifecycleHandlerRegistrar));
+        var unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE, c -> c.workScheduler(executor));
+        testSubject = new SimpleCommandBus(unitOfWorkFactory, List.of(lifecycleHandlerRegistrar));
 
         var commandHandler = new StubCommandHandler("ok");
         CommandMessage<String> command = TEST_COMMAND;
@@ -263,7 +270,8 @@ class SimpleCommandBusTest {
     @Test
     void describeReturnsRegisteredComponents() {
         ProcessingLifecycleHandlerRegistrar lifecycleHandlerRegistrar = mock(ProcessingLifecycleHandlerRegistrar.class);
-        testSubject = new SimpleCommandBus(executor, lifecycleHandlerRegistrar);
+        UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
+        testSubject = new SimpleCommandBus(unitOfWorkFactory, List.of(lifecycleHandlerRegistrar));
         var handler1 = mock(CommandHandler.class);
         var handler2 = mock(CommandHandler.class);
         testSubject.subscribe(COMMAND_NAME, handler1);
@@ -273,7 +281,7 @@ class SimpleCommandBusTest {
         ComponentDescriptor mockComponentDescriptor = mock(ComponentDescriptor.class);
         testSubject.describeTo(mockComponentDescriptor);
 
-        verify(mockComponentDescriptor).describeProperty("worker", executor);
+        verify(mockComponentDescriptor).describeProperty("unitOfWorkFactory", unitOfWorkFactory);
         verify(mockComponentDescriptor).describeProperty("lifecycleRegistrars", List.of(lifecycleHandlerRegistrar));
         verify(mockComponentDescriptor)
                 .describeProperty("subscriptions", Map.of(COMMAND_NAME, handler1, handlerTwoName, handler2));

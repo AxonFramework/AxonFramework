@@ -29,6 +29,7 @@ import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.UnknownSerializedType;
 
@@ -169,8 +170,14 @@ public class AvroSerializer implements Serializer {
 
             // without upcasting:
             // byte[] -> T
-            SerializedObject<byte[]> bytesSerialized = converter.convert(serializedObject, byte[].class);
-
+            SerializedObject<byte[]> bytesSerialized;
+            if (serializedObject.getContentType().equals(byte[].class)) {
+                bytesSerialized = (SerializedObject<byte[]>) serializedObject;
+            } else {
+                bytesSerialized = new SimpleSerializedObject<>(convert(serializedObject.getData(), byte[].class),
+                                                               byte[].class,
+                                                               serializedObject.getType());
+            }
             return (T) serializerStrategy.get().deserializeFromSingleObjectEncoded(bytesSerialized, payloadType);
         }
 

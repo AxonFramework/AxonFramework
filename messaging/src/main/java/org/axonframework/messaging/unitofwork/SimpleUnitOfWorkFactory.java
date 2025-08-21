@@ -16,17 +16,64 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.ApplicationContext;
+
+import java.util.Objects;
+import java.util.function.UnaryOperator;
+
 /**
- * Factory for creating simple {@link UnitOfWork} instances. Create units of work by invoking the {@link UnitOfWork}
- * constructor.
+ * Factory for creating simple {@link UnitOfWork} instances. This factory allows for the creation of {@link UnitOfWork}
+ * instances with a default configuration, which can be customized using a provided function.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
 
+    private final ApplicationContext applicationContext;
+    private final UnaryOperator<UnitOfWorkConfiguration> factoryCustomization;
+
+    /**
+     * Initializes a {@link SimpleUnitOfWorkFactory} with the default configuration. This constructor uses the default
+     * configuration for creating {@link UnitOfWork} instances without any customizations.
+     *
+     * @param applicationContext The {@link ApplicationContext} for component resolution in created {@link UnitOfWork}
+     *                           instances.
+     */
+    public SimpleUnitOfWorkFactory(@Nonnull ApplicationContext applicationContext) {
+        this(applicationContext, c -> c);
+    }
+
+    /**
+     * Initializes a {@link SimpleUnitOfWorkFactory} with the given {@link ApplicationContext} and customization
+     * function. Allows customizing the default configuration used to create {@link UnitOfWork} instances by this
+     * factory.
+     *
+     * @param applicationContext   The {@link ApplicationContext} for component resolution in created {@link UnitOfWork}
+     *                             instances.
+     * @param factoryCustomization The function to customize the {@link UnitOfWorkConfiguration} used to create
+     *                             {@link UnitOfWork} instances.
+     */
+    public SimpleUnitOfWorkFactory(
+            @Nonnull ApplicationContext applicationContext,
+            @Nonnull UnaryOperator<UnitOfWorkConfiguration> factoryCustomization
+    ) {
+        Objects.requireNonNull(applicationContext, "The applicationContext may not be null.");
+        Objects.requireNonNull(factoryCustomization, "The factoryCustomization may not be null.");
+        this.applicationContext = applicationContext;
+        this.factoryCustomization = factoryCustomization;
+    }
+
+    @Nonnull
     @Override
-    public UnitOfWork create() {
-        return new UnitOfWork();
+    public UnitOfWork create(
+            @Nonnull String identifier,
+            @Nonnull UnaryOperator<UnitOfWorkConfiguration> customization
+    ) {
+        Objects.requireNonNull(identifier, "The identifier may not be null.");
+        Objects.requireNonNull(customization, "The customization may not be null.");
+        var configuration = customization.apply(factoryCustomization.apply(UnitOfWorkConfiguration.defaultValues()));
+        return new UnitOfWork(identifier, configuration.workScheduler(), applicationContext);
     }
 }

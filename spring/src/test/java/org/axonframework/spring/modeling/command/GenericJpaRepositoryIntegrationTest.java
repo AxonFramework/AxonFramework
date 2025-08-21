@@ -27,6 +27,7 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
@@ -84,11 +85,11 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         SimpleEventHandlerInvoker eventHandlerInvoker = SimpleEventHandlerInvoker.builder()
                                                                                  .eventHandlers(this)
                                                                                  .build();
-        eventProcessor = SubscribingEventProcessor.builder()
-                                                  .name("test")
-                                                  .eventHandlerInvoker(eventHandlerInvoker)
-                                                  .messageSource(eventBus)
-                                                  .build();
+        eventProcessor = new SubscribingEventProcessor(
+                "test",
+                List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
+                cfg -> cfg.messageSource(eventBus)
+        );
         eventProcessor.start();
     }
 

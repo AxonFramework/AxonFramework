@@ -16,10 +16,10 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
@@ -27,6 +27,7 @@ import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
+import org.axonframework.integrationtests.testsuite.AbstractAxonServerIntegrationTest;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
@@ -35,17 +36,14 @@ import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.serialization.Converter;
-import org.axonframework.test.server.AxonServerContainer;
-import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -62,37 +60,20 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  */
-@Testcontainers
-public abstract class AbstractStudentTestSuite {
+public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegrationTest {
 
     protected static final GenericCommandResultMessage<String> SUCCESSFUL_COMMAND_RESULT =
             new GenericCommandResultMessage<>(new MessageType("empty"), "successful");
-    private static final AxonServerContainer container = new AxonServerContainer()
-            .withAxonServerHostname("localhost")
-            .withDevMode(true);
+
     protected CommandGateway commandGateway;
-    protected StateManager stateManager;
-    private StatefulCommandHandlingModule.CommandHandlerPhase statefulCommandHandlingModule;
+    protected UnitOfWorkFactory unitOfWorkFactory;
+
+    private CommandHandlingModule.CommandHandlerPhase commandHandlingModule;
     private EventSourcedEntityModule<String, Course> courseEntity;
     private EventSourcedEntityModule<String, Student> studentEntity;
-    private AxonConfiguration startedConfiguration;
-
-    @BeforeAll
-    static void beforeAll() {
-        container.start();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        container.stop();
-    }
 
     @BeforeEach
-    void setUp() throws IOException {
-        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
-                                                           container.getHttpPort(),
-                                                           "default",
-                                                           AxonServerContainerUtils.DCB_CONTEXT);
+    protected void prepareModule() {
         studentEntity = EventSourcedEntityModule
                 .declarative(String.class, Student.class)
                 .messagingModel((c, b) -> b
@@ -101,6 +82,7 @@ public abstract class AbstractStudentTestSuite {
                 .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(Student::new))
                 .criteriaResolver(this::studentCriteriaResolver)
                 .build();
+
         courseEntity = EventSourcedEntityModule
                 .declarative(String.class, Course.class)
                 .messagingModel((c, b) -> b
@@ -110,71 +92,59 @@ public abstract class AbstractStudentTestSuite {
                 .criteriaResolver(this::courseCriteriaResolver)
                 .build();
 
-        statefulCommandHandlingModule = StatefulCommandHandlingModule.named("student-course-module")
-                                                                     .entities()
-                                                                     .entity(studentEntity)
-                                                                     .entity(courseEntity)
-                                                                     .entities(this::registerAdditionalEntities)
-                                                                     .commandHandlers();
+        commandHandlingModule = CommandHandlingModule.named("student-course-module")
+                                                     .commandHandlers();
     }
 
-    @AfterEach
-    void tearDown() {
-        if (startedConfiguration != null) {
-            startedConfiguration.shutdown();
-        }
+    @Override
+    protected ApplicationConfigurer createConfigurer() {
+        var configurer = EventSourcingConfigurer.create()
+                                                .componentRegistry(cr -> cr.registerModule(studentEntity))
+                                                .componentRegistry(cr -> cr.registerModule(courseEntity))
+                                                .registerCommandHandlingModule(commandHandlingModule);
+        return testSuiteConfigurer(configurer);
     }
 
     /**
      * Test suite implementations can invoke this method to register additional command handlers.
      *
-     * @param handlerConfigurer The command handler phase of the {@link StatefulCommandHandlingModule}, allowing for
-     *                          command handler registration.
+     * @param handlerConfigurer The command handler phase of the {@link CommandHandlingModule}, allowing for command
+     *                          handler registration.
      */
     protected void registerCommandHandlers(
-            Consumer<StatefulCommandHandlingModule.CommandHandlerPhase> handlerConfigurer
+            @Nonnull Consumer<CommandHandlingModule.CommandHandlerPhase> handlerConfigurer
     ) {
-        statefulCommandHandlingModule.commandHandlers(handlerConfigurer);
+        commandHandlingModule.commandHandlers(handlerConfigurer);
     }
 
     /**
      * Starts the Axon Framework application.
      */
     protected void startApp() {
-        AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
-        axonServerConfiguration.setServers(
-                container.getHost() + ":" + container.getGrpcPort()
-        );
-        startedConfiguration = EventSourcingConfigurer
-                .create()
-                .componentRegistry(cr -> {
-                    cr.registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration);
-                })
-                .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
-                .start();
+        super.startApp();
         commandGateway = startedConfiguration.getComponent(CommandGateway.class);
-
-        Configuration moduleConfig = startedConfiguration.getModuleConfigurations().getFirst();
-        stateManager = moduleConfig.getComponent(StateManager.class);
+        unitOfWorkFactory = startedConfiguration.getComponent(UnitOfWorkFactory.class);
     }
 
     /**
-     * Test suites can override this method to register additional entities.
+     * Allows for further configuration of the {@link EventSourcingConfigurer} used in the test suite.
+     * <p>
+     * This method can be overridden by subclasses to add additional configuration.
      *
-     * @param entityConfigurer The entity phase of the {@link StatefulCommandHandlingModule}, allowing for additional
-     *                         entities to be registered.
+     * @param configurer The {@link EventSourcingConfigurer} to configure.
+     * @return The configured {@link EventSourcingConfigurer}.
      */
-    protected void registerAdditionalEntities(StatefulCommandHandlingModule.EntityPhase entityConfigurer) {
-        // Do nothing by default.
+    protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
+        return configurer;
     }
 
     /**
      * Returns the {@link EntityEvolver} for the {@link Course} model. Defaults to manually calling the event sourcing
      * handlers on the model.
      */
-    protected EntityEvolver<Course> courseEvolver(Configuration config) {
+    protected EntityEvolver<Course> courseEvolver(@Nonnull Configuration config) {
         return (course, event, context) -> {
-            if(event.type().name().equals(StudentEnrolledEvent.class.getName())) {
+            if (event.type().name().equals(StudentEnrolledEvent.class.getName())) {
                 // Convert the payload to the expected type
                 Converter converter = config.getComponent(Converter.class);
                 StudentEnrolledEvent convert = converter.convert(event.payload(), StudentEnrolledEvent.class);
@@ -206,8 +176,9 @@ public abstract class AbstractStudentTestSuite {
      * {@link AnnotationBasedEntityEvolvingComponent} to use the annotations placed.
      */
     protected EntityEvolver<Student> studentEvolver(Configuration config) {
-        return new AnnotationBasedEntityEvolvingComponent<>(Student.class, config.getComponent(Converter.class), config.getComponent(
-                MessageTypeResolver.class));
+        return new AnnotationBasedEntityEvolvingComponent<>(Student.class,
+                                                            config.getComponent(Converter.class),
+                                                            config.getComponent(MessageTypeResolver.class));
     }
 
     protected void changeStudentName(String studentId, String name) {
@@ -222,28 +193,35 @@ public abstract class AbstractStudentTestSuite {
         commandGateway.sendAndWait(payload);
     }
 
+    protected <T, R> R sendCommand(T payload, Class<R> expectedResultType) {
+        return commandGateway.sendAndWait(payload, expectedResultType);
+    }
+
     protected void verifyStudentName(String id, String name) {
-        UnitOfWork uow = new UnitOfWork();
-        uow.executeWithResult(context -> stateManager.repository(Student.class, String.class)
-                                                     .load(id, context)
-                                                     .thenAccept(student -> assertEquals(name,
-                                                                                         student.entity().getName())))
+        UnitOfWork uow = unitOfWorkFactory.create();
+        uow.executeWithResult(context -> context.component(StateManager.class)
+                                                .repository(Student.class, String.class)
+                                                .load(id, context)
+                                                .thenAccept(student -> assertEquals(name,
+                                                                                    student.entity().getName())))
            .join();
     }
 
     protected void verifyStudentEnrolledInCourse(String id, String courseId) {
-        UnitOfWork uow = new UnitOfWork();
-        uow.executeWithResult(context -> stateManager.repository(Student.class, String.class)
-                                                     .load(id, context)
-                                                     .thenAccept(student -> assertTrue(student.entity()
-                                                                                              .getCoursesEnrolled()
-                                                                                              .contains(courseId)))
-                                                     .thenCompose(v -> stateManager.repository(Course.class,
-                                                                                               String.class)
-                                                                                   .load(courseId, context))
-                                                     .thenAccept(course -> assertTrue(course.entity()
-                                                                                            .getStudentsEnrolled()
-                                                                                            .contains(id))))
+        UnitOfWork uow = unitOfWorkFactory.create();
+        uow.executeWithResult(context -> context.component(StateManager.class)
+                                                .repository(Student.class, String.class)
+                                                .load(id, context)
+                                                .thenAccept(student -> assertTrue(student.entity()
+                                                                                         .getCoursesEnrolled()
+                                                                                         .contains(courseId)))
+                                                .thenCompose(v -> context.component(StateManager.class)
+                                                                         .repository(Course.class,
+                                                                                     String.class)
+                                                                         .load(courseId, context))
+                                                .thenAccept(course -> assertTrue(course.entity()
+                                                                                       .getStudentsEnrolled()
+                                                                                       .contains(id))))
            .join();
     }
 }

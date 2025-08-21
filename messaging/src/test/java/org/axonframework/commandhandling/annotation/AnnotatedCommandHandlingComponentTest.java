@@ -22,15 +22,15 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.messaging.CommandMessageHandlerInterceptorChain;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -62,7 +62,9 @@ class AnnotatedCommandHandlingComponentTest {
         annotatedCommandHandler = new MyCommandHandler();
         ParameterResolverFactory parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
 
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, parameterResolverFactory);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
+                                                              parameterResolverFactory,
+                                                              PassThroughConverter.INSTANCE);
 
         when(commandBus.subscribe(any(QualifiedName.class), any())).thenReturn(commandBus);
         when(commandBus.subscribe(anySet(), any())).thenReturn(commandBus);
@@ -156,7 +158,7 @@ class AnnotatedCommandHandlingComponentTest {
         annotatedCommandHandler = new MyInterceptingCommandHandler(withoutInterceptor,
                                                                    withInterceptor,
                                                                    new ArrayList<>());
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, PassThroughConverter.INSTANCE);
 
         Object result = testSubject.handle(testCommandMessage, mock(ProcessingContext.class))
                                    .first()
@@ -166,7 +168,7 @@ class AnnotatedCommandHandlingComponentTest {
                                    .payload();
 
         assertNull(result);
-        // TODO The interceptor chain is not yet implemented fully through the MessageStream.
+        // TODO #3103 The interceptor chain is not yet implemented fully through the MessageStream.
         //  Hence, this test does not end up in the message handler.
 //        assertEquals(1, annotatedCommandHandler.voidHandlerInvoked);
         assertEquals(Collections.singletonList(testCommandMessage), withInterceptor);
@@ -181,7 +183,7 @@ class AnnotatedCommandHandlingComponentTest {
         annotatedCommandHandler = new MyInterceptingCommandHandler(new ArrayList<>(),
                                                                    new ArrayList<>(),
                                                                    interceptedExceptions);
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, PassThroughConverter.INSTANCE);
 
         try {
             testSubject.handle(testCommandMessage, mock(ProcessingContext.class));

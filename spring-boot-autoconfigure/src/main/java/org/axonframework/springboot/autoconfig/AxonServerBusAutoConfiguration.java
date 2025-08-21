@@ -20,18 +20,15 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.TargetContextResolver;
-import org.axonframework.axonserver.connector.command.AxonServerConnector;
-import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
-import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
+import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.QueryBus;
@@ -69,15 +66,15 @@ public class AxonServerBusAutoConfiguration {
     @Bean
     @Primary
     @ConditionalOnMissingQualifiedBean(qualifier = "!localSegment", beanClass = CommandBus.class)
-    public AxonServerConnector axonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager,
-                                                    AxonServerConfiguration axonServerConfiguration,
-                                                    @Qualifier("localSegment") CommandBus localSegment,
-                                                    @Qualifier("messageSerializer") Serializer messageSerializer,
-                                                    RoutingStrategy routingStrategy,
-                                                    TargetContextResolver<? super CommandMessage<?>> targetContextResolver,
-                                                    CommandBusSpanFactory spanFactory) {
+    public AxonServerCommandBusConnector axonServerCommandBus(AxonServerConnectionManager axonServerConnectionManager,
+                                                              AxonServerConfiguration axonServerConfiguration,
+                                                              @Qualifier("localSegment") CommandBus localSegment,
+                                                              @Qualifier("messageSerializer") Serializer messageSerializer,
+                                                              RoutingStrategy routingStrategy,
+                                                              TargetContextResolver<? super CommandMessage<?>> targetContextResolver,
+                                                              CommandBusSpanFactory spanFactory) {
         // TODO #3076 - Wire the AxonServerConnector instead of the AxonServerCommandBus
-        return (AxonServerConnector) null;
+        return (AxonServerCommandBusConnector) null;
     }
 
     @Bean
@@ -119,49 +116,6 @@ public class AxonServerBusAutoConfiguration {
             axonQueryBuilder.enabledLocalSegmentShortCut();
         }
         return axonQueryBuilder.build();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
-    public LegacyEventStore eventStore(AxonServerConfiguration axonServerConfiguration,
-                                       LegacyConfiguration configuration,
-                                       AxonServerConnectionManager axonServerConnectionManager,
-                                       Serializer snapshotSerializer,
-                                       @Qualifier("eventSerializer") Serializer eventSerializer) {
-        return AxonServerEventStore.builder()
-                                   .messageMonitor(configuration
-                                                           .messageMonitor(AxonServerEventStore.class, "eventStore"))
-                                   .configuration(axonServerConfiguration)
-                                   .platformConnectionManager(axonServerConnectionManager)
-                                   .snapshotSerializer(snapshotSerializer)
-                                   .eventSerializer(eventSerializer)
-                                   .snapshotFilter(configuration.snapshotFilter())
-                                   .upcasterChain(configuration.upcasterChain())
-                                   .spanFactory(configuration.getComponent(EventBusSpanFactory.class))
-                                   .build();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
-    public AxonServerEventStoreFactory axonServerEventStoreFactory(AxonServerConfiguration axonServerConfig,
-                                                                   AxonServerConnectionManager axonServerConnectionManager,
-                                                                   Serializer snapshotSerializer,
-                                                                   @Qualifier("eventSerializer") Serializer eventSerializer,
-                                                                   LegacyConfiguration config) {
-        return AxonServerEventStoreFactory.builder()
-                                          .configuration(axonServerConfig)
-                                          .connectionManager(axonServerConnectionManager)
-                                          .snapshotSerializer(snapshotSerializer)
-                                          .eventSerializer(eventSerializer)
-                                          .snapshotFilter(config.snapshotFilter())
-                                          .upcasterChain(config.upcasterChain())
-                                          .messageMonitor(
-                                                  config.messageMonitor(AxonServerEventStore.class, "eventStore")
-                                          )
-                                          .spanFactory(config.getComponent(EventBusSpanFactory.class))
-                                          .build();
     }
 }
 

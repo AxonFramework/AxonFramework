@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import com.thoughtworks.xstream.XStream;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
@@ -241,10 +240,6 @@ class InterceptorConfigurationTest {
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     static class DefaultContext {
 
-        @Bean
-        public XStream xStream() {
-            return TestSerializer.xStreamSerializer().getXStream();
-        }
     }
 
 

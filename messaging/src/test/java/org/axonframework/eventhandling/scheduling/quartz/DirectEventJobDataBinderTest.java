@@ -34,7 +34,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static org.axonframework.messaging.Headers.*;
+import static org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler.DirectEventJobDataBinder.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -54,11 +54,6 @@ class DirectEventJobDataBinderTest {
 
     static Stream<Arguments> serializerImplementationAndAssertionSpecifics() {
         return Stream.of(
-                Arguments.arguments(
-                        spy(TestSerializer.XSTREAM.getSerializer()),
-                        (Function<Class<?>, String>) clazz -> clazz.getSimpleName().toLowerCase(),
-                        (Predicate<Object>) Objects::isNull
-                ),
                 Arguments.arguments(
                         spy(JacksonSerializer.builder().build()),
                         (Function<Class<?>, String>) Class::getName,

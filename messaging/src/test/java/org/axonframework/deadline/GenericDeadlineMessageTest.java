@@ -19,8 +19,12 @@ package org.axonframework.deadline;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
+
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,11 +35,27 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class GenericDeadlineMessageTest extends MessageTestSuite<DeadlineMessage<?>> {
 
+    private static final String TEST_DEADLINE_NAME = "deadlineName";
+    private static final Instant TEST_TIMESTAMP = Instant.now();
+
+    @Override
+    protected DeadlineMessage<?> buildDefaultMessage() {
+        Message<String> delegate =
+                new GenericMessage<>(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+        return new GenericDeadlineMessage<>(TEST_DEADLINE_NAME, delegate, () -> TEST_TIMESTAMP);
+    }
+
     @Override
     protected <P> DeadlineMessage<?> buildMessage(@Nullable P payload) {
-        return new GenericDeadlineMessage<>("deadlineName",
+        return new GenericDeadlineMessage<>(TEST_DEADLINE_NAME,
                                             new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
                                             payload);
+    }
+
+    @Override
+    protected void validateDefaultMessage(@Nonnull DeadlineMessage<?> result) {
+        assertThat(TEST_DEADLINE_NAME).isEqualTo(result.getDeadlineName());
+        assertThat(TEST_TIMESTAMP).isEqualTo(result.timestamp());
     }
 
     @Override

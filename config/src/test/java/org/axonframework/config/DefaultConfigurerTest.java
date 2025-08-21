@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -23,6 +24,7 @@ import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Id;
 import jakarta.persistence.Persistence;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
@@ -30,18 +32,14 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.caching.WeakReferenceCache;
-import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.utils.TestSerializer;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.eventhandling.DomainEventData;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -51,11 +49,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.LegacyCachingEventSourcingRepository;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
-import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
-import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
@@ -69,7 +63,7 @@ import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.annotation.QueryHandler;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
@@ -83,12 +77,12 @@ import org.quartz.SchedulerException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import static org.axonframework.commandhandling.CommandBusTestUtils.aCommandBus;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
@@ -129,10 +123,7 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.defaultConfiguration()
                                        .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                                       .configureCommandBus(c -> new SimpleCommandBus(c.getComponent(
-                                               Executor.class,
-                                               Executors::newSingleThreadExecutor)
-                                       ))
+                                       .configureCommandBus(c -> aCommandBus())
                                        .configureAggregate(StubAggregate.class)
                                        .buildConfiguration();
         config.start();
@@ -152,8 +143,8 @@ class DefaultConfigurerTest {
         configurer.eventProcessing().registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
         LegacyConfiguration config = configurer.registerComponent(
                                                        PooledStreamingProcessorConfiguration.class,
-                                                       c -> (config1, builder) -> builder.workerExecutor(name -> 
-                                                           Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + name)))
+                                                       c -> (config1, builder) -> builder.workerExecutor(
+                                                           Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker")))
                                                )
                                                .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .start();
@@ -165,7 +156,7 @@ class DefaultConfigurerTest {
             assertRetryingWithin(Duration.ofSeconds(5),
                                  () -> assertEquals(2,
                                                     config.getComponent(TokenStore.class)
-                                                          .fetchSegments(processor.getName()).length));
+                                                          .fetchSegments(processor.name()).length));
         } finally {
             config.shutdown();
         }
@@ -179,8 +170,8 @@ class DefaultConfigurerTest {
         configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor(processorName,
                                                   LegacyConfiguration::eventStore,
-                                                  (config, builder) -> builder.workerExecutor(name -> 
-                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + name))))
+                                                  (config, builder) -> builder.workerExecutor(
+                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
                   .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
@@ -193,7 +184,7 @@ class DefaultConfigurerTest {
             assertRetryingWithin(Duration.ofSeconds(5),
                                  () -> assertEquals(2,
                                                     config.getComponent(TokenStore.class)
-                                                          .fetchSegments(processor.getName()).length));
+                                                          .fetchSegments(processor.name()).length));
         } finally {
             config.shutdown();
         }
@@ -206,8 +197,8 @@ class DefaultConfigurerTest {
         configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor(processorName,
                                                   LegacyConfiguration::eventStore,
-                                                  (config, builder) -> builder.workerExecutor(name -> 
-                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + name))))
+                                                  (config, builder) -> builder.workerExecutor(
+                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
                   .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
@@ -231,8 +222,8 @@ class DefaultConfigurerTest {
         configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor(processorName,
                                                   LegacyConfiguration::eventStore,
-                                                  (config, builder) -> builder.workerExecutor(name -> 
-                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + name))))
+                                                  (config, builder) -> builder.workerExecutor(
+                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
                   .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
@@ -256,19 +247,6 @@ class DefaultConfigurerTest {
         AtomicInteger counter = new AtomicInteger();
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.defaultConfiguration()
-                                       .configureEmbeddedEventStore(
-                                               c -> LegacyJpaEventStorageEngine.builder()
-                                                                               .snapshotSerializer(c.serializer())
-                                                                               .upcasterChain(c.upcasterChain())
-                                                                               .persistenceExceptionResolver(c.getComponent(
-                                                                                       PersistenceExceptionResolver.class
-                                                                               ))
-                                                                               .entityManagerProvider(() -> entityManager)
-                                                                               .transactionManager(c.getComponent(
-                                                                                       TransactionManager.class
-                                                                               ))
-                                                                               .eventSerializer(c.serializer())
-                                                                               .build())
                                        .configureAggregate(
                                                defaultConfiguration(StubAggregate.class)
                                                        .configureCommandTargetResolver(
@@ -282,7 +260,7 @@ class DefaultConfigurerTest {
                                        .configureTransactionManager(c -> new EntityManagerTransactionManager(
                                                entityManager
                                        ))
-                                       .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(configuration -> JacksonSerializer.defaultSerializer())
                                        .buildConfiguration();
 
         config.start();
@@ -304,7 +282,7 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
                                        .configureCommandBus(c -> {
-                                           SimpleCommandBus commandBus = new SimpleCommandBus(Runnable::run);
+                                           SimpleCommandBus commandBus = aCommandBus();
                                            return new InterceptingCommandBus(
                                                    commandBus,
                                                    List.of(new TransactionManagingInterceptor<>(c.getComponent(
@@ -326,7 +304,7 @@ class DefaultConfigurerTest {
                                                                                               .build()
                                                        )
                                        )
-                                       .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(c -> JacksonSerializer.defaultSerializer())
                                        .buildConfiguration();
 
         config.start();
@@ -345,9 +323,9 @@ class DefaultConfigurerTest {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
-                                       .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(c -> JacksonSerializer.defaultSerializer())
                                        .configureCommandBus(c -> new InterceptingCommandBus(
-                                               new SimpleCommandBus(Runnable::run),
+                                               aCommandBus(),
                                                List.of(new TransactionManagingInterceptor<>(c.getComponent(
                                                        TransactionManager.class
                                                ))),
@@ -369,7 +347,7 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.defaultConfiguration()
                                        .configureCommandBus(c -> new InterceptingCommandBus(
-                                               new SimpleCommandBus(Runnable::run),
+                                               aCommandBus(),
                                                List.of(new TransactionManagingInterceptor<>(c.getComponent(
                                                        TransactionManager.class
                                                ))),
@@ -389,7 +367,7 @@ class DefaultConfigurerTest {
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager)
                                        .registerComponent(TransactionManager.class, c -> transactionManager)
                                        .configureCommandBus(c -> new InterceptingCommandBus(
-                                               new SimpleCommandBus(Runnable::run),
+                                               aCommandBus(),
                                                List.of(new TransactionManagingInterceptor<>(c.getComponent(
                                                        TransactionManager.class
                                                ))),
@@ -404,7 +382,7 @@ class DefaultConfigurerTest {
                                                                               .parameterResolverFactory(c.parameterResolverFactory())
                                                                               .build())
                                        )
-                                       .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(c -> JacksonSerializer.defaultSerializer())
                                        .buildConfiguration();
 
         config.start();
@@ -472,7 +450,7 @@ class DefaultConfigurerTest {
     void defaultConfigurationWithCache() throws Exception {
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
                                                             .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                                                            .configureCommandBus(c -> new SimpleCommandBus(Runnable::run))
+                                                            .configureCommandBus(c -> aCommandBus())
                                                             .configureAggregate(defaultConfiguration(StubAggregate.class).configureCache(
                                                                     c -> new WeakReferenceCache()
                                                             ))
@@ -490,7 +468,7 @@ class DefaultConfigurerTest {
     void configuredSnapshotterDefaultsToAggregateSnapshotter() {
         Snapshotter defaultSnapshotter = LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager)
                                                                 .configureSerializer(
-                                                                        configuration -> TestSerializer.xStreamSerializer()
+                                                                        configuration -> JacksonSerializer.defaultSerializer()
                                                                 )
                                                                 .configureAggregate(StubAggregate.class)
                                                                 .buildConfiguration().snapshotter();
@@ -502,7 +480,7 @@ class DefaultConfigurerTest {
     void defaultSnapshotterDefaultsToNoOpWhenNoAggregatesAreKnown() {
         Snapshotter defaultSnapshotter =
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager)
-                                       .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(configuration -> JacksonSerializer.defaultSerializer())
                                        .buildConfiguration().snapshotter();
 
         assertFalse(defaultSnapshotter instanceof AggregateSnapshotter);
@@ -562,54 +540,6 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void aggregateSnapshotFilterIsAddedToTheEventStore() {
-        AtomicBoolean filteredFirst = new AtomicBoolean(false);
-        SnapshotFilter testFilterOne = snapshotData -> {
-            filteredFirst.set(true);
-            return true;
-        };
-        AggregateConfigurer<StubAggregate> aggregateConfigurerOne = AggregateConfigurer.defaultConfiguration(
-                StubAggregate.class).configureSnapshotFilter(configuration -> testFilterOne);
-
-        AtomicBoolean filteredSecond = new AtomicBoolean(false);
-        SnapshotFilter testFilterTwo = snapshotData -> {
-            filteredSecond.set(true);
-            return true;
-        };
-        AggregateConfigurer<StubAggregate> aggregateConfigurerTwo = AggregateConfigurer.defaultConfiguration(
-                StubAggregate.class).configureSnapshotFilter(configuration -> testFilterTwo);
-
-        Serializer serializer = TestSerializer.xStreamSerializer();
-        EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
-
-        DomainEventMessage<String> testDomainEvent = new GenericDomainEventMessage<>(
-                "StubAggregate", "some-aggregate-id", 0, new MessageType("event"), "some-payload"
-        );
-        DomainEventData<byte[]> snapshotData =
-                new AbstractSnapshotEventEntry<>(testDomainEvent, serializer, byte[].class) {
-                };
-        DomainEventData<byte[]> domainEventData = new DomainEventEntry(testDomainEvent, serializer);
-        // Firstly snapshot data will be retrieved (and filtered), secondly event data.
-        doReturn(Stream.of(snapshotData), Collections.singletonList(domainEventData)).when(transactionManager)
-                                                                                     .fetchInTransaction(any());
-
-        LegacyConfiguration resultConfig = LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager)
-                                                                  .configureSerializer(
-                                                                          configuration -> serializer
-                                                                  )
-                                                                  .configureTransactionManager(configuration -> transactionManager)
-                                                                  .configureAggregate(aggregateConfigurerOne)
-                                                                  .configureAggregate(aggregateConfigurerTwo)
-                                                                  .buildConfiguration();
-
-        LegacyEventStore resultEventStore = resultConfig.eventStore();
-        resultEventStore.readEvents("some-aggregate-id");
-
-        assertTrue(filteredFirst.get());
-        assertTrue(filteredSecond.get());
-    }
-
-    @Test
     void defaultConfiguredDeadlineManager() {
         DeadlineManager result = LegacyDefaultConfigurer.defaultConfiguration().buildConfiguration().deadlineManager();
 
@@ -627,7 +557,7 @@ class DefaultConfigurerTest {
                                                config -> QuartzDeadlineManager.builder()
                                                                               .scheduler(mockScheduler)
                                                                               .scopeAwareProvider(config.scopeAwareProvider())
-                                                                              .serializer(TestSerializer.xStreamSerializer())
+                                                                              .serializer(JacksonSerializer.defaultSerializer())
                                                                               .build()
                                        )
                                        .buildConfiguration().deadlineManager();

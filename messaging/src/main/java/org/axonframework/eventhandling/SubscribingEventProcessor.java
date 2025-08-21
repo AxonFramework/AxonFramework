@@ -18,20 +18,22 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.assertThat;
 
 /**
  * Event processor implementation that {@link EventBus#subscribe(Consumer) subscribes} to the {@link EventBus} for
@@ -43,63 +45,77 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Rene de Waele
  * @since 3.0
  */
-public class SubscribingEventProcessor implements EventProcessor {
+public class SubscribingEventProcessor implements EventProcessor, DescribableComponent {
 
+    private final String name;
+    private final SubscribingEventProcessorConfiguration configuration;
     private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
+    private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final EventProcessingStrategy processingStrategy;
-    private final TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory;
-    private final EventProcessorOperations eventProcessorOperations;
+    private final ErrorHandler errorHandler;
 
     private volatile Registration eventBusRegistration;
 
     /**
-     * Instantiate a {@code SubscribingEventProcessor} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code SubscribingEventProcessor} with given {@code name}, {@code eventHandlingComponents} and
+     * based on the fields contained in the {@link SubscribingEventProcessorConfiguration}.
      * <p>
-     * Will assert that the Event Processor {@code name}, {@link EventHandlerInvoker} and
-     * {@link SubscribableMessageSource} are not {@code null}, and will throw an {@link AxonConfigurationException} if
-     * any of them is {@code null}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@code SubscribingEventProcessor} instance
+     * Will assert the following for their presence in the configuration, prior to constructing this processor:
+     * <ul>
+     *     <li>A {@link SubscribableMessageSource}.</li>
+     * </ul>
+     * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
+
+     * @param name A {@link String} defining this {@link EventProcessor} instance.
+     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual {@link EventMessage}s.
+     * @param customization The function that allows to customize default {@link SubscribingEventProcessor} used to configure a {@code SubscribingEventProcessor} instance.
      */
-    protected SubscribingEventProcessor(Builder builder) {
-        builder.validate();
-        this.messageSource = builder.messageSource;
-        this.processingStrategy = builder.processingStrategy;
-        this.transactionalUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(builder.transactionManager);
-        this.eventProcessorOperations = new EventProcessorOperations.Builder()
-                .name(builder.name())
-                .eventHandlingComponent(builder.eventHandlingComponent())
-                .errorHandler(builder.errorHandler())
-                .spanFactory(builder.spanFactory())
-                .messageMonitor(builder.messageMonitor())
-                .build();
+    public SubscribingEventProcessor(
+            @Nonnull String name,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
+            @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> customization
+    ) {
+        this(
+                Objects.requireNonNull(name, "Name may not be null"),
+                Objects.requireNonNull(eventHandlingComponents, "EventHandlingComponents may not be null"),
+                Objects.requireNonNull(customization, "Customization may not be null")
+                       .apply(new SubscribingEventProcessorConfiguration())
+        );
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@code SubscribingEventProcessor}.
+     * Instantiate a {@code SubscribingEventProcessor} with given {@code name}, {@code eventHandlingComponents} and
+     * based on the fields contained in the {@link SubscribingEventProcessorConfiguration}.
      * <p>
-     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
-     * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a
-     * {@link DirectEventProcessingStrategy}, the {@link EventProcessorSpanFactory} defaults to a
-     * {@link DefaultEventProcessorSpanFactory} backed by a {@link org.axonframework.tracing.NoOpSpanFactory}, and the
-     * {@link TransactionManager} defaults to the {@link NoTransactionManager#INSTANCE}. The Event Processor
-     * {@code name}, {@link EventHandlerInvoker} and {@link SubscribableMessageSource} are <b>hard requirements</b> and
-     * as such should be provided.
-     *
-     * @return a Builder to be able to create a {@code SubscribingEventProcessor}
+     * Will assert the following for their presence in the configuration, prior to constructing this processor:
+     * <ul>
+     *     <li>A {@link SubscribableMessageSource}.</li>
+     * </ul>
+     * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
+
+     * @param name A {@link String} defining this {@link EventProcessor} instance.
+     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual {@link EventMessage}s.
+     * @param configuration The {@link SubscribingEventProcessorConfiguration} used to configure a {@code SubscribingEventProcessor} instance.
      */
-    public static Builder builder() {
-        return new Builder();
+    public SubscribingEventProcessor(
+            @Nonnull String name,
+            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
+            @Nonnull SubscribingEventProcessorConfiguration configuration
+    ) {
+        this.name = Objects.requireNonNull(name, "Name may not be null");
+        assertThat(name, n -> Objects.nonNull(n) && !n.isEmpty(), "Event Processor name may not be null or empty");
+        Objects.requireNonNull(configuration, "SubscribingEventProcessorConfiguration may not be null");
+        configuration.validate();
+        this.configuration = configuration;
+        this.messageSource = this.configuration.messageSource();
+        this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
+        this.processingStrategy = this.configuration.processingStrategy();
+        this.errorHandler = this.configuration.errorHandler();
     }
 
     @Override
-    public String getName() {
-        return eventProcessorOperations.name();
-    }
-
-    @Override
-    public List<MessageHandlerInterceptor<EventMessage<?>>> getHandlerInterceptors() {
-        return eventProcessorOperations.handlerInterceptors();
+    public String name() {
+        return name;
     }
 
     /**
@@ -138,13 +154,34 @@ public class SubscribingEventProcessor implements EventProcessor {
      */
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
-            var unitOfWork = transactionalUnitOfWorkFactory.create();
-            eventProcessorOperations.processInUnitOfWork(eventMessages, unitOfWork);
+            var unitOfWork = this.configuration.unitOfWorkFactory().create();
+            unitOfWork.onInvocation(processingContext -> processWithErrorHandling(eventMessages,
+                                                                                  processingContext).asCompletableFuture());
+            FutureUtils.joinAndUnwrap(unitOfWork.execute());
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new EventProcessingException("Exception occurred while processing events", e);
         }
+    }
+
+    private MessageStream.Empty<Message<Void>> processWithErrorHandling(List<? extends EventMessage<?>> events,
+                                                                        ProcessingContext context) {
+        return eventHandlingComponents.handle(events, context)
+                                      .onErrorContinue(ex -> {
+                                          try {
+                                              errorHandler.handleError(new ErrorContext(name, ex, events));
+                                          } catch (RuntimeException re) {
+                                              return MessageStream.failed(re);
+                                          } catch (Exception e) {
+                                              return MessageStream.failed(new EventProcessingException(
+                                                      "Exception occurred while processing events",
+                                                      e));
+                                          }
+                                          return MessageStream.empty().cast();
+                                      })
+                                      .ignoreEntries()
+                                      .cast();
     }
 
     /**
@@ -171,128 +208,10 @@ public class SubscribingEventProcessor implements EventProcessor {
     }
 
     @Override
-    public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<EventMessage<?>> handlerInterceptor) {
-        return eventProcessorOperations.registerHandlerInterceptor(handlerInterceptor);
-    }
-
-    /**
-     * Builder class to instantiate a {@link SubscribingEventProcessor}.
-     * <p>
-     * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
-     * {@link EventProcessorSpanFactory} is defaulted to a {@link DefaultEventProcessorSpanFactory} backed by a
-     * {@link org.axonframework.tracing.NoOpSpanFactory}, the {@link MessageMonitor} defaults to a
-     * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a
-     * {@link DirectEventProcessingStrategy} and the {@link TransactionManager} defaults to the
-     * {@link NoTransactionManager#INSTANCE}. The Event Processor {@code name}, {@link EventHandlerInvoker} and
-     * {@link SubscribableMessageSource} are <b>hard requirements</b> and as such should be provided.
-     */
-    public static class Builder extends EventProcessorBuilder {
-
-        private SubscribableMessageSource<? extends EventMessage<?>> messageSource;
-        private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
-        private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-
-        public Builder() {
-            super();
-        }
-
-        @Override
-        public Builder name(@Nonnull String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder eventHandlerInvoker(@Nonnull EventHandlerInvoker eventHandlerInvoker) {
-            super.eventHandlerInvoker(eventHandlerInvoker);
-            return this;
-        }
-
-        @Override
-        public Builder eventHandlingComponent(@Nonnull EventHandlingComponent eventHandlingComponent) {
-            super.eventHandlingComponent(eventHandlingComponent);
-            return this;
-        }
-
-        @Override
-        public Builder errorHandler(@Nonnull ErrorHandler errorHandler) {
-            super.errorHandler(errorHandler);
-            return this;
-        }
-
-        @Override
-        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
-            super.messageMonitor(messageMonitor);
-            return this;
-        }
-
-        @Override
-        public Builder spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
-            super.spanFactory(spanFactory);
-            return this;
-        }
-
-        /**
-         * Sets the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
-         * implementation will subscribe itself to receive {@link EventMessage}s.
-         *
-         * @param messageSource the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this
-         *                      {@link EventProcessor} implementation will subscribe itself to receive
-         *                      {@link EventMessage}s
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder messageSource(@Nonnull SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
-            assertNonNull(messageSource, "SubscribableMessageSource may not be null");
-            this.messageSource = messageSource;
-            return this;
-        }
-
-        /**
-         * Sets the {@link EventProcessingStrategy} determining whether events are processed directly or asynchronously.
-         * Defaults to a {@link DirectEventProcessingStrategy}.
-         *
-         * @param processingStrategy the {@link EventProcessingStrategy} determining whether events are processed
-         *                           directly or asynchronously
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder processingStrategy(@Nonnull EventProcessingStrategy processingStrategy) {
-            assertNonNull(processingStrategy, "EventProcessingStrategy may not be null");
-            this.processingStrategy = processingStrategy;
-            return this;
-        }
-
-        /**
-         * Sets the {@link TransactionManager} used when processing {@link EventMessage}s.
-         *
-         * @param transactionManager the {@link TransactionManager} used when processing {@link EventMessage}s
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
-            assertNonNull(transactionManager, "TransactionManager may not be null");
-            this.transactionManager = transactionManager;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link SubscribingEventProcessor} as specified through this Builder.
-         *
-         * @return a {@link SubscribingEventProcessor} as specified through this Builder
-         */
-        public SubscribingEventProcessor build() {
-            return new SubscribingEventProcessor(this);
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        @Override
-        protected void validate() throws AxonConfigurationException {
-            super.validate();
-            assertNonNull(messageSource, "The SubscribableMessageSource is a hard requirement and should be provided");
-        }
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("name", name);
+        descriptor.describeProperty("mode", "subscribing");
+        descriptor.describeProperty("eventHandlingComponents", eventHandlingComponents);
+        descriptor.describeProperty("configuration", configuration);
     }
 }

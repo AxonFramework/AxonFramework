@@ -57,6 +57,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Allard Buijze
  * @since 2.2
  * @deprecated in favor of the {@link JacksonConverter}.
+ * TODO #3602 remove
  */
 @Deprecated(forRemoval = true, since = "5.0.0")
 public class JacksonSerializer implements Serializer {
@@ -247,7 +248,15 @@ public class JacksonSerializer implements Serializer {
                 return getReader(type)
                         .readValue((JsonNode) serializedObject.getData());
             }
-            SerializedObject<byte[]> byteSerialized = converter.convert(serializedObject, byte[].class);
+
+            SerializedObject<byte[]> byteSerialized;
+            if (serializedObject.getContentType().equals(byte[].class)) {
+                byteSerialized = (SerializedObject<byte[]>) serializedObject;
+            } else {
+                byteSerialized = new SimpleSerializedObject<>(convert(serializedObject.getData(), byte[].class),
+                                                              byte[].class,
+                                                              serializedObject.getType());
+            }
             return getReader(type).readValue(byteSerialized.getData());
         } catch (IOException e) {
             throw new SerializationException("Error while deserializing object", e);

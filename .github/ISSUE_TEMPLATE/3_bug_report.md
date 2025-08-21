@@ -2,7 +2,7 @@
 name: 'Bug report'
 about: 'Report a bug in Axon Framework'
 title:
-labels: 'Type: Bug'
+type: 'Bug'
 ---
 
 <!-- Please use markdown (https://guides.github.com/features/mastering-markdown/) semantics throughout the bug description. -->

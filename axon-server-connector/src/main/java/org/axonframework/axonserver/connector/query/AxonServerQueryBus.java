@@ -33,12 +33,10 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerRegistration;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.PriorityRunnable;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
-import org.axonframework.axonserver.connector.util.ExecutorServiceBuilder;
 import org.axonframework.axonserver.connector.util.PriorityTaskSchedulers;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.common.Assert;
@@ -77,6 +75,8 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanScope;
+import org.axonframework.util.ExecutorServiceFactory;
+import org.axonframework.util.PriorityRunnable;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,6 +106,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -226,8 +227,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      * <p>
      * The {@link QueryPriorityCalculator} is defaulted to
      * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()}, the {@link TargetContextResolver} defaults to a
-     * lambda returning the {@link AxonServerConfiguration#getContext()} as the context, the
-     * {@link ExecutorServiceBuilder} defaults to {@link ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}.
+     * lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
+     * {@link ExecutorServiceFactory} creates a {@link ThreadPoolExecutor} with {@link BlockingQueue} and a poolsize
+     * provided by the {@link AxonServerConfiguration}.<br/>
      * The {@link AxonServerConnectionManager} and the {@link QueryBusSpanFactory} defaults to a
      * {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}. The {@link AxonServerConfiguration}, the
      * local {@link QueryBus}, the {@link QueryUpdateEmitter}, and the message and generic {@link Serializer}s are
@@ -584,8 +586,15 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      * <p>
      * The {@link QueryPriorityCalculator} is defaulted to
      * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()} and the {@link TargetContextResolver} defaults
-     * to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
-     * {@link ExecutorServiceBuilder} defaults to {@link ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}.
+     * to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context.<br/>
+     * The {@code queryExecutorServiceBuilder} builds an {@link ExecutorService} based on a given
+     * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
+     * to process incoming queries with. Defaults to a {@link ThreadPoolExecutor}, using the
+     * {@link AxonServerConfiguration#getQueryThreads()} for the pool size, the
+     * given BlockingQueue as the work queue, and an {@link AxonThreadFactory}.<br/>
+     * The same applies to {@code queryResponseExecutorServiceBuilder}, which is used to process incoming query
+     * responses with.
+     * <p/>
      * The {@link QueryBusSpanFactory} defaults to a {@link DefaultQueryBusSpanFactory} backed by a
      * {@link NoOpSpanFactory}. The {@link AxonServerConnectionManager}, the {@link AxonServerConfiguration}, the local
      * {@link QueryBus}, the {@link QueryUpdateEmitter}, and the message and generic {@link Serializer}s are <b>hard
@@ -602,10 +611,24 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         private QueryPriorityCalculator priorityCalculator = QueryPriorityCalculator.defaultQueryPriorityCalculator();
         private TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver =
                 q -> configuration.getContext();
-        private ExecutorServiceBuilder queryExecutorServiceBuilder =
-                ExecutorServiceBuilder.defaultQueryExecutorServiceBuilder();
-        private ExecutorServiceBuilder queryResponseExecutorServiceBuilder =
-                ExecutorServiceBuilder.defaultQueryResponseExecutorServiceBuilder();
+        private BiFunction<AxonServerConfiguration, BlockingQueue<Runnable>, ExecutorService> queryExecutorServiceBuilder =
+                (axonServerConfiguration, queue) -> new ThreadPoolExecutor(
+                        axonServerConfiguration.getQueryThreads(),
+                        axonServerConfiguration.getQueryThreads(),
+                        0L,
+                        TimeUnit.MILLISECONDS,
+                        queue,
+                        new AxonThreadFactory("QueryProcessor")
+                );
+        private BiFunction<AxonServerConfiguration, BlockingQueue<Runnable>, ExecutorService> queryResponseExecutorServiceBuilder =
+                (axonServerConfiguration, queue) -> new ThreadPoolExecutor(
+                        axonServerConfiguration.getQueryResponseThreads(),
+                        axonServerConfiguration.getQueryResponseThreads(),
+                        0L,
+                        TimeUnit.MILLISECONDS,
+                        queue,
+                        new AxonThreadFactory("QueryResponseProcessor")
+                );
         private String defaultContext;
         private QueryBusSpanFactory spanFactory = DefaultQueryBusSpanFactory.builder()
                                                                             .spanFactory(NoOpSpanFactory.INSTANCE)
@@ -724,44 +747,42 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
 
         /**
-         * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given
+         * Sets the {@link ExecutorServiceFactory} which builds an {@link ExecutorService} based on a given
          * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
          * to process incoming queries with. Defaults to a {@link ThreadPoolExecutor}, using the
          * {@link AxonServerConfiguration#getQueryThreads()} for the pool size, the given BlockingQueue as the work
          * queue, and an {@link AxonThreadFactory}.
          * <p/>
          * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own
-         * {@code executorServiceBuilder}, as it ensures the query's priority is taken into consideration. Defaults to
-         * {@link ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}.
+         * {@code executorServiceBuilder}, as it ensures the query's priority is taken into consideration.
          *
-         * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}
+         * @param executorServiceBuilder an {@link ExecutorServiceFactory} used to build an {@link ExecutorService}
          *                               based on the {@link AxonServerConfiguration} and a {@link BlockingQueue}
          * @return the current Builder instance, for fluent interfacing
-         * @deprecated in favor of using the {@link #queryExecutorServiceBuilder(ExecutorServiceBuilder)} method
+         * @deprecated in favor of using the {@link #queryExecutorServiceBuilder(BiFunction)} method
          */
         @Deprecated
         @SuppressWarnings("unused")
-        public Builder executorServiceBuilder(ExecutorServiceBuilder executorServiceBuilder) {
+        public Builder executorServiceBuilder(BiFunction<AxonServerConfiguration, BlockingQueue<Runnable>, ExecutorService> executorServiceBuilder) {
             return queryExecutorServiceBuilder(executorServiceBuilder);
         }
 
         /**
-         * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given
+         * Sets the {@link ExecutorServiceFactory} which builds an {@link ExecutorService} based on a given
          * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
          * to process incoming queries with. Defaults to a {@link ThreadPoolExecutor}, using the
          * {@link AxonServerConfiguration#getQueryThreads()} for the pool size, the given BlockingQueue as the work
          * queue, and an {@link AxonThreadFactory}.
          * <p/>
          * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own
-         * {@code executorServiceBuilder}, as it ensures the query's priority is taken into consideration. Defaults to
-         * {@link ExecutorServiceBuilder#defaultQueryResponseExecutorServiceBuilder()}.
+         * {@code executorServiceBuilder}, as it ensures the query's priority is taken into consideration.
          *
-         * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}
+         * @param executorServiceBuilder an {@link ExecutorServiceFactory} used to build an {@link ExecutorService}
          *                               based on the {@link AxonServerConfiguration} and a {@link BlockingQueue}
          * @return the current Builder instance, for fluent interfacing
          */
         @SuppressWarnings("unused")
-        public Builder queryExecutorServiceBuilder(ExecutorServiceBuilder executorServiceBuilder) {
+        public Builder queryExecutorServiceBuilder(BiFunction<AxonServerConfiguration, BlockingQueue<Runnable>, ExecutorService> executorServiceBuilder) {
             assertNonNull(executorServiceBuilder, "ExecutorServiceBuilder may not be null");
             this.queryExecutorServiceBuilder = executorServiceBuilder;
             return this;
@@ -769,22 +790,22 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
 
         /**
-         * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given
+         * Sets the {@link ExecutorServiceFactory} which builds an {@link ExecutorService} based on a given
          * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
          * to process incoming query responses with. Defaults to a {@link ThreadPoolExecutor}, using the
          * {@link AxonServerConfiguration#getQueryResponseThreads()} for the pool size, the given BlockingQueue as the
          * work queue, and an {@link AxonThreadFactory}.
          * <p/>
          * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own
-         * {@code executorServiceBuilder}, as it ensures the query's priority is taken into consideration. Defaults to
-         * {@link ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}.
+         * {@code executorServiceBuilder}, as it ensures the query's priority is taken into consideration.
          *
-         * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}
+         * @param executorServiceBuilder an {@link ExecutorServiceFactory} used to build an {@link ExecutorService}
          *                               based on the {@link AxonServerConfiguration} and a {@link BlockingQueue}
          * @return the current Builder instance, for fluent interfacing
          */
         @SuppressWarnings("unused")
-        public Builder queryResponseExecutorServiceBuilder(ExecutorServiceBuilder executorServiceBuilder) {
+        public Builder queryResponseExecutorServiceBuilder(
+                BiFunction<AxonServerConfiguration, BlockingQueue<Runnable>, ExecutorService> executorServiceBuilder) {
             assertNonNull(executorServiceBuilder, "ExecutorServiceBuilder may not be null");
             this.queryResponseExecutorServiceBuilder = executorServiceBuilder;
             return this;
