@@ -21,7 +21,8 @@ package org.axonframework.serialization;
  *
  * @author Allard Buijze
  * @since 2.0
- * @deprecated By shifting from the {@link Serializer} to the {@link Converter}, this class becomes obsolete.
+ * TODO #3602 remove
+ * @deprecated By shifting from the {@link Serializer} to the {@link Converter}, this exception becomes obsolete.
  */
 @Deprecated(forRemoval = true, since = "5.0.0")
 public interface SerializedType {

@@ -1349,10 +1349,11 @@ This section contains five tables:
 | org.axonframework.serialization.CannotConvertBetweenTypesException                                     | org.axonframework.serialization.ConversionException                              | No                               |
 | org.axonframework.commandhandling.distributed.CommandDispatchException                                 | org.axonframework.commandhandling.CommandDispatchException                       | No                               |
 | org.axonframework.axonserver.connector.command.CommandPriorityCalculator                               | org.axonframework.commandhandling.CommandPriorityCalculator                      | Yes. Moved to `axon-messaging`   |
-| org.axonframework.commandhandling.distribute.MetaDataRoutingStrategy                                   | org.axonframework.commandhandling.MetaDataRoutingStrategy                        | Yes. Moved to `axon-messaging`   |
+| org.axonframework.co| org.axonframework.serialization.json.JacksonSerializer                                                 | org.axonframework.serialization.json.JacksonConverter                            | No                             |mmandhandling.distribute.MetaDataRoutingStrategy                                   | org.axonframework.commandhandling.MetaDataRoutingStrategy                        | Yes. Moved to `axon-messaging`   |
 | org.axonframework.commandhandling.distribute.RoutingStrategy                                           | org.axonframework.commandhandling.RoutingStrategy                                | Yes. Moved to `axon-messaging`   |
 | org.axonframework.commandhandling.distribute.UnresolvedRoutingKeyPolicy                                | org.axonframework.commandhandling.UnresolvedRoutingKeyPolicy                     | Yes. Moved to `axon-messaging`   |
 | org.axonframework.commandhandling.distribute.AnnotationRoutingStrategy                                 | org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy           | Yes. Moved to `axon-messaging`   |
+| org.axonframework.serialization.json.JacksonSerializer                                                 | org.axonframework.serialization.json.JacksonConverter                            | No                               |
 
 ### Removed Classes
 
@@ -1410,6 +1411,15 @@ This section contains five tables:
 | org.axonframework.axonserver.connector.event.axon.QueryResult                            | Removed in favor of `EventCriteria` use.                                                                                                       |
 | org.axonframework.axonserver.connector.event.axon.QueryResultStream                      | Removed in favor of `EventCriteria` use.                                                                                                       |
 | org.axonframework.axonserver.connector.event.axon.QueryResultStreamAdapter               | Removed in favor of `EventCriteria` use.                                                                                                       |
+| org.axonframework.serialization.xml.XStreamSerializer                                    | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.AbstractXStreamSerializer                                | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.CompactDriver                                        | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.Dom4JToByteArrayConverter                            | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.InputStreamToDom4jConverter                          | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.InputStreamToXomConverter                            | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.XomToStringConverter                                 | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| SerializerProperties.SerializerType#XSTREAM                                              | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.eventsourcing.eventstore.EqualRevisionPredicate                        | Removed due to removal of the `DomainEventData`.                                                                                               |
 
 ### Marked for removal Classes
 

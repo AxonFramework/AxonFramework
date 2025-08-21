@@ -69,7 +69,7 @@ class QuartzEventSchedulerTest {
         testSubject = QuartzEventScheduler.builder()
                                           .scheduler(scheduler)
                                           .eventBus(eventBus)
-                                          .serializer(TestSerializer.XSTREAM.getSerializer())
+                                          .serializer(TestSerializer.JACKSON.getSerializer())
                                           .build();
         testSubject.setGroupIdentifier(GROUP_ID);
     }
@@ -107,7 +107,7 @@ class QuartzEventSchedulerTest {
                                           .scheduler(scheduler)
                                           .eventBus(eventBus)
                                           .transactionManager(transactionManager)
-                                          .serializer(TestSerializer.XSTREAM.getSerializer())
+                                          .serializer(TestSerializer.JACKSON.getSerializer())
                                           .build();
         testSubject.setGroupIdentifier(GROUP_ID);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -140,7 +140,7 @@ class QuartzEventSchedulerTest {
                                           .scheduler(scheduler)
                                           .eventBus(eventBus)
                                           .transactionManager(transactionManager)
-                                          .serializer(TestSerializer.XSTREAM.getSerializer())
+                                          .serializer(TestSerializer.JACKSON.getSerializer())
                                           .build();
         testSubject.setGroupIdentifier(GROUP_ID);
 
@@ -183,7 +183,7 @@ class QuartzEventSchedulerTest {
         QuartzEventScheduler testSubject = QuartzEventScheduler.builder()
                                                                .scheduler(scheduler)
                                                                .eventBus(eventBus)
-                                                               .serializer(TestSerializer.XSTREAM.getSerializer())
+                                                               .serializer(TestSerializer.JACKSON.getSerializer())
                                                                .build();
 
         assertThrows(SchedulingException.class, testSubject::shutdown);
@@ -209,7 +209,7 @@ class QuartzEventSchedulerTest {
         QuartzEventScheduler.Builder builderTestSubject =
                 QuartzEventScheduler.builder()
                                     .eventBus(eventBus)
-                                    .serializer(TestSerializer.XSTREAM.getSerializer());
+                                    .serializer(TestSerializer.JACKSON.getSerializer());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
@@ -220,12 +220,12 @@ class QuartzEventSchedulerTest {
         QuartzEventScheduler.Builder builderTestSubject =
                 QuartzEventScheduler.builder()
                                     .scheduler(scheduler)
-                                    .serializer(TestSerializer.XSTREAM.getSerializer());
+                                    .serializer(TestSerializer.JACKSON.getSerializer());
 
         assertThrows(AxonConfigurationException.class, builderTestSubject::build);
     }
 
     private EventMessage<Object> buildTestEvent() {
-        return new GenericEventMessage<>(new MessageType("message"), new Object());
+        return new GenericEventMessage<>(new MessageType("message"), "test-event");
     }
 }
