@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
@@ -41,7 +40,6 @@ import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.TestSerializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
@@ -96,6 +94,8 @@ class EventMessageDeadLetterJpaConverterTest {
                 "my-identifier",
                 new SimpleSerializedObject<>(
                         "{\"my-wrong-payload\":\"wadawd\"}".getBytes(StandardCharsets.UTF_8),
+// TODO #3517 - Revert back incorrect format and validate that it still works once we use a Converter i.o. a Serializer.
+//                        "{'my-wrong-payload':'wadawd'}".getBytes(StandardCharsets.UTF_8),
                         byte[].class,
                         eventType
                 ),
