@@ -50,6 +50,7 @@ import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -58,6 +59,7 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
@@ -452,7 +454,10 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
     @Qualifier("localSegment")
     @Bean
     public CommandBus commandBus(TransactionManager txManager, LegacyConfiguration axonConfiguration) {
-        SimpleCommandBus commandBus = new SimpleCommandBus(new TransactionalUnitOfWorkFactory(txManager), Collections.emptyList());
+        SimpleCommandBus commandBus = new SimpleCommandBus(
+                new TransactionalUnitOfWorkFactory(txManager, new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE)),
+                Collections.emptyList()
+        );
         return new InterceptingCommandBus(
                 commandBus,
                 List.of(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())),

@@ -455,9 +455,10 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         return defaultComponent(CommandBus.class, config)
                 .orElseGet(() -> {
                     TransactionManager txManager = config.getComponent(TransactionManager.class);
+                    SimpleUnitOfWorkFactory simpleUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
                     UnitOfWorkFactory unitOfWorkFactory = txManager != null
-                            ? new TransactionalUnitOfWorkFactory(txManager)
-                            : new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
+                            ? new TransactionalUnitOfWorkFactory(txManager, simpleUnitOfWorkFactory)
+                            : simpleUnitOfWorkFactory;
                     SimpleCommandBus commandBus = new SimpleCommandBus(unitOfWorkFactory, Collections.emptyList());
                     if (!config.correlationDataProviders().isEmpty()) {
                         CorrelationDataInterceptor<Message<?>> interceptor =
