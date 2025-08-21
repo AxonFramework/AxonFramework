@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.gateway.EventAppender;
@@ -139,6 +140,11 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
                 }
                 metamodel.evolve(entityState, eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            throw new UnsupportedOperationException("Not required for testing");
         }
     }
 }
