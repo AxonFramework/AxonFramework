@@ -17,6 +17,7 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.EmptyApplicationContext;
 
 import java.util.UUID;
@@ -61,6 +62,22 @@ public final class UnitOfWorkTestUtils {
     @Nonnull
     public static UnitOfWork aUnitOfWork(@Nonnull String identifier) {
         return SIMPLE_FACTORY.create(identifier);
+    }
+
+    /**
+     * Creates a {@link TransactionalUnitOfWorkFactory} configured with the given {@link TransactionManager}. The
+     * resulting factory creates {@link UnitOfWork} instances bound to transactions managed by the specified
+     * {@link TransactionManager}.
+     * <p>
+     * Please note this will delegate to the {@link SimpleUnitOfWorkFactory} with an {@link EmptyApplicationContext}, so
+     * you will not be able to get any components from the {@link ProcessingContext#component} method - it will always
+     * throw a {@link org.axonframework.configuration.ComponentNotFoundException}.
+     *
+     * @param transactionManager The transaction manager used to manage transactions for the units of work.
+     * @return A new instance of {@link TransactionalUnitOfWorkFactory} using the provided transaction manager.
+     */
+    public static TransactionalUnitOfWorkFactory transactionalUnitOfWorkFactory(TransactionManager transactionManager) {
+        return new TransactionalUnitOfWorkFactory(transactionManager, SIMPLE_FACTORY);
     }
 
     private UnitOfWorkTestUtils() {

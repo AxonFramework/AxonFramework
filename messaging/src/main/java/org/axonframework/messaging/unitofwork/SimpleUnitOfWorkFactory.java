@@ -59,8 +59,8 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
             @Nonnull ApplicationContext applicationContext,
             @Nonnull UnaryOperator<UnitOfWorkConfiguration> factoryCustomization
     ) {
-        Objects.requireNonNull(applicationContext, "The applicationContext may not be null");
-        Objects.requireNonNull(factoryCustomization, "The factoryCustomization may not be null");
+        Objects.requireNonNull(applicationContext, "The applicationContext may not be null.");
+        Objects.requireNonNull(factoryCustomization, "The factoryCustomization may not be null.");
         this.applicationContext = applicationContext;
         this.factoryCustomization = factoryCustomization;
     }
@@ -71,6 +71,8 @@ public class SimpleUnitOfWorkFactory implements UnitOfWorkFactory {
             @Nonnull String identifier,
             @Nonnull UnaryOperator<UnitOfWorkConfiguration> customization
     ) {
+        Objects.requireNonNull(identifier, "The identifier may not be null.");
+        Objects.requireNonNull(customization, "The customization may not be null.");
         var configuration = customization.apply(factoryCustomization.apply(UnitOfWorkConfiguration.defaultValues()));
         return new UnitOfWork(identifier, configuration.workScheduler(), applicationContext);
     }

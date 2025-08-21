@@ -32,6 +32,7 @@ import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -49,6 +50,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Arrays.asList;
+import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -74,7 +76,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
 
         transactionManager = new EntityManagerTransactionManager(entityManager);
 
-        commandBus = new SimpleCommandBus(new TransactionalUnitOfWorkFactory(transactionManager), Collections.emptyList());
+        commandBus = new SimpleCommandBus(transactionalUnitOfWorkFactory(transactionManager), Collections.emptyList());
         commandGateway = new DefaultCommandGateway(commandBus, new ClassBasedMessageTypeResolver());
 
         Set<Class<? extends ParentAggregate>> subtypes =

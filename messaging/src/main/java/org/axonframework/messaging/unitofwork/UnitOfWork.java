@@ -81,9 +81,9 @@ public class UnitOfWork implements ProcessingLifecycle {
             @Nonnull Executor workScheduler,
             @Nonnull ApplicationContext applicationContext
     ) {
-        Objects.requireNonNull(identifier, "identifier may not be null");
-        Objects.requireNonNull(workScheduler, "workScheduler may not be null");
-        Objects.requireNonNull(applicationContext, "applicationContext may not be null");
+        Objects.requireNonNull(identifier, "identifier may not be null.");
+        Objects.requireNonNull(workScheduler, "workScheduler may not be null.");
+        Objects.requireNonNull(applicationContext, "applicationContext may not be null.");
         this.identifier = identifier;
         this.context = new UnitOfWorkProcessingContext(
                 identifier,
