@@ -451,6 +451,26 @@ The previously used builder-pattern now only remains for the customizable fields
 simple required parameters of the constructor of the `AggregateBasedJpaEventStorageEngine`. The customizable fields (
 like gap timeouts and batch size) can be found in the `AggregateBasedJpaEventStorageEngineConfiguration`.
 
+#### Axon Server based Event Storage
+
+The `AxonServerEventStore` has been removed entirely, in favor of two new `EventStorageEngine` implementations dedicated
+to Axon Server.
+These are:
+
+1. The `AggregateBasedAxonServerEventStorageEngine` - mandatory for aggregate-based event store formats.
+2. The `AxonServerEventStorageEngine` - mandatory for DCB-based event store formats.
+
+As was the case for Axon Framework 4, whenever the `axon-server-connector` is on the classpath, Axon Framework will
+default to Axon Server for commands, events, and queries. To disable this default, the `axon-server-connector` can once
+more be excluded, or it can be disabled in the `AxonServerConfiguration`. Whenever Axon Server is present, Axon
+Framework will assume you want a DCB-based event store. As such, it will construct an `AxonServerEventStorageEngine` by
+default.
+
+For green field projects this suffices. For those migrating, be mindful that the stored format of Axon Server needs to
+align with DCB for it to work with the `AxonServerEventStorageEngine`!
+If the stored format still relies on the aggregate-based format, be sure to configure the
+`AggregateBasedAxonServerEventStorageEngine` instead.
+
 ## Event Processors
 
 The `EventProcessingModule` (along with the `EventProcessingConfigurer` and `EventProcessingConfiguration` interfaces
@@ -1382,6 +1402,14 @@ This section contains five tables:
 | org.axonframework.config.EventProcessingConfigurer                                       | Removed due to changes in the Configuration API (see [Event Processors](#event-processors)).                                                   |
 | org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor.Builder             | Removed in favor of `PooledStreamingEventProcessorConfiguration` (see [Event Processors](#event-processors)).                                  |
 | org.axonframework.eventhandling.SubscribingEventProcessor.Builder                        | Removed in favor of `SubscribingEventProcessorConfiguration` (see [Event Processors](#event-processors)).                                      |
+| org.axonframework.axonserver.connector.event.axon.AxonServerEventStore                   | Removed in favor of the `AxonServerEventStorageEngine`                                                                                         |
+| org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory            | Removed in favor of the `AxonServerEventStorageEngineFactory`                                                                                  |
+| org.axonframework.axonserver.connector.event.axon.EventBuffer                            | Removed in favor of the `AxonServerMessageStream`, `SourcingEventMessageStream`, and `StreamingEventMessageStream`                             |
+| org.axonframework.axonserver.connector.event.axon.GrpcBackedDomainEventData              | Removed as mapping is done to an `EventMessage` directly.                                                                                      |
+| org.axonframework.axonserver.connector.event.axon.GrpcMetaDataAwareSerializer            | See [here](#metadata-with-string-values).                                                                                                      |
+| org.axonframework.axonserver.connector.event.axon.QueryResult                            | Removed in favor of `EventCriteria` use.                                                                                                       |
+| org.axonframework.axonserver.connector.event.axon.QueryResultStream                      | Removed in favor of `EventCriteria` use.                                                                                                       |
+| org.axonframework.axonserver.connector.event.axon.QueryResultStreamAdapter               | Removed in favor of `EventCriteria` use.                                                                                                       |
 
 ### Marked for removal Classes
 
