@@ -27,8 +27,6 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.command.StatefulCommandHandler;
-import org.axonframework.modelling.repository.Repository;
 import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
@@ -170,17 +168,10 @@ class CommandHandlingModuleTest {
     }
 
     @Test
-    void commandHandlerThrowsNullPointerExceptionForNullCommandNameWithStatefulCommandHandler() {
+    void commandHandlerThrowsNullPointerExceptionForNullCommandNameWithCommandHandler() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
                      () -> commandHandlerPhase.commandHandler(null, (cmd, context) -> MessageStream.just(null)));
-    }
-
-    @Test
-    void commandHandlerThrowsNullPointerExceptionForNullStatefulCommandHandler() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class,
-                     () -> commandHandlerPhase.commandHandler(COMMAND_NAME, (StatefulCommandHandler) null));
     }
 
     @Test
