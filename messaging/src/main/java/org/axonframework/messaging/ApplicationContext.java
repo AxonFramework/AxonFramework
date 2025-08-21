@@ -20,14 +20,15 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.configuration.ComponentNotFoundException;
 
-import java.util.Optional;
-
 /**
- * An {@code ApplicationContext} is a container for components that are registered in the Axon Framework. It allows
- * retrieval of components by their type and optionally by their name.
+ * An {@code ApplicationContext} is a container for components that are registered in the
+ * {@link org.axonframework.configuration.ComponentRegistry} of the {@link org.axonframework.configuration.ApplicationConfigurer}. It allows retrieval of
+ * components by their type and optionally by their name.
  * <p>
- * This interface is typically used to retrieve components that are registered in the Axon Framework, where you have
- * access to the {@link org.axonframework.messaging.unitofwork.ProcessingContext}.
+ * This interface is typically used to retrieve components that are registered in the
+ * {@link org.axonframework.configuration.ApplicationConfigurer}'s
+ * {@link org.axonframework.configuration.ComponentRegistry}. It is designed to be used in places where you have access
+ * to the {@link org.axonframework.messaging.unitofwork.ProcessingContext}.
  *
  * @author Mateusz Nowak
  * @author Mitchell Herrijgers
