@@ -22,8 +22,9 @@ import org.axonframework.configuration.ComponentNotFoundException;
 
 /**
  * An {@code ApplicationContext} is a container for components that are registered in the
- * {@link org.axonframework.configuration.ComponentRegistry} of the {@link org.axonframework.configuration.ApplicationConfigurer}. It allows retrieval of
- * components by their type and optionally by their name.
+ * {@link org.axonframework.configuration.ComponentRegistry} of the
+ * {@link org.axonframework.configuration.ApplicationConfigurer}. It allows retrieval of components by their type and
+ * optionally by their name.
  * <p>
  * This interface is typically used to retrieve components that are registered in the
  * {@link org.axonframework.configuration.ApplicationConfigurer}'s
