@@ -16,8 +16,11 @@
 
 package org.axonframework.eventhandling.gateway;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.annotation.EventAppenderParameterResolverFactory;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -25,7 +28,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import jakarta.annotation.Nonnull;
 
 /**
  * Component that publishes events to an {@link EventSink} in the context of a {@link ProcessingContext}. The events
@@ -41,7 +43,7 @@ import jakarta.annotation.Nonnull;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public interface EventAppender {
+public interface EventAppender extends DescribableComponent {
 
     /**
      * The {@link Context.ResourceKey} used to store the {@link EventAppender} in the {@link ProcessingContext}.

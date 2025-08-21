@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling.gateway;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
@@ -37,7 +37,8 @@ import java.util.stream.Collectors;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ProcessingContextEventAppender implements EventAppender, DescribableComponent {
+@Internal
+public class ProcessingContextEventAppender implements EventAppender {
 
     private final ProcessingContext processingContext;
     private final EventSink eventSink;
