@@ -54,7 +54,7 @@ public class MessagingTestHelper {
         return new GenericCommandResultMessage<>(new MessageType(qualifiedName), payload);
     }
 
-    public static EventMessage<Object> event(@Nonnull Object payload) {
+    public static <T> EventMessage<T> event(@Nonnull T payload) {
         return new GenericEventMessage<>(new MessageType(payload.getClass().getSimpleName()), payload);
     }
 

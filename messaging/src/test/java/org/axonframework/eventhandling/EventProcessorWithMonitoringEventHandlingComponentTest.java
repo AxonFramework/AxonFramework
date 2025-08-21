@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -30,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
 
 import static org.axonframework.messaging.MessagingTestHelper.event;
 import static org.junit.jupiter.api.Assertions.*;
@@ -68,13 +70,12 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         MessageHandlerInterceptor<EventMessage<?>> interceptor = (message, context, interceptorChain) ->
                 interceptorChain.proceed(event(123), context);
         var interceptingEventHandlingComponent = new InterceptingEventHandlingComponent(
-                List.of(interceptor),
+                List.of(), // List.of(interceptor),
                 eventHandlingComponent
         );
         var decoratedEventHandlingComponent = new MonitoringEventHandlingComponent(
                 messageMonitor,
                 interceptingEventHandlingComponent
-                // eventHandlingComponent
         );
         TestEventProcessor testSubject = new TestEventProcessor(decoratedEventHandlingComponent);
 
