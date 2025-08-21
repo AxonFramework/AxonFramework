@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -121,7 +122,7 @@ public abstract class EventTestUtils {
      * @param eventsBatch The batch of {@link EventMessage EventMessages} to handle.
      */
     public static <T> void handleEventsInUnitOfWork(EventHandler handler, List<EventMessage<T>> eventsBatch) {
-        var unitOfWork = new SimpleUnitOfWorkFactory().create();
+        var unitOfWork = UnitOfWorkTestUtils.aUnitOfWork();
         unitOfWork.onInvocation(context -> {
             MessageStream<Message<Void>> batchResult = MessageStream.empty().cast();
             for (var event : eventsBatch) {

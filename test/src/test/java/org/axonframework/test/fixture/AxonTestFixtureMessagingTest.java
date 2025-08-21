@@ -16,6 +16,7 @@
 
 package org.axonframework.test.fixture;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -24,16 +25,19 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.fixture.sampledomain.ChangeStudentNameCommand;
 import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -219,7 +223,7 @@ class AxonTestFixtureMessagingTest {
                 return FutureUtils.emptyCompletedFuture();
             });
             configurer.registerCommandBus(
-                    c -> new SimpleCommandBus()
+                    c -> aCommandBus()
                             .subscribe(
                                     new QualifiedName(ChangeStudentNameCommand.class),
                                     (command, context) -> {
@@ -240,6 +244,11 @@ class AxonTestFixtureMessagingTest {
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
                    .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 2));
+        }
+
+        @Nonnull
+        private static SimpleCommandBus aCommandBus() {
+            return new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE), Collections.emptyList());
         }
 
         @Test

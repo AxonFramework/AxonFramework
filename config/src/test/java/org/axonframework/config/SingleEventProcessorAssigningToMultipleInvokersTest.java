@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.jupiter.api.*;
 
@@ -105,7 +106,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                                   name,
                                   List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                                   cfg -> cfg.messageSource(conf.eventBus())
-                                          .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                                          .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
                           )
                   );
         LegacyConfiguration configuration = configurer.buildConfiguration();
@@ -133,7 +134,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                                   name,
                                   List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                                   cfg -> cfg.messageSource(conf.eventBus())
-                                            .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                                            .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
                           )
                   )
                   .assignProcessingGroup("processor1", "myProcessor")
@@ -164,7 +165,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                                   name,
                                   List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                                   cfg -> cfg.messageSource(conf.eventBus())
-                                            .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                                            .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
                           )
                   ).assignProcessingGroup(group -> "myProcessor");
 

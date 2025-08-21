@@ -28,11 +28,13 @@ import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -204,13 +206,13 @@ class PooledStreamingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             // and - shared customization
-            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
             ErrorHandler sharedErrorHandler = PropagatingErrorHandler.instance();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.errorHandler(sharedErrorHandler)
                                                                .unitOfWorkFactory(sharedUnitOfWorkFactory)));
 
             // and - type-specific customization
-            UnitOfWorkFactory typeUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(new NoOpTransactionManager());
+            UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
             AsyncInMemoryStreamableEventSource typeEventSource = new AsyncInMemoryStreamableEventSource();
             int typeSegmentCount = 8;
             configurer.eventProcessing(ep ->
@@ -261,13 +263,13 @@ class PooledStreamingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             // and - shared customization
-            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
             ErrorHandler sharedErrorHandler = PropagatingErrorHandler.instance();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.errorHandler(sharedErrorHandler)
                                                                .unitOfWorkFactory(sharedUnitOfWorkFactory)));
 
             // and - type-specific customization
-            UnitOfWorkFactory typeUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(new NoOpTransactionManager());
+            UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
             AsyncInMemoryStreamableEventSource typeEventSource = new AsyncInMemoryStreamableEventSource();
             int typeSegmentCount = 8;
             configurer.eventProcessing(ep ->
@@ -322,13 +324,13 @@ class PooledStreamingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             // and - shared customization
-            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
             ErrorHandler sharedErrorHandler = PropagatingErrorHandler.instance();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.errorHandler(sharedErrorHandler)
                                                                .unitOfWorkFactory(sharedUnitOfWorkFactory)));
 
             // and - type-specific customization
-            UnitOfWorkFactory typeUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(new NoOpTransactionManager());
+            UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
             AsyncInMemoryStreamableEventSource typeEventSource = new AsyncInMemoryStreamableEventSource();
             int typeSegmentCount = 8;
             configurer.eventProcessing(ep ->
@@ -547,5 +549,10 @@ class PooledStreamingEventProcessorModuleTest {
                 throw new RuntimeException(e);
             }
         }).orElse(null);
+    }
+
+    @Nonnull
+    private static TransactionalUnitOfWorkFactory aTransactionalUnitOfWork() {
+        return UnitOfWorkTestUtils.transactionalUnitOfWorkFactory(new NoOpTransactionManager());
     }
 }

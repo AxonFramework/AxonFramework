@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -23,6 +24,8 @@ import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.messaging.EmptyApplicationContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -33,6 +36,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -108,7 +112,7 @@ public class HierarchicalSpringContextTest {
 
         @Bean
         CommandBus commandBus() {
-            return new SimpleCommandBus();
+            return aSimpleCommandBus();
         }
     }
 
@@ -118,7 +122,7 @@ public class HierarchicalSpringContextTest {
 
         @Bean
         CommandBus commandBus() {
-            return new SimpleCommandBus();
+            return aSimpleCommandBus();
         }
 
         @Bean
@@ -129,5 +133,13 @@ public class HierarchicalSpringContextTest {
                             new InterceptingCommandBus(delegate, List.of(), List.of())
             );
         }
+    }
+
+    @Nonnull
+    private static SimpleCommandBus aSimpleCommandBus() {
+        return new SimpleCommandBus(
+                new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE),
+                Collections.emptyList()
+        );
     }
 }

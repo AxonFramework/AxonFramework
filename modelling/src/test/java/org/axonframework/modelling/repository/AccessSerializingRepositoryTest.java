@@ -16,8 +16,11 @@
 
 package org.axonframework.modelling.repository;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -29,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.UnaryOperator;
 
 import static org.awaitility.Awaitility.await;
+import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOfWork;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -62,8 +66,8 @@ class AccessSerializingRepositoryTest {
 
     @Test
     void concurrentAccessToSameIdentifierIsBlocked() {
-        UnitOfWork uow1 = new UnitOfWork();
-        UnitOfWork uow2 = new UnitOfWork();
+        UnitOfWork uow1 = aUnitOfWork();
+        UnitOfWork uow2 = aUnitOfWork();
         // Set blockers to allow both to run concurrently and block a wait moment at the repository
         CompletableFuture<Void> uowBlocker1 = new CompletableFuture<>();
         CompletableFuture<Void> uowBlocker2 = new CompletableFuture<>();
@@ -103,9 +107,9 @@ class AccessSerializingRepositoryTest {
 
     @Test
     void timeoutOnQueuedOperationMakesTheNextWaitForCompletionOfAllPreviousItems() {
-        UnitOfWork uow1 = new UnitOfWork("uow1");
-        UnitOfWork uow2 = new UnitOfWork("uow2");
-        UnitOfWork uow3 = new UnitOfWork("uow3");
+        UnitOfWork uow1 = aUnitOfWork("uow1");
+        UnitOfWork uow2 = aUnitOfWork("uow2");
+        UnitOfWork uow3 = aUnitOfWork("uow3");
         // Set blockers to allow both to run concurrently and block a wait moment at the repository
         CompletableFuture<Void> uowBlocker1 = new CompletableFuture<>();
         CompletableFuture<Void> uowBlocker3 = new CompletableFuture<>();
