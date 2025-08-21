@@ -53,7 +53,7 @@ Major API Changes
 * The API of all infrastructure components is rewritten to be "async native." This means that the
   aforementioned [Unit of Work](#unit-of-work) adjustments flow through most APIs, as well as the use of
   a [Message Stream](#message-stream) to provide a way to support imperative and reactive message handlers. See
-  the [Adjusted APIs](#adjusted-apis) section for a list of all classes that have undergone changes.
+  the [Async Native APIs](#async-native-apis) section for a list of all classes that have undergone changes.
 * Axon's `EventStore` implementations let go their aggregate-focus, instead following the "Dynamic Consistency
   Boundary" approach. This shift changed the `EventStore` and `EventStorageEngine` API heavily, providing a lot of
   flexibility in defining how entities are event sourced and how events are appended for them. Although most users won't
@@ -262,7 +262,7 @@ As can be expected, the `MessageStream` streams implementation of `Message`. Hen
 Framework uses this `Context` to add the aggregate identifier, aggregate type, and sequence number for events that
 originate from an aggregate-based event store (thus a pre-Dynamic Consistency Boundary event store).
 
-## Adjusted APIs
+## Async Native APIs
 
 The changes incurred by the new [Unit of Work](#unit-of-work) and [Message Stream](#message-stream) combined form the
 basis to make Axon Framework what we have dubbed "Async Native." In other words, it is intended to make Axon Framework
@@ -276,8 +276,11 @@ Nonetheless, if you **do** use these operations, it is good to know they've chan
 
 The following classes have undergone changes to accompany this shift:
 
+* The `CommandBus`
+* The `CommandGateway`
 * The `EventStorageEngine`
 * The `EventStore`
+* The `EventProcessors`
 * The `Repository`
 * The `StreamableMessageSource`
 * The `CommandBus`
@@ -1212,7 +1215,7 @@ migrate the tests on their own pass.
 Minor API Changes
 =================
 
-* The `Repository`, just as other components, has been made [async native](#adjusted-apis). This means methods return a
+* The `Repository`, just as other components, has been made [async native](#async-native-apis). This means methods return a
   `CompletableFuture` instead of the loaded `Aggregate`. Furthermore, the notion of aggregate was removed from the
   `Repository`, in favor of talking about `ManagedEntity` instances. This makes the `Repository` applicable for
   non-aggregate solutions too.
@@ -1229,7 +1232,7 @@ Minor API Changes
   `AggregateLifecycle#apply` method.
 * The `EventStorageEngine` uses append, source, and streaming conditions, for appending, sourcing, and streaming events,
   as described in the [Event Store](#event-store) section. Furthermore, operations have been made "async-native," as
-  described [here](#adjusted-apis). This is marked as a minor API changes since the `EventStorageEngine` should not be
+  described [here](#async-native-apis). This is marked as a minor API changes since the `EventStorageEngine` should not be
   used directly
 * The `RollbackConfiguration` interface and the `rollbackConfiguration()` builder method have been removed from all
   EventProcessor builders. Exceptions need to be handled by an interceptor, or otherwise they are always considered an
