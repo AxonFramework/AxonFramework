@@ -39,6 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.awaitility.Awaitility.await;
+import static org.axonframework.commandhandling.CommandBusTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -60,7 +61,7 @@ class DistributedCommandBusTest {
         testCommand = new GenericCommandMessage<>(new MessageType("command"), "test");
 
         connector = new StubConnector();
-        delegate = new SimpleCommandBus();
+        delegate = aCommandBus();
         DistributedCommandBusConfiguration configuration = DistributedCommandBusConfiguration.DEFAULT;
         // Create virtual threads for the test, so we don't have to manage the thread pool.
         configuration.executorService(Executors.newVirtualThreadPerTaskExecutor());

@@ -29,6 +29,7 @@ import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -85,7 +86,7 @@ class CoordinatorTest {
                                  .name(PROCESSOR_NAME)
                                  .eventSource(messageSource)
                                  .tokenStore(tokenStore)
-                                 .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                                 .unitOfWorkFactory(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE))
                                  .executorService(executorService)
                                  .workPackageFactory((segment, trackingToken) -> workPackage)
                                  .initialToken(es -> es.firstToken().thenApply(ReplayToken::createReplayToken))

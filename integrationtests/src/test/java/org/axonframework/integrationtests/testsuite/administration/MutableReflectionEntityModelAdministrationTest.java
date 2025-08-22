@@ -16,25 +16,22 @@
 
 package org.axonframework.integrationtests.testsuite.administration;
 
-import org.axonframework.configuration.Module;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutablePerson;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.entity.EntityMetamodel;
 
 /**
- * Runs the administration test suite using as many reflection components of the {@link EntityMetamodel} and
- * related classes as possible. As reflection-based components are added, this test may change to use more of them.
+ * Runs the administration test suite using as many reflection components of the {@link EntityMetamodel} and related
+ * classes as possible. As reflection-based components are added, this test may change to use more of them.
  */
 public class MutableReflectionEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
     @Override
-    Module getModule() {
-        return StatefulCommandHandlingModule.named("MutableReflectionEntityModelAdministrationTest")
-                                            .entities()
-                                            .entity(EventSourcedEntityModule.annotated(PersonIdentifier.class,
-                                                                                       MutablePerson.class))
-                                            .build();
+    protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
+        var personEntity = EventSourcedEntityModule.annotated(PersonIdentifier.class, MutablePerson.class);
+        return configurer.componentRegistry(cr -> cr.registerModule(personEntity));
     }
+
 }

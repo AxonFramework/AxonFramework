@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.configuration;
 
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ModuleBuilder;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -37,30 +39,6 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
     @Override
     public ModellingConfigurer createConfigurer() {
         return testSubject == null ? ModellingConfigurer.create() : testSubject;
-    }
-
-    @Test
-    void registerStatefulCommandHandlingModuleAddsAModuleConfiguration() {
-        StateBasedEntityModule<String, Object> testEntityBuilder =
-                StateBasedEntityModule.declarative(String.class, Object.class)
-                                      .loader(c -> (id, context) -> null)
-                                      .persister(c -> (id, entity, context) -> null)
-                                      .build();
-        ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
-                StatefulCommandHandlingModule.named("test")
-                                             .entities(entityPhase -> entityPhase.entity(testEntityBuilder))
-                                             .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
-                                                     new QualifiedName(String.class),
-                                                     (command, stateManager, context) -> MessageStream.empty().cast()
-                                             ));
-
-        List<Configuration> moduleConfigurations =
-                testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
-                           .build()
-                           .getModuleConfigurations();
-
-        assertFalse(moduleConfigurations.isEmpty());
-        assertEquals(1, moduleConfigurations.size());
     }
 
     @Test
@@ -84,5 +62,36 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
                            .getComponent(TestComponent.class);
 
         assertEquals(TEST_COMPONENT, result);
+    }
+
+    @Test
+    void registerEntityModuleAddsAModuleConfiguration() {
+        StateBasedEntityModule<String, Object> testEntityBuilder =
+                StateBasedEntityModule.declarative(String.class, Object.class)
+                                      .loader(c -> (id, context) -> null)
+                                      .persister(c -> (id, entity, context) -> null)
+                                      .build();
+
+        Configuration configuration =
+                testSubject.componentRegistry(cr -> cr.registerModule(testEntityBuilder))
+                           .build();
+
+        assertThat(configuration.getModuleConfiguration("SimpleStateBasedEntityModule<String, Object>")).isPresent();
+    }
+
+    @Test
+    void registerCommandHandlingModuleAddsAModuleConfiguration() {
+        ModuleBuilder<CommandHandlingModule> statefulCommandHandlingModule =
+                CommandHandlingModule.named("test")
+                                     .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
+                                             new QualifiedName(String.class),
+                                             (command, context) -> MessageStream.empty().cast()
+                                     ));
+
+        Configuration configuration =
+                testSubject.registerCommandHandlingModule(statefulCommandHandlingModule)
+                           .build();
+
+        assertThat(configuration.getModuleConfiguration("test")).isPresent();
     }
 }

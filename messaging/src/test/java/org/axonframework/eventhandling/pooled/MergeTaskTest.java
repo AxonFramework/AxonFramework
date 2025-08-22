@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -64,7 +65,8 @@ class MergeTaskTest {
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(SEGMENT_IDS);
 
         testSubject = new MergeTask(
-                result, PROCESSOR_NAME, SEGMENT_TO_MERGE, workPackages, tokenStore, new SimpleUnitOfWorkFactory()
+                result, PROCESSOR_NAME, SEGMENT_TO_MERGE, workPackages, tokenStore,
+                new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE)
         );
     }
 

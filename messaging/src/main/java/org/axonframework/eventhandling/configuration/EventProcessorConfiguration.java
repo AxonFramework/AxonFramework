@@ -21,6 +21,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.*;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -59,7 +60,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
                                                                                       .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                       .build();
     private List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
-    protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory();
+    protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
 
     /**
      * Constructs a new {@link EventProcessorConfiguration} with default values.

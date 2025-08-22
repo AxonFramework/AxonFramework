@@ -36,10 +36,11 @@ import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
@@ -66,9 +67,9 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
             new GenericCommandResultMessage<>(new MessageType("empty"), "successful");
 
     protected CommandGateway commandGateway;
-    protected StateManager stateManager;
+    protected UnitOfWorkFactory unitOfWorkFactory;
 
-    private StatefulCommandHandlingModule.CommandHandlerPhase statefulCommandHandlingModule;
+    private CommandHandlingModule.CommandHandlerPhase commandHandlingModule;
     private EventSourcedEntityModule<String, Course> courseEntity;
     private EventSourcedEntityModule<String, Student> studentEntity;
 
@@ -92,31 +93,29 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
                 .criteriaResolver(this::courseCriteriaResolver)
                 .build();
 
-        statefulCommandHandlingModule = StatefulCommandHandlingModule
-                .named("student-course-module")
-                .entities()
-                .entity(studentEntity)
-                .entity(courseEntity)
-                .entities(this::registerAdditionalEntities)
-                .commandHandlers();
+        commandHandlingModule = CommandHandlingModule.named("student-course-module")
+                                                     .commandHandlers();
     }
 
     @Override
     protected ApplicationConfigurer createConfigurer() {
-        return EventSourcingConfigurer.create()
-                                      .registerStatefulCommandHandlingModule(statefulCommandHandlingModule);
+        var configurer = EventSourcingConfigurer.create()
+                                                .componentRegistry(cr -> cr.registerModule(studentEntity))
+                                                .componentRegistry(cr -> cr.registerModule(courseEntity))
+                                                .registerCommandHandlingModule(commandHandlingModule);
+        return testSuiteConfigurer(configurer);
     }
 
     /**
      * Test suite implementations can invoke this method to register additional command handlers.
      *
-     * @param handlerConfigurer The command handler phase of the {@link StatefulCommandHandlingModule}, allowing for
-     *                          command handler registration.
+     * @param handlerConfigurer The command handler phase of the {@link CommandHandlingModule}, allowing for command
+     *                          handler registration.
      */
     protected void registerCommandHandlers(
-            @Nonnull Consumer<StatefulCommandHandlingModule.CommandHandlerPhase> handlerConfigurer
+            @Nonnull Consumer<CommandHandlingModule.CommandHandlerPhase> handlerConfigurer
     ) {
-        statefulCommandHandlingModule.commandHandlers(handlerConfigurer);
+        commandHandlingModule.commandHandlers(handlerConfigurer);
     }
 
     /**
@@ -125,19 +124,19 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
     protected void startApp() {
         super.startApp();
         commandGateway = startedConfiguration.getComponent(CommandGateway.class);
-
-        Configuration moduleConfig = startedConfiguration.getModuleConfigurations().getFirst();
-        stateManager = moduleConfig.getComponent(StateManager.class);
+        unitOfWorkFactory = startedConfiguration.getComponent(UnitOfWorkFactory.class);
     }
 
     /**
-     * Test suites can override this method to register additional entities.
+     * Allows for further configuration of the {@link EventSourcingConfigurer} used in the test suite.
+     * <p>
+     * This method can be overridden by subclasses to add additional configuration.
      *
-     * @param entityConfigurer The entity phase of the {@link StatefulCommandHandlingModule}, allowing for additional
-     *                         entities to be registered.
+     * @param configurer The {@link EventSourcingConfigurer} to configure.
+     * @return The configured {@link EventSourcingConfigurer}.
      */
-    protected void registerAdditionalEntities(StatefulCommandHandlingModule.EntityPhase entityConfigurer) {
-        // Do nothing by default.
+    protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
+        return configurer;
     }
 
     /**
@@ -202,29 +201,30 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
     }
 
     protected void verifyStudentName(String id, String name) {
-        UnitOfWork uow = new UnitOfWork();
-        uow.executeWithResult(
-                   context -> stateManager.repository(Student.class, String.class)
-                                          .load(id, context)
-                                          .thenAccept(student -> assertEquals(name, student.entity().getName()))
-           )
+        UnitOfWork uow = unitOfWorkFactory.create();
+        uow.executeWithResult(context -> context.component(StateManager.class)
+                                                .repository(Student.class, String.class)
+                                                .load(id, context)
+                                                .thenAccept(student -> assertEquals(name,
+                                                                                    student.entity().getName())))
            .join();
     }
 
     protected void verifyStudentEnrolledInCourse(String id, String courseId) {
-        UnitOfWork uow = new UnitOfWork();
-        uow.executeWithResult(
-                   context -> stateManager.repository(Student.class, String.class)
-                                          .load(id, context)
-                                          .thenAccept(student -> assertTrue(student.entity()
-                                                                                   .getCoursesEnrolled()
-                                                                                   .contains(courseId)))
-                                          .thenCompose(v -> stateManager.repository(Course.class, String.class)
-                                                                        .load(courseId, context))
-                                          .thenAccept(course -> assertTrue(course.entity()
-                                                                                 .getStudentsEnrolled()
-                                                                                 .contains(id)))
-           )
+        UnitOfWork uow = unitOfWorkFactory.create();
+        uow.executeWithResult(context -> context.component(StateManager.class)
+                                                .repository(Student.class, String.class)
+                                                .load(id, context)
+                                                .thenAccept(student -> assertTrue(student.entity()
+                                                                                         .getCoursesEnrolled()
+                                                                                         .contains(courseId)))
+                                                .thenCompose(v -> context.component(StateManager.class)
+                                                                         .repository(Course.class,
+                                                                                     String.class)
+                                                                         .load(courseId, context))
+                                                .thenAccept(course -> assertTrue(course.entity()
+                                                                                       .getStudentsEnrolled()
+                                                                                       .contains(id))))
            .join();
     }
 }

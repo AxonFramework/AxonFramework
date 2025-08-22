@@ -17,6 +17,7 @@
 package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Component;
@@ -33,7 +34,7 @@ import java.util.function.Consumer;
 
 /**
  * The modelling {@link ApplicationConfigurer} of Axon Framework's configuration API, providing registration methods to,
- * for example, register a {@link StatefulCommandHandlingModule}.
+ * for example, register a {@link CommandHandlingModule}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -88,21 +89,22 @@ public class ModellingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link ModuleBuilder builder} for a {@link StatefulCommandHandlingModule} to use in this
+     * Registers the given {@link ModuleBuilder builder} for a {@link CommandHandlingModule} to use in this
      * configuration.
      * <p>
      * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
      * will not be accessible from other {@code Modules} to enforce encapsulation. The sole exception to this, are
-     * {@code Modules} registered with the resulting {@link StatefulCommandHandlingModule} itself.
+     * {@code Modules} registered with the resulting {@link CommandHandlingModule} itself.
      *
-     * @param moduleBuilder The builder returning a stateful command handling module to register with
+     * @param moduleBuilder The builder returning a command handling module to register with
      *                      {@code this ModellingConfigurer}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
-    public ModellingConfigurer registerStatefulCommandHandlingModule(
-            ModuleBuilder<StatefulCommandHandlingModule> moduleBuilder
+    @Nonnull
+    public ModellingConfigurer registerCommandHandlingModule(
+            @Nonnull ModuleBuilder<CommandHandlingModule> moduleBuilder
     ) {
-        delegate.componentRegistry(cr -> cr.registerModule(moduleBuilder.build()));
+        delegate.registerCommandHandlingModule(Objects.requireNonNull(moduleBuilder, "ModuleBuilder may not be null"));
         return this;
     }
 

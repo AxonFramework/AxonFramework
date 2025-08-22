@@ -18,10 +18,12 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 
@@ -195,6 +197,45 @@ public class MessagingConfigurer implements ApplicationConfigurer {
         delegate.componentRegistry(
                 cr -> cr.registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder)
         );
+        return this;
+    }
+
+    /**
+     * Registers the given {@link UnitOfWorkFactory} factory in this {@code Configurer}.
+     * <p>
+     * The {@code unitOfWorkFactoryBuilder} receives the {@link Configuration} as input and is expected to return a
+     * {@link UnitOfWorkFactory} instance.
+     *
+     * @param unitOfWorkFactoryBuilder The builder constructing the {@link UnitOfWorkFactory}.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    public MessagingConfigurer registerUnitOfWorkFactory(
+            @Nonnull ComponentBuilder<UnitOfWorkFactory> unitOfWorkFactoryBuilder
+    ) {
+        delegate.componentRegistry(
+                cr -> cr.registerComponent(UnitOfWorkFactory.class, unitOfWorkFactoryBuilder)
+        );
+        return this;
+    }
+
+    /**
+     * Registers the given {@link ModuleBuilder builder} for a {@link CommandHandlingModule} to use in this
+     * configuration.
+     * <p>
+     * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
+     * will not be accessible from other {@code Modules} to enforce encapsulation. The sole exception to this, are
+     * {@code Modules} registered with the resulting {@link CommandHandlingModule} itself.
+     *
+     * @param moduleBuilder The builder returning a command handling module to register with
+     *                      {@code this ModellingConfigurer}.
+     * @return A {@code ModellingConfigurer} instance for further configuring.
+     */
+    @Nonnull
+    public MessagingConfigurer registerCommandHandlingModule(
+            @Nonnull ModuleBuilder<CommandHandlingModule> moduleBuilder
+    ) {
+        Objects.requireNonNull(moduleBuilder, "The moduleBuilder cannot be null.");
+        delegate.componentRegistry(cr -> cr.registerModule(moduleBuilder.build()));
         return this;
     }
 

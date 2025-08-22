@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
@@ -32,6 +33,7 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.spring.config.annotation.SpringBeanDependencyResolverFactory;
 import org.axonframework.spring.config.annotation.SpringBeanParameterResolverFactory;
 import org.axonframework.test.FixtureExecutionException;
@@ -49,6 +51,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.test.annotation.DirtiesContext;
 
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -387,7 +390,7 @@ class SpringBeanResolverFactoryTest {
 
         @Bean
         public CommandBus commandBus() {
-            return new SimpleCommandBus();
+            return new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE), Collections.emptyList());
         }
 
         @Bean

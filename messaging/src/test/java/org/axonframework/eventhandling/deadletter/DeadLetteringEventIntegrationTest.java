@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.deadletter;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -41,6 +42,7 @@ import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
@@ -194,7 +196,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         eventSource = new AsyncInMemoryStreamableEventSource();
         var configuration = new PooledStreamingEventProcessorConfiguration()
                 .eventSource(eventSource)
-                .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager))
+                .unitOfWorkFactory(aTransactionalUnitOfWork())
                 .tokenStore(new InMemoryTokenStore())
                 .coordinatorExecutor(Executors.newSingleThreadScheduledExecutor())
                 .workerExecutor(Executors.newSingleThreadScheduledExecutor())
@@ -705,6 +707,11 @@ public abstract class DeadLetteringEventIntegrationTest {
                 );
             }
         }
+    }
+
+    @Nonnull
+    private TransactionalUnitOfWorkFactory aTransactionalUnitOfWork() {
+        return UnitOfWorkTestUtils.transactionalUnitOfWorkFactory(transactionManager);
     }
 
     private static class ProblematicEventHandlingComponent {
