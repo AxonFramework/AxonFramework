@@ -104,6 +104,7 @@ class FixtureTest_RegisteringSagaEnhancements {
         this.testSubject.givenAPublished(testEvent);
     }
 
+    @Disabled("TODO revise after #3103 is finished and Saga support is enabled")
     @Test
     void exceptionsAreRethrownAsFixtureExecutionExceptionDuringGivenPhaseWithoutInvokedCustomErrorHandler() {
         SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);

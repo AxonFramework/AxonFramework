@@ -303,6 +303,7 @@ class FixtureTest_Deadlines {
                .expectNoScheduledEvents();
     }
 
+    @Disabled("TODO revise after #3103 is finished and Saga support is enabled")
     @Test
     void deadlineHandlerInterceptor() {
 
