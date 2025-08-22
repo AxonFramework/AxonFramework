@@ -18,10 +18,12 @@ package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.StringUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.QualifiedName;
 
 import java.lang.annotation.Annotation;
 import java.util.Objects;
@@ -88,30 +90,41 @@ public class AnnotationMessageTypeResolver implements MessageTypeResolver {
     @Override
     public Optional<MessageType> resolve(@Nonnull Class<?> payloadType) {
         return AnnotationUtils.findAnnotationAttributes(payloadType, specification.annotation())
-                              .map(attributes -> new MessageType(
-                                      (String) attributes.get(specification.nameAttribute()),
-                                      (String) attributes.get(specification.versionAttribute())
-                              ))
+                              .map(attributes -> {
+                                  String name = (String) attributes.get(specification.nameAttribute());
+                                  String namespace = (String) attributes.get(specification.namespaceAttribute());
+                                  QualifiedName qualifiedName = StringUtils.nonEmptyOrNull(namespace)
+                                          ? new QualifiedName(namespace, name)
+                                          : new QualifiedName(name);
+                                  return new MessageType(
+                                          qualifiedName,
+                                          (String) attributes.get(specification.versionAttribute())
+                                  );
+                              })
                               .or(() -> fallback != null ? fallback.resolve(payloadType) : Optional.empty());
     }
 
     /**
      * An annotation specification unique to the {@link AnnotationMessageTypeResolver}.
      *
-     * @param annotation       The annotation class to search for when {@link #resolve(Class)} is invoked.
-     * @param nameAttribute    The attribute for the {@link MessageType#name()}, that should be present on the given
-     *                         {@code annotation}.
-     * @param versionAttribute The attribute for the {@link MessageType#version()}, that should be present on the given
-     *                         {@code annotation}.
+     * @param annotation         The annotation class to search for when {@link #resolve(Class)} is invoked.
+     * @param nameAttribute      The attribute for the {@link MessageType#name()}, that should be present on the given
+     *                           {@code annotation}.
+     * @param versionAttribute   The attribute for the {@link MessageType#version()}, that should be present on the
+     *                           given {@code annotation}.
+     * @param namespaceAttribute The attribute for the {@link QualifiedName#namespace()} field of the
+     *                           {@link QualifiedName} set in the resolved {@link MessageType}. Whenever {@code null},
+     *                           the {@link #nameAttribute()} is used on its own.
      */
     public record AnnotationSpecification(@Nonnull Class<? extends Annotation> annotation,
                                           @Nonnull String nameAttribute,
-                                          @Nonnull String versionAttribute) {
+                                          @Nonnull String versionAttribute,
+                                          @Nullable String namespaceAttribute) {
 
         /**
          * The default {@link AnnotationSpecification} looking for the {@link Message} annotation.
          */
         public static final AnnotationSpecification DEFAULT =
-                new AnnotationSpecification(Message.class, "name", "version");
+                new AnnotationSpecification(Message.class, "name", "version", "namespace");
     }
 }

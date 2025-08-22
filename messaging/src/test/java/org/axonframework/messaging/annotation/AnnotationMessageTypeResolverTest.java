@@ -60,6 +60,16 @@ class AnnotationMessageTypeResolverTest {
     }
 
     @Test
+    void classAnnotatedWithCommandIncludingNamespaceReturnsExpectedMessageType() {
+        MessageType expectedType = new MessageType("context", "test-command-domain-name", "1.33.7");
+
+        Optional<MessageType> result = testSubject.resolve(TestCommandWithNamespace.class);
+
+        assertThat(result).isPresent();
+        assertThat(result.get()).isEqualTo(expectedType);
+    }
+
+    @Test
     void classAnnotatedWithEventReturnsExpectedMessageType() {
         MessageType expectedType = new MessageType("event-business-name", "42");
 
@@ -70,10 +80,30 @@ class AnnotationMessageTypeResolverTest {
     }
 
     @Test
+    void classAnnotatedWithEventIncludingNamespaceReturnsExpectedMessageType() {
+        MessageType expectedType = new MessageType("context", "event-business-name", "42");
+
+        Optional<MessageType> result = testSubject.resolve(TestEventWithNamespace.class);
+
+        assertThat(result).isPresent();
+        assertThat(result.get()).isEqualTo(expectedType);
+    }
+
+    @Test
     void classAnnotatedWithQueryReturnsExpectedMessageType() {
         MessageType expectedType = new MessageType("non-of-your-business-query-name", "9001");
 
         Optional<MessageType> result = testSubject.resolve(TestQuery.class);
+
+        assertThat(result).isPresent();
+        assertThat(result.get()).isEqualTo(expectedType);
+    }
+
+    @Test
+    void classAnnotatedWithQueryIncludingNamespaceReturnsExpectedMessageType() {
+        MessageType expectedType = new MessageType("context", "non-of-your-business-query-name", "9001");
+
+        Optional<MessageType> result = testSubject.resolve(TestQueryWithNamespace.class);
 
         assertThat(result).isPresent();
         assertThat(result.get()).isEqualTo(expectedType);
@@ -102,8 +132,10 @@ class AnnotationMessageTypeResolverTest {
 
     @Test
     void customAnnotationSpecificationIsHonored() {
-        AnnotationSpecification specification =
-                new AnnotationSpecification(CustomMessageAnnotation.class, "customName", "customVersion");
+        AnnotationSpecification specification = new AnnotationSpecification(CustomMessageAnnotation.class,
+                                                                            "customName",
+                                                                            "customVersion",
+                                                                            "customNamespace");
         AnnotationMessageTypeResolver customAnnotationTestSubject =
                 new AnnotationMessageTypeResolver(null, specification);
 
@@ -120,13 +152,28 @@ class AnnotationMessageTypeResolverTest {
 
     }
 
+    @Command(name = "test-command-domain-name", version = "1.33.7", namespace = "context")
+    private record TestCommandWithNamespace(String id) {
+
+    }
+
     @Event(name = "event-business-name", version = "42")
     private record TestEvent(String id) {
 
     }
 
+    @Event(name = "event-business-name", version = "42", namespace = "context")
+    private record TestEventWithNamespace(String id) {
+
+    }
+
     @Query(name = "non-of-your-business-query-name", version = "9001")
     private record TestQuery(String id) {
+
+    }
+
+    @Query(name = "non-of-your-business-query-name", version = "9001", namespace = "context")
+    private record TestQueryWithNamespace(String id) {
 
     }
 
@@ -148,6 +195,8 @@ class AnnotationMessageTypeResolverTest {
         String customName() default "customName";
 
         String customVersion() default "customVersion";
+
+        String customNamespace() default "";
     }
 
     @CustomMessageAnnotation
