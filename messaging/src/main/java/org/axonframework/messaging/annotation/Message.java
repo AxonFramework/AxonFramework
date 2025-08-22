@@ -40,11 +40,25 @@ import java.lang.annotation.Target;
 public @interface Message {
 
     /**
+     * The namespace or (bounded) context of the annotated message.
+     * <p>
+     * Will typically be mapped to the {@link QualifiedName#namespace()}. Whenever this attribute is defined, the
+     * {@link #name()} will become the {@link QualifiedName#localName()}. Together they would form the
+     * {@link QualifiedName#name()}.
+     *
+     * @return The namespace or (bounded) context of the annotated message.
+     */
+    String namespace() default "";
+
+    /**
      * The business or domain name of the annotated message.
      * <p>
      * Will typically be mapped to a {@link QualifiedName#QualifiedName(String)} and inserted into a
-     * {@link MessageType}. By using the String-based constructor of the {@link QualifiedName}, this field  will
-     * represent the combination of the {@link QualifiedName#localName()} and {@link QualifiedName#namespace()},
+     * {@link MessageType}. By using the String-based constructor of the {@link QualifiedName}, this field will
+     * represent the combination of the {@link QualifiedName#localName()} and {@link QualifiedName#namespace()}.
+     * <p>
+     * If the {@link #namespace()} has also been specified, this attribute will reflect the
+     * {@link QualifiedName#localName()} <b>only</b>.
      *
      * @return The business or domain name of the annotated message.
      */

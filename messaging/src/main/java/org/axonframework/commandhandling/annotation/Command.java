@@ -42,6 +42,17 @@ import java.lang.annotation.Target;
 public @interface Command {
 
     /**
+     * The namespace or (bounded) context of the command.
+     * <p>
+     * Will typically be mapped to the {@link QualifiedName#namespace()}. Whenever this attribute is defined, the
+     * {@link #name()} will become the {@link QualifiedName#localName()}. Together they would form the
+     * {@link QualifiedName#name()}.
+     *
+     * @return The namespace or (bounded) context of the command.
+     */
+    String namespace() default "";
+
+    /**
      * The business or domain name of the command.
      * <p>
      * Will typically be mapped to a {@link QualifiedName#QualifiedName(String)} and inserted into a
