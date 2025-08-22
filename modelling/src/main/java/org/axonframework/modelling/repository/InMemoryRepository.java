@@ -17,6 +17,7 @@
 package org.axonframework.modelling.repository;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.SimpleRepository;
@@ -32,11 +33,11 @@ import static java.util.Objects.requireNonNull;
  * This implementation uses a {@link SimpleRepository} as a delegate to handle entity lifecycle management while
  * providing persistent storage in memory.
  * <p>
- * This repository is suitable for testing purposes, prototyping, or scenarios where entities need to be stored
- * in memory without external persistence. The storage is thread-safe through the use of {@code ConcurrentHashMap}.
+ * This repository is suitable for testing purposes, prototyping, or scenarios where entities need to be stored in
+ * memory without external persistence. The storage is thread-safe through the use of {@code ConcurrentHashMap}.
  * <p>
- * The repository automatically manages entity lifecycle through the {@link SimpleRepository} delegate, ensuring
- * proper integration with the {@link ProcessingContext} and automatic persistence on commit.
+ * The repository automatically manages entity lifecycle through the {@link SimpleRepository} delegate, ensuring proper
+ * integration with the {@link ProcessingContext} and automatic persistence on commit.
  * <p>
  * Example usage:
  * <pre>{@code
@@ -69,15 +70,17 @@ public class InMemoryRepository<ID, E> implements Repository.LifecycleManagement
     public InMemoryRepository(@Nonnull Class<ID> idType, @Nonnull Class<E> entityType) {
         requireNonNull(idType, "The idType may not be null");
         requireNonNull(entityType, "The entityType may not be null");
-        
+
         this.storage = new ConcurrentHashMap<>();
         this.delegate = new SimpleRepository<>(
                 idType,
                 entityType,
                 (identifier, processingContext) -> CompletableFuture.completedFuture(storage.get(identifier)),
                 (identifier, entity, processingContext) -> {
-                    storage.put(identifier, entity);
-                    return CompletableFuture.completedFuture(null);
+                    if (entity != null) { // it's sometimes null!
+                        storage.put(identifier, entity);
+                    }
+                    return FutureUtils.emptyCompletedFuture();
                 }
         );
     }
@@ -150,5 +153,4 @@ public class InMemoryRepository<ID, E> implements Repository.LifecycleManagement
     public boolean contains(@Nonnull ID identifier) {
         return storage.containsKey(identifier);
     }
-
 }

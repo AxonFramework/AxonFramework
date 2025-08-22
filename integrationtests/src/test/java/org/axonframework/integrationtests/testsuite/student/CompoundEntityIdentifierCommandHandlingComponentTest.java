@@ -98,7 +98,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractComma
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(AssignMentorCommand.class),
                 c -> (command, context) -> {
-                    EventAppender eventAppender = EventAppender.forContext(context, c);
+                    EventAppender eventAppender = EventAppender.forContext(context);
                     AssignMentorCommand payload = command.payloadAs(AssignMentorCommand.class,
                                                                     c.getComponent(Converter.class));
                     StateManager state = context.component(StateManager.class);

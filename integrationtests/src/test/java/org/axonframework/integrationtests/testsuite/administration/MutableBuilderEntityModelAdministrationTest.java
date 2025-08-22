@@ -64,8 +64,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableTask.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CompleteTaskCommand.class).qualifiedName(),
                                         (command, entity, context) -> {
-                                            EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                                   configuration);
+                                            EventAppender eventAppender = EventAppender.forContext(context);
                                             entity.handle(command.payloadAs(CompleteTaskCommand.class, converter), eventAppender);
                                             return MessageStream.empty().cast();
                                         })
@@ -77,7 +76,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableSalaryInformation.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
                                         (command, entity, context) -> {
-                                            EventAppender eventAppender = EventAppender.forContext(context, configuration);
+                                            EventAppender eventAppender = EventAppender.forContext(context);
                                             entity.handle(command.payloadAs(GiveRaise.class, converter), eventAppender);
                                             return MessageStream.empty().cast();
                                         })
@@ -89,15 +88,13 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(MutableEmployee.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
                                         ((command, entity, context) -> {
-                                            EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                                   configuration);
+                                            EventAppender eventAppender = EventAppender.forContext(context);
                                             entity.handle(command.payloadAs(CreateEmployee.class, converter), eventAppender);
                                             return MessageStream.empty().cast();
                                         }))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(AssignTaskCommand.class).qualifiedName(),
                                         ((command, entity, context) -> {
-                                            EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                                   configuration);
+                                            EventAppender eventAppender = EventAppender.forContext(context);
                                             entity.handle(command.payloadAs(AssignTaskCommand.class, converter), eventAppender);
                                             return MessageStream.empty().cast();
                                         }))
@@ -146,7 +143,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .instanceCommandHandler(
                         typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
                         ((command, entity, context) -> {
-                            EventAppender eventAppender = EventAppender.forContext(context, configuration);
+                            EventAppender eventAppender = EventAppender.forContext(context);
                             entity.handle(command.payloadAs(CreateCustomer.class, converter), eventAppender);
                             return MessageStream.empty().cast();
                         }))
@@ -161,7 +158,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                 .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
                                             entity.handle(command.payloadAs(ChangeEmailAddress.class, converter),
-                                                          EventAppender.forContext(context, configuration));
+                                                          EventAppender.forContext(context));
                                             return MessageStream.empty().cast();
                                         })
                 .build();

@@ -49,23 +49,18 @@ public interface EventAppender {
     Context.ResourceKey<ProcessingContextEventAppender> RESOURCE_KEY = Context.ResourceKey.withLabel("EventAppender");
 
     /**
-     * Creates an appender for the given {@link ProcessingContext} and {@link Configuration}. You can use this appender
-     * only for the context it was created for. There is no harm in using this method more than once, as the same
-     * appender will be returned.
+     * Creates an appender for the given {@link ProcessingContext}. You can use this appender only for the context it
+     * was created for. There is no harm in using this method more than once, as the same appender will be returned.
      *
-     * @param context       The {@link ProcessingContext} to create the appender for.
-     * @param configuration The {@link Configuration} to use for the appender.
+     * @param context The {@link ProcessingContext} to create the appender for.
      * @return The created appender.
      */
-    static EventAppender forContext(
-            @Nonnull ProcessingContext context,
-            @Nonnull Configuration configuration
-    ) {
-        Objects.requireNonNull(configuration, "The configuration must not be null.");
+    static EventAppender forContext(@Nonnull ProcessingContext context) {
+        Objects.requireNonNull(context, "ProcessingContext may not be null");
         return forContext(
                 context,
-                configuration.getComponent(EventSink.class),
-                configuration.getComponent(MessageTypeResolver.class)
+                context.component(EventSink.class),
+                context.component(MessageTypeResolver.class)
         );
     }
 

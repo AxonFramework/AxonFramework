@@ -67,8 +67,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableTask.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(CompleteTaskCommand.class).qualifiedName(),
                                         (command, entity, context) -> {
-                                            EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                                   configuration);
+                                            EventAppender eventAppender = EventAppender.forContext(context);
                                             entity.handle(command.payloadAs(CompleteTaskCommand.class, converter),
                                                           eventAppender);
                                             return MessageStream.empty().cast();
@@ -81,8 +80,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableSalaryInformation.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(GiveRaise.class).qualifiedName(),
                                         (command, entity, context) -> {
-                                            EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                                   configuration);
+                                            EventAppender eventAppender = EventAppender.forContext(context);
                                             entity.handle(command.payloadAs(GiveRaise.class, converter), eventAppender);
                                             return MessageStream.empty().cast();
                                         })
@@ -94,8 +92,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableEmployee.class, converter, typeResolver))
                 .creationalCommandHandler(typeResolver.resolveOrThrow(CreateEmployee.class).qualifiedName(),
                                           ((command, context) -> {
-                                              EventAppender eventAppender =
-                                                      EventAppender.forContext(context, configuration);
+                                              EventAppender eventAppender = EventAppender.forContext(context);
                                               ImmutableEmployee.handle(
                                                       command.payloadAs(CreateEmployee.class, converter), eventAppender
                                               );
@@ -103,8 +100,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                           }))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(AssignTaskCommand.class).qualifiedName(),
                                         ((command, entity, context) -> {
-                                            EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                                   configuration);
+                                            EventAppender eventAppender = EventAppender.forContext(context);
                                             entity.handle(command.payloadAs(AssignTaskCommand.class, converter), eventAppender);
                                             return MessageStream.empty().cast();
                                         }))
@@ -152,8 +148,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutableCustomer.class, converter, typeResolver))
                 .creationalCommandHandler(typeResolver.resolveOrThrow(CreateCustomer.class).qualifiedName(),
                                           ((command, context) -> {
-                                              EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                                     configuration);
+                                              EventAppender eventAppender = EventAppender.forContext(context);
                                               ImmutableCustomer.handle(
                                                       command.payloadAs(CreateCustomer.class, converter), eventAppender
                                               );
@@ -168,8 +163,7 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .entityEvolver(new AnnotationBasedEntityEvolvingComponent<>(ImmutablePerson.class, converter, typeResolver))
                 .instanceCommandHandler(typeResolver.resolveOrThrow(ChangeEmailAddress.class).qualifiedName(),
                                         (command, entity, context) -> {
-                                            EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                                   configuration);
+                                            EventAppender eventAppender = EventAppender.forContext(context);
                                             entity.handle(command.payloadAs(ChangeEmailAddress.class, converter),
                                                           eventAppender);
                                             return MessageStream.empty().cast();

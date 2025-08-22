@@ -55,7 +55,7 @@ public class EventAppenderParameterResolverFactory implements ParameterResolverF
                 @Nullable
                 @Override
                 public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-                    return EventAppender.forContext(context, configuration);
+                    return EventAppender.forContext(context);
                 }
 
                 @Override

@@ -17,8 +17,6 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -28,7 +26,6 @@ import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
-import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -36,8 +33,8 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StateBasedEntityModule;
 import org.axonframework.modelling.repository.InMemoryRepository;
+import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
-import org.springframework.core.convert.converter.Converter;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -46,12 +43,20 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
-public class PooledStreamingEventHandlingComponentTest extends AbstractStudentTestSuite {
+public class PooledStreamingEventHandlingComponentWithStateBasedEntityTest extends AbstractStudentTestSuite {
 
 
     private final List<String> notificationSentToStudents = new CopyOnWriteArrayList<>();
 
     record StudentCoursesReadModel(String studentId, List<String> courses) {
+
+        StudentCoursesReadModel(String studentId) {
+            this(studentId, List.of());
+        }
+
+        StudentCoursesReadModel evolve(StudentEnrolledEvent event) {
+            return new StudentCoursesReadModel(studentId, List.of(event.courseId()));
+        }
     }
 
     @Override
@@ -59,15 +64,15 @@ public class PooledStreamingEventHandlingComponentTest extends AbstractStudentTe
         var studentCoursesRepository = new InMemoryRepository<>(String.class, StudentCoursesReadModel.class);
         StateBasedEntityModule<String, StudentCoursesReadModel> studentCoursesEntity =
                 StateBasedEntityModule.declarative(String.class, StudentCoursesReadModel.class)
-                        .repository(cfg -> studentCoursesRepository)
-                        .build();
+                                      .repository(cfg -> studentCoursesRepository)
+                                      .messagingModel((configuration, builder) -> builder.build())
+                                      .entityIdResolver(cfg -> (entity, context) -> "student-1");
         configurer.componentRegistry(cr -> cr.registerModule(studentCoursesEntity));
 
         var studentRegisteredCoursesProcessor = EventProcessorModule
                 .pooledStreaming("student-courses-readmodel-processor")
                 .eventHandlingComponents(components -> components.declarative(
-                        cfg -> studentMaxCoursesEnrolledNotifier(cfg.getComponent(StateManager.class),
-                                cfg.getComponent(CommandGateway.class))
+                        cfg -> studentCoursesProjector()
                 )).notCustomized();
         configurer.messaging(
                 messaging -> messaging.eventProcessing(
@@ -88,7 +93,6 @@ public class PooledStreamingEventHandlingComponentTest extends AbstractStudentTe
     }
 
 
-
     @Test
     void sample() {
         // given
@@ -102,51 +106,29 @@ public class PooledStreamingEventHandlingComponentTest extends AbstractStudentTe
 
         // then
         await().atMost(2, TimeUnit.SECONDS)
-                .untilAsserted(() -> assertThat(notificationSentToStudents).containsAnyOf(studentId));
-    }
-
-
-    private CommandHandlingModule.CommandHandlerPhase sendMaxCoursesEnrolledNotificationCommandHandler() {
-        return CommandHandlingModule
-                .named("student-max-courses-notifier")
-                .commandHandlers()
-                .commandHandler(
-                        new QualifiedName(SendMaxCoursesEnrolledNotificationCommand.class),
-                        (command, context) -> {
-//                            SendMaxCoursesEnrolledNotificationCommand payload = (SendMaxCoursesEnrolledNotificationCommand) command.payload();
-//                            var studentId = payload.studentId();
-                            var studentId = "student-id-1";
-                            notificationSentToStudents.add(studentId);
-                            return MessageStream.just(SUCCESSFUL_COMMAND_RESULT);
-                        }
-                );
+               .untilAsserted(() -> assertThat(notificationSentToStudents).containsAnyOf(studentId));
     }
 
     @Nonnull
-    private static EventHandlingComponent studentMaxCoursesEnrolledNotifier(
-            CommandGateway commandGateway
-    ) {
+    private static EventHandlingComponent studentCoursesProjector() {
         var eventHandlingComponent = new SimpleEventHandlingComponent();
         eventHandlingComponent.subscribe(
                 new QualifiedName(StudentEnrolledEvent.class),
                 (event, context) -> {
                     var converter = context.component(Converter.class);
-//                    StudentEnrolledEvent payload = (StudentEnrolledEvent) event.payload();
-//                    var studentId = payload.studentId();
-                    var studentId = "student-id-1";
+                    var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
+                    var studentId = studentEnrolled.studentId();
                     var state = context.component(StateManager.class);
-                    Student student = state.loadEntity(Student.class, studentId, context).join();
-                    if (student.getCoursesEnrolled().size() == 3) {
-                        commandGateway.sendAndWait(new SendMaxCoursesEnrolledNotificationCommand(studentId));
-                    }
+                    // todo: I have null here!
+                    var loadedState = state.loadEntity(StudentCoursesReadModel.class,
+                                                        studentId,
+                                                        context).join();
+                    var readModel = loadedState != null ? loadedState : new StudentCoursesReadModel(studentId);
+                    readModel.evolve(studentEnrolled);
                     return MessageStream.empty();
                 }
         );
         return eventHandlingComponent;
-    }
-
-    record SendMaxCoursesEnrolledNotificationCommand(String studentId) {
-
     }
 
     protected void studentEnrolledToCourse(String studentId, String courseId) {
@@ -159,8 +141,8 @@ public class PooledStreamingEventHandlingComponentTest extends AbstractStudentTe
                 new MessageType(clazz),
                 payload
         );
-        uow.runOnInvocation(context -> context.component(EventStore.class).transaction(context).appendEvent(eventMessage));
+        uow.runOnInvocation(context -> context.component(EventStore.class).transaction(context)
+                                              .appendEvent(eventMessage));
         uow.execute().join();
     }
-
 }

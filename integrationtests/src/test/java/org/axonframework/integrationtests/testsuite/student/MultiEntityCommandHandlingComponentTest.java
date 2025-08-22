@@ -67,7 +67,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractCommandHandlingStu
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(EnrollStudentToCourseCommand.class),
                 c -> (command, context) -> {
-                    EventAppender eventAppender = EventAppender.forContext(context, c);
+                    EventAppender eventAppender = EventAppender.forContext(context);
                     EnrollStudentToCourseCommand payload =
                             command.payloadAs(EnrollStudentToCourseCommand.class, c.getComponent(Converter.class));
                     StateManager state = context.component(StateManager.class);
