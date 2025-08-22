@@ -30,6 +30,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventSt
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
@@ -39,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 
 import static org.axonframework.eventhandling.EventTestUtils.createEvents;
+import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SubscribingEventProcessorTest {
@@ -63,7 +65,7 @@ class SubscribingEventProcessorTest {
     ) {
         var configuration = new SubscribingEventProcessorConfiguration()
                 .messageSource(eventBus)
-                .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager));
+                .unitOfWorkFactory(transactionalUnitOfWorkFactory(transactionManager));
         var customized = customization.apply(configuration);
         var processor = new SubscribingEventProcessor(
                 "test",

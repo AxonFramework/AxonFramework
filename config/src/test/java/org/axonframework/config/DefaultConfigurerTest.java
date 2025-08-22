@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -23,6 +24,7 @@ import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Id;
 import jakarta.persistence.Persistence;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
@@ -75,12 +77,12 @@ import org.quartz.SchedulerException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import static org.axonframework.commandhandling.CommandBusTestUtils.aCommandBus;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
@@ -121,10 +123,7 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.defaultConfiguration()
                                        .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                                       .configureCommandBus(c -> new SimpleCommandBus(c.getComponent(
-                                               Executor.class,
-                                               Executors::newSingleThreadExecutor)
-                                       ))
+                                       .configureCommandBus(c -> aCommandBus())
                                        .configureAggregate(StubAggregate.class)
                                        .buildConfiguration();
         config.start();
@@ -283,7 +282,7 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
                                        .configureCommandBus(c -> {
-                                           SimpleCommandBus commandBus = new SimpleCommandBus(Runnable::run);
+                                           SimpleCommandBus commandBus = aCommandBus();
                                            return new InterceptingCommandBus(
                                                    commandBus,
                                                    List.of(new TransactionManagingInterceptor<>(c.getComponent(
@@ -326,7 +325,7 @@ class DefaultConfigurerTest {
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
                                        .configureSerializer(c -> JacksonSerializer.defaultSerializer())
                                        .configureCommandBus(c -> new InterceptingCommandBus(
-                                               new SimpleCommandBus(Runnable::run),
+                                               aCommandBus(),
                                                List.of(new TransactionManagingInterceptor<>(c.getComponent(
                                                        TransactionManager.class
                                                ))),
@@ -348,7 +347,7 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.defaultConfiguration()
                                        .configureCommandBus(c -> new InterceptingCommandBus(
-                                               new SimpleCommandBus(Runnable::run),
+                                               aCommandBus(),
                                                List.of(new TransactionManagingInterceptor<>(c.getComponent(
                                                        TransactionManager.class
                                                ))),
@@ -368,7 +367,7 @@ class DefaultConfigurerTest {
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager)
                                        .registerComponent(TransactionManager.class, c -> transactionManager)
                                        .configureCommandBus(c -> new InterceptingCommandBus(
-                                               new SimpleCommandBus(Runnable::run),
+                                               aCommandBus(),
                                                List.of(new TransactionManagingInterceptor<>(c.getComponent(
                                                        TransactionManager.class
                                                ))),
@@ -451,7 +450,7 @@ class DefaultConfigurerTest {
     void defaultConfigurationWithCache() throws Exception {
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
                                                             .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                                                            .configureCommandBus(c -> new SimpleCommandBus(Runnable::run))
+                                                            .configureCommandBus(c -> aCommandBus())
                                                             .configureAggregate(defaultConfiguration(StubAggregate.class).configureCache(
                                                                     c -> new WeakReferenceCache()
                                                             ))

@@ -17,11 +17,23 @@
 package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.configuration.ApplicationConfigurer;
+import org.axonframework.configuration.ComponentDefinition;
+import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.DefaultComponentRegistry;
+import org.axonframework.messaging.ApplicationContext;
+import org.axonframework.messaging.ConfigurationApplicationContext;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
+import org.axonframework.utils.StubLifecycleRegistry;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -40,6 +52,28 @@ public class StubProcessingContext implements ProcessingContext {
     private final Map<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
     private final Map<Phase, List<Function<ProcessingContext, CompletableFuture<?>>>> phaseActions = new ConcurrentHashMap<>();
     private final Phase currentPhase = DefaultPhases.PRE_INVOCATION;
+    private final ApplicationContext applicationContext;
+
+    /**
+     * Creates a new stub {@link ProcessingContext} with an empty {@link ApplicationContext}. You can use this to create
+     * a context compatible with most of the framework. Do note that this context does not commit or advance phases on
+     * its own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
+     */
+    public StubProcessingContext() {
+        this(EmptyApplicationContext.INSTANCE);
+    }
+
+    /**
+     * Creates a new stub {@link ProcessingContext} with the given {@link ApplicationContext}. You can use this to create
+     * a context compatible with most of the framework. Do note that this context does not commit or advance phases on
+     * its own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
+     *
+     * @param applicationContext The application context to use for this processing context.
+     */
+    public StubProcessingContext(@Nonnull ApplicationContext applicationContext) {
+        Objects.requireNonNull(applicationContext, "The application context may not be null");
+        this.applicationContext = applicationContext;
+    }
 
     @Override
     public boolean isStarted() {
@@ -79,7 +113,7 @@ public class StubProcessingContext implements ProcessingContext {
 
     @Override
     public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
-        if(phase.order() <= currentPhase.order()) {
+        if (phase.order() <= currentPhase.order()) {
             throw new IllegalArgumentException("Cannot register an action for a phase that has already passed");
         }
         phaseActions.computeIfAbsent(phase, p -> new CopyOnWriteArrayList<>()).add(action);
@@ -167,15 +201,75 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     /**
-     * Creates a new stub {@link ProcessingContext} for the given {@link LegacyUnitOfWork}.
-     * You can use this to create a context compatible with most of the framework.
-     * Do note that this context does not commit or advance phases on its own,
+     * Creates a new stub {@link ProcessingContext} with the given {@code component}. You can use this to
+     * create a context compatible with most of the framework. Do note that this context does not commit or advance
+     * phases on its own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
+     *
+     * @param type     The type of the component to register.
+     * @param instance The instance of the component to register.
+     * @param <C>      The type of the component to register.
+     * @return A new {@link ProcessingContext} instance containing the given {@code component} as a resource.
+     */
+    public static <C> StubProcessingContext withComponent(@Nonnull Class<C> type, @Nonnull C instance) {
+        return withComponent(ComponentDefinition.ofType(type).withInstance(instance));
+    }
+
+    /**
+     * Creates a new stub {@link ProcessingContext} with the given {@code componentDefinition}. You can use this to
+     * create a context compatible with most of the framework. Do note that this context does not commit or advance
+     * phases on its own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
+     *
+     * @param definition The component definition to register.
+     * @param <C>        The type of the component to register.
+     * @return A new {@link ProcessingContext} instance containing the given {@code componentDefinition} as a resource.
+     */
+    public static <C> StubProcessingContext withComponent(@Nonnull ComponentDefinition<C> definition) {
+        return withComponents(componentRegistry -> componentRegistry.registerComponent(definition));
+    }
+
+    /**
+     * Creates a new stub {@link ProcessingContext} with the given {@code componentRegistrar}. You can use this to
+     * create a context compatible with most of the framework. Do note that this context does not commit or advance
+     * phases on its own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
+     *
+     * @param componentRegistrar The consumer that registers components in the component registry.
+     * @return A new {@link ProcessingContext} instance containing the registered components as resources.
+     */
+    public static StubProcessingContext withComponents(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+        DefaultComponentRegistry componentRegistry = new DefaultComponentRegistry();
+        componentRegistrar.accept(componentRegistry);
+        Configuration configuration = componentRegistry.build(new StubLifecycleRegistry());
+        ApplicationContext applicationContext = new ConfigurationApplicationContext(configuration);
+        return new StubProcessingContext(applicationContext);
+    }
+
+    /**
+     * Add given {@code message} to the {@link ProcessingContext}. You can use this to create a context
+     * compatible with most of the framework. Do note that this context does not commit or advance phases on its own,
      * but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
+     *
+     * @param message The message to add to the context.
+     * @return A new {@link ProcessingContext} instance containing the given {@code message} as a resource.
+     */
+    public ProcessingContext withMessage(Message<?> message) {
+        return Message.addToContext(this, message);
+    }
+
+    /**
+     * Creates a new stub {@link ProcessingContext} for the given {@link LegacyUnitOfWork}. You can use this to create a
+     * context compatible with most of the framework. Do note that this context does not commit or advance phases on its
+     * own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
      *
      * @param uow The unit of work to create a context for.
      * @return A new {@link ProcessingContext} instance containing the given {@code message} as a resource.
      */
     public static ProcessingContext forUnitOfWork(LegacyUnitOfWork<?> uow) {
         return forMessage(uow.getMessage());
+    }
+
+    @Nonnull
+    @Override
+    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+        return applicationContext.component(type, name);
     }
 }

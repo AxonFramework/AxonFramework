@@ -31,6 +31,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
@@ -66,10 +67,11 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
     void canCombineStatesInLambdaCommandHandlerViaStateManagerParameter() {
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(EnrollStudentToCourseCommand.class),
-                c -> (command, state, context) -> {
+                c -> (command, context) -> {
                     EventAppender eventAppender = EventAppender.forContext(context, c);
                     EnrollStudentToCourseCommand payload =
                             command.payloadAs(EnrollStudentToCourseCommand.class, c.getComponent(Converter.class));
+                    StateManager state = context.component(StateManager.class);
                     Student student = state.loadEntity(Student.class, payload.studentId(), context).join();
                     Course course = state.loadEntity(Course.class, payload.courseId(), context).join();
 

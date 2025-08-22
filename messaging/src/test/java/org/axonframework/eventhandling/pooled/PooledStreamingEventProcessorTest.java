@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -124,7 +125,7 @@ class PooledStreamingEventProcessorTest {
 
         var testDefaultConfiguration = new PooledStreamingEventProcessorConfiguration()
                 .eventSource(stubMessageSource)
-                .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                .unitOfWorkFactory(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE))
                 .tokenStore(tokenStore)
                 .coordinatorExecutor(coordinatorExecutor)
                 .workerExecutor(workerExecutor)

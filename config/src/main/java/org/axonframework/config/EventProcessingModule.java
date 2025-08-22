@@ -44,6 +44,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.LegacyStreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorSupport;
@@ -56,6 +57,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.ThrowableCause;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -884,6 +886,8 @@ public class EventProcessingModule
     protected EventProcessor subscribingEventProcessor(String name,
                                                        EventHandlerInvoker eventHandlerInvoker,
                                                        SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+        SimpleUnitOfWorkFactory simpleUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
+
         return new SubscribingEventProcessor(
                 name,
                 List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
@@ -891,7 +895,7 @@ public class EventProcessingModule
                       .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
                       .messageSource(messageSource)
                       .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
-                      .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
+                      .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name), simpleUnitOfWorkFactory))
                       .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
         );
     }
@@ -918,12 +922,13 @@ public class EventProcessingModule
         ScheduledExecutorService workerExecutor = defaultExecutor(4, "WorkPackage[" + name + "]");
         config.onShutdown(workerExecutor::shutdown);
 
+        SimpleUnitOfWorkFactory simpleUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
         var processorConfig = new PooledStreamingEventProcessorConfiguration()
                 .errorHandler(errorHandler(name))
                 .messageMonitor(messageMonitor(PooledStreamingEventProcessor.class, name))
                 .eventSource(new LegacyStreamableEventSource<>(messageSource))
                 .tokenStore(tokenStore(name))
-                .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name)))
+                .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name), simpleUnitOfWorkFactory))
                 .coordinatorExecutor(coordinatorExecutor)
                 .workerExecutor(workerExecutor)
                 .spanFactory(config.getComponent(EventProcessorSpanFactory.class));
