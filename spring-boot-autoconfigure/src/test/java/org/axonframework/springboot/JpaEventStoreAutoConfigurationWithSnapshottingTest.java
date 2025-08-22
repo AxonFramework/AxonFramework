@@ -33,8 +33,8 @@ import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.stereotype.Aggregate;
-import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -138,7 +138,7 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
         @Bean
         @Primary
         public Serializer serializer() {
-            return TestSerializer.xStreamSerializer();
+            return JacksonSerializer.defaultSerializer();
         }
 
         public static class CreateCommand {

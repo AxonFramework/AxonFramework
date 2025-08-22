@@ -17,7 +17,6 @@
 package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
-import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
@@ -267,7 +266,8 @@ public class AxonServerConfiguration {
     private Eventhandling eventhandling = new Eventhandling();
 
     /**
-     * Properties describing the settings for the {@link AxonServerEventStore EventStore}.
+     * Properties describing the settings for the
+     * {@link org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine AxonServerEventStorageEngine}.
      */
     private EventStoreConfiguration eventStoreConfiguration = new EventStoreConfiguration();
 

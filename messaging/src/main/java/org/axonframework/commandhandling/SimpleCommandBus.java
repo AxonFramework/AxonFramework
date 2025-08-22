@@ -23,7 +23,9 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,51 +59,22 @@ public class SimpleCommandBus implements CommandBus {
 
     private final List<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars;
     private final ConcurrentMap<QualifiedName, CommandHandler> subscriptions = new ConcurrentHashMap<>();
-    private final Executor worker;
+    private final UnitOfWorkFactory unitOfWorkFactory;
 
     /**
      * Construct a {@code SimpleCommandBus}, using the given {@code processingLifecycleHandlerRegistrars} when
      * constructing a {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle} to handle commands in.
      *
-     * @param processingLifecycleHandlerRegistrars A vararg of {@code ProcessingLifecycleHandlerRegistrar} instance,
-     *                                             used when constructing a
-     *                                             {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle} to
-     *                                             handle commands in.
-     */
-    public SimpleCommandBus(ProcessingLifecycleHandlerRegistrar... processingLifecycleHandlerRegistrars) {
-        this(DirectExecutor.instance(), processingLifecycleHandlerRegistrars);
-    }
-
-    /**
-     * Construct a {@code SimpleCommandBus}, using the given {@code processingLifecycleHandlerRegistrars} when
-     * constructing a {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle} to handle commands in.
-     *
-     * @param workerSupplier                       The {@code Executor} used to handle commands in a dedicated
+     * @param unitOfWorkFactory                    The {@code UnitOfWorkFactory} used to handle commands in a dedicated
      *                                             {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle}.
      * @param processingLifecycleHandlerRegistrars A vararg of {@code ProcessingLifecycleHandlerRegistrar} instance,
      *                                             used when constructing a
      *                                             {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle} to
      *                                             handle commands in.
      */
-    public SimpleCommandBus(@Nonnull Executor workerSupplier,
-                            ProcessingLifecycleHandlerRegistrar... processingLifecycleHandlerRegistrars) {
-        this(workerSupplier, Arrays.asList(processingLifecycleHandlerRegistrars));
-    }
-
-    /**
-     * Construct a {@code SimpleCommandBus}, using the given {@code processingLifecycleHandlerRegistrars} when
-     * constructing a {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle} to handle commands in.
-     *
-     * @param workerSupplier                       The {@code Executor} used to handle commands in a dedicated
-     *                                             {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle}.
-     * @param processingLifecycleHandlerRegistrars A vararg of {@code ProcessingLifecycleHandlerRegistrar} instance,
-     *                                             used when constructing a
-     *                                             {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle} to
-     *                                             handle commands in.
-     */
-    public SimpleCommandBus(@Nonnull Executor workerSupplier,
+    public SimpleCommandBus(@Nonnull UnitOfWorkFactory unitOfWorkFactory,
                             @Nonnull Collection<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars) {
-        this.worker = requireNonNull(workerSupplier, "The given Executor cannot be null.");
+        this.unitOfWorkFactory = requireNonNull(unitOfWorkFactory, "The given UnitOfWorkFactory cannot be null.");
         this.processingLifecycleHandlerRegistrars = requireNonNull(processingLifecycleHandlerRegistrars).isEmpty()
                 ? emptyList()
                 : new ArrayList<>(processingLifecycleHandlerRegistrars);
@@ -150,7 +123,7 @@ public class SimpleCommandBus implements CommandBus {
             logger.debug("Handling command [{} ({})]", command.identifier(), command.type());
         }
 
-        UnitOfWork unitOfWork = new UnitOfWork(command.identifier(), worker);
+        UnitOfWork unitOfWork = unitOfWorkFactory.create(command.identifier());
         processingLifecycleHandlerRegistrars.forEach(it -> it.registerHandlers(unitOfWork));
 
         var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).first().asCompletableFuture());
@@ -174,7 +147,7 @@ public class SimpleCommandBus implements CommandBus {
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("lifecycleRegistrars", processingLifecycleHandlerRegistrars);
-        descriptor.describeProperty("worker", worker);
+        descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
         descriptor.describeProperty("subscriptions", subscriptions);
     }
 }

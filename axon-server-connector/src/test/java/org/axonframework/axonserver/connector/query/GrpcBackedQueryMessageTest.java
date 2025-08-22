@@ -16,9 +16,9 @@
 
 package org.axonframework.axonserver.connector.query;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseType;
@@ -26,6 +26,7 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
 import java.util.Objects;
@@ -46,7 +47,7 @@ class GrpcBackedQueryMessageTest {
     private static final int TIMEOUT = 1000;
     private static final int PRIORITY = 1;
 
-    private final Serializer serializer = TestSerializer.xStreamSerializer();
+    private final Serializer serializer = JacksonSerializer.defaultSerializer();
     private final QuerySerializer querySerializer =
             new QuerySerializer(serializer, serializer, new AxonServerConfiguration());
 
@@ -168,13 +169,13 @@ class GrpcBackedQueryMessageTest {
         assertTrue(resultMetaData.containsKey(additionalMetaData.keySet().iterator().next()));
     }
 
-    @SuppressWarnings("ClassCanBeRecord") // Required to be a class for XStream
     private static class TestQuery {
 
         private final String queryModelId;
         private final int someFilterValue;
 
-        private TestQuery(String queryModelId, int someFilterValue) {
+        private TestQuery(@JsonProperty("queryModelId") String queryModelId,
+                          @JsonProperty("someFilterValue") int someFilterValue) {
             this.queryModelId = queryModelId;
             this.someFilterValue = someFilterValue;
         }

@@ -18,9 +18,13 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.configuration.ComponentNotFoundException;
 import org.axonframework.messaging.Message;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -28,8 +32,8 @@ import java.util.function.UnaryOperator;
 
 /**
  * Legacy implementation of the {@link ProcessingContext} that should only be used for legacy components. Can only be
- * constructed with a {@link org.axonframework.messaging.Message} as parameter that serves as its only resource. Any
- * operation except getting the message from the context will fail.
+ * constructed with a {@link org.axonframework.messaging.Message} as parameter that is added to the resources. Any
+ * lifecycle operation will fail.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -39,14 +43,16 @@ import java.util.function.UnaryOperator;
 public class LegacyMessageSupportingContext implements ProcessingContext {
 
     private static final String UNSUPPORTED_MESSAGE = "Cannot register lifecycle actions in this ProcessingContext";
-    private final Message<?> message;
+    private final ConcurrentMap<ResourceKey<?>, Object> resources;
 
     /**
      * Initialize the {@link ProcessingContext} with the given {@code message} as the only resource.
+     *
      * @param message The message to be used as the only resource in this context.
      */
     public LegacyMessageSupportingContext(@Nonnull Message<?> message) {
-        this.message = message;
+        this.resources = new ConcurrentHashMap<>();
+        Message.addToContext(this, message);
     }
 
     @Override
@@ -86,50 +92,58 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
 
     @Override
     public boolean containsResource(@Nonnull ResourceKey<?> key) {
-        return key.equals(Message.RESOURCE_KEY);
+        return resources.containsKey(key);
     }
 
     @Override
     public <T> T getResource(@Nonnull ResourceKey<T> key) {
-        if (key.equals(Message.RESOURCE_KEY)) {
-            //noinspection unchecked
-            return (T) message;
-        }
-        return null;
+        //noinspection unchecked
+        return (T) resources.get(key);
     }
 
     @Override
     public <T> T putResource(@Nonnull ResourceKey<T> key,
                              @Nonnull T resource) {
-        throw new IllegalArgumentException("Cannot put resources in this ProcessingContext");
+        //noinspection unchecked
+        return (T) resources.put(key, resource);
     }
 
     @Override
     public <T> T updateResource(@Nonnull ResourceKey<T> key,
                                 @Nonnull UnaryOperator<T> resourceUpdater) {
-        throw new IllegalArgumentException("Cannot update resources in this ProcessingContext");
+        //noinspection unchecked
+        return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
     }
 
     @Override
     public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
                                      @Nonnull T resource) {
-        throw new IllegalArgumentException("Cannot put resources in this ProcessingContext");
+        //noinspection unchecked
+        return (T) resources.putIfAbsent(key, resource);
     }
 
     @Override
     public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
                                          @Nonnull Supplier<T> resourceSupplier) {
-        throw new IllegalArgumentException("Cannot compute resources in this ProcessingContext");
+        //noinspection unchecked
+        return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
     }
 
     @Override
     public <T> T removeResource(@Nonnull ResourceKey<T> key) {
-        return null;
+        //noinspection unchecked
+        return (T) resources.remove(key);
     }
 
     @Override
     public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
-                                      @Nullable T expectedResource) {
-        return expectedResource == null;
+                                      @Nonnull T expectedResource) {
+        return resources.remove(key, expectedResource);
+    }
+
+    @Nonnull
+    @Override
+    public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+        throw new ComponentNotFoundException(type, name);
     }
 }

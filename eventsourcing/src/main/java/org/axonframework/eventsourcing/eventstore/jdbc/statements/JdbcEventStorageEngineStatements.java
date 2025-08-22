@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
@@ -109,8 +108,8 @@ public abstract class JdbcEventStorageEngineStatements {
         PreparedStatement statement = connection.prepareStatement(sql);
         for (EventMessage<?> eventMessage : events) {
             DomainEventMessage<?> event = asDomainEventMessage(eventMessage);
-            SerializedObject<?> payload = event.serializePayload(serializer, dataType);
-            SerializedObject<?> metaData = event.serializeMetaData(serializer, dataType);
+            SerializedObject<?> payload = serializer.serialize(event.payload(), dataType);
+            SerializedObject<?> metaData = serializer.serialize(event.metaData(), dataType);
             statement.setString(1, event.identifier());
             statement.setString(2, event.getAggregateIdentifier());
             statement.setLong(3, event.getSequenceNumber());
@@ -230,8 +229,8 @@ public abstract class JdbcEventStorageEngineStatements {
         final String sql = "INSERT INTO "
                 + schema.snapshotTable() + " (" + schema.domainEventFields() + ") VALUES (?,?,?,?,?,?,?,?,?)";
         PreparedStatement statement = connection.prepareStatement(sql);
-        SerializedObject<?> payload = snapshot.serializePayload(serializer, dataType);
-        SerializedObject<?> metaData = snapshot.serializeMetaData(serializer, dataType);
+        SerializedObject<?> payload = serializer.serialize(snapshot.payload(), dataType);
+        SerializedObject<?> metaData = serializer.serialize(snapshot.metaData(), dataType);
         statement.setString(1, snapshot.identifier());
         statement.setString(2, snapshot.getAggregateIdentifier());
         statement.setLong(3, snapshot.getSequenceNumber());

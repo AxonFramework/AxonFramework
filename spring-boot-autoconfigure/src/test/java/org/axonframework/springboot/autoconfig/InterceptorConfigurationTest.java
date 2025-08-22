@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import com.thoughtworks.xstream.XStream;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
@@ -36,7 +35,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.annotation.QueryHandler;
-import org.axonframework.springboot.utils.TestSerializer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -240,10 +238,6 @@ class InterceptorConfigurationTest {
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     static class DefaultContext {
 
-        @Bean
-        public XStream xStream() {
-            return TestSerializer.xStreamSerializer().getXStream();
-        }
     }
 
 

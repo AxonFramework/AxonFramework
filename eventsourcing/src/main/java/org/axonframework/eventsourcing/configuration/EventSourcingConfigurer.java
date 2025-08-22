@@ -34,8 +34,8 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -108,25 +108,25 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      *
      * @param delegate The delegate {@code ModellingConfigurer} the {@code EventSourcingConfigurer} is based on.
      */
-    public EventSourcingConfigurer(@Nonnull ModellingConfigurer delegate) {
+    private EventSourcingConfigurer(@Nonnull ModellingConfigurer delegate) {
         Objects.requireNonNull(delegate, "The delegate ModellingConfigurer may not be null.");
         this.delegate = delegate;
     }
 
     /**
-     * Registers the given stateful command handling {@code moduleBuilder} to use in this configuration.
+     * Registers the given command handling {@code moduleBuilder} to use in this configuration.
      * <p>
      * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
      * will not be accessible from other {@code Modules} to enforce encapsulation.
      *
-     * @param moduleBuilder The builder returning a stateful command handling module to register with
+     * @param moduleBuilder The builder returning a command handling module to register with
      *                      {@code this ModellingConfigurer}.
-     * @return A {@code ModellingConfigurer} instance for further configuring.
+     * @return A {@code EventSourcingConfigurer} instance for further configuring.
      */
-    public EventSourcingConfigurer registerStatefulCommandHandlingModule(
-            ModuleBuilder<StatefulCommandHandlingModule> moduleBuilder
+    public EventSourcingConfigurer registerCommandHandlingModule(
+            ModuleBuilder<CommandHandlingModule> moduleBuilder
     ) {
-        return modelling(modellingConfigurer -> modellingConfigurer.registerStatefulCommandHandlingModule(
+        return modelling(modellingConfigurer -> modellingConfigurer.registerCommandHandlingModule(
                 moduleBuilder
         ));
     }

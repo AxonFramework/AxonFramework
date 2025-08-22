@@ -20,51 +20,60 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.UnaryOperator;
 
-import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
+import static org.axonframework.eventhandling.EventTestUtils.createEvents;
+import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class SubscribingEventProcessorTest {
 
-    private SubscribingEventProcessor testSubject;
     private LegacyEmbeddedEventStore eventBus;
-    private EventHandlerInvoker eventHandlerInvoker;
-    private EventMessageHandler mockHandler;
     private TestingTransactionManager transactionManager;
     private TestSpanFactory spanFactory;
+
+    private SubscribingEventProcessor testSubject;
 
     @BeforeEach
     void setUp() {
         spanFactory = new TestSpanFactory();
-        mockHandler = mock(EventMessageHandler.class);
-        eventHandlerInvoker = SimpleEventHandlerInvoker.builder().eventHandlers(mockHandler).build();
         eventBus = LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine()).build();
         transactionManager = new TestingTransactionManager();
-        testSubject = SubscribingEventProcessor.builder()
-                                               .name("test")
-                                               .eventHandlerInvoker(eventHandlerInvoker)
-                                               .messageSource(eventBus)
-                                               .transactionManager(transactionManager)
-                                               .spanFactory(DefaultEventProcessorSpanFactory.builder()
-                                                                                            .spanFactory(spanFactory)
-                                                                                            .build())
-                                               .build();
+        testSubject = withTestSubject(List.of(), config -> config);
+    }
+
+    private SubscribingEventProcessor withTestSubject(
+            List<EventHandlingComponent> eventHandlingComponents,
+            UnaryOperator<SubscribingEventProcessorConfiguration> customization
+    ) {
+        var configuration = new SubscribingEventProcessorConfiguration()
+                .messageSource(eventBus)
+                .unitOfWorkFactory(transactionalUnitOfWorkFactory(transactionManager));
+        var customized = customization.apply(configuration);
+        var processor = new SubscribingEventProcessor(
+                "test",
+                eventHandlingComponents,
+                customized
+        );
+        this.testSubject = processor;
+        return processor;
     }
 
     @AfterEach
@@ -75,31 +84,42 @@ class SubscribingEventProcessorTest {
 
     @Test
     void restartSubscribingEventProcessor() throws Exception {
+        // given
         CountDownLatch countDownLatch = new CountDownLatch(2);
-        doAnswer(invocation -> {
+        var eventHandlingComponent = new SimpleEventHandlingComponent();
+        eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (event, context) -> {
             countDownLatch.countDown();
-            return null;
-        }).when(mockHandler).handleSync(any(), any());
+            return MessageStream.empty();
+        });
+        withTestSubject(List.of(eventHandlingComponent), config -> config);
 
+        // when
         testSubject.start();
         testSubject.shutDown();
         testSubject.start();
 
-        eventBus.publish(createDomainEvents(2));
+        // then
+        List<EventMessage<Integer>> events = createEvents(2);
+        eventBus.publish(events);
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 2 published events");
     }
 
+    @Disabled("TODO #3098 - Support tracking on the level of batch / Unit of Work")
     @Test
-    void subscribingEventProcessorIsTraced() throws Exception {
-        doAnswer(invocation -> {
-            EventMessage<?> message = invocation.getArgument(0, EventMessage.class);
-            spanFactory.verifySpanActive("EventProcessor.process", message);
-            return null;
-        }).when(mockHandler).handleSync(any(), any());
+    void subscribingEventProcessorIsTraced() {
+        // given
+        var eventHandlingComponent = new SimpleEventHandlingComponent();
+        eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (event, context) -> {
+            spanFactory.verifySpanActive("EventProcessor.process", event);
+            return MessageStream.empty();
+        });
+        withTestSubject(List.of(eventHandlingComponent), config -> config);
 
+        // when
         testSubject.start();
 
-        List<DomainEventMessage<?>> events = createDomainEvents(2);
+        // then
+        List<EventMessage<Integer>> events = createEvents(2);
         eventBus.publish(events);
         events.forEach(e -> spanFactory.verifySpanCompleted("EventProcessor.process", e));
     }
@@ -107,26 +127,26 @@ class SubscribingEventProcessorTest {
     @Test
     void startTransactionManager() throws Exception {
         testSubject.start();
-        eventBus.publish(createDomainEvents(1));
+        eventBus.publish(createEvents(1));
 
         assertTrue(transactionManager.started, "Expected Transaction to be started");
     }
 
     @Test
-    void buildWithNullTransactionManagerThrowsAxonConfigurationException() {
-        SubscribingEventProcessor.Builder builder = SubscribingEventProcessor.builder();
+    void buildWithNullUnitOfWorkFactoryThrowsAxonConfigurationException() {
+        SubscribingEventProcessorConfiguration builder = new SubscribingEventProcessorConfiguration();
 
-        assertThrows(AxonConfigurationException.class,  () -> builder.transactionManager(null));
+        assertThrows(AxonConfigurationException.class, () -> builder.unitOfWorkFactory(null));
     }
 
     static class TestingTransactionManager implements TransactionManager {
+
         private boolean started;
 
         @Override
         public Transaction startTransaction() {
-            started  = true;
+            started = true;
             return NoTransactionManager.INSTANCE.startTransaction();
         }
     }
-
 }

@@ -21,7 +21,6 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.query.AxonServerNonTransientRemoteQueryHandlingException;
 import org.axonframework.axonserver.connector.query.AxonServerRemoteQueryHandlingException;
-import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
@@ -43,7 +42,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SubscriptionMessageSerializerTest {
 
-    private final Serializer xStreamSerializer = TestSerializer.xStreamSerializer();
     private final Serializer jacksonSerializer = JacksonSerializer.defaultSerializer();
 
     private final AxonServerConfiguration configuration = new AxonServerConfiguration() {{
@@ -52,7 +50,7 @@ class SubscriptionMessageSerializerTest {
     }};
 
     private final SubscriptionMessageSerializer testSubject =
-            new SubscriptionMessageSerializer(jacksonSerializer, xStreamSerializer, configuration);
+            new SubscriptionMessageSerializer(jacksonSerializer, jacksonSerializer, configuration);
 
     @Test
     void update() {

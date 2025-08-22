@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,11 @@ import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import io.axoniq.axonserver.grpc.query.SubscriptionQueryRequest;
 import io.grpc.stub.ClientCallStreamObserver;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
@@ -70,7 +70,7 @@ class AxonServerSubscriptionQueryResultTest {
         subscriptionQueryUpdateBuffer.beforeStart(mockUpstream);
 
         AxonServerConfiguration configuration = new AxonServerConfiguration();
-        Serializer serializer = TestSerializer.xStreamSerializer();
+        Serializer serializer = JacksonSerializer.defaultSerializer();
         SubscriptionMessageSerializer testSerializer =
                 new SubscriptionMessageSerializer(serializer, serializer, configuration);
         QueryBusSpanFactory noOpSpanFactory = DefaultQueryBusSpanFactory.builder()

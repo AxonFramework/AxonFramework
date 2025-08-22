@@ -17,11 +17,12 @@
 package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
 import org.junit.jupiter.api.*;
@@ -33,6 +34,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the functionality of the {@link SimpleCommandHandlingComponent} with command handlers that use
+ * {@link StateManager}.
+ */
 class StatefulCommandHandlingComponentTest {
 
     private final StateManager stateManager = SimpleStateManager
@@ -44,10 +49,11 @@ class StatefulCommandHandlingComponentTest {
 
     @Test
     void invokedRegisteredHandler() {
-        StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", stateManager);
+        SimpleCommandHandlingComponent testSubject = SimpleCommandHandlingComponent.create("test");
 
         AtomicBoolean invoked = new AtomicBoolean();
-        testSubject.subscribe(new QualifiedName("test-command"), (command, state, ctx) -> {
+        testSubject.subscribe(new QualifiedName("test-command"), (command, ctx) -> {
+            var state = ctx.component(StateManager.class);
             state.loadEntity(Integer.class, "42", ctx).thenAccept(result -> {
                 assertEquals(42, result);
             }).join();
@@ -57,13 +63,13 @@ class StatefulCommandHandlingComponentTest {
 
         GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("test-command"),
                                                                             "my-payload");
-        testSubject.handle(command, StubProcessingContext.forMessage(command)).asCompletableFuture().join();
+        testSubject.handle(command, messageProcessingContext(command)).asCompletableFuture().join();
         assertTrue(invoked.get());
     }
 
     @Test
     void canRegisterNonStatefulNormalHandler() {
-        StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", stateManager);
+        SimpleCommandHandlingComponent testSubject = SimpleCommandHandlingComponent.create("test");
         AtomicBoolean invoked = new AtomicBoolean();
         testSubject.subscribe(new QualifiedName("test-command"), (command, ctx) -> {
             invoked.set(true);
@@ -72,16 +78,16 @@ class StatefulCommandHandlingComponentTest {
 
         GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("test-command"),
                                                                             "my-payload");
-        testSubject.handle(command, StubProcessingContext.forMessage(command))
+        testSubject.handle(command, messageProcessingContext(command))
                    .asCompletableFuture().join();
         assertTrue(invoked.get());
     }
 
     @Test
-    void reigsteredHandlersAreListedInSupportedCommands() {
-        StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", stateManager);
+    void registeredHandlersAreListedInSupportedCommands() {
+        SimpleCommandHandlingComponent testSubject = SimpleCommandHandlingComponent.create("test");
         testSubject.subscribe(new QualifiedName("test-command"),
-                              (command, models, ctx) -> MessageStream.empty().cast());
+                              (command, ctx) -> MessageStream.empty().cast());
         testSubject.subscribe(new QualifiedName("test-command-2"), (command, ctx) -> MessageStream.empty().cast());
         Set<QualifiedName> supportedCommands = testSubject.supportedCommands();
         assertEquals(2, supportedCommands.size());
@@ -91,8 +97,8 @@ class StatefulCommandHandlingComponentTest {
 
     @Test
     void exceptionWhileHandlingCommandResultsInFailedStream() {
-        StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", stateManager);
-        testSubject.subscribe(new QualifiedName("test-command"), (command, models, ctx) -> {
+        SimpleCommandHandlingComponent testSubject = SimpleCommandHandlingComponent.create("test");
+        testSubject.subscribe(new QualifiedName("test-command"), (command, ctx) -> {
             throw new RuntimeException("Faking an exception");
         });
 
@@ -106,5 +112,9 @@ class StatefulCommandHandlingComponentTest {
 
         assertInstanceOf(RuntimeException.class, exception.getCause());
         assertEquals("Faking an exception", exception.getCause().getMessage());
+    }
+
+    private ProcessingContext messageProcessingContext(GenericCommandMessage<String> command) {
+        return StubProcessingContext.withComponent(StateManager.class, stateManager).withMessage(command);
     }
 }

@@ -20,7 +20,6 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -47,7 +46,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class QuerySerializerTest {
 
-    private final Serializer xStreamSerializer = TestSerializer.xStreamSerializer();
     private final Serializer jacksonSerializer = JacksonSerializer.defaultSerializer();
 
     private final AxonServerConfiguration configuration = new AxonServerConfiguration() {{
@@ -56,7 +54,7 @@ class QuerySerializerTest {
     }};
 
     private final QuerySerializer testSubject =
-            new QuerySerializer(jacksonSerializer, xStreamSerializer, configuration);
+            new QuerySerializer(jacksonSerializer, jacksonSerializer, configuration);
 
     @Test
     void serializeRequest() {

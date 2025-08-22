@@ -18,6 +18,7 @@ package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -227,5 +228,10 @@ public class ChainingContentTypeConverter implements Converter {
     @Nonnull
     public List<ContentTypeConverter<?, ?>> getContentTypeConverters() {
         return Collections.unmodifiableList(this.converters);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("content-type-converters", converters);
     }
 }

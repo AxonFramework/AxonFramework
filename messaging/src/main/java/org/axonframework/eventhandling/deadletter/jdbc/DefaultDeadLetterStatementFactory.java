@@ -135,8 +135,8 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
     private void setEventFields(PreparedStatement statement,
                                 AtomicInteger fieldIndex,
                                 E eventMessage) throws SQLException {
-        SerializedObject<byte[]> serializedPayload = eventMessage.serializePayload(eventSerializer, byte[].class);
-        SerializedObject<byte[]> serializedMetaData = eventMessage.serializeMetaData(eventSerializer, byte[].class);
+        SerializedObject<byte[]> serializedPayload = eventSerializer.serialize(eventMessage.payload(), byte[].class);
+        SerializedObject<byte[]> serializedMetaData = eventSerializer.serialize(eventMessage.metaData(), byte[].class);
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getClass().getName());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.identifier());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.type().toString());
