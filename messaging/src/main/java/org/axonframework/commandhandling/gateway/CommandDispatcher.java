@@ -17,7 +17,6 @@
 package org.axonframework.commandhandling.gateway;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Context;
@@ -26,7 +25,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Component that publishes events to a {@link CommandGateway} in a predefined
@@ -95,51 +93,6 @@ public interface CommandDispatcher extends DescribableComponent {
     default <R> CompletableFuture<R> send(@Nonnull Object command,
                                           @Nonnull Class<R> expectedType) {
         return send(command).resultAs(expectedType);
-    }
-
-    /**
-     * Send the given {@code command} and waits for completion, disregarding the result.
-     * <p>
-     * To retrieve the result, use {@link #sendAndWait(Object, Class)} instead, as it allows for type conversion of the
-     * result payload.
-     *
-     * @param command The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
-     * @throws CommandExecutionException When an exception occurs while handling the {@code command}.
-     */
-    default void sendAndWait(@Nonnull Object command) {
-        try {
-            send(command).getResultMessage().get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new CommandExecutionException("Thread interrupted while waiting for result", e);
-        } catch (ExecutionException e) {
-            throw new CommandExecutionException("Exception while handling command", e);
-        }
-    }
-
-    /**
-     * Send the given {@code command} and waits for the result.
-     * <p>
-     * The result will be converted to the specified {@code returnType} if possible. The payload of the resulting
-     * message is returned, or a {@link CommandExecutionException} is thrown when the command completed with an
-     * exception.
-     *
-     * @param command    The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
-     * @param resultType The class representing the type of the expected command result.
-     * @param <R>        The generic type of the expected response.
-     * @return The payload of the result message of type {@code R}.
-     * @throws CommandExecutionException When an exception occurs while handling the {@code command}.
-     */
-    default <R> R sendAndWait(@Nonnull Object command,
-                              @Nonnull Class<R> resultType) {
-        try {
-            return send(command).resultAs(resultType).get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new CommandExecutionException("Thread interrupted while waiting for result", e);
-        } catch (ExecutionException e) {
-            throw new CommandExecutionException("Exception while handling command", e);
-        }
     }
 
     /**
