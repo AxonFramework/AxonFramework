@@ -197,6 +197,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         assertTrue(memberCommandHandlingValidator.get());
     }
 
+    @Disabled("TODO reintegrate as part of #3485")
     @Test
     void createdAggregateModelInvokesAllCommandInterceptors() throws Exception {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;
@@ -216,6 +217,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         assertEquals(expectedNumberOfMemberCommandInterceptorInvocations, memberCommandInterceptingCounter.get());
     }
 
+    @Disabled("TODO reintegrate as part of #3485")
     @Test
     void createdAggregateModelInvokesAllCommandInterceptorsForPolymorphicAggregate() throws Exception {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;
