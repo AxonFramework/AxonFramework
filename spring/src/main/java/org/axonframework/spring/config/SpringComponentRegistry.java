@@ -506,14 +506,15 @@ public class SpringComponentRegistry implements
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nullable String name) {
-            // Spring requires a non-null name, so we divert to the name-less method if name equals null.
-            if (name == null) {
-                return getOptionalComponent(type);
-            }
-
             Map<String, C> beansOfType = beanFactory.getBeansOfType(type);
             if (beansOfType.containsKey(name)) {
                 return Optional.of(beansOfType.get(name));
+            } else if (name == null && beansOfType.containsKey(type.getName())) {
+                // When name is null and a bean name equals FQCN, it is a configured Axon component based on type only.
+                return Optional.of(beansOfType.get(type.getName()));
+            } else if (name == null) {
+                // Spring requires a non-null name, so we divert to the name-less method if name equals null.
+                return getOptionalComponent(type);
             } else {
                 return Optional.empty();
             }
