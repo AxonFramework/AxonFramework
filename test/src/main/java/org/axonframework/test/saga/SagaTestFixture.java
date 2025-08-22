@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -28,13 +29,16 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.EventMessageHandlerInterceptorChain;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeDescriptor;
@@ -96,7 +100,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final LinkedList<ParameterResolverFactory> registeredParameterResolverFactories = new LinkedList<>();
     private final LinkedList<HandlerDefinition> registeredHandlerDefinitions = new LinkedList<>();
     private final LinkedList<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new LinkedList<>();
-    private final LinkedList<MessageHandlerInterceptor<? super EventMessage<?>>> eventHandlerInterceptors = new LinkedList<>();
+    private final LinkedList<MessageHandlerInterceptor<EventMessage<?>>> eventHandlerInterceptors = new LinkedList<>();
     private final RecordingListenerInvocationErrorHandler recordingListenerInvocationErrorHandler;
 
     private final Class<T> sagaType;
@@ -160,18 +164,30 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         TrackedEventMessage<?> trackedEventMessage = asTrackedEventMessage(event);
         LegacyDefaultUnitOfWork<? extends EventMessage<?>> unitOfWork =
                 LegacyDefaultUnitOfWork.startAndGet(trackedEventMessage);
-        // TODO reintegrate with #3097
 
-        ResultMessage<?> resultMessage = null;
-                /*
-                unitOfWork.executeWithResult((context) -> new MessageHandlerInterceptorChain<>(
-                    eventHandlerInterceptors,
-                    (MessageHandler<EventMessage<?>, Message<Void>>) (message, ctx) -> {
-                        sagaManager.handle(message, ctx, Segment.ROOT_SEGMENT);
-                        return GenericMessage.emptyMessage();
-                    }).proceed(unitOfWork.getMessage(), context)
-                );
-                 */
+        /*
+        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(
+                (context) -> {
+                    sagaManager.handle(unitOfWork.getMessage(), context, Segment.ROOT_SEGMENT);
+                    return unitOfWork.getExecutionResult();
+                }
+        );
+         */
+        // TODO reintegrate with #3097
+        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(
+                (context) -> new EventMessageHandlerInterceptorChain(
+                        eventHandlerInterceptors,
+                        (EventHandler) (m, ctx) -> {
+                            try {
+                                sagaManager.handle(m, ctx, Segment.ROOT_SEGMENT);
+                                return MessageStream.empty();
+                            } catch (Throwable t) {
+                                return MessageStream.failed(t);
+                            }
+                        }
+                ).proceed(unitOfWork.getMessage(), context)
+        );
+
 
         if (resultMessage.isExceptional()) {
             Throwable e = resultMessage.exceptionResult();
@@ -443,7 +459,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureConfiguration registerEventHandlerInterceptor(
-            MessageHandlerInterceptor<? super EventMessage<?>> eventHandlerInterceptor
+            MessageHandlerInterceptor<EventMessage<?>> eventHandlerInterceptor
     ) {
         this.eventHandlerInterceptors.add(eventHandlerInterceptor);
         return this;

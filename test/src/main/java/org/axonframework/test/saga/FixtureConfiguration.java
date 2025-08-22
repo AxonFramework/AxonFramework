@@ -167,7 +167,7 @@ public interface FixtureConfiguration {
      * @return The current {@link FixtureConfiguration}, for fluent interfacing.
      */
     default FixtureConfiguration registerEventHandlerInterceptor(
-            MessageHandlerInterceptor<? super EventMessage<?>> eventHandlerInterceptor
+            MessageHandlerInterceptor<EventMessage<?>> eventHandlerInterceptor
     ) {
         throw new UnsupportedOperationException(
                 "The FixtureConfiguration implementation does not support this operation"

@@ -23,10 +23,8 @@ import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -280,26 +278,36 @@ public class StubDeadlineManager implements DeadlineManager {
             @Override
             public @NotNull MessageStream<?> proceed(@NotNull DeadlineMessage<?> message,
                                                      @NotNull ProcessingContext context) {
-                if (iterator.hasNext()) {
-                    return iterator.next().interceptOnHandle(message, context, this);
-                } else {
-                    try {
+                try {
+                    if (iterator.hasNext()) {
+                        return iterator.next().interceptOnHandle(message, context, this);
+                    } else {
+
                         deadlineConsumer.consume(scheduledDeadlineInfo.getDeadlineScope(), message);
                         return MessageStream.empty();
-                    } catch (Exception e) {
-                        return MessageStream.failed(e);
                     }
+                } catch (Exception e) {
+                    return MessageStream.failed(e);
                 }
-
             }
         };
 
         // TODO reintegrate as part of #3065
-        ResultMessage<?> resultMessage = uow.executeWithResult((ctx) -> chain.proceed(uow.getMessage(), ctx));
-        if (resultMessage.isExceptional()) {
-            Throwable e = resultMessage.exceptionResult();
-            throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
+        ResultMessage<?> resultMessage = uow.executeWithResult((ctx) -> {
+            var processingResult = chain.proceed(uow.getMessage(), ctx);
+            if (!processingResult.hasNextAvailable()) {
+                return uow.getExecutionResult() != null ? uow.getExecutionResult() : uow.getMessage();
+            }
+            return processingResult;
+        });
+        if (resultMessage != null) {
+            if (resultMessage.isExceptional()) {
+                Throwable e = resultMessage.exceptionResult();
+                throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
+            }
+            return (DeadlineMessage<?>) resultMessage.payload();
+        } else {
+            return null;
         }
-        return (DeadlineMessage<?>) resultMessage.payload();
     }
 }
