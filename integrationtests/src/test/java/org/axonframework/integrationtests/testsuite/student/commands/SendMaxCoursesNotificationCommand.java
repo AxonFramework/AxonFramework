@@ -14,17 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.student.events;
+package org.axonframework.integrationtests.testsuite.student.commands;
 
-import org.axonframework.eventsourcing.annotations.EventTag;
-import org.axonframework.modelling.annotation.TargetEntityId;
-
-public record StudentEnrolledEvent(
-        @EventTag(key = "Student")
-        @TargetEntityId
-        String studentId,
-        @EventTag(key = "Course")
-        String courseId
+public record SendMaxCoursesNotificationCommand(
+        String studentId
 ) {
 
 }

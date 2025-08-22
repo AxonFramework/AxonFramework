@@ -77,7 +77,7 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
                 .map(r -> (Repository<I, T>) r)
                 .findFirst()
                 .orElseThrow(() -> new MissingRepositoryException(id.getClass(), entityType))
-                .loadOrCreate(id, context)
+                .loadOrCreate(id, context) // todo: there is load behind, can return null!
                 .thenApply(me -> {
                     if (me.entity() != null && !entityType.isInstance(me.entity())) {
                         throw new LoadedEntityNotOfExpectedTypeException(me.entity().getClass(), entityType);

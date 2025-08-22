@@ -17,14 +17,10 @@
 package org.axonframework.integrationtests.testsuite.student.events;
 
 import org.axonframework.eventsourcing.annotations.EventTag;
-import org.axonframework.modelling.annotation.TargetEntityId;
 
-public record StudentEnrolledEvent(
+public record MaxCoursesNotificationSentEvent(
         @EventTag(key = "Student")
-        @TargetEntityId
-        String studentId,
-        @EventTag(key = "Course")
-        String courseId
+        String studentId
 ) {
 
 }
