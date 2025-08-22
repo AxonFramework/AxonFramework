@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BiConsumer;
 
 import static org.axonframework.messaging.MessagingTestHelper.event;
 import static org.junit.jupiter.api.Assertions.*;
@@ -63,14 +62,16 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         };
 
         EventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent();
-        eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (e, c) -> MessageStream.empty());
+        eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (e, c)
+                -> MessageStream.empty());
 
         // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
-        MessageHandlerInterceptor<EventMessage<?>> interceptor = (message, context, interceptorChain) ->
-                interceptorChain.proceed(event(123), context);
+        MessageHandlerInterceptor<EventMessage<?>> interceptor = (message, context, interceptorChain)
+                -> interceptorChain.proceed(event(123), context);
+
         var interceptingEventHandlingComponent = new InterceptingEventHandlingComponent(
-                List.of(), // List.of(interceptor),
+                List.of(interceptor),
                 eventHandlingComponent
         );
         var decoratedEventHandlingComponent = new MonitoringEventHandlingComponent(

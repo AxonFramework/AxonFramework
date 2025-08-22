@@ -63,7 +63,7 @@ class EventProcessingModuleConfigTest {
                     eventProcessingConfiguration.eventProcessorByProcessingGroup("processor1");
             assertTrue(optionalProcessorOne.isPresent());
             EventProcessor processorOne = optionalProcessorOne.get();
-            assertEquals("processor2", processorOne.getName());
+            assertEquals("processor2", processorOne.name());
 //            List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor =
 //                    eventProcessingConfiguration.interceptorsFor("processor2");
 //            assertEquals(2, interceptorsFor.size());

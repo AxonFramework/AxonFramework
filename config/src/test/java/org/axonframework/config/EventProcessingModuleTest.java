@@ -52,6 +52,8 @@ import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventSt
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.deadletter.Decisions;

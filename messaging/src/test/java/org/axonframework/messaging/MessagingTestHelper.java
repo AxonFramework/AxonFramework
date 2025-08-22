@@ -25,42 +25,46 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 
+/**
+ * Helper to create messages in tests.
+ */
 public class MessagingTestHelper {
 
     private MessagingTestHelper() {
         // avoid instantiation
     }
 
-    public static Message<Object> message(@Nonnull String qualifiedName, @Nullable Object payload) {
+    public static <T> Message<T> message(@Nonnull String qualifiedName, @Nullable T payload) {
         return new GenericMessage<>(new MessageType(qualifiedName), payload);
     }
 
-    public static Message<Object> message(@Nonnull Object payload) {
-        return new GenericMessage<>(new MessageType(payload.getClass().getSimpleName()), payload);
+    public static <T> Message<T> message(@Nonnull T payload) {
+        return new GenericMessage<>(new MessageType(payload.getClass()), payload);
     }
 
-    public static CommandMessage<Object> command(@Nonnull Object payload) {
-        return new GenericCommandMessage<>(new MessageType(payload.getClass().getSimpleName()), payload);
+    public static <T> CommandMessage<T> command(@Nonnull T payload) {
+        return new GenericCommandMessage<>(new MessageType(payload.getClass()), payload);
     }
-    public static CommandMessage<Object> command(@Nonnull String qualifiedName, @Nonnull Object payload) {
+
+    public static <T> CommandMessage<T> command(@Nonnull String qualifiedName, @Nonnull T payload) {
         return new GenericCommandMessage<>(new MessageType(qualifiedName), payload);
     }
 
-    public static CommandResultMessage<Object> commandResult(@Nonnull Object payload) {
-        return new GenericCommandResultMessage<>(new MessageType(payload.getClass().getSimpleName()), payload);
+    public static <T> CommandResultMessage<T> commandResult(@Nonnull T payload) {
+        return new GenericCommandResultMessage<>(new MessageType(payload.getClass()), payload);
     }
 
-    public static CommandResultMessage<Object> commandResult(@Nonnull String qualifiedName, @Nonnull Object payload) {
+    public static <T> CommandResultMessage<T> commandResult(@Nonnull String qualifiedName, @Nonnull T payload) {
         return new GenericCommandResultMessage<>(new MessageType(qualifiedName), payload);
     }
 
     public static <T> EventMessage<T> event(@Nonnull T payload) {
-        return new GenericEventMessage<>(new MessageType(payload.getClass().getSimpleName()), payload);
+        return new GenericEventMessage<>(new MessageType(payload.getClass()), payload);
     }
 
     public static CommandResultMessage<?> asCommandResultMessage(CommandMessage<?> message) {
         var payload = message.payload();
-        var messageType = payload != null ? new MessageType(payload.getClass().getSimpleName()) : message.type();
+        var messageType = payload != null ? new MessageType(payload.getClass()) : message.type();
         return new GenericCommandResultMessage<>(messageType, payload);
     }
 }
