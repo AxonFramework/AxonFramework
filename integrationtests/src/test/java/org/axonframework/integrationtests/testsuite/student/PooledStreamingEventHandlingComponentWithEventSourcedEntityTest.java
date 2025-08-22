@@ -101,16 +101,16 @@ public class PooledStreamingEventHandlingComponentWithEventSourcedEntityTest ext
 
         configurer.registerCommandHandlingModule(sendMaxCoursesNotificationCommandHandler);
 
-        var studentRegisteredCoursesProcessor = EventProcessorModule
-                .pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
-                .eventHandlingComponents(components -> components.declarative(
-                        cfg -> whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()
-                )).notCustomized();
 //        var studentRegisteredCoursesProcessor = EventProcessorModule
 //                .pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
-//                .eventHandlingComponents(components -> components.annotated(
-//                        cfg -> new WhenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()
+//                .eventHandlingComponents(components -> components.declarative(
+//                        cfg -> whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()
 //                )).notCustomized();
+        var studentRegisteredCoursesProcessor = EventProcessorModule
+                .pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
+                .eventHandlingComponents(components -> components.annotated(
+                        cfg -> new WhenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()
+                )).notCustomized();
         configurer.messaging(
                 messaging -> messaging.eventProcessing(
                         ep -> ep.pooledStreaming(
@@ -176,16 +176,16 @@ public class PooledStreamingEventHandlingComponentWithEventSourcedEntityTest ext
 
         @EventHandler
         public MessageStream.Empty<?> react(
-                StudentEnrolledEvent event,
-                @InjectEntity StudentCoursesAutomationState state,
+                StudentEnrolledEvent event, // why is not converted?
+//                @InjectEntity StudentCoursesAutomationState state,
                 ProcessingContext context
         ) {
             var studentId = event.studentId();
-            var readModel = state != null ? state : new StudentCoursesAutomationState(studentId);
-            if (readModel.courses.size() >= 3 && !readModel.notified()) {
-                var commandGateway = context.component(CommandGateway.class);
-                commandGateway.send(new SendMaxCoursesNotificationCommand(studentId), context);
-            }
+//            var readModel = state != null ? state : new StudentCoursesAutomationState(studentId);
+//            if (readModel.courses.size() >= 3 && !readModel.notified()) {
+//                var commandGateway = context.component(CommandGateway.class);
+//                commandGateway.send(new SendMaxCoursesNotificationCommand(studentId), context);
+//            }
             return MessageStream.empty();
         }
     }
