@@ -318,7 +318,10 @@ The following classes have undergone changes to accompany this shift:
 
 ## Command Dispatching and Handling
 
-This section describes numerous changes around Command Dispatching and Handling
+This section describes numerous changes around Command Dispatching and Handling. For a reintroduction to the
+`CommandBus` and `CommandGateway`, check [this](#command-bus) and [this](#command-gateway) section respectively. For the
+newly **recommended** approach to dispatch commands from within another message handling function, please check
+the [Command Dispatcher](#command-dispatcher) section. 
 
 ### Command Bus
 
@@ -376,6 +379,53 @@ Last point of note on the Command Gateway, is the removal of the `CommandGateway
 `DisruptorCommandBus`, we saw limited usages through our users. If you feel strongly about the `CommandGatewayFactory`
 and would like to see it return to Axon Framework 5, be sure to
 open [an issue](https://github.com/AxonFramework/AxonFramework/issues) for this. 
+
+### Command Dispatcher
+
+The `CommandDispatcher` is the "new kid on the block" for command dispatching.
+Where the `CommandBus` is the lowest level means to dispatch `CommandMessages`, the `CommandGateway` is the integration
+point between other services to automatically wrap a user's command into a `CommandMessage`. To achieve this, the
+`CommandGateway` uses a `CommandBus` to add the command wrapping and response unwrapping.
+
+From there, the `CommandDispatcher` is the [processing context](#unit-of-work)-aware command dispatcher. To that end, is
+uses a `CommandGateway`, automatically passing the active `ProcessingContext` for the handler it's invoked in. Due to
+this knowledge, it is the recommended approach to dispatch commands when **inside** another message handling function.
+
+To clarify, let us show the approach to dispatch a command as part of an existing `ProcessingContext` without the
+`CommandDispatcher`:
+
+```java
+
+@EventHandler
+public void handle(MoneyTransferredEvent event,
+                   ProcessingContext context,
+                   CommandGateway commandGateway) {
+    // Checks/validation...
+    commandGateway.send(new IncreaseBalanceCommand(/*...*/), context);
+}
+```
+
+By dispatching a command while providing the `ProcessingContext`, you ensure that, for example, correlation data is kept
+from one message to another. For distributed tracing, this is a must. As such, the `ProcessingContext` would become a
+component users **always** need to wire into their message handler.
+
+It is this requirement that the `CommandDispatcher` solves:
+
+```java
+
+@EventHandler
+public void on(MoneyTransferredEvent event,
+               CommandDispatcher commandDispatcher) {
+    // Checks/validation...
+    commandDispatcher.send(new IncreaseBalanceCommand(/*...*/));
+}
+```
+
+Axon Framework automatically wires a `CommandDispatcher` for you that is aware of the `ProcessingContext` of the
+`MoneyTransferredEvent`. This makes the `CommandDispatcher` an added convenience over the `CommandGateway` **within**
+message handling functions. Note that this means that the `CommandDispatcher` does not, for example, work from a REST
+endpoint. Axon Framework's `ProcessingContext` has not started at that point in time and as such, there is no
+`CommandDispatcher` available.
 
 ## Event Store
 
