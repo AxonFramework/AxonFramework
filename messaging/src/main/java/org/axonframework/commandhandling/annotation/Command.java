@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-@Message
+@Message(messageType = CommandMessage.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 public @interface Command {

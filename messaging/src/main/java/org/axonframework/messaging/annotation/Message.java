@@ -72,4 +72,11 @@ public @interface Message {
      * @return The version of the annotated message.
      */
     String version() default MessageType.DEFAULT_VERSION;
+
+    /**
+     * The type of {@link org.axonframework.messaging.Message} this annotation applies to.
+     *
+     * @return The type of {@link org.axonframework.messaging.Message} this annotation applies to.
+     */
+    Class<? extends org.axonframework.messaging.Message> messageType();
 }

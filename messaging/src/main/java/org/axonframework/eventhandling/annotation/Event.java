@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.Message;
@@ -34,7 +35,7 @@ import java.lang.annotation.Target;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-@Message
+@Message(messageType = EventMessage.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 public @interface Event {
