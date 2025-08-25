@@ -35,7 +35,6 @@ import org.axonframework.common.AxonException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -58,10 +57,11 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * {@link AxonServerCommandBusConnector#subscribe(QualifiedName, int) subscribed} command handlers in the
  * {@link AxonServerCommandBusConnector}.
  * <p>
- * The operations {@link #convertCommandMessage(CommandMessage) convert} {@link CommandMessage CommandMessages} and
- * {@link #convertCommandResponse(CommandResponse) convert} {@link CommandResponse CommandResponses} are used during
- * dispatching. The operations {@link #convertCommand(Command) convert} {@link Command Commands} and
- * {@link #convertResultMessage(Message, String) convert} result messages are used during handling.
+ * The operations {@link #convertCommandMessage(CommandMessage, String, String) convert}
+ * {@link CommandMessage CommandMessages} and {@link #convertCommandResponse(CommandResponse) convert}
+ * {@link CommandResponse CommandResponses} are used during dispatching. The operations
+ * {@link #convertCommand(Command) convert} {@link Command Commands} and
+ * {@link #convertResultMessage(CommandResultMessage, String) convert} result messages are used during handling.
  * <p>
  * This utility class is marked as {@link Internal} as it is specific for the {@link AxonServerCommandBusConnector}.
  *
@@ -83,10 +83,16 @@ public class CommandConverter {
      * Will set the {@link ProcessingKey#ROUTING_KEY routing key} and {@link ProcessingKey#PRIORITY priority} when
      * present on the given {@code command}.
      *
-     * @param command The command message to convert to a {@link Command}.
+     * @param command       The command message to convert to a {@link Command}.
+     * @param clientId      The identifier of this application, as specific in the
+     *                      {@link org.axonframework.axonserver.connector.AxonServerConfiguration}.
+     * @param componentName The name of this application, as specific in the
+     *                      {@link org.axonframework.axonserver.connector.AxonServerConfiguration}.
      * @return The given {@code command} converted to a {@link Command}.
      */
-    public static Command convertCommandMessage(@Nonnull CommandMessage<?> command) {
+    public static Command convertCommandMessage(@Nonnull CommandMessage<?> command,
+                                                @Nonnull String clientId,
+                                                @Nonnull String componentName) {
         Object payload = command.payload();
         if (!(payload instanceof byte[] payloadAsBytes)) {
             throw new IllegalArgumentException(
@@ -99,7 +105,9 @@ public class CommandConverter {
         addRoutingKey(builder, command);
         addPriority(builder, command);
 
-        return builder.setMessageIdentifier(command.identifier())
+        return builder.setClientId(clientId)
+                      .setComponentName(componentName)
+                      .setMessageIdentifier(command.identifier())
                       .setName(command.type().name())
                       .putAllMetaData(MetaDataConverter.convertGrpcToMetaDataValues(command.metaData()))
                       .setPayload(SerializedObject.newBuilder()

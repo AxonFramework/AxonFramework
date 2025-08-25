@@ -17,6 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -28,6 +29,7 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.serialization.Converter;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -44,7 +46,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
-class MessagingConfigurationDefaultsAutoconfigTest {
+class MessagingConfigurationDefaultsAutoConfigurationTest {
 
     private ApplicationContextRunner testContext;
 
@@ -60,10 +62,14 @@ class MessagingConfigurationDefaultsAutoconfigTest {
         testContext.run(context -> {
             assertThat(context).hasSingleBean(MessageTypeResolver.class);
             assertThat(context).hasBean(MessageTypeResolver.class.getName());
+            assertThat(context).hasSingleBean(Converter.class);
+            assertThat(context).hasBean(Converter.class.getName());
             assertThat(context).hasSingleBean(CommandGateway.class);
             assertThat(context).hasBean(CommandGateway.class.getName());
             assertThat(context).hasSingleBean(CommandBus.class);
             assertThat(context).hasBean(CommandBus.class.getName());
+            assertThat(context).hasSingleBean(RoutingStrategy.class);
+            assertThat(context).hasBean(RoutingStrategy.class.getName());
             assertThat(context).hasSingleBean(EventGateway.class);
             assertThat(context).hasBean(EventGateway.class.getName());
             assertThat(context).hasSingleBean(EventSink.class);
@@ -84,10 +90,14 @@ class MessagingConfigurationDefaultsAutoconfigTest {
         testContext.withUserConfiguration(CustomContext.class).run(context -> {
             assertThat(context).hasSingleBean(MessageTypeResolver.class);
             assertThat(context).hasBean("customMessageTypeResolver");
+            assertThat(context).hasSingleBean(Converter.class);
+            assertThat(context).hasBean("customConverter");
             assertThat(context).hasSingleBean(CommandGateway.class);
             assertThat(context).hasBean("customCommandGateway");
             assertThat(context).hasSingleBean(CommandBus.class);
             assertThat(context).hasBean("customCommandBus");
+            assertThat(context).hasSingleBean(RoutingStrategy.class);
+            assertThat(context).hasBean("customRoutingStrategy");
             assertThat(context).hasSingleBean(EventGateway.class);
             assertThat(context).hasBean("customEventGateway");
             assertThat(context).hasSingleBean(EventSink.class);
@@ -134,6 +144,11 @@ class MessagingConfigurationDefaultsAutoconfigTest {
         }
 
         @Bean
+        public Converter customConverter() {
+            return mock(Converter.class);
+        }
+
+        @Bean
         public CommandGateway customCommandGateway() {
             return mock(CommandGateway.class);
         }
@@ -141,6 +156,11 @@ class MessagingConfigurationDefaultsAutoconfigTest {
         @Bean
         public CommandBus customCommandBus() {
             return mock(CommandBus.class);
+        }
+
+        @Bean
+        public RoutingStrategy customRoutingStrategy() {
+            return mock(RoutingStrategy.class);
         }
 
         @Bean
