@@ -22,8 +22,6 @@ import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -226,40 +224,6 @@ public interface Message<P> {
      */
     @Nonnull
     Message<P> andMetaData(@Nonnull Map<String, String> metaData);
-
-    /**
-     * Serialize the payload of this message to the {@code expectedRepresentation} using given {@code serializer}. This
-     * method <em>should</em> return the same SerializedObject instance when invoked multiple times using the same
-     * serializer.
-     *
-     * @param serializer             The serializer to serialize payload with
-     * @param expectedRepresentation The type of data to serialize to
-     * @param <R>                    The type of the serialized data
-     * @return a SerializedObject containing the serialized representation of the message's payload
-     * @deprecated Serialization is removed from messages themselves. Instead, use
-     * {@link #withConvertedPayload(Class, Converter)}
-     */
-    @Deprecated
-    default <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
-        return serializer.serialize(payload(), expectedRepresentation);
-    }
-
-    /**
-     * Serialize the metadata of this message to the {@code expectedRepresentation} using given {@code serializer}. This
-     * method <em>should</em> return the same SerializedObject instance when invoked multiple times using the same
-     * serializer.
-     *
-     * @param serializer             The serializer to serialize meta data with
-     * @param expectedRepresentation The type of data to serialize to
-     * @param <R>                    The type of the serialized data
-     * @return a SerializedObject containing the serialized representation of the message's metadata
-     * @deprecated Serialization is removed from messages themselves. Instead, use
-     * {@link #withConvertedPayload(Class, Converter)}
-     */
-    @Deprecated
-    default <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
-        return serializer.serialize(metaData(), expectedRepresentation);
-    }
 
     /**
      * Returns a <b>new</b> {@code Message} implementation with its {@link #payload()} converted to the given

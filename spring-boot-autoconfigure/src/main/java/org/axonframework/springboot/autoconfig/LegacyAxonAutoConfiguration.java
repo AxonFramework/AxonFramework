@@ -18,7 +18,6 @@ package org.axonframework.springboot.autoconfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
-import com.thoughtworks.xstream.XStream;
 import jakarta.annotation.Nonnull;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.axonserver.connector.TagsConfiguration;
@@ -50,6 +49,7 @@ import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -58,6 +58,8 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
@@ -75,7 +77,6 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.avro.AvroSerializer;
 import org.axonframework.serialization.avro.AvroSerializerStrategy;
 import org.axonframework.serialization.json.JacksonSerializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
 import org.axonframework.springboot.DistributedCommandBusProperties;
 import org.axonframework.springboot.EventProcessorProperties;
@@ -254,16 +255,7 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
             case XSTREAM:
             case DEFAULT:
             default:
-                Map<String, XStream> xStreamBeans = beansOfTypeIncludingAncestors(applicationContext, XStream.class);
-                XStream xStream = xStreamBeans.containsKey("defaultAxonXStream")
-                        ? xStreamBeans.get("defaultAxonXStream")
-                        : xStreamBeans.values().stream().findFirst()
-                                      .orElseThrow(() -> new NoSuchBeanDefinitionException(XStream.class));
-                return XStreamSerializer.builder()
-                                        .xStream(xStream)
-                                        .revisionResolver(revisionResolver)
-                                        .classLoader(beanClassLoader)
-                                        .build();
+                return null;
         }
     }
 
@@ -451,7 +443,10 @@ public class LegacyAxonAutoConfiguration implements BeanClassLoaderAware {
     @Qualifier("localSegment")
     @Bean
     public CommandBus commandBus(TransactionManager txManager, LegacyConfiguration axonConfiguration) {
-        SimpleCommandBus commandBus = new SimpleCommandBus(txManager);
+        SimpleCommandBus commandBus = new SimpleCommandBus(
+                new TransactionalUnitOfWorkFactory(txManager, new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE)),
+                Collections.emptyList()
+        );
         return new InterceptingCommandBus(
                 commandBus,
                 List.of(new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())),

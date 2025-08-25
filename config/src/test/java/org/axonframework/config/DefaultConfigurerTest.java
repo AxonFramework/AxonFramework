@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -23,6 +24,7 @@ import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Id;
 import jakarta.persistence.Persistence;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
@@ -33,7 +35,6 @@ import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.utils.TestSerializer;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
@@ -62,6 +63,7 @@ import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
@@ -75,12 +77,12 @@ import org.quartz.SchedulerException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
+import static org.axonframework.commandhandling.CommandBusTestUtils.aCommandBus;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.axonframework.config.AggregateConfigurer.jpaMappedConfiguration;
 import static org.axonframework.config.ConfigAssertions.assertExpectedModules;
@@ -121,10 +123,7 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.defaultConfiguration()
                                        .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                                       .configureCommandBus(c -> new SimpleCommandBus(c.getComponent(
-                                               Executor.class,
-                                               Executors::newSingleThreadExecutor)
-                                       ))
+                                       .configureCommandBus(c -> aCommandBus())
                                        .configureAggregate(StubAggregate.class)
                                        .buildConfiguration();
         config.start();
@@ -261,7 +260,7 @@ class DefaultConfigurerTest {
                                        .configureTransactionManager(c -> new EntityManagerTransactionManager(
                                                entityManager
                                        ))
-                                       .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(configuration -> JacksonSerializer.defaultSerializer())
                                        .buildConfiguration();
 
         config.start();
@@ -283,7 +282,7 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
                                        .configureCommandBus(c -> {
-                                           SimpleCommandBus commandBus = new SimpleCommandBus(Runnable::run);
+                                           SimpleCommandBus commandBus = aCommandBus();
                                            return new InterceptingCommandBus(
                                                    commandBus,
                                                    List.of(new TransactionManagingInterceptor<>(c.getComponent(
@@ -305,7 +304,7 @@ class DefaultConfigurerTest {
                                                                                               .build()
                                                        )
                                        )
-                                       .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(c -> JacksonSerializer.defaultSerializer())
                                        .buildConfiguration();
 
         config.start();
@@ -324,9 +323,9 @@ class DefaultConfigurerTest {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
-                                       .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(c -> JacksonSerializer.defaultSerializer())
                                        .configureCommandBus(c -> new InterceptingCommandBus(
-                                               new SimpleCommandBus(Runnable::run),
+                                               aCommandBus(),
                                                List.of(new TransactionManagingInterceptor<>(c.getComponent(
                                                        TransactionManager.class
                                                ))),
@@ -348,7 +347,7 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.defaultConfiguration()
                                        .configureCommandBus(c -> new InterceptingCommandBus(
-                                               new SimpleCommandBus(Runnable::run),
+                                               aCommandBus(),
                                                List.of(new TransactionManagingInterceptor<>(c.getComponent(
                                                        TransactionManager.class
                                                ))),
@@ -368,7 +367,7 @@ class DefaultConfigurerTest {
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager)
                                        .registerComponent(TransactionManager.class, c -> transactionManager)
                                        .configureCommandBus(c -> new InterceptingCommandBus(
-                                               new SimpleCommandBus(Runnable::run),
+                                               aCommandBus(),
                                                List.of(new TransactionManagingInterceptor<>(c.getComponent(
                                                        TransactionManager.class
                                                ))),
@@ -383,7 +382,7 @@ class DefaultConfigurerTest {
                                                                               .parameterResolverFactory(c.parameterResolverFactory())
                                                                               .build())
                                        )
-                                       .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(c -> JacksonSerializer.defaultSerializer())
                                        .buildConfiguration();
 
         config.start();
@@ -451,7 +450,7 @@ class DefaultConfigurerTest {
     void defaultConfigurationWithCache() throws Exception {
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
                                                             .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                                                            .configureCommandBus(c -> new SimpleCommandBus(Runnable::run))
+                                                            .configureCommandBus(c -> aCommandBus())
                                                             .configureAggregate(defaultConfiguration(StubAggregate.class).configureCache(
                                                                     c -> new WeakReferenceCache()
                                                             ))
@@ -469,7 +468,7 @@ class DefaultConfigurerTest {
     void configuredSnapshotterDefaultsToAggregateSnapshotter() {
         Snapshotter defaultSnapshotter = LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager)
                                                                 .configureSerializer(
-                                                                        configuration -> TestSerializer.xStreamSerializer()
+                                                                        configuration -> JacksonSerializer.defaultSerializer()
                                                                 )
                                                                 .configureAggregate(StubAggregate.class)
                                                                 .buildConfiguration().snapshotter();
@@ -481,7 +480,7 @@ class DefaultConfigurerTest {
     void defaultSnapshotterDefaultsToNoOpWhenNoAggregatesAreKnown() {
         Snapshotter defaultSnapshotter =
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager)
-                                       .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
+                                       .configureSerializer(configuration -> JacksonSerializer.defaultSerializer())
                                        .buildConfiguration().snapshotter();
 
         assertFalse(defaultSnapshotter instanceof AggregateSnapshotter);
@@ -558,7 +557,7 @@ class DefaultConfigurerTest {
                                                config -> QuartzDeadlineManager.builder()
                                                                               .scheduler(mockScheduler)
                                                                               .scopeAwareProvider(config.scopeAwareProvider())
-                                                                              .serializer(TestSerializer.xStreamSerializer())
+                                                                              .serializer(JacksonSerializer.defaultSerializer())
                                                                               .build()
                                        )
                                        .buildConfiguration().deadlineManager();

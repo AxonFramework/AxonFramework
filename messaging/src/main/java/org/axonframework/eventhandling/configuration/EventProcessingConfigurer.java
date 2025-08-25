@@ -25,6 +25,7 @@ import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -107,12 +108,9 @@ public class EventProcessingConfigurer {
                 cr -> cr.registerComponent(
                         EventProcessorCustomization.class,
                         cfg -> EventProcessorCustomization.noOp().andThen(
-                                (axonConfig, processorConfig) -> {
-                                    cfg.getOptionalComponent(TransactionManager.class)
-                                       .map(TransactionalUnitOfWorkFactory::new)
-                                       .ifPresent(processorConfig::unitOfWorkFactory);
-                                    return processorConfig;
-                                }).andThen(processorsDefaultCustomization)
+                                (axonConfig, processorConfig) -> processorConfig.unitOfWorkFactory(
+                                        cfg.getComponent(UnitOfWorkFactory.class))
+                        ).andThen(processorsDefaultCustomization)
                 )
         );
         pooledStreamingEventProcessors.build();

@@ -33,6 +33,7 @@ import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -94,7 +95,7 @@ class WorkPackageTest {
         testSubjectBuilder = WorkPackage.builder()
                                         .name(PROCESSOR_NAME)
                                         .tokenStore(tokenStore)
-                                        .unitOfWorkFactory(new SimpleUnitOfWorkFactory())
+                                        .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
                                         .executorService(executorService)
                                         .eventFilter(eventFilter)
                                         .batchProcessor(batchProcessor)

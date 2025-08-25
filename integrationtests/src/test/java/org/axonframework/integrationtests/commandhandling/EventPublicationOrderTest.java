@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -31,13 +32,16 @@ import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static org.axonframework.commandhandling.CommandBusTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -48,7 +52,7 @@ class EventPublicationOrderTest {
 
     @BeforeEach
     void setUp() {
-        this.commandBus = new SimpleCommandBus();
+        this.commandBus = aCommandBus();
         eventStore = spy(LegacyEmbeddedEventStore.builder()
                                                  .storageEngine(new LegacyInMemoryEventStorageEngine())
                                                  .build());

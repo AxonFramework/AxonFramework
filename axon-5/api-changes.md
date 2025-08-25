@@ -236,6 +236,40 @@ referred to as `Message#metaData()`. A similar rename occurred for the `EventMes
 `getTimestamp()` method to `timestamp()`. Lastly, the `QueryMessage` and `SubscriptionQueryMessage` have undergone the
 same rename, for `getResponseType()` and `getUpdateResponseType()` respectively.
 
+### Message Conversion / Serialization
+
+The `Message` and `ResultMessage` interfaces used to have three methods to serialize the payload, metadata, and
+exception, called:
+
+1. `Message#serializePayload(Serializer, Class<T>)`
+2. `Message#serializeMetaData(Serializer, Class<T>)`
+3. `ResultMessage#serializeExceptionResult(Serializer, Class<T>)`
+
+These methods have been removed entirely, as we have redefined the conversion flow for Axon Framework 5.
+Instead of using wrapper classes, like the `SerializedObject` returned by the above methods, the `Message` now contains
+the required information to be converted itself.
+
+This follows from the introduction of the `MessageType` (as explained [here](#message-type-and-qualified-name)), which
+takes the place of the `Message#payloadType`.
+This in turn allows the `payloadType` to reflect the format as it is stored within the `Message#payload` at that moment
+in time.
+
+On top of that, to keep providing means to retrieve a `Message's` payload in the required format, two new methods have
+been introduced:
+
+1. `Message#payloadAs(Type, Converter)`
+2. `Message#withConvertedPayload(Type, Converter)`
+
+The `payloadAs(Type, Converter)` method allows to convert the payload into the type required at that moment in time. For
+example, one Event Handler requires a "subscription canceled event" as the `SubscriptionCanceledEvent` object, while
+another simply wants it as a `JsonNode`. To that end, `EventMessage#payloadAs(Type, Converter)` may be invoked to
+extract the payload as desired.
+
+The `withConvertedPayload(Type, Converter)` method constructs a new `Message` instance, with the `payload` converted to
+the desired format.
+This is valuable if a consumer/publisher is certain that the payload will be required in a new format throughout the
+upstream/downstream of the `Message` in question.
+
 ## Message Stream
 
 We have introduced the so-called `MessageStream` to allow people to draft both imperative **and** reactive message
@@ -1411,12 +1445,14 @@ This section contains five tables:
 | org.axonframework.modelling.command.inspection.AbstractChildEntityDefinition                           | org.axonframework.modelling.entity.annotation.AbstractEntityChildModelDefinition | No                               |
 | org.axonframework.axonserver.connector.ServerConnectorConfigurerModule                                 | org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer           | No                               |
 | org.axonframework.serialization.CannotConvertBetweenTypesException                                     | org.axonframework.serialization.ConversionException                              | No                               |
+| org.axonframework.serialization.json.JacksonSerializer                                                 | org.axonframework.serialization.json.JacksonConverter                            | No                               |
 | org.axonframework.commandhandling.distributed.CommandDispatchException                                 | org.axonframework.commandhandling.CommandDispatchException                       | No                               |
 | org.axonframework.axonserver.connector.command.CommandPriorityCalculator                               | org.axonframework.commandhandling.CommandPriorityCalculator                      | Yes. Moved to `axon-messaging`   |
 | org.axonframework.commandhandling.distribute.MetaDataRoutingStrategy                                   | org.axonframework.commandhandling.MetaDataRoutingStrategy                        | Yes. Moved to `axon-messaging`   |
 | org.axonframework.commandhandling.distribute.RoutingStrategy                                           | org.axonframework.commandhandling.RoutingStrategy                                | Yes. Moved to `axon-messaging`   |
 | org.axonframework.commandhandling.distribute.UnresolvedRoutingKeyPolicy                                | org.axonframework.commandhandling.UnresolvedRoutingKeyPolicy                     | Yes. Moved to `axon-messaging`   |
 | org.axonframework.commandhandling.distribute.AnnotationRoutingStrategy                                 | org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy           | Yes. Moved to `axon-messaging`   |
+| org.axonframework.serialization.json.JacksonSerializer                                                 | org.axonframework.serialization.json.JacksonConverter                            | No                               |
 
 ### Removed Classes
 
@@ -1474,6 +1510,15 @@ This section contains five tables:
 | org.axonframework.axonserver.connector.event.axon.QueryResult                            | Removed in favor of `EventCriteria` use.                                                                                                       |
 | org.axonframework.axonserver.connector.event.axon.QueryResultStream                      | Removed in favor of `EventCriteria` use.                                                                                                       |
 | org.axonframework.axonserver.connector.event.axon.QueryResultStreamAdapter               | Removed in favor of `EventCriteria` use.                                                                                                       |
+| org.axonframework.serialization.xml.XStreamSerializer                                    | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.AbstractXStreamSerializer                                | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.CompactDriver                                        | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.Dom4JToByteArrayConverter                            | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.InputStreamToDom4jConverter                          | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.InputStreamToXomConverter                            | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.serialization.xml.XomToStringConverter                                 | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| SerializerProperties.SerializerType#XSTREAM                                              | No longer supported in Axon Framework 5 due to undesired reflection support.                                                                   |
+| org.axonframework.eventsourcing.eventstore.EqualRevisionPredicate                        | Removed due to removal of the `DomainEventData`.                                                                                               |
 | org.axonframework.commandhandling.CommandCallback                                        | See [here](#command-dispatching-and-handling).                                                                                                 |
 | org.axonframework.commandhandling.callbacks.FailureLoggingCallback                       | See [here](#command-dispatching-and-handling).                                                                                                 |
 | org.axonframework.commandhandling.callbacks.LoggingCallback                              | See [here](#command-dispatching-and-handling).                                                                                                 |

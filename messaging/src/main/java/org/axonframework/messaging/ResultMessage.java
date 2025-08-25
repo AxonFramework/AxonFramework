@@ -80,34 +80,6 @@ public interface ResultMessage<R> extends Message<R> {
         return optionalExceptionResult().flatMap(HandlerExecutionException::resolveDetails);
     }
 
-    @Deprecated
-    @Override
-    default <S> SerializedObject<S> serializePayload(Serializer serializer, Class<S> expectedRepresentation) {
-        if (isExceptional()) {
-            return serializer.serialize(exceptionDetails().orElse(null), expectedRepresentation);
-        }
-        return serializer.serialize(payload(), expectedRepresentation);
-    }
-
-    /**
-     * Serializes the exception result. Will create a {@link RemoteExceptionDescription} from the {@link Optional}
-     * exception in this ResultMessage instead of serializing the original exception.
-     *
-     * @param serializer             the {@link Serializer} used to serialize the exception
-     * @param expectedRepresentation a {@link Class} representing the expected format
-     * @param <T>                    the generic type representing the expected format
-     * @return the serialized exception as a {@link SerializedObject}
-     * @deprecated Serialization is removed from messages themselves. Instead, use
-     * {@link Message#withConvertedPayload(Class, org.axonframework.serialization.Converter)}
-     */
-    @Deprecated
-    default <T> SerializedObject<T> serializeExceptionResult(Serializer serializer, Class<T> expectedRepresentation) {
-        return serializer.serialize(
-                optionalExceptionResult().map(RemoteExceptionDescription::describing).orElse(null),
-                expectedRepresentation
-        );
-    }
-
     @Override
     @Nonnull
     ResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData);

@@ -34,6 +34,8 @@ import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
@@ -75,6 +77,7 @@ class MessagingConfigurationDefaultsTest {
         // The specific CommandGateway-implementation registered by default may be overridden by the serviceloader-mechanism.
         // So we just check if _any_ CommandGateway has been added to the configuration.
         assertTrue(resultConfig.hasComponent(CommandGateway.class));
+        assertInstanceOf(TransactionalUnitOfWorkFactory.class, resultConfig.getComponent(UnitOfWorkFactory.class));
         assertInstanceOf(SimpleCommandBus.class, resultConfig.getComponent(CommandBus.class));
         assertInstanceOf(DefaultEventGateway.class, resultConfig.getComponent(EventGateway.class));
         assertInstanceOf(SimpleEventBus.class, resultConfig.getComponent(EventBus.class));

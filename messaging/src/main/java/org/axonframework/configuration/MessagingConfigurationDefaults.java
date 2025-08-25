@@ -34,7 +34,12 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.ConfigurationApplicationContext;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
@@ -46,6 +51,9 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link MessagingConfigurer}.
  * <p>
@@ -53,6 +61,7 @@ import org.axonframework.serialization.json.JacksonConverter;
  * <ul>
  *     <li>Registers a {@link org.axonframework.messaging.ClassBasedMessageTypeResolver} for class {@link org.axonframework.messaging.MessageTypeResolver}</li>
  *     <li>Registers a {@link org.axonframework.serialization.json.JacksonConverter} for class {@link org.axonframework.serialization.Converter}</li>
+ *     <li>Registers a {@link org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory} for class {@link org.axonframework.messaging.unitofwork.UnitOfWorkFactory}</li>
  *     <li>Registers a {@link org.axonframework.commandhandling.gateway.DefaultCommandGateway} for class {@link org.axonframework.commandhandling.gateway.CommandGateway}</li>
  *     <li>Registers a {@link org.axonframework.commandhandling.SimpleCommandBus} for class {@link CommandBus}</li>
  *     <li>Registers a {@link org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy} for class {@link RoutingStrategy}</li>
@@ -91,6 +100,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         registry.registerIfNotPresent(MessageTypeResolver.class,
                                       MessagingConfigurationDefaults::defaultMessageTypeResolver)
                 .registerIfNotPresent(Converter.class, c -> new JacksonConverter())
+                .registerIfNotPresent(UnitOfWorkFactory.class, MessagingConfigurationDefaults::defaultUnitOfWorkFactory)
                 .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(CommandBus.class, MessagingConfigurationDefaults::defaultCommandBus)
                 .registerIfNotPresent(RoutingStrategy.class, MessagingConfigurationDefaults::defaultRoutingStrategy)
@@ -112,10 +122,24 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         return new ClassBasedMessageTypeResolver();
     }
 
+    private static UnitOfWorkFactory defaultUnitOfWorkFactory(Configuration config) {
+        return new TransactionalUnitOfWorkFactory(
+                config.getComponent(
+                        TransactionManager.class,
+                        NoTransactionManager::instance
+                ),
+                new SimpleUnitOfWorkFactory(new ConfigurationApplicationContext(config))
+        );
+    }
+
     private static CommandBus defaultCommandBus(Configuration config) {
-        return config.getOptionalComponent(TransactionManager.class)
-                     .map(SimpleCommandBus::new)
-                     .orElse(new SimpleCommandBus());
+        return new SimpleCommandBus(
+                config.getComponent(UnitOfWorkFactory.class),
+                config.getOptionalComponent(TransactionManager.class)
+                      .map(tm -> (ProcessingLifecycleHandlerRegistrar) tm)
+                      .map(List::of)
+                      .orElse(Collections.emptyList())
+        );
     }
 
     private static CommandGateway defaultCommandGateway(Configuration config) {

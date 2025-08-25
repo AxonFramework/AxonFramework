@@ -27,6 +27,7 @@ import jakarta.annotation.Nullable;
  * @author Allard Buijze
  * @since 1.2
  * @deprecated In favor of the simpler {@link Converter} interface.
+ * TODO #3602 remove
  */
 @Deprecated(forRemoval = true, since = "5.0.0")
 public interface Serializer {

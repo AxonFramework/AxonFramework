@@ -102,32 +102,6 @@ class SerializedMessageTest {
     }
 
     @Test
-    void serializePayloadImmediatelyAfterConstructionReturnsOriginalPayload() {
-        SerializedMessage<Object> testSubject =
-                new SerializedMessage<>(eventId, serializedPayload, serializedMetaData, serializer);
-
-        SerializedObject<byte[]> result = testSubject.serializePayload(serializer, byte[].class);
-        assertArrayEquals("serializedPayload".getBytes(StandardCharsets.UTF_8), result.getData());
-        // this call is allowed
-        verify(serializer, atLeast(0)).classForType(isA(SerializedType.class));
-        verify(serializer, atLeast(0)).getConverter();
-        verifyNoMoreInteractions(serializer);
-    }
-
-    @Test
-    void serializeMetaDataImmediatelyAfterConstructionReturnsOriginalMetaData() {
-        SerializedMessage<Object> testSubject =
-                new SerializedMessage<>(eventId, serializedPayload, serializedMetaData, serializer);
-
-        SerializedObject<byte[]> result = testSubject.serializeMetaData(serializer, byte[].class);
-        assertArrayEquals("serializedMetaData".getBytes(StandardCharsets.UTF_8), result.getData());
-        // this call is allowed
-        verify(serializer, atLeast(0)).classForType(isA(SerializedType.class));
-        verify(serializer, atLeast(0)).getConverter();
-        verifyNoMoreInteractions(serializer);
-    }
-
-    @Test
     void rethrowSerializationExceptionOnGetPayload() {
         SerializationException serializationException = new SerializationException("test message");
         when(serializer.deserialize(serializedMetaData)).thenThrow(serializationException);
