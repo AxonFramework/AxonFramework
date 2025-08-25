@@ -16,16 +16,12 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.common.Registration;
-
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Registration;
 
 /**
  * Interface marking components capable of registering Handler Interceptors. Generally, these are Messaging components
  * injected into the receiving end of the communication.
- * <p>
- * Handler Interceptors are always invoked in the thread that handles the message. If a Unit of Work is active, it is
- * that of the intercepted message.
  *
  * @param <T> The type of Message the interceptor works with
  * @see MessageDispatchInterceptor
@@ -39,5 +35,5 @@ public interface MessageHandlerInterceptorSupport<T extends Message<?>> {
      * @param handlerInterceptor The interceptor to register
      * @return A Registration, which may be used to deregister the interceptor.
      */
-    Registration registerHandlerInterceptor(@Nonnull MessageHandlerInterceptor<? super T> handlerInterceptor);
+    Registration registerHandlerInterceptor(@Nonnull MessageHandlerInterceptor<T> handlerInterceptor);
 }

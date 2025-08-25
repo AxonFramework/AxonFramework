@@ -536,9 +536,9 @@ class AxonServerQueryBusTest {
     @Test
     void dispatchInterceptor() {
         List<Object> results = new LinkedList<>();
-        testSubject.registerDispatchInterceptor(messages -> (a, b) -> {
-            results.add(b.payload());
-            return b;
+        testSubject.registerDispatchInterceptor((message, context, chain) -> {
+            results.add(message.payload());
+            return chain.proceed(message, context);
         });
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
                 new MessageType("query"), "payload", new InstanceResponseType<>(String.class)
@@ -552,7 +552,7 @@ class AxonServerQueryBusTest {
     @Test
     void handlerInterceptorRegisteredWithLocalSegment() {
         MessageHandlerInterceptor<QueryMessage<?, ?>> interceptor =
-                (unitOfWork, ctx, interceptorChain) -> interceptorChain.proceedSync(ctx);
+                (message, context, chain) -> chain.proceed(message, context);
 
         testSubject.registerHandlerInterceptor(interceptor);
 

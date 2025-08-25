@@ -18,6 +18,8 @@ package org.axonframework.modelling.command.inspection;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -26,8 +28,10 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.CommandMessageHandlerInterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -427,12 +431,27 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         if (interceptors.isEmpty()) {
             result = findHandlerAndHandleCommand(potentialHandlers, commandMessage, context);
         } else {
-            //noinspection unchecked
-            result = new DefaultInterceptorChain<>(
-                    (LegacyUnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
-                    interceptors,
-                    (m, ctx) -> findHandlerAndHandleCommand(potentialHandlers, commandMessage, context)
-            ).proceedSync(context);
+            result = findHandlerAndHandleCommand(potentialHandlers, commandMessage, context);
+            // TODO: reintegrate as part of #3485
+            /*
+            result = new CommandMessageHandlerInterceptorChain(
+                    (m, ctx) -> {
+                        try {
+                            return MessageStream.just(
+                                    new GenericCommandResultMessage<>(
+                                            MessageType(commandMessage.type().qualifiedName() + "result")
+                                            findHandlerAndHandleCommand(potentialHandlers, commandMessage, context)
+                                    )
+
+                            );
+                        } catch (Exception e) {
+                            return MessageStream.failed(e);
+                        }
+                    },
+                    interceptors
+            ).proceed(commandMessage, context);
+
+             */
         }
         return result;
     }

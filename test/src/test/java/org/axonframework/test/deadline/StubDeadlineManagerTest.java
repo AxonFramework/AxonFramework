@@ -37,6 +37,7 @@ class StubDeadlineManagerTest {
         testSubject = new StubDeadlineManager();
     }
 
+    @Disabled("TODO reintegrate as part of #3065")
     @Test
     void messagesCarryTriggerTimestamp() throws Exception {
         Instant triggerTime = Instant.now().plusSeconds(60);

@@ -16,22 +16,18 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.common.Registration;
-
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Registration;
 
 /**
  * Interface marking components capable of registering Dispatch Interceptors. Generally, these are Messaging components
  * injected into the sending end of the communication.
  * <p>
- * Dispatch Interceptors are always invoked in the thread that dispatches the message to the messaging component. If a
- * Unit of Work is active, it is not that of the dispatched message, but of the message that triggered this message to
- * be published.
  *
- * @param <T> The type of Message the interceptor works with
- * @see MessageHandlerInterceptor
+ * @param <M> The type of Message the interceptor works with
+ * @see MessageDispatchInterceptor
  */
-public interface MessageDispatchInterceptorSupport<T extends Message<?>> {
+public interface MessageDispatchInterceptorSupport<M extends Message<?>> {
 
     /**
      * Register the given DispatchInterceptor. After registration, the interceptor will be invoked for each Message
@@ -40,5 +36,5 @@ public interface MessageDispatchInterceptorSupport<T extends Message<?>> {
      * @param dispatchInterceptor The interceptor to register
      * @return A Registration, which may be used to deregister the interceptor.
      */
-    Registration registerDispatchInterceptor(@Nonnull MessageDispatchInterceptor<? super T> dispatchInterceptor);
+    Registration registerDispatchInterceptor(@Nonnull MessageDispatchInterceptor<? super M> dispatchInterceptor);
 }

@@ -265,7 +265,7 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<? super DeadlineMessage<?>> deadlineHandlerInterceptor);
+            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor);
 
     /**
      * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing objects.

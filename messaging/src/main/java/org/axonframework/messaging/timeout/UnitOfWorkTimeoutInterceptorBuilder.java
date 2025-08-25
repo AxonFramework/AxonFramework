@@ -16,29 +16,33 @@
 package org.axonframework.messaging.timeout;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Context;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.queryhandling.QueryMessage;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * Message handler interceptor that sets a timeout on the processing of the current {@link LegacyUnitOfWork}. If the
+ * Message handler interceptor that sets a timeout on the processing of the current {@link ProcessingContext}. If the
  * timeout is reached, the thread is interrupted and the transaction will be rolled back automatically.
  * <p>
  * Note: Due to interceptor ordering, this interceptor may not be the first in the chain. We are unable to work around
  * this, and as such the timeout measuring starts from the moment this interceptor is invoked, and ends measuring when
- * the commit of the {@link LegacyUnitOfWork} is completed.
+ * the commit of the {@link ProcessingContext} is completed.
  *
  * @author Mitchell Herrijgers
  * @since 4.11.0
  */
-public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<Message<?>> {
+// TODO remove as part of #3559
+@Deprecated(forRemoval = true)
+public class UnitOfWorkTimeoutInterceptorBuilder {
 
     private static final String TRANSACTION_TIME_LIMIT_RESOURCE_KEY = "_transactionTimeLimit";
     private static final Context.ResourceKey<AxonTimeLimitedTask> TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY =
@@ -52,11 +56,11 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
     private final Logger logger;
 
     /**
-     * Creates a new {@link UnitOfWorkTimeoutInterceptor} for the given {@code componentName} with the given
+     * Creates a new {@code UnitOfWorkTimeoutInterceptor} for the given {@code componentName} with the given
      * {@code timeout}, {@code warningThreshold} and {@code warningInterval}. The warnings and timeout will be scheduled
      * on the {@link AxonTaskJanitor#INSTANCE}. If you want to use a different {@link ScheduledExecutorService} or
      * {@link Logger} to log on, use the other
-     * {@link #UnitOfWorkTimeoutInterceptor(String, int, int, int, ScheduledExecutorService, Logger)}.
+     * {@link #UnitOfWorkTimeoutInterceptorBuilder(String, int, int, int, ScheduledExecutorService, Logger)}.
      *
      * @param componentName    The name of the component to be included in the logging
      * @param timeout          The timeout in milliseconds
@@ -64,10 +68,10 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
      *                         higher than {@code timeout} will disable warnings.
      * @param warningInterval  The interval in milliseconds between warnings.
      */
-    public UnitOfWorkTimeoutInterceptor(String componentName,
-                                        int timeout,
-                                        int warningThreshold,
-                                        int warningInterval
+    public UnitOfWorkTimeoutInterceptorBuilder(String componentName,
+                                               int timeout,
+                                               int warningThreshold,
+                                               int warningInterval
     ) {
         this(componentName,
              timeout,
@@ -78,7 +82,7 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
     }
 
     /**
-     * Creates a new {@link UnitOfWorkTimeoutInterceptor} for the given {@code componentName} with the given
+     * Creates a new {@code UnitOfWorkTimeoutInterceptor} for the given {@code componentName} with the given
      * {@code timeout}, {@code warningThreshold} and {@code warningInterval}. The warnings and timeout will be scheduled
      * on the provided {@code executorService}.
      *
@@ -90,12 +94,12 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
      * @param executorService  The executor service to schedule the timeout and warnings
      * @param logger           The logger to log warnings and errors
      */
-    public UnitOfWorkTimeoutInterceptor(String componentName,
-                                        int timeout,
-                                        int warningThreshold,
-                                        int warningInterval,
-                                        ScheduledExecutorService executorService,
-                                        Logger logger
+    public UnitOfWorkTimeoutInterceptorBuilder(String componentName,
+                                               int timeout,
+                                               int warningThreshold,
+                                               int warningInterval,
+                                               ScheduledExecutorService executorService,
+                                               Logger logger
     ) {
         this.componentName = componentName;
         this.timeout = timeout;
@@ -105,77 +109,54 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
         this.logger = logger;
     }
 
-    @Override
-    public Object handle(@Nonnull LegacyUnitOfWork<? extends Message<?>> unitOfWork,
-                         @Nonnull ProcessingContext context,
-                         @Nonnull InterceptorChain interceptorChain) throws Exception {
-        LegacyUnitOfWork<?> root = unitOfWork.root();
-        String taskName = "UnitOfWork of " + componentName;
-        if (!root.resources().containsKey(TRANSACTION_TIME_LIMIT_RESOURCE_KEY)) {
-            AxonTimeLimitedTask taskTimeout = taskTimeout(taskName);
-            root.resources().put(TRANSACTION_TIME_LIMIT_RESOURCE_KEY, taskTimeout);
-            taskTimeout.start();
-            unitOfWork.afterCommit(u -> completeSafely(taskTimeout));
-            unitOfWork.onRollback(u -> taskTimeout.complete());
-        }
-
-        AxonTimeLimitedTask task = (AxonTimeLimitedTask) root.resources().get(TRANSACTION_TIME_LIMIT_RESOURCE_KEY);
-        try {
-            Object proceed = interceptorChain.proceedSync(context);
-            task.ensureNoInterruptionWasSwallowed();
-            return proceed;
-        } catch (Exception e) {
-            throw task.detectInterruptionInsteadOfException(e);
-        }
+    public MessageHandlerInterceptor<EventMessage<?>> buildEventInterceptor() {
+        return build();
     }
 
-    @Override
-    public <M extends Message<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
-                                                                                           @Nonnull ProcessingContext context,
-                                                                                           @Nonnull InterceptorChain<M, R> interceptorChain) {
+    public MessageHandlerInterceptor<QueryMessage<?, ?>> buildQueryInterceptor() {
+        return build();
+    }
+
+    public MessageHandlerInterceptor<DeadlineMessage<?>> buildDeadlineInterceptor() {
+        return build();
+    }
+
+    <T extends Message<?>> MessageHandlerInterceptor<T> build() {
+        return new MessageHandlerInterceptor<>() {
+
+            @Nonnull
+            @Override
+            public MessageStream<?> interceptOnHandle(@Nonnull T message,
+                                                      @Nonnull ProcessingContext context,
+                                                      @Nonnull MessageHandlerInterceptorChain<T> interceptorChain) {
+                initializeTimeoutIfNotInitialized(context);
+                AxonTimeLimitedTask task = context.getResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY);
+                try {
+                    MessageStream<?> proceed = interceptorChain.proceed(message, context);
+                    task.ensureNoInterruptionWasSwallowed();
+                    return proceed;
+                } catch (Exception e) {
+                    return MessageStream.failed(task.detectInterruptionInsteadOfException(e));
+                }
+            }
+        };
+    }
+
+    void initializeTimeoutIfNotInitialized(ProcessingContext context) {
         String taskName = "UnitOfWork of " + componentName;
         if (!context.containsResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY)) {
-            AxonTimeLimitedTask taskTimeout = taskTimeout(taskName);
+            AxonTimeLimitedTask taskTimeout = new AxonTimeLimitedTask(
+                    taskName,
+                    timeout,
+                    warningThreshold,
+                    warningInterval,
+                    executorService,
+                    logger
+            );
             context.putResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY, taskTimeout);
             taskTimeout.start();
             context.runOnAfterCommit(u -> taskTimeout.complete());
             context.onError((ctx, phase, error) -> taskTimeout.complete());
         }
-
-        AxonTimeLimitedTask task = context.getResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY);
-        try {
-            MessageStream<R> proceed = interceptorChain.proceed(message, context);
-            task.ensureNoInterruptionWasSwallowed();
-            return proceed;
-        } catch (Exception e) {
-            return MessageStream.failed(task.detectInterruptionInsteadOfException(e));
-        }
-    }
-
-    private static void completeSafely(AxonTimeLimitedTask task) {
-        try {
-            try {
-                task.ensureNoInterruptionWasSwallowed();
-                task.complete();
-            } catch (Exception e) {
-                throw task.detectInterruptionInsteadOfException(e);
-            }
-        } catch (Exception e) {
-            if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
-            }
-            throw new RuntimeException(e);
-        }
-    }
-
-    private AxonTimeLimitedTask taskTimeout(String taskName) {
-        return new AxonTimeLimitedTask(
-                taskName,
-                timeout,
-                warningThreshold,
-                warningInterval,
-                executorService,
-                logger
-        );
     }
 }

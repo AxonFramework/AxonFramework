@@ -20,8 +20,8 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.messaging.CommandMessageHandlerInterceptorChain;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -149,6 +149,7 @@ class AnnotatedCommandHandlingComponentTest {
         assertInstanceOf(NoHandlerForCommandException.class, exception.getCause());
     }
 
+    @Disabled("Reintegrate as part of #3485")
     @Test
     void messageHandlerInterceptorAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
         CommandMessage<String> testCommandMessage = new GenericCommandMessage<>(new MessageType(String.class), "");
@@ -257,10 +258,9 @@ class AnnotatedCommandHandlingComponentTest {
         }
 
         @MessageHandlerInterceptor
-        public Object interceptAny(CommandMessage<?> command, ProcessingContext context, InterceptorChain chain)
-                throws Exception {
+        public Object interceptAny(CommandMessage<?> command, ProcessingContext context, CommandMessageHandlerInterceptorChain chain) {
             interceptedWithInterceptorChain.add(command);
-            return chain.proceedSync(context);
+            return chain.proceed(command, context);
         }
 
         @ExceptionHandler

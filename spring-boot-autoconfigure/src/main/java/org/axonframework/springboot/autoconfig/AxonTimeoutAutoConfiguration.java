@@ -21,7 +21,7 @@ import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.messaging.timeout.HandlerTimeoutHandlerEnhancerDefinition;
 import org.axonframework.messaging.timeout.TaskTimeoutSettings;
-import org.axonframework.messaging.timeout.UnitOfWorkTimeoutInterceptor;
+import org.axonframework.messaging.timeout.UnitOfWorkTimeoutInterceptorBuilder;
 import org.axonframework.springboot.TimeoutProperties;
 import jakarta.annotation.Nonnull;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -69,12 +69,12 @@ public class AxonTimeoutAutoConfiguration {
             configurer.eventProcessing()
                       .registerDefaultHandlerInterceptor((c, name) -> {
                           TaskTimeoutSettings settings = getSettingsForProcessor(name);
-                          return new UnitOfWorkTimeoutInterceptor(
+                          return new UnitOfWorkTimeoutInterceptorBuilder(
                                   "EventProcessor " + name,
                                   settings.getTimeoutMs(),
                                   settings.getWarningThresholdMs(),
                                   settings.getWarningIntervalMs()
-                          );
+                          ).buildEventInterceptor();
                       });
             // Cannot use the configurer.onInitialize, as it creates a circular creation dependency
             configurer.onStart(Integer.MIN_VALUE, () -> {
@@ -86,18 +86,18 @@ public class AxonTimeoutAutoConfiguration {
 //                        properties.getCommandBus().getWarningThresholdMs(),
 //                        properties.getCommandBus().getWarningIntervalMs()
 //                ));
-                c.queryBus().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptor(
+                c.queryBus().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptorBuilder(
                         c.queryBus().getClass().getSimpleName(),
                         properties.getQueryBus().getTimeoutMs(),
                         properties.getQueryBus().getWarningThresholdMs(),
                         properties.getQueryBus().getWarningIntervalMs()
-                ));
-                c.deadlineManager().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptor(
+                ).buildQueryInterceptor());
+                c.deadlineManager().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptorBuilder(
                         c.deadlineManager().getClass().getSimpleName(),
                         properties.getDeadline().getTimeoutMs(),
                         properties.getDeadline().getWarningThresholdMs(),
                         properties.getDeadline().getWarningIntervalMs()
-                ));
+                ).buildDeadlineInterceptor());
             });
         }
 

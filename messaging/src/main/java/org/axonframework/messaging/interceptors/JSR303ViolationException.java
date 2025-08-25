@@ -65,7 +65,7 @@ public class JSR303ViolationException extends AxonNonTransientException {
      * </pre>
      *
      * @param violations set of violations that were detected when the exception was thrown
-     * @return a human readable string describing the violations
+     * @return a human-readable string describing the violations
      */
     @SuppressWarnings("DuplicatedCode")
     protected static String convert(Set<ConstraintViolation<Object>> violations) {

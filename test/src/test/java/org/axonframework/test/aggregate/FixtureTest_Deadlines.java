@@ -285,7 +285,16 @@ class FixtureTest_Deadlines {
     @Disabled("TODO #3065 - Revisit Deadline support")
     void deadlineDispatcherInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
-                messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.timestamp()))
+                       (message, context, chain) ->
+                               chain.proceed(
+                                       asDeadlineMessage(
+                                               message.getDeadlineName(),
+                                               "fakeDeadlineDetails",
+                                               message.timestamp()
+                                       ),
+                                       context
+                               )
+               )
                .givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
@@ -295,17 +304,21 @@ class FixtureTest_Deadlines {
     @Test
     @Disabled("TODO #3065 - Revisit Deadline support")
     void deadlineHandlerInterceptor() {
-        fixture.registerDeadlineHandlerInterceptor((uow, context, chain) -> {
-            uow.transformMessage(deadlineMessage -> asDeadlineMessage(
-                    deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.timestamp())
-            );
-            return chain.proceedSync(context);
-        })
+    /*
+        fixture.registerDeadlineHandlerInterceptor(
+                (uow, context, chain) -> {
+                uow.transformMessage(deadlineMessage -> asDeadlineMessage(
+                           deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.timestamp())
+                   );
+                   return chain.proceedSync(context);
+               })
                .givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
                .expectTriggeredDeadlines("fakeDeadlineDetails");
+    */
     }
+
 
     @SuppressWarnings("unchecked")
     public static <P> DeadlineMessage<P> asDeadlineMessage(String deadlineName,

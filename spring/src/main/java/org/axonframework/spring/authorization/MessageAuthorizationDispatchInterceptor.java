@@ -17,8 +17,12 @@
 package org.axonframework.spring.authorization;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorChain;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +30,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import jakarta.annotation.Nonnull;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -62,11 +63,13 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message<?>> imple
 
     @Nonnull
     @Override
-    public T handle(@Nonnull T message) {
+    public MessageStream<?> interceptOnDispatch(@Nonnull T message,
+                                                @Nullable ProcessingContext context,
+                                                @Nonnull MessageDispatchInterceptorChain<T> interceptorChain) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
             logger.debug("No authentication found.");
-            return message;
+            return interceptorChain.proceed(message, context);
         }
 
         logger.debug("Adding message metadata for username & authorities.");
@@ -78,12 +81,6 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message<?>> imple
                                            .collect(Collectors.joining(","));
         authenticationDetails.put("authorities", authorities);
         //noinspection unchecked
-        return (T) message.andMetaData(authenticationDetails);
-    }
-
-    @Nonnull
-    @Override
-    public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> list) {
-        return (position, message) -> handle(message);
+        return interceptorChain.proceed((T) message.andMetaData(authenticationDetails), context);
     }
 }

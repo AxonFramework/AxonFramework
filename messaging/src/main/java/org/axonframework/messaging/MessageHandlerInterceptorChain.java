@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.messaging;
+
+import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+
+/**
+ * The interceptor chain manages the flow of a message through a chain of interceptors and ultimately to the message
+ * handler. Interceptors may continue processing via this chain by calling the
+ * {@link #proceed(Message, ProcessingContext)} method. Alternatively, they can block processing by returning without
+ * calling either of these methods.
+ *
+ * @param <M> Type of the message to intercept.
+ * @author Allard Buijze
+ * @author Simon Zambrovski
+ * @since 0.5
+ */
+@FunctionalInterface
+public interface MessageHandlerInterceptorChain<M extends Message<?>> {
+
+    /**
+     * Signals the Interceptor Chain to continue processing the message.
+     *
+     * @param message Message to pass further to the interceptors in the chain.
+     * @param context The {@link ProcessingContext} in which the reset is being prepared.
+     * @return A {@link MessageStream} containing the result of the message processing.
+     */
+    @Nonnull
+    MessageStream<?> proceed(@Nonnull M message, @Nonnull ProcessingContext context);
+}

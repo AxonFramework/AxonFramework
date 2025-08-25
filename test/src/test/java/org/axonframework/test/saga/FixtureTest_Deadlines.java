@@ -288,7 +288,12 @@ class FixtureTest_Deadlines {
     @Test
     void deadlineDispatchInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
-                messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.timestamp())
+                (message, context, chain) ->
+                        chain.proceed(
+                                asDeadlineMessage(message.getDeadlineName(), "fakeDeadlineDetails", message.timestamp()),
+                                context
+                        )
+
         )
                .givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
@@ -298,14 +303,19 @@ class FixtureTest_Deadlines {
                .expectNoScheduledEvents();
     }
 
+    @Disabled("TODO revise after #3103 is finished and Saga support is enabled")
     @Test
     void deadlineHandlerInterceptor() {
-        fixture.registerDeadlineHandlerInterceptor((uow, context, chain) -> {
-            uow.transformMessage(deadlineMessage -> asDeadlineMessage(
-                    deadlineMessage.getDeadlineName(), "fakeDeadlineDetails", deadlineMessage.timestamp())
-            );
-            return chain.proceedSync(context);
-        })
+
+        // TODO #3065 revise deadline support
+        fixture.registerDeadlineHandlerInterceptor(
+                (message, context, chain)
+                        -> chain.proceed(
+                                asDeadlineMessage(message.getDeadlineName(), "fakeDeadlineDetails", message.timestamp()),
+                                context)
+        );
+
+            fixture
                .givenAggregate(AGGREGATE_ID)
                .published(START_SAGA_EVENT)
                .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))

@@ -18,6 +18,7 @@ package org.axonframework.config;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
@@ -459,7 +460,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                             : simpleUnitOfWorkFactory;
                     SimpleCommandBus commandBus = new SimpleCommandBus(unitOfWorkFactory, Collections.emptyList());
                     if (!config.correlationDataProviders().isEmpty()) {
-                        CorrelationDataInterceptor<Message<?>> interceptor =
+                        CorrelationDataInterceptor<CommandMessage<?>> interceptor =
                                 new CorrelationDataInterceptor<>(config.correlationDataProviders());
                         return new InterceptingCommandBus(commandBus, List.of(interceptor), List.of());
                     }
