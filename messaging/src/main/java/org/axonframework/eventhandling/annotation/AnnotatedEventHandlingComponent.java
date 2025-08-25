@@ -34,6 +34,7 @@ import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberCha
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.Converter;
 
 import java.util.Set;
 
@@ -53,17 +54,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
     private final SimpleEventHandlingComponent handlingComponent;
-
-    /**
-     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
-     * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
-     *
-     * @param annotatedEventHandler The object containing the
-     *                              {@link org.axonframework.eventhandling.annotation.EventHandler} annotated methods.
-     */
-    public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler) {
-        this(annotatedEventHandler, ClasspathParameterResolverFactory.forClass(annotatedEventHandler.getClass()));
-    }
+    private final Converter converter;
 
     /**
      * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
@@ -75,10 +66,12 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      */
     public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
-                                           @Nonnull ParameterResolverFactory parameterResolverFactory) {
+                                           @Nonnull ParameterResolverFactory parameterResolverFactory,
+                                           @Nonnull Converter converter) {
         this(annotatedEventHandler,
              parameterResolverFactory,
-             ClasspathHandlerDefinition.forClass(annotatedEventHandler.getClass()));
+             ClasspathHandlerDefinition.forClass(annotatedEventHandler.getClass()),
+             converter);
     }
 
     /**
@@ -90,16 +83,19 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      *                                 methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      * @param handlerDefinition        The handler definition used to create concrete handlers.
+     * @param converter
      */
     @SuppressWarnings("unchecked")
     public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
                                            @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                           @Nonnull HandlerDefinition handlerDefinition) {
+                                           @Nonnull HandlerDefinition handlerDefinition,
+                                           @Nonnull Converter converter) {
         this(
                 annotatedEventHandler,
                 AnnotatedHandlerInspector.inspectType((Class<T>) annotatedEventHandler.getClass(),
                                                       parameterResolverFactory,
-                                                      handlerDefinition)
+                                                      handlerDefinition),
+                converter
         );
     }
 
@@ -112,9 +108,11 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * @param model                 The inspector to use to find the annotated handlers on the annotatedEventHandler.
      */
     public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
-                                           @Nonnull AnnotatedHandlerInspector<T> model) {
+                                           @Nonnull AnnotatedHandlerInspector<T> model,
+                                           @Nonnull Converter converter) {
         this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null");
         this.model = requireNonNull(model, "The Annotated Handler Inspector may not be null");
+        this.converter = requireNonNull(converter, "The Converter may not be null");
 
         this.handlingComponent = new SimpleEventHandlingComponent();
         initializeHandlersBasedOnModel();
@@ -130,12 +128,13 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     private void registerHandler(MessageHandlingMember<? super T> handler) {
         QualifiedName qualifiedName = new QualifiedName(handler.payloadType()); // TODO #3098 - allow to define eventName on the handling member
+        // todo: convert payload here!!!
 
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         handlingComponent.subscribe(
                 qualifiedName,
                 (event, ctx) ->
-                interceptorChain.handle(event, ctx, target, handler).ignoreEntries().cast()
+                interceptorChain.handle(event.withConvertedPayload(handler.payloadType(), converter), ctx, target, handler).ignoreEntries().cast() // todo: here!
         );
     }
 
