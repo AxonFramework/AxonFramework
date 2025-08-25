@@ -1592,8 +1592,8 @@ This section contains four subsections, called:
 | `org.axonframework.eventhandling.EventProcessor#registerHandlerInterceptor(MessageHandlerInterceptor)`  | Interceptors will be configured on the `EventHandlingComponent` level instead of the `EventProcessor`.                      |
 | `PooledStreamingEventProcessor.Builder#coordinatorExecutor(Function<String, ScheduledExecutorService>)` | Removed due to changes in the Configuration API (see [Event Processors](#event-processors))                                 |
 | `PooledStreamingEventProcessor.Builder#workerExecutor(Function<String, ScheduledExecutorService>)`      | Removed due to changes in the Configuration API (see [Event Processors](#event-processors))                                 |
-| `org.axonframework.axonserver.connector.AxonServerConfiguration#getCommitTimeout`                       | Removed as the `EventStorageEngine` is no asynchronous (we don't have to wait for commits).                                 |
-| `org.axonframework.axonserver.connector.AxonServerConfiguration#setCommitTimeout(int)`                  | Removed as the `EventStorageEngine` is no asynchronous (we don't have to wait for commits).                                 |
+| `org.axonframework.axonserver.connector.AxonServerConfiguration#getCommitTimeout`                       | Removed as the `EventStorageEngine` is now asynchronous (we don't have to wait for commits).                                 |
+| `org.axonframework.axonserver.connector.AxonServerConfiguration#setCommitTimeout(int)`                  | Removed as the `EventStorageEngine` is now asynchronous (we don't have to wait for commits).                                 |
 | `org.axonframework.axonserver.connector.AxonServerConfiguration#isEventBlockListingEnabled `            | Removed as the `EventCriteria` allow for automated filtering.                                                               |
 | `org.axonframework.axonserver.connector.AxonServerConfiguration#setEventBlockListingEnabled(boolean)`   | Removed as the `EventCriteria` allow for automated filtering.                                                               |
 
