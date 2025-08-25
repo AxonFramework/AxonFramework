@@ -27,7 +27,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Component that publishes events to a {@link CommandGateway} in a predefined
+ * Component that publishes commands to a {@link CommandGateway} in a predefined
  * {@link org.axonframework.messaging.unitofwork.ProcessingContext context}. The events will be published in the context
  * this appender was created for. You can construct one through the
  * {@link #forContext(ProcessingContext, Configuration)}.
