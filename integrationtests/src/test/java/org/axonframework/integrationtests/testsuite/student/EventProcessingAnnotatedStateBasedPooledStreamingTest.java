@@ -18,12 +18,9 @@ package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -39,13 +36,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends AbstractStudentTestSuite {
 
     @Test
-    void sample() {
+    void whenStudentEnrolledThenUpdateReadModel() {
         // given
         startApp();
 
@@ -57,7 +53,7 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
 
         // then
         verifyReadModelState(studentId, state -> {
-            assertNotNull(state);
+            assertThat(state).isNotNull();
             assertThat(state.courses).containsExactly("my-courseId-1", "my-courseId-2", "my-courseId-3");
         });
     }
@@ -88,15 +84,6 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
                 .eventHandlingComponents(components -> components.declarative(
                         cfg -> studentCoursesProjector()
                 )).notCustomized();
-//        configurer.messaging(
-//                messaging -> messaging.eventProcessing(
-//                        ep -> ep.pooledStreaming(
-//                                ps -> ps.defaults((cfg, d) -> d.eventSource(
-//                                        (StreamableEventSource<? extends EventMessage<?>>) cfg.getComponent(EventStore.class))
-//                                )
-//                        )
-//                )
-//        );
         return configurer.messaging(
                 messaging -> messaging.eventProcessing(
                         ep -> ep.pooledStreaming(
@@ -129,15 +116,13 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
     }
 
     private void verifyReadModelState(String studentId, Consumer<StudentCoursesReadModel> stateVerifier) {
-        await().atMost(5, TimeUnit.SECONDS)
-                .pollDelay(1, TimeUnit.SECONDS)
+        await().atMost(2, TimeUnit.SECONDS)
                .untilAsserted(() -> {
-                   System.out.println("CHECK!!!");
                    UnitOfWork uow = unitOfWorkFactory.create();
-                   uow.executeWithResult(context -> context.component(StateManager.class)
+                   var result = uow.executeWithResult(context -> context.component(StateManager.class)
                                                       .repository(StudentCoursesReadModel.class, String.class)
-                                                      .load(studentId, context)
-                                                      .thenAccept(student -> stateVerifier.accept(student.entity()))).join();
+                                                      .load(studentId, context)).join();
+                   stateVerifier.accept(result.entity());
                });
     }
 }

@@ -36,8 +36,10 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
+import org.axonframework.modelling.configuration.EntityModule;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -73,7 +75,7 @@ public class EventProcessingAnnotatedEventSourcedPooledStreamingTest extends Abs
 
         @EventSourcingHandler
         StudentCoursesAutomationState evolve(StudentEnrolledEvent event) {
-            var updatedCourses = new java.util.ArrayList<>(courses);
+            var updatedCourses = new ArrayList<>(courses);
             updatedCourses.add(event.courseId());
             return new StudentCoursesAutomationState(studentId, updatedCourses, false);
         }
@@ -150,7 +152,7 @@ public class EventProcessingAnnotatedEventSourcedPooledStreamingTest extends Abs
     }
 
     private static void configureEntityAndCommandHandler(EventSourcingConfigurer configurer) {
-        EventSourcedEntityModule<String, StudentCoursesAutomationState> studentCoursesEntity =
+        EntityModule<String, StudentCoursesAutomationState> studentCoursesEntity =
                 EventSourcedEntityModule.annotated(String.class, StudentCoursesAutomationState.class);
         configurer.componentRegistry(cr -> cr.registerModule(studentCoursesEntity));
 

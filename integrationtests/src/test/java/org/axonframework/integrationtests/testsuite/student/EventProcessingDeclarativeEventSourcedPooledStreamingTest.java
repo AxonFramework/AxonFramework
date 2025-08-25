@@ -36,6 +36,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.configuration.EntityModule;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.Test;
 
@@ -45,6 +46,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
+
 
 public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends AbstractStudentTestSuite {
 
@@ -142,7 +144,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
     }
 
     private static void configureEntityAndCommandHandler(EventSourcingConfigurer configurer) {
-        EventSourcedEntityModule<String, StudentCoursesAutomationState> studentCoursesEntity =
+        EntityModule<String, StudentCoursesAutomationState> studentCoursesEntity =
                 EventSourcedEntityModule.annotated(String.class, StudentCoursesAutomationState.class);
         configurer.componentRegistry(cr -> cr.registerModule(studentCoursesEntity));
 
