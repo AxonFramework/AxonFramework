@@ -24,6 +24,11 @@ import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link EventAppenderParameterResolverFactoryConfigurationEnhancer}.
+ *
+ * @author Mitchell Herrijgers.
+ */
 class EventAppenderParameterResolverFactoryConfigurationEnhancerTest {
 
     @Test

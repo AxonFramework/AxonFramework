@@ -33,7 +33,7 @@ public class EventAppenderParameterResolverFactoryConfigurationEnhancer implemen
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
         ParameterResolverFactoryUtils.registerToComponentRegistry(
-                registry, EventAppenderParameterResolverFactory::new
+                registry, config -> new EventAppenderParameterResolverFactory()
         );
     }
 }

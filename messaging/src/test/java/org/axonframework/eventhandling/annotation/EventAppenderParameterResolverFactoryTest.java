@@ -21,9 +21,9 @@ import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventhandling.gateway.ProcessingContextEventAppender;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -31,14 +31,18 @@ import java.lang.reflect.Method;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link EventAppenderParameterResolverFactory}.
+ *
+ * @author Mitchell Herrijgers
+ */
 class EventAppenderParameterResolverFactoryTest {
 
     private final Configuration configuration = mock(Configuration.class);
     private final EventSink eventSink = mock(EventSink.class);
     private final MessageTypeResolver messageTypeResolver = mock(MessageTypeResolver.class);
 
-    private final EventAppenderParameterResolverFactory testSubject =
-            new EventAppenderParameterResolverFactory(configuration);
+    private final EventAppenderParameterResolverFactory testSubject = new EventAppenderParameterResolverFactory();
 
     @BeforeEach
     void setUp() {
@@ -48,7 +52,10 @@ class EventAppenderParameterResolverFactoryTest {
 
     @Test
     void injectsEventAppenderBasedOnProcessingContext() throws Exception {
-        ProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = StubProcessingContext.withComponents(registry -> {
+            registry.registerComponent(EventSink.class, c -> eventSink);
+            registry.registerComponent(MessageTypeResolver.class, c -> messageTypeResolver);
+        });
 
         Method method = getClass().getMethod("methodWithEventAppenderParameter", EventAppender.class);
         ParameterResolver<?> instance = testSubject.createInstance(method, method.getParameters(), 0);
