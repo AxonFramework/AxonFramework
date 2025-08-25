@@ -31,6 +31,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.EntityIdResolver;
@@ -190,5 +191,23 @@ class MultiEntityCommandHandlingComponentTest extends AbstractCommandHandlingStu
                 throw new IllegalArgumentException("Can not resolve mentor id from command");
             }
         }
+    }
+
+    private void verifyStudentEnrolledInCourse(String id, String courseId) {
+        UnitOfWork uow = unitOfWorkFactory.create();
+        uow.executeWithResult(context -> context.component(StateManager.class)
+                                                .repository(Student.class, String.class)
+                                                .load(id, context)
+                                                .thenAccept(student -> assertTrue(student.entity()
+                                                                                         .getCoursesEnrolled()
+                                                                                         .contains(courseId)))
+                                                .thenCompose(v -> context.component(StateManager.class)
+                                                                         .repository(Course.class,
+                                                                                     String.class)
+                                                                         .load(courseId, context))
+                                                .thenAccept(course -> assertTrue(course.entity()
+                                                                                       .getStudentsEnrolled()
+                                                                                       .contains(id))))
+           .join();
     }
 }

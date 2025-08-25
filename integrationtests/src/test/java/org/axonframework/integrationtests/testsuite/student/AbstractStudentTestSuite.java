@@ -18,18 +18,17 @@ package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.AbstractAxonServerIntegrationTest;
-import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
-import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
@@ -160,31 +159,26 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
                                                             config.getComponent(MessageTypeResolver.class));
     }
 
-    protected void verifyStudentName(String id, String name) {
-        UnitOfWork uow = unitOfWorkFactory.create();
-        uow.executeWithResult(context -> context.component(StateManager.class)
-                                                .repository(Student.class, String.class)
-                                                .load(id, context)
-                                                .thenAccept(student -> assertEquals(name,
-                                                                                    student.entity().getName())))
-           .join();
+    protected <T> void sendCommand(T payload) {
+        commandGateway.sendAndWait(payload);
     }
 
-    protected void verifyStudentEnrolledInCourse(String id, String courseId) {
+    protected <T, R> R sendCommand(T payload, Class<R> expectedResultType) {
+        return commandGateway.sendAndWait(payload, expectedResultType);
+    }
+
+    protected void studentEnrolledToCourse(String studentId, String courseId) {
+        storeEvent(StudentEnrolledEvent.class, new StudentEnrolledEvent(studentId, courseId));
+    }
+
+    protected <T> void storeEvent(Class<T> clazz, T payload) {
         UnitOfWork uow = unitOfWorkFactory.create();
-        uow.executeWithResult(context -> context.component(StateManager.class)
-                                                .repository(Student.class, String.class)
-                                                .load(id, context)
-                                                .thenAccept(student -> assertTrue(student.entity()
-                                                                                         .getCoursesEnrolled()
-                                                                                         .contains(courseId)))
-                                                .thenCompose(v -> context.component(StateManager.class)
-                                                                         .repository(Course.class,
-                                                                                     String.class)
-                                                                         .load(courseId, context))
-                                                .thenAccept(course -> assertTrue(course.entity()
-                                                                                       .getStudentsEnrolled()
-                                                                                       .contains(id))))
-           .join();
+        var eventMessage = new GenericEventMessage<T>(
+                new MessageType(clazz),
+                payload
+        );
+        uow.runOnInvocation(context -> context.component(EventStore.class).transaction(context)
+                                              .appendEvent(eventMessage));
+        uow.execute().join();
     }
 }
