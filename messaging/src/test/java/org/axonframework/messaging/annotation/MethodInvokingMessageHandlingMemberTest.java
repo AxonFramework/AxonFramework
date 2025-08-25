@@ -45,13 +45,13 @@ class MethodInvokingMessageHandlingMemberTest {
     private static MessageStream<?> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?> future) {
             return MessageStream.fromFuture(future.thenApply(
-                    r -> new GenericMessage<>(new MessageType(r.getClass()), r)
+                    r -> new GenericMessage(new MessageType(r.getClass()), r)
             ));
         }
         if (result instanceof MessageStream<?> stream) {
             return stream;
         }
-        return MessageStream.just(new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
+        return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
 
     @BeforeEach

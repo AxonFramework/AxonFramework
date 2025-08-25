@@ -101,10 +101,10 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     }
 
     @Override
-    protected DomainEventMessage<?> createSnapshot(Class<?> aggregateType,
+    protected DomainEventMessage createSnapshot(Class<?> aggregateType,
                                                    String aggregateIdentifier,
                                                    DomainEventStream eventStream) {
-        DomainEventMessage<?> firstEvent = eventStream.peek();
+        DomainEventMessage firstEvent = eventStream.peek();
         AggregateFactory<?> aggregateFactory = getAggregateFactory(aggregateType);
         if (aggregateFactory == null) {
             throw new IllegalArgumentException(
@@ -123,7 +123,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         if (aggregate.isDeleted()) {
             return null;
         }
-        return new GenericDomainEventMessage<>(aggregate.type(),
+        return new GenericDomainEventMessage(aggregate.type(),
                                                aggregate.identifierAsString(),
                                                aggregate.version(),
                                                messageTypeResolver.resolveOrThrow(aggregateType),
@@ -355,7 +355,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         }
 
         @Override
-        public Object handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+        public Object handle(@Nonnull Message message, @Nonnull ProcessingContext context) {
             throw new UnsupportedOperationException("Aggregate instance is read-only");
         }
 

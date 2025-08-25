@@ -50,8 +50,8 @@ class OutboundEventMessageChannelAdapterTest {
     @Test
     void messageForwardedToChannel() {
         StubDomainEvent event = new StubDomainEvent();
-        EventMessage<StubDomainEvent> testMessage =
-                new GenericEventMessage<>(new MessageType("event"), event);
+        EventMessage testMessage =
+                new GenericEventMessage(new MessageType("event"), event);
         testSubject.handle(singletonList(testMessage));
 
         verify(mockChannel).send(messageWithPayload(event));
@@ -73,11 +73,11 @@ class OutboundEventMessageChannelAdapterTest {
         verify(mockEventBus, never()).publish(isA(EventMessage.class));
     }
 
-    private EventMessage<String> newDomainEvent() {
-        return new GenericEventMessage<>(new MessageType("event"), "Mock");
+    private EventMessage newDomainEvent() {
+        return new GenericEventMessage(new MessageType("event"), "Mock");
     }
 
-    private Message<?> messageWithPayload(final StubDomainEvent event) {
+    private Message messageWithPayload(final StubDomainEvent event) {
         return argThat(x -> event.equals(x.getPayload()));
     }
 }

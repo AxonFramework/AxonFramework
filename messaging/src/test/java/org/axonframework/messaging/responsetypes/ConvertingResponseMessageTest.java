@@ -32,10 +32,10 @@ class ConvertingResponseMessageTest {
 
     @Test
     void payloadIsConvertedToExpectedType() {
-        QueryResponseMessage<?> msg = new GenericQueryResponseMessage<>(
+        QueryResponseMessage msg = new GenericQueryResponseMessage(
                 new MessageType("query"), new String[]{"Some string result"}
         ).withMetaData(MetaData.with("test", "value"));
-        QueryResponseMessage<List<String>> wrapped =
+        QueryResponseMessage wrapped =
                 new ConvertingResponseMessage<>(ResponseTypes.multipleInstancesOf(String.class), msg);
 
         assertEquals(List.class, wrapped.payloadType());
@@ -45,16 +45,16 @@ class ConvertingResponseMessageTest {
 
     @Test
     void illegalAccessPayloadWhenResultIsExceptional() {
-        QueryResponseMessage<?> msg = asResponseMessage(List.class, new RuntimeException());
-        QueryResponseMessage<List<String>> wrapped =
+        QueryResponseMessage msg = asResponseMessage(List.class, new RuntimeException());
+        QueryResponseMessage wrapped =
                 new ConvertingResponseMessage<>(ResponseTypes.multipleInstancesOf(String.class), msg);
 
         assertEquals(List.class, wrapped.payloadType());
         assertThrows(IllegalPayloadAccessException.class, wrapped::payload);
     }
 
-    private static <R> QueryResponseMessage<R> asResponseMessage(Class<R> declaredType, Throwable exception) {
-        return new GenericQueryResponseMessage<>(new MessageType(exception.getClass()),
+    private static <R> QueryResponseMessage asResponseMessage(Class<R> declaredType, Throwable exception) {
+        return new GenericQueryResponseMessage(new MessageType(exception.getClass()),
                                                  exception,
                                                  declaredType);
     }

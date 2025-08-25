@@ -85,7 +85,7 @@ class TimestampParameterResolverFactoryTest {
         ParameterResolver<Instant> resolver =
                 testSubject.createInstance(instantMethod, instantMethod.getParameters(), 0);
 
-        final EventMessage<Object> message = EventTestUtils.asEventMessage("test");
+        final EventMessage message = EventTestUtils.asEventMessage("test");
         ProcessingContext context = StubProcessingContext.forMessage(message);
         assertTrue(resolver.matches(context));
         assertEquals(message.timestamp(), resolver.resolveParameterValue(context));
@@ -96,7 +96,7 @@ class TimestampParameterResolverFactoryTest {
         ParameterResolver<Instant> resolver =
                 testSubject.createInstance(temporalMethod, temporalMethod.getParameters(), 0);
 
-        final EventMessage<Object> message = EventTestUtils.asEventMessage("test");
+        final EventMessage message = EventTestUtils.asEventMessage("test");
         ProcessingContext context = StubProcessingContext.forMessage(message);
         assertTrue(resolver.matches(context));
         assertEquals(message.timestamp(), resolver.resolveParameterValue(context));
@@ -119,7 +119,7 @@ class TimestampParameterResolverFactoryTest {
     void resolvesToDateTimeWhenAnnotatedWithMetaAnnotation() {
         Parameter[] parameters = metaAnnotatedMethod.getParameters();
         ParameterResolver<?> resolver = testSubject.createInstance(metaAnnotatedMethod, parameters, 0);
-        final EventMessage<Object> message = EventTestUtils.asEventMessage("test");
+        final EventMessage message = EventTestUtils.asEventMessage("test");
         ProcessingContext context = StubProcessingContext.forMessage(message);
         assertTrue(resolver.matches(context), "Resolver should be a match for message " + message);
         assertEquals(message.timestamp(), resolver.resolveParameterValue(context));

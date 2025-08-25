@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ShouldEnqueueTest {
 
-    private DeadLetter<? extends Message<?>> testLetter;
+    private DeadLetter<? extends Message> testLetter;
 
     @BeforeEach
     void setUp() {
@@ -47,23 +47,23 @@ class ShouldEnqueueTest {
 
     @Test
     void constructorShouldEnqueueAllowsEnqueueing() {
-        ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>();
+        ShouldEnqueue<Message> testSubject = new ShouldEnqueue<>();
 
         assertTrue(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
+        DeadLetter<? extends Message> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
     @Test
     void decisionsEnqueueAllowsEnqueueing() {
-        ShouldEnqueue<Message<?>> testSubject = Decisions.enqueue();
+        ShouldEnqueue<Message> testSubject = Decisions.enqueue();
 
         assertTrue(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
+        DeadLetter<? extends Message> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
@@ -71,14 +71,14 @@ class ShouldEnqueueTest {
     void constructorShouldEnqueueWithCauseAllowsEnqueueingWithGivenCause() {
         Throwable testCause = new RuntimeException("just because");
 
-        ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>(testCause);
+        ShouldEnqueue<Message> testSubject = new ShouldEnqueue<>(testCause);
 
         assertTrue(testSubject.shouldEnqueue());
         Optional<Throwable> resultCause = testSubject.enqueueCause();
         assertTrue(resultCause.isPresent());
         assertEquals(testCause, resultCause.get());
 
-        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
+        DeadLetter<? extends Message> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
@@ -86,14 +86,14 @@ class ShouldEnqueueTest {
     void decisionsEnqueueWithCauseAllowsEnqueueingWithGivenCause() {
         Throwable testCause = new RuntimeException("just because");
 
-        ShouldEnqueue<Message<?>> testSubject = Decisions.enqueue(testCause);
+        ShouldEnqueue<Message> testSubject = Decisions.enqueue(testCause);
 
         assertTrue(testSubject.shouldEnqueue());
         Optional<Throwable> resultCause = testSubject.enqueueCause();
         assertTrue(resultCause.isPresent());
         assertEquals(testCause, resultCause.get());
 
-        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
+        DeadLetter<? extends Message> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
@@ -101,14 +101,14 @@ class ShouldEnqueueTest {
     void decisionsRequeueWithCauseAllowsEnqueueingWithGivenCause() {
         Throwable testCause = new RuntimeException("just because");
 
-        ShouldEnqueue<Message<?>> testSubject = Decisions.requeue(testCause);
+        ShouldEnqueue<Message> testSubject = Decisions.requeue(testCause);
 
         assertTrue(testSubject.shouldEnqueue());
         Optional<Throwable> resultCause = testSubject.enqueueCause();
         assertTrue(resultCause.isPresent());
         assertEquals(testCause, resultCause.get());
 
-        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
+        DeadLetter<? extends Message> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
@@ -117,14 +117,14 @@ class ShouldEnqueueTest {
         Throwable testCause = new RuntimeException("just because");
         MetaData testMetaData = MetaData.with("key", "value");
 
-        ShouldEnqueue<Message<?>> testSubject = new ShouldEnqueue<>(testCause, letter -> testMetaData);
+        ShouldEnqueue<Message> testSubject = new ShouldEnqueue<>(testCause, letter -> testMetaData);
 
         assertTrue(testSubject.shouldEnqueue());
         Optional<Throwable> resultCause = testSubject.enqueueCause();
         assertTrue(resultCause.isPresent());
         assertEquals(testCause, resultCause.get());
 
-        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
+        DeadLetter<? extends Message> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter.message(), result.message());
         assertEquals(testLetter.cause(), result.cause());
         assertEquals(testLetter.enqueuedAt(), result.enqueuedAt());
@@ -137,14 +137,14 @@ class ShouldEnqueueTest {
         Throwable testCause = new RuntimeException("just because");
         MetaData testMetaData = MetaData.with("key", "value");
 
-        ShouldEnqueue<Message<?>> testSubject = Decisions.requeue(testCause, letter -> testMetaData);
+        ShouldEnqueue<Message> testSubject = Decisions.requeue(testCause, letter -> testMetaData);
 
         assertTrue(testSubject.shouldEnqueue());
         Optional<Throwable> resultCause = testSubject.enqueueCause();
         assertTrue(resultCause.isPresent());
         assertEquals(testCause, resultCause.get());
 
-        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
+        DeadLetter<? extends Message> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter.message(), result.message());
         assertEquals(testLetter.cause(), result.cause());
         assertEquals(testLetter.enqueuedAt(), result.enqueuedAt());

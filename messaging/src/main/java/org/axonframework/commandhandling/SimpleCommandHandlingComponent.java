@@ -85,7 +85,7 @@ public class SimpleCommandHandlingComponent implements
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
                                                                 @Nonnull ProcessingContext context) {
         QualifiedName qualifiedName = requireNonNull(command, "The command message cannot be null.")
                 .type()

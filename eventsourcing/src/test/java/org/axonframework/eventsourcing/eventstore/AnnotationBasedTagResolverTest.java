@@ -695,7 +695,7 @@ class AnnotationBasedTagResolverTest {
         }
     }
 
-    private EventMessage<?> anEventMessage(Object payload) {
-        return new GenericEventMessage<>(new MessageType("event"), payload);
+    private EventMessage anEventMessage(Object payload) {
+        return new GenericEventMessage(new MessageType("event"), payload);
     }
 }

@@ -48,9 +48,9 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger {
     }
 
     @Override
-    public void eventHandled(@Nonnull EventMessage<?> msg) {
+    public void eventHandled(@Nonnull EventMessage msg) {
         if (msg instanceof DomainEventMessage && exceedsThreshold()) {
-            prepareSnapshotScheduling((DomainEventMessage<?>) msg);
+            prepareSnapshotScheduling((DomainEventMessage) msg);
             reset();
         }
     }
@@ -60,7 +60,7 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger {
         initialized = true;
     }
 
-    private void prepareSnapshotScheduling(DomainEventMessage<?> eventMessage) {
+    private void prepareSnapshotScheduling(DomainEventMessage eventMessage) {
         if (CurrentUnitOfWork.isStarted()) {
             if (initialized) {
                 CurrentUnitOfWork.get().onPrepareCommit(
@@ -74,7 +74,7 @@ public abstract class AbstractSnapshotTrigger implements SnapshotTrigger {
         }
     }
 
-    private void scheduleSnapshot(DomainEventMessage<?> eventMessage) {
+    private void scheduleSnapshot(DomainEventMessage eventMessage) {
         snapshotter.scheduleSnapshot(aggregateType, eventMessage.getAggregateIdentifier());
     }
 

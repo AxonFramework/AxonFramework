@@ -30,7 +30,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class MappedMessageStream<DM extends Message<?>, RM extends Message<?>> extends DelegatingMessageStream<DM, RM> {
+class MappedMessageStream<DM extends Message, RM extends Message> extends DelegatingMessageStream<DM, RM> {
 
     private final Function<Entry<DM>, Entry<RM>> mapper;
     private final MessageStream<DM> delegate;
@@ -67,7 +67,7 @@ class MappedMessageStream<DM extends Message<?>, RM extends Message<?>> extends 
      * @param <DM> The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @param <RM> The type of {@link Message} contained in the {@link Entry} as a result of mapping.
      */
-    static class Single<DM extends Message<?>, RM extends Message<?>> extends MappedMessageStream<DM, RM> implements
+    static class Single<DM extends Message, RM extends Message> extends MappedMessageStream<DM, RM> implements
             MessageStream.Single<RM> {
 
         /**

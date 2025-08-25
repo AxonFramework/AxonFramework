@@ -76,7 +76,7 @@ public abstract class AbstractLegacyEventStorageEngine implements LegacyEventSto
     }
 
     @Override
-    public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
+    public Stream<? extends TrackedEventMessage> readEvents(TrackingToken trackingToken, boolean mayBlock) {
         Stream<? extends TrackedEventData<?>> input = readEventData(trackingToken, mayBlock);
         return upcastAndDeserializeTrackedEvents(input, getEventSerializer(), upcasterChain);
     }
@@ -88,7 +88,7 @@ public abstract class AbstractLegacyEventStorageEngine implements LegacyEventSto
     }
 
     @Override
-    public Optional<DomainEventMessage<?>> readSnapshot(@Nonnull String aggregateIdentifier) {
+    public Optional<DomainEventMessage> readSnapshot(@Nonnull String aggregateIdentifier) {
         return readSnapshotData(aggregateIdentifier)
                 .filter(snapshotFilter::allow)
                 .map(snapshot -> upcastAndDeserializeDomainEvents(Stream.of(snapshot),
@@ -97,16 +97,16 @@ public abstract class AbstractLegacyEventStorageEngine implements LegacyEventSto
                 ))
                 .flatMap(DomainEventStream::asStream)
                 .findFirst()
-                .map(event -> (DomainEventMessage<?>) event);
+                .map(event -> (DomainEventMessage) event);
     }
 
     @Override
-    public void appendEvents(@Nonnull List<? extends EventMessage<?>> events) {
+    public void appendEvents(@Nonnull List<? extends EventMessage> events) {
         appendEvents(events, getEventSerializer());
     }
 
     @Override
-    public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
+    public void storeSnapshot(@Nonnull DomainEventMessage snapshot) {
         storeSnapshot(snapshot, getSnapshotSerializer());
     }
 
@@ -116,7 +116,7 @@ public abstract class AbstractLegacyEventStorageEngine implements LegacyEventSto
      * @param exception   The exception raised while persisting an Event
      * @param failedEvent The EventMessage that could not be persisted
      */
-    protected void handlePersistenceException(Exception exception, EventMessage<?> failedEvent) {
+    protected void handlePersistenceException(Exception exception, EventMessage failedEvent) {
         String eventDescription = buildExceptionMessage(failedEvent);
         if (persistenceExceptionResolver != null && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
             if (isFirstDomainEvent(failedEvent)) {
@@ -135,8 +135,8 @@ public abstract class AbstractLegacyEventStorageEngine implements LegacyEventSto
      * @param failedEvent the event to be checked
      * @return true in case of first event, false otherwise
      */
-    private boolean isFirstDomainEvent(EventMessage<?> failedEvent) {
-        return failedEvent instanceof DomainEventMessage<?> domainEvent
+    private boolean isFirstDomainEvent(EventMessage failedEvent) {
+        return failedEvent instanceof DomainEventMessage domainEvent
                 && domainEvent.getSequenceNumber() == 0L;
     }
 
@@ -146,17 +146,17 @@ public abstract class AbstractLegacyEventStorageEngine implements LegacyEventSto
      * @param failedEvent the event to be used for the exception message
      * @return the created exception message
      */
-    private String buildExceptionMessage(EventMessage<?> failedEvent) {
+    private String buildExceptionMessage(EventMessage failedEvent) {
         String eventDescription = format("An event with identifier [%s] could not be persisted",
                                          failedEvent.identifier());
         if (isFirstDomainEvent(failedEvent)) {
-            DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
+            DomainEventMessage failedDomainEvent = (DomainEventMessage) failedEvent;
             eventDescription = format(
                     "Cannot reuse aggregate identifier [%s] to create aggregate [%s] since identifiers need to be unique.",
                     failedDomainEvent.getAggregateIdentifier(),
                     failedDomainEvent.getType());
-        } else if (failedEvent instanceof DomainEventMessage<?>) {
-            DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
+        } else if (failedEvent instanceof DomainEventMessage) {
+            DomainEventMessage failedDomainEvent = (DomainEventMessage) failedEvent;
             eventDescription = format("An event for aggregate [%s] at sequence [%d] was already inserted",
                                       failedDomainEvent.getAggregateIdentifier(),
                                       failedDomainEvent.getSequenceNumber());
@@ -171,7 +171,7 @@ public abstract class AbstractLegacyEventStorageEngine implements LegacyEventSto
      * @param events     Events to append to the database
      * @param serializer Serializer used to convert the events to a suitable format for storage
      */
-    protected abstract void appendEvents(List<? extends EventMessage<?>> events, Serializer serializer);
+    protected abstract void appendEvents(List<? extends EventMessage> events, Serializer serializer);
 
     /**
      * Store the given {@code snapshot} of an Aggregate. Implementations may override any existing snapshot of the
@@ -180,7 +180,7 @@ public abstract class AbstractLegacyEventStorageEngine implements LegacyEventSto
      * @param snapshot   Snapshot Event of the aggregate
      * @param serializer Serializer used to convert the snapshot event to a suitable format for storage
      */
-    protected abstract void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer);
+    protected abstract void storeSnapshot(DomainEventMessage snapshot, Serializer serializer);
 
     /**
      * Returns a {@link Stream} of serialized event data entries for an aggregate with given {@code identifier}. The

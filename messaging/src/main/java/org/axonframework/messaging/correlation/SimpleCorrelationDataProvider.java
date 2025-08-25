@@ -48,7 +48,7 @@ public class SimpleCorrelationDataProvider implements CorrelationDataProvider {
 
     @Nonnull
     @Override
-    public Map<String, String> correlationDataFor(@Nonnull Message<?> message) {
+    public Map<String, String> correlationDataFor(@Nonnull Message message) {
         if (headerNames.length == 0) {
             return Collections.emptyMap();
         }

@@ -131,7 +131,7 @@ public class SubscriptionMessageSerializer {
      *                                       QueryUpdate}
      * @return the {@link QueryUpdate} based on the given {@link SubscriptionQueryUpdateMessage}
      */
-    public QueryUpdate serialize(SubscriptionQueryUpdateMessage<?> subscriptionQueryUpdateMessage) {
+    public QueryUpdate serialize(SubscriptionQueryUpdateMessage subscriptionQueryUpdateMessage) {
         QueryUpdate.Builder updateMessageBuilder = QueryUpdate.newBuilder();
         if (subscriptionQueryUpdateMessage.isExceptional()) {
             Throwable exceptionResult = subscriptionQueryUpdateMessage.exceptionResult();
@@ -179,7 +179,7 @@ public class SubscriptionMessageSerializer {
      * @param <I>           the response type of the {@link QueryResponseMessage} to return
      * @return a {@link QueryResponseMessage} based on the given {@link QueryResponse}
      */
-    public <I> QueryResponseMessage<I> deserialize(QueryResponse queryResponse) {
+    public <I> QueryResponseMessage deserialize(QueryResponse queryResponse) {
         return new GrpcBackedResponseMessage<>(queryResponse, messageSerializer);
     }
 
@@ -190,7 +190,7 @@ public class SubscriptionMessageSerializer {
      * @param <U>         the update type of the {@link SubscriptionQueryUpdateMessage} to return
      * @return a {@link SubscriptionQueryUpdateMessage} based on the given {@link QueryUpdate}
      */
-    public <U> SubscriptionQueryUpdateMessage<U> deserialize(QueryUpdate queryUpdate) {
-        return new GrpcBackedQueryUpdateMessage<>(queryUpdate, messageSerializer);
+    public SubscriptionQueryUpdateMessage deserialize(QueryUpdate queryUpdate) {
+        return new GrpcBackedQueryUpdateMessage(queryUpdate, messageSerializer);
     }
 }

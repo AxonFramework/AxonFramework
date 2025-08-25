@@ -45,7 +45,7 @@ import jakarta.annotation.Nonnull;
  * @author Ivan Dugalic
  * @since 4.1
  */
-public class CapacityMonitor implements MessageMonitor<Message<?>> {
+public class CapacityMonitor implements MessageMonitor<Message> {
 
     private final Map<String, SlidingTimeWindowReservoir> timeWindowedDurationMeasurementsMap;
     private final TimeUnit timeUnit;
@@ -53,7 +53,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
     private final long window;
     private final String meterNamePrefix;
     private final MeterRegistry meterRegistry;
-    private final Function<Message<?>, Iterable<Tag>> tagsBuilder;
+    private final Function<Message, Iterable<Tag>> tagsBuilder;
 
 
     /**
@@ -77,7 +77,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
      * @return The created capacity monitor
      */
     public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry,
-                                               Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+                                               Function<Message, Iterable<Tag>> tagsBuilder) {
         return buildMonitor(meterNamePrefix, meterRegistry, 10, TimeUnit.MINUTES, tagsBuilder);
     }
 
@@ -107,7 +107,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
      * @return The created capacity monitor
      */
     public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, long window,
-                                               TimeUnit timeUnit, Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+                                               TimeUnit timeUnit, Function<Message, Iterable<Tag>> tagsBuilder) {
         return buildMonitor(meterNamePrefix, meterRegistry, window, timeUnit, Clock.SYSTEM, tagsBuilder);
     }
 
@@ -143,7 +143,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
      */
     public static CapacityMonitor buildMonitor(String meterNamePrefix, MeterRegistry meterRegistry, long window,
                                                TimeUnit timeUnit, Clock clock,
-                                               Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+                                               Function<Message, Iterable<Tag>> tagsBuilder) {
 
         return new CapacityMonitor(window, timeUnit, clock, meterNamePrefix, meterRegistry, tagsBuilder);
     }
@@ -161,7 +161,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
 
     private CapacityMonitor(long window, TimeUnit timeUnit, Clock clock, String meterNamePrefix,
                             MeterRegistry meterRegistry,
-                            Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+                            Function<Message, Iterable<Tag>> tagsBuilder) {
         this.timeWindowedDurationMeasurementsMap = new ConcurrentHashMap<>();
         this.timeUnit = timeUnit;
         this.clock = clock;
@@ -182,7 +182,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>> {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message<?> message) {
+    public MonitorCallback onMessageIngested(@Nonnull Message message) {
         final Iterable<Tag> tags = tagsBuilder.apply(message);
         final SlidingTimeWindowReservoir timeWindowedDurationMeasurements = createIfAbsent(meterNamePrefix,
                                                                                            Tags.of(tags),

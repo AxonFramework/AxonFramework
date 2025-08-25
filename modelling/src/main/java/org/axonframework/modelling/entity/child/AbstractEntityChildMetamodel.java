@@ -71,7 +71,7 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
     }
 
     @Override
-    public boolean canHandle(@Nonnull CommandMessage<?> message,
+    public boolean canHandle(@Nonnull CommandMessage message,
                              @Nonnull P parentEntity,
                              @Nonnull ProcessingContext context) {
         if (!supportedCommands().contains(message.type().qualifiedName())) {
@@ -86,7 +86,7 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage message,
                                                                 @Nonnull P parentEntity,
                                                                 @Nonnull ProcessingContext context) {
         List<C> childEntities = getChildEntities(parentEntity);
@@ -100,7 +100,7 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
     protected abstract List<C> getChildEntities(P entity);
 
     @Override
-    public P evolve(@Nonnull P entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    public P evolve(@Nonnull P entity, @Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         final AtomicBoolean evolvedChildEntity = new AtomicBoolean(false);
         var evolvedEntities = getChildEntities(entity)
                 .stream()

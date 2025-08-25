@@ -90,16 +90,16 @@ class PrimitiveQueryHandlerResponseTypeTest {
      */
     private <T> void test(final T value, final Class<T> boxed, final Class<T> primitive) {
         MessageType type = new MessageType(value.getClass().getName());
-        final QueryMessage<T, T> queryBoxed = new GenericQueryMessage<>(
+        final QueryMessage queryBoxed = new GenericQueryMessage(
                 type, value, ResponseTypes.instanceOf(boxed)
         );
-        final QueryMessage<T, T> queryPrimitive = new GenericQueryMessage<>(
+        final QueryMessage queryPrimitive = new GenericQueryMessage(
                 type, value, ResponseTypes.instanceOf(primitive)
         );
 
 
-        final T responseBoxed = queryBus.query(queryBoxed).join().payload();
-        final T responsePrimitive = queryBus.query(queryPrimitive).join().payload();
+        final T responseBoxed = queryBus.query(queryBoxed).join().payloadAs(boxed);
+        final T responsePrimitive = queryBus.query(queryPrimitive).join().payloadAs(boxed);
 
         assertEquals(value, responseBoxed);
         assertEquals(value, responsePrimitive);

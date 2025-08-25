@@ -98,9 +98,9 @@ class AxonAutoConfigurationWithHibernateTest {
         assertEquals(8, entityManager.getEntityManagerFactory().getMetamodel().getEntities().size());
     }
 
-    private static <P> EventMessage<P> asEventMessage(P event) {
-        return new GenericEventMessage<>(
-                new GenericMessage<>(new MessageType(event.getClass()), (P) event),
+    private static <P> EventMessage asEventMessage(P event) {
+        return new GenericEventMessage(
+                new GenericMessage(new MessageType(event.getClass()), (P) event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -114,7 +114,7 @@ class AxonAutoConfigurationWithHibernateTest {
 //        Assertions.assertEquals(serializer, engine.getSnapshotSerializer());
 
 //        engine.appendEvents(asEventMessage("hello"));
-//        List<? extends TrackedEventMessage<?>> events = engine.readEvents(null, false).collect(Collectors.toList());
+//        List<? extends TrackedEventMessage> events = engine.readEvents(null, false).collect(Collectors.toList());
 //        assertEquals(1, events.size());
 
         verify(upcaster).upcast(any());

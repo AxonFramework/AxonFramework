@@ -73,7 +73,7 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
     @Nullable
     @Override
     public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-        Message<?> message = Message.fromContext(context);
+        Message message = Message.fromContext(context);
         Object resolvedId = identifierResolver.resolve(message, context);
         //noinspection ConstantValue Users can still make the mistake to return null.
         if (resolvedId == null) {

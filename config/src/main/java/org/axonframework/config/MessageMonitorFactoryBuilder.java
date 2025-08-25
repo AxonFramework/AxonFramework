@@ -73,7 +73,7 @@ class MessageMonitorFactoryBuilder {
         return this;
     }
 
-    BiFunction<Class<?>, String, MessageMonitor<Message<?>>> build(LegacyConfiguration configuration) {
+    BiFunction<Class<?>, String, MessageMonitor<Message>> build(LegacyConfiguration configuration) {
         assertNotBuilt();
         built = true;
         return (type, name) -> {

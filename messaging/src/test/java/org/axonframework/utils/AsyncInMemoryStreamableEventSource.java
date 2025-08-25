@@ -72,7 +72,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class AsyncInMemoryStreamableEventSource implements StreamableEventSource<EventMessage<?>> {
+public class AsyncInMemoryStreamableEventSource implements StreamableEventSource<EventMessage> {
 
     /**
      * An {@link EventMessage#payload()} representing a failed event.
@@ -82,12 +82,12 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     /**
      * An {@link EventMessage} representing a failed event.
      */
-    public static final EventMessage<String> FAIL_EVENT = EventTestUtils.asEventMessage(FAIL_PAYLOAD);
+    public static final EventMessage FAIL_EVENT = EventTestUtils.asEventMessage(FAIL_PAYLOAD);
 
-    private volatile NavigableMap<Long, EventMessage<?>> eventStorage = new ConcurrentSkipListMap<>();
+    private volatile NavigableMap<Long, EventMessage> eventStorage = new ConcurrentSkipListMap<>();
     private final AtomicLong nextIndex = new AtomicLong(0);
     private final boolean streamCallbackSupported;
-    private final List<EventMessage<?>> ignoredEvents = new CopyOnWriteArrayList<>();
+    private final List<EventMessage> ignoredEvents = new CopyOnWriteArrayList<>();
     private final Set<AsyncMessageStream> openStreams = new CopyOnWriteArraySet<>();
     private Runnable onOpen = () -> {};
     private Runnable onClose = () -> {};
@@ -111,7 +111,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public MessageStream<EventMessage<?>> open(@Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition) {
         AsyncMessageStream stream = new AsyncMessageStream(condition);
         openStreams.add(stream);
         onOpen.run();
@@ -137,7 +137,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         return eventStorage.entrySet()
                            .stream()
                            .filter(positionToEventEntry -> {
-                               EventMessage<?> event = positionToEventEntry.getValue();
+                               EventMessage event = positionToEventEntry.getValue();
                                Instant eventTimestamp = event.timestamp();
                                return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);
                            })
@@ -156,7 +156,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      *
      * @param event The event to publish on this {@link StreamableEventSource}.
      */
-    public synchronized void publishMessage(EventMessage<?> event) {
+    public synchronized void publishMessage(EventMessage event) {
         long position = nextIndex.getAndIncrement();
         eventStorage.put(position, event);
 
@@ -169,7 +169,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      *
      * @return A {@link List} of {@link EventMessage EventMessages} that have been ignored by the stream consumer.
      */
-    public List<EventMessage<?>> getIgnoredEvents() {
+    public List<EventMessage> getIgnoredEvents() {
         return Collections.unmodifiableList(ignoredEvents);
     }
 
@@ -211,7 +211,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     /**
      * Internal implementation of {@link MessageStream} that provides event streaming functionality.
      */
-    private class AsyncMessageStream implements MessageStream<EventMessage<?>> {
+    private class AsyncMessageStream implements MessageStream<EventMessage> {
 
         private final AtomicLong currentPosition;
         private final AtomicReference<Runnable> callback = new AtomicReference<>(() -> {
@@ -241,14 +241,14 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public Optional<Entry<EventMessage<?>>> next() {
+        public Optional<Entry<EventMessage>> next() {
             if (closed) {
                 return Optional.empty();
             }
 
             while (true) {
                 long position = currentPosition.get();
-                EventMessage<?> event = eventStorage.get(position);
+                EventMessage event = eventStorage.get(position);
 
                 if (event == null) {
                     return Optional.empty();
@@ -273,13 +273,13 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
         }
 
         @Override
-        public Optional<Entry<EventMessage<?>>> peek() {
+        public Optional<Entry<EventMessage>> peek() {
             if (closed) {
                 return Optional.empty();
             }
 
             long position = currentPosition.get();
-            EventMessage<?> event = eventStorage.get(position);
+            EventMessage event = eventStorage.get(position);
 
             if (event == null) {
                 return Optional.empty();
@@ -300,7 +300,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                 // We must scan forward until we find a matching event or run out of events.
                 long nextPos = position + 1;
                 while (true) {
-                    EventMessage<?> nextEvent = eventStorage.get(nextPos);
+                    EventMessage nextEvent = eventStorage.get(nextPos);
                     if (nextEvent == null) {
                         return Optional.empty();
                     }
@@ -383,7 +383,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
      * Checks whether the given event matches the streaming condition. Similar to the match method in
      * InMemoryEventStorageEngine.
      */
-    private static boolean matches(EventMessage<?> event, StreamingCondition condition) {
+    private static boolean matches(EventMessage event, StreamingCondition condition) {
         // Handle null condition (can happen with mocking)
         if (condition == null) {
             return true; // Accept all events if no condition

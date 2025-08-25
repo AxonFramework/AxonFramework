@@ -99,15 +99,15 @@ public abstract class JdbcEventStorageEngineStatements {
     public static PreparedStatement appendEvents(Connection connection,
                                                  EventSchema schema,
                                                  Class<?> dataType,
-                                                 List<? extends EventMessage<?>> events,
+                                                 List<? extends EventMessage> events,
                                                  Serializer serializer,
                                                  TimestampWriter timestampWriter)
             throws SQLException {
         final String sql = "INSERT INTO " + schema.domainEventTable() + " (" + schema.domainEventFields() + ") "
                 + "VALUES (?,?,?,?,?,?,?,?,?)";
         PreparedStatement statement = connection.prepareStatement(sql);
-        for (EventMessage<?> eventMessage : events) {
-            DomainEventMessage<?> event = asDomainEventMessage(eventMessage);
+        for (EventMessage eventMessage : events) {
+            DomainEventMessage event = asDomainEventMessage(eventMessage);
             SerializedObject<?> payload = serializer.serialize(event.payload(), dataType);
             SerializedObject<?> metaData = serializer.serialize(event.metaData(), dataType);
             statement.setString(1, event.identifier());
@@ -137,10 +137,10 @@ public abstract class JdbcEventStorageEngineStatements {
      * @param <T>   the type of payload in the message
      * @return the message converted to a domain event message
      */
-    protected static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> event) {
-        return event instanceof DomainEventMessage<?>
-                ? (DomainEventMessage<T>) event
-                : new GenericDomainEventMessage<>(null, event.identifier(), 0L, event, event::timestamp);
+    protected static <T> DomainEventMessage asDomainEventMessage(EventMessage event) {
+        return event instanceof DomainEventMessage
+                ? (DomainEventMessage) event
+                : new GenericDomainEventMessage(null, event.identifier(), 0L, event, event::timestamp);
     }
 
     /**
@@ -222,7 +222,7 @@ public abstract class JdbcEventStorageEngineStatements {
     public static PreparedStatement appendSnapshot(Connection connection,
                                                    EventSchema schema,
                                                    Class<?> dataType,
-                                                   DomainEventMessage<?> snapshot,
+                                                   DomainEventMessage snapshot,
                                                    Serializer serializer,
                                                    TimestampWriter timestampWriter)
             throws SQLException {

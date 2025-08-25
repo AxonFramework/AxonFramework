@@ -54,21 +54,21 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
     private static final String AGGREGATE_TYPE = AXON_MESSAGE_PREFIX + "aggregate-type";
 
     @Override
-    public <T> Message<T> convertToOutboundMessage(EventMessage<T> event) {
+    public <T> Message convertToOutboundMessage(EventMessage event) {
         Map<String, Object> headers = new HashMap<>(event.metaData());
         headers.put(MESSAGE_ID, event.identifier());
         headers.put(MESSAGE_TYPE, event.type().toString());
         if (event instanceof DomainEventMessage) {
-            headers.put(AGGREGATE_ID, ((DomainEventMessage<?>) event).getAggregateIdentifier());
-            headers.put(AGGREGATE_SEQ, ((DomainEventMessage<?>) event).getSequenceNumber());
-            headers.put(AGGREGATE_TYPE, ((DomainEventMessage<?>) event).getType());
+            headers.put(AGGREGATE_ID, ((DomainEventMessage) event).getAggregateIdentifier());
+            headers.put(AGGREGATE_SEQ, ((DomainEventMessage) event).getSequenceNumber());
+            headers.put(AGGREGATE_TYPE, ((DomainEventMessage) event).getType());
         }
-        return new GenericMessage<>(event.payload(),
+        return new GenericMessage(event.payload(),
                                     new SettableTimestampMessageHeaders(headers, event.timestamp().toEpochMilli()));
     }
 
     @Override
-    public <T> EventMessage<T> convertFromInboundMessage(Message<T> message) {
+    public <T> EventMessage convertFromInboundMessage(Message message) {
         MessageHeaders headers = message.getHeaders();
         Map<String, String> metaData = headers.entrySet()
                                               .stream()
@@ -82,11 +82,11 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
         MessageType type = getType(message);
         Long timestamp = headers.getTimestamp();
 
-        org.axonframework.messaging.GenericMessage<T> genericMessage
-                = new org.axonframework.messaging.GenericMessage<>(messageId, type, message.getPayload(), metaData);
+        org.axonframework.messaging.GenericMessage genericMessage
+                = new org.axonframework.messaging.GenericMessage(messageId, type, message.getPayload(), metaData);
         if (headers.containsKey(AGGREGATE_ID)) {
             //noinspection DataFlowIssue - Just let it throw a NullPointerException if the sequence or timestamp is null
-            return new GenericDomainEventMessage<>(Objects.toString(headers.get(AGGREGATE_TYPE)),
+            return new GenericDomainEventMessage(Objects.toString(headers.get(AGGREGATE_TYPE)),
                                                    Objects.toString(headers.get(AGGREGATE_ID)),
                                                    NumberUtils.convertNumberToTargetClass(
                                                            headers.get(AGGREGATE_SEQ, Number.class), Long.class
@@ -94,7 +94,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
                                                    genericMessage, () -> Instant.ofEpochMilli(timestamp));
         } else {
             //noinspection DataFlowIssue - Just let it throw a NullPointerException if the timestamp is null
-            return new GenericEventMessage<>(genericMessage, () -> Instant.ofEpochMilli(timestamp));
+            return new GenericEventMessage(genericMessage, () -> Instant.ofEpochMilli(timestamp));
         }
     }
 
@@ -103,7 +103,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
      * based on the header. When it is not present, we can expect a non-Axon {@link Message} is handled. As such, we
      * base the {@code type} on the fully qualified class qualifiedName.
      */
-    private static <T> MessageType getType(Message<T> message) {
+    private static <T> MessageType getType(Message message) {
         MessageHeaders headers = message.getHeaders();
         return headers.containsKey(MESSAGE_TYPE)
                 ? MessageType.fromString(Objects.toString(headers.get(MESSAGE_TYPE)))

@@ -30,30 +30,30 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class FilteringDomainEventStreamTest {
 
-    private DomainEventMessage<String> event1;
-    private DomainEventMessage<String> event2;
-    private DomainEventMessage<String> event3;
+    private DomainEventMessage event1;
+    private DomainEventMessage event2;
+    private DomainEventMessage event3;
 
     @BeforeEach
     void setUp() throws Exception {
-        event1 = new GenericDomainEventMessage<>("type", "1", 0L,
+        event1 = new GenericDomainEventMessage("type", "1", 0L,
                                                  new MessageType("event"), "Create type 1");
-        event2 = new GenericDomainEventMessage<>("type2", "1", 0L,
+        event2 = new GenericDomainEventMessage("type2", "1", 0L,
                                                  new MessageType("event"), "Create type 2");
-        event3 = new GenericDomainEventMessage<>("type2", "1", 1L,
+        event3 = new GenericDomainEventMessage("type2", "1", 1L,
                                                  new MessageType("event"), "Change type 2");
     }
 
     @Test
     void forEachRemainingType1() {
-        List<DomainEventMessage<String>> expectedMessages = Collections.singletonList(event1);
+        List<DomainEventMessage> expectedMessages = Collections.singletonList(event1);
 
         DomainEventStream concat = new FilteringDomainEventStream(
                 DomainEventStream.of(event1, event2, event3), // Initial stream - add all elements
                 e -> e.getType().equals("type")
         );
 
-        List<DomainEventMessage<?>> actualMessages = new ArrayList<>();
+        List<DomainEventMessage> actualMessages = new ArrayList<>();
         concat.forEachRemaining(actualMessages::add);
 
         assertEquals(expectedMessages, actualMessages);
@@ -61,14 +61,14 @@ class FilteringDomainEventStreamTest {
 
     @Test
     void forEachRemainingType2() {
-        List<DomainEventMessage<String>> expectedMessages = Arrays.asList(event2, event3);
+        List<DomainEventMessage> expectedMessages = Arrays.asList(event2, event3);
 
         DomainEventStream concat = new FilteringDomainEventStream(
                 DomainEventStream.of(event1, event2, event3), // Initial stream - add all elements
                 e -> e.getType().equals("type2")
         );
 
-        List<DomainEventMessage<?>> actualMessages = new ArrayList<>();
+        List<DomainEventMessage> actualMessages = new ArrayList<>();
         concat.forEachRemaining(actualMessages::add);
 
         assertEquals(expectedMessages, actualMessages);

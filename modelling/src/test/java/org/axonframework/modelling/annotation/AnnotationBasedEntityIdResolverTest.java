@@ -29,7 +29,7 @@ class AnnotationBasedEntityIdResolverTest {
     void resolvesIdOfSingleTargetCommand() {
         // given
         SingleTargetCommand command = new SingleTargetCommand("id-2792793");
-        var message = new GenericCommandMessage<>(new MessageType(command.getClass()), command);
+        var message = new GenericCommandMessage(new MessageType(command.getClass()), command);
 
         // when
         Object result = testSubject.resolve(message, StubProcessingContext.forMessage(message));
@@ -43,7 +43,7 @@ class AnnotationBasedEntityIdResolverTest {
     void resolvesIdOfSingleTargetCommandWithGetterAnnotated() {
         // given
         SingleTargetGetterCommand command = new SingleTargetGetterCommand("id-2792794");
-        var message = new GenericCommandMessage<>(new MessageType(command.getClass()), command);
+        var message = new GenericCommandMessage(new MessageType(command.getClass()), command);
 
         // when
         Object result = testSubject.resolve(message, StubProcessingContext.forMessage(message));
@@ -56,7 +56,7 @@ class AnnotationBasedEntityIdResolverTest {
     void resolvesIdOfSingleTargetCommandWithRecord() {
         // given
         SingleTargetRecordCommand command = new SingleTargetRecordCommand("id-2792795");
-        var message = new GenericCommandMessage<>(new MessageType(command.getClass()), command);
+        var message = new GenericCommandMessage(new MessageType(command.getClass()), command);
 
         // when
         Object result = testSubject.resolve(message, StubProcessingContext.forMessage(message));
@@ -69,7 +69,7 @@ class AnnotationBasedEntityIdResolverTest {
     void throwsExceptionWhenMultipleTargetAnnotationsArePresentThatDontMatch() {
         // given
         MultipleTargetCommand command = new MultipleTargetCommand("id-2792796", "id-2792797");
-        var message = new GenericCommandMessage<>(new MessageType(command.getClass()), command);
+        var message = new GenericCommandMessage(new MessageType(command.getClass()), command);
 
         // then
         Assertions.assertThrows(MultipleTargetEntityIdsFoundInPayload.class, () -> testSubject.resolve(
@@ -83,7 +83,7 @@ class AnnotationBasedEntityIdResolverTest {
         MultipleTargetCommand command = new MultipleTargetCommand("id-2792798", null);
 
         // when
-        var message = new GenericCommandMessage<>(new MessageType(command.getClass()), command);
+        var message = new GenericCommandMessage(new MessageType(command.getClass()), command);
         Object result = testSubject.resolve(message, StubProcessingContext.forMessage(message));
 
         // then
@@ -94,7 +94,7 @@ class AnnotationBasedEntityIdResolverTest {
     void resolvesNonNullIdWhenAllTargetIdFieldsHaveSameValue() {
         // given
         MultipleTargetCommand command = new MultipleTargetCommand("id-2792700", "id-2792700");
-        var message = new GenericCommandMessage<>(new MessageType(command.getClass()), command);
+        var message = new GenericCommandMessage(new MessageType(command.getClass()), command);
 
         // when
         Object result = testSubject.resolve(message, StubProcessingContext.forMessage(message));
@@ -107,7 +107,7 @@ class AnnotationBasedEntityIdResolverTest {
     void throwsNoEntityIdFoundInPayloadWhenNoTargetAnnotationPresent() {
         // given
         NoTargetCommand command = new NoTargetCommand();
-        GenericCommandMessage<NoTargetCommand> commandMessage = new GenericCommandMessage<>(
+        GenericCommandMessage commandMessage = new GenericCommandMessage(
                 new MessageType(command.getClass()), command
         );
 

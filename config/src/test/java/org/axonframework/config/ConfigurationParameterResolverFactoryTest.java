@@ -73,7 +73,7 @@ class ConfigurationParameterResolverFactoryTest {
     @Test
     void configurationContainsRequestedParameter() {
         ParameterResolver<?> actual = testSubject.createInstance(method, parameters, 1);
-        Message<String> testMessage = new GenericMessage<>(new MessageType("message"), "test");
+        Message testMessage = new GenericMessage(new MessageType("message"), "test");
 
         assertNotNull(actual);
         assertSame(commandBus, actual.resolveParameterValue(StubProcessingContext.forMessage(testMessage)));

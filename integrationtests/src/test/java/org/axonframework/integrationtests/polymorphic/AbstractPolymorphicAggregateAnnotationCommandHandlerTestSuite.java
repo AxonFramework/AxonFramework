@@ -233,13 +233,13 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
     }
 
     private void assertAggregateState(String aggregateId, String expectedState) {
-        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         uow.attachTransaction(transactionManager);
         String state = uow.executeWithResult((ctx) -> {
             AtomicReference<String> rv = new AtomicReference<>();
             repository.load(aggregateId).execute(a -> rv.set(a.getState()));
             return rv.get();
-        }).payload();
+        }).payloadAs(String.class);
         assertEquals(expectedState, state);
     }
 

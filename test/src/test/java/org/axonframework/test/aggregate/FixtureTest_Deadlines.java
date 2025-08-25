@@ -307,12 +307,11 @@ class FixtureTest_Deadlines {
                .expectTriggeredDeadlines("fakeDeadlineDetails");
     }
 
-    @SuppressWarnings("unchecked")
-    public static <P> DeadlineMessage<P> asDeadlineMessage(String deadlineName,
-                                                           Object payload,
-                                                           Instant expiryTime) {
-        return new GenericDeadlineMessage<>(
-                deadlineName, new GenericMessage<>(new MessageType(payload.getClass()), (P) payload), () -> expiryTime
+    public static DeadlineMessage asDeadlineMessage(String deadlineName,
+                                                    Object payload,
+                                                    Instant expiryTime) {
+        return new GenericDeadlineMessage(
+                deadlineName, new GenericMessage(new MessageType(payload.getClass()), payload), () -> expiryTime
         );
     }
 

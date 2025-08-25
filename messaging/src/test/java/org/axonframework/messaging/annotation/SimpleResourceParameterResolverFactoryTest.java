@@ -67,7 +67,6 @@ class SimpleResourceParameterResolverFactoryTest {
     public void someMessageHandlingMethodWithResourceOfDifferentType(Message message, Integer resourceOfDifferentType) {
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void resolvesToResourceWhenMessageHandlingMethodHasResourceParameter() {
         ParameterResolver resolver =
@@ -76,7 +75,6 @@ class SimpleResourceParameterResolverFactoryTest {
         assertEquals(TEST_RESOURCE, resolver.resolveParameterValue(context));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void resolvesToResourceWhenMessageHandlingMethodHasAnotherResourceParameter() {
         ParameterResolver resolver =

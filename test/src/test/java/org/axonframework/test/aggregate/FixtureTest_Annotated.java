@@ -86,9 +86,9 @@ class FixtureTest_Annotated {
                .andGiven(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
                .andGivenCommands(new TestCommand("AggregateId"))
                .when(new TestCommand("AggregateId"))
-               .expectEventsMatching(new TypeSafeMatcher<List<EventMessage<?>>>() {
+               .expectEventsMatching(new TypeSafeMatcher<List<EventMessage>>() {
                    @Override
-                   protected boolean matchesSafely(List<EventMessage<?>> item) {
+                   protected boolean matchesSafely(List<EventMessage> item) {
                        return item.stream().allMatch(i -> Instant.EPOCH.equals(i.timestamp()));
                    }
 
@@ -160,7 +160,7 @@ class FixtureTest_Annotated {
         DomainEventStream events = fixture.getEventStore().readEvents("AggregateId");
         for (int t = 0; t < 3; t++) {
             assertTrue(events.hasNext());
-            DomainEventMessage<?> next = events.next();
+            DomainEventMessage next = events.next();
             assertEquals("AggregateId", next.getAggregateIdentifier());
             assertEquals(t, next.getSequenceNumber());
         }
@@ -214,11 +214,11 @@ class FixtureTest_Annotated {
 
     @Test
     void fixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
-        DomainEventMessage<StubDomainEvent> testEventOne = new GenericDomainEventMessage<>(
+        DomainEventMessage testEventOne = new GenericDomainEventMessage(
                 "test", UUID.randomUUID().toString(), 0, new MessageType("event"),
                 new StubDomainEvent()
         );
-        DomainEventMessage<StubDomainEvent> testEventTwo = new GenericDomainEventMessage<>(
+        DomainEventMessage testEventTwo = new GenericDomainEventMessage(
                 "test", UUID.randomUUID().toString(), 0, new MessageType("event"),
                 new StubDomainEvent()
         );
@@ -229,10 +229,10 @@ class FixtureTest_Annotated {
     @Test
     void fixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
-        DomainEventMessage<StubDomainEvent> testEventOne = new GenericDomainEventMessage<>(
+        DomainEventMessage testEventOne = new GenericDomainEventMessage(
                 "test", identifier, 0, new MessageType("event"), new StubDomainEvent()
         );
-        DomainEventMessage<StubDomainEvent> testEventTwo = new GenericDomainEventMessage<>(
+        DomainEventMessage testEventTwo = new GenericDomainEventMessage(
                 "test", identifier, 2, new MessageType("event"), new StubDomainEvent()
         );
 

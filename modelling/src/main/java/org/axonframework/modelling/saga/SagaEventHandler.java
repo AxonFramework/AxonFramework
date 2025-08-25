@@ -29,7 +29,7 @@ import java.lang.annotation.*;
  * The parameters of the annotated method are resolved using parameter resolvers.
  * <p>
  * Axon provides a number of parameter resolvers that allow you to use the following parameter types:<ul> <li>The first
- * parameter is always the payload of the Event message</li> <li>Parameters annotated with {@code @MetaDataValue} will
+ * parameter is always the payload of the Event Message <li>Parameters annotated with {@code @MetaDataValue} will
  * resolve to the Meta Data value with the key as indicated on the annotation. If required is false (default), null is
  * passed when the meta data value is not present. If required is true, the resolver will not match and prevent the
  * method from being invoked when the meta data value is not present.</li> <li>Parameters of type {@link MetaData} will

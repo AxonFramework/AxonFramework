@@ -26,9 +26,9 @@ import java.util.Iterator;
  * @since 3.0.3
  */
 public class IteratorBackedDomainEventStream implements DomainEventStream {
-    private final Iterator<? extends DomainEventMessage<?>> iterator;
+    private final Iterator<? extends DomainEventMessage> iterator;
     private boolean hasPeeked;
-    private DomainEventMessage<?> peekEvent;
+    private DomainEventMessage peekEvent;
     private Long sequenceNumber;
 
     /**
@@ -36,12 +36,12 @@ public class IteratorBackedDomainEventStream implements DomainEventStream {
      *
      * @param iterator The iterator providing the messages to stream
      */
-    public IteratorBackedDomainEventStream(Iterator<? extends DomainEventMessage<?>> iterator) {
+    public IteratorBackedDomainEventStream(Iterator<? extends DomainEventMessage> iterator) {
         this.iterator = iterator;
     }
 
     @Override
-    public DomainEventMessage<?> peek() {
+    public DomainEventMessage peek() {
         if (!hasPeeked) {
             peekEvent = readNext();
             hasPeeked = true;
@@ -55,18 +55,18 @@ public class IteratorBackedDomainEventStream implements DomainEventStream {
     }
 
     @Override
-    public DomainEventMessage<?> next() {
+    public DomainEventMessage next() {
         if (!hasPeeked) {
             return readNext();
         }
-        DomainEventMessage<?> result = peekEvent;
+        DomainEventMessage result = peekEvent;
         peekEvent = null;
         hasPeeked = false;
         return result;
     }
 
-    private DomainEventMessage<?> readNext() {
-        DomainEventMessage<?> next = iterator.next();
+    private DomainEventMessage readNext() {
+        DomainEventMessage next = iterator.next();
         this.sequenceNumber = next.getSequenceNumber();
         return next;
     }

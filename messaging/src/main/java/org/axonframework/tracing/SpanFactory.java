@@ -74,7 +74,7 @@ public interface SpanFactory {
      *                      addition to the original.
      * @return The created {@link Span}.
      */
-    default Span createLinkedHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage, Message<?>... linkedParents) {
+    default Span createLinkedHandlerSpan(Supplier<String> operationNameSupplier, Message parentMessage, Message... linkedParents) {
         return createHandlerSpan(operationNameSupplier, parentMessage, false, linkedParents);
     }
 
@@ -93,7 +93,7 @@ public interface SpanFactory {
      *                      addition to the original.
      * @return The created {@link Span}.
      */
-    default Span createChildHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage, Message<?>... linkedParents) {
+    default Span createChildHandlerSpan(Supplier<String> operationNameSupplier, Message parentMessage, Message... linkedParents) {
         return createHandlerSpan(operationNameSupplier, parentMessage, true, linkedParents);
     }
 
@@ -115,8 +115,8 @@ public interface SpanFactory {
      *                      addition to the original.
      * @return The created {@link Span}.
      */
-    Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage, boolean isChildTrace,
-                           Message<?>... linkedParents);
+    Span createHandlerSpan(Supplier<String> operationNameSupplier, Message parentMessage, boolean isChildTrace,
+                           Message... linkedParents);
 
     /**
      * Creates a new {@link Span} linked to dispatching a {@link Message}, for example when sending a command to Axon
@@ -136,7 +136,7 @@ public interface SpanFactory {
      * @param linkedSiblings Optional parameter, providing this will link the provided messages to the current.
      * @return The created {@link Span}.
      */
-    Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage, Message<?>... linkedSiblings);
+    Span createDispatchSpan(Supplier<String> operationNameSupplier, Message parentMessage, Message... linkedSiblings);
 
     /**
      * Creates a new {@link Span} linked to the currently active span. This is useful for tracing different parts of
@@ -161,7 +161,7 @@ public interface SpanFactory {
      * @param operationNameSupplier Supplier of the operation's name.
      * @return The created {@link Span}.
      */
-    Span createInternalSpan(Supplier<String> operationNameSupplier, Message<?> message);
+    Span createInternalSpan(Supplier<String> operationNameSupplier, Message message);
 
 
     /**
@@ -183,5 +183,5 @@ public interface SpanFactory {
      * @param <M>     The message's type.
      * @return The enhanced message.
      */
-    <M extends Message<?>> M propagateContext(M message);
+    <M extends Message> M propagateContext(M message);
 }

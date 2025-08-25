@@ -33,7 +33,7 @@ import jakarta.annotation.Nonnull;
 public class PayloadTypeSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message<?> message) {
+    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message message) {
         return Collections.singletonMap("axon_payload_type", message.payloadType().getName());
     }
 }

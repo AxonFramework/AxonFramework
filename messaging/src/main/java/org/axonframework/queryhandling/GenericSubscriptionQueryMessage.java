@@ -41,7 +41,7 @@ import java.util.Map;
  * @since 3.3.0
  */
 public class GenericSubscriptionQueryMessage<P, I, U>
-        extends GenericQueryMessage<P, I>
+        extends GenericQueryMessage
         implements SubscriptionQueryMessage<P, I, U> {
 
     private final ResponseType<U> updateResponseType;
@@ -88,7 +88,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      * @param updateResponseType The expected {@link ResponseType type} of incremental updates for this
      *                           {@link SubscriptionQueryMessage}.
      */
-    public GenericSubscriptionQueryMessage(@Nonnull Message<P> delegate,
+    public GenericSubscriptionQueryMessage(@Nonnull Message delegate,
                                            @Nonnull ResponseType<I> responseType,
                                            @Nonnull ResponseType<U> updateResponseType) {
         super(delegate, responseType);
@@ -105,7 +105,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     @Nonnull
     public SubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryMessage<>(delegate().withMetaData(metaData),
-                                                     responseType(),
+                                                     (ResponseType<I>)responseType(),
                                                      updateResponseType);
     }
 
@@ -113,24 +113,23 @@ public class GenericSubscriptionQueryMessage<P, I, U>
     @Nonnull
     public SubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
         return new GenericSubscriptionQueryMessage<>(delegate().andMetaData(metaData),
-                                                     responseType(),
+                                                     (ResponseType<I>)responseType(),
                                                      updateResponseType);
     }
 
     @Override
     @Nonnull
-    public <T> SubscriptionQueryMessage<T, I, U> withConvertedPayload(@Nonnull Type type,
-                                                                      @Nonnull Converter converter) {
-        T convertedPayload = payloadAs(type, converter);
+    public SubscriptionQueryMessage<?, I, U> withConvertedPayload(@Nonnull Type type,
+                                                                  @Nonnull Converter converter) {
+        Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
-            //noinspection unchecked
-            return (SubscriptionQueryMessage<T, I, U>) this;
+            return this;
         }
-        Message<P> delegate = delegate();
-        Message<T> converted = new GenericMessage<>(delegate.identifier(),
+        Message delegate = delegate();
+        Message converted = new GenericMessage(delegate.identifier(),
                                                     delegate.type(),
                                                     convertedPayload,
                                                     delegate.metaData());
-        return new GenericSubscriptionQueryMessage<>(converted, responseType(), updatesResponseType());
+        return new GenericSubscriptionQueryMessage<>(converted, (ResponseType<I>)responseType(), updatesResponseType());
     }
 }

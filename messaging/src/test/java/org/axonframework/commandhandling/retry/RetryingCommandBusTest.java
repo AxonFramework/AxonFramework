@@ -61,29 +61,29 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldReturnSuccessResultImmediately() throws ExecutionException, InterruptedException {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "Test");
-        Message<Object> result = new GenericMessage<>(TEST_RESULT_TYPE, "OK");
+        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "Test");
+        Message result = new GenericMessage(TEST_RESULT_TYPE, "OK");
         when(delegate.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(result));
 
         ProcessingContext processingContext = mock();
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(testCommand, processingContext);
+        CompletableFuture<? extends Message> actual = testSubject.dispatch(testCommand, processingContext);
 
         assertSame(result, actual.get());
     }
 
     @Test
     void shouldDelegateToRetrySchedulerOnFailure() throws ExecutionException, InterruptedException {
-        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "Test");
-        Message<Object> successResult = new GenericMessage<>(TEST_RESULT_TYPE, "OK");
+        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "Test");
+        Message successResult = new GenericMessage(TEST_RESULT_TYPE, "OK");
         when(delegate.dispatch(any(), any()))
                 .thenAnswer(i -> CompletableFuture.failedFuture(new MockException("Simulating failure")));
         when(retryScheduler.scheduleRetry(any(), any(), any(), any()))
                 .thenAnswer(i -> MessageStream.just(successResult));
 
         ProcessingContext processingContext = mock();
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(testCommand, processingContext);
+        CompletableFuture<? extends Message> actual = testSubject.dispatch(testCommand, processingContext);
 
-        ArgumentCaptor<RetryScheduler.Dispatcher<CommandMessage<?>, Message<?>>> dispatcherCaptor =
+        ArgumentCaptor<RetryScheduler.Dispatcher<CommandMessage, Message>> dispatcherCaptor =
                 ArgumentCaptor.forClass(RetryScheduler.Dispatcher.class);
         verify(retryScheduler).scheduleRetry(eq(testCommand),
                                              eq(processingContext),
@@ -101,7 +101,7 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldReturnedFailureIfRetrySchedulerReturnsFailure() {
-        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "Test");
+        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "Test");
         when(delegate.dispatch(any(), any()))
                 .thenAnswer(i -> CompletableFuture.failedFuture(new MockException("Simulating failure")));
         when(retryScheduler.scheduleRetry(any(),
@@ -111,9 +111,9 @@ class RetryingCommandBusTest {
                 "Simulating failure")));
 
         ProcessingContext processingContext = mock();
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(testCommand, processingContext);
+        CompletableFuture<? extends Message> actual = testSubject.dispatch(testCommand, processingContext);
 
-        ArgumentCaptor<RetryScheduler.Dispatcher<CommandMessage<?>, Message<?>>> dispatcherCaptor =
+        ArgumentCaptor<RetryScheduler.Dispatcher<CommandMessage, Message>> dispatcherCaptor =
                 ArgumentCaptor.forClass(RetryScheduler.Dispatcher.class);
         verify(retryScheduler).scheduleRetry(eq(testCommand),
                                              eq(processingContext),

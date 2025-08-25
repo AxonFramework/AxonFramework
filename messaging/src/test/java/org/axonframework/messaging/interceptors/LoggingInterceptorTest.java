@@ -46,10 +46,10 @@ class LoggingInterceptorTest {
 
     private static final MessageType TYPE = new MessageType("message");
 
-    private LoggingInterceptor<Message<?>> testSubject;
+    private LoggingInterceptor<Message> testSubject;
     private ExtendedLogger mockLogger;
     private InterceptorChain interceptorChain;
-    private LegacyUnitOfWork<Message<?>> unitOfWork;
+    private LegacyUnitOfWork<Message> unitOfWork;
     private ProcessingContext context;
 
     @BeforeEach
@@ -64,7 +64,7 @@ class LoggingInterceptorTest {
         loggerField.set(logger, mockLogger);
 
         interceptorChain = mock(InterceptorChain.class);
-        Message<StubMessage> message = new GenericMessage<>(TYPE, new StubMessage());
+        Message message = new GenericMessage(TYPE, new StubMessage());
         context = StubProcessingContext.forMessage(message);
         unitOfWork = new LegacyDefaultUnitOfWork<>(message);
     }
@@ -147,7 +147,7 @@ class LoggingInterceptorTest {
     void dispatchInterceptorLogging() {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        testSubject.handle(new GenericMessage<>(TYPE, new StubMessage()));
+        testSubject.handle(new GenericMessage(TYPE, new StubMessage()));
 
         verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains(TYPE.name()));
         verifyNoMoreInteractions(mockLogger);

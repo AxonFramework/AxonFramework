@@ -61,7 +61,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @since 4.8.0
  */
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
-public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implements DeadLetterStatementFactory<E> {
+public class DefaultDeadLetterStatementFactory<E extends EventMessage> implements DeadLetterStatementFactory<E> {
 
     private final DeadLetterSchema schema;
     private final Serializer genericSerializer;
@@ -94,7 +94,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
      *            {@link PreparedStatement PreparedStatements} for.
      * @return A builder that con construct a {@link DefaultDeadLetterStatementFactory}.
      */
-    public static <E extends EventMessage<?>> Builder<E> builder() {
+    public static <E extends EventMessage> Builder<E> builder() {
         return new Builder<>();
     }
 
@@ -149,14 +149,14 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
 
     private void setDomainEventFields(PreparedStatement statement,
                                       AtomicInteger fieldIndex,
-                                      EventMessage<?> eventMessage) throws SQLException {
+                                      EventMessage eventMessage) throws SQLException {
         boolean isDomainEvent = eventMessage instanceof DomainEventMessage;
-        setDomainEventFields(statement, fieldIndex, isDomainEvent ? (DomainEventMessage<?>) eventMessage : null);
+        setDomainEventFields(statement, fieldIndex, isDomainEvent ? (DomainEventMessage) eventMessage : null);
     }
 
     private void setDomainEventFields(PreparedStatement statement,
                                       AtomicInteger fieldIndex,
-                                      DomainEventMessage<?> eventMessage) throws SQLException {
+                                      DomainEventMessage eventMessage) throws SQLException {
         statement.setString(fieldIndex.getAndIncrement(),
                             getOrDefault(eventMessage, DomainEventMessage::getType, null));
         statement.setString(fieldIndex.getAndIncrement(),
@@ -167,11 +167,11 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
 
     private void setTrackedEventFields(PreparedStatement statement,
                                        AtomicInteger fieldIndex,
-                                       EventMessage<?> eventMessage) throws SQLException {
+                                       EventMessage eventMessage) throws SQLException {
         boolean isTrackedEvent = eventMessage instanceof TrackedEventMessage;
         setTrackedEventFields(statement,
                               fieldIndex,
-                              isTrackedEvent ? ((TrackedEventMessage<?>) eventMessage).trackingToken() : null);
+                              isTrackedEvent ? ((TrackedEventMessage) eventMessage).trackingToken() : null);
     }
 
     private void setTrackedEventFields(PreparedStatement statement,
@@ -428,7 +428,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
      * @param <E> An implementation of {@link EventMessage} within the {@link DeadLetter} this factory constructs
      *            {@link PreparedStatement PreparedStatements} for.
      */
-    protected static class Builder<E extends EventMessage<?>> {
+    protected static class Builder<E extends EventMessage> {
 
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
         private Serializer genericSerializer;

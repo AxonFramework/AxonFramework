@@ -48,7 +48,7 @@ public interface MessageHandlerInterceptorMemberChain<T> {
      * @throws Exception Any exception thrown by the handler or any of the interceptors.
      */
     @Deprecated
-    Object handleSync(@Nonnull Message<?> message,
+    Object handleSync(@Nonnull Message message,
                       @Nonnull ProcessingContext context,
                       @Nonnull T target,
                       @Nonnull MessageHandlingMember<? super T> handler
@@ -56,7 +56,7 @@ public interface MessageHandlerInterceptorMemberChain<T> {
 
 
     @Deprecated
-    default Object handleSync(@Nonnull Message<?> message,
+    default Object handleSync(@Nonnull Message message,
                               @Nonnull T target,
                               @Nonnull MessageHandlingMember<? super T> handler
     ) throws Exception {
@@ -64,13 +64,13 @@ public interface MessageHandlerInterceptorMemberChain<T> {
         return handleSync(message, processingContext, target, handler);
     }
 
-    default MessageStream<?> handle(@Nonnull Message<?> message,
+    default MessageStream<?> handle(@Nonnull Message message,
                                     @Nonnull ProcessingContext context,
                                     @Nonnull T target,
                                     @Nonnull MessageHandlingMember<? super T> handler) {
         try {
             Object result = handleSync(message, context, target, handler);
-            return MessageStream.just(new GenericMessage<>(new MessageType(result.getClass()), result));
+            return MessageStream.just(new GenericMessage(new MessageType(result.getClass()), result));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }

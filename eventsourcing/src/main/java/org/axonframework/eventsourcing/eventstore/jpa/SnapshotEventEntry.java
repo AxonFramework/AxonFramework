@@ -41,7 +41,7 @@ public class SnapshotEventEntry extends AbstractSnapshotEventEntry<byte[]> {
      * @param eventMessage The snapshot event message to convert to a serialized event entry
      * @param serializer   The serializer to convert the snapshot event
      */
-    public SnapshotEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
+    public SnapshotEventEntry(DomainEventMessage eventMessage, Serializer serializer) {
         super(eventMessage, serializer, byte[].class);
     }
 

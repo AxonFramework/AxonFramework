@@ -41,7 +41,7 @@ import static org.axonframework.test.saga.DescriptionUtils.describe;
 public class CommandValidator {
 
     private final FieldFilter fieldFilter;
-    private final Supplier<List<CommandMessage<?>>> dispatchedCommands;
+    private final Supplier<List<CommandMessage>> dispatchedCommands;
     private final Runnable clearRecordedCommands;
 
     /**
@@ -55,7 +55,7 @@ public class CommandValidator {
     }
 
     public CommandValidator(
-            Supplier<List<CommandMessage<?>>> dispatchedCommands,
+            Supplier<List<CommandMessage>> dispatchedCommands,
             Runnable clearRecordedCommands,
             FieldFilter fieldFilter
     ) {
@@ -77,22 +77,22 @@ public class CommandValidator {
      * @param expected The commands expected to have been published on the bus
      */
     public void assertDispatchedEqualTo(Object... expected) {
-        List<CommandMessage<?>> actual = dispatchedCommands.get();
+        List<CommandMessage> actual = dispatchedCommands.get();
         if (actual.size() != expected.length) {
             throw new AxonAssertionError(
                     "Got wrong number of commands dispatched.\n"
                             + "Expected <" + expected.length + ">,\n but got <" + actual.size() + ">."
             );
         }
-        Iterator<CommandMessage<?>> actualIterator = actual.iterator();
+        Iterator<CommandMessage> actualIterator = actual.iterator();
         Iterator<Object> expectedIterator = Arrays.asList(expected).iterator();
 
         int counter = 0;
         while (actualIterator.hasNext()) {
-            CommandMessage<?> actualItem = actualIterator.next();
+            CommandMessage actualItem = actualIterator.next();
             Object expectedItem = expectedIterator.next();
             if (expectedItem instanceof CommandMessage) {
-                CommandMessage<?> expectedMessage = (CommandMessage<?>) expectedItem;
+                CommandMessage expectedMessage = (CommandMessage) expectedItem;
                 if (!expectedMessage.payloadType().equals(actualItem.payloadType())) {
                     throw new AxonAssertionError(
                             "Unexpected payload type of command at position " + counter + " (0-based).\n"

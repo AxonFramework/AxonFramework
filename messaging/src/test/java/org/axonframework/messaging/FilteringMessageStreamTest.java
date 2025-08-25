@@ -30,32 +30,32 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Steven van Beelen
  */
-class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
+class FilteringMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
+    MessageStream<Message> completedTestSubject(List<Message> messages) {
         return new FilteringMessageStream<>(MessageStream.fromIterable(messages), entry -> true);
     }
 
     @Override
-    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         return new FilteringMessageStream.Single<>(MessageStream.just(message), entry -> true);
     }
 
     @Override
-    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("ConcatenatingMessageStream doesn't support explicitly empty streams");
         return null;
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
+    MessageStream<Message> failingTestSubject(List<Message> messages, Exception failure) {
         return completedTestSubject(messages).concatWith(MessageStream.failed(failure));
     }
 
     @Override
-    Message<String> createRandomMessage() {
-        return new GenericMessage<>(new MessageType("message"),
+    Message createRandomMessage() {
+        return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
@@ -64,17 +64,17 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void advancesToFirstMatchingEntry() {
-            Message<String> first = new GenericMessage<>(new MessageType("type"), "skip");
-            Message<String> second = new GenericMessage<>(new MessageType("type"), "keep");
-            MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first, second));
-            FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate,
-                                                                                          entry -> entry.message()
-                                                                                                        .payload()
-                                                                                                        .equals("keep"));
+            Message first = new GenericMessage(new MessageType("type"), "skip");
+            Message second = new GenericMessage(new MessageType("type"), "keep");
+            MessageStream<Message> delegate = MessageStream.fromIterable(List.of(first, second));
+            FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate,
+                                                                                  entry -> entry.message()
+                                                                                                .payload()
+                                                                                                .equals("keep"));
 
-            Optional<Entry<Message<String>>> peeked = stream.peek();
-            Optional<Entry<Message<String>>> next = stream.next();
-            Optional<Entry<Message<String>>> after = stream.next();
+            Optional<Entry<Message>> peeked = stream.peek();
+            Optional<Entry<Message>> next = stream.next();
+            Optional<Entry<Message>> after = stream.next();
 
             assertThat(peeked).isPresent();
             assertThat(peeked.get().message().payload()).isEqualTo("keep");
@@ -85,22 +85,21 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void returnsEmptyForStreamWithOnlyNonMatchingElements() {
-            Message<String> first = new GenericMessage<>(new MessageType("type"), "skip1");
-            Message<String> second = new GenericMessage<>(new MessageType("type"), "skip2");
-            MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first, second));
-            FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate,
-                                                                                          entry -> entry.message()
-                                                                                                        .payload()
-                                                                                                        .startsWith(
-                                                                                                                "keep"));
+            Message first = new GenericMessage(new MessageType("type"), "skip1");
+            Message second = new GenericMessage(new MessageType("type"), "skip2");
+            MessageStream<Message> delegate = MessageStream.fromIterable(List.of(first, second));
+            FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate,
+                                                                                  entry -> entry.message()
+                                                                                                .payloadAs(String.class)
+                                                                                                .startsWith("keep"));
 
             assertThat(stream.peek()).isNotPresent();
         }
 
         @Test
         void returnsEmptyForEmptyStream() {
-            MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of());
-            FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate, entry -> true);
+            MessageStream<Message> delegate = MessageStream.fromIterable(List.of());
+            FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate, entry -> true);
             assertThat(stream.peek()).isNotPresent();
         }
     }
@@ -110,56 +109,54 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void skipsFilteredOutEntriesAndReturnsOnlyMatching() {
-            Message<String> first = new GenericMessage<>(new MessageType("type"), "skip1");
-            Message<String> second = new GenericMessage<>(new MessageType("type"), "keep1");
-            Message<String> third = new GenericMessage<>(new MessageType("type"), "skip2");
-            Message<String> fourth = new GenericMessage<>(new MessageType("type"), "keep2");
-            MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first, second, third, fourth));
-            FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate,
-                                                                                          entry -> entry.message()
-                                                                                                        .payload()
-                                                                                                        .startsWith(
-                                                                                                                "keep"));
+            Message first = new GenericMessage(new MessageType("type"), "skip1");
+            Message second = new GenericMessage(new MessageType("type"), "keep1");
+            Message third = new GenericMessage(new MessageType("type"), "skip2");
+            Message fourth = new GenericMessage(new MessageType("type"), "keep2");
+            MessageStream<Message> delegate = MessageStream.fromIterable(List.of(first, second, third, fourth));
+            FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate,
+                                                                                  entry -> entry.message()
+                                                                                                .payloadAs(String.class)
+                                                                                                .startsWith("keep"));
 
-            Optional<Entry<Message<String>>> firstMatch = stream.next();
+            Optional<Entry<Message>> firstMatch = stream.next();
             assertThat(firstMatch).isPresent();
             assertThat(firstMatch.get().message().payload()).isEqualTo("keep1");
 
-            Optional<Entry<Message<String>>> secondMatch = stream.next();
+            Optional<Entry<Message>> secondMatch = stream.next();
             assertThat(secondMatch).isPresent();
             assertThat(secondMatch.get().message().payload()).isEqualTo("keep2");
 
-            Optional<Entry<Message<String>>> after = stream.next();
+            Optional<Entry<Message>> after = stream.next();
             assertThat(after).isNotPresent();
         }
 
         @Test
         void returnsEmptyForStreamWithOnlyNonMatchingElements() {
-            Message<String> first = new GenericMessage<>(new MessageType("type"), "skip1");
-            Message<String> second = new GenericMessage<>(new MessageType("type"), "skip2");
-            MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first, second));
-            FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate,
-                                                                                          entry -> entry.message()
-                                                                                                        .payload()
-                                                                                                        .startsWith(
-                                                                                                                "keep"));
+            Message first = new GenericMessage(new MessageType("type"), "skip1");
+            Message second = new GenericMessage(new MessageType("type"), "skip2");
+            MessageStream<Message> delegate = MessageStream.fromIterable(List.of(first, second));
+            FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate,
+                                                                                  entry -> entry.message()
+                                                                                                .payloadAs(String.class)
+                                                                                                .startsWith("keep"));
 
             assertThat(stream.next()).isNotPresent();
         }
 
         @Test
         void returnsEmptyForEmptyStream() {
-            MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of());
-            FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate, entry -> true);
+            MessageStream<Message> delegate = MessageStream.fromIterable(List.of());
+            FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate, entry -> true);
             assertThat(stream.next()).isNotPresent();
         }
 
         @Test
         void returnsAllEntriesIfAllMatch() {
-            Message<String> first = new GenericMessage<>(new MessageType("type"), "keep1");
-            Message<String> second = new GenericMessage<>(new MessageType("type"), "keep2");
-            MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first, second));
-            FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate, entry -> true);
+            Message first = new GenericMessage(new MessageType("type"), "keep1");
+            Message second = new GenericMessage(new MessageType("type"), "keep2");
+            MessageStream<Message> delegate = MessageStream.fromIterable(List.of(first, second));
+            FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate, entry -> true);
 
             assertThat(stream.next()).isPresent();
             assertThat(stream.next()).isPresent();
@@ -172,24 +169,24 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         @Test
         void returnsTrueIfMatchingEntryAvailable() {
-            Message<String> first = new GenericMessage<>(new MessageType("type"), "keep");
-            MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first));
-            FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate, entry -> true);
+            Message first = new GenericMessage(new MessageType("type"), "keep");
+            MessageStream<Message> delegate = MessageStream.fromIterable(List.of(first));
+            FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate, entry -> true);
             assertThat(stream.hasNextAvailable()).isTrue();
         }
 
         @Test
         void returnsFalseIfNoMatchingEntryAvailable() {
-            Message<String> first = new GenericMessage<>(new MessageType("type"), "skip");
-            MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first));
-            FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate, entry -> false);
+            Message first = new GenericMessage(new MessageType("type"), "skip");
+            MessageStream<Message> delegate = MessageStream.fromIterable(List.of(first));
+            FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate, entry -> false);
             assertThat(stream.hasNextAvailable()).isFalse();
         }
 
         @Test
         void returnsFalseForEmptyStream() {
-            MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of());
-            FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate, entry -> true);
+            MessageStream<Message> delegate = MessageStream.fromIterable(List.of());
+            FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate, entry -> true);
             assertThat(stream.hasNextAvailable()).isFalse();
         }
     }
@@ -200,16 +197,16 @@ class FilteringMessageStreamTest extends MessageStreamTest<Message<String>> {
         @Test
         void propagatesErrorFromDelegate() {
             Exception failure = new RuntimeException("fail");
-            MessageStream<Message<String>> delegate = MessageStream.failed(failure);
-            FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate, entry -> true);
+            MessageStream<Message> delegate = MessageStream.failed(failure);
+            FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate, entry -> true);
             assertThat(stream.error()).contains(failure);
         }
 
         @Test
         void isCompletedReflectsDelegateAndPeeked() {
-            Message<String> first = new GenericMessage<>(new MessageType("type"), "keep");
-            MessageStream<Message<String>> delegate = MessageStream.fromIterable(List.of(first));
-            FilteringMessageStream<Message<String>> stream = new FilteringMessageStream<>(delegate, entry -> true);
+            Message first = new GenericMessage(new MessageType("type"), "keep");
+            MessageStream<Message> delegate = MessageStream.fromIterable(List.of(first));
+            FilteringMessageStream<Message> stream = new FilteringMessageStream<>(delegate, entry -> true);
             assertThat(stream.isCompleted()).isFalse();
             stream.next();
             assertThat(stream.isCompleted()).isTrue();

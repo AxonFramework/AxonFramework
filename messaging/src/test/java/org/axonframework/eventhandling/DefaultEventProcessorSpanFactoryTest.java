@@ -67,7 +67,7 @@ class DefaultEventProcessorSpanFactoryTest extends
 
     @Test
     void createHandleEventSpanWithDefaultsForNonStreaming() {
-        EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
+        EventMessage eventMessage = Mockito.mock(EventMessage.class);
         test(
                 factory -> factory.createProcessEventSpan(false, eventMessage),
                 expectedSpan("EventProcessor.process", TestSpanFactory.TestSpanType.HANDLER_CHILD)
@@ -77,7 +77,7 @@ class DefaultEventProcessorSpanFactoryTest extends
 
     @Test
     void createHandleEventSpanWithDefaultsForStreaming() {
-        EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
+        EventMessage eventMessage = Mockito.mock(EventMessage.class);
         test(
                 factory -> factory.createProcessEventSpan(true, eventMessage),
                 expectedSpan("StreamingEventProcessor.process", TestSpanFactory.TestSpanType.HANDLER_CHILD)
@@ -87,7 +87,7 @@ class DefaultEventProcessorSpanFactoryTest extends
 
     @Test
     void createHandleEventSpanWithDisabledBatchSpanForNonStreaming() {
-        EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
+        EventMessage eventMessage = Mockito.mock(EventMessage.class);
         test(
                 builder -> builder.disableBatchTrace(true),
                 factory -> factory.createProcessEventSpan(false, eventMessage),
@@ -98,7 +98,7 @@ class DefaultEventProcessorSpanFactoryTest extends
 
     @Test
     void createHandleEventSpanWithDisabledBatchSpanForStreaming() {
-        EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
+        EventMessage eventMessage = Mockito.mock(EventMessage.class);
         test(
                 builder -> builder.disableBatchTrace(true),
                 factory -> factory.createProcessEventSpan(true, eventMessage),
@@ -109,7 +109,7 @@ class DefaultEventProcessorSpanFactoryTest extends
 
     @Test
     void createHandleEventSpanWithDistributedInSameTraceWithRecentMessage() {
-        EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
+        EventMessage eventMessage = Mockito.mock(EventMessage.class);
         when(eventMessage.timestamp()).thenReturn(Instant.now());
         test(
                 builder -> builder.distributedInSameTrace(true),
@@ -120,7 +120,7 @@ class DefaultEventProcessorSpanFactoryTest extends
     }
     @Test
     void createHandleEventSpanWithDistributedInSameTraceWithOldMessage() {
-        EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
+        EventMessage eventMessage = Mockito.mock(EventMessage.class);
         when(eventMessage.timestamp()).thenReturn(Instant.now().minus(Duration.ofSeconds(600)));
         test(
                 builder -> builder.distributedInSameTrace(true).distributedInSameTraceTimeLimit(Duration.ofSeconds(500)),

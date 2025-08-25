@@ -175,7 +175,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     @ConditionalOnMissingBean
     @Bean
-    public TargetContextResolver<Message<?>> targetContextResolver() {
+    public TargetContextResolver<Message> targetContextResolver() {
         return TargetContextResolver.noOp();
     }
 

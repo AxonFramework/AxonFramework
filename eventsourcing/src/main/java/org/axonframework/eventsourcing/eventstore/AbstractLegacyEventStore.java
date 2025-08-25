@@ -63,7 +63,7 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
     }
 
     @Override
-    protected void prepareCommit(List<? extends EventMessage<?>> events) {
+    protected void prepareCommit(List<? extends EventMessage> events) {
         storageEngine.appendEvents(events);
         super.prepareCommit(events);
     }
@@ -76,7 +76,7 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
      */
     @Override
     public DomainEventStream readEvents(@Nonnull String aggregateIdentifier) {
-        Optional<DomainEventMessage<?>> optionalSnapshot;
+        Optional<DomainEventMessage> optionalSnapshot;
         try {
             optionalSnapshot = storageEngine.readSnapshot(aggregateIdentifier);
         } catch (Exception | LinkageError e) {
@@ -84,7 +84,7 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
         }
         DomainEventStream eventStream;
         if (optionalSnapshot.isPresent()) {
-            DomainEventMessage<?> snapshot = optionalSnapshot.get();
+            DomainEventMessage snapshot = optionalSnapshot.get();
             eventStream = DomainEventStream.concat(DomainEventStream.of(snapshot),
                                                    storageEngine.readEvents(aggregateIdentifier,
                                                                             snapshot.getSequenceNumber() + 1));
@@ -92,7 +92,7 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
             eventStream = storageEngine.readEvents(aggregateIdentifier);
         }
 
-        Stream<? extends DomainEventMessage<?>> domainEventMessages = stagedDomainEventMessages(aggregateIdentifier);
+        Stream<? extends DomainEventMessage> domainEventMessages = stagedDomainEventMessages(aggregateIdentifier);
         return DomainEventStream.concat(eventStream, DomainEventStream.of(domainEventMessages));
     }
 
@@ -114,7 +114,7 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
      *
      * @throws RuntimeException any runtimeException to fail loading the
      */
-    protected Optional<DomainEventMessage<?>> handleSnapshotReadingError(String aggregateIdentifier, Throwable e) {
+    protected Optional<DomainEventMessage> handleSnapshotReadingError(String aggregateIdentifier, Throwable e) {
         logger.warn("Error reading snapshot for aggregate [{}]. Reconstructing from entire event stream.",
                     aggregateIdentifier, e);
         return Optional.empty();
@@ -127,10 +127,10 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
      * @param aggregateIdentifier The identifier of the aggregate to get staged events for
      * @return a Stream of DomainEventMessage of the identified aggregate
      */
-    protected Stream<? extends DomainEventMessage<?>> stagedDomainEventMessages(String aggregateIdentifier) {
+    protected Stream<? extends DomainEventMessage> stagedDomainEventMessages(String aggregateIdentifier) {
         return queuedMessages().stream()
                                .filter(m -> m instanceof DomainEventMessage)
-                               .map(m -> (DomainEventMessage<?>) m)
+                               .map(m -> (DomainEventMessage) m)
                                .filter(m -> aggregateIdentifier.equals(m.getAggregateIdentifier()));
     }
 
@@ -143,7 +143,7 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
     }
 
     @Override
-    public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
+    public void storeSnapshot(@Nonnull DomainEventMessage snapshot) {
         storageEngine.storeSnapshot(snapshot);
     }
 
@@ -196,7 +196,7 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
         protected LegacyEventStorageEngine storageEngine;
 
         @Override
-        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
             super.messageMonitor(messageMonitor);
             return this;
         }

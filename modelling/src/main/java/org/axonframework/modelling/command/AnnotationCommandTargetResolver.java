@@ -66,7 +66,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
     }
 
     @Override
-    public String resolveTarget(@Nonnull CommandMessage<?> command) {
+    public String resolveTarget(@Nonnull CommandMessage command) {
         Object aggregateIdentifier;
         try {
             aggregateIdentifier = findIdentifier(command);
@@ -90,13 +90,13 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         return aggregateIdentifier.toString();
     }
 
-    private Object findIdentifier(Message<?> command) throws InvocationTargetException, IllegalAccessException {
+    private Object findIdentifier(Message command) throws InvocationTargetException, IllegalAccessException {
         return invokeAnnotated(command, identifierAnnotation);
     }
 
     @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
     private static Object invokeAnnotated(
-            Message<?> command, Class<? extends Annotation> annotation
+            Message command, Class<? extends Annotation> annotation
     ) throws InvocationTargetException, IllegalAccessException {
         for (Method m : methodsOf(command.payloadType())) {
             if (AnnotationUtils.isAnnotationPresent(m, annotation)) {

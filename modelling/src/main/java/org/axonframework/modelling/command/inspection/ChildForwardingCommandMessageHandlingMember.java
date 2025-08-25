@@ -44,7 +44,7 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
 
     private final List<MessageHandlingMember<? super C>> childHandlingInterceptors;
     private final MessageHandlingMember<? super C> childHandler;
-    private final BiFunction<CommandMessage<?>, P, C> childEntityResolver;
+    private final BiFunction<CommandMessage, P, C> childEntityResolver;
     private final String commandName;
     private final boolean isFactoryHandler;
 
@@ -59,7 +59,7 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
      */
     public ChildForwardingCommandMessageHandlingMember(List<MessageHandlingMember<? super C>> childHandlerInterceptors,
                                                        MessageHandlingMember<? super C> childHandler,
-                                                       BiFunction<CommandMessage<?>, P, C> childEntityResolver) {
+                                                       BiFunction<CommandMessage, P, C> childEntityResolver) {
         this.childHandlingInterceptors = childHandlerInterceptors;
         this.childHandler = childHandler;
         this.childEntityResolver = childEntityResolver;
@@ -96,12 +96,12 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
     }
 
     @Override
-    public boolean canForward(CommandMessage<?> message, P target) {
+    public boolean canForward(CommandMessage message, P target) {
         return childEntityResolver.apply(message, target) != null;
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+    public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
         return childHandler.canHandle(message, context);
     }
 
@@ -112,8 +112,8 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
     }
 
     @Override
-    public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable P target) throws Exception {
-        C childEntity = childEntityResolver.apply((CommandMessage<?>) message, target);
+    public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable P target) throws Exception {
+        C childEntity = childEntityResolver.apply((CommandMessage) message, target);
         if (childEntity == null) {
             throw new ChildEntityNotFoundException(
                     "Aggregate cannot handle command [" + message.type()

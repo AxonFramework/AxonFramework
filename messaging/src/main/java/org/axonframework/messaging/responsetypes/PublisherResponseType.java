@@ -47,6 +47,10 @@ public class PublisherResponseType<R> extends AbstractResponseType<Publisher<R>>
     public static final int PUBLISHER_MATCH = 2048;
     private final ResponseType<?> multipleInstanceResponseType;
 
+    public static <R> ResponseType<Publisher<R>> of(Class<R> expectedResponseType) {
+        return new PublisherResponseType<>(expectedResponseType);
+    }
+
     /**
      * Instantiate a {@link PublisherResponseType} with the given
      * {@code expectedResponseType} as the type to be matched against and to which the query response should be
@@ -54,7 +58,7 @@ public class PublisherResponseType<R> extends AbstractResponseType<Publisher<R>>
      *
      * @param expectedResponseType the response type which is expected to be matched against and returned
      */
-    public PublisherResponseType(Class<?> expectedResponseType) {
+    public PublisherResponseType(Class<R> expectedResponseType) {
         super(expectedResponseType);
         multipleInstanceResponseType = new MultipleInstancesResponseType<>(expectedResponseType);
     }

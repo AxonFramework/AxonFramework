@@ -47,9 +47,9 @@ import static java.util.Objects.requireNonNull;
 public class InterceptingCommandBus implements CommandBus {
 
     private final CommandBus delegate;
-    private final LinkedList<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors;
-    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
-    private final BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<CommandResultMessage<?>>> dispatcher;
+    private final LinkedList<MessageHandlerInterceptor<? super CommandMessage>> handlerInterceptors;
+    private final List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors;
+    private final BiFunction<CommandMessage, ProcessingContext, MessageStream<CommandResultMessage<?>>> dispatcher;
 
     /**
      * Constructs a {@code InterceptingCommandBus}, delegating dispatching and handling logic to the given
@@ -63,8 +63,8 @@ public class InterceptingCommandBus implements CommandBus {
      */
     public InterceptingCommandBus(
             @Nonnull CommandBus delegate,
-            @Nonnull List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors,
-            @Nonnull List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
+            @Nonnull List<MessageHandlerInterceptor<? super CommandMessage>> handlerInterceptors,
+            @Nonnull List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors
     ) {
         this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
         this.handlerInterceptors = new LinkedList<>(
@@ -74,9 +74,9 @@ public class InterceptingCommandBus implements CommandBus {
                 requireNonNull(dispatchInterceptors, "The dispatch interceptors must not be null.")
         );
 
-        Iterator<MessageDispatchInterceptor<? super CommandMessage<?>>> di =
+        Iterator<MessageDispatchInterceptor<? super CommandMessage>> di =
                 new LinkedList<>(dispatchInterceptors).descendingIterator();
-        BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<CommandResultMessage<?>>> dis =
+        BiFunction<CommandMessage, ProcessingContext, MessageStream<CommandResultMessage<?>>> dis =
                 (c, p) -> MessageStream.fromFuture(delegate.dispatch(c, p));
         while (di.hasNext()) {
             dis = new Dispatcher(di.next(), dis);
@@ -88,7 +88,7 @@ public class InterceptingCommandBus implements CommandBus {
     public InterceptingCommandBus subscribe(@Nonnull QualifiedName name,
                                             @Nonnull CommandHandler commandHandler) {
         CommandHandler handler = requireNonNull(commandHandler, "The command handler cannot be null.");
-        Iterator<MessageHandlerInterceptor<? super CommandMessage<?>>> iter = handlerInterceptors.descendingIterator();
+        Iterator<MessageHandlerInterceptor<? super CommandMessage>> iter = handlerInterceptors.descendingIterator();
         CommandHandler interceptedHandler = handler;
         while (iter.hasNext()) {
             interceptedHandler = new InterceptedHandler(iter.next(), interceptedHandler);
@@ -98,7 +98,7 @@ public class InterceptingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                @Nullable ProcessingContext processingContext) {
         return dispatcher.apply(requireNonNull(command, "The command message cannot be null."), processingContext)
                          .first()
@@ -114,13 +114,13 @@ public class InterceptingCommandBus implements CommandBus {
     }
 
     private record InterceptedHandler(
-            MessageHandlerInterceptor<? super CommandMessage<?>> interceptor,
+            MessageHandlerInterceptor<? super CommandMessage> interceptor,
             CommandHandler next
-    ) implements CommandHandler, InterceptorChain<CommandMessage<?>, CommandResultMessage<?>> {
+    ) implements CommandHandler, InterceptorChain<CommandMessage, CommandResultMessage<?>> {
 
         @Nonnull
         @Override
-        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage message,
                                                                     @Nonnull ProcessingContext processingContext) {
             try {
                 return interceptor.interceptOnHandle(message, processingContext, this)
@@ -136,20 +136,20 @@ public class InterceptingCommandBus implements CommandBus {
         }
 
         @Override
-        public MessageStream<CommandResultMessage<?>> proceed(@Nonnull CommandMessage<?> message,
+        public MessageStream<CommandResultMessage<?>> proceed(@Nonnull CommandMessage message,
                                                               @Nonnull ProcessingContext context) {
             return next.handle(message, context);
         }
     }
 
     private record Dispatcher(
-            MessageDispatchInterceptor<? super CommandMessage<?>> interceptor,
-            BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<CommandResultMessage<?>>> next
-    ) implements BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<CommandResultMessage<?>>>,
-            InterceptorChain<CommandMessage<?>, CommandResultMessage<?>> {
+            MessageDispatchInterceptor<? super CommandMessage> interceptor,
+            BiFunction<CommandMessage, ProcessingContext, MessageStream<CommandResultMessage<?>>> next
+    ) implements BiFunction<CommandMessage, ProcessingContext, MessageStream<CommandResultMessage<?>>>,
+            InterceptorChain<CommandMessage, CommandResultMessage<?>> {
 
         @Override
-        public MessageStream<CommandResultMessage<?>> apply(CommandMessage<?> commandMessage,
+        public MessageStream<CommandResultMessage<?>> apply(CommandMessage commandMessage,
                                                             ProcessingContext processingContext) {
             try {
                 return interceptor.interceptOnDispatch(commandMessage, processingContext, this);
@@ -164,7 +164,7 @@ public class InterceptingCommandBus implements CommandBus {
         }
 
         @Override
-        public MessageStream<CommandResultMessage<?>> proceed(@Nonnull CommandMessage<?> message,
+        public MessageStream<CommandResultMessage<?>> proceed(@Nonnull CommandMessage message,
                                                               @Nonnull ProcessingContext context) {
             return next.apply(message, context);
         }

@@ -32,7 +32,7 @@ import org.junit.jupiter.api.*;
 class InMemoryDeadLetteringIntegrationTest extends DeadLetteringEventIntegrationTest {
 
     @Override
-    protected SequencedDeadLetterQueue<EventMessage<?>> buildDeadLetterQueue() {
+    protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
         return InMemorySequencedDeadLetterQueue.defaultQueue();
     }
 }

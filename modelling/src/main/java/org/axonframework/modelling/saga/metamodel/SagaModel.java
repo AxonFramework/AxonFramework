@@ -40,7 +40,7 @@ public interface SagaModel<T> {
      * @param context The {@link ProcessingContext} in which the event is being processed.
      * @return Optional of the AssociationValue for the event, or an empty Optional if the saga doesn't handle the event
      */
-    Optional<AssociationValue> resolveAssociation(EventMessage<?> eventMessage, ProcessingContext context);
+    Optional<AssociationValue> resolveAssociation(EventMessage eventMessage, ProcessingContext context);
 
     /**
      * Returns a {@link List} of {@link MessageHandlingMember} that can handle the given event.
@@ -49,7 +49,7 @@ public interface SagaModel<T> {
      * @param context The {@link ProcessingContext} in which the event is being processed.
      * @return Event message handlers for the given {@code event}.
      */
-    List<MessageHandlingMember<? super T>> findHandlerMethods(EventMessage<?> event, ProcessingContext context);
+    List<MessageHandlingMember<? super T>> findHandlerMethods(EventMessage event, ProcessingContext context);
 
     /**
      * Indicates whether the Saga described by this model has a handler for the given {@code eventMessage}
@@ -58,7 +58,7 @@ public interface SagaModel<T> {
      * @param context The {@link ProcessingContext} in which the event is being processed.
      * @return {@code true} if there the Saga has a handler for this message, otherwise {@code false}.
      */
-    default boolean hasHandlerMethod(EventMessage<?> eventMessage, ProcessingContext context) {
+    default boolean hasHandlerMethod(EventMessage eventMessage, ProcessingContext context) {
         return !findHandlerMethods(eventMessage, context).isEmpty();
     }
 

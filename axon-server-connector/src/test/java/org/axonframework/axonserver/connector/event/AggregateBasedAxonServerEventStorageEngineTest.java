@@ -91,7 +91,7 @@ class AggregateBasedAxonServerEventStorageEngineTest extends
     }
 
     @Override
-    protected EventMessage<String> convertPayload(EventMessage<?> original) {
+    protected EventMessage convertPayload(EventMessage original) {
         return original.withConvertedPayload(String.class, converter);
     }
 }

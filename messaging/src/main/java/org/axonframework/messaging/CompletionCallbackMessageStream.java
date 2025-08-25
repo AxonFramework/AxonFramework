@@ -33,7 +33,7 @@ import java.util.function.BiFunction;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMessageStream<M, M> {
+class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessageStream<M, M> {
 
     private final MessageStream<M> delegate;
     private final Runnable completeHandler;
@@ -125,7 +125,7 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
      *
      * @param <M> The type of {@link Message} contained in the {@link Entry} of this stream.
      */
-    static class Single<M extends Message<?>> extends CompletionCallbackMessageStream<M>
+    static class Single<M extends Message> extends CompletionCallbackMessageStream<M>
             implements MessageStream.Single<M> {
 
         /**
@@ -147,7 +147,7 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
      *
      * @param <M> The type of {@link Message} for the empty {@link Entry} of this stream.
      */
-    static class Empty<M extends Message<?>> extends CompletionCallbackMessageStream<M>
+    static class Empty<M extends Message> extends CompletionCallbackMessageStream<M>
             implements MessageStream.Empty<M> {
 
         /**

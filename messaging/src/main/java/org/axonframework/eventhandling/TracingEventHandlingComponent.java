@@ -41,7 +41,7 @@ import java.util.function.Function;
 // TODO #3594 - Revise Tracing Integration (not it's based on ThreadLocals which is not appropriate for the MessageStream API)
 public class TracingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
-    private final Function<EventMessage<?>, Span> spanProvider;
+    private final Function<EventMessage, Span> spanProvider;
 
     /**
      * Constructs the component with given {@code delegate} to receive calls.
@@ -50,7 +50,7 @@ public class TracingEventHandlingComponent extends DelegatingEventHandlingCompon
      * @param spanProvider The provider of {@link Span} to track the event handling.
      */
     public TracingEventHandlingComponent(
-            @Nonnull Function<EventMessage<?>, Span> spanProvider,
+            @Nonnull Function<EventMessage, Span> spanProvider,
             @Nonnull EventHandlingComponent delegate
     ) {
         super(delegate);
@@ -59,8 +59,8 @@ public class TracingEventHandlingComponent extends DelegatingEventHandlingCompon
 
     @Nonnull
     @Override
-    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
-                                                     @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
+                                               @Nonnull ProcessingContext context) {
         Span span = spanProvider.apply(event);
         span.start();
         try (SpanScope ignored = span.makeCurrent()) { // works as long as the MessageStream doesn't change threads

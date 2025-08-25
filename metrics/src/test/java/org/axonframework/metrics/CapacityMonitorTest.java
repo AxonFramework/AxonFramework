@@ -51,9 +51,9 @@ class CapacityMonitorTest {
     void multithreadedCapacity() {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
-        EventMessage<Object> foo = asEventMessage("foo");
-        EventMessage<Object> bar = asEventMessage("bar");
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+        EventMessage foo = asEventMessage("foo");
+        EventMessage bar = asEventMessage("bar");
+        Map<? super Message, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(foo, bar));
         testClock.increase(1000);
         callbacks.get(foo).reportSuccess();
@@ -73,7 +73,7 @@ class CapacityMonitorTest {
         assertEquals(0, capacityGauge.getValue(), 0);
     }
 
-    private static EventMessage<Object> asEventMessage(String payload) {
-        return new GenericEventMessage<>(new MessageType("event"), payload);
+    private static EventMessage asEventMessage(String payload) {
+        return new GenericEventMessage(new MessageType("event"), payload);
     }
 }

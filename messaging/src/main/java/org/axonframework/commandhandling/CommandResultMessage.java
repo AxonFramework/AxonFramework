@@ -31,7 +31,7 @@ import java.util.Map;
  * @author Milan Savic
  * @since 4.0.0
  */
-public interface CommandResultMessage<R> extends ResultMessage<R> {
+public interface CommandResultMessage<R> extends ResultMessage {
 
     @Override
     @Nonnull
@@ -43,18 +43,18 @@ public interface CommandResultMessage<R> extends ResultMessage<R> {
 
     @Override
     @Nonnull
-    default <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+    default CommandResultMessage<?> withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
     @Nonnull
-    default <T> CommandResultMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type,
-                                                             @Nonnull Converter converter) {
+    default CommandResultMessage<?> withConvertedPayload(@Nonnull TypeReference<?> type,
+                                                         @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @Nonnull
-    <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    CommandResultMessage<?> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

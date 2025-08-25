@@ -71,7 +71,7 @@ class MethodQueryMessageHandlerDefinitionTest {
         QueryHandlingMember<MethodQueryMessageHandlerDefinitionTest> handler = messageHandler("optionalReturnType");
         assertEquals(String.class, handler.getResultType());
 
-        GenericQueryMessage<String, String> message = new GenericQueryMessage<>(
+        GenericQueryMessage message = new GenericQueryMessage(
                 new MessageType(String.class), "mock", ResponseTypes.instanceOf(String.class)
         );
 
@@ -105,13 +105,13 @@ class MethodQueryMessageHandlerDefinitionTest {
     private static MessageStream<?> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?> future) {
             return MessageStream.fromFuture(future.thenApply(
-                    r -> new GenericMessage<>(new MessageType(r.getClass()), r)
+                    r -> new GenericMessage(new MessageType(r.getClass()), r)
             ));
         }
         if (result instanceof MessageStream<?> stream) {
             return stream;
         }
-        return MessageStream.just(new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
+        return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
 
     private <R> QueryHandlingMember<R> messageHandler(String methodName) {

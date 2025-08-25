@@ -54,7 +54,7 @@ class PayloadAssociationResolverTest {
     }
 
     private void testResolveOnce() {
-        EventMessage<?> eventMessage = asEventMessage(new TestEvent(TEST_PROPERTY_VALUE));
+        EventMessage eventMessage = asEventMessage(new TestEvent(TEST_PROPERTY_VALUE));
         Object result = testSubject.resolve(TEST_PROPERTY_NAME, eventMessage, handlingMember);
         assertEquals(TEST_PROPERTY_VALUE, result);
     }
@@ -86,7 +86,7 @@ class PayloadAssociationResolverTest {
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable Object target) {
+        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable Object target) {
             return null;
         }
 
@@ -96,7 +96,7 @@ class PayloadAssociationResolverTest {
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
             return true;
         }
     }

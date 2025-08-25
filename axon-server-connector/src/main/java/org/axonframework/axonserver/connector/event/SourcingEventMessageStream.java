@@ -51,7 +51,7 @@ import java.util.Optional;
  * @since 5.0.0
  */
 @Internal
-public class SourcingEventMessageStream implements MessageStream<EventMessage<?>> {
+public class SourcingEventMessageStream implements MessageStream<EventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -73,7 +73,7 @@ public class SourcingEventMessageStream implements MessageStream<EventMessage<?>
     }
 
     @Override
-    public Optional<Entry<EventMessage<?>>> next() {
+    public Optional<Entry<EventMessage>> next() {
         SourceEventsResponse next = stream.nextIfAvailable();
         if (next == null) {
             logger.debug("Reached the end of the source result stream.");
@@ -85,14 +85,14 @@ public class SourcingEventMessageStream implements MessageStream<EventMessage<?>
         return convertToEventEntry(next.getEvent());
     }
 
-    private Optional<Entry<EventMessage<?>>> convertToEventEntry(SequencedEvent event) {
-        EventMessage<byte[]> eventMessage = converter.convertEvent(event.getEvent());
+    private Optional<Entry<EventMessage>> convertToEventEntry(SequencedEvent event) {
+        EventMessage eventMessage = converter.convertEvent(event.getEvent());
         TrackingToken token = new GlobalSequenceTrackingToken(event.getSequence() + 1);
         Context context = Context.with(TrackingToken.RESOURCE_KEY, token);
         return Optional.of(new SimpleEntry<>(eventMessage, context));
     }
 
-    private static Optional<Entry<EventMessage<?>>> convertToMarkerEntry(long marker) {
+    private static Optional<Entry<EventMessage>> convertToMarkerEntry(long marker) {
         Context context = ConsistencyMarker.addToContext(
                 Context.empty(), new GlobalIndexConsistencyMarker(marker)
         );
@@ -100,7 +100,7 @@ public class SourcingEventMessageStream implements MessageStream<EventMessage<?>
     }
 
     @Override
-    public Optional<Entry<EventMessage<?>>> peek() {
+    public Optional<Entry<EventMessage>> peek() {
         SourceEventsResponse peeked = stream.peek();
         if (peeked == null) {
             logger.debug("Peeked the end of the source result stream.");

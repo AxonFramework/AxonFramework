@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
  * @param <M> The {@link Message} implementation under test.
  * @author Steven van Beelen
  */
-public abstract class MessageTestSuite<M extends Message<?>> {
+public abstract class MessageTestSuite<M extends Message> {
 
     protected static final String TEST_IDENTIFIER = "testIdentifier";
     protected static final MessageType TEST_TYPE = new MessageType("message");
@@ -300,7 +300,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
 
         M testSubject = buildDefaultMessage();
 
-        Message<?> result = testSubject.andMetaData(newMetaData);
+        Message result = testSubject.andMetaData(newMetaData);
 
         assertThat(testSubject.payload()).isEqualTo(result.payload());
         assertThat(expectedMetaData).isEqualTo(result.metaData());
@@ -312,7 +312,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
 
         M testSubject = buildDefaultMessage();
 
-        Message<?> result = testSubject.withMetaData(newMetaData);
+        Message result = testSubject.withMetaData(newMetaData);
 
         assertThat(testSubject.payload()).isEqualTo(result.payload());
         assertThat(newMetaData).isEqualTo(result.metaData());
@@ -329,7 +329,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     void withConvertedPayloadForClassReturnsNewMessageInstanceWithConvertedPayload() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
-        Message<byte[]> result = testSubject.withConvertedPayload(byte[].class, CONVERTER);
+        Message result = testSubject.withConvertedPayload(byte[].class, CONVERTER);
 
         assertThat(testSubject.identifier()).isEqualTo(result.identifier());
         assertThat(testSubject.type()).isEqualTo(result.type());
@@ -351,7 +351,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     void withConvertedPayloadForTypeReferenceReturnsNewMessageInstanceWithConvertedPayload() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
-        Message<byte[]> result = testSubject.withConvertedPayload(BYTE_ARRAY_TYPE_REF, CONVERTER);
+        Message result = testSubject.withConvertedPayload(BYTE_ARRAY_TYPE_REF, CONVERTER);
 
         assertThat(testSubject.identifier()).isEqualTo(result.identifier());
         assertThat(testSubject.type()).isEqualTo(result.type());
@@ -373,7 +373,7 @@ public abstract class MessageTestSuite<M extends Message<?>> {
     void withConvertedPayloadForTypeReturnsNewMessageInstanceWithConvertedPayload() {
         M testSubject = buildMessage(STRING_PAYLOAD);
 
-        Message<byte[]> result = testSubject.withConvertedPayload((Type) byte[].class, CONVERTER);
+        Message result = testSubject.withConvertedPayload((Type) byte[].class, CONVERTER);
 
         assertThat(testSubject.identifier()).isEqualTo(result.identifier());
         assertThat(testSubject.type()).isEqualTo(result.type());

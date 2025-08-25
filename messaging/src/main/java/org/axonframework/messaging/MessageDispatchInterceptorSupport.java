@@ -31,7 +31,7 @@ import jakarta.annotation.Nonnull;
  * @param <T> The type of Message the interceptor works with
  * @see MessageHandlerInterceptor
  */
-public interface MessageDispatchInterceptorSupport<T extends Message<?>> {
+public interface MessageDispatchInterceptorSupport<T extends Message> {
 
     /**
      * Register the given DispatchInterceptor. After registration, the interceptor will be invoked for each Message

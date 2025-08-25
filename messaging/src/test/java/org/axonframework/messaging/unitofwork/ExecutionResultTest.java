@@ -30,7 +30,7 @@ class ExecutionResultTest {
     @Test
     void normalExecutionResult() {
         Object resultPayload = new Object();
-        ResultMessage<Object> result = asResultMessage(resultPayload);
+        ResultMessage result = asResultMessage(resultPayload);
         ExecutionResult subject = new ExecutionResult(result);
         assertSame(result, subject.getResult());
         assertFalse(subject.isExceptionResult());
@@ -40,7 +40,7 @@ class ExecutionResultTest {
     @Test
     void uncheckedExceptionResult() {
         RuntimeException mockException = new RuntimeException();
-        ResultMessage<RuntimeException> resultMessage = asResultMessage(mockException);
+        ResultMessage resultMessage = asResultMessage(mockException);
         ExecutionResult subject = new ExecutionResult(resultMessage);
         assertTrue(subject.isExceptionResult());
         assertSame(mockException, subject.getExceptionResult());
@@ -50,7 +50,7 @@ class ExecutionResultTest {
     @Test
     void checkedExceptionResult() {
         Exception mockException = new Exception();
-        ResultMessage<Exception> resultMessage = asResultMessage(mockException);
+        ResultMessage resultMessage = asResultMessage(mockException);
         ExecutionResult subject = new ExecutionResult(resultMessage);
         assertTrue(subject.isExceptionResult());
         assertSame(mockException, subject.getExceptionResult());

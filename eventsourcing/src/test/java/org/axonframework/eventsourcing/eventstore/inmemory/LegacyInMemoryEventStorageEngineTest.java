@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class LegacyInMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
-    private static final EventMessage<Object> TEST_EVENT = EventTestUtils.asEventMessage("test");
+    private static final EventMessage TEST_EVENT = EventTestUtils.asEventMessage("test");
 
     private LegacyInMemoryEventStorageEngine testSubject;
 
@@ -49,7 +49,7 @@ class LegacyInMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
     @Test
     void publishedEventsEmittedToExistingStreams() {
-        Stream<? extends TrackedEventMessage<?>> stream = testSubject.readEvents(null, true);
+        Stream<? extends TrackedEventMessage> stream = testSubject.readEvents(null, true);
         testSubject.appendEvents(TEST_EVENT);
 
         assertTrue(stream.findFirst().isPresent());
@@ -58,10 +58,10 @@ class LegacyInMemoryEventStorageEngineTest extends EventStorageEngineTest {
     @Test
     void publishedEventsEmittedToExistingStreams_WithOffset() {
         testSubject = new LegacyInMemoryEventStorageEngine(1);
-        Stream<? extends TrackedEventMessage<?>> stream = testSubject.readEvents(null, true);
+        Stream<? extends TrackedEventMessage> stream = testSubject.readEvents(null, true);
         testSubject.appendEvents(TEST_EVENT);
 
-        Optional<? extends TrackedEventMessage<?>> optionalResult = stream.findFirst();
+        Optional<? extends TrackedEventMessage> optionalResult = stream.findFirst();
         assertTrue(optionalResult.isPresent());
         OptionalLong optionalResultPosition = optionalResult.get().trackingToken().position();
         assertTrue(optionalResultPosition.isPresent());
@@ -70,13 +70,13 @@ class LegacyInMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
     @Test
     void eventsAreStoredOnCommitIfCurrentUnitOfWorkIsActive() {
-        LegacyUnitOfWork<EventMessage<Object>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(TEST_EVENT);
+        LegacyUnitOfWork<EventMessage> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(TEST_EVENT);
 
         // when _only_ publishing...
         testSubject.appendEvents(TEST_EVENT);
 
         // then there are no events in the storage engine, since the UnitOfWork is not committed yet.
-        Stream<? extends TrackedEventMessage<?>> eventStream = testSubject.readEvents(null, true);
+        Stream<? extends TrackedEventMessage> eventStream = testSubject.readEvents(null, true);
         assertEquals(0L, eventStream.count());
 
         // When rolling back the UnitOfWork...
@@ -89,13 +89,13 @@ class LegacyInMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
     @Test
     void eventsAreNotStoredWhenTheUnitOfWorkIsRolledBackIfCurrentUnitOfWorkIsActive() {
-        LegacyUnitOfWork<EventMessage<Object>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(TEST_EVENT);
+        LegacyUnitOfWork<EventMessage> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(TEST_EVENT);
 
         // when _only_ publishing...
         testSubject.appendEvents(TEST_EVENT);
 
         // then there are no events in the storage engine, since the UnitOfWork is not committed yet.
-        Stream<? extends TrackedEventMessage<?>> eventStream = testSubject.readEvents(null, true);
+        Stream<? extends TrackedEventMessage> eventStream = testSubject.readEvents(null, true);
         assertEquals(0L, eventStream.count());
 
         // When rolling back the UnitOfWork...

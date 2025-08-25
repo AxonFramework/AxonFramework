@@ -45,5 +45,5 @@ public interface EntityIdResolver<ID> {
      * @return The id of the entity.
      */
     @Nonnull
-    ID resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context);
+    ID resolve(@Nonnull Message message, @Nonnull ProcessingContext context);
 }

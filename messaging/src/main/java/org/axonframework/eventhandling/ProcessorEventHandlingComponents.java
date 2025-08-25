@@ -26,7 +26,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 /**
@@ -80,11 +79,11 @@ public class ProcessorEventHandlingComponents {
      * @return A stream of messages resulting from the processing of the event messages.
      */
     @Nonnull
-    public MessageStream.Empty<Message<Void>> handle(
-            @Nonnull List<? extends EventMessage<?>> events,
+    public MessageStream.Empty<Message> handle(
+            @Nonnull List<? extends EventMessage> events,
             @Nonnull ProcessingContext context
     ) {
-        MessageStream<Message<Void>> batchResult = MessageStream.empty().cast();
+        MessageStream<Message> batchResult = MessageStream.empty().cast();
         for (var event : events) {
             var eventResult = handle(event, context);
             batchResult = batchResult.concatWith(eventResult.cast());
@@ -94,11 +93,11 @@ public class ProcessorEventHandlingComponents {
     }
 
     @Nonnull
-    private MessageStream.Empty<Message<Void>> handle(
-            @Nonnull EventMessage<?> event,
+    private MessageStream.Empty<Message> handle(
+            @Nonnull EventMessage event,
             @Nonnull ProcessingContext context
     ) {
-        MessageStream<Message<Void>> result = MessageStream.empty();
+        MessageStream<Message> result = MessageStream.empty();
         for (var component : components) {
             if (component.supports(event.type().qualifiedName())) {
                 var componentResult = component.handle(event, context);
@@ -138,7 +137,7 @@ public class ProcessorEventHandlingComponents {
      * @param context The processing context in which the sequence identifiers are evaluated. Must not be null.
      * @return A set of sequence identifiers associated with the given event and context.
      */
-    public Set<Object> sequenceIdentifiersFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    public Set<Object> sequenceIdentifiersFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return components.stream()
                          .map(c -> c.sequenceIdentifierFor(event, context))
                          .collect(Collectors.toSet());

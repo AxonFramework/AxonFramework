@@ -64,7 +64,7 @@ public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinitio
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, T target)
+        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, T target)
                 throws Exception {
             if (!hasRequiredRoles(message)) {
                 throw new UnauthorizedMessageException(
@@ -74,7 +74,7 @@ public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinitio
             return super.handleSync(message, context, target);
         }
 
-        private boolean hasRequiredRoles(@Nonnull Message<?> message) {
+        private boolean hasRequiredRoles(@Nonnull Message message) {
             Set<String> authorities = new HashSet<>();
             if (message.metaData().containsKey("authorities")) {
                 authorities.addAll(Arrays.asList(message.metaData().get("authorities").split(",")));

@@ -27,35 +27,34 @@ import java.util.Map;
 /**
  * A {@link Message} initiating the reset of an Event Handling Component.
  * <p>
- * A payload of {@code P} can be provided to support the reset operation handling this message.
+ * A payload can be provided to support the reset operation handling this message.
  *
- * @param <P> The type of {@link #payload() payload} contained in this {@link Message}.
  * @author Steven van Beelen
  * @since 4.4.0
  */
-public interface ResetContext<P> extends Message<P> {
+public interface ResetContext extends Message {
 
     @Override
     @Nonnull
-    ResetContext<P> withMetaData(@Nonnull Map<String, String> metaData);
+    ResetContext withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     @Nonnull
-    ResetContext<P> andMetaData(@Nonnull Map<String, String> metaData);
+    ResetContext andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     @Nonnull
-    default <T> ResetContext<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+    default ResetContext withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
     @Nonnull
-    default <T> ResetContext<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+    default ResetContext withConvertedPayload(@Nonnull TypeReference<?> type, @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @Nonnull
-    <T> ResetContext<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    ResetContext withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

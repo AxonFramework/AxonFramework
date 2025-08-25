@@ -31,34 +31,34 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
+class EmptyMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message<Void>> completedTestSubject(List<Message<Void>> messages) {
+    MessageStream<Message> completedTestSubject(List<Message> messages) {
         Assumptions.assumeTrue(messages.isEmpty(), "EmptyMessageStream doesn't support content");
         return MessageStream.empty();
     }
 
     @Override
-    MessageStream.Single<Message<Void>> completedSingleStreamTestSubject(Message<Void> message) {
+    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         Assumptions.abort("EmptyMessageStream doesn't support content");
         return null;
     }
 
     @Override
-    MessageStream.Empty<Message<Void>> completedEmptyStreamTestSubject() {
+    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         return MessageStream.empty();
     }
 
     @Override
-    MessageStream<Message<Void>> failingTestSubject(List<Message<Void>> messages,
+    MessageStream<Message> failingTestSubject(List<Message> messages,
                                                     Exception failure) {
         Assumptions.abort("EmptyMessageStream doesn't support failed streams");
         return MessageStream.empty();
     }
 
     @Override
-    Message<Void> createRandomMessage() {
+    Message createRandomMessage() {
         Assumptions.abort("EmptyMessageStream doesn't support content");
         return null;
     }
@@ -67,7 +67,7 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
     void doesNothingOnErrorContinue() {
         AtomicBoolean invoked = new AtomicBoolean(false);
 
-        CompletableFuture<Entry<Message<Void>>> result = MessageStream.empty()
+        CompletableFuture<Entry<Message>> result = MessageStream.empty()
                                                                       .onErrorContinue(e -> {
                                                                           invoked.set(true);
                                                                           return MessageStream.empty();

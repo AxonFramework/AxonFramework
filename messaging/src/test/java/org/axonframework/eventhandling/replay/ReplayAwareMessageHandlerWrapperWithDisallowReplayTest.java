@@ -62,9 +62,9 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
 
     @Test
     void invokeWithReplayTokens() throws Exception {
-        GenericTrackedEventMessage<Object> stringEvent = new GenericTrackedEventMessage<>(replayToken,
+        GenericTrackedEventMessage stringEvent = new GenericTrackedEventMessage(replayToken,
                                                                                           asEventMessage("1"));
-        GenericTrackedEventMessage<Object> longEvent = new GenericTrackedEventMessage<>(replayToken,
+        GenericTrackedEventMessage longEvent = new GenericTrackedEventMessage(replayToken,
                                                                                         asEventMessage(1L));
         ProcessingContext stringContext = StubProcessingContext.forMessage(stringEvent);
         ProcessingContext longContext = StubProcessingContext.forMessage(longEvent);

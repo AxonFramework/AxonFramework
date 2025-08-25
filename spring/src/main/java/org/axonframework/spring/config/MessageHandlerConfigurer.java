@@ -100,12 +100,12 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
          */
         QUERY(QueryMessage.class);
 
-        private final Class<? extends Message<?>> messageType;
+        private final Class<? extends Message> messageType;
 
         // Suppressed to allow instantiation of enumeration.
         @SuppressWarnings({"rawtypes", "unchecked"})
         Type(Class<? extends Message> messageType) {
-            this.messageType = (Class<? extends Message<?>>) messageType;
+            this.messageType = (Class<? extends Message>) messageType;
         }
 
         /**
@@ -113,7 +113,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
          *
          * @return The supported {@link Message} implementation.
          */
-        public Class<? extends Message<?>> getMessageType() {
+        public Class<? extends Message> getMessageType() {
             return messageType;
         }
     }

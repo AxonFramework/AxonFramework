@@ -38,5 +38,5 @@ public interface DeadlineConsumer {
      * @param deadlineMessage the {@link DeadlineMessage} to be handled
      * @throws Exception in case something goes wrong while consuming the {@code deadlineMessage}
      */
-    void consume(ScopeDescriptor deadlineScope, DeadlineMessage<?> deadlineMessage) throws Exception;
+    void consume(ScopeDescriptor deadlineScope, DeadlineMessage deadlineMessage) throws Exception;
 }

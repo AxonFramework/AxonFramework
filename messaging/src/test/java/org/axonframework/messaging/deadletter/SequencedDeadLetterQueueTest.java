@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @param <M> The {@link DeadLetter} implementation enqueued by this test class.
  * @author Steven van Beelen
  */
-public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
+public abstract class SequencedDeadLetterQueueTest<M extends Message> {
 
     private SequencedDeadLetterQueue<M> testSubject;
 
@@ -914,7 +914,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message<?>> {
      *
      * @return A unique {@link EventMessage} to serves as the {@link DeadLetter#message()} contents.
      */
-    protected static EventMessage<String> generateEvent() {
+    protected static EventMessage generateEvent() {
         return EventTestUtils.asEventMessage("Then this happened..." + UUID.randomUUID());
     }
 

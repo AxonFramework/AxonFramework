@@ -44,7 +44,7 @@ class GenericAggregateFactoryTest {
     void initializeRepository_ConstructorNotCallable() {
         GenericAggregateFactory<ExceptionThrowingAggregate> factory =
                 new GenericAggregateFactory<>(ExceptionThrowingAggregate.class);
-        DomainEventMessage<Object> testEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "type", "", 0, new MessageType("event"), new Object()
         );
         try {
@@ -58,7 +58,7 @@ class GenericAggregateFactoryTest {
     @Test
     void initializeFromAggregateSnapshot() {
         StubAggregate aggregate = new StubAggregate("stubId");
-        DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>(
+        DomainEventMessage snapshotMessage = new GenericDomainEventMessage(
                 "type", aggregate.getIdentifier(), 2, new MessageType("event"), aggregate
         );
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<>(StubAggregate.class);
@@ -71,7 +71,7 @@ class GenericAggregateFactoryTest {
     @Test
     void initializeFromAggregateSnapshot_AvoidCallingDoCreateAggregate() {
         StubAggregate aggregate = new StubAggregate("stubId");
-        DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>(
+        DomainEventMessage snapshotMessage = new GenericDomainEventMessage(
                 "type", aggregate.getIdentifier(), 2, new MessageType("event"), aggregate
         );
         AggregateFactory<StubAggregate> factory = new RogueAggregateFactory(StubAggregate.class);

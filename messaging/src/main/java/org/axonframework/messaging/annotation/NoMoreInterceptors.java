@@ -42,7 +42,7 @@ public class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberCha
     }
 
     @Override
-    public Object handleSync(@Nonnull Message<?> message,
+    public Object handleSync(@Nonnull Message message,
                              @Nonnull ProcessingContext context,
                              @Nonnull T target,
                              @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
@@ -50,7 +50,7 @@ public class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberCha
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message<?> message,
+    public MessageStream<?> handle(@Nonnull Message message,
                                    @Nonnull ProcessingContext context,
                                    @Nonnull T target,
                                    @Nonnull MessageHandlingMember<? super T> handler) {

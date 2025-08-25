@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MessageMonitorFactoryBuilderTest {
 
-    private MessageMonitor<Message<?>> defaultMonitor = (message) -> null;
+    private MessageMonitor<Message> defaultMonitor = (message) -> null;
 
     private static class A {}
     private static class B {}
@@ -35,11 +35,11 @@ class MessageMonitorFactoryBuilderTest {
 
     @Test
     void validateRulesWithoutTypeHierarchy() {
-        MessageMonitor<Message<?>> aMonitor = (message) -> null;
-        MessageMonitor<Message<?>> bMonitor = (message) -> null;
-        MessageMonitor<Message<?>> cMonitor = (message) -> null;
+        MessageMonitor<Message> aMonitor = (message) -> null;
+        MessageMonitor<Message> bMonitor = (message) -> null;
+        MessageMonitor<Message> cMonitor = (message) -> null;
 
-        BiFunction<Class<?>, String, MessageMonitor<Message<?>>> factory = new MessageMonitorFactoryBuilder()
+        BiFunction<Class<?>, String, MessageMonitor<Message>> factory = new MessageMonitorFactoryBuilder()
                 .add((conf, type, name) -> defaultMonitor)
                 .add(A.class, (conf, type, name) -> aMonitor)
                 .add(B.class, (conf, type, name) -> bMonitor)
@@ -67,13 +67,13 @@ class MessageMonitorFactoryBuilderTest {
     private static class M extends L {}
     private static class N extends M implements I {}
 
-    private MessageMonitor<Message<?>> kMonitor = (message) -> null;
-    private MessageMonitor<Message<?>> mMonitor = (message) -> null;
-    private MessageMonitor<Message<?>> iMonitor = (message) -> null;
+    private MessageMonitor<Message> kMonitor = (message) -> null;
+    private MessageMonitor<Message> mMonitor = (message) -> null;
+    private MessageMonitor<Message> iMonitor = (message) -> null;
 
     @Test
     void validateTypeHierarchy() {
-        BiFunction<Class<?>, String, MessageMonitor<Message<?>>> factory = new MessageMonitorFactoryBuilder()
+        BiFunction<Class<?>, String, MessageMonitor<Message>> factory = new MessageMonitorFactoryBuilder()
                 .add((conf, type, name) -> defaultMonitor)
                 .add(K.class, (conf, type, name) -> kMonitor)
                 .add(M.class, (conf, type, name) -> mMonitor)
@@ -93,7 +93,7 @@ class MessageMonitorFactoryBuilderTest {
         validateTypeHierarchyResults(factory);
     }
 
-    private void validateTypeHierarchyResults(BiFunction<Class<?>, String, MessageMonitor<Message<?>>> factory) {
+    private void validateTypeHierarchyResults(BiFunction<Class<?>, String, MessageMonitor<Message>> factory) {
         // For a configured type, expect the configured monitor
         assertEquals(kMonitor, factory.apply(K.class, "any"));
         assertEquals(mMonitor, factory.apply(M.class, "any"));
@@ -110,7 +110,7 @@ class MessageMonitorFactoryBuilderTest {
 
     @Test
     void validateMultipleClassesForSameName() {
-        BiFunction<Class<?>, String, MessageMonitor<Message<?>>> factory = new MessageMonitorFactoryBuilder()
+        BiFunction<Class<?>, String, MessageMonitor<Message>> factory = new MessageMonitorFactoryBuilder()
                 .add((conf, type, name) -> defaultMonitor)
                 .add(K.class, "name", (conf, type, name) -> kMonitor)
                 .add(M.class, "name", (conf, type, name) -> mMonitor)

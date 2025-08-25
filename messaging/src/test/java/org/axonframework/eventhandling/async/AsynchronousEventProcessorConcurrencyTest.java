@@ -49,7 +49,7 @@ class AsynchronousEventProcessorConcurrencyTest {
     @Timeout(value = EventsPublisher.EVENTS_COUNT, unit = TimeUnit.MILLISECONDS)
     void handleEvents() throws InterruptedException {
         final AtomicInteger counter = new AtomicInteger();
-        Consumer<List<? extends EventMessage<?>>> processor = eventMessages -> counter.addAndGet(eventMessages.size());
+        Consumer<List<? extends EventMessage>> processor = eventMessages -> counter.addAndGet(eventMessages.size());
 
         int threadCount = 50;
         for (int i = 0; i < threadCount; i++) {
@@ -69,9 +69,9 @@ class AsynchronousEventProcessorConcurrencyTest {
 
         private static final int ITERATIONS = 10000;
         private static final int EVENTS_COUNT = ITERATIONS * 3;
-        private final Consumer<List<? extends EventMessage<?>>> processor;
+        private final Consumer<List<? extends EventMessage>> processor;
 
-        public EventsPublisher(Consumer<List<? extends EventMessage<?>>> processor) {
+        public EventsPublisher(Consumer<List<? extends EventMessage>> processor) {
             this.processor = processor;
         }
 

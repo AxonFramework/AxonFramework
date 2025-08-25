@@ -179,13 +179,13 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected List<Callable<Object>> createStorageJobs(String aggregateId, int batchSize, int batchCount) {
         return IntStream.range(0, batchCount).mapToObj(i -> (Callable<Object>) () -> {
-            EventMessage<?>[] events = createEvents(aggregateId, i * batchSize, batchSize);
+            EventMessage[] events = createEvents(aggregateId, i * batchSize, batchSize);
             executeStorageJob(events);
             return i;
         }).collect(Collectors.toList());
     }
 
-    protected EventMessage<?>[] createEvents(String aggregateId, int startSequenceNumber, int count) {
+    protected EventMessage[] createEvents(String aggregateId, int startSequenceNumber, int count) {
         return IntStream.range(startSequenceNumber, startSequenceNumber + count)
                         .mapToObj(sequenceNumber -> createDomainEvent(aggregateId, sequenceNumber))
                         .peek(event -> serializer().ifPresent(serializer -> {
@@ -194,12 +194,12 @@ public abstract class AbstractEventStoreBenchmark {
                         })).toArray(EventMessage[]::new);
     }
 
-    protected void executeStorageJob(EventMessage<?>... events) {
+    protected void executeStorageJob(EventMessage... events) {
         LegacyUnitOfWork<?> unitOfWork = new LegacyDefaultUnitOfWork<>(null);
         unitOfWork.execute((ctx) -> storeEvents(events));
     }
 
-    protected void storeEvents(EventMessage<?>... events) {
+    protected void storeEvents(EventMessage... events) {
         eventStore.publish(events);
     }
 

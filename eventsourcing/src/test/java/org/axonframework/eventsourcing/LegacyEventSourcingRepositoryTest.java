@@ -77,7 +77,7 @@ class LegacyEventSourcingRepositoryTest {
                                                                                             .build())
                                                    .build();
         unitOfWork = LegacyDefaultUnitOfWork.startAndGet(
-                new GenericMessage<>(new MessageType("message"), "test")
+                new GenericMessage(new MessageType("message"), "test")
         );
     }
 
@@ -91,10 +91,10 @@ class LegacyEventSourcingRepositoryTest {
     @Test
     void loadAndSaveAggregate() {
         String identifier = UUID.randomUUID().toString();
-        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+        DomainEventMessage event1 = new GenericDomainEventMessage(
                 "type", identifier, 1L, new MessageType("event"), "Mock contents"
         );
-        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+        DomainEventMessage event2 = new GenericDomainEventMessage(
                 "type", identifier, 2L, new MessageType("event"), "Mock contents"
         );
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2));
@@ -122,10 +122,10 @@ class LegacyEventSourcingRepositoryTest {
     @Test
     void loadAndSaveAggregateIsTracedCorrectly() {
         String identifier = UUID.randomUUID().toString();
-        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+        DomainEventMessage event1 = new GenericDomainEventMessage(
                 "type", identifier, 1L, new MessageType("event"), "Mock contents"
         );
-        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+        DomainEventMessage event2 = new GenericDomainEventMessage(
                 "type", identifier, 2L, new MessageType("event"), "Mock contents"
         );
         when(mockEventStore.readEvents(identifier)).thenAnswer(invocation -> {
@@ -156,10 +156,10 @@ class LegacyEventSourcingRepositoryTest {
     @Test
     void filterEventsByType() {
         String identifier = UUID.randomUUID().toString();
-        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+        DomainEventMessage event1 = new GenericDomainEventMessage(
                 "type", identifier, 1L, new MessageType("event"), "Mock contents"
         );
-        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+        DomainEventMessage event2 = new GenericDomainEventMessage(
                 "otherType", identifier, 1L, new MessageType("event"), "Other contents"
         );
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(event1, event2));
@@ -176,7 +176,7 @@ class LegacyEventSourcingRepositoryTest {
     void load_FirstEventIsSnapshot() {
         String identifier = UUID.randomUUID().toString();
         TestAggregate aggregate = new TestAggregate(identifier);
-        DomainEventMessage<TestAggregate> testSnapshot = new GenericDomainEventMessage<>(
+        DomainEventMessage testSnapshot = new GenericDomainEventMessage(
                 "type", identifier, 10, new MessageType("snapshot"), aggregate
         );
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(testSnapshot));
@@ -187,13 +187,13 @@ class LegacyEventSourcingRepositoryTest {
     void loadEventsWithSnapshotter() {
         String identifier = UUID.randomUUID().toString();
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
-                new GenericDomainEventMessage<>(
+                new GenericDomainEventMessage(
                         "type", identifier, 1L, new MessageType("event"), "Mock contents"
                 ),
-                new GenericDomainEventMessage<>(
+                new GenericDomainEventMessage(
                         "type", identifier, 2L, new MessageType("event"), "Mock contents"
                 ),
-                new GenericDomainEventMessage<>(
+                new GenericDomainEventMessage(
                         "type", identifier, 3L, new MessageType("event"), "Mock contents"
                 )
         ));
@@ -248,8 +248,8 @@ class LegacyEventSourcingRepositoryTest {
     @AggregateRoot(type = "type")
     private static class TestAggregate {
 
-        private final List<EventMessage<?>> handledEvents = new ArrayList<>();
-        private final List<EventMessage<?>> liveEvents = new ArrayList<>();
+        private final List<EventMessage> handledEvents = new ArrayList<>();
+        private final List<EventMessage> liveEvents = new ArrayList<>();
 
         @AggregateIdentifier
         private String identifier;
@@ -267,19 +267,19 @@ class LegacyEventSourcingRepositoryTest {
         }
 
         @EventSourcingHandler
-        protected void handle(EventMessage<?> event) {
-            identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
+        protected void handle(EventMessage event) {
+            identifier = ((DomainEventMessage) event).getAggregateIdentifier();
             handledEvents.add(event);
             if (AggregateLifecycle.isLive()) {
                 liveEvents.add(event);
             }
         }
 
-        public List<EventMessage<?>> getHandledEvents() {
+        public List<EventMessage> getHandledEvents() {
             return handledEvents;
         }
 
-        public List<EventMessage<?>> getLiveEvents() {
+        public List<EventMessage> getLiveEvents() {
             return liveEvents;
         }
 

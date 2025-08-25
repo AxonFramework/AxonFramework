@@ -46,7 +46,7 @@ public abstract class StreamUtils {
      */
     public static <M> Stream<M> asStream(BlockingStream<M> messageStream) {
         Spliterator<M> spliterator =
-                new Spliterators.AbstractSpliterator<M>(Long.MAX_VALUE, DISTINCT | NONNULL | ORDERED) {
+                new Spliterators.AbstractSpliterator<>(Long.MAX_VALUE, DISTINCT | NONNULL | ORDERED) {
                     @Override
                     public boolean tryAdvance(Consumer<? super M> action) {
                         try {

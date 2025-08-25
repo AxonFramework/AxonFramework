@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SegmentTest {
 
-    private List<DomainEventMessage<?>> domainEventMessages;
+    private List<DomainEventMessage> domainEventMessages;
 
     @BeforeEach
     void before() {
@@ -349,19 +349,19 @@ class SegmentTest {
         }
     }
 
-    private List<DomainEventMessage<?>> produceEvents() {
-        final ArrayList<DomainEventMessage<?>> events = new ArrayList<>();
+    private List<DomainEventMessage> produceEvents() {
+        final ArrayList<DomainEventMessage> events = new ArrayList<>();
         // Produce a set of
         for (int i = 0; i < 10000; i++) {
             String aggregateIdentifier = UUID.randomUUID().toString();
-            final DomainEventMessage<?> domainEventMessage = newStubDomainEvent(aggregateIdentifier);
+            final DomainEventMessage domainEventMessage = newStubDomainEvent(aggregateIdentifier);
             events.add(domainEventMessage);
         }
         return events;
     }
 
-    private DomainEventMessage<Object> newStubDomainEvent(Object aggregateIdentifier) {
-        return new GenericDomainEventMessage<>(
+    private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
+        return new GenericDomainEventMessage(
                 "aggregateType", aggregateIdentifier.toString(), 0L,
                 new MessageType("event"), new Object()
         );

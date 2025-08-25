@@ -33,7 +33,7 @@ import jakarta.annotation.Nonnull;
  *
  * @author Rene de Waele
  */
-public class TransactionManagingInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T> {
+public class TransactionManagingInterceptor<T extends Message> implements MessageHandlerInterceptor<T> {
 
     private final TransactionManager transactionManager;
 
@@ -57,7 +57,7 @@ public class TransactionManagingInterceptor<T extends Message<?>> implements Mes
     }
 
     @Override
-    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
+    public <M extends T, R extends Message> MessageStream<R> interceptOnHandle(@Nonnull M message,
                                                                                   @Nonnull ProcessingContext context,
                                                                                   @Nonnull InterceptorChain<M, R> interceptorChain) {
         Transaction transaction = transactionManager.startTransaction();

@@ -59,11 +59,11 @@ public abstract class AbstractEventBus implements EventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventBus.class);
 
-    private final MessageMonitor<? super EventMessage<?>> messageMonitor;
+    private final MessageMonitor<? super EventMessage> messageMonitor;
 
     private final String eventsKey = this + "_EVENTS";
-    private final Set<Consumer<List<? extends EventMessage<?>>>> eventProcessors = new CopyOnWriteArraySet<>();
-    private final Set<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
+    private final Set<Consumer<List<? extends EventMessage>>> eventProcessors = new CopyOnWriteArraySet<>();
+    private final Set<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors = new CopyOnWriteArraySet<>();
     private final EventBusSpanFactory spanFactory;
 
     /**
@@ -78,7 +78,7 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     @Override
-    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventProcessor) {
         if (this.eventProcessors.add(eventProcessor)) {
             if (logger.isDebugEnabled()) {
                 logger.debug("EventProcessor [{}] subscribed successfully", eventProcessor);
@@ -109,17 +109,17 @@ public abstract class AbstractEventBus implements EventBus {
      */
     @Override
     public Registration registerDispatchInterceptor(
-            @Nonnull MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
+            @Nonnull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     @Override
-    public void publish(@Nonnull List<? extends EventMessage<?>> events) {
-        List<? extends EventMessage<?>> eventsWithContext = events
+    public void publish(@Nonnull List<? extends EventMessage> events) {
+        List<? extends EventMessage> eventsWithContext = events
                 .stream()
                 .map(e -> spanFactory.createPublishEventSpan(e)
-                                     .runSupplier(() -> spanFactory.propagateContext((EventMessage<?>)e)))
+                                     .runSupplier(() -> spanFactory.propagateContext(e)))
                 .collect(Collectors.toList());
         List<MessageMonitor.MonitorCallback> ingested = eventsWithContext.stream()
                                                                          .map(messageMonitor::onMessageIngested)
@@ -155,10 +155,10 @@ public abstract class AbstractEventBus implements EventBus {
         }
     }
 
-    private List<EventMessage<?>> eventsQueue(LegacyUnitOfWork<?> unitOfWork) {
+    private List<EventMessage> eventsQueue(LegacyUnitOfWork<?> unitOfWork) {
         return unitOfWork.getOrComputeResource(eventsKey, r -> {
             Span commitSpan = spanFactory.createCommitEventsSpan();
-            List<EventMessage<?>> eventQueue = new ArrayList<>();
+            List<EventMessage> eventQueue = new ArrayList<>();
 
             unitOfWork.onPrepareCommit(u -> {
                 commitSpan.start();
@@ -170,7 +170,7 @@ public abstract class AbstractEventBus implements EventBus {
                         doWithEvents(this::prepareCommit, intercept(eventQueue));
                         // Make sure events published during publication prepare commit phase are also published
                         while (processedItems < eventQueue.size()) {
-                            List<? extends EventMessage<?>> newMessages =
+                            List<? extends EventMessage> newMessages =
                                     intercept(eventQueue.subList(processedItems, eventQueue.size()));
                             processedItems = eventQueue.size();
                             doWithEvents(this::prepareCommit, newMessages);
@@ -210,23 +210,23 @@ public abstract class AbstractEventBus implements EventBus {
      *
      * @return a list of all the events staged for publication
      */
-    protected List<EventMessage<?>> queuedMessages() {
+    protected List<EventMessage> queuedMessages() {
         if (!CurrentUnitOfWork.isStarted()) {
             return Collections.emptyList();
         }
-        List<EventMessage<?>> messages = new ArrayList<>();
+        List<EventMessage> messages = new ArrayList<>();
         addStagedMessages(CurrentUnitOfWork.get(), messages);
         return messages;
     }
 
-    private void addStagedMessages(LegacyUnitOfWork<?> unitOfWork, List<EventMessage<?>> messages) {
+    private void addStagedMessages(LegacyUnitOfWork<?> unitOfWork, List<EventMessage> messages) {
         unitOfWork.parent().ifPresent(parent -> addStagedMessages(parent, messages));
         if (unitOfWork.isRolledBack()) {
             // staged messages are irrelevant if the UoW has been rolled back
             return;
         }
-        List<EventMessage<?>> stagedEvents = unitOfWork.getOrDefaultResource(eventsKey, Collections.emptyList());
-        for (EventMessage<?> stagedEvent : stagedEvents) {
+        List<EventMessage> stagedEvents = unitOfWork.getOrDefaultResource(eventsKey, Collections.emptyList());
+        for (EventMessage stagedEvent : stagedEvents) {
             if (!messages.contains(stagedEvent)) {
                 messages.add(stagedEvent);
             }
@@ -239,20 +239,20 @@ public abstract class AbstractEventBus implements EventBus {
      * @param events The original events being published
      * @return The events to actually publish
      */
-    protected List<? extends EventMessage<?>> intercept(List<? extends EventMessage<?>> events) {
-        List<EventMessage<?>> preprocessedEvents = new ArrayList<>(events);
-        for (MessageDispatchInterceptor<? super EventMessage<?>> preprocessor : dispatchInterceptors) {
-            BiFunction<Integer, ? super EventMessage<?>, ? super EventMessage<?>> function =
+    protected List<? extends EventMessage> intercept(List<? extends EventMessage> events) {
+        List<EventMessage> preprocessedEvents = new ArrayList<>(events);
+        for (MessageDispatchInterceptor<? super EventMessage> preprocessor : dispatchInterceptors) {
+            BiFunction<Integer, ? super EventMessage, ? super EventMessage> function =
                     preprocessor.handle(preprocessedEvents);
             for (int i = 0; i < preprocessedEvents.size(); i++) {
-                preprocessedEvents.set(i, (EventMessage<?>) function.apply(i, preprocessedEvents.get(i)));
+                preprocessedEvents.set(i, (EventMessage) function.apply(i, preprocessedEvents.get(i)));
             }
         }
         return preprocessedEvents;
     }
 
-    private void doWithEvents(Consumer<List<? extends EventMessage<?>>> eventsConsumer,
-                              List<? extends EventMessage<?>> events) {
+    private void doWithEvents(Consumer<List<? extends EventMessage>> eventsConsumer,
+                              List<? extends EventMessage> events) {
         eventsConsumer.accept(events);
     }
 
@@ -263,7 +263,7 @@ public abstract class AbstractEventBus implements EventBus {
      *
      * @param events Events to be published by this Event Bus
      */
-    protected void prepareCommit(List<? extends EventMessage<?>> events) {
+    protected void prepareCommit(List<? extends EventMessage> events) {
         eventProcessors.forEach(eventProcessor -> eventProcessor.accept(events));
     }
 
@@ -273,7 +273,7 @@ public abstract class AbstractEventBus implements EventBus {
      *
      * @param events Events to be published by this Event Bus
      */
-    protected void commit(List<? extends EventMessage<?>> events) {
+    protected void commit(List<? extends EventMessage> events) {
     }
 
     /**
@@ -281,7 +281,7 @@ public abstract class AbstractEventBus implements EventBus {
      *
      * @param events Events to be published by this Event Bus
      */
-    protected void afterCommit(List<? extends EventMessage<?>> events) {
+    protected void afterCommit(List<? extends EventMessage> events) {
     }
 
     /**
@@ -292,7 +292,7 @@ public abstract class AbstractEventBus implements EventBus {
      */
     public abstract static class Builder {
 
-        private MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+        private MessageMonitor<? super EventMessage> messageMonitor = NoOpMessageMonitor.INSTANCE;
         private EventBusSpanFactory spanFactory = DefaultEventBusSpanFactory
                 .builder().spanFactory(NoOpSpanFactory.INSTANCE).build();
 
@@ -303,7 +303,7 @@ public abstract class AbstractEventBus implements EventBus {
          * @param messageMonitor a {@link MessageMonitor} to monitor ingested {@link EventMessage}s
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
             assertNonNull(messageMonitor, "MessageMonitor may not be null");
             this.messageMonitor = messageMonitor;
             return this;

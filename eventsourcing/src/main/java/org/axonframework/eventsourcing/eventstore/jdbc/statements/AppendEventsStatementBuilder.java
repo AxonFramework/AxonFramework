@@ -51,7 +51,7 @@ public interface AppendEventsStatementBuilder {
     PreparedStatement build(Connection connection,
                             EventSchema schema,
                             Class<?> dataType,
-                            List<? extends EventMessage<?>> events,
+                            List<? extends EventMessage> events,
                             Serializer serializer,
                             TimestampWriter timestampWriter) throws SQLException;
 }

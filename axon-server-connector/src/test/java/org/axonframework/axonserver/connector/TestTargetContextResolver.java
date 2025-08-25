@@ -23,7 +23,7 @@ import org.axonframework.messaging.Message;
  *
  * @author Steven van Beelen
  */
-public class TestTargetContextResolver<T extends Message<?>> implements TargetContextResolver<T> {
+public class TestTargetContextResolver<T extends Message> implements TargetContextResolver<T> {
 
     public static final String BOUNDED_CONTEXT = "not-important";
 

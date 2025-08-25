@@ -249,7 +249,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     }
 
     @Override
-    protected void publish(EventMessage<?> msg) {
+    protected void publish(EventMessage msg) {
         super.publish(msg);
         snapshotTrigger.eventHandled(msg);
         if (identifierAsString() == null && isSnapshotEvent(msg)) {
@@ -267,12 +267,12 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         }
     }
 
-    private boolean isSnapshotEvent(EventMessage<?> event) {
+    private boolean isSnapshotEvent(EventMessage event) {
         return inspector.types().anyMatch(event.payloadType()::equals);
     }
 
     @Override
-    protected void publishOnEventBus(EventMessage<?> msg) {
+    protected void publishOnEventBus(EventMessage msg) {
         if (!initializing) {
             // force conversion of LazyIdentifierDomainEventMessage to Generic to release reference to Aggregate.
             super.publishOnEventBus(msg.andMetaData(Collections.emptyMap()));

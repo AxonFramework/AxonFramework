@@ -117,12 +117,12 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                            @Nonnull String deadlineName,
                            Object messageOrPayload,
                            @Nonnull ScopeDescriptor deadlineScope) {
-        DeadlineMessage<?> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
+        DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String deadlineMessageId = deadlineMessage.identifier();
         DeadlineId deadlineId = new DeadlineId(deadlineName, deadlineScope, deadlineMessageId);
         Span span = spanFactory.createScheduleSpan(deadlineName, deadlineMessageId, deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
-            DeadlineMessage<?> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
+            DeadlineMessage interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             DeadlineTask deadlineTask = new DeadlineTask(deadlineId, interceptedDeadlineMessage);
             Duration triggerDuration = Duration.between(Instant.now(), triggerDateTime);
             ScheduledFuture<?> scheduledFuture = scheduledExecutorService.schedule(
@@ -348,10 +348,10 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
     private class DeadlineTask implements Runnable {
 
         private final DeadlineId deadlineId;
-        private final DeadlineMessage<?> deadlineMessage;
+        private final DeadlineMessage deadlineMessage;
 
         private DeadlineTask(DeadlineId deadlineId,
-                             DeadlineMessage<?> deadlineMessage) {
+                             DeadlineMessage deadlineMessage) {
             this.deadlineMessage = deadlineMessage;
             this.deadlineId = deadlineId;
         }
@@ -366,7 +366,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                                    .start();
             try (SpanScope unused = span.makeCurrent()) {
                 Instant triggerInstant = GenericEventMessage.clock.instant();
-                LegacyUnitOfWork<DeadlineMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(new GenericDeadlineMessage<>(
+                LegacyUnitOfWork<DeadlineMessage> unitOfWork = new LegacyDefaultUnitOfWork<>(new GenericDeadlineMessage(
                         deadlineId.getDeadlineName(),
                         deadlineMessage,
                         () -> triggerInstant));
@@ -381,7 +381,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager {
                                                                                    deadlineId.getDeadlineScope());
                                                           return null;
                                                       });
-                ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceedSync);
+                ResultMessage resultMessage = unitOfWork.executeWithResult(chain::proceedSync);
                 if (resultMessage.isExceptional()) {
                     Throwable e = resultMessage.exceptionResult();
                     logger.error("An error occurred while triggering the deadline [{}] with identifier [{}]",

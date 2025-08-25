@@ -39,7 +39,7 @@ public interface CommandResult {
      *
      * @return The result {@link Message} within a {@code CompletableFuture} of command handling.
      */
-    CompletableFuture<? extends Message<?>> getResultMessage();
+    CompletableFuture<? extends Message> getResultMessage();
 
     /**
      * Returns the result of command handling, cast to the given {@code type}, within a {@link CompletableFuture}.
@@ -74,7 +74,7 @@ public interface CommandResult {
      * @return This command result, invoking the given {@code successHandler} when command handling resolves
      * successfully.
      */
-    default CommandResult onSuccess(@Nonnull Consumer<Message<?>> successHandler) {
+    default CommandResult onSuccess(@Nonnull Consumer<Message> successHandler) {
         requireNonNull(successHandler, "The success handler must not be null.");
         getResultMessage().whenComplete((r, e) -> {
             if (e == null) {
@@ -98,7 +98,7 @@ public interface CommandResult {
      * successfully.
      */
     default <R> CommandResult onSuccess(@Nonnull Class<R> resultType,
-                                        @Nonnull BiConsumer<R, Message<?>> successHandler) {
+                                        @Nonnull BiConsumer<R, Message> successHandler) {
         requireNonNull(resultType, "The result type must not be null.");
         requireNonNull(successHandler, "The success handler must not be null.");
         getResultMessage().whenComplete((r, e) -> {

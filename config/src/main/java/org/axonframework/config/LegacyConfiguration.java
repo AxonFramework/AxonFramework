@@ -311,7 +311,7 @@ public interface LegacyConfiguration extends LifecycleOperations {
      * @param <M>           The type of message the monitor can deal with
      * @return The monitor to be used for the described component
      */
-    <M extends Message<?>> MessageMonitor<? super M> messageMonitor(@Nonnull Class<?> componentType,
+    <M extends Message> MessageMonitor<? super M> messageMonitor(@Nonnull Class<?> componentType,
                                                                     @Nonnull String componentName);
 
     /**

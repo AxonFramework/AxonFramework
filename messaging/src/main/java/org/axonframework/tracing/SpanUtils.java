@@ -36,7 +36,7 @@ public class SpanUtils {
      * @param message The message to determine a message name for
      * @return The message's name
      */
-    public static String determineMessageName(Message<?> message) {
+    public static String determineMessageName(Message message) {
         return message.type().toString();
     }
 }

@@ -26,7 +26,7 @@ import jakarta.annotation.Nonnull;
  * @author Marijn van Zelst
  * @since 3.0
  */
-public enum NoOpMessageMonitor implements MessageMonitor<Message<?>> {
+public enum NoOpMessageMonitor implements MessageMonitor<Message> {
 
     /**
      * Singleton instance of a {@link NoOpMessageMonitor}.
@@ -45,7 +45,7 @@ public enum NoOpMessageMonitor implements MessageMonitor<Message<?>> {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message<?> message) {
+    public MonitorCallback onMessageIngested(@Nonnull Message message) {
         return NoOpMessageMonitorCallback.INSTANCE;
     }
 

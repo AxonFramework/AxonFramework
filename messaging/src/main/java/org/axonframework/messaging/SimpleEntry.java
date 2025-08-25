@@ -34,7 +34,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Context context) implements Entry<M> {
+public record SimpleEntry<M extends Message>(@Nullable M message, @Nonnull Context context) implements Entry<M> {
 
     /**
      * Construct a SimpleEntry with the given {@code message} and an empty {@link Context}.
@@ -56,7 +56,7 @@ public record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Co
     }
 
     @Override
-    public <RM extends Message<?>> Entry<RM> map(@Nonnull Function<M, RM> mapper) {
+    public <RM extends Message> Entry<RM> map(@Nonnull Function<M, RM> mapper) {
         return new SimpleEntry<>(mapper.apply(message()), context);
     }
 

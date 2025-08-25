@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
  * @author Marc Gathier
  * @since 3.1
  */
-public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, MessageHandler<QueryMessage<?, ?>, QueryResponseMessage<?>> {
+public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, MessageHandler<QueryMessage, QueryResponseMessage> {
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
@@ -108,7 +108,7 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
     }
 
     @Override
-    public Object handleSync(@Nonnull QueryMessage<?, ?> message, @Nonnull ProcessingContext context) throws Exception {
+    public Object handleSync(@Nonnull QueryMessage message, @Nonnull ProcessingContext context) throws Exception {
         MessageHandlingMember<? super T> handler =
                 model.getHandlers(target.getClass())
                      .filter(m -> m.canHandle(message, context))
@@ -120,7 +120,7 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
     }
 
     @Override
-    public boolean canHandle(@Nonnull QueryMessage<?, ?> message, @Nonnull ProcessingContext context) {
+    public boolean canHandle(@Nonnull QueryMessage message, @Nonnull ProcessingContext context) {
         return model.getHandlers(target.getClass())
                     .anyMatch(handlingMember -> handlingMember.canHandle(message, context));
     }

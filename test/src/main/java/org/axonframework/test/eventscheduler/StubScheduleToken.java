@@ -33,7 +33,7 @@ import java.util.Objects;
 public class StubScheduleToken implements ScheduleToken, Comparable<StubScheduleToken>, ScheduledItem {
 
     private final Instant scheduleTime;
-    private final EventMessage<?> event;
+    private final EventMessage event;
     private final int counter;
 
     /**
@@ -57,7 +57,7 @@ public class StubScheduleToken implements ScheduleToken, Comparable<StubSchedule
 
     @Override
     public EventMessage getEvent() {
-        return new GenericEventMessage<>(event, () -> scheduleTime);
+        return new GenericEventMessage(event, () -> scheduleTime);
     }
 
     @Override

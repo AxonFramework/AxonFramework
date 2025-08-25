@@ -43,7 +43,7 @@ public interface SnapshotTrigger {
      *
      * @param msg The message handled by the aggregate
      */
-    void eventHandled(@Nonnull EventMessage<?> msg);
+    void eventHandled(@Nonnull EventMessage msg);
 
     /**
      * Invoked when the initialization of the aggregate based on passed events is completed. Any subsequent invocation

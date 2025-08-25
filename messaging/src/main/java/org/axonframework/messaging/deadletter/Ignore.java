@@ -33,7 +33,7 @@ import java.util.Optional;
  * @author Steven van Beelen
  * @since 4.6.0
  */
-public class Ignore<M extends Message<?>> implements EnqueueDecision<M> {
+public class Ignore<M extends Message> implements EnqueueDecision<M> {
 
     @Override
     public boolean shouldEnqueue() {

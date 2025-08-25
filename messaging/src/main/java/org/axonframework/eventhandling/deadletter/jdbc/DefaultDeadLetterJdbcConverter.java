@@ -60,7 +60,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
+public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
         implements DeadLetterJdbcConverter<E, JdbcDeadLetter<E>> {
 
     private final DeadLetterSchema schema;
@@ -94,21 +94,21 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
      *            this converter converts.
      * @return A builder that con construct a {@link DefaultDeadLetterJdbcConverter}.
      */
-    public static <E extends EventMessage<?>> Builder<E> builder() {
+    public static <E extends EventMessage> Builder<E> builder() {
         return new Builder<>();
     }
 
     @Override
     public JdbcDeadLetter<E> convertToLetter(ResultSet resultSet) throws SQLException {
-        EventMessage<?> eventMessage;
-        Message<?> serializedMessage = convertToSerializedMessage(resultSet);
+        EventMessage eventMessage;
+        Message serializedMessage = convertToSerializedMessage(resultSet);
         String eventTimestampString = resultSet.getString(schema.timestampColumn());
         Supplier<Instant> timestampSupplier = () -> DateTimeUtils.parseInstant(eventTimestampString);
 
         if (resultSet.getString(schema.tokenTypeColumn()) != null) {
             TrackingToken trackingToken = convertToTrackingToken(resultSet);
             if (resultSet.getString(schema.aggregateIdentifierColumn()) != null) {
-                eventMessage = new GenericTrackedDomainEventMessage<>(
+                eventMessage = new GenericTrackedDomainEventMessage(
                         trackingToken,
                         resultSet.getString(schema.aggregateTypeColumn()),
                         resultSet.getString(schema.aggregateIdentifierColumn()),
@@ -117,10 +117,10 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
                         timestampSupplier
                 );
             } else {
-                eventMessage = new GenericTrackedEventMessage<>(trackingToken, serializedMessage, timestampSupplier);
+                eventMessage = new GenericTrackedEventMessage(trackingToken, serializedMessage, timestampSupplier);
             }
         } else if (resultSet.getString(schema.aggregateIdentifierColumn()) != null) {
-            eventMessage = new GenericDomainEventMessage<>(resultSet.getString(schema.aggregateTypeColumn()),
+            eventMessage = new GenericDomainEventMessage(resultSet.getString(schema.aggregateTypeColumn()),
                                                            resultSet.getString(schema.aggregateIdentifierColumn()),
                                                            resultSet.getLong(schema.sequenceNumberColumn()),
                                                            serializedMessage.identifier(),
@@ -129,7 +129,7 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
                                                            serializedMessage.metaData(),
                                                            timestampSupplier.get());
         } else {
-            eventMessage = new GenericEventMessage<>(serializedMessage, timestampSupplier);
+            eventMessage = new GenericEventMessage(serializedMessage, timestampSupplier);
         }
 
         String deadLetterIdentifier = resultSet.getString(schema.deadLetterIdentifierColumn());
@@ -155,10 +155,10 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
                                     (E) eventMessage);
     }
 
-    private SerializedMessage<?> convertToSerializedMessage(ResultSet resultSet) throws SQLException {
+    private SerializedMessage convertToSerializedMessage(ResultSet resultSet) throws SQLException {
         SerializedObject<byte[]> serializedPayload = convertToSerializedPayload(resultSet);
         SerializedObject<byte[]> serializedMetaData = convertToSerializedMetaData(resultSet);
-        return new SerializedMessage<>(resultSet.getString(schema.eventIdentifierColumn()),
+        return new SerializedMessage(resultSet.getString(schema.eventIdentifierColumn()),
                                        serializedPayload,
                                        serializedMetaData,
                                        eventSerializer);
@@ -206,7 +206,7 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
      * @param <E> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation
      *            this converter converts.
      */
-    protected static class Builder<E extends EventMessage<?>> {
+    protected static class Builder<E extends EventMessage> {
 
         private DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
         private Serializer genericSerializer;

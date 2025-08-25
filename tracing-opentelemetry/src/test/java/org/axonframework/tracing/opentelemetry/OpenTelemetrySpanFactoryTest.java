@@ -92,9 +92,9 @@ class OpenTelemetrySpanFactoryTest {
         GlobalOpenTelemetry.set(otelMock);
     }
 
-    private static <P> EventMessage<P> asEventMessage(P event) {
-        return new GenericEventMessage<>(
-                new GenericMessage<>(new MessageType(event.getClass()), event),
+    private static <P> EventMessage asEventMessage(P event) {
+        return new GenericEventMessage(
+                new GenericMessage(new MessageType(event.getClass()), event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -111,7 +111,7 @@ class OpenTelemetrySpanFactoryTest {
 
     @Test
     void createHandlerSpanExtractsParentContext() {
-        Message<?> message = generateMessageWithTraceId("1");
+        Message message = generateMessageWithTraceId("1");
         factory.createChildHandlerSpan(() -> "MyRootTrace", message);
 
         ArgumentCaptor<Context> parentCaptor = ArgumentCaptor.forClass(Context.class);
@@ -122,7 +122,7 @@ class OpenTelemetrySpanFactoryTest {
 
     @Test
     void createHandlerSpanAddsLinks() {
-        Message<?> message = generateMessageWithTraceId("1");
+        Message message = generateMessageWithTraceId("1");
         factory.createChildHandlerSpan(() -> "MyRootTrace",
                                        message,
                                        generateMessageWithTraceId("2"),
@@ -135,7 +135,7 @@ class OpenTelemetrySpanFactoryTest {
 
     @Test
     void createLinkedHandlerSpanExtractsLinkedContext() {
-        Message<?> message = generateMessageWithTraceId("1");
+        Message message = generateMessageWithTraceId("1");
         factory.createLinkedHandlerSpan(() -> "MyRootTrace", message);
 
         verify(spanBuilder, times(1)).addLink(any());
@@ -145,7 +145,7 @@ class OpenTelemetrySpanFactoryTest {
 
     @Test
     void createHandlerSpanAddsAttributes() {
-        Message<?> message = generateMessageWithTraceId("1");
+        Message message = generateMessageWithTraceId("1");
         when(spanAttributesProvider.provideForMessage(any())).thenReturn(Collections.singletonMap("myKey", "myValue"));
         factory.createLinkedHandlerSpan(() -> "MyRootTrace", message);
 
@@ -154,7 +154,7 @@ class OpenTelemetrySpanFactoryTest {
 
     @Test
     void createDispatchSpanAddsLinks() {
-        Message<?> message = generateMessageWithTraceId("1");
+        Message message = generateMessageWithTraceId("1");
         factory.createDispatchSpan(() -> "MyRootTrace",
                                    message,
                                    generateMessageWithTraceId("2"),
@@ -166,7 +166,7 @@ class OpenTelemetrySpanFactoryTest {
 
     @Test
     void createDispatchSpanSetsCurrentContextAsParent() {
-        Message<?> message = generateMessageWithTraceId("1");
+        Message message = generateMessageWithTraceId("1");
         factory.createDispatchSpan(() -> "MyRootTrace",
                                    message,
                                    generateMessageWithTraceId("2"),
@@ -177,7 +177,7 @@ class OpenTelemetrySpanFactoryTest {
 
     @Test
     void createDispatchSpanAddsAttributes() {
-        Message<?> message = generateMessageWithTraceId("1");
+        Message message = generateMessageWithTraceId("1");
         when(spanAttributesProvider.provideForMessage(any())).thenReturn(Collections.singletonMap("myKey", "myValue"));
         factory.createDispatchSpan(() -> "MyRootTrace", message);
 
@@ -200,7 +200,7 @@ class OpenTelemetrySpanFactoryTest {
 
     @Test
     void createInternalSpanAddsAttributes() {
-        Message<?> message = generateMessageWithTraceId("1");
+        Message message = generateMessageWithTraceId("1");
         when(spanAttributesProvider.provideForMessage(any())).thenReturn(Collections.singletonMap("myKey", "myValue"));
         factory.createInternalSpan(() -> "MyRootTrace", message);
 
@@ -210,8 +210,8 @@ class OpenTelemetrySpanFactoryTest {
 
     @Test
     void propagatesContextInjectsMetadata() {
-        EventMessage<Object> originalMessage = asEventMessage("MyEvent");
-        EventMessage<Object> modifiedMessage = factory.propagateContext(originalMessage);
+        EventMessage originalMessage = asEventMessage("MyEvent");
+        EventMessage modifiedMessage = factory.propagateContext(originalMessage);
 
         assertNotNull(modifiedMessage.metaData().get("traceparent"));
     }
@@ -240,7 +240,7 @@ class OpenTelemetrySpanFactoryTest {
         assertThrows(AxonConfigurationException.class, () -> builder.textMapSetter(null));
     }
 
-    private Message<?> generateMessageWithTraceId(String traceId) {
+    private Message generateMessageWithTraceId(String traceId) {
         return asEventMessage("MyEvent").andMetaData(Collections.singletonMap("traceparent", traceId));
     }
 }

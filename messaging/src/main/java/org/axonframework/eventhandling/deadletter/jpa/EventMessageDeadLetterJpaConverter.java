@@ -46,14 +46,13 @@ import java.util.function.Supplier;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
-public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverter<EventMessage<?>> {
+public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverter<EventMessage> {
 
-    @SuppressWarnings("rawtypes")
     @Override
-    public DeadLetterEventEntry convert(EventMessage<?> message,
+    public DeadLetterEventEntry convert(EventMessage message,
                                         Serializer eventSerializer,
                                         Serializer genericSerializer) {
-        GenericEventMessage<?> eventMessage = (GenericEventMessage<?>) message;
+        GenericEventMessage eventMessage = (GenericEventMessage) message;
         Optional<TrackedEventMessage> trackedEventMessage = Optional.of(eventMessage).filter(
                 TrackedEventMessage.class::isInstance).map(TrackedEventMessage.class::cast);
         Optional<DomainEventMessage> domainEventMessage = Optional.of(eventMessage).filter(
@@ -85,10 +84,10 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     }
 
     @Override
-    public EventMessage<?> convert(DeadLetterEventEntry entry,
+    public EventMessage convert(DeadLetterEventEntry entry,
                                    Serializer eventSerializer,
                                    Serializer genericSerializer) {
-        SerializedMessage<?> serializedMessage = new SerializedMessage<>(entry.getEventIdentifier(),
+        SerializedMessage serializedMessage = new SerializedMessage(entry.getEventIdentifier(),
                                                                          entry.getPayload(),
                                                                          entry.getMetaData(),
                                                                          eventSerializer);
@@ -96,18 +95,18 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         if (entry.getTrackingToken() != null) {
             TrackingToken trackingToken = genericSerializer.deserialize(entry.getTrackingToken());
             if (entry.getAggregateIdentifier() != null) {
-                return new GenericTrackedDomainEventMessage<>(trackingToken,
+                return new GenericTrackedDomainEventMessage(trackingToken,
                                                               entry.getAggregateType(),
                                                               entry.getAggregateIdentifier(),
                                                               entry.getSequenceNumber(),
                                                               serializedMessage,
                                                               timestampSupplier);
             } else {
-                return new GenericTrackedEventMessage<>(trackingToken, serializedMessage, timestampSupplier);
+                return new GenericTrackedEventMessage(trackingToken, serializedMessage, timestampSupplier);
             }
         }
         if (entry.getAggregateIdentifier() != null) {
-            return new GenericDomainEventMessage<>(entry.getAggregateType(),
+            return new GenericDomainEventMessage(entry.getAggregateType(),
                                                    entry.getAggregateIdentifier(),
                                                    entry.getSequenceNumber(),
                                                    serializedMessage.identifier(),
@@ -116,7 +115,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                                                    serializedMessage.metaData(),
                                                    timestampSupplier.get());
         } else {
-            return new GenericEventMessage<>(serializedMessage, timestampSupplier);
+            return new GenericEventMessage(serializedMessage, timestampSupplier);
         }
     }
 
@@ -129,7 +128,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
     }
 
     @Override
-    public boolean canConvert(EventMessage<?> message) {
+    public boolean canConvert(EventMessage message) {
         return message instanceof GenericEventMessage;
     }
 }

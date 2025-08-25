@@ -51,7 +51,7 @@ public interface AppendSnapshotStatementBuilder {
     PreparedStatement build(Connection connection,
                             EventSchema schema,
                             Class<?> dataType,
-                            DomainEventMessage<?> snapshot,
+                            DomainEventMessage snapshot,
                             Serializer serializer,
                             TimestampWriter timestampWriter) throws SQLException;
 }

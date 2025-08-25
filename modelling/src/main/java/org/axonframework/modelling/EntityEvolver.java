@@ -44,6 +44,6 @@ public interface EntityEvolver<E> {
      * happened.
      */
     E evolve(@Nonnull E entity,
-             @Nonnull EventMessage<?> event,
+             @Nonnull EventMessage event,
              @Nonnull ProcessingContext context);
 }

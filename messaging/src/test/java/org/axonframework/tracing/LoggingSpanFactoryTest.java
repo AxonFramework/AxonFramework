@@ -32,8 +32,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class LoggingSpanFactoryTest {
 
-    private static final EventMessage<String> TEST_EVENT =
-            new GenericEventMessage<>(new MessageType("event"), "payload");
+    private static final EventMessage TEST_EVENT =
+            new GenericEventMessage(new MessageType("event"), "payload");
     private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
 
     @Test
@@ -68,8 +68,8 @@ class LoggingSpanFactoryTest {
 
     @Test
     void propagateContextReturnsOriginal() {
-        EventMessage<String> message = TEST_EVENT;
-        EventMessage<String> result = NoOpSpanFactory.INSTANCE.propagateContext(message);
+        EventMessage message = TEST_EVENT;
+        EventMessage result = NoOpSpanFactory.INSTANCE.propagateContext(message);
         assertSame(message, result);
     }
 
@@ -85,8 +85,8 @@ class LoggingSpanFactoryTest {
 
     @Test
     void internalSpanCanBeStartedAndEndedWithUnitOfWorkActive() {
-        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "My command");
-        LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = new LegacyDefaultUnitOfWork<>(command);
+        CommandMessage command = new GenericCommandMessage(TEST_COMMAND_TYPE, "My command");
+        LegacyDefaultUnitOfWork<CommandMessage> uow = new LegacyDefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {
             Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace");
@@ -119,7 +119,7 @@ class LoggingSpanFactoryTest {
 
     @Test
     void dispatchSpanCanBeStartedAndEnded() {
-        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "My command");
+        CommandMessage command = new GenericCommandMessage(TEST_COMMAND_TYPE, "My command");
         assertDoesNotThrow(() -> {
             Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", command);
             trace.start()
@@ -130,8 +130,8 @@ class LoggingSpanFactoryTest {
 
     @Test
     void dispatchSpanCanBeStartedAndEndedWhileUnitOfWorkActive() {
-        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "My command");
-        LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = new LegacyDefaultUnitOfWork<>(command);
+        CommandMessage command = new GenericCommandMessage(TEST_COMMAND_TYPE, "My command");
+        LegacyDefaultUnitOfWork<CommandMessage> uow = new LegacyDefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {
             Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", TEST_EVENT);
@@ -154,8 +154,8 @@ class LoggingSpanFactoryTest {
 
     @Test
     void internalSpanWithMessageCanBeStartedAndEndedWhileUnitOfWorkActive() {
-        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "My command");
-        LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = new LegacyDefaultUnitOfWork<>(command);
+        CommandMessage command = new GenericCommandMessage(TEST_COMMAND_TYPE, "My command");
+        LegacyDefaultUnitOfWork<CommandMessage> uow = new LegacyDefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {
             Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", TEST_EVENT);

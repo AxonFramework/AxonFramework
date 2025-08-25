@@ -34,7 +34,7 @@ import static java.util.Collections.singletonMap;
 public class MessageNameSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message<?> message) {
+    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message message) {
         return singletonMap("axon_message_name", message.type().toString());
     }
 }

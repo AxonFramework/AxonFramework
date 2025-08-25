@@ -29,7 +29,7 @@ import org.axonframework.messaging.Message;
  * @since 4.2
  */
 @FunctionalInterface
-public interface TargetContextResolver<T extends Message<?>> {
+public interface TargetContextResolver<T extends Message> {
 
     /**
      * Provides the context to which a message should be routed.
@@ -58,7 +58,7 @@ public interface TargetContextResolver<T extends Message<?>> {
      * @return a no-op TargetContextResolver. This will default to returning {@code null} on any {@link Message}
      * provided
      */
-    static TargetContextResolver<Message<?>> noOp() {
+    static TargetContextResolver<Message> noOp() {
         return message -> null;
     }
 }

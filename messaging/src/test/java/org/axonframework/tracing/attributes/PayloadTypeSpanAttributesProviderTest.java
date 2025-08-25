@@ -32,7 +32,7 @@ class PayloadTypeSpanAttributesProviderTest {
 
     @Test
     void stringPayload() {
-        Message<?> message = new GenericEventMessage<>(new MessageType("event"), "MyEvent");
+        Message message = new GenericEventMessage(new MessageType("event"), "MyEvent");
 
         Map<String, String> map = provider.provideForMessage(message);
         assertEquals(1, map.size());
@@ -41,7 +41,7 @@ class PayloadTypeSpanAttributesProviderTest {
 
     @Test
     void classPayload() {
-        Message<?> message = new GenericEventMessage<>(new MessageType("event"), new MyEvent());
+        Message message = new GenericEventMessage(new MessageType("event"), new MyEvent());
 
         Map<String, String> map = provider.provideForMessage(message);
         assertEquals(1, map.size());

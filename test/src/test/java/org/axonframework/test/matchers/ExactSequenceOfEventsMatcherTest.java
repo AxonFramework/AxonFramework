@@ -37,10 +37,10 @@ import static org.mockito.Mockito.*;
  */
 class ExactSequenceOfEventsMatcherTest {
 
-    private Matcher<EventMessage<?>> mockMatcher1;
-    private Matcher<EventMessage<?>> mockMatcher2;
-    private Matcher<EventMessage<?>> mockMatcher3;
-    private Matcher<List<EventMessage<?>>> testSubject;
+    private Matcher<EventMessage> mockMatcher1;
+    private Matcher<EventMessage> mockMatcher2;
+    private Matcher<EventMessage> mockMatcher3;
+    private Matcher<List<EventMessage>> testSubject;
     private StubEvent stubEvent1;
     private StubEvent stubEvent2;
     private StubEvent stubEvent3;

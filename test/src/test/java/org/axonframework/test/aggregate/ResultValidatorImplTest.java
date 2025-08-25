@@ -72,21 +72,21 @@ class ResultValidatorImplTest {
 
     @Test
     void shouldCompareValuesForEquality() {
-        EventMessage<?> expected = actualEvents().iterator().next().andMetaData(singletonMap("key1", "otherValue"));
+        EventMessage expected = actualEvents().iterator().next().andMetaData(singletonMap("key1", "otherValue"));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectEvents(expected));
     }
 
     @Test
     void shouldCompareKeysForEquality() {
-        EventMessage<?> expected = actualEvents().iterator().next().andMetaData(singletonMap("KEY1", "value1"));
+        EventMessage expected = actualEvents().iterator().next().andMetaData(singletonMap("KEY1", "value1"));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectEvents(expected));
     }
 
     @Test
     void shouldSuccessfullyCompareEqualMetadata() {
-        EventMessage<?> expected = actualEvents().iterator().next().andMetaData(singletonMap("key1", "value1"));
+        EventMessage expected = actualEvents().iterator().next().andMetaData(singletonMap("key1", "value1"));
 
         validator.expectEvents(expected);
     }
@@ -345,15 +345,15 @@ class ResultValidatorImplTest {
                                                                              "deadlineName"));
     }
 
-    private List<EventMessage<?>> actualEvents() {
+    private List<EventMessage> actualEvents() {
         return singletonList(asEventMessage(new MyEvent("aggregateId", 123))
                                      .andMetaData(singletonMap("key1", "value1")));
     }
 
     private ScheduledDeadlineInfo createDeadline(Instant expiryTime) {
         var payload = "payload";
-        DeadlineMessage<String> deadlineMessage = new GenericDeadlineMessage<>(
-                "deadlineName", new GenericMessage<>(new MessageType(payload.getClass()), payload), () -> expiryTime
+        DeadlineMessage deadlineMessage = new GenericDeadlineMessage(
+                "deadlineName", new GenericMessage(new MessageType(payload.getClass()), payload), () -> expiryTime
         );
         return new ScheduledDeadlineInfo(expiryTime, "deadlineName", "1", 0, deadlineMessage, null);
     }
@@ -361,7 +361,7 @@ class ResultValidatorImplTest {
     @Test
     void hamcrestMatcherMismatchIsReported() {
         // this matcher implementation will always fail and return expected strings
-        final DiagnosingMatcher<List<? super EventMessage<?>>> matcher = new DiagnosingMatcher<List<? super EventMessage<?>>>() {
+        final DiagnosingMatcher<List<? super EventMessage>> matcher = new DiagnosingMatcher<List<? super EventMessage>>() {
             @Override
             protected boolean matches(Object item, Description mismatchDescription) {
                 mismatchDescription.appendText("<MISMATCH TEXT>");
@@ -382,7 +382,7 @@ class ResultValidatorImplTest {
         }
     }
 
-    private static EventMessage<Object> asEventMessage(Object payload) {
-        return new GenericEventMessage<>(new MessageType("event"), payload);
+    private static EventMessage asEventMessage(Object payload) {
+        return new GenericEventMessage(new MessageType("event"), payload);
     }
 }

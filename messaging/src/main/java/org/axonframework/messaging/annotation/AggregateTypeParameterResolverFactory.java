@@ -58,7 +58,7 @@ public final class AggregateTypeParameterResolverFactory
         @Nullable
         @Override
         public String resolveParameterValue(@Nonnull ProcessingContext context) {
-            if(Message.fromContext(context) instanceof DomainEventMessage<?> domainEventMessage) {
+            if(Message.fromContext(context) instanceof DomainEventMessage domainEventMessage) {
                 return domainEventMessage.getType();
             }
             return null;

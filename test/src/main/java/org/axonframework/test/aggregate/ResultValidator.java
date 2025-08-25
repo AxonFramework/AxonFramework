@@ -67,7 +67,7 @@ public interface ResultValidator<T> {
      * @param expectedEvents The expected events, in the exact order they are expected to be dispatched and stored.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectEvents(EventMessage<?>... expectedEvents);
+    ResultValidator<T> expectEvents(EventMessage... expectedEvents);
 
     /**
      * Expect no events to have been published from the command.
@@ -86,7 +86,7 @@ public interface ResultValidator<T> {
      * @param matcher The matcher to match with the actually published events
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher);
+    ResultValidator<T> expectEventsMatching(Matcher<? extends List<? super EventMessage>> matcher);
 
     /**
      * Expect the command handler to return the given {@code expectedPayload} after execution. The actual and expected
@@ -215,7 +215,7 @@ public interface ResultValidator<T> {
      * @param matcher  the matcher that must match with the deadline scheduled at the given time
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectScheduledDeadlineMatching(Duration duration, Matcher<? super DeadlineMessage<?>> matcher);
+    ResultValidator<T> expectScheduledDeadlineMatching(Duration duration, Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that a deadline equal to the given {@code deadline} has been scheduled after the given {@code duration}.
@@ -259,7 +259,7 @@ public interface ResultValidator<T> {
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator<T> expectScheduledDeadlineMatching(Instant scheduledTime,
-                                                       Matcher<? super DeadlineMessage<?>> matcher);
+                                                       Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that a deadline equal to the given {@code deadline} has been scheduled at the given {@code
@@ -311,7 +311,7 @@ public interface ResultValidator<T> {
      * @param matcher the matcher defining the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage<?>> matcher);
+    ResultValidator<T> expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} should be scheduled after the given {@code
@@ -324,7 +324,7 @@ public interface ResultValidator<T> {
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator<T> expectNoScheduledDeadlineMatching(Duration durationToScheduledTime,
-                                                         Matcher<? super DeadlineMessage<?>> matcher);
+                                                         Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled after the given {@code
@@ -378,7 +378,7 @@ public interface ResultValidator<T> {
      * @return the current ResultValidator, for fluent interfacing
      */
     ResultValidator<T> expectNoScheduledDeadlineMatching(Instant scheduledTime,
-                                                         Matcher<? super DeadlineMessage<?>> matcher);
+                                                         Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled at the given {@code
@@ -428,7 +428,7 @@ public interface ResultValidator<T> {
      * @param matcher the matcher defining the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage<?>> matcher);
+    ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled between the {@code to} and {@code from} times, where {@code to}
@@ -469,7 +469,7 @@ public interface ResultValidator<T> {
      * @param matcher the matcher that defines the expected list of deadlines
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectTriggeredDeadlinesMatching(Matcher<? extends List<? super DeadlineMessage<?>>> matcher);
+    ResultValidator<T> expectTriggeredDeadlinesMatching(Matcher<? extends List<? super DeadlineMessage>> matcher);
 
     /**
      * Asserts that given {@code expected} deadlines have been triggered. Deadlines are compared by their type

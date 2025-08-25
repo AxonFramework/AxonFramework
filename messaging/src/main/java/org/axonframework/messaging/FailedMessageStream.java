@@ -32,7 +32,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class FailedMessageStream<M extends Message<?>> implements MessageStream.Empty<M> {
+class FailedMessageStream<M extends Message> implements MessageStream.Empty<M> {
 
     private final Throwable error;
 
@@ -86,7 +86,7 @@ class FailedMessageStream<M extends Message<?>> implements MessageStream.Empty<M
     }
 
     @Override
-    public <RM extends Message<?>> Empty<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+    public <RM extends Message> Empty<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         //noinspection unchecked
         return (FailedMessageStream<RM>) this;
     }

@@ -146,7 +146,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     @Nonnull
     @Override
-    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                      @Nonnull ProcessingContext context) {
         return handlingComponent.handle(event, context);
     }

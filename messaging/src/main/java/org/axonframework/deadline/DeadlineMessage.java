@@ -31,13 +31,11 @@ import java.util.Map;
  * Implementations of the {@link DeadlineMessage} represent a fact (it's a specialization of {@code EventMessage}) that
  * some deadline was reached. The optional payload contains relevant data of the scheduled deadline.
  *
- * @param <P> The type of {@link #payload() payload} contained in this {@link DeadlineMessage}. May be {@link Void} if
- *            no payload was provided.
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 3.3.0
  */
-public interface DeadlineMessage<P> extends EventMessage<P> {
+public interface DeadlineMessage extends EventMessage {
 
     /**
      * Returns the name of the {@link DeadlineMessage deadline} to be handled.
@@ -49,25 +47,25 @@ public interface DeadlineMessage<P> extends EventMessage<P> {
 
     @Override
     @Nonnull
-    DeadlineMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
+    DeadlineMessage withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     @Nonnull
-    DeadlineMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData);
+    DeadlineMessage andMetaData(@Nonnull Map<String, String> additionalMetaData);
 
     @Override
     @Nonnull
-    default <T> DeadlineMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+    default DeadlineMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
     @Nonnull
-    default <T> DeadlineMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+    default DeadlineMessage withConvertedPayload(@Nonnull TypeReference<?> type, @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @Nonnull
-    <T> DeadlineMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    DeadlineMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

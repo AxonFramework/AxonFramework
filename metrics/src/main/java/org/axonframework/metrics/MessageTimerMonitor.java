@@ -40,7 +40,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Marijn van Zelst
  * @since 3.0
  */
-public class MessageTimerMonitor implements MessageMonitor<Message<?>>, MetricSet {
+public class MessageTimerMonitor implements MessageMonitor<Message>, MetricSet {
 
     private final Timer allTimer;
     private final Timer successTimer;
@@ -77,7 +77,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>>, MetricSe
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message<?> message) {
+    public MonitorCallback onMessageIngested(@Nonnull Message message) {
         final Timer.Context allTimerContext = this.allTimer.time();
         final Timer.Context successTimerContext = this.successTimer.time();
         final Timer.Context failureTimerContext = this.failureTimer.time();

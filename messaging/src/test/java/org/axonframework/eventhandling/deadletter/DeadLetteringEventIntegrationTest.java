@@ -129,7 +129,7 @@ public abstract class DeadLetteringEventIntegrationTest {
             + "Lorem ipsum dolor sit amet consectetur.";
 
     private ProblematicEventHandlingComponent eventHandlingComponent;
-    private SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue;
+    private SequencedDeadLetterQueue<EventMessage> deadLetterQueue;
     private DeadLetteringEventHandlerInvoker deadLetteringInvoker;
     private AsyncInMemoryStreamableEventSource eventSource;
     private StreamingEventProcessor streamingProcessor;
@@ -144,7 +144,7 @@ public abstract class DeadLetteringEventIntegrationTest {
      *
      * @return A {@link SequencedDeadLetterQueue} implementation used during the integration test.
      */
-    protected abstract SequencedDeadLetterQueue<EventMessage<?>> buildDeadLetterQueue();
+    protected abstract SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue();
 
     protected TransactionManager getTransactionManager() {
         return new NoOpTransactionManager();
@@ -161,7 +161,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         deadLetterQueue = buildDeadLetterQueue();
 
         // A policy that ensure a letter is only retried once by adding diagnostics.
-        EnqueuePolicy<EventMessage<?>> enqueuePolicy = (letter, cause) -> {
+        EnqueuePolicy<EventMessage> enqueuePolicy = (letter, cause) -> {
             int retries = Integer.parseInt(letter.diagnostics().getOrDefault("retries", "0"));
             if (retries < maxRetries.get()) {
                 Throwable decisionThrowable = cause;
@@ -263,7 +263,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
     @Test
     void failedEventHandlingEnqueuesTheEvent() {
-        EventMessage<Object> failedEvent = asEventMessage(new DeadLetterableEvent("failure", FAIL));
+        EventMessage failedEvent = asEventMessage(new DeadLetterableEvent("failure", FAIL));
         eventSource.publishMessage(asEventMessage(new DeadLetterableEvent("success", SUCCEED)));
         eventSource.publishMessage(failedEvent);
 
@@ -282,7 +282,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         assertTrue(deadLetterQueue.contains("failure"));
         assertFalse(deadLetterQueue.contains("success"));
 
-        Iterator<DeadLetter<? extends EventMessage<?>>> sequence = deadLetterQueue.deadLetterSequence("failure")
+        Iterator<DeadLetter<? extends EventMessage>> sequence = deadLetterQueue.deadLetterSequence("failure")
                                                                                   .iterator();
         assertTrue(sequence.hasNext());
         assertEquals(failedEvent.payload(), sequence.next().message().payload());
@@ -322,7 +322,7 @@ public abstract class DeadLetteringEventIntegrationTest {
 
         assertTrue(deadLetterQueue.contains(aggregateId));
         assertWithin(2, TimeUnit.SECONDS, () -> {
-            Iterator<DeadLetter<? extends EventMessage<?>>> sequence = deadLetterQueue.deadLetterSequence(aggregateId)
+            Iterator<DeadLetter<? extends EventMessage>> sequence = deadLetterQueue.deadLetterSequence(aggregateId)
                                                                                       .iterator();
             assertTrue(sequence.hasNext());
             assertEquals(firstDeadLetter, sequence.next().message().payload());
@@ -726,7 +726,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         @EventHandler
         public void on(DeadLetterableEvent event,
                        @MessageIdentifier String eventIdentifier,
-                       DeadLetter<EventMessage<DeadLetterableEvent>> deadLetter) {
+                       DeadLetter<EventMessage> deadLetter) {
             // The aggregate identifier effectively references the sequence because of the configured SequencingPolicy.
             String sequenceId = event.getAggregateIdentifier();
 
@@ -890,7 +890,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         }
     }
 
-    private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor(AtomicBoolean invoked) {
+    private MessageHandlerInterceptor<? super EventMessage> errorCatchingInterceptor(AtomicBoolean invoked) {
         return (unitOfWork, context, chain) -> {
             invoked.set(true);
             try {

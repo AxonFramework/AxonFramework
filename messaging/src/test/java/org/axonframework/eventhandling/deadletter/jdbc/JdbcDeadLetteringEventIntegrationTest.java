@@ -64,13 +64,13 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
 
     private DataSource dataSource;
     private TransactionManager transactionManager;
-    private DeadLetterStatementFactory<EventMessage<?>> statementFactory;
-    private JdbcSequencedDeadLetterQueue<EventMessage<?>> jdbcDeadLetterQueue;
+    private DeadLetterStatementFactory<EventMessage> statementFactory;
+    private JdbcSequencedDeadLetterQueue<EventMessage> jdbcDeadLetterQueue;
 
     private final DeadLetterSchema schema = DeadLetterSchema.defaultSchema();
 
     @Override
-    protected SequencedDeadLetterQueue<EventMessage<?>> buildDeadLetterQueue() {
+    protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
         dataSource = dataSource();
         transactionManager = transactionManager(dataSource);
         Serializer eventSerializer = TestSerializer.JACKSON.getSerializer();
@@ -143,9 +143,9 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
     @Test
     void deadLetterSequenceReturnsMatchingEnqueuedLettersInInsertOrder() {
         String aggregateId = UUID.randomUUID().toString();
-        Map<Integer, GenericDeadLetter<EventMessage<?>>> insertedLetters = new HashMap<>();
+        Map<Integer, GenericDeadLetter<EventMessage>> insertedLetters = new HashMap<>();
 
-        Iterator<DeadLetter<? extends EventMessage<?>>> resultIterator =
+        Iterator<DeadLetter<? extends EventMessage>> resultIterator =
                 jdbcDeadLetterQueue.deadLetterSequence(aggregateId)
                                    .iterator();
         assertFalse(resultIterator.hasNext());
@@ -154,22 +154,22 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
                  .boxed()
                  .sorted(Collections.reverseOrder())
                  .forEach(i -> {
-                     GenericDeadLetter<EventMessage<?>> letter =
+                     GenericDeadLetter<EventMessage> letter =
                              new GenericDeadLetter<>(aggregateId, asEventMessage(i));
                      insertLetterAtIndex(aggregateId, letter, i);
                      insertedLetters.put(i, letter);
                  });
 
         resultIterator = jdbcDeadLetterQueue.deadLetterSequence(aggregateId).iterator();
-        for (Map.Entry<Integer, GenericDeadLetter<EventMessage<?>>> entry : insertedLetters.entrySet()) {
+        for (Map.Entry<Integer, GenericDeadLetter<EventMessage>> entry : insertedLetters.entrySet()) {
             Integer sequenceIndex = entry.getKey();
             Supplier<String> assertMessageSupplier = () -> "Failed asserting event [" + sequenceIndex + "]";
             assertTrue(resultIterator.hasNext(), assertMessageSupplier);
 
-            GenericDeadLetter<EventMessage<?>> expected = entry.getValue();
-            DeadLetter<? extends EventMessage<?>> result = resultIterator.next();
+            GenericDeadLetter<EventMessage> expected = entry.getValue();
+            DeadLetter<? extends EventMessage> result = resultIterator.next();
             assertTrue(result instanceof JdbcDeadLetter);
-            JdbcDeadLetter<? extends EventMessage<?>> actual = ((JdbcDeadLetter<? extends EventMessage<?>>) result);
+            JdbcDeadLetter<? extends EventMessage> actual = ((JdbcDeadLetter<? extends EventMessage>) result);
 
             assertEquals(expected.getSequenceIdentifier(), actual.getSequenceIdentifier(), assertMessageSupplier);
             assertEquals(expected.message().payload(), actual.message().payload(), assertMessageSupplier);
@@ -179,7 +179,7 @@ class JdbcDeadLetteringEventIntegrationTest extends DeadLetteringEventIntegratio
         }
     }
 
-    private void insertLetterAtIndex(String aggregateId, DeadLetter<EventMessage<?>> letter, int index) {
+    private void insertLetterAtIndex(String aggregateId, DeadLetter<EventMessage> letter, int index) {
         transactionManager.executeInTransaction(() -> {
             try (Connection connection = dataSource.getConnection()) {
                 executeUpdate(

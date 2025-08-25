@@ -82,7 +82,7 @@ class AvroUpcasterTest {
                                              .setValue3(42)
                                              .build();
 
-        GenericDomainEventMessage<?> msg = new GenericDomainEventMessage<>(
+        GenericDomainEventMessage msg = new GenericDomainEventMessage(
                 ComplexObject.class.getCanonicalName(),
                 "aggregateId",
                 0,
@@ -193,7 +193,7 @@ class AvroUpcasterTest {
 
     private static class ByteArrayDomainEventEntry extends AbstractSequencedDomainEventEntry<byte[]> {
 
-        public ByteArrayDomainEventEntry(DomainEventMessage<?> event, Serializer serializer) {
+        public ByteArrayDomainEventEntry(DomainEventMessage event, Serializer serializer) {
             super(event, serializer, byte[].class);
         }
     }

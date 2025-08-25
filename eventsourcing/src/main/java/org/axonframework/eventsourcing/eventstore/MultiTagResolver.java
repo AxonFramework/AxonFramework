@@ -55,7 +55,7 @@ public class MultiTagResolver implements TagResolver {
 
     @Nonnull
     @Override
-    public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
+    public Set<Tag> resolve(@Nonnull EventMessage event) {
         Set<Tag> tags = new HashSet<>();
         for (TagResolver delegate : delegates) {
             tags.addAll(delegate.resolve(event));

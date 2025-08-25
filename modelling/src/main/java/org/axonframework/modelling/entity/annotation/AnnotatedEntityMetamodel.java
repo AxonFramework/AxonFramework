@@ -415,7 +415,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
 
     @Override
     @Nonnull
-    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage<?> message,
+    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage message,
                                                                       @Nonnull ProcessingContext context) {
         logger.debug("Handling creation command: {} for type: {}", message.type(), entityType());
         var convertedMessage = message.withConvertedPayload(getExpectedRepresentation(message.type().qualifiedName()),
@@ -425,7 +425,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
 
     @Override
     @Nonnull
-    public MessageStream.Single<CommandResultMessage<?>> handleInstance(@Nonnull CommandMessage<?> message,
+    public MessageStream.Single<CommandResultMessage<?>> handleInstance(@Nonnull CommandMessage message,
                                                                         @Nonnull E entity,
                                                                         @Nonnull ProcessingContext context) {
         logger.debug("Handling instance command: {} for entity: {} of type: {}", message.type(), entity, entityType());
@@ -442,7 +442,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     }
 
     @Override
-    public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    public E evolve(@Nonnull E entity, @Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         logger.debug("Evolving entity: {} with event: {} for entity type: {}", entity, event.type(), entityType());
         return delegateMetamodel.evolve(entity, event, context);
     }

@@ -35,8 +35,8 @@ class SimpleCorrelationDataProviderTest {
         metaData.put("key1", "value1");
         metaData.put("key2", "value2");
         metaData.put("key3", "value3");
-        Message<String> message =
-                new GenericMessage<>(new MessageType("message"), "payload", metaData);
+        Message message =
+                new GenericMessage(new MessageType("message"), "payload", metaData);
 
         assertEquals(singletonMap("key1", "value1"),
                      new SimpleCorrelationDataProvider("key1").correlationDataFor(message));

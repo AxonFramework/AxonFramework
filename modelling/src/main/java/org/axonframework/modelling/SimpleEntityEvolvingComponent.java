@@ -62,7 +62,7 @@ public class SimpleEntityEvolvingComponent<E> implements EntityEvolvingComponent
 
     @Override
     public E evolve(@Nonnull E entity,
-                    @Nonnull EventMessage<?> event,
+                    @Nonnull EventMessage event,
                     @Nonnull ProcessingContext context) {
         QualifiedName eventName = event.type().qualifiedName();
         EntityEvolver<E> entityEvolver = entityEvolvers.get(eventName);

@@ -31,27 +31,27 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>> {
+class SingleValueMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
+    MessageStream<Message> completedTestSubject(List<Message> messages) {
         Assumptions.assumeTrue(messages.size() == 1, "SingleValueMessageStream only supports a single value");
         return MessageStream.just(messages.getFirst());
     }
 
     @Override
-    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         return MessageStream.just(message);
     }
 
     @Override
-    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("DelayedMessageStream does not support empty streams");
         return null;
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+    MessageStream<Message> failingTestSubject(List<Message> messages,
                                                       Exception failure) {
         Assumptions.assumeTrue(messages.isEmpty(),
                                "SingleValueMessageStream only supports failures without regular values");
@@ -59,15 +59,15 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>> {
     }
 
     @Override
-    Message<String> createRandomMessage() {
-        return new GenericMessage<>(new MessageType("message"),
+    Message createRandomMessage() {
+        return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test
     void shouldReturnNextItemOnceWhenFutureCompletes() {
-        CompletableFuture<MessageStream.Entry<Message<?>>> future = new CompletableFuture<>();
-        SingleValueMessageStream<Message<?>> testSubject = new SingleValueMessageStream<>(future);
+        CompletableFuture<MessageStream.Entry<Message>> future = new CompletableFuture<>();
+        SingleValueMessageStream<Message> testSubject = new SingleValueMessageStream<>(future);
 
         assertFalse(testSubject.hasNextAvailable());
         assertFalse(testSubject.next().isPresent());
@@ -82,8 +82,8 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Test
     void shouldPropagateErrorWhenFutureFailed() {
-        CompletableFuture<MessageStream.Entry<Message<?>>> future = new CompletableFuture<>();
-        SingleValueMessageStream<Message<?>> testSubject = new SingleValueMessageStream<>(future);
+        CompletableFuture<MessageStream.Entry<Message>> future = new CompletableFuture<>();
+        SingleValueMessageStream<Message> testSubject = new SingleValueMessageStream<>(future);
 
         assertFalse(testSubject.hasNextAvailable());
         assertFalse(testSubject.next().isPresent());
@@ -100,8 +100,8 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Test
     void shouldInvokeOnAvailableWhenFutureCompletes() {
-        CompletableFuture<MessageStream.Entry<Message<?>>> future = new CompletableFuture<>();
-        SingleValueMessageStream<Message<?>> testSubject = new SingleValueMessageStream<>(future);
+        CompletableFuture<MessageStream.Entry<Message>> future = new CompletableFuture<>();
+        SingleValueMessageStream<Message> testSubject = new SingleValueMessageStream<>(future);
 
         AtomicBoolean invoked = new AtomicBoolean(false);
         testSubject.onAvailable(() -> invoked.set(true));
@@ -114,8 +114,8 @@ class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Test
     void closeCancelsTheCompletableFuture() {
-        CompletableFuture<MessageStream.Entry<Message<?>>> future = new CompletableFuture<>();
-        SingleValueMessageStream<Message<?>> testSubject = new SingleValueMessageStream<>(future);
+        CompletableFuture<MessageStream.Entry<Message>> future = new CompletableFuture<>();
+        SingleValueMessageStream<Message> testSubject = new SingleValueMessageStream<>(future);
 
         testSubject.close();
 

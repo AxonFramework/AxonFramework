@@ -42,7 +42,7 @@ public interface AggregateFactory<T> {
      *                            creation of the aggregate, or a snapshot event
      * @return an aggregate root ready for initialization using a DomainEventStream.
      */
-    T createAggregateRoot(String aggregateIdentifier, DomainEventMessage<?> firstEvent);
+    T createAggregateRoot(String aggregateIdentifier, DomainEventMessage firstEvent);
 
     /**
      * Returns the type of aggregate this factory creates. All instances created by this factory must be an

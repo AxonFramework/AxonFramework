@@ -49,7 +49,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     private final EventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
     private final TagResolver tagResolver;
-    private final List<Consumer<EventMessage<?>>> callbacks;
+    private final List<Consumer<EventMessage>> callbacks;
 
     private final ResourceKey<AppendCondition> appendConditionKey;
     private final ResourceKey<List<TaggedEventMessage<?>>> eventQueueKey;
@@ -80,14 +80,14 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public MessageStream<? extends EventMessage<?>> source(@Nonnull SourcingCondition condition) {
+    public MessageStream<? extends EventMessage> source(@Nonnull SourcingCondition condition) {
         var appendCondition = processingContext.updateResource(
                 appendConditionKey,
                 ac -> ac == null
                         ? AppendCondition.withCriteria(condition.criteria())
                         : ac.orCriteria(condition.criteria())
         );
-        MessageStream<EventMessage<?>> source = eventStorageEngine.source(condition);
+        MessageStream<EventMessage> source = eventStorageEngine.source(condition);
         if (appendCondition.consistencyMarker() != ConsistencyMarker.ORIGIN) {
             return source;
         }
@@ -122,7 +122,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public void appendEvent(@Nonnull EventMessage<?> eventMessage) {
+    public void appendEvent(@Nonnull EventMessage eventMessage) {
         var eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
@@ -174,7 +174,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public void onAppend(@Nonnull Consumer<EventMessage<?>> callback) {
+    public void onAppend(@Nonnull Consumer<EventMessage> callback) {
         callbacks.add(callback);
     }
 

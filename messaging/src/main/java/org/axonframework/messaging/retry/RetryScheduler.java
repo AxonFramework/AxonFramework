@@ -50,7 +50,7 @@ public interface RetryScheduler {
      * @param <R>               The type of message expected as a result of dispatching
      * @return a MessageStream representing the result of the last attempt
      */
-    <M extends Message<?>, R extends Message<?>> MessageStream<R> scheduleRetry(
+    <M extends Message, R extends Message> MessageStream<R> scheduleRetry(
             @Nonnull M message,
             @Nullable ProcessingContext processingContext,
             @Nonnull Throwable cause,
@@ -62,7 +62,7 @@ public interface RetryScheduler {
      * @param <M> The type of Message to dispatch
      * @param <R> The expected type of Message returned
      */
-    interface Dispatcher<M extends Message<?>, R extends Message<?>> {
+    interface Dispatcher<M extends Message, R extends Message> {
 
         /**
          * @param message           The Message to dispatch

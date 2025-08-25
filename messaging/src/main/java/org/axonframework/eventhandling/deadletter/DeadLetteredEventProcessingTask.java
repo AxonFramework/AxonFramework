@@ -48,18 +48,18 @@ import java.util.function.Function;
  * @since 4.6.0
  */
 class DeadLetteredEventProcessingTask
-        implements Function<DeadLetter<EventMessage<?>>, EnqueueDecision<EventMessage<?>>> {
+        implements Function<DeadLetter<EventMessage>, EnqueueDecision<EventMessage>> {
 
     private final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final List<EventMessageHandler> eventHandlingComponents;
-    private final List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors;
-    private final EnqueuePolicy<EventMessage<?>> enqueuePolicy;
+    private final List<MessageHandlerInterceptor<? super EventMessage>> interceptors;
+    private final EnqueuePolicy<EventMessage> enqueuePolicy;
     private final TransactionManager transactionManager;
 
     DeadLetteredEventProcessingTask(List<EventMessageHandler> eventHandlingComponents,
-                                    List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors,
-                                    EnqueuePolicy<EventMessage<?>> enqueuePolicy,
+                                    List<MessageHandlerInterceptor<? super EventMessage>> interceptors,
+                                    EnqueuePolicy<EventMessage> enqueuePolicy,
                                     TransactionManager transactionManager) {
         this.eventHandlingComponents = eventHandlingComponents;
         this.interceptors = interceptors;
@@ -68,7 +68,7 @@ class DeadLetteredEventProcessingTask
     }
 
     @Override
-    public EnqueueDecision<EventMessage<?>> apply(DeadLetter<EventMessage<?>> letter) {
+    public EnqueueDecision<EventMessage> apply(DeadLetter<EventMessage> letter) {
         return process(letter);
     }
 
@@ -83,13 +83,13 @@ class DeadLetteredEventProcessingTask
      * @param letter The {@link DeadLetter dead letter} to process.
      * @return An {@link EnqueueDecision} describing what to do after processing the given {@code letter}.
      */
-    public EnqueueDecision<EventMessage<?>> process(DeadLetter<? extends EventMessage<?>> letter) {
+    public EnqueueDecision<EventMessage> process(DeadLetter<? extends EventMessage> letter) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start evaluation of dead letter with message id [{}].", letter.message().identifier());
         }
 
-        AtomicReference<EnqueueDecision<EventMessage<?>>> decision = new AtomicReference<>();
-        LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(letter.message());
+        AtomicReference<EnqueueDecision<EventMessage>> decision = new AtomicReference<>();
+        LegacyUnitOfWork<? extends EventMessage> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(letter.message());
 
         unitOfWork.attachTransaction(transactionManager);
         unitOfWork.resources()
@@ -101,16 +101,16 @@ class DeadLetteredEventProcessingTask
         return ObjectUtils.getOrDefault(decision.get(), Decisions::ignore);
     }
 
-    private void handle(EventMessage<?> eventMessage, ProcessingContext context) throws Exception {
+    private void handle(EventMessage eventMessage, ProcessingContext context) throws Exception {
         for (EventMessageHandler handler : eventHandlingComponents) {
             handler.handleSync(eventMessage, context);
         }
     }
 
     private Object handleWithInterceptors(
-            LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+            LegacyUnitOfWork<? extends EventMessage> unitOfWork,
             ProcessingContext context) throws Exception {
-        new DefaultInterceptorChain<EventMessage<?>, Message<Void>>(
+        new DefaultInterceptorChain<EventMessage, Message>(
                 unitOfWork,
                 interceptors,
                 (m, ctx) -> {
@@ -123,7 +123,7 @@ class DeadLetteredEventProcessingTask
         return null;
     }
 
-    private EnqueueDecision<EventMessage<?>> onCommit(DeadLetter<? extends EventMessage<?>> letter) {
+    private EnqueueDecision<EventMessage> onCommit(DeadLetter<? extends EventMessage> letter) {
         if (logger.isInfoEnabled()) {
             logger.info("Processing dead letter with message id [{}] was successful.",
                         letter.message().identifier());
@@ -131,7 +131,7 @@ class DeadLetteredEventProcessingTask
         return Decisions.evict();
     }
 
-    private EnqueueDecision<EventMessage<?>> onRollback(DeadLetter<? extends EventMessage<?>> letter, Throwable cause) {
+    private EnqueueDecision<EventMessage> onRollback(DeadLetter<? extends EventMessage> letter, Throwable cause) {
         if (logger.isWarnEnabled()) {
             logger.warn("Processing dead letter with message id [{}] failed.", letter.message().identifier(), cause);
         }

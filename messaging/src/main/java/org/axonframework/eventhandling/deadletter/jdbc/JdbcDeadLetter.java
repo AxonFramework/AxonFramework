@@ -37,7 +37,7 @@ import java.util.Optional;
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class JdbcDeadLetter<E extends EventMessage<?>> implements DeadLetter<E> {
+public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
 
     private final String identifier;
     private final long sequenceIndex;

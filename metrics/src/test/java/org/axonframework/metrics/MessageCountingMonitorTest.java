@@ -35,10 +35,10 @@ class MessageCountingMonitorTest {
     @Test
     void messages() {
         MessageCountingMonitor testSubject = new MessageCountingMonitor();
-        EventMessage<Object> foo = asEventMessage("foo");
-        EventMessage<Object> bar = asEventMessage("bar");
-        EventMessage<Object> baz = asEventMessage("baz");
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks =
+        EventMessage foo = asEventMessage("foo");
+        EventMessage bar = asEventMessage("bar");
+        EventMessage baz = asEventMessage("baz");
+        Map<? super Message, MessageMonitor.MonitorCallback> callbacks =
                 testSubject.onMessagesIngested(Arrays.asList(foo, bar, baz));
         callbacks.get(foo).reportSuccess();
         callbacks.get(bar).reportFailure(null);
@@ -59,7 +59,7 @@ class MessageCountingMonitorTest {
         assertEquals(1, ignoredCounter.getCount());
     }
 
-    private static EventMessage<Object> asEventMessage(Object payload) {
-        return new GenericEventMessage<>(new MessageType("event"), payload);
+    private static EventMessage asEventMessage(Object payload) {
+        return new GenericEventMessage(new MessageType("event"), payload);
     }
 }

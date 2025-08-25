@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  * @since 0.5
  */
 @FunctionalInterface
-public interface InterceptorChain<M extends Message<?>, R extends Message<?>> {
+public interface InterceptorChain<M extends Message, R extends Message> {
 
     /**
      * Signals the Interceptor Chain to continue processing the message.

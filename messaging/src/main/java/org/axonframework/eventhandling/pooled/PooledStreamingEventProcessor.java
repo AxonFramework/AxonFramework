@@ -88,7 +88,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
 
     private final String name;
     private final PooledStreamingEventProcessorConfiguration configuration;
-    private final StreamableEventSource<? extends EventMessage<?>> eventSource;
+    private final StreamableEventSource<? extends EventMessage> eventSource;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final EventCriteria eventCriteria;
     private final UnitOfWorkFactory unitOfWorkFactory;
@@ -396,8 +396,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
                           .build();
     }
 
-    private MessageStream.Empty<Message<Void>> processWithErrorHandling(List<? extends EventMessage<?>> events,
-                                                                        ProcessingContext context) {
+    private MessageStream.Empty<Message> processWithErrorHandling(List<? extends EventMessage> events,
+                                                                  ProcessingContext context) {
         return eventHandlingComponents.handle(events, context)
                                       .onErrorContinue(ex -> {
                                           try {

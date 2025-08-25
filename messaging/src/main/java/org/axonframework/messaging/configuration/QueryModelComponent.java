@@ -75,14 +75,14 @@ public class QueryModelComponent implements EventHandlingComponent, QueryHandlin
 
     @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
+    public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
                                                          @Nonnull ProcessingContext context) {
         return queryComponent.handle(query, context);
     }
 
     @Nonnull
     @Override
-    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                      @Nonnull ProcessingContext context) {
         return eventComponent.handle(event, context);
     }

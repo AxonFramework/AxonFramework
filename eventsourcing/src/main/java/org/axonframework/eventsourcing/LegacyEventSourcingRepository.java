@@ -56,7 +56,7 @@ public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T,
     private final SnapshotTriggerDefinition snapshotTriggerDefinition;
     private final AggregateFactory<T> aggregateFactory;
     private final RepositoryProvider repositoryProvider;
-    private final Predicate<? super DomainEventMessage<?>> eventStreamFilter;
+    private final Predicate<? super DomainEventMessage> eventStreamFilter;
 
     /**
      * Instantiate a {@link LegacyEventSourcingRepository} based on the fields contained in the {@link Builder}.
@@ -225,7 +225,7 @@ public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T,
         private AggregateFactory<T> aggregateFactory;
         protected RepositoryProvider repositoryProvider;
         protected Cache cache;
-        protected Predicate<? super DomainEventMessage<?>> eventStreamFilter;
+        protected Predicate<? super DomainEventMessage> eventStreamFilter;
 
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
@@ -352,7 +352,7 @@ public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T,
          *
          * @param filter a {@link Predicate} that may return false to discard events.
          */
-        public Builder<T> eventStreamFilter(Predicate<? super DomainEventMessage<?>> filter) {
+        public Builder<T> eventStreamFilter(Predicate<? super DomainEventMessage> filter) {
             this.eventStreamFilter = filter;
             return this;
         }

@@ -38,9 +38,9 @@ import java.util.Map;
  * @author Steven van Beelen
  * @since 3.3.0
  */
-public class GenericSubscriptionQueryUpdateMessage<U>
-        extends GenericResultMessage<U>
-        implements SubscriptionQueryUpdateMessage<U> {
+public class GenericSubscriptionQueryUpdateMessage
+        extends GenericResultMessage
+        implements SubscriptionQueryUpdateMessage {
 
     /**
      * Constructs a {@code GenericSubscriptionQueryUpdateMessage} for the given {@code type} and {@code payload}.
@@ -52,8 +52,8 @@ public class GenericSubscriptionQueryUpdateMessage<U>
      *                incremental update.
      */
     public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
-                                                 @Nullable U payload) {
-        this(new GenericMessage<>(type, payload, MetaData.emptyInstance()));
+                                                 @Nullable Object payload) {
+        this(new GenericMessage(type, payload, MetaData.emptyInstance()));
     }
 
     /**
@@ -66,9 +66,9 @@ public class GenericSubscriptionQueryUpdateMessage<U>
      *                           representing an incremental update.
      * @param declaredUpdateType The declared update type of this  {@link SubscriptionQueryUpdateMessage}.
      */
-    public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
-                                                 @Nullable U payload,
-                                                 @Nonnull Class<U> declaredUpdateType) {
+    public <P> GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
+                                                 @Nullable P payload,
+                                                 @Nonnull Class<P> declaredUpdateType) {
         this(type, payload, declaredUpdateType, MetaData.emptyInstance());
     }
 
@@ -82,11 +82,11 @@ public class GenericSubscriptionQueryUpdateMessage<U>
      * @param declaredUpdateType The declared update type of this  {@link SubscriptionQueryUpdateMessage}.
      * @param metaData           The metadata for this {@link SubscriptionQueryUpdateMessage}.
      */
-    public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
-                                                 @Nullable U payload,
-                                                 @Nonnull Class<U> declaredUpdateType,
+    public <P> GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
+                                                 @Nullable P payload,
+                                                 @Nonnull Class<P> declaredUpdateType,
                                                  @Nonnull Map<String, ?> metaData) {
-        super(new GenericMessage<>(type, payload, declaredUpdateType, metaData));
+        super(new GenericMessage(type, payload, declaredUpdateType, metaData));
     }
 
     /**
@@ -101,9 +101,9 @@ public class GenericSubscriptionQueryUpdateMessage<U>
      */
     public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
                                                  @Nonnull Throwable exception,
-                                                 @Nonnull Class<U> declaredUpdateType,
+                                                 @Nonnull Class<?> declaredUpdateType,
                                                  @Nonnull Map<String, ?> metaData) {
-        super(new GenericMessage<>(type, null, declaredUpdateType, metaData), exception);
+        super(new GenericMessage(type, null, declaredUpdateType, metaData), exception);
     }
 
     /**
@@ -117,33 +117,33 @@ public class GenericSubscriptionQueryUpdateMessage<U>
      *                 {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
-    protected GenericSubscriptionQueryUpdateMessage(@Nonnull Message<U> delegate) {
+    protected GenericSubscriptionQueryUpdateMessage(@Nonnull Message delegate) {
         super(delegate);
     }
 
     @Override
     @Nonnull
-    public SubscriptionQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericSubscriptionQueryUpdateMessage<>(delegate().withMetaData(metaData));
+    public SubscriptionQueryUpdateMessage withMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericSubscriptionQueryUpdateMessage(delegate().withMetaData(metaData));
     }
 
     @Override
     @Nonnull
-    public SubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericSubscriptionQueryUpdateMessage<>(delegate().andMetaData(metaData));
+    public SubscriptionQueryUpdateMessage andMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericSubscriptionQueryUpdateMessage(delegate().andMetaData(metaData));
     }
 
     @Override
     @Nonnull
-    public <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Type type,
+    public SubscriptionQueryUpdateMessage withConvertedPayload(@Nonnull Type type,
                                                                       @Nonnull Converter converter) {
-        T convertedPayload = payloadAs(type, converter);
+        Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
             //noinspection unchecked
-            return (SubscriptionQueryUpdateMessage<T>) this;
+            return this;
         }
-        Message<U> delegate = delegate();
-        return new GenericSubscriptionQueryUpdateMessage<>(new GenericMessage<>(delegate.identifier(),
+        Message delegate = delegate();
+        return new GenericSubscriptionQueryUpdateMessage(new GenericMessage(delegate.identifier(),
                                                                                 delegate.type(),
                                                                                 convertedPayload,
                                                                                 delegate.metaData()));

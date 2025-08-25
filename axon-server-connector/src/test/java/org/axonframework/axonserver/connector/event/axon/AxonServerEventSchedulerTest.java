@@ -262,7 +262,7 @@ public class AxonServerEventSchedulerTest {
     @Test
     void reschedule() {
         String token = "12345";
-        EventMessage<String> testEvent = new GenericEventMessage<>(
+        EventMessage testEvent = new GenericEventMessage(
                 new MessageType("event"), "Updated", MetaData.with("updated", "true")
         );
 
@@ -275,7 +275,7 @@ public class AxonServerEventSchedulerTest {
 
     @Test
     void rescheduleWithoutToken() {
-        EventMessage<String> testEvent = new GenericEventMessage<>(
+        EventMessage testEvent = new GenericEventMessage(
                 new MessageType("event"), "Updated", MetaData.with("updated", "true")
         );
         org.axonframework.eventhandling.scheduling.ScheduleToken token =

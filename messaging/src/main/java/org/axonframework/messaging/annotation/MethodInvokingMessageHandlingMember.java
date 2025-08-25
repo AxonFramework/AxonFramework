@@ -101,7 +101,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+    public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
         ProcessingContext contextWithMessage = Message.addToContext(context, message);
         return typeMatches(message)
                 && payloadType.isAssignableFrom(message.payloadType())
@@ -114,7 +114,6 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    @SuppressWarnings("rawtypes")
     public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
         return this.messageType.isAssignableFrom(messageType);
     }
@@ -127,7 +126,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
      * @param message the message to check for
      * @return {@code true} if this member can handle the message type. {@code false} otherwise
      */
-    protected boolean typeMatches(Message<?> message) {
+    protected boolean typeMatches(Message message) {
         return messageType.isInstance(message);
     }
 
@@ -137,7 +136,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
      * @param message the message to check for
      * @return {@code true} if the parameter resolvers can handle this message. {@code false} otherwise
      */
-    protected boolean parametersMatch(Message<?> message, ProcessingContext processingContext) {
+    protected boolean parametersMatch(Message message, ProcessingContext processingContext) {
         for (ParameterResolver<?> resolver : parameterResolvers) {
             if (!resolver.matches(processingContext)) {
                 logger.debug("Parameter Resolver [{}] did not match message [{}] for payload type [{}].",
@@ -149,7 +148,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public Object handleSync(@Nonnull Message<?> message,
+    public Object handleSync(@Nonnull Message message,
                              @Nonnull ProcessingContext context,
                              T target) throws Exception {
         try {
@@ -168,7 +167,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message<?> message,
+    public MessageStream<?> handle(@Nonnull Message message,
                                    @Nonnull ProcessingContext context,
                                    @Nullable T target) {
         ProcessingContext contextWithMessage = Message.addToContext(context, message);

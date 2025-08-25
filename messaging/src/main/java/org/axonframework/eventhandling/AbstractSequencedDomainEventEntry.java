@@ -48,7 +48,7 @@ public abstract class AbstractSequencedDomainEventEntry<T> extends AbstractDomai
      * @param serializer   The serializer to convert the event
      * @param contentType  The data type of the payload and metadata after serialization
      */
-    public AbstractSequencedDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer,
+    public AbstractSequencedDomainEventEntry(DomainEventMessage eventMessage, Serializer serializer,
                                              Class<T> contentType) {
         super(eventMessage, serializer, contentType);
     }

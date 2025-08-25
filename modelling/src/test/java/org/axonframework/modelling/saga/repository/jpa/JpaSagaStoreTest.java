@@ -22,6 +22,7 @@ import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
 import org.axonframework.common.Assert;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.messaging.Message;
@@ -44,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Allard Buijze
  */
 class JpaSagaStoreTest {
+    private static final TypeReference<Set<String>> SET_OF_STRINGS = new TypeReference<>() {};
 
     private AnnotatedSagaRepository<StubSaga> repository;
 
@@ -51,7 +53,7 @@ class JpaSagaStoreTest {
             Persistence.createEntityManagerFactory("jpaSagaStorePersistenceUnit");
     private final EntityManager entityManager = entityManagerFactory.createEntityManager();
     private final EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
-    private LegacyDefaultUnitOfWork<Message<?>> unitOfWork;
+    private LegacyDefaultUnitOfWork<Message> unitOfWork;
 
     @BeforeEach
     void setUp() {
@@ -117,7 +119,7 @@ class JpaSagaStoreTest {
     void addAndLoadSaga_ByIdentifier() {
         String identifier = unitOfWork.executeWithResult((ctx) -> repository.createInstance(
                         IdentifierFactory.getInstance().generateIdentifier(), StubSaga::new).getSagaIdentifier())
-                .payload();
+                .payloadAs(String.class);
         entityManager.clear();
         startUnitOfWork();
         unitOfWork.execute((ctx) -> {
@@ -134,7 +136,7 @@ class JpaSagaStoreTest {
                     StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
             return saga.getSagaIdentifier();
-        }).payload();
+        }).payloadAs(String.class);
         entityManager.clear();
         startUnitOfWork();
         unitOfWork.execute((ctx) -> {
@@ -159,7 +161,7 @@ class JpaSagaStoreTest {
                     StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
             return saga.getSagaIdentifier();
-        }).payload();
+        }).payloadAs(String.class);
         entityManager.clear();
         startUnitOfWork();
         unitOfWork.execute((ctx) -> {
@@ -169,7 +171,7 @@ class JpaSagaStoreTest {
         entityManager.clear();
         startUnitOfWork();
         Set<String> found = unitOfWork.executeWithResult((ctx) -> repository.find(new AssociationValue("key", "value")))
-                .payload();
+                .payloadAs(SET_OF_STRINGS);
         assertEquals(0, found.size());
     }
 
@@ -180,7 +182,7 @@ class JpaSagaStoreTest {
                     StubSaga::new);
             saga.execute(s -> s.associate("key", "value"));
             return saga.getSagaIdentifier();
-        }).payload();
+        }).payloadAs(String.class);
         entityManager.clear();
         assertFalse(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
                 .setParameter("id", identifier).getResultList().isEmpty());

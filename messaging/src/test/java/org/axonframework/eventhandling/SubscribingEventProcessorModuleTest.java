@@ -152,7 +152,7 @@ class SubscribingEventProcessorModuleTest {
             configuration.start();
 
             // when
-            EventMessage<String> sampleEvent = EventTestUtils.asEventMessage("test-event");
+            EventMessage sampleEvent = EventTestUtils.asEventMessage("test-event");
             eventBus.publish(sampleEvent);
 
             // then

@@ -144,7 +144,7 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
 
     @Override
     @Nonnull
-    public <T> SubscriptionQueryMessage<T, I, U> withConvertedPayload(@Nonnull Type type,
+    public SubscriptionQueryMessage<?, I, U> withConvertedPayload(@Nonnull Type type,
                                                                       @Nonnull Converter converter) {
         // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
         return null;

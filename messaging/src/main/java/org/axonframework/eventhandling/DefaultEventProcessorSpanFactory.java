@@ -76,7 +76,7 @@
         }
 
         @Override
-        public Span createBatchSpan(boolean streaming, List<? extends EventMessage<?>> eventMessages) {
+        public Span createBatchSpan(boolean streaming, List<? extends EventMessage> eventMessages) {
             if (distributedInSameTrace || disableBatchTrace || !streaming) {
                 return NoOpSpanFactory.NoOpSpan.INSTANCE;
             }
@@ -84,7 +84,7 @@
         }
 
         @Override
-        public Span createProcessEventSpan(boolean streaming, EventMessage<?> eventMessage) {
+        public Span createProcessEventSpan(boolean streaming, EventMessage eventMessage) {
             if (!streaming) {
                 return spanFactory.createChildHandlerSpan(() -> "EventProcessor.process", eventMessage);
             }

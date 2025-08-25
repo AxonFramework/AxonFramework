@@ -40,8 +40,8 @@ class GenericSubscriptionQueryMessageTest extends MessageTestSuite<SubscriptionQ
 
     @Override
     protected SubscriptionQueryMessage<?, ?, ?> buildDefaultMessage() {
-        Message<String> delegate =
-                new GenericMessage<>(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+        Message delegate =
+                new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
         return new GenericSubscriptionQueryMessage<>(delegate,
                                                      TEST_RESPONSE_TYPE,
                                                      TEST_UPDATES_TYPE);

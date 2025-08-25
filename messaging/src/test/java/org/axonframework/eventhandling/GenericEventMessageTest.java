@@ -27,8 +27,6 @@ import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,29 +36,29 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
-class GenericEventMessageTest extends MessageTestSuite<EventMessage<?>> {
+class GenericEventMessageTest extends MessageTestSuite<EventMessage> {
 
     private static final Instant TEST_TIMESTAMP = Instant.now();
 
     @Override
-    protected EventMessage<?> buildDefaultMessage() {
-        Message<String> delegate =
-                new GenericMessage<>(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
-        return new GenericEventMessage<>(delegate, TEST_TIMESTAMP);
+    protected EventMessage buildDefaultMessage() {
+        Message delegate =
+                new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+        return new GenericEventMessage(delegate, TEST_TIMESTAMP);
     }
 
     @Override
-    protected <P> EventMessage<?> buildMessage(@Nullable P payload) {
-        return new GenericEventMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    protected <P> EventMessage buildMessage(@Nullable P payload) {
+        return new GenericEventMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 
     @Override
-    protected void validateDefaultMessage(@Nonnull EventMessage<?> result) {
+    protected void validateDefaultMessage(@Nonnull EventMessage result) {
         assertThat(TEST_TIMESTAMP).isEqualTo(result.timestamp());
     }
 
     @Override
-    protected void validateMessageSpecifics(@Nonnull EventMessage<?> actual, @Nonnull EventMessage<?> result) {
+    protected void validateMessageSpecifics(@Nonnull EventMessage actual, @Nonnull EventMessage result) {
         assertThat(actual.timestamp()).isEqualTo(result.timestamp());
     }
 

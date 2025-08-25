@@ -99,15 +99,15 @@ class DefaultEventHandlingComponentBuilderTest {
             var component = builder.handles(new QualifiedName(String.class), (e, c) -> {
                                           handler1Invoked.set(true);
                                           return MessageStream.empty();
-                                      })
+                                   })
                                    .handles(new QualifiedName(String.class), (e, c) -> {
                                           handler2Invoked.set(true);
                                           return MessageStream.empty();
-                                      })
+                                   })
                                    .build();
 
             //  when
-            EventMessage<String> sampleMessage = EventTestUtils.asEventMessage("Message1");
+            EventMessage sampleMessage = EventTestUtils.asEventMessage("Message1");
             component.handle(sampleMessage, STUB_PROCESSING_CONTEXT);
 
             // then
@@ -128,7 +128,7 @@ class DefaultEventHandlingComponentBuilderTest {
                            .build();
 
             // when
-            EventMessage<String> sampleMessage = EventTestUtils.asEventMessage("Message1");
+            EventMessage sampleMessage = EventTestUtils.asEventMessage("Message1");
             component.handle(sampleMessage, STUB_PROCESSING_CONTEXT);
 
             // then
@@ -146,8 +146,8 @@ class DefaultEventHandlingComponentBuilderTest {
 
             @Nonnull
             @Override
-            public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
-                                                             @Nonnull ProcessingContext context) {
+            public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
+                                                       @Nonnull ProcessingContext context) {
                 invoked.set(true);
                 return super.handle(event, context);
             }

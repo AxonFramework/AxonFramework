@@ -31,41 +31,38 @@ import java.util.Map;
  * <p>
  * It hard codes the {@link #responseType() response type} to an {@link PublisherResponseType} implementation.
  *
- * @param <P> The type of {@link #payload() payload} expressing the query in this {@link StreamingQueryMessage}.
- * @param <R> The type of {@link #responseType() response} expected from this {@link StreamingQueryMessage} streamed via
- *            {@link Publisher}.
  * @author Milan Savic
  * @author Stefan Dragisic
  * @since 4.6.0
  */
-public interface StreamingQueryMessage<P, R> extends QueryMessage<P, Publisher<R>> {
+public interface StreamingQueryMessage extends QueryMessage {
 
     @Override
     @Nonnull
-    ResponseType<Publisher<R>> responseType();
+    ResponseType<Publisher<?>> responseType();
 
     @Override
     @Nonnull
-    StreamingQueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData);
+    StreamingQueryMessage withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     @Nonnull
-    StreamingQueryMessage<P, R> andMetaData(@Nonnull Map<String, String> additionalMetaData);
+    StreamingQueryMessage andMetaData(@Nonnull Map<String, String> additionalMetaData);
 
     @Override
     @Nonnull
-    default <T> StreamingQueryMessage<T, R> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+    default StreamingQueryMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
     @Nonnull
-    default <T> StreamingQueryMessage<T, R> withConvertedPayload(@Nonnull TypeReference<T> type,
-                                                                 @Nonnull Converter converter) {
+    default StreamingQueryMessage withConvertedPayload(@Nonnull TypeReference<?> type,
+                                                       @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @Nonnull
-    <T> StreamingQueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    StreamingQueryMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

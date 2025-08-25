@@ -89,7 +89,7 @@ class RoutingKeyEventTargetMatcherDefinitionTest {
         assertThrows(UnknownRoutingKeyException.class, () -> {
             resolver.matches(
                     new ChildEntityWithWrongRoutingKey(),
-                    new GenericEventMessage<>(messageType, new MyCommandPayload("someValue")),
+                    new GenericEventMessage(messageType, new MyCommandPayload("someValue")),
                     new StubProcessingContext()
             );
         });

@@ -31,29 +31,29 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ConcatenatingDomainEventStreamTest {
 
-    private DomainEventMessage<String> event1;
-    private DomainEventMessage<String> event2;
-    private DomainEventMessage<String> event3;
-    private DomainEventMessage<String> event4;
-    private DomainEventMessage<String> event5;
+    private DomainEventMessage event1;
+    private DomainEventMessage event2;
+    private DomainEventMessage event3;
+    private DomainEventMessage event4;
+    private DomainEventMessage event5;
 
     @BeforeEach
     void setUp() {
-        event1 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 0,
+        event1 = new GenericDomainEventMessage("type", UUID.randomUUID().toString(), 0,
                                                  new MessageType("event"), "Mock contents 1");
-        event2 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 1,
+        event2 = new GenericDomainEventMessage("type", UUID.randomUUID().toString(), 1,
                                                  new MessageType("event"), "Mock contents 2");
-        event3 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 2,
+        event3 = new GenericDomainEventMessage("type", UUID.randomUUID().toString(), 2,
                                                  new MessageType("event"), "Mock contents 3");
-        event4 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 3,
+        event4 = new GenericDomainEventMessage("type", UUID.randomUUID().toString(), 3,
                                                  new MessageType("event"), "Mock contents 4");
-        event5 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 4,
+        event5 = new GenericDomainEventMessage("type", UUID.randomUUID().toString(), 4,
                                                  new MessageType("event"), "Mock contents 5");
     }
 
     @Test
     void forEachRemaining() {
-        List<DomainEventMessage<String>> expectedMessages = Arrays.asList(event1, event2, event3, event4, event5);
+        List<DomainEventMessage> expectedMessages = Arrays.asList(event1, event2, event3, event4, event5);
 
         DomainEventStream concat = new ConcatenatingDomainEventStream(
                 DomainEventStream.of(event1, event2), // Initial stream - add all elements
@@ -62,7 +62,7 @@ class ConcatenatingDomainEventStreamTest {
                 DomainEventStream.of(event4, event5) // Partial overlap with previous stream - add some elements
         );
 
-        List<DomainEventMessage<?>> actualMessages = new ArrayList<>();
+        List<DomainEventMessage> actualMessages = new ArrayList<>();
         concat.forEachRemaining(actualMessages::add);
 
         assertEquals(expectedMessages, actualMessages);
@@ -70,7 +70,7 @@ class ConcatenatingDomainEventStreamTest {
 
     @Test
     void forEachRemainingKeepsDuplicateSequenceIdEventsInSameStream() {
-        List<DomainEventMessage<String>> expectedMessages =
+        List<DomainEventMessage> expectedMessages =
                 Arrays.asList(event1, event1, event2, event3, event4, event4, event5);
 
         DomainEventStream concat = new ConcatenatingDomainEventStream(
@@ -82,7 +82,7 @@ class ConcatenatingDomainEventStreamTest {
                 DomainEventStream.of(event4, event5)
         );
 
-        List<DomainEventMessage<?>> actualMessages = new ArrayList<>();
+        List<DomainEventMessage> actualMessages = new ArrayList<>();
         concat.forEachRemaining(actualMessages::add);
 
         assertEquals(expectedMessages, actualMessages);

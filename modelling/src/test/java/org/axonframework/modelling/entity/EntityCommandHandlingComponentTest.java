@@ -46,15 +46,15 @@ class EntityCommandHandlingComponentTest {
 
     private final StubProcessingContext context = new StubProcessingContext();
     private final MessageType creationalMessageType = new MessageType("CreationalCommand");
-    private final CommandMessage<?> creationalCommandMessage = new GenericCommandMessage<>(creationalMessageType,
+    private final CommandMessage creationalCommandMessage = new GenericCommandMessage(creationalMessageType,
                                                                                            "command");
     private final MessageType instanceMessageType = new MessageType("InstanceCommand");
-    private final CommandMessage<?> instanceCommandMessage = new GenericCommandMessage<>(instanceMessageType,
+    private final CommandMessage instanceCommandMessage = new GenericCommandMessage(instanceMessageType,
                                                                                          "command");
     private final MessageType mixedMessageType = new MessageType("MixedCommand");
-    private final CommandMessage<?> mixedCommandMessage = new GenericCommandMessage<>(mixedMessageType, "command");
+    private final CommandMessage mixedCommandMessage = new GenericCommandMessage(mixedMessageType, "command");
     private final MessageType missingMessageType = new MessageType("MissingCommand");
-    private final CommandMessage<?> missingCommandMessage = new GenericCommandMessage<>(missingMessageType,
+    private final CommandMessage missingCommandMessage = new GenericCommandMessage(missingMessageType,
                                                                                            "command");
     private final String entityId = "myEntityId456";
 

@@ -60,7 +60,7 @@ class SingleEntityChildMetamodelTest {
     @DisplayName("Command handling")
     public class CommandHandling {
 
-        private final CommandMessage<String> commandMessage = new GenericCommandMessage<>(
+        private final CommandMessage commandMessage = new GenericCommandMessage(
                 new MessageType(COMMAND), "myPayload"
         );
         private final ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
@@ -76,7 +76,7 @@ class SingleEntityChildMetamodelTest {
             RecordingChildEntity entityToBeFound = new RecordingChildEntity();
             when(childEntityFieldDefinition.getChildValue(any())).thenReturn(entityToBeFound);
 
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(COMMAND), "myPayload");
+            GenericCommandMessage command = new GenericCommandMessage(new MessageType(COMMAND), "myPayload");
 
             var result = testSubject.handle(command, parentEntity, context);
             assertEquals("result", result.asCompletableFuture().join().message().payload());
@@ -120,7 +120,7 @@ class SingleEntityChildMetamodelTest {
     @DisplayName("Event handling")
     public class EventHandling {
 
-        private final EventMessage<String> event = new GenericEventMessage<>(new MessageType(EVENT), "myPayload");
+        private final EventMessage event = new GenericEventMessage(new MessageType(EVENT), "myPayload");
         private final ProcessingContext context = StubProcessingContext.forMessage(event);
 
 
@@ -143,7 +143,7 @@ class SingleEntityChildMetamodelTest {
             when(childEntityFieldDefinition.getChildValue(any())).thenReturn(childEntity);
             when(childEntityMetamodel.evolve(any(), any(), any())).thenAnswer(answ -> {
                 RecordingChildEntity child = answ.getArgument(0);
-                EventMessage<String> event = answ.getArgument(1);
+                EventMessage event = answ.getArgument(1);
                 return child.evolve("child evolve: " + event.payload());
             });
             when(childEntityFieldDefinition.evolveParentBasedOnChildInput(any(), any())).thenAnswer(answ -> {

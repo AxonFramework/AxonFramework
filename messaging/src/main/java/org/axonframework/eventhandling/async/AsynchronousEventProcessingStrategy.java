@@ -64,12 +64,12 @@ public class AsynchronousEventProcessingStrategy implements EventProcessingStrat
     }
 
     @Override
-    public void handle(@Nonnull List<? extends EventMessage<?>> events,
-                       @Nonnull Consumer<List<? extends EventMessage<?>>> processor) {
+    public void handle(@Nonnull List<? extends EventMessage> events,
+                       @Nonnull Consumer<List<? extends EventMessage>> processor) {
         if (CurrentUnitOfWork.isStarted()) {
             LegacyUnitOfWork<?> unitOfWorkRoot = CurrentUnitOfWork.get().root();
             unitOfWorkRoot.getOrComputeResource(scheduledEventsKey, key -> {
-                List<EventMessage<?>> allEvents = new ArrayList<>();
+                List<EventMessage> allEvents = new ArrayList<>();
                 unitOfWorkRoot.afterCommit(uow -> schedule(allEvents, processor));
                 return allEvents;
             }).addAll(events);
@@ -84,10 +84,10 @@ public class AsynchronousEventProcessingStrategy implements EventProcessingStrat
      * @param events    The messages to schedule for processing
      * @param processor The component that will perform the actual processing
      */
-    protected void schedule(List<? extends EventMessage<?>> events,
-                            Consumer<List<? extends EventMessage<?>>> processor) {
-        Map<Object, List<EventMessage<?>>> groupedEvents = new HashMap<>();
-        for (EventMessage<?> event : events) {
+    protected void schedule(List<? extends EventMessage> events,
+                            Consumer<List<? extends EventMessage>> processor) {
+        Map<Object, List<EventMessage>> groupedEvents = new HashMap<>();
+        for (EventMessage event : events) {
             groupedEvents.computeIfAbsent(
                     sequencingPolicy.getSequenceIdentifierFor(event).orElse(null),
                     key -> new ArrayList<>()
@@ -110,8 +110,8 @@ public class AsynchronousEventProcessingStrategy implements EventProcessingStrat
         });
     }
 
-    private void assignEventsToScheduler(List<? extends EventMessage<?>> events, Object sequenceIdentifier,
-                                         Consumer<List<? extends EventMessage<?>>> processor) {
+    private void assignEventsToScheduler(List<? extends EventMessage> events, Object sequenceIdentifier,
+                                         Consumer<List<? extends EventMessage>> processor) {
         boolean taskScheduled = false;
         while (!taskScheduled) {
             EventProcessorTask currentScheduler = currentTasks.get(sequenceIdentifier);

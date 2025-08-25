@@ -72,7 +72,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     private static final boolean WITH_MARKER = true;
     private static final boolean WITHOUT_MARKER = false;
 
-    private final NavigableMap<Long, TaggedEventMessage<? extends EventMessage<?>>> eventStorage =
+    private final NavigableMap<Long, TaggedEventMessage<? extends EventMessage>> eventStorage =
             new ConcurrentSkipListMap<>();
     private final long offset;
     private final ReentrantLock appendLock = new ReentrantLock();
@@ -169,7 +169,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
@@ -183,7 +183,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
@@ -235,7 +235,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         return eventStorage.entrySet()
                            .stream()
                            .filter(positionToEventEntry -> {
-                               EventMessage<?> event = positionToEventEntry.getValue().event();
+                               EventMessage event = positionToEventEntry.getValue().event();
                                Instant eventTimestamp = event.timestamp();
                                return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);
                            })
@@ -253,7 +253,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         descriptor.describeProperty("offset", offset);
     }
 
-    private abstract class MapBackedMessageStream implements MessageStream<EventMessage<?>> {
+    private abstract class MapBackedMessageStream implements MessageStream<EventMessage> {
 
         private final AtomicLong position;
         protected final long end;
@@ -271,7 +271,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         }
 
         @Override
-        public Optional<Entry<EventMessage<?>>> next() {
+        public Optional<Entry<EventMessage>> next() {
             long currentPosition = this.position.get();
             while (currentPosition <= this.end
                     && eventStorage.containsKey(currentPosition)
@@ -288,7 +288,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         }
 
         @Override
-        public Optional<Entry<EventMessage<?>>> peek() {
+        public Optional<Entry<EventMessage>> peek() {
             long currentPosition = this.position.get();
             while (currentPosition <= this.end && eventStorage.containsKey(currentPosition)) {
                 TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
@@ -302,7 +302,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             return lastEntry();
         }
 
-        abstract Optional<Entry<EventMessage<?>>> lastEntry();
+        abstract Optional<Entry<EventMessage>> lastEntry();
 
         @Override
         public void onAvailable(@Nonnull Runnable callback) {
@@ -350,7 +350,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         }
 
         @Override
-        Optional<Entry<EventMessage<?>>> lastEntry() {
+        Optional<Entry<EventMessage>> lastEntry() {
             if (sharedLastEntry.compareAndSet(false, true)) {
                 Context context = Context.with(ConsistencyMarker.RESOURCE_KEY, new GlobalIndexConsistencyMarker(end));
                 return Optional.of(new SimpleEntry<>(TerminalEventMessage.INSTANCE, context));
@@ -378,7 +378,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         }
 
         @Override
-        Optional<Entry<EventMessage<?>>> lastEntry() {
+        Optional<Entry<EventMessage>> lastEntry() {
             return Optional.empty();
         }
     }

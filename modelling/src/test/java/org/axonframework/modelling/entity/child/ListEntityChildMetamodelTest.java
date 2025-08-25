@@ -71,7 +71,7 @@ class ListEntityChildMetamodelTest {
     @Nested
     @DisplayName("Command handling")
     public class CommandHandling {
-        private final CommandMessage<String> commandMessage = new GenericCommandMessage<>(
+        private final CommandMessage commandMessage = new GenericCommandMessage(
                 new MessageType(COMMAND), "myPayload"
         );
         private final ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
@@ -152,14 +152,14 @@ class ListEntityChildMetamodelTest {
     @DisplayName("Event handling")
     public class EventHandling {
 
-        private final EventMessage<String> event = new GenericEventMessage<>(new MessageType(EVENT), "myPayload");
+        private final EventMessage event = new GenericEventMessage(new MessageType(EVENT), "myPayload");
         private final ProcessingContext context = StubProcessingContext.forMessage(event);
 
         @BeforeEach
         void setUp() {
             when(childEntityMetamodel.evolve(any(), any(), any())).thenAnswer(answ -> {
                 RecordingChildEntity child = answ.getArgument(0);
-                EventMessage<String> event = answ.getArgument(1);
+                EventMessage event = answ.getArgument(1);
                 return child.evolve("child evolve: " + event.payload());
             });
             when(childEntityFieldDefinition.evolveParentBasedOnChildInput(any(), any())).thenAnswer(answ -> {

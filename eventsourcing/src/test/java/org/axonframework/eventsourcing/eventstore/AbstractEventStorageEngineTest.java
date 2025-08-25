@@ -76,12 +76,12 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
         testSubject = createEngine(engineBuilder -> (EB) engineBuilder.upcasterChain(mockUpcasterChain));
 
         testSubject.appendEvents(createDomainEvents(4));
-        List<DomainEventMessage<?>> upcastedEvents = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
+        List<DomainEventMessage> upcastedEvents = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
         assertEquals(8, upcastedEvents.size());
 
-        Iterator<DomainEventMessage<?>> iterator = upcastedEvents.iterator();
+        Iterator<DomainEventMessage> iterator = upcastedEvents.iterator();
         while (iterator.hasNext()) {
-            DomainEventMessage<?> event1 = iterator.next(), event2 = iterator.next();
+            DomainEventMessage event1 = iterator.next(), event2 = iterator.next();
             assertEquals(event1.getAggregateIdentifier(), event2.getAggregateIdentifier());
             assertEquals(event1.getSequenceNumber(), event2.getSequenceNumber());
             assertEquals(event1.payload(), event2.payload());

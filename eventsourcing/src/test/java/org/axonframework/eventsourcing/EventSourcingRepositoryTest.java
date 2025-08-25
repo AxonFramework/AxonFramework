@@ -185,11 +185,11 @@ class EventSourcingRepositoryTest {
         verify(eventStoreTransaction)
                 .source(argThat(EventSourcingRepositoryTest::conditionPredicate));
         //noinspection unchecked
-        ArgumentCaptor<Consumer<EventMessage<?>>> callback = ArgumentCaptor.forClass(Consumer.class);
+        ArgumentCaptor<Consumer<EventMessage>> callback = ArgumentCaptor.forClass(Consumer.class);
         verify(eventStoreTransaction).onAppend(callback.capture());
         assertEquals("test(0)-0-1", result.resultNow().entity());
 
-        callback.getValue().accept(new GenericEventMessage<>(new MessageType("event"), "live"));
+        callback.getValue().accept(new GenericEventMessage(new MessageType("event"), "live"));
         assertEquals("test(0)-0-1-live", result.resultNow().entity());
     }
 

@@ -46,7 +46,7 @@ class PersonIdentifierEntityIdResolver implements EntityIdResolver<PersonIdentif
 
     @Nonnull
     @Override
-    public PersonIdentifier resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+    public PersonIdentifier resolve(@Nonnull Message message, @Nonnull ProcessingContext context) {
         List<Class<? extends PersonCommand>> personCommandTypes = List.of(
                 AssignTaskCommand.class,
                 CreateCustomer.class,

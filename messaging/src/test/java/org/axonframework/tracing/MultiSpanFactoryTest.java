@@ -36,8 +36,8 @@ class MultiSpanFactoryTest {
     private final Span mockSpan2 = mock(Span.class);
     private final SpanFactory multiSpanFactory = new MultiSpanFactory(Arrays.asList(spanFactory1, spanFactory2));
 
-    private final GenericEventMessage<?> message =
-            new GenericEventMessage<>(new MessageType("event"), "payload");
+    private final GenericEventMessage message =
+            new GenericEventMessage(new MessageType("event"), "payload");
     private final Supplier<String> stringSupplier = () -> "Trace";
 
     @Test

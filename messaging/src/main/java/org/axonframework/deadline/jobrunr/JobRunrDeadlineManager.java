@@ -134,11 +134,11 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     public String schedule(@Nonnull Instant triggerDateTime, @Nonnull String deadlineName,
                            @Nullable Object messageOrPayload,
                            @Nonnull ScopeDescriptor deadlineScope) {
-        DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
+        DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         UUID deadlineId = UUID.randomUUID();
         Span span = spanFactory.createScheduleSpan(deadlineName, deadlineId.toString(), deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
-            DeadlineMessage<Object> interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
+            DeadlineMessage interceptedDeadlineMessage = processDispatchInterceptors(deadlineMessage);
             String serializedDeadlineDetails = DeadlineDetails.serialized(
                     deadlineName,
                     deadlineScope,
@@ -206,7 +206,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
      *                                  the needed details to execute.
      * @param deadlineId                The {@link UUID} of the deadline.
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("rawtypes")
     public void execute(@Nonnull String serializedDeadlineDetails, String deadlineId) {
         SimpleSerializedObject<String> serializedDeadlineMetaData = new SimpleSerializedObject<>(
                 serializedDeadlineDetails, String.class, DeadlineDetails.class.getName(), null
@@ -217,7 +217,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
                                                   deadlineId,
                                                   deadlineMessage).start();
         try (SpanScope ignored = span.makeCurrent()) {
-            LegacyUnitOfWork<DeadlineMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(deadlineMessage);
+            LegacyUnitOfWork<DeadlineMessage> unitOfWork = new LegacyDefaultUnitOfWork<>(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
             InterceptorChain chain = new DefaultInterceptorChain<>(
@@ -229,7 +229,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
                                                  deadlineDetails.getDeserializedScopeDescriptor(serializer));
                         return null;
                     });
-            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceedSync);
+            ResultMessage resultMessage = unitOfWork.executeWithResult(chain::proceedSync);
             if (resultMessage.isExceptional()) {
                 Throwable e = resultMessage.exceptionResult();
                 span.recordException(e);
@@ -243,7 +243,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
     }
 
     @SuppressWarnings("Duplicates")
-    private void executeScheduledDeadline(DeadlineMessage<?> deadlineMessage, ProcessingContext context, ScopeDescriptor deadlineScope) {
+    private void executeScheduledDeadline(DeadlineMessage deadlineMessage, ProcessingContext context, ScopeDescriptor deadlineScope) {
         scopeAwareProvider.provideScopeAwareStream(deadlineScope)
                           .filter(scopeAwareComponent -> scopeAwareComponent.canResolve(deadlineScope))
                           .forEach(scopeAwareComponent -> {

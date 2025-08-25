@@ -154,7 +154,7 @@ class WorkPackage {
      * @return {@code True} if this {@link WorkPackage} scheduled one of the events for execution, otherwise
      * {@code false}.
      */
-    public boolean scheduleEvents(List<MessageStream.Entry<? extends EventMessage<?>>> eventEntries) {
+    public boolean scheduleEvents(List<MessageStream.Entry<? extends EventMessage>> eventEntries) {
         if (eventEntries.isEmpty()) {
             // cannot schedule an empty events list
             return false;
@@ -199,7 +199,7 @@ class WorkPackage {
         return canHandleAny;
     }
 
-    private void assertEqualTokens(List<MessageStream.Entry<? extends EventMessage<?>>> eventEntries) {
+    private void assertEqualTokens(List<MessageStream.Entry<? extends EventMessage>> eventEntries) {
         TrackingToken expectedToken = TrackingToken.fromContext(eventEntries.get(0)).orElse(null);
         Assert.isTrue(
                 eventEntries.stream()
@@ -219,7 +219,7 @@ class WorkPackage {
      * @param eventEntry The event entry to schedule for work in this work package.
      * @return {@code True} if this {@link WorkPackage} scheduled the event for execution, otherwise {@code false}.
      */
-    public boolean scheduleEvent(MessageStream.Entry<? extends EventMessage<?>> eventEntry) {
+    public boolean scheduleEvent(MessageStream.Entry<? extends EventMessage> eventEntry) {
         TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
         if (shouldNotSchedule(eventEntry)) {
             logger.trace("Ignoring event [{}] with position [{}] for work package [{}]. "
@@ -256,13 +256,13 @@ class WorkPackage {
      * @param eventEntry The event entry to validate whether it should be scheduled yes or no.
      * @return {@code true} if the given {@code eventEntry} should not be scheduled, {@code false} otherwise.
      */
-    private boolean shouldNotSchedule(MessageStream.Entry<? extends EventMessage<?>> eventEntry) {
+    private boolean shouldNotSchedule(MessageStream.Entry<? extends EventMessage> eventEntry) {
         TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
         // Null check is done to solve potential NullPointerException.
         return lastDeliveredToken != null && eventToken != null && lastDeliveredToken.covers(eventToken);
     }
 
-    private boolean canHandle(EventMessage<?> eventMessage, ProcessingContext processingContext) {
+    private boolean canHandle(EventMessage eventMessage, ProcessingContext processingContext) {
         try {
             return eventFilter.canHandle(eventMessage, processingContext, segment);
         } catch (Exception e) {
@@ -313,7 +313,7 @@ class WorkPackage {
     }
 
     private void processEvents() throws Exception {
-        List<EventMessage<?>> eventBatch = new ArrayList<>();
+        List<EventMessage> eventBatch = new ArrayList<>();
         while (!isAbortTriggered() && eventBatch.size() < batchSize && !processingQueue.isEmpty()) {
             ProcessingEntry entry = processingQueue.poll();
             lastConsumedToken = WrappedToken.advance(lastConsumedToken, entry.trackingToken());
@@ -526,7 +526,7 @@ class WorkPackage {
          * @return {@code true} if the event message can be handled, otherwise {@code false}
          * @throws Exception when validating of the given {@code eventMessage} fails
          */
-        boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Segment segment) throws Exception;
+        boolean canHandle(EventMessage eventMessage, ProcessingContext context, Segment segment) throws Exception;
     }
 
     /**
@@ -542,7 +542,7 @@ class WorkPackage {
          * @param context The processing context in which the event messages are processed.
          * @return A stream of messages resulting from the processing of the event messages.
          */
-        MessageStream.Empty<Message<Void>> process(@Nonnull List<? extends EventMessage<?>> events, ProcessingContext context);
+        MessageStream.Empty<Message> process(@Nonnull List<? extends EventMessage> events, ProcessingContext context);
     }
 
     /**
@@ -734,7 +734,7 @@ class WorkPackage {
          *
          * @param eventBatch The list of events to add this entry's events to.
          */
-        void addToBatch(List<EventMessage<?>> eventBatch);
+        void addToBatch(List<EventMessage> eventBatch);
     }
 
     /**
@@ -744,10 +744,10 @@ class WorkPackage {
      */
     private static class DefaultProcessingEntry implements ProcessingEntry {
 
-        private final MessageStream.Entry<? extends EventMessage<?>> eventEntry;
+        private final MessageStream.Entry<? extends EventMessage> eventEntry;
         private final boolean canHandle;
 
-        public DefaultProcessingEntry(MessageStream.Entry<? extends EventMessage<?>> eventEntry, boolean canHandle) {
+        public DefaultProcessingEntry(MessageStream.Entry<? extends EventMessage> eventEntry, boolean canHandle) {
             this.eventEntry = eventEntry;
             this.canHandle = canHandle;
         }
@@ -758,7 +758,7 @@ class WorkPackage {
         }
 
         @Override
-        public void addToBatch(List<EventMessage<?>> eventBatch) {
+        public void addToBatch(List<EventMessage> eventBatch) {
             if (canHandle) {
                 eventBatch.add(eventEntry.message());
             }
@@ -787,7 +787,7 @@ class WorkPackage {
         }
 
         @Override
-        public void addToBatch(List<EventMessage<?>> eventBatch) {
+        public void addToBatch(List<EventMessage> eventBatch) {
             processingEntries.forEach(entry -> entry.addToBatch(eventBatch));
         }
     }

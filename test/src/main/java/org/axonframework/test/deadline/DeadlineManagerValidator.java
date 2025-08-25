@@ -129,9 +129,9 @@ public class DeadlineManagerValidator {
      */
     public void assertTriggeredDeadlinesMatching(Matcher<? extends Iterable<?>> matcher) {
         List<ScheduledDeadlineInfo> triggeredDeadlines = deadlineManager.getTriggeredDeadlines();
-        List<DeadlineMessage<?>> deadlineMessages = triggeredDeadlines.stream()
-                                                                      .map(ScheduledDeadlineInfo::deadlineMessage)
-                                                                      .collect(Collectors.toList());
+        List<DeadlineMessage> deadlineMessages = triggeredDeadlines.stream()
+                                                                   .map(ScheduledDeadlineInfo::deadlineMessage)
+                                                                   .collect(Collectors.toList());
         if (!matcher.matches(deadlineMessages)) {
             Description expected = new StringDescription();
             Description actual = new StringDescription();
@@ -170,8 +170,8 @@ public class DeadlineManagerValidator {
         );
     }
 
-    private Matcher<DeadlineMessage<?>>[] createDeadlineNameMatchers(String[] expectedDeadlineNames) {
-        List<Matcher<DeadlineMessage<?>>> matchers = new ArrayList<>(expectedDeadlineNames.length);
+    private Matcher<DeadlineMessage>[] createDeadlineNameMatchers(String[] expectedDeadlineNames) {
+        List<Matcher<DeadlineMessage>> matchers = new ArrayList<>(expectedDeadlineNames.length);
         for (String deadlineName : expectedDeadlineNames) {
             matchers.add(matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName)));
         }
@@ -192,8 +192,8 @@ public class DeadlineManagerValidator {
         );
     }
 
-    private Matcher<Message<?>>[] createDeadlineTypeMatchers(Class<?>[] expectedDeadlineTypes) {
-        List<Matcher<Message<?>>> matchers = new ArrayList<>(expectedDeadlineTypes.length);
+    private Matcher<Message>[] createDeadlineTypeMatchers(Class<?>[] expectedDeadlineTypes) {
+        List<Matcher<Message>> matchers = new ArrayList<>(expectedDeadlineTypes.length);
         for (Class<?> deadlineType : expectedDeadlineTypes) {
             matchers.add(messageWithPayload(any(deadlineType)));
         }
