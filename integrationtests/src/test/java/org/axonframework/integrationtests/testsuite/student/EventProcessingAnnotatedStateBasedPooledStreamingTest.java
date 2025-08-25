@@ -84,7 +84,7 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
                                       .messagingModel((configuration, builder) -> builder
                                               .entityEvolver(readModelEvolver())
                                               .build())
-                                      .entityIdResolver(cfg -> (message, context) -> STUDENT_ID);
+                                      .entityIdResolver(cfg -> (message, context) -> STUDENT_ID); // fixme: I don't consume Command here, but it's needed.
         configurer.componentRegistry(cr -> cr.registerModule(studentCoursesEntity));
 
         var studentRegisteredCoursesProcessor = EventProcessorModule
