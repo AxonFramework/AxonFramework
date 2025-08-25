@@ -23,6 +23,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.eventhandling.EventConverter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
@@ -48,19 +49,19 @@ import java.util.stream.Collectors;
  * @since 5.0.0
  */
 @Internal
-public class EventConverter implements DescribableComponent {
+public class TaggedEventConverter implements DescribableComponent {
 
-    private final Converter converter;
+    private final EventConverter converter;
 
     /**
-     * Constructs an {@code EventConverter} using the given {@code converter} to convert the
-     * {@link EventMessage#payload() event payload} and {@link EventMessage#metaData() metadata values}.
+     * Constructs an {@code TaggedEventConverter} using the given {@code converter} to convert the
+     * {@link EventMessage#payload() event payload}.
      *
      * @param converter The converter used to {@link Converter#convert(Object, Class)} the
-     *                  {@link EventMessage#payload()} and {@link EventMessage#metaData()} for the {@link Event}.
+     *                  {@link EventMessage#payload()} for the {@link Event}.
      */
-    public EventConverter(@Nonnull Converter converter) {
-        this.converter = Objects.requireNonNull(converter, "The converter cannot be null.");
+    public TaggedEventConverter(@Nonnull EventConverter converter) {
+        this.converter = Objects.requireNonNull(converter, "The EventConverter cannot be null.");
     }
 
     /**
@@ -84,13 +85,13 @@ public class EventConverter implements DescribableComponent {
                     .setTimestamp(eventMessage.timestamp().toEpochMilli())
                     .setName(eventMessage.type().name())
                     .setVersion(eventMessage.type().version())
-                    .setPayload(convertPayload(eventMessage.payload()))
+                    .setPayload(convertPayload(eventMessage))
                     .putAllMetadata(convertMetaData(eventMessage.metaData()))
                     .build();
     }
 
-    private ByteString convertPayload(Object payload) {
-        return ByteString.copyFrom(converter.convert(payload, byte[].class));
+    private ByteString convertPayload(EventMessage payload) {
+        return ByteString.copyFrom(converter.convertPayload(payload, byte[].class));
     }
 
     private Map<String, String> convertMetaData(MetaData metaData) {
@@ -104,7 +105,7 @@ public class EventConverter implements DescribableComponent {
 
     private static List<io.axoniq.axonserver.grpc.event.dcb.Tag> convertTags(Set<Tag> tags) {
         return tags.stream()
-                   .map(EventConverter::convertTag)
+                   .map(TaggedEventConverter::convertTag)
                    .collect(Collectors.toList());
     }
 

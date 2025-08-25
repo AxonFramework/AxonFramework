@@ -20,7 +20,9 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.messaging.DelegatingMessageConverter;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageConverter;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -48,14 +50,17 @@ class PayloadConvertingCommandBusConnectorTest {
     void setUp() {
         mockDelegate = mock(CommandBusConnector.class);
         mockConverter = mock(Converter.class);
-        testSubject = new PayloadConvertingCommandBusConnector<>(mockDelegate, mockConverter, byte[].class);
+        testSubject = new PayloadConvertingCommandBusConnector<>(
+                mockDelegate, new DelegatingMessageConverter(mockConverter), byte[].class
+        );
     }
 
     @Test
     void constructorRequiresNonNullDelegate() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class,
-                     () -> new PayloadConvertingCommandBusConnector<>(null, mockConverter, byte[].class));
+        assertThrows(NullPointerException.class, () -> new PayloadConvertingCommandBusConnector<>(
+                null, new DelegatingMessageConverter(mockConverter), byte[].class
+        ));
     }
 
     @Test
@@ -68,8 +73,9 @@ class PayloadConvertingCommandBusConnectorTest {
     @Test
     void constructorRequiresNonNullTargetType() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class,
-                     () -> new PayloadConvertingCommandBusConnector<>(mockDelegate, mockConverter, null));
+        assertThrows(NullPointerException.class, () -> new PayloadConvertingCommandBusConnector<>(
+                mockDelegate, new DelegatingMessageConverter(mockConverter), null
+        ));
     }
 
     @Test

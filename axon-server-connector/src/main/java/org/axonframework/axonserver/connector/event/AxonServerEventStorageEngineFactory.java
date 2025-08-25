@@ -25,11 +25,10 @@ import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.InstantiatedComponentDefinition;
 import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.eventhandling.EventConverter;
 import org.axonframework.serialization.Converter;
 
 import java.util.Optional;
-
-import static org.axonframework.configuration.MessagingConfigurationDefaults.EVENT_CONVERTER_NAME;
 
 /**
  * A {@link ComponentFactory} implementation that generates {@link AxonServerEventStorageEngine} instances.
@@ -71,7 +70,7 @@ public class AxonServerEventStorageEngineFactory implements ComponentFactory<Axo
                                                                    @Nonnull Configuration config) {
         AxonServerConnection connection = config.getComponent(AxonServerConnectionManager.class)
                                                 .getConnection(context);
-        Converter eventConverter = config.getComponent(Converter.class, EVENT_CONVERTER_NAME);
+        EventConverter eventConverter = config.getComponent(EventConverter.class);
         return new AxonServerEventStorageEngine(connection, eventConverter);
     }
 

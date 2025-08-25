@@ -22,19 +22,19 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.MessagingConfigurationDefaults;
+import org.axonframework.eventhandling.EventConverter;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
+import org.axonframework.messaging.MessageConverter;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
-import org.axonframework.serialization.Converter;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -42,7 +42,6 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.ConstructorUtils.getConstructorFunctionWithZeroArguments;
-import static org.axonframework.configuration.MessagingConfigurationDefaults.EVENT_CONVERTER_NAME;
 
 /**
  * Annotation-based implementation of the {@link EventSourcedEntityModule}. Expects the {@link EventSourcedEntity}
@@ -84,7 +83,6 @@ class AnnotatedEventSourcedEntityModule<I, E>
                         .criteriaResolver(criteriaResolver(annotationAttributes))
                         .entityIdResolver(entityIdResolver(annotationAttributes)))
         );
-
     }
 
     private AnnotatedEntityMetamodel<E> buildMetaModel(@Nonnull Configuration c) {
@@ -94,7 +92,8 @@ class AnnotatedEventSourcedEntityModule<I, E>
                     concreteTypes,
                     c.getComponent(ParameterResolverFactory.class),
                     c.getComponent(MessageTypeResolver.class),
-                    c.getComponent(Converter.class, EVENT_CONVERTER_NAME)
+                    c.getComponent(MessageConverter.class),
+                    c.getComponent(EventConverter.class)
             );
         }
 
@@ -102,7 +101,8 @@ class AnnotatedEventSourcedEntityModule<I, E>
                 entityType,
                 c.getComponent(ParameterResolverFactory.class),
                 c.getComponent(MessageTypeResolver.class),
-                c.getComponent(Converter.class, EVENT_CONVERTER_NAME)
+                c.getComponent(MessageConverter.class),
+                c.getComponent(EventConverter.class)
         );
     }
 

@@ -28,15 +28,17 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.DelegatingEventConverter;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventConverter;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.ConfigurationApplicationContext;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.DelegatingMessageConverter;
+import org.axonframework.messaging.MessageConverter;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -61,19 +63,19 @@ import java.util.List;
  * <p>
  * Will only register the following components <b>if</b> there is no component registered for the given class yet:
  * <ul>
- *     <li>Registers a {@link org.axonframework.messaging.ClassBasedMessageTypeResolver} for class {@link org.axonframework.messaging.MessageTypeResolver}</li>
- *     <li>Registers a {@link org.axonframework.serialization.json.JacksonConverter} for class {@link org.axonframework.serialization.Converter}</li>
- *     <li>Registers a {@link org.axonframework.serialization.json.JacksonConverter} for class {@link org.axonframework.serialization.Converter} under the {@link #MESSAGE_CONVERTER_NAME}.</li>
- *     <li>Registers a {@link org.axonframework.serialization.json.JacksonConverter} for class {@link org.axonframework.serialization.Converter} under the {@link #EVENT_CONVERTER_NAME}.</li>
- *     <li>Registers a {@link org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory} for class {@link org.axonframework.messaging.unitofwork.UnitOfWorkFactory}</li>
- *     <li>Registers a {@link org.axonframework.commandhandling.gateway.DefaultCommandGateway} for class {@link org.axonframework.commandhandling.gateway.CommandGateway}</li>
- *     <li>Registers a {@link org.axonframework.commandhandling.SimpleCommandBus} for class {@link CommandBus}</li>
- *     <li>Registers a {@link org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy} for class {@link RoutingStrategy}</li>
- *     <li>Registers a {@link org.axonframework.eventhandling.gateway.DefaultEventGateway} for class {@link org.axonframework.eventhandling.gateway.EventGateway}</li>
- *     <li>Registers a {@link org.axonframework.eventhandling.SimpleEventBus} for class {@link org.axonframework.eventhandling.EventBus}</li>
- *     <li>Registers a {@link org.axonframework.queryhandling.DefaultQueryGateway} for class {@link org.axonframework.queryhandling.QueryGateway}</li>
- *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryBus} for class {@link QueryBus}</li>
- *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryUpdateEmitter} for class {@link QueryUpdateEmitter}</li>
+ *     <li>Registers a {@link ClassBasedMessageTypeResolver} for class {@link MessageTypeResolver}</li>
+ *     <li>Registers a {@link JacksonConverter} for class {@link Converter}</li>
+ *     <li>Registers a {@link DelegatingMessageConverter} using the default {@link JacksonConverter}.</li>
+ *     <li>Registers a {@link DelegatingEventConverter} using the default {@link JacksonConverter}.</li>
+ *     <li>Registers a {@link TransactionalUnitOfWorkFactory} for class {@link UnitOfWorkFactory}</li>
+ *     <li>Registers a {@link DefaultCommandGateway} for class {@link CommandGateway}</li>
+ *     <li>Registers a {@link SimpleCommandBus} for class {@link CommandBus}</li>
+ *     <li>Registers a {@link AnnotationRoutingStrategy} for class {@link RoutingStrategy}</li>
+ *     <li>Registers a {@link DefaultEventGateway} for class {@link EventGateway}</li>
+ *     <li>Registers a {@link SimpleEventBus} for class {@link EventBus}</li>
+ *     <li>Registers a {@link DefaultQueryGateway} for class {@link QueryGateway}</li>
+ *     <li>Registers a {@link SimpleQueryBus} for class {@link QueryBus}</li>
+ *     <li>Registers a {@link SimpleQueryUpdateEmitter} for class {@link QueryUpdateEmitter}</li>
  * </ul>
  *
  * @author Steven van Beelen
@@ -94,21 +96,6 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
      */
     public static final int CONVERTING_COMMAND_GATEWAY_ORDER = Integer.MIN_VALUE + 100;
 
-    /**
-     * Name used to register the messaging-specific {@link Converter} with the {@link ComponentRegistry}.
-     * <p>
-     * This {@code Converter} is used to convert <b>all</b> {@link Message#payload() Message payloads} by default. The
-     * payload for {@link EventMessage EventMessages} may be overwritten by the {@code Converter} configured under the
-     * {@link #EVENT_CONVERTER_NAME}.
-     */
-    public static final String MESSAGE_CONVERTER_NAME = "messageConverter";
-    /**
-     * Name used to register the event-specific {@link Converter} with the {@link ComponentRegistry}.
-     * <p>
-     * This {@code Converter} is used to convert <b>all</b> {@link EventMessage#payload() Message payloads} by default.
-     */
-    public static final String EVENT_CONVERTER_NAME = "eventConverter";
-
     @Override
     public int order() {
         return Integer.MAX_VALUE;
@@ -119,10 +106,8 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         registry.registerIfNotPresent(MessageTypeResolver.class,
                                       MessagingConfigurationDefaults::defaultMessageTypeResolver)
                 .registerIfNotPresent(Converter.class, c -> new JacksonConverter())
-                .registerIfNotPresent(Converter.class, MESSAGE_CONVERTER_NAME,
-                                      c -> c.getComponent(Converter.class))
-                .registerIfNotPresent(Converter.class, EVENT_CONVERTER_NAME,
-                                      c -> c.getComponent(Converter.class, MESSAGE_CONVERTER_NAME))
+                .registerIfNotPresent(MessageConverter.class, MessagingConfigurationDefaults::defaultMessageConverter)
+                .registerIfNotPresent(EventConverter.class, MessagingConfigurationDefaults::defaultEventConverter)
                 .registerIfNotPresent(UnitOfWorkFactory.class, MessagingConfigurationDefaults::defaultUnitOfWorkFactory)
                 .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(CommandBus.class, MessagingConfigurationDefaults::defaultCommandBus)
@@ -139,13 +124,25 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 CONVERTING_COMMAND_GATEWAY_ORDER,
                 (config, name, delegate) -> new ConvertingCommandGateway(
                         delegate,
-                        config.getComponent(Converter.class, MESSAGE_CONVERTER_NAME)
+                        config.getComponent(MessageConverter.class)
                 )
         );
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(Configuration config) {
         return new ClassBasedMessageTypeResolver();
+    }
+
+    private static DelegatingMessageConverter defaultMessageConverter(Configuration c) {
+        return new DelegatingMessageConverter(c.getComponent(Converter.class));
+    }
+
+    private static DelegatingEventConverter defaultEventConverter(Configuration c) {
+        return c.getOptionalComponent(MessageConverter.class)
+                .filter(messageConverter -> messageConverter instanceof DelegatingMessageConverter)
+                .map(messageConverter -> ((DelegatingMessageConverter) messageConverter).converter())
+                .map(DelegatingEventConverter::new)
+                .orElse(new DelegatingEventConverter(c.getComponent(Converter.class)));
     }
 
     private static UnitOfWorkFactory defaultUnitOfWorkFactory(Configuration config) {

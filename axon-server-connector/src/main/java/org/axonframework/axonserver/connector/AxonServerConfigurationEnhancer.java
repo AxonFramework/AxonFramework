@@ -28,11 +28,9 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.SearchScope;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.serialization.Converter;
+import org.axonframework.messaging.MessageConverter;
 
 import javax.annotation.Nonnull;
-
-import static org.axonframework.configuration.MessagingConfigurationDefaults.MESSAGE_CONVERTER_NAME;
 
 /**
  * A {@link ConfigurationEnhancer} that is auto-loadable by the
@@ -67,7 +65,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
     private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector<Object>> payloadConvertingConnectorComponentDecorator() {
         return (config, name, delegate) -> new PayloadConvertingCommandBusConnector<>(
                 delegate,
-                config.getComponent(Converter.class, MESSAGE_CONVERTER_NAME),
+                config.getComponent(MessageConverter.class),
                 byte[].class
         );
     }

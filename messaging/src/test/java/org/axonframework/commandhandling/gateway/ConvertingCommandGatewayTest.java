@@ -18,8 +18,8 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageConverter;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
 import java.nio.charset.StandardCharsets;
@@ -30,20 +30,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link ConvertingCommandGateway}.
+ */
 class ConvertingCommandGatewayTest {
 
     private static final String HELLO_MESSAGE = "Hello, world!";
     private static final byte[] HELLO_BYTES = HELLO_MESSAGE.getBytes(StandardCharsets.UTF_8);
     private static final MessageType TEST_TYPE = new MessageType("message");
 
-    private Converter mockConverter;
+    private MessageConverter mockConverter;
     private CommandGateway mockDelegate;
     private ConvertingCommandGateway testSubject;
 
     @BeforeEach
     void setUp() {
         mockDelegate = mock(CommandGateway.class);
-        mockConverter = mock(Converter.class);
+        mockConverter = mock(MessageConverter.class);
         testSubject = new ConvertingCommandGateway(mockDelegate, mockConverter);
     }
 
@@ -54,7 +57,7 @@ class ConvertingCommandGatewayTest {
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
-        when(mockConverter.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
+        when(mockConverter.convertPayload(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
 
         CompletableFuture<byte[]> actual = testSubject.send("Test", null).resultAs(byte[].class);
         assertTrue(actual.isDone());
@@ -68,7 +71,7 @@ class ConvertingCommandGatewayTest {
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
-        when(mockConverter.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
+        when(mockConverter.convertPayload(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
 
         CompletableFuture<byte[]> actual = testSubject.send("Test", null, byte[].class);
         assertTrue(actual.isDone());
@@ -82,7 +85,7 @@ class ConvertingCommandGatewayTest {
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
-        when(mockConverter.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
+        when(mockConverter.convertPayload(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
 
         var commandResult = testSubject.send("Test", null);
         CompletableFuture<byte[]> actual = commandResult.resultAs(byte[].class);
@@ -97,7 +100,7 @@ class ConvertingCommandGatewayTest {
         CommandResult stubResult = new FutureCommandResult(completableFuture);
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
-        when(mockConverter.convert(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
+        when(mockConverter.convertPayload(any(), eq(byte[].class))).thenReturn(HELLO_BYTES);
 
         var commandResult = testSubject.send("Test", null);
         CompletableFuture<byte[]> actual = commandResult.resultAs(byte[].class);
