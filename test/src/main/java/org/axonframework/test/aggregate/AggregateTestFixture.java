@@ -79,9 +79,7 @@ import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
-import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.PassThroughConverter;
-import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.deadline.StubDeadlineManager;
@@ -230,7 +228,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 getParameterResolverFactory(),
                 getHandlerDefinition(),
                 new ClassBasedMessageTypeResolver(),
-                PassThroughConverter.INSTANCE
+                PassThroughConverter.MESSAGE_INSTANCE
         ));
         return this;
     }

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.ConversionException;
@@ -61,8 +62,24 @@ public class JacksonConverter implements Converter {
      * @param objectMapper The mapper used to convert objects into and from a JSON format.
      */
     public JacksonConverter(@Nonnull ObjectMapper objectMapper) {
+        this(objectMapper, new ChainingContentTypeConverter());
+    }
+
+    /**
+     * Constructs a {@code JacksonConverter} with the given {@code objectMapper} and {@code converter}.
+     * <p>
+     * This constructor should only be used when a specific {@link ClassLoader} should be give to the
+     * {@link ChainingContentTypeConverter} to ensure it loads the right set of
+     * {@link org.axonframework.serialization.ContentTypeConverter ContentTypeConverters}.
+     *
+     * @param objectMapper The mapper used to convert objects into and from a JSON format.
+     * @param converter    The converter used for simpler conversions.
+     */
+    @Internal
+    public JacksonConverter(@Nonnull ObjectMapper objectMapper,
+                            @Nonnull ChainingContentTypeConverter converter) {
         this.objectMapper = Objects.requireNonNull(objectMapper, "The ObjectMapper may not be null.");
-        this.converter = new ChainingContentTypeConverter();
+        this.converter = Objects.requireNonNull(converter, "The ChainingContentTypeConverter may not be null.");
         this.converter.registerConverter(new JsonNodeToByteArrayConverter(this.objectMapper));
         this.converter.registerConverter(new ByteArrayToJsonNodeConverter(this.objectMapper));
         this.converter.registerConverter(new JsonNodeToObjectNodeConverter());

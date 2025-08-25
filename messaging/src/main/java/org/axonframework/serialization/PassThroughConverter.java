@@ -19,6 +19,10 @@ package org.axonframework.serialization;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.eventhandling.DelegatingEventConverter;
+import org.axonframework.eventhandling.EventConverter;
+import org.axonframework.messaging.DelegatingMessageConverter;
+import org.axonframework.messaging.MessageConverter;
 
 import java.lang.reflect.Type;
 
@@ -43,6 +47,14 @@ public final class PassThroughConverter implements Converter {
      * The single instance of the {@code PassThroughConverter}.
      */
     public static final PassThroughConverter INSTANCE = new PassThroughConverter();
+    /**
+     * A {@link MessageConverter} using the {@link #INSTANCE}.
+     */
+    public static final MessageConverter MESSAGE_INSTANCE = new DelegatingMessageConverter(INSTANCE);
+    /**
+     * An {@link EventConverter} using the {@link #INSTANCE}.
+     */
+    public static final EventConverter EVENT_INSTANCE = new DelegatingEventConverter(INSTANCE);
 
     private PassThroughConverter() {
         // Private constructor to enforce use of constant.

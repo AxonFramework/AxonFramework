@@ -20,9 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.Converter;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -38,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
 public class PayloadConvertingCommandBusConnector<T> extends DelegatingCommandBusConnector {
 
     private final CommandBusConnector delegate;
-    private final Converter converter;
+    private final MessageConverter converter;
     private final Class<?> targetType;
 
     /**
@@ -50,7 +49,7 @@ public class PayloadConvertingCommandBusConnector<T> extends DelegatingCommandBu
      * @param targetType The desired representation of forwarded Message's payload.
      */
     public PayloadConvertingCommandBusConnector(@Nonnull CommandBusConnector delegate,
-                                                @Nonnull Converter converter,
+                                                @Nonnull MessageConverter converter,
                                                 @Nonnull Class<?> targetType) {
         super(delegate);
         this.delegate = Objects.requireNonNull(delegate, "The delegate must not be null.");
@@ -62,7 +61,7 @@ public class PayloadConvertingCommandBusConnector<T> extends DelegatingCommandBu
     @Override
     public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                                @Nullable ProcessingContext processingContext) {
-        CommandMessage<?> serializedCommand = command.withConvertedPayload(targetType, converter);
+        CommandMessage<?> serializedCommand = converter.convertMessage(command, targetType);
         return delegate.dispatch(serializedCommand, processingContext);
     }
 
@@ -92,7 +91,7 @@ public class PayloadConvertingCommandBusConnector<T> extends DelegatingCommandBu
                 callback.onSuccess(resultMessage);
                 return;
             }
-            callback.onSuccess(resultMessage.withConvertedPayload(targetType, converter));
+            callback.onSuccess(converter.convertMessage(resultMessage, targetType));
         }
 
         @Override

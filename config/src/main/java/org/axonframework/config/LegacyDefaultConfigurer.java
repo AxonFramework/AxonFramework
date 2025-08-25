@@ -72,7 +72,6 @@ import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
 import org.axonframework.modelling.command.RepositorySpanFactory;
@@ -96,9 +95,6 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
-import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
@@ -845,20 +841,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                 configuration -> new MessageHandlerRegistrar(
                         () -> configuration,
                         commandHandlerBuilder,
-                        (config, commandHandler) -> {
-                            config.commandBus()
-                                  .subscribe(new AnnotatedCommandHandlingComponent<>(
-                                          commandHandler,
-                                          config.parameterResolverFactory(),
-                                          config.handlerDefinition(commandHandler.getClass()),
-                                          messageTypeResolver,
-                                          config.getComponent(Converter.class)
-                                  ));
-                            // TODO AnnotationCommandHandlerAdapter#subscribe does not use a Registration anymore
-                            // If we support automated unsubscribe, we need to figure out another way.
-                            // Enforced to a no-op Registration object for now.
-                            return () -> true;
-                        }
+                        (config, commandHandler) -> () -> true
                 )
         ));
         return this;

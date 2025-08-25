@@ -18,9 +18,11 @@ package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.eventhandling.EventConverter;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
@@ -40,7 +42,6 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
@@ -176,9 +177,11 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
      * {@link AnnotationBasedEntityEvolvingComponent} to use the annotations placed.
      */
     protected EntityEvolver<Student> studentEvolver(Configuration config) {
-        return new AnnotationBasedEntityEvolvingComponent<>(Student.class,
-                                                            config.getComponent(Converter.class),
-                                                            config.getComponent(MessageTypeResolver.class));
+        return new AnnotationBasedEntityEvolvingComponent<>(
+                Student.class,
+                config.getComponent(EventConverter.class),
+                config.getComponent(MessageTypeResolver.class)
+        );
     }
 
     protected void changeStudentName(String studentId, String name) {

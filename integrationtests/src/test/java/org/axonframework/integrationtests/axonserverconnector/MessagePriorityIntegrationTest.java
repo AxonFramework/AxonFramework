@@ -32,6 +32,7 @@ import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBus
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.DelegatingMessageConverter;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -105,7 +106,7 @@ class MessagePriorityIntegrationTest {
         var commandBusConnector = new AxonServerCommandBusConnector(connectionManager.getConnection());
         CommandBusConnector serializingConnector = new PayloadConvertingCommandBusConnector<>(
                 commandBusConnector,
-                new JacksonConverter(),
+                new DelegatingMessageConverter(new JacksonConverter()),
                 byte[].class
         );
 

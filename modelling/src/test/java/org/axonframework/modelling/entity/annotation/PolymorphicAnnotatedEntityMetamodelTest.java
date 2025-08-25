@@ -48,9 +48,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
- * Tests the {@link AnnotatedEntityMetamodel} through the {@link Project} domain model. This domain model has
- * been designed to touch as many aspects of the {@link AnnotatedEntityMetamodel} as possible, such as
- * polymorphic types, command routing, and event publication.
+ * Tests the {@link AnnotatedEntityMetamodel} through the {@link Project} domain model. This domain model has been
+ * designed to touch as many aspects of the {@link AnnotatedEntityMetamodel} as possible, such as polymorphic types,
+ * command routing, and event publication.
  * <p>
  * Note that the domain might not be feature-complete or realistic. In addition, while the model is not event-sourced
  * but state-sourced, it does apply events that are then applied to the model state. This is done to ensure that the
@@ -68,7 +68,8 @@ class PolymorphicAnnotatedEntityMetamodelTest extends AbstractAnnotatedEntityMet
                 Set.of(InternalProject.class, OpenSourceProject.class),
                 parameterResolverFactory,
                 messageTypeResolver,
-                converter
+                messageConverter,
+                eventConverter
         );
     }
 
@@ -276,8 +277,8 @@ class PolymorphicAnnotatedEntityMetamodelTest extends AbstractAnnotatedEntityMet
         }
 
         /**
-         * Tests that changing the GitHub username of a regular developer works correctly. In other words, it tests whether
-         * it chooses the matching field out of the two in the parent class.
+         * Tests that changing the GitHub username of a regular developer works correctly. In other words, it tests
+         * whether it chooses the matching field out of the two in the parent class.
          */
         @Test
         void canChangeGithubUsernameOfRegularDeveloper() {

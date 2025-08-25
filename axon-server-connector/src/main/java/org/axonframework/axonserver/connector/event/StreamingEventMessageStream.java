@@ -51,7 +51,7 @@ public class StreamingEventMessageStream implements MessageStream<EventMessage<?
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final ResultStream<StreamEventsResponse> stream;
-    private final EventConverter converter;
+    private final TaggedEventConverter converter;
 
     /**
      * Constructs a {@code StreamingMessageStream} with the given {@code stream} and {@code converter}.
@@ -62,7 +62,7 @@ public class StreamingEventMessageStream implements MessageStream<EventMessage<?
      *                  {@link EventMessage EventMessages} for this {@link MessageStream} implementation.
      */
     public StreamingEventMessageStream(@Nonnull ResultStream<StreamEventsResponse> stream,
-                                       @Nonnull EventConverter converter) {
+                                       @Nonnull TaggedEventConverter converter) {
         this.stream = Objects.requireNonNull(stream, "The result stream cannot be null.");
         this.converter = Objects.requireNonNull(converter, "The converter cannot be null.");
     }

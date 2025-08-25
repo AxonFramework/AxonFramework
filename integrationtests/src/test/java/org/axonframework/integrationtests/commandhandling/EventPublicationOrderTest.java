@@ -17,10 +17,8 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
@@ -30,18 +28,18 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
+import org.axonframework.messaging.DelegatingMessageConverter;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageConverter;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
-import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.commandhandling.CommandBusTestUtils.*;
+import static org.axonframework.commandhandling.CommandBusTestUtils.aCommandBus;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -63,7 +61,8 @@ class EventPublicationOrderTest {
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
         target.setEventBus(eventStore);
-        commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(target, PassThroughConverter.INSTANCE));
+        MessageConverter messageConverter = new DelegatingMessageConverter(PassThroughConverter.INSTANCE);
+        commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(target, messageConverter));
     }
 
     @Test

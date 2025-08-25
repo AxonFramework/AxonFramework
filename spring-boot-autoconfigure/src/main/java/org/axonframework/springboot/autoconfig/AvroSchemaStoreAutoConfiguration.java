@@ -40,22 +40,22 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Autoconfigures required beans for the Avro serializer.
+ * Autoconfigures required beans for the Avro {@link org.axonframework.serialization.Converter}.
  *
  * @author Simon Zambrovski
  * @author Jan Galinski
  * @since 4.11.0
  */
 @AutoConfiguration
-@AutoConfigureBefore(LegacyAxonAutoConfiguration.class)
+@AutoConfigureBefore(ConverterAutoConfiguration.class)
 @ConditionalOnClass(name = {"org.apache.avro.message.SchemaStore"})
-public class AvroSerializerAutoConfiguration {
+public class AvroSchemaStoreAutoConfiguration {
 
     /**
      * Constructs a simple default in-memory schema store filled with schemas.
      *
      * @param schemas Avro schemas to put into the store.
-     * @return schema store instance.
+     * @return Schema store instance.
      */
     @Bean("defaultAxonSchemaStore")
     @Conditional({AvroConfiguredCondition.class, OnMissingDefaultSchemaStoreCondition.class})
@@ -69,9 +69,9 @@ public class AvroSerializerAutoConfiguration {
      * Scans classpath for schemas, configured using {@link org.axonframework.spring.serialization.avro.AvroSchemaScan}
      * annotations.
      *
-     * @param beanFactory  spring bean factory.
-     * @param schemaLoader list of schema loaders.
-     * @return set of schemas detected on the classpath.
+     * @param beanFactory  Spring bean factory.
+     * @param schemaLoader List of schema loaders.
+     * @return Set of schemas detected on the classpath.
      */
     @Bean
     @Conditional({AvroConfiguredCondition.class})
@@ -94,7 +94,7 @@ public class AvroSerializerAutoConfiguration {
     /**
      * Constructs default schema loader from Avro-Java-Maven-Generated classes.
      *
-     * @param resourceLoader resource loader.
+     * @param resourceLoader The resource loader.
      * @return ClasspathAvroSchemaLoader instance.
      */
     @Bean("specificRecordBaseClasspathAvroSchemaLoader")
@@ -117,13 +117,13 @@ public class AvroSerializerAutoConfiguration {
         }
 
         @SuppressWarnings("unused")
-        @ConditionalOnProperty(name = "axon.serializer.messages", havingValue = "avro")
+        @ConditionalOnProperty(name = "axon.converter.messages", havingValue = "avro")
         static class MessagesAvroCondition {
 
         }
 
         @SuppressWarnings("unused")
-        @ConditionalOnProperty(name = "axon.serializer.events", havingValue = "avro")
+        @ConditionalOnProperty(name = "axon.converter.events", havingValue = "avro")
         static class EventsAvroCondition {
 
         }

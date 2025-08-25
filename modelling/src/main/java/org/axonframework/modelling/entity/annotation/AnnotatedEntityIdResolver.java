@@ -21,6 +21,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.command.EntityIdResolver;
@@ -41,7 +42,7 @@ import java.util.Objects;
 public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, DescribableComponent {
 
     private final AnnotatedEntityMetamodel<?> metamodel;
-    private final Converter converter;
+    private final MessageConverter converter;
     private final EntityIdResolver<ID> delegate;
     private final Class<ID> idType;
 
@@ -56,7 +57,7 @@ public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, Desc
      */
     public AnnotatedEntityIdResolver(@Nonnull AnnotatedEntityMetamodel<?> metamodel,
                                      @Nonnull Class<ID> idType,
-                                     @Nonnull Converter converter,
+                                     @Nonnull MessageConverter converter,
                                      @Nonnull EntityIdResolver<ID> delegate) {
         this.idType = Objects.requireNonNull(idType, "The idType should not be null.");
         this.metamodel = Objects.requireNonNull(metamodel, "The metamodel should not be null,");
@@ -69,11 +70,12 @@ public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, Desc
     public ID resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
         Class<?> expectedRepresentation = metamodel.getExpectedRepresentation(message.type().qualifiedName());
         if (expectedRepresentation != null) {
-            Message<?> convertedMessage = message.withConvertedPayload(expectedRepresentation, converter);
+            Message<?> convertedMessage = converter.convertMessage(message, expectedRepresentation);
             return delegate.resolve(convertedMessage, context);
         }
         throw new AxonConfigurationException(
-                "No expected representation found for message type [" + message.type().qualifiedName() + "]");
+                "No expected representation found for message type [" + message.type().qualifiedName() + "]"
+        );
     }
 
     @Override

@@ -24,9 +24,9 @@ import org.junit.jupiter.api.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests the {@link AnnotatedEntityMetamodel} through the {@link TodoItem} domain model. This domain model has
- * been designed to touch as few aspects of the {@link AnnotatedEntityMetamodel} as possible, so the least
- * extensive testcase is covered.
+ * Tests the {@link AnnotatedEntityMetamodel} through the {@link TodoItem} domain model. This domain model has been
+ * designed to touch as few aspects of the {@link AnnotatedEntityMetamodel} as possible, so the least extensive testcase
+ * is covered.
  * <p>
  * Note that the domain might not be feature-complete or realistic. In addition, while the model is not event-sourced
  * but state-sourced, it does apply events that are then applied to the model state. This is done to ensure that the
@@ -43,7 +43,8 @@ class SimpleAnnotatedEntityMetamodelTest extends AbstractAnnotatedEntityMetamode
                 TodoItem.class,
                 parameterResolverFactory,
                 messageTypeResolver,
-                converter
+                messageConverter,
+                eventConverter
         );
     }
 
