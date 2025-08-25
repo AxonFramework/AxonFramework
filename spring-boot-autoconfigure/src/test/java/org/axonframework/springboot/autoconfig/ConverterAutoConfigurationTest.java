@@ -38,8 +38,9 @@ import org.springframework.context.annotation.Configuration;
 
 import java.lang.reflect.Field;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link ConverterAutoConfiguration}, {@link ObjectMapperAutoConfiguration}, and
@@ -70,6 +71,18 @@ class ConverterAutoConfigurationTest {
             assertThat(eventConverter).isInstanceOf(DelegatingEventConverter.class);
             MessageConverter wrappedEventConverter = ((DelegatingEventConverter) eventConverter).converter();
             assertThat(wrappedEventConverter).isEqualTo(messageConverter);
+        });
+    }
+
+    @Test
+    void overrideAllConverterOptions() {
+        testContext.withUserConfiguration(CustomContext.class).run(context -> {
+            assertThat(context).hasSingleBean(Converter.class);
+            assertThat(context).hasBean("customConverter");
+            assertThat(context).hasSingleBean(MessageConverter.class);
+            assertThat(context).hasBean("customMessageConverter");
+            assertThat(context).hasSingleBean(EventConverter.class);
+            assertThat(context).hasBean("customEventConverter");
         });
     }
 
@@ -219,6 +232,33 @@ class ConverterAutoConfigurationTest {
     })
     public static class TestContext {
 
+
+    }
+
+    @Configuration
+    @EnableAutoConfiguration(exclude = {
+            JmxAutoConfiguration.class,
+            WebClientAutoConfiguration.class,
+            DataSourceAutoConfiguration.class,
+            JacksonAutoConfiguration.class,
+            HttpMessageConvertersAutoConfiguration.class,
+    })
+    public static class CustomContext {
+
+        @Bean
+        public Converter customConverter() {
+            return mock(Converter.class);
+        }
+
+        @Bean
+        public MessageConverter customMessageConverter() {
+            return mock(MessageConverter.class);
+        }
+
+        @Bean
+        public EventConverter customEventConverter() {
+            return mock(EventConverter.class);
+        }
     }
 
     @Configuration
