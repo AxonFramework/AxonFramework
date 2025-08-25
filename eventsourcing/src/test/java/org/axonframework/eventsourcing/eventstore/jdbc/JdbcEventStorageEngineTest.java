@@ -35,6 +35,8 @@ import org.axonframework.serialization.json.JacksonSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.jupiter.api.*;
 import org.springframework.test.annotation.DirtiesContext;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -64,6 +66,7 @@ import static org.mockito.Mockito.*;
  * @author Rene de Waele
  */
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
+@Testcontainers
 class JdbcEventStorageEngineTest
         extends BatchingEventStorageEngineTest<LegacyJdbcEventStorageEngine, LegacyJdbcEventStorageEngine.Builder> {
 
@@ -72,10 +75,14 @@ class JdbcEventStorageEngineTest
     private LegacyJdbcEventStorageEngine testSubject;
     private ReadEventDataForAggregateStatementBuilder readForAggregateStatementBuilder;
 
+    @Container
+    private static final HsqldbTestContainer HSQLDB = new HsqldbTestContainer();
+
     @BeforeEach
     void setUp() throws SQLException {
-        dataSource = new JDBCDataSource();
-        dataSource.setUrl("jdbc:hsqldb:mem:test");
+
+        dataSource = HSQLDB.getDataSource();
+
         defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
         //noinspection Convert2Lambda,Anonymous2MethodRef
         readForAggregateStatementBuilder = spy(new ReadEventDataForAggregateStatementBuilder() {
