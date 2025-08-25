@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.DelegatingMessageConverter;
+import org.axonframework.messaging.MessageConverter;
 import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
@@ -35,44 +37,53 @@ import java.util.Objects;
  */
 public class DelegatingEventConverter implements EventConverter {
 
-    private final Converter converter;
+    private final MessageConverter messageConverter;
+
+    /**
+     * Constructs a {@code DelegatingEventConverter}, delegating operations to a {@link DelegatingMessageConverter}
+     * build with the given {@code converter}.
+     *
+     * @param converter The converter to construct a {@link DelegatingMessageConverter} with to delegate all conversion
+     *                  operations to.
+     */
+    public DelegatingEventConverter(@Nonnull Converter converter) {
+        this(new DelegatingMessageConverter(Objects.requireNonNull(converter, "The Converter must not be null.")));
+    }
 
     /**
      * Constructs a {@code DelegatingEventConverter}, delegating operations to the given {@code converter}.
      *
-     * @param converter The converter to delegate all conversion operations to.
+     * @param messageConverter The converter to delegate all conversion operations to.
      */
-    public DelegatingEventConverter(@Nonnull Converter converter) {
-        this.converter = Objects.requireNonNull(converter, "The Converter must not be null.");
+    public DelegatingEventConverter(@Nonnull MessageConverter messageConverter) {
+        this.messageConverter = Objects.requireNonNull(messageConverter, "The Converter must not be null.");
     }
 
     @Nullable
     @Override
     public <E extends EventMessage, T> T convertPayload(@Nonnull E event, @Nonnull Type targetType) {
-        //noinspection unchecked
-        return (T) event.payloadAs(targetType, converter);
+        return messageConverter.convertPayload(event, targetType);
     }
 
     @Override
     public <E extends EventMessage> E convertEvent(@Nonnull E event, @Nonnull Type targetType) {
-        //noinspection unchecked
-        return (E) event.withConvertedPayload(targetType, converter);
+        return messageConverter.convertMessage(event, targetType);
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeWrapperOf(converter);
+        descriptor.describeProperty("messageConverter", messageConverter);
     }
 
     /**
-     * Returns the {@link Converter} this {@code MessageConverter} delegates too.
+     * Returns the {@link MessageConverter} this {@code EventConverter} delegates too.
      * <p>
-     * Used to automatically construct other instances with the exact same {@code Converter}.
+     * Used to automatically construct other instances with the exact same {@code MessageConverter}.
      *
-     * @return The {@link Converter} this {@code MessageConverter} delegates too.
+     * @return The {@link MessageConverter} this {@code EventConverter} delegates too.
      */
     @Internal
-    public Converter converter() {
-        return converter;
+    public MessageConverter converter() {
+        return messageConverter;
     }
 }
