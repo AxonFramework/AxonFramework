@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.springboot;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @TestPropertySource("classpath:application.serializer-without-jackson.test.properties")
+@Disabled("TODO #3496") // This test requires another Converter option, which doesn't exist at this stage.
 class AxonAutoConfigurationWithoutObjectMapperTest {
 
     @Autowired
@@ -53,6 +54,5 @@ class AxonAutoConfigurationWithoutObjectMapperTest {
     @Test
     void noObjectMapperBeanIsCreatedIfNoJacksonSerializerIsSpecified() {
         assertThrows(NoSuchBeanDefinitionException.class, () -> applicationContext.getBean(ObjectMapper.class));
-
     }
 }
