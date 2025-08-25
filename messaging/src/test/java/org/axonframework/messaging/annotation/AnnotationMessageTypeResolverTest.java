@@ -49,158 +49,182 @@ class AnnotationMessageTypeResolverTest {
         testSubject = new AnnotationMessageTypeResolver(fallback);
     }
 
-    @Test
-    void classAnnotatedWithCommandReturnsExpectedMessageType() {
-        MessageType expectedType = new MessageType("test-command-domain-name", "1.33.7");
+    @Nested
+    class CommandMessageResolution {
 
-        Optional<MessageType> result = testSubject.resolve(TestCommand.class);
+        @Test
+        void classAnnotatedWithCommandReturnsExpectedMessageType() {
+            MessageType expectedType = new MessageType("test-command-domain-name", "1.33.7");
 
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(expectedType);
+            Optional<MessageType> result = testSubject.resolve(TestCommand.class);
+
+            assertThat(result).isPresent();
+            assertThat(result.get()).isEqualTo(expectedType);
+        }
+
+        @Test
+        void classAnnotatedWithCommandIncludingNamespaceReturnsExpectedMessageType() {
+            MessageType expectedType = new MessageType("context", "test-command-domain-name", "1.33.7");
+
+            Optional<MessageType> result = testSubject.resolve(TestCommandWithNamespace.class);
+
+            assertThat(result).isPresent();
+            assertThat(result.get()).isEqualTo(expectedType);
+        }
+
+        @Command(name = "test-command-domain-name", version = "1.33.7")
+        private record TestCommand(String id) {
+
+        }
+
+        @Command(name = "test-command-domain-name", version = "1.33.7", namespace = "context")
+        private record TestCommandWithNamespace(String id) {
+
+        }
     }
 
-    @Test
-    void classAnnotatedWithCommandIncludingNamespaceReturnsExpectedMessageType() {
-        MessageType expectedType = new MessageType("context", "test-command-domain-name", "1.33.7");
+    @Nested
+    class EventMessageResolution {
 
-        Optional<MessageType> result = testSubject.resolve(TestCommandWithNamespace.class);
+        @Test
+        void classAnnotatedWithEventReturnsExpectedMessageType() {
+            MessageType expectedType = new MessageType("event-business-name", "42");
 
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(expectedType);
+            Optional<MessageType> result = testSubject.resolve(TestEvent.class);
+
+            assertThat(result).isPresent();
+            assertThat(result.get()).isEqualTo(expectedType);
+        }
+
+        @Test
+        void classAnnotatedWithEventIncludingNamespaceReturnsExpectedMessageType() {
+            MessageType expectedType = new MessageType("context", "event-business-name", "42");
+
+            Optional<MessageType> result = testSubject.resolve(TestEventWithNamespace.class);
+
+            assertThat(result).isPresent();
+            assertThat(result.get()).isEqualTo(expectedType);
+        }
+
+        @Event(name = "event-business-name", version = "42")
+        private record TestEvent(String id) {
+
+        }
+
+        @Event(name = "event-business-name", version = "42", namespace = "context")
+        private record TestEventWithNamespace(String id) {
+
+        }
     }
 
-    @Test
-    void classAnnotatedWithEventReturnsExpectedMessageType() {
-        MessageType expectedType = new MessageType("event-business-name", "42");
+    @Nested
+    class QueryMessageResolution {
 
-        Optional<MessageType> result = testSubject.resolve(TestEvent.class);
+        @Test
+        void classAnnotatedWithQueryReturnsExpectedMessageType() {
+            MessageType expectedType = new MessageType("non-of-your-business-query-name", "9001");
 
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(expectedType);
+            Optional<MessageType> result = testSubject.resolve(TestQuery.class);
+
+            assertThat(result).isPresent();
+            assertThat(result.get()).isEqualTo(expectedType);
+        }
+
+        @Test
+        void classAnnotatedWithQueryIncludingNamespaceReturnsExpectedMessageType() {
+            MessageType expectedType = new MessageType("context", "non-of-your-business-query-name", "9001");
+
+            Optional<MessageType> result = testSubject.resolve(TestQueryWithNamespace.class);
+
+            assertThat(result).isPresent();
+            assertThat(result.get()).isEqualTo(expectedType);
+        }
+
+        @Query(name = "non-of-your-business-query-name", version = "9001")
+        private record TestQuery(String id) {
+
+        }
+
+        @Query(name = "non-of-your-business-query-name", version = "9001", namespace = "context")
+        private record TestQueryWithNamespace(String id) {
+
+        }
     }
 
-    @Test
-    void classAnnotatedWithEventIncludingNamespaceReturnsExpectedMessageType() {
-        MessageType expectedType = new MessageType("context", "event-business-name", "42");
+    @Nested
+    class MetaAnnotatedResolution {
 
-        Optional<MessageType> result = testSubject.resolve(TestEventWithNamespace.class);
+        @Test
+        void classAnnotatedWithMetaAnnotatedMessageReturnsExpectedMessageType() {
+            MessageType expectedType = new MessageType("meta-annotated", "-1");
 
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(expectedType);
+            Optional<MessageType> result = testSubject.resolve(MetaAnnotatedMessage.class);
+
+            assertThat(result).isPresent();
+            assertThat(result.get()).isEqualTo(expectedType);
+        }
+
+        @Retention(RetentionPolicy.RUNTIME)
+        @Message(name = "meta-annotated", version = "-1")
+        private @interface MyMessageSpecificAnnotation {
+
+        }
+
+        @MyMessageSpecificAnnotation
+        private record MetaAnnotatedMessage(String id) {
+
+        }
     }
 
-    @Test
-    void classAnnotatedWithQueryReturnsExpectedMessageType() {
-        MessageType expectedType = new MessageType("non-of-your-business-query-name", "9001");
+    @Nested
+    class CustomAnnotationResolution {
 
-        Optional<MessageType> result = testSubject.resolve(TestQuery.class);
+        @Test
+        void customAnnotationSpecificationIsHonored() {
+            AnnotationSpecification specification = new AnnotationSpecification(CustomMessageAnnotation.class,
+                                                                                "customName",
+                                                                                "customVersion",
+                                                                                "customNamespace");
+            AnnotationMessageTypeResolver customAnnotationTestSubject =
+                    new AnnotationMessageTypeResolver(null, specification);
 
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(expectedType);
+            MessageType expectedType = new MessageType("customName", "customVersion");
+
+            Optional<MessageType> result = customAnnotationTestSubject.resolve(CustomAnnotatedMessage.class);
+
+            assertThat(result).isPresent();
+            assertThat(result.get()).isEqualTo(expectedType);
+        }
+
+        // Intentionally public to ensure the AnnotationUtils can access the properties.
+        @Retention(RetentionPolicy.RUNTIME)
+        public @interface CustomMessageAnnotation {
+
+            String customName() default "customName";
+
+            String customVersion() default "customVersion";
+
+            String customNamespace() default "";
+        }
+
+        @CustomMessageAnnotation
+        private record CustomAnnotatedMessage(String id) {
+
+        }
     }
 
-    @Test
-    void classAnnotatedWithQueryIncludingNamespaceReturnsExpectedMessageType() {
-        MessageType expectedType = new MessageType("context", "non-of-your-business-query-name", "9001");
+    @Nested
+    class FallbackResolution {
 
-        Optional<MessageType> result = testSubject.resolve(TestQueryWithNamespace.class);
+        @Test
+        void fallbackIsInvokedInAbsenceOfSpecificAnnotation() {
+            MessageType expectedType = new MessageType("fallback", "2025");
+            when(fallback.resolve(any())).thenReturn(Optional.of(expectedType));
 
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(expectedType);
-    }
+            Optional<MessageType> result = testSubject.resolve(Object.class);
 
-    @Test
-    void classAnnotatedWithMetaAnnotatedMessageReturnsExpectedMessageType() {
-        MessageType expectedType = new MessageType("meta-annotated", "-1");
-
-        Optional<MessageType> result = testSubject.resolve(MetaAnnotatedMessage.class);
-
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(expectedType);
-    }
-
-    @Test
-    void fallbackIsInvokedInAbsenceOfSpecificAnnotation() {
-        MessageType expectedType = new MessageType("fallback", "2025");
-        when(fallback.resolve(any())).thenReturn(Optional.of(expectedType));
-
-        Optional<MessageType> result = testSubject.resolve(Object.class);
-
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(expectedType);
-    }
-
-    @Test
-    void customAnnotationSpecificationIsHonored() {
-        AnnotationSpecification specification = new AnnotationSpecification(CustomMessageAnnotation.class,
-                                                                            "customName",
-                                                                            "customVersion",
-                                                                            "customNamespace");
-        AnnotationMessageTypeResolver customAnnotationTestSubject =
-                new AnnotationMessageTypeResolver(null, specification);
-
-        MessageType expectedType = new MessageType("customName", "customVersion");
-
-        Optional<MessageType> result = customAnnotationTestSubject.resolve(CustomAnnotatedMessage.class);
-
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(expectedType);
-    }
-
-    @Command(name = "test-command-domain-name", version = "1.33.7")
-    private record TestCommand(String id) {
-
-    }
-
-    @Command(name = "test-command-domain-name", version = "1.33.7", namespace = "context")
-    private record TestCommandWithNamespace(String id) {
-
-    }
-
-    @Event(name = "event-business-name", version = "42")
-    private record TestEvent(String id) {
-
-    }
-
-    @Event(name = "event-business-name", version = "42", namespace = "context")
-    private record TestEventWithNamespace(String id) {
-
-    }
-
-    @Query(name = "non-of-your-business-query-name", version = "9001")
-    private record TestQuery(String id) {
-
-    }
-
-    @Query(name = "non-of-your-business-query-name", version = "9001", namespace = "context")
-    private record TestQueryWithNamespace(String id) {
-
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Message(name = "meta-annotated", version = "-1")
-    private @interface MyMessageSpecificAnnotation {
-
-    }
-
-    @MyMessageSpecificAnnotation
-    private record MetaAnnotatedMessage(String id) {
-
-    }
-
-    // Intentionally public to ensure the AnnotationUtils can access the properties.
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface CustomMessageAnnotation {
-
-        String customName() default "customName";
-
-        String customVersion() default "customVersion";
-
-        String customNamespace() default "";
-    }
-
-    @CustomMessageAnnotation
-    private record CustomAnnotatedMessage(String id) {
-
+            assertThat(result).isPresent();
+            assertThat(result.get()).isEqualTo(expectedType);
+        }
     }
 }
