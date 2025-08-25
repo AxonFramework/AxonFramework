@@ -94,7 +94,7 @@ public class EventProcessingAnnotatedEventSourcedPooledStreamingTest extends Abs
                 @InjectEntity(idProperty = "studentId") StudentCoursesAutomationState state,
                 ProcessingContext context
         ) {
-            var studentId = state.studentId;
+            var studentId = command.studentId();
             var canNotify = state != null && !state.notified();
             if (canNotify) {
                 var eventAppender = EventAppender.forContext(context);

@@ -23,18 +23,18 @@ import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
-import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
-import org.axonframework.eventsourcing.annotation.reflection.InjectEntityId;
+import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.eventstreaming.EventCriteria;
+import org.axonframework.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.student.commands.SendMaxCoursesNotificationCommand;
 import org.axonframework.integrationtests.testsuite.student.events.MaxCoursesNotificationSentEvent;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.EntityModule;
 import org.axonframework.serialization.Converter;
@@ -67,22 +67,18 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
                .untilAsserted(() -> verifyNotificationSentTo(studentId));
     }
 
-    @EventSourcedEntity(tagKey = "Student")
     record StudentCoursesAutomationState(String studentId, List<String> courses, boolean notified) {
 
-        @EntityCreator
-        StudentCoursesAutomationState(@InjectEntityId String studentId) {
+        StudentCoursesAutomationState(String studentId) {
             this(studentId, List.of(), false);
         }
 
-        @EventSourcingHandler
         StudentCoursesAutomationState evolve(StudentEnrolledEvent event) {
             var updatedCourses = new ArrayList<>(courses);
             updatedCourses.add(event.courseId());
             return new StudentCoursesAutomationState(studentId, updatedCourses, false);
         }
 
-        @EventSourcingHandler
         StudentCoursesAutomationState evolve(MaxCoursesNotificationSentEvent event) {
             return new StudentCoursesAutomationState(studentId, courses, true);
         }
@@ -145,7 +141,10 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
 
     private static void configureEntityAndCommandHandler(EventSourcingConfigurer configurer) {
         EntityModule<String, StudentCoursesAutomationState> studentCoursesEntity =
-                EventSourcedEntityModule.annotated(String.class, StudentCoursesAutomationState.class);
+                EventSourcedEntityModule.declarative(String.class, StudentCoursesAutomationState.class)
+                                        .messagingModel((c, model) -> model.entityEvolver(automationStateEvolver()).build())
+                                        .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(StudentCoursesAutomationState::new))
+                                        .criteriaResolver(c -> (id, ctx) -> EventCriteria.havingTags(Tag.of("Student", id))).build();
         configurer.componentRegistry(cr -> cr.registerModule(studentCoursesEntity));
 
         CommandHandlingModule sendMaxCoursesNotificationCommandHandler = CommandHandlingModule
@@ -168,4 +167,17 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
         configurer.registerCommandHandlingModule(sendMaxCoursesNotificationCommandHandler);
     }
 
+    private static EntityEvolver<StudentCoursesAutomationState> automationStateEvolver() {
+        return (entity, event, context) -> {
+            if (event.type().qualifiedName().equals(new QualifiedName(StudentEnrolledEvent.class))) {
+                return entity.evolve(event.withConvertedPayload(StudentEnrolledEvent.class,
+                                                                context.component(Converter.class)).payload());
+            }
+            if (event.type().qualifiedName().equals(new QualifiedName(MaxCoursesNotificationSentEvent.class))) {
+                return entity.evolve(event.withConvertedPayload(MaxCoursesNotificationSentEvent.class,
+                                                                context.component(Converter.class)).payload());
+            }
+            return entity;
+        };
+    }
 }

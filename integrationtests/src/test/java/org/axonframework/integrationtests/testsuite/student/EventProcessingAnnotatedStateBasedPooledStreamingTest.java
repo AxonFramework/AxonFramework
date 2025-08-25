@@ -81,9 +81,8 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
 
         var studentRegisteredCoursesProcessor = EventProcessorModule
                 .pooledStreaming("student-courses-readmodel-processor")
-                .eventHandlingComponents(components -> components.declarative(
-                        cfg -> studentCoursesProjector()
-                )).notCustomized();
+                .eventHandlingComponents(components -> components.declarative(cfg -> studentCoursesProjector()))
+                .notCustomized();
         return configurer.messaging(
                 messaging -> messaging.eventProcessing(
                         ep -> ep.pooledStreaming(
