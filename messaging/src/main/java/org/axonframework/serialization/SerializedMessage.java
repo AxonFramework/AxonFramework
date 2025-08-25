@@ -150,22 +150,6 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     }
 
     @Override
-    public <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
-        if (serializer.equals(payload.getSerializer())) {
-            return serializer.getConverter().convertSerializedObject(payload.getSerializedObject(), expectedRepresentation);
-        }
-        return serializer.serialize(payload.getObject(), expectedRepresentation);
-    }
-
-    @Override
-    public <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
-        if (serializer.equals(metaData.getSerializer())) {
-            return serializer.getConverter().convertSerializedObject(metaData.getSerializedObject(), expectedRepresentation);
-        }
-        return serializer.serialize(metaData.getObject(), expectedRepresentation);
-    }
-
-    @Override
     @Nonnull
     public <T> Message<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         // This class will be removed/replaced by the ConversionAwareMessage, so skipping implementation

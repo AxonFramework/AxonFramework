@@ -27,6 +27,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
@@ -115,7 +116,6 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
 
     private static class TestEventProcessor implements EventProcessor {
 
-        private static final SimpleUnitOfWorkFactory UNIT_OF_WORK_FACTORY = new SimpleUnitOfWorkFactory();
         private final ProcessorEventHandlingComponents processorEventHandlingComponents;
 
         private TestEventProcessor(EventHandlingComponent eventHandlingComponent) {
@@ -149,7 +149,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
 
         void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages)
                 throws ExecutionException, InterruptedException, TimeoutException {
-            var unitOfWork = UNIT_OF_WORK_FACTORY.create();
+            var unitOfWork = UnitOfWorkTestUtils.aUnitOfWork();
             unitOfWork.executeWithResult(ctx -> processorEventHandlingComponents.handle(eventMessages, ctx)
                                                                                 .asCompletableFuture()
             ).get(2, TimeUnit.SECONDS);

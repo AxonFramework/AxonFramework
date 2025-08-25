@@ -17,8 +17,8 @@
 package org.axonframework.serialization;
 
 /**
- * Class representing a serialized object of which there is no class available in the current class loader. This
- * class provides access to the raw underlying data, as well as any format supported by the serializer.
+ * Class representing a serialized object of which there is no class available in the current class loader. This class
+ * provides access to the raw underlying data, as well as any format supported by the serializer.
  *
  * @author Allard Buijze
  * @since 4.0
@@ -66,7 +66,13 @@ public class UnknownSerializedType {
      * @return the data in the desired format
      */
     public <T> T readData(Class<T> desiredFormat) {
-        return serializer.getConverter().convertSerializedObject(serializedObject, desiredFormat).getData();
+        if (serializedObject.getContentType().equals(desiredFormat)) {
+            return ((SerializedObject<T>) serializedObject).getData();
+        }
+        return new SimpleSerializedObject<>(serializer.getConverter()
+                                                      .convert(serializedObject.getData(), desiredFormat),
+                                            desiredFormat,
+                                            serializedObject.getType()).getData();
     }
 
     /**

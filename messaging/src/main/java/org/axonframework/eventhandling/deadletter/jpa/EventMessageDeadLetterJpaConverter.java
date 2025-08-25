@@ -61,7 +61,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
 
         // Serialize the payload with message.serializePayload to make the deserialization lazy and thus
         // make us able to store deserialization errors as well.
-        SerializedObject<byte[]> serializedPayload = message.serializePayload(eventSerializer, byte[].class);
+        SerializedObject<byte[]> serializedPayload = eventSerializer.serialize(message.payload(), byte[].class);
         // For compatibility, we use the serializer directly for the metadata
         SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.metaData(), byte[].class);
         Optional<SerializedObject<byte[]>> serializedToken =

@@ -56,6 +56,7 @@ import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.ScopeAwareProvider;
@@ -69,6 +70,10 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
 import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.saga.DefaultSagaManagerSpanFactory;
@@ -448,9 +453,11 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         return defaultComponent(CommandBus.class, config)
                 .orElseGet(() -> {
                     TransactionManager txManager = config.getComponent(TransactionManager.class);
-                    SimpleCommandBus commandBus = txManager != null
-                            ? new SimpleCommandBus(txManager)
-                            : new SimpleCommandBus();
+                    SimpleUnitOfWorkFactory simpleUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
+                    UnitOfWorkFactory unitOfWorkFactory = txManager != null
+                            ? new TransactionalUnitOfWorkFactory(txManager, simpleUnitOfWorkFactory)
+                            : simpleUnitOfWorkFactory;
+                    SimpleCommandBus commandBus = new SimpleCommandBus(unitOfWorkFactory, Collections.emptyList());
                     if (!config.correlationDataProviders().isEmpty()) {
                         CorrelationDataInterceptor<Message<?>> interceptor =
                                 new CorrelationDataInterceptor<>(config.correlationDataProviders());

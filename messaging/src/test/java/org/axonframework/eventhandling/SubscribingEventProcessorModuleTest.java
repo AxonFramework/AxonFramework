@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -32,6 +33,7 @@ import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -199,13 +201,13 @@ class SubscribingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             // and - shared customization
-            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
             ErrorHandler sharedErrorHandler = PropagatingErrorHandler.instance();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.errorHandler(sharedErrorHandler)
                                                                .unitOfWorkFactory(sharedUnitOfWorkFactory)));
 
             // and - type-specific customization
-            UnitOfWorkFactory typeUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(new NoOpTransactionManager());
+            UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
             SimpleEventBus typeMessageSource = SimpleEventBus.builder().build();
             EventProcessingStrategy typeProcessingStrategy = DirectEventProcessingStrategy.INSTANCE;
             configurer.eventProcessing(ep ->
@@ -254,13 +256,13 @@ class SubscribingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             // and - shared customization
-            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
             ErrorHandler sharedErrorHandler = PropagatingErrorHandler.instance();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.errorHandler(sharedErrorHandler)
                                                                .unitOfWorkFactory(sharedUnitOfWorkFactory)));
 
             // and - type-specific customization
-            UnitOfWorkFactory typeUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(new NoOpTransactionManager());
+            UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
             SimpleEventBus typeMessageSource = SimpleEventBus.builder().build();
             EventProcessingStrategy typeProcessingStrategy = DirectEventProcessingStrategy.INSTANCE;
             configurer.eventProcessing(ep ->
@@ -311,13 +313,13 @@ class SubscribingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             // and - shared customization
-            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory();
+            UnitOfWorkFactory sharedUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
             ErrorHandler sharedErrorHandler = PropagatingErrorHandler.instance();
             configurer.eventProcessing(ep -> ep.defaults(d -> d.errorHandler(sharedErrorHandler)
                                                                .unitOfWorkFactory(sharedUnitOfWorkFactory)));
 
             // and - type-specific customization
-            UnitOfWorkFactory typeUnitOfWorkFactory = new TransactionalUnitOfWorkFactory(new NoOpTransactionManager());
+            UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
             SimpleEventBus typeMessageSource = SimpleEventBus.builder().build();
             EventProcessingStrategy typeProcessingStrategy = DirectEventProcessingStrategy.INSTANCE;
             configurer.eventProcessing(ep ->
@@ -444,6 +446,11 @@ class SubscribingEventProcessorModuleTest {
             var messageSource = configuration.getOptionalComponent(ErrorHandler.class);
             assertThat(messageSource).isNotPresent();
         }
+    }
+
+    @Nonnull
+    private static TransactionalUnitOfWorkFactory aTransactionalUnitOfWork() {
+        return UnitOfWorkTestUtils.transactionalUnitOfWorkFactory(new NoOpTransactionManager());
     }
 
     private static RecordingEventHandlingComponent simpleRecordingTestComponent() {

@@ -550,9 +550,7 @@ import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
-
-import java.util.List;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 
 public class SubscribeStudentConfiguration {
 

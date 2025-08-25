@@ -22,6 +22,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Context;
 
 import java.util.Objects;
+import java.util.function.UnaryOperator;
 
 /**
  * Factory for creating {@link UnitOfWork} instances that are bound to a transaction.
@@ -43,26 +44,16 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
     private final UnitOfWorkFactory delegate;
 
     /**
-     * Initializes a factory with the given {@code transactionManager}. The unit of work's lifecycle will be bound to
-     * transactions managed by the provided {@code transactionManager}.
-     *
-     * @param transactionManager The transaction manager used to create and manage transactions for the units of work
-     */
-    public TransactionalUnitOfWorkFactory(@Nonnull TransactionManager transactionManager) {
-        Objects.requireNonNull(transactionManager, "Transaction Manager cannot be null");
-        this.transactionManager = transactionManager;
-        this.delegate = new SimpleUnitOfWorkFactory();
-    }
-
-    /**
      * Initializes a factory with the given {@code transactionManager} and a delegate {@link UnitOfWorkFactory}. The
      * unit of work's lifecycle will be bound to transaction managed by the provided {@code transactionManager}.
      *
      * @param transactionManager The transaction manager used to create and manage transactions for the units of work.
      * @param delegate           The delegate factory used to create units of work.
      */
-    public TransactionalUnitOfWorkFactory(@Nonnull TransactionManager transactionManager,
-                                          @Nonnull UnitOfWorkFactory delegate) {
+    public TransactionalUnitOfWorkFactory(
+            @Nonnull TransactionManager transactionManager,
+            @Nonnull UnitOfWorkFactory delegate
+    ) {
         Objects.requireNonNull(transactionManager, "Transaction Manager cannot be null");
         Objects.requireNonNull(delegate, "Delegate UnitOfWorkFactory cannot be null");
         this.transactionManager = transactionManager;
@@ -82,9 +73,13 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
      *
      * @return A new transactional unit of work.
      */
+    @Nonnull
     @Override
-    public UnitOfWork create() {
-        var unitOfWork = delegate.create();
+    public UnitOfWork create(
+            @Nonnull String identifier,
+            @Nonnull UnaryOperator<UnitOfWorkConfiguration> customization
+    ) {
+        var unitOfWork = delegate.create(identifier, customization);
         unitOfWork.runOnPreInvocation(ctx -> {
             var transaction = transactionManager.startTransaction();
             ctx.putResource(TRANSACTION_RESOURCE_KEY, transaction);

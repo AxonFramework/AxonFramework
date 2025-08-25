@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.eventhandling.EventTestUtils.handleEventsInUnitOfWork;
+import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.*;
 
 /**
  * Class testing the {@link SequencingEventHandlingComponent} to ensure it correctly handles event sequencing.
@@ -156,7 +158,7 @@ class SequencingEventHandlingComponentTest {
         // when & then - Should complete without issues
         assertThatNoException().isThrownBy(() -> {
             EventMessage<?> event = testEvent("event-1_seq-A");
-            var unitOfWork = new SimpleUnitOfWorkFactory().create();
+            var unitOfWork = aUnitOfWork();
             var result = unitOfWork.executeWithResult((ctx) -> eventHandlingComponent.handle(event, ctx)
                                                                                      .asCompletableFuture());
 
@@ -177,7 +179,7 @@ class SequencingEventHandlingComponentTest {
 
         // when
         EventMessage<?> event = testEvent("event-1_seq-A");
-        var unitOfWork = new SimpleUnitOfWorkFactory().create();
+        var unitOfWork = aUnitOfWork();
         var result = unitOfWork.executeWithResult((ctx) -> eventHandlingComponent.handle(event, ctx)
                                                                                  .asCompletableFuture());
 

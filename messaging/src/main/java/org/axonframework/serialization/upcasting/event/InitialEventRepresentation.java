@@ -114,7 +114,12 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
 
     @Override
     public <D> SerializedObject<D> getData(Class<D> requiredType) {
-        return serializer.getConverter().convertSerializedObject(data, requiredType);
+        if (data.getContentType().equals(requiredType)) {
+            return (SerializedObject<D>) data;
+        }
+        return new SimpleSerializedObject<>(serializer.getConverter().convert(data.getData(), requiredType),
+                                            requiredType,
+                                            data.getType());
     }
 
     @Override
