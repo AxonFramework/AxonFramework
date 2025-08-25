@@ -88,8 +88,6 @@ class AxonServerConfigurationEnhancerTest {
                                        ))
                                        .build();
 
-        // Retrieving the CommandBusConnector ensure the AxonServerCommandBusConnector triggers "a" start of the AxonServerConnectionManager.
-        result.getComponent(CommandBusConnector.class);
         result.start();
 
         AxonServerConnectionManager connectionManager = result.getComponent(AxonServerConnectionManager.class);
@@ -128,8 +126,6 @@ class AxonServerConfigurationEnhancerTest {
                                        ))
                                        .build();
 
-        // Retrieving the CommandBusConnector ensure the AxonServerCommandBusConnector triggers "a" start of the AxonServerConnectionManager.
-        result.getComponent(CommandBusConnector.class);
         result.start();
 
         AxonServerConnectionManager connectionManager = result.getComponent(AxonServerConnectionManager.class);
