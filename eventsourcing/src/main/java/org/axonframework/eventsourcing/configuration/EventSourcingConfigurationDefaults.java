@@ -17,9 +17,12 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
@@ -28,6 +31,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventstreaming.StreamableEventSource;
 
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link EventSourcingConfigurer}.
@@ -57,7 +61,9 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
                 .registerIfNotPresent(EventStorageEngine.class,
                                       EventSourcingConfigurationDefaults::defaultEventStorageEngine)
                 .registerIfNotPresent(EventStore.class, EventSourcingConfigurationDefaults::defaultEventStore)
-                .registerIfNotPresent(Snapshotter.class, EventSourcingConfigurationDefaults::defaultSnapshotter);
+                .registerIfNotPresent(Snapshotter.class, EventSourcingConfigurationDefaults::defaultSnapshotter)
+                .registerIfNotPresent(StreamableEventSource.class,
+                                      EventSourcingConfigurationDefaults::defaultStreamableEventSource);
     }
 
     private static TagResolver defaultTagResolver(Configuration configuration) {
@@ -81,5 +87,16 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
         return (aggregateType, aggregateIdentifier) -> {
             // TODO #3105 - Replace this Snapshotter for the new Snapshotter
         };
+    }
+
+    private static StreamableEventSource<? extends EventMessage<?>> defaultStreamableEventSource(
+            Configuration configuration
+    ) {
+        EventStore eventStore = configuration.getComponent(EventStore.class);
+        if (eventStore instanceof StreamableEventSource) {
+            return (StreamableEventSource<? extends EventMessage<?>>) eventStore;
+        }
+        throw new AxonConfigurationException(
+                "The EventStore is not a StreamableEventSource, so the StreamableEventSource must be configured explicitly.");
     }
 }
