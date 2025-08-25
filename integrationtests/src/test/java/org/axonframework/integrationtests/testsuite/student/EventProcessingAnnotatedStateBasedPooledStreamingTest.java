@@ -20,11 +20,13 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.StateBasedEntityModule;
 import org.axonframework.modelling.repository.InMemoryRepository;
@@ -40,19 +42,20 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends AbstractStudentTestSuite {
 
+    public static final String STUDENT_ID = "student-id-1";
+
     @Test
     void whenStudentEnrolledThenUpdateReadModel() {
         // given
         startApp();
 
         // when
-        var studentId = "student-id-1";
-        studentEnrolledToCourse(studentId, "my-courseId-1");
-        studentEnrolledToCourse(studentId, "my-courseId-2");
-        studentEnrolledToCourse(studentId, "my-courseId-3");
+        studentEnrolledToCourse(STUDENT_ID, "my-courseId-1");
+        studentEnrolledToCourse(STUDENT_ID, "my-courseId-2");
+        studentEnrolledToCourse(STUDENT_ID, "my-courseId-3");
 
         // then
-        verifyReadModelState(studentId, state -> {
+        verifyReadModelState(STUDENT_ID, state -> {
             assertThat(state).isNotNull();
             assertThat(state.courses).containsExactly("my-courseId-1", "my-courseId-2", "my-courseId-3");
         });
@@ -75,8 +78,10 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
         StateBasedEntityModule<String, StudentCoursesReadModel> studentCoursesEntity =
                 StateBasedEntityModule.declarative(String.class, StudentCoursesReadModel.class)
                                       .repository(cfg -> studentCoursesRepository)
-                                      .messagingModel((configuration, builder) -> builder.build())
-                                      .entityIdResolver(cfg -> (entity, context) -> "student-1");
+                                      .messagingModel((configuration, builder) -> builder
+                                              .entityEvolver(readModelEvolver())
+                                              .build())
+                                      .entityIdResolver(cfg -> (entity, context) -> STUDENT_ID);
         configurer.componentRegistry(cr -> cr.registerModule(studentCoursesEntity));
 
         var studentRegisteredCoursesProcessor = EventProcessorModule
@@ -100,14 +105,8 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
                 (event, context) -> {
                     var converter = context.component(Converter.class);
                     var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
-                    var studentId = studentEnrolled.studentId();
-                    var state = context.component(StateManager.class);
-                    // todo: I have null here!
-                    var loadedState = state.loadEntity(StudentCoursesReadModel.class,
-                                                       studentId,
-                                                       context).join();
-                    var readModel = loadedState != null ? loadedState : new StudentCoursesReadModel(studentId);
-                    readModel.evolve(studentEnrolled);
+                    var eventAppender = EventAppender.forContext(context);
+                    eventAppender.append(studentEnrolled);
                     return MessageStream.empty();
                 }
         );
@@ -123,5 +122,15 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
                                                       .load(studentId, context)).join();
                    stateVerifier.accept(result.entity());
                });
+    }
+
+    private static EntityEvolver<StudentCoursesReadModel> readModelEvolver() {
+        return (entity, event, context) -> {
+            if (event.type().qualifiedName().equals(new QualifiedName(StudentEnrolledEvent.class))) {
+                return entity.evolve(event.withConvertedPayload(StudentEnrolledEvent.class,
+                                                                context.component(Converter.class)).payload());
+            }
+            return entity;
+        };
     }
 }
