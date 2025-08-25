@@ -43,7 +43,7 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(ChangeStudentNameCommand.class),
                 c -> (command, context) -> {
-                    EventAppender eventAppender = EventAppender.forContext(context, c);
+                    EventAppender eventAppender = EventAppender.forContext(context);
                     ChangeStudentNameCommand payload =
                             command.payloadAs(ChangeStudentNameCommand.class, c.getComponent(Converter.class));
                     StateManager state = context.component(StateManager.class);
