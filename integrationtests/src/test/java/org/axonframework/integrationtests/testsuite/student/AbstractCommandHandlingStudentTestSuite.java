@@ -72,12 +72,4 @@ public abstract class AbstractCommandHandlingStudentTestSuite extends AbstractSt
     protected void enrollStudentToCourse(String studentId, String courseId) {
         sendCommand(new EnrollStudentToCourseCommand(studentId, courseId));
     }
-
-    protected <T> void sendCommand(T payload) {
-        commandGateway.sendAndWait(payload);
-    }
-
-    protected <T, R> R sendCommand(T payload, Class<R> expectedResultType) {
-        return commandGateway.sendAndWait(payload, expectedResultType);
-    }
 }

@@ -128,13 +128,12 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     private void registerHandler(MessageHandlingMember<? super T> handler) {
         QualifiedName qualifiedName = new QualifiedName(handler.payloadType()); // TODO #3098 - allow to define eventName on the handling member
-        // todo: convert payload here!!!
 
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         handlingComponent.subscribe(
                 qualifiedName,
                 (event, ctx) ->
-                interceptorChain.handle(event.withConvertedPayload(handler.payloadType(), converter), ctx, target, handler).ignoreEntries().cast() // todo: here!
+                interceptorChain.handle(event.withConvertedPayload(handler.payloadType(), converter), ctx, target, handler).ignoreEntries().cast()
         );
     }
 
