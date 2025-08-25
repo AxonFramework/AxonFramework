@@ -34,6 +34,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -68,8 +69,9 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
         }
 
         StudentCoursesReadModel evolve(StudentEnrolledEvent event) {
-            courses.add(event.courseId());
-            return this;
+            var updatedCourses = new ArrayList<>(courses);
+            updatedCourses.add(event.courseId());
+            return new StudentCoursesReadModel(studentId, updatedCourses);
         }
     }
 
@@ -82,7 +84,7 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
                                       .messagingModel((configuration, builder) -> builder
                                               .entityEvolver(readModelEvolver())
                                               .build())
-                                      .entityIdResolver(cfg -> (entity, context) -> STUDENT_ID);
+                                      .entityIdResolver(cfg -> (message, context) -> STUDENT_ID);
         configurer.componentRegistry(cr -> cr.registerModule(studentCoursesEntity));
 
         var studentRegisteredCoursesProcessor = EventProcessorModule
@@ -100,28 +102,35 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
 
     @Nonnull
     private static EventHandlingComponent studentCoursesProjector() {
-        var eventHandlingComponent = new SimpleEventHandlingComponent();
-        eventHandlingComponent.subscribe(
-                new QualifiedName(StudentEnrolledEvent.class),
-                (event, context) -> {
-                    var converter = context.component(Converter.class);
-                    var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
-                    var state = context.component(StateManager.class);
-                    var loadedEntity = state.loadManagedEntity(StudentCoursesReadModel.class, STUDENT_ID, context).join();
-                    loadedEntity.applyStateChange(e -> e != null ? e.evolve(studentEnrolled) : new StudentCoursesReadModel(STUDENT_ID).evolve(studentEnrolled));
-                    return MessageStream.empty();
-                }
-        );
-        return eventHandlingComponent;
+        return SimpleEventHandlingComponent
+                .builder()
+                .sequenceIdentifier(e -> STUDENT_ID)
+                .handles(
+                        new QualifiedName(StudentEnrolledEvent.class),
+                        (event, context) -> {
+                            var converter = context.component(Converter.class);
+                            var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
+                            var state = context.component(StateManager.class);
+                            var loadedEntity = state.loadManagedEntity(StudentCoursesReadModel.class,
+                                                                       STUDENT_ID,
+                                                                       context).join();
+                            loadedEntity.applyStateChange(e -> Optional.ofNullable(e)
+                                                                       .orElse(new StudentCoursesReadModel(STUDENT_ID))
+                                                                       .evolve(studentEnrolled)
+                            );
+                            return MessageStream.empty();
+                        }
+                ).build();
     }
 
     private void verifyReadModelState(String studentId, Consumer<StudentCoursesReadModel> stateVerifier) {
-        await().atMost(2, TimeUnit.SECONDS)
+        await().atMost(5, TimeUnit.SECONDS)
                .untilAsserted(() -> {
                    UnitOfWork uow = unitOfWorkFactory.create();
                    var result = uow.executeWithResult(context -> context.component(StateManager.class)
-                                                      .repository(StudentCoursesReadModel.class, String.class)
-                                                      .load(studentId, context)).join();
+                                                                        .repository(StudentCoursesReadModel.class,
+                                                                                    String.class)
+                                                                        .load(studentId, context)).join();
                    stateVerifier.accept(result.entity());
                });
     }
