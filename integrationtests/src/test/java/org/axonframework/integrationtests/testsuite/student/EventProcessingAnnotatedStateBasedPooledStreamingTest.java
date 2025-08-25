@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
-public class PooledStreamingEventHandlingComponentWithStateBasedEntityTest extends AbstractStudentTestSuite {
+public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends AbstractStudentTestSuite {
 
 
     private final List<String> notificationSentToStudents = new CopyOnWriteArrayList<>();
