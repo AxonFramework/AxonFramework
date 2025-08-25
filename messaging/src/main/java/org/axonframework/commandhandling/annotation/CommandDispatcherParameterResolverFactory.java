@@ -20,37 +20,25 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.gateway.CommandDispatcher;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
-import java.util.Objects;
 
 /**
- * {@link ParameterResolverFactory} that ensures the {@link EventAppender} is resolved in the context of the current
- * {@link ProcessingContext}. For any message handler that declares this parameter, it will call
- * {@link EventAppender#forContext(ProcessingContext, Configuration)} to create the appender.
+ * {@link ParameterResolverFactory} that ensures the {@link CommandDispatcher} is resolved in the context of the current
+ * {@link ProcessingContext}.
+ * <p>
+ * For any message handler that declares this parameter, it will call
+ * {@link CommandDispatcher#forContext(ProcessingContext)} to create the appender.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
 @Internal
 public class CommandDispatcherParameterResolverFactory implements ParameterResolverFactory {
-
-    private final Configuration configuration;
-
-    /**
-     * Creates a new {@link ParameterResolverFactory} that resolves arguments of type {@link EventAppender}.
-     *
-     * @param configuration The {@link Configuration} to use for the construction of the appender.
-     */
-    public CommandDispatcherParameterResolverFactory(@Nonnull Configuration configuration) {
-        this.configuration = Objects.requireNonNull(configuration, "The configuration must not be null.");
-    }
 
     @Nullable
     @Override
@@ -65,7 +53,7 @@ public class CommandDispatcherParameterResolverFactory implements ParameterResol
             @Nullable
             @Override
             public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-                return CommandDispatcher.forContext(context, configuration);
+                return CommandDispatcher.forContext(context);
             }
 
             @Override

@@ -19,7 +19,6 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.gateway.CommandDispatcher;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ContextAwareCommandDispatcher;
-import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
@@ -37,21 +36,18 @@ import static org.mockito.Mockito.*;
  */
 class CommandDispatcherParameterResolverFactoryTest {
 
-    private final Configuration configuration = mock(Configuration.class);
     private final CommandGateway commandGateway = mock(CommandGateway.class);
 
     private CommandDispatcherParameterResolverFactory testSubject;
 
     @BeforeEach
     void setUp() {
-        when(configuration.getComponent(CommandGateway.class)).thenReturn(commandGateway);
-
-        testSubject = new CommandDispatcherParameterResolverFactory(configuration);
+        testSubject = new CommandDispatcherParameterResolverFactory();
     }
 
     @Test
     void injectsCommandDispatcherBasedOnProcessingContext() throws Exception {
-        ProcessingContext processingContext = new StubProcessingContext();
+        ProcessingContext processingContext = StubProcessingContext.withComponent(CommandGateway.class, commandGateway);
 
         Method method = getClass().getMethod("methodWithCommandDispatcherParameter", CommandDispatcher.class);
         ParameterResolver<?> instance = testSubject.createInstance(method, method.getParameters(), 0);

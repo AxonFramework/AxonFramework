@@ -33,7 +33,7 @@ public class CommandDispatcherParameterResolverFactoryConfigurationEnhancer impl
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
         ParameterResolverFactoryUtils.registerToComponentRegistry(
-                registry, CommandDispatcherParameterResolverFactory::new
+                registry, config -> new CommandDispatcherParameterResolverFactory()
         );
     }
 }

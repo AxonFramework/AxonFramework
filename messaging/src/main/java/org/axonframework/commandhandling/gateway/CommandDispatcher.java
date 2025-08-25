@@ -23,14 +23,13 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
  * Component that publishes commands to a {@link CommandGateway} in a predefined
  * {@link org.axonframework.messaging.unitofwork.ProcessingContext context}. The events will be published in the context
  * this appender was created for. You can construct one through the
- * {@link #forContext(ProcessingContext, Configuration)}.
+ * {@link #forContext(ProcessingContext)}.
  * <p>
  * When using annotation-based {@link org.axonframework.messaging.annotation.MessageHandler @MessageHandler-methods} and
  * you have declared an argument of type {@link CommandDispatcher}, the dispatcher will automatically be injected by the
@@ -49,21 +48,18 @@ public interface CommandDispatcher extends DescribableComponent {
     Context.ResourceKey<ContextAwareCommandDispatcher> RESOURCE_KEY = Context.ResourceKey.withLabel("CommandDispatcher");
 
     /**
-     * Creates a dispatcher for the given {@link ProcessingContext} and {@link Configuration}.
+     * Creates a dispatcher for the given {@link ProcessingContext}.
      * <p>
      * You can use this dispatcher <b>only</b> for the context it was created for. There is no harm in using this method
      * more than once with the same {@code context}, as the same dispatcher will be returned.
      *
-     * @param context       The {@link ProcessingContext} to create the dispatcher for.
-     * @param configuration The {@link Configuration} to use for the dispatcher.
+     * @param context The {@link ProcessingContext} to create the dispatcher for.
      * @return The command dispatcher specific for the given {@code context}.
      */
-    static CommandDispatcher forContext(@Nonnull ProcessingContext context,
-                                        @Nonnull Configuration configuration) {
-        Objects.requireNonNull(configuration, "The configuration must not be null.");
+    static CommandDispatcher forContext(@Nonnull ProcessingContext context) {
         return context.computeResourceIfAbsent(
                 RESOURCE_KEY,
-                () -> new ContextAwareCommandDispatcher(configuration.getComponent(CommandGateway.class), context)
+                () -> new ContextAwareCommandDispatcher(context.component(CommandGateway.class), context)
         );
     }
 
