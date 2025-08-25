@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
@@ -27,10 +28,12 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
+import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -38,6 +41,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,7 +62,7 @@ class AnnotatedEventHandlingComponentTest {
     @BeforeEach
     void beforeEach() {
         eventHandler = new TestEventHandler();
-        eventHandlingComponent = new AnnotatedEventHandlingComponent<>(eventHandler);
+        eventHandlingComponent = annotatedEventHandlingComponent(eventHandler);
     }
 
     @Test
@@ -195,7 +199,7 @@ class AnnotatedEventHandlingComponentTest {
         void doNotHandleNotDeclaredEventType() {
             // given
             var eventHandler = new HandlingJustStringEventHandler();
-            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(eventHandler);
+            var eventHandlingComponent = annotatedEventHandlingComponent(eventHandler);
             var event = domainEvent(0);
 
             // when
@@ -232,7 +236,7 @@ class AnnotatedEventHandlingComponentTest {
         void returnsFailedMessageStreamIfExceptionThrownInsideEventHandler() {
             // given
             var eventHandler = new ErrorThrowingEventHandler();
-            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(eventHandler);
+            var eventHandlingComponent = annotatedEventHandlingComponent(eventHandler);
             var event = domainEvent(0);
 
             // when
@@ -269,7 +273,7 @@ class AnnotatedEventHandlingComponentTest {
         void testMethodWithPayload() {
             // given
             var eventHandler = new HandlingJustStringEventHandler();
-            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(eventHandler);
+            var eventHandlingComponent = annotatedEventHandlingComponent(eventHandler);
 
             // when
             var supportedEvents = eventHandlingComponent.supportedEvents();
@@ -284,7 +288,7 @@ class AnnotatedEventHandlingComponentTest {
         void testMethodsWithObjectAndPayload() {
             // given
             var eventHandler = new TestEventHandler();
-            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(eventHandler);
+            var eventHandlingComponent = annotatedEventHandlingComponent(eventHandler);
 
             // when
             var supportedEvents = eventHandlingComponent.supportedEvents();
@@ -361,5 +365,14 @@ class AnnotatedEventHandlingComponentTest {
         void handle(String event) {
             this.handledCount++;
         }
+    }
+
+    @Nonnull
+    private static AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent(Object eventHandler) {
+        return new AnnotatedEventHandlingComponent<>(
+                eventHandler,
+                ClasspathParameterResolverFactory.forClass(eventHandler.getClass()),
+                PassThroughConverter.INSTANCE
+        );
     }
 }

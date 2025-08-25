@@ -17,18 +17,15 @@
 package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.serialization.Converter;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.function.BiFunction;
-import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -82,7 +79,8 @@ public interface EventHandlingComponentsConfigurer {
             requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
             return declarative(c -> new AnnotatedEventHandlingComponent<>(
                     handlingComponentBuilder.build(c),
-                    c.getComponent(ParameterResolverFactory.class)
+                    c.getComponent(ParameterResolverFactory.class),
+                    c.getComponent(Converter.class)
             ));
         }
     }
