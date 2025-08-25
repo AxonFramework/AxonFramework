@@ -19,6 +19,10 @@ package org.axonframework.springboot.autoconfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.eventhandling.DelegatingEventConverter;
+import org.axonframework.eventhandling.EventConverter;
+import org.axonframework.messaging.DelegatingMessageConverter;
+import org.axonframework.messaging.MessageConverter;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
@@ -56,12 +60,16 @@ class ConverterAutoConfigurationTest {
     void defaultConverterConfigurationUsesJacksonConverterThroughout() {
         testContext.run(context -> {
             Converter generalConverter = context.getBean(Converter.class);
-            Converter messageConverter = context.getBean("messageConverter", Converter.class);
-            Converter eventConverter = context.getBean("eventConverter", Converter.class);
+            MessageConverter messageConverter = context.getBean(MessageConverter.class);
+            EventConverter eventConverter = context.getBean(EventConverter.class);
 
             assertThat(generalConverter).isInstanceOf(JacksonConverter.class);
-            assertThat(messageConverter).isInstanceOf(JacksonConverter.class);
-            assertThat(eventConverter).isInstanceOf(JacksonConverter.class);
+            assertThat(messageConverter).isInstanceOf(DelegatingMessageConverter.class);
+            Converter wrappedMessageConverter = ((DelegatingMessageConverter) messageConverter).converter();
+            assertThat(wrappedMessageConverter).isEqualTo(generalConverter);
+            assertThat(eventConverter).isInstanceOf(DelegatingEventConverter.class);
+            MessageConverter wrappedEventConverter = ((DelegatingEventConverter) eventConverter).converter();
+            assertThat(wrappedEventConverter).isEqualTo(messageConverter);
         });
     }
 
@@ -77,8 +85,8 @@ class ConverterAutoConfigurationTest {
             Field objectMapperField = JacksonConverter.class.getDeclaredField("objectMapper");
 
             Converter generalConverter = context.getBean(Converter.class);
-            Converter messageConverter = context.getBean("messageConverter", Converter.class);
-            Converter eventConverter = context.getBean("eventConverter", Converter.class);
+            Converter messageConverter = getWrappedMessageConverter(context.getBean(MessageConverter.class));
+            Converter eventConverter = getWrappedEventConverter(context.getBean(EventConverter.class));
 
             ObjectMapper objectMapper = context.getBean("defaultAxonObjectMapper", ObjectMapper.class);
 
@@ -110,8 +118,8 @@ class ConverterAutoConfigurationTest {
             Field objectMapperField = JacksonConverter.class.getDeclaredField("objectMapper");
 
             Converter generalConverter = context.getBean(Converter.class);
-            Converter messageConverter = context.getBean("messageConverter", Converter.class);
-            Converter eventConverter = context.getBean("eventConverter", Converter.class);
+            Converter messageConverter = getWrappedMessageConverter(context.getBean(MessageConverter.class));
+            Converter eventConverter = getWrappedEventConverter(context.getBean(EventConverter.class));
             ObjectMapper objectMapper = context.getBean("testObjectMapper", ObjectMapper.class);
 
             ObjectMapper resultGeneralMapper = ReflectionUtils.getFieldValue(objectMapperField, generalConverter);
@@ -140,8 +148,8 @@ class ConverterAutoConfigurationTest {
             Field objectMapperField = JacksonConverter.class.getDeclaredField("objectMapper");
 
             Converter generalConverter = context.getBean(Converter.class);
-            Converter messageConverter = context.getBean("messageConverter", Converter.class);
-            Converter eventConverter = context.getBean("eventConverter", Converter.class);
+            Converter messageConverter = getWrappedMessageConverter(context.getBean(MessageConverter.class));
+            Converter eventConverter = getWrappedEventConverter(context.getBean(EventConverter.class));
 
             ObjectMapper resultGeneralMapper = ReflectionUtils.getFieldValue(objectMapperField, generalConverter);
             ObjectMapper resultMessageMapper = ReflectionUtils.getFieldValue(objectMapperField, messageConverter);
@@ -174,8 +182,8 @@ class ConverterAutoConfigurationTest {
             Field objectMapperField = JacksonConverter.class.getDeclaredField("objectMapper");
 
             Converter generalConverter = context.getBean(Converter.class);
-            Converter messageConverter = context.getBean("messageConverter", Converter.class);
-            Converter eventConverter = context.getBean("eventConverter", Converter.class);
+            Converter messageConverter = getWrappedMessageConverter(context.getBean(MessageConverter.class));
+            Converter eventConverter = getWrappedEventConverter(context.getBean(EventConverter.class));
             CBORMapper cborMapper = context.getBean("testCborMapper", CBORMapper.class);
 
             ObjectMapper resultGeneralMapper = ReflectionUtils.getFieldValue(objectMapperField, generalConverter);
@@ -189,6 +197,16 @@ class ConverterAutoConfigurationTest {
             assertThat(cborMapper).isEqualTo(resultMessageMapper);
             assertThat(cborMapper).isNotEqualTo(resultEventMapper);
         });
+    }
+
+    private static Converter getWrappedMessageConverter(MessageConverter messageConverter) {
+        assertThat(messageConverter).isInstanceOf(DelegatingMessageConverter.class);
+        return ((DelegatingMessageConverter) messageConverter).converter();
+    }
+
+    private static Converter getWrappedEventConverter(EventConverter eventConverter) {
+        assertThat(eventConverter).isInstanceOf(DelegatingEventConverter.class);
+        return getWrappedMessageConverter(((DelegatingEventConverter) eventConverter).converter());
     }
 
     @Configuration
