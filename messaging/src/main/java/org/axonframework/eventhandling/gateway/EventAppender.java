@@ -30,9 +30,10 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Component that appends events to an {@link EventSink} in the context of a {@link ProcessingContext}.
+ * Component that appends events to an {@link EventSink} in the context of a {@link ProcessingContext}. This makes the
+ * {@code EventAppender} the <b>preferred</b> way to append events from within another message handling method.
  * <p>
- * The events will be published in the context this appender was created for. You can construct one through the
+ * The events will be appended in the context this appender was created for. You can construct one through the
  * {@link #forContext(ProcessingContext)}.
  * <p>
  * When using annotation-based {@link org.axonframework.messaging.annotation.MessageHandler @MessageHandler-methods} and

@@ -27,8 +27,9 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Component that dispatches commands to a {@link CommandGateway} in a predefined
- * {@link org.axonframework.messaging.unitofwork.ProcessingContext context}. The events will be published in the context
- * this appender was created for. You can construct one through the
+ * {@link org.axonframework.messaging.unitofwork.ProcessingContext context}. This makes the {@code CommandDispatcher} the <b>preferred</b> way to send commands from within another message handling method.
+ * <p>
+ * The commands will be dispatched in the context this dispatcher was created for. You can construct one through the
  * {@link #forContext(ProcessingContext)}.
  * <p>
  * When using annotation-based {@link org.axonframework.messaging.annotation.MessageHandler @MessageHandler-methods} and
