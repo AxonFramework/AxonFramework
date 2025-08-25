@@ -94,7 +94,6 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
                     var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
                     var studentId = studentEnrolled.studentId();
                     var state = context.component(StateManager.class);
-                    // fixme: I have null here! How is it possible?
                     var loadedState = state.loadEntity(StudentCoursesAutomationState.class,
                                                        studentId,
                                                        context).join();

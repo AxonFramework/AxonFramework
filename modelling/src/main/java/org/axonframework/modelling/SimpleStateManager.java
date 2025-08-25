@@ -70,20 +70,20 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
             @Nonnull I id,
             @Nonnull ProcessingContext context
     ) {
-        return repositories
+        var repository = repositories
                 .stream()
                 .filter(r -> r.entityType().isAssignableFrom(entityType))
                 .filter(r -> r.idType().isAssignableFrom(id.getClass()))
                 .map(r -> (Repository<I, T>) r)
                 .findFirst()
-                .orElseThrow(() -> new MissingRepositoryException(id.getClass(), entityType))
-                .loadOrCreate(id, context) // todo: there is load behind, can return null!
-                .thenApply(me -> {
-                    if (me.entity() != null && !entityType.isInstance(me.entity())) {
-                        throw new LoadedEntityNotOfExpectedTypeException(me.entity().getClass(), entityType);
-                    }
-                    return me;
-                });
+                .orElseThrow(() -> new MissingRepositoryException(id.getClass(), entityType));
+        return repository.loadOrCreate(id, context)
+                         .thenApply(me -> {
+                             if (me.entity() != null && !entityType.isInstance(me.entity())) {
+                                 throw new LoadedEntityNotOfExpectedTypeException(me.entity().getClass(), entityType);
+                             }
+                             return me;
+                         });
     }
 
     @Override

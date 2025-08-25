@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.messaging.MessageStream;
@@ -33,6 +32,7 @@ import org.axonframework.modelling.repository.InMemoryRepository;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -64,11 +64,12 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
     record StudentCoursesReadModel(String studentId, List<String> courses) {
 
         StudentCoursesReadModel(String studentId) {
-            this(studentId, List.of());
+            this(studentId, new ArrayList<>());
         }
 
         StudentCoursesReadModel evolve(StudentEnrolledEvent event) {
-            return new StudentCoursesReadModel(studentId, List.of(event.courseId()));
+            courses.add(event.courseId());
+            return this;
         }
     }
 
@@ -105,8 +106,9 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
                 (event, context) -> {
                     var converter = context.component(Converter.class);
                     var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
-                    var eventAppender = EventAppender.forContext(context);
-                    eventAppender.append(studentEnrolled);
+                    var state = context.component(StateManager.class);
+                    var loadedEntity = state.loadManagedEntity(StudentCoursesReadModel.class, STUDENT_ID, context).join();
+                    loadedEntity.applyStateChange(e -> e != null ? e.evolve(studentEnrolled) : new StudentCoursesReadModel(STUDENT_ID).evolve(studentEnrolled));
                     return MessageStream.empty();
                 }
         );
