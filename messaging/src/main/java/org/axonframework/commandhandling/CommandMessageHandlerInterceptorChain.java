@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Iterator;
@@ -55,7 +57,7 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
     @Nonnull
     @Override
     public MessageStream<?> proceed(@Nonnull CommandMessage command,
-                                             @Nonnull ProcessingContext context) {
+                                    @Nonnull ProcessingContext context) {
         try {
             if (chain.hasNext()) {
                 return this.chain.next()
