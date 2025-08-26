@@ -40,10 +40,10 @@ import static org.mockito.Mockito.*;
  */
 class BeanValidationInterceptorTest {
 
-    private BeanValidationInterceptor<Message<?>> testSubject;
+    private BeanValidationInterceptor<Message> testSubject;
 
     private MessageHandlerInterceptorChain<Message<?>> handlerInterceptorChain;
-    private MessageDispatchInterceptorChain<Message<?>> dispatchInterceptorChain;
+    private MessageDispatchInterceptorChain<Message> dispatchInterceptorChain;
 
     @BeforeEach
     void setUp() {
@@ -54,7 +54,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateSimpleObject() {
-        Message<?> message = new GenericMessage<>(
+        Message<?> message = new GenericMessage(
                 new MessageType("message"), "Simple instance"
         );
         ProcessingContext context = StubProcessingContext.forMessage(message);
@@ -64,7 +64,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateAnnotatedObject_IllegalNullValue() {
-        Message<?> message = new GenericMessage<>(
+        Message<?> message = new GenericMessage(
                 new MessageType("message"), new JSR303AnnotatedInstance(null)
         );
         ProcessingContext context = null;
@@ -81,7 +81,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateAnnotatedObject_LegalValue() throws Exception {
-        Message<?> message = new GenericMessage<>(
+        Message message = new GenericMessage(
                 new MessageType("message"), new JSR303AnnotatedInstance("abc")
         );
         ProcessingContext context = null;
@@ -91,7 +91,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void validateAnnotatedObject_IllegalValue() throws Exception {
-        Message<?> message = new GenericMessage<>(
+        Message message = new GenericMessage(
                 new MessageType("message"), new JSR303AnnotatedInstance("bea")
         );
         testSubject.interceptOnDispatch(message, null, dispatchInterceptorChain)
@@ -106,8 +106,8 @@ class BeanValidationInterceptorTest {
 
     @Test
     void customValidatorFactory() throws Exception {
-        Message<?> message = new GenericMessage<Object>(new MessageType("message"),
-                                                        new JSR303AnnotatedInstance("abc"));
+        Message message = new GenericMessage(new MessageType("message"),
+                                             new JSR303AnnotatedInstance("abc"));
         ValidatorFactory mockValidatorFactory = spy(Validation.buildDefaultValidatorFactory());
         testSubject = new BeanValidationInterceptor<>(mockValidatorFactory);
         testSubject.interceptOnDispatch(message, null, dispatchInterceptorChain);

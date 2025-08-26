@@ -44,7 +44,7 @@ import jakarta.annotation.Nonnull;
 public class LegacyFilteringEventStorageEngine implements LegacyEventStorageEngine {
 
     private final LegacyEventStorageEngine delegate;
-    private final Predicate<? super EventMessage<?>> filter;
+    private final Predicate<? super EventMessage> filter;
 
     /**
      * Initializes the FilteringEventStorageEngine delegating all event messages matching the given {@code filter} to
@@ -57,28 +57,28 @@ public class LegacyFilteringEventStorageEngine implements LegacyEventStorageEngi
      * @param delegate the EventStorageEngine to store matching messages in
      * @param filter   the predicate that event messages must match against to be stored
      */
-    public LegacyFilteringEventStorageEngine(LegacyEventStorageEngine delegate, Predicate<? super EventMessage<?>> filter) {
+    public LegacyFilteringEventStorageEngine(LegacyEventStorageEngine delegate, Predicate<? super EventMessage> filter) {
         this.delegate = delegate;
         this.filter = filter;
     }
 
     @Override
-    public void appendEvents(@Nonnull EventMessage<?>... events) {
+    public void appendEvents(@Nonnull EventMessage... events) {
         delegate.appendEvents(Arrays.stream(events).filter(filter).collect(Collectors.toList()));
     }
 
     @Override
-    public void appendEvents(@Nonnull List<? extends EventMessage<?>> events) {
+    public void appendEvents(@Nonnull List<? extends EventMessage> events) {
         delegate.appendEvents(events.stream().filter(filter).collect(Collectors.toList()));
     }
 
     @Override
-    public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
+    public void storeSnapshot(@Nonnull DomainEventMessage snapshot) {
         delegate.storeSnapshot(snapshot);
     }
 
     @Override
-    public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
+    public Stream<? extends TrackedEventMessage> readEvents(TrackingToken trackingToken, boolean mayBlock) {
         return delegate.readEvents(trackingToken, mayBlock);
     }
 
@@ -93,7 +93,7 @@ public class LegacyFilteringEventStorageEngine implements LegacyEventStorageEngi
     }
 
     @Override
-    public Optional<DomainEventMessage<?>> readSnapshot(@Nonnull String aggregateIdentifier) {
+    public Optional<DomainEventMessage> readSnapshot(@Nonnull String aggregateIdentifier) {
         return delegate.readSnapshot(aggregateIdentifier);
     }
 

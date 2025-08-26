@@ -55,9 +55,9 @@ class EventProcessingModuleWithInterceptorsTest {
                                                                .withUserConfiguration(TestContext.class);
     }
 
-    private static <P> EventMessage<P> asEventMessage(P event) {
-        return new GenericEventMessage<>(
-                new GenericMessage<>(new MessageType(event.getClass()), (P) event),
+    private static <P> EventMessage asEventMessage(P event) {
+        return new GenericEventMessage(
+                new GenericMessage(new MessageType(event.getClass()), (P) event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -87,14 +87,15 @@ class EventProcessingModuleWithInterceptorsTest {
             return eventProcessingModule;
         }
 
-        static class MyInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
+        static class MyInterceptor implements MessageHandlerInterceptor<EventMessage> {
 
             @Override
             @Nonnull
             public MessageStream<?> interceptOnHandle(
-                    @Nonnull EventMessage<?> message,
+                    @Nonnull EventMessage message,
                     @Nonnull ProcessingContext context,
-                    @Nonnull MessageHandlerInterceptorChain<EventMessage<?>> interceptorChain) {
+                    @Nonnull MessageHandlerInterceptorChain<EventMessage> interceptorChain
+            ) {
                 return interceptorChain.proceed(
                         message.andMetaData(Collections.singletonMap("myMetaDataKey", "myMetaDataValue")),
                         context);

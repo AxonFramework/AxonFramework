@@ -45,7 +45,7 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @since 1.1
  */
-public class BeanValidationInterceptor<M extends Message<?>>
+public class BeanValidationInterceptor<M extends Message>
         implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
 
     private final ValidatorFactory validatorFactory;
@@ -99,7 +99,7 @@ public class BeanValidationInterceptor<M extends Message<?>>
     }
 
 
-    private Set<ConstraintViolation<Object>> validate(Message<?> message) {
+    private Set<ConstraintViolation<Object>> validate(Message message) {
         Validator validator = validatorFactory.getValidator();
         return validateMessage(message.payload(), validator);
     }

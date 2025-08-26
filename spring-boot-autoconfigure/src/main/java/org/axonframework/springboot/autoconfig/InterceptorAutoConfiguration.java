@@ -62,7 +62,7 @@ public class InterceptorAutoConfiguration {
 //    @ConditionalOnBean(MessageDispatchInterceptor.class)
 //    public InitializingBean commandDispatchInterceptorConfigurer(
 //            CommandGateway commandGateway,
-//            Optional<List<MessageDispatchInterceptor<? super CommandMessage<?>>>> interceptors
+//            Optional<List<MessageDispatchInterceptor<? super CommandMessage>>> interceptors
 //    ) {
 //        return () -> interceptors.ifPresent(it -> it.forEach(commandGateway::registerDispatchInterceptor));
 //    }
@@ -72,7 +72,7 @@ public class InterceptorAutoConfiguration {
 //    @ConditionalOnBean(MessageDispatchInterceptor.class)
 //    public InitializingBean eventDispatchInterceptorConfigurer(
 //            EventGateway eventGateway,
-//            Optional<List<MessageDispatchInterceptor<? super EventMessage<?>>>> interceptors
+//            Optional<List<MessageDispatchInterceptor<? super EventMessage>>> interceptors
 //    ) {
 //        return () -> interceptors.ifPresent(it -> it.forEach(eventGateway::registerDispatchInterceptor));
 //    }
@@ -81,7 +81,7 @@ public class InterceptorAutoConfiguration {
     @ConditionalOnBean(MessageDispatchInterceptor.class)
     public InitializingBean queryDispatchInterceptorConfigurer(
             QueryGateway queryGateway,
-            Optional<List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>>> interceptors
+            Optional<List<MessageDispatchInterceptor<? super QueryMessage>>> interceptors
     ) {
         return () -> interceptors.ifPresent(it -> it.forEach(queryGateway::registerDispatchInterceptor));
     }
@@ -91,7 +91,7 @@ public class InterceptorAutoConfiguration {
 //    @ConditionalOnBean(MessageHandlerInterceptor.class)
 //    public InitializingBean commandHandlerInterceptorConfigurer(
 //            CommandBus commandBus,
-//            Optional<List<MessageHandlerInterceptor<? super CommandMessage<?>>>> interceptors
+//            Optional<List<MessageHandlerInterceptor<? super CommandMessage>>> interceptors
 //    ) {
 //        return () -> interceptors.ifPresent(it -> it.forEach(commandBus::registerHandlerInterceptor));
 //    }
@@ -100,14 +100,14 @@ public class InterceptorAutoConfiguration {
     @ConditionalOnBean(MessageHandlerInterceptor.class)
     public InitializingBean queryHandlerInterceptorConfigurer(
             QueryBus queryBus,
-            Optional<List<MessageHandlerInterceptor<QueryMessage<?, ?>>>> interceptors) {
+            Optional<List<MessageHandlerInterceptor<QueryMessage>>> interceptors) {
         return () -> interceptors.ifPresent(it -> it.forEach(queryBus::registerHandlerInterceptor));
     }
 
     @Bean
     public InitializingBean messageHandlerInterceptorConfigurer(
             EventProcessingConfigurer eventProcessingConfigurer,
-            Optional<List<MessageHandlerInterceptor<EventMessage<?>>>> interceptors
+            Optional<List<MessageHandlerInterceptor<EventMessage>>> interceptors
     ) {
         return () -> interceptors
                 .ifPresent(it -> it.forEach(i -> eventProcessingConfigurer.registerDefaultHandlerInterceptor((c, n) -> i)));

@@ -32,23 +32,23 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
-class GenericCommandMessageTest extends MessageTestSuite<CommandMessage<?>> {
+class GenericCommandMessageTest extends MessageTestSuite<CommandMessage> {
 
     @Override
-    protected CommandMessage<?> buildDefaultMessage() {
-        Message<String> delegate =
-                new GenericMessage<>(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
-        return new GenericCommandMessage<>(delegate);
+    protected CommandMessage buildDefaultMessage() {
+        Message delegate =
+                new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+        return new GenericCommandMessage(delegate);
     }
 
     @Override
-    protected <P> CommandMessage<?> buildMessage(@Nullable P payload) {
-        return new GenericCommandMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    protected <P> CommandMessage buildMessage(@Nullable P payload) {
+        return new GenericCommandMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 
     @Test
     void toStringIsAsExpected() {
-        String actual = new GenericCommandMessage<>(TEST_TYPE, "MyPayload")
+        String actual = new GenericCommandMessage(TEST_TYPE, "MyPayload")
                 .andMetaData(MetaData.with("key", "value").and("key2", "13"))
                 .toString();
 

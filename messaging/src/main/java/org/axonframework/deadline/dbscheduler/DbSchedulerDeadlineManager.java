@@ -135,12 +135,12 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     public String schedule(@Nonnull Instant triggerDateTime, @Nonnull String deadlineName,
                            @Nullable Object messageOrPayload,
                            @Nonnull ScopeDescriptor deadlineScope) {
-        DeadlineMessage<Object> deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
+        DeadlineMessage deadlineMessage = asDeadlineMessage(deadlineName, messageOrPayload, triggerDateTime);
         String identifier = IdentifierFactory.getInstance().generateIdentifier();
         DbSchedulerDeadlineToken taskInstanceId = new DbSchedulerDeadlineToken(identifier);
         Span span = spanFactory.createScheduleSpan(deadlineName, identifier, deadlineMessage);
         runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
-            DeadlineMessage<Object> message = processDispatchInterceptors(deadlineMessage);
+            DeadlineMessage message = processDispatchInterceptors(deadlineMessage);
             TaskInstance<?> taskInstance;
             if (useBinaryPojo) {
                 taskInstance = binaryTask(deadlineName, deadlineScope, message, taskInstanceId);
@@ -156,7 +156,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     private TaskInstance<?> binaryTask(
             String deadlineName,
             ScopeDescriptor deadlineScope,
-            DeadlineMessage<Object> interceptedDeadlineMessage,
+            DeadlineMessage interceptedDeadlineMessage,
             DbSchedulerDeadlineToken taskInstanceId
     ) {
         DbSchedulerBinaryDeadlineDetails details = DbSchedulerBinaryDeadlineDetails.serialized(
@@ -170,7 +170,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
     private TaskInstance<?> humanReadableTask(
             String deadlineName,
             ScopeDescriptor deadlineScope,
-            DeadlineMessage<Object> interceptedDeadlineMessage,
+            DeadlineMessage interceptedDeadlineMessage,
             DbSchedulerDeadlineToken taskInstanceId
     ) {
         DbSchedulerHumanReadableDeadlineDetails details = DbSchedulerHumanReadableDeadlineDetails.serialized(
@@ -326,7 +326,6 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
      *
      * @param deadlineDetails {@link DbSchedulerBinaryDeadlineDetails} containing the needed details to execute.
      */
-    @SuppressWarnings("rawtypes")
     private void execute(String deadlineId, DbSchedulerBinaryDeadlineDetails deadlineDetails) {
         GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);
         ScopeDescriptor scopeDescriptor = deadlineDetails.getDeserializedScopeDescriptor(serializer);
@@ -338,21 +337,19 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
      *
      * @param deadlineDetails {@link DbSchedulerHumanReadableDeadlineDetails} containing the needed details to execute.
      */
-    @SuppressWarnings("rawtypes")
     private void execute(String deadlineId, DbSchedulerHumanReadableDeadlineDetails deadlineDetails) {
         GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);
         ScopeDescriptor scopeDescriptor = deadlineDetails.getDeserializedScopeDescriptor(serializer);
         execute(deadlineId, deadlineDetails.getDeadlineName(), deadlineMessage, scopeDescriptor);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("rawtypes")
     private void execute(String deadlineId, String deadlineName, GenericDeadlineMessage deadlineMessage,
                          ScopeDescriptor scopeDescriptor) {
         Span span = spanFactory.createExecuteSpan(deadlineName, deadlineId, deadlineMessage)
                                .start();
         try (SpanScope ignored = span.makeCurrent()) {
-
-            LegacyUnitOfWork<GenericDeadlineMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(deadlineMessage);
+            LegacyUnitOfWork<GenericDeadlineMessage> unitOfWork = new LegacyDefaultUnitOfWork<>(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
             /*
@@ -364,7 +361,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
                         executeScheduledDeadline(interceptedDeadlineMessage, ctx, scopeDescriptor);
                         return null;
                     });
-            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceedSync);
+            ResultMessage resultMessage = unitOfWork.executeWithResult(chain::proceedSync);
             if (resultMessage.isExceptional()) {
                 Throwable e = resultMessage.exceptionResult();
                 span.recordException(e);
@@ -377,7 +374,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
         }
     }
 
-    private void executeScheduledDeadline(DeadlineMessage<?> deadlineMessage,
+    private void executeScheduledDeadline(DeadlineMessage deadlineMessage,
                                           ProcessingContext context,
                                           ScopeDescriptor deadlineScope) {
         scopeAwareProvider.provideScopeAwareStream(deadlineScope)

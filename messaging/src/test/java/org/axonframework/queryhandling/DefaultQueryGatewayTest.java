@@ -52,13 +52,13 @@ class DefaultQueryGatewayTest {
 
     private QueryBus mockBus;
     private DefaultQueryGateway testSubject;
-    private QueryResponseMessage<String> answer;
+    private QueryResponseMessage answer;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
-        answer = new GenericQueryResponseMessage<>(new MessageType("query"), "answer");
-        MessageDispatchInterceptor<QueryMessage<?, ?>> mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
+        answer = new GenericQueryResponseMessage(new MessageType("query"), "answer");
+        MessageDispatchInterceptor<QueryMessage> mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
         mockBus = mock(QueryBus.class);
         testSubject = DefaultQueryGateway.builder()
                                          .queryBus(mockBus)
@@ -80,11 +80,11 @@ class DefaultQueryGatewayTest {
         assertEquals("answer", queryResponse.get());
 
         //noinspection unchecked
-        ArgumentCaptor<QueryMessage<String, String>> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+        ArgumentCaptor<QueryMessage> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
 
         verify(mockBus).query(queryMessageCaptor.capture());
 
-        QueryMessage<String, String> result = queryMessageCaptor.getValue();
+        QueryMessage result = queryMessageCaptor.getValue();
         assertEquals("query", result.payload());
         assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
@@ -99,7 +99,7 @@ class DefaultQueryGatewayTest {
 
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
 
-        GenericMessage<String> testQuery = new GenericMessage<>(
+        GenericMessage testQuery = new GenericMessage(
                 new MessageType("query"),
                 "query",
                 MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
@@ -109,11 +109,11 @@ class DefaultQueryGatewayTest {
         assertEquals("answer", queryResponse.get());
 
         //noinspection unchecked
-        ArgumentCaptor<QueryMessage<String, String>> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+        ArgumentCaptor<QueryMessage> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
 
         verify(mockBus).query(queryMessageCaptor.capture());
 
-        QueryMessage<String, String> result = queryMessageCaptor.getValue();
+        QueryMessage result = queryMessageCaptor.getValue();
         assertEquals("query", result.payload());
         assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
@@ -126,7 +126,7 @@ class DefaultQueryGatewayTest {
     @Test
     void pointToPointQueryWhenQueryBusReportsAnError() throws Exception {
         Throwable expected = new Throwable("oops");
-        QueryResponseMessage<String> testQuery = new GenericQueryResponseMessage<>(
+        QueryResponseMessage testQuery = new GenericQueryResponseMessage(
                 new MessageType("query"), expected, String.class
         );
         when(mockBus.query(anyMessage(String.class, String.class)))
@@ -141,7 +141,7 @@ class DefaultQueryGatewayTest {
 
     @Test
     void pointToPointQueryWhenClientCancelQuery() {
-        CompletableFuture<QueryResponseMessage<String>> queryBusFutureResult = new CompletableFuture<>();
+        CompletableFuture<QueryResponseMessage> queryBusFutureResult = new CompletableFuture<>();
         when(mockBus.query(anyMessage(String.class, String.class)))
                 .thenReturn(queryBusFutureResult);
 
@@ -156,7 +156,7 @@ class DefaultQueryGatewayTest {
     @Test
     void pointToPointQueryWhenQueryBusThrowsException() throws Exception {
         Throwable expected = new Throwable("oops");
-        CompletableFuture<QueryResponseMessage<String>> queryResponseCompletableFuture = new CompletableFuture<>();
+        CompletableFuture<QueryResponseMessage> queryResponseCompletableFuture = new CompletableFuture<>();
         queryResponseCompletableFuture.completeExceptionally(expected);
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(queryResponseCompletableFuture);
 
@@ -182,11 +182,11 @@ class DefaultQueryGatewayTest {
         assertEquals("answer", firstResult.get());
 
         //noinspection unchecked
-        ArgumentCaptor<QueryMessage<String, String>> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+        ArgumentCaptor<QueryMessage> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
 
         verify(mockBus).scatterGather(queryMessageCaptor.capture(), eq(expectedTimeout), eq(expectedTimeUnit));
 
-        QueryMessage<String, String> result = queryMessageCaptor.getValue();
+        QueryMessage result = queryMessageCaptor.getValue();
         assertEquals("scatterGather", result.payload());
         assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
@@ -204,7 +204,7 @@ class DefaultQueryGatewayTest {
         when(mockBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any()))
                 .thenReturn(Stream.of(answer));
 
-        Message<String> testQuery = new GenericMessage<>(
+        Message testQuery = new GenericMessage(
                 new MessageType("query"), "scatterGather",
                 MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
         );
@@ -216,11 +216,11 @@ class DefaultQueryGatewayTest {
         assertEquals("answer", firstResult.get());
 
         //noinspection unchecked
-        ArgumentCaptor<QueryMessage<String, String>> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+        ArgumentCaptor<QueryMessage> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
 
         verify(mockBus).scatterGather(queryMessageCaptor.capture(), eq(expectedTimeout), eq(expectedTimeUnit));
 
-        QueryMessage<String, String> result = queryMessageCaptor.getValue();
+        QueryMessage result = queryMessageCaptor.getValue();
         assertEquals("scatterGather", result.payload());
         assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
@@ -262,7 +262,7 @@ class DefaultQueryGatewayTest {
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
 
-        Message<String> testQuery = new GenericMessage<>(
+        Message testQuery = new GenericMessage(
                 new MessageType("query"), "subscription",
                 MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
         );
@@ -289,24 +289,24 @@ class DefaultQueryGatewayTest {
     @Test
     void dispatchInterceptor() {
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
-        testSubject.registerDispatchInterceptor((message, context, chain)
-                                                        -> MessageStream.just(
-                                                        new GenericQueryMessage<>(
-                                                                new MessageType(message.type().name()),
-                                                                "dispatch-" + message.payload(), message.responseType())
-                                                )
+        testSubject.registerDispatchInterceptor(
+                (message, context, chain) -> MessageStream.just(new GenericQueryMessage(
+                        new MessageType(message.type().name()),
+                        "dispatch-" + message.payload(),
+                        message.responseType()
+                ))
         );
 
         testSubject.query("query", String.class).join();
 
         verify(mockBus).query(
-                argThat((ArgumentMatcher<QueryMessage<String, String>>) x -> "dispatch-query".equals(x.payload()))
+                argThat((ArgumentMatcher<QueryMessage>) x -> "dispatch-query".equals(x.payload()))
         );
     }
 
     @Test
     void exceptionInInitialResultOfSubscriptionQueryReportedInMono() {
-        QueryResponseMessage<String> testResponse = new GenericQueryResponseMessage<>(
+        QueryResponseMessage testResponse = new GenericQueryResponseMessage(
                 new MessageType("query"), new MockException(), String.class
         );
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
@@ -327,7 +327,7 @@ class DefaultQueryGatewayTest {
 
     @Test
     void nullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
-        QueryResponseMessage<String> testQuery = new GenericQueryResponseMessage<>(
+        QueryResponseMessage testQuery = new GenericQueryResponseMessage(
                 new MessageType("query"), (String) null, String.class
         );
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
@@ -345,7 +345,7 @@ class DefaultQueryGatewayTest {
 
     @Test
     void nullUpdatesOfSubscriptionQuerySkipped() {
-        SubscriptionQueryUpdateMessage<String> testQuery = new GenericSubscriptionQueryUpdateMessage<>(
+        SubscriptionQueryUpdateMessage testQuery = new GenericSubscriptionQueryUpdateMessage(
                 new MessageType("query"), null, String.class
         );
         when(mockBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
@@ -365,7 +365,7 @@ class DefaultQueryGatewayTest {
     @Test
     void payloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
         when(mockBus.query(anyMessage(String.class, String.class)))
-                .thenReturn(completedFuture(new GenericQueryResponseMessage<>(
+                .thenReturn(completedFuture(new GenericQueryResponseMessage(
                         new MessageType("query"), "test"
                 ) {
                     @Override
@@ -382,10 +382,10 @@ class DefaultQueryGatewayTest {
 
     @Test
     void streamingQueryIsLazy() {
-        Publisher<QueryResponseMessage<Object>> response = Flux.just(
-                new GenericQueryResponseMessage<>(new MessageType("query"), "a"),
-                new GenericQueryResponseMessage<>(new MessageType("query"), "b"),
-                new GenericQueryResponseMessage<>(new MessageType("query"), "c")
+        Publisher<QueryResponseMessage> response = Flux.just(
+                new GenericQueryResponseMessage(new MessageType("query"), "a"),
+                new GenericQueryResponseMessage(new MessageType("query"), "b"),
+                new GenericQueryResponseMessage(new MessageType("query"), "c")
         );
 
         when(mockBus.streamingQuery(any()))
@@ -420,7 +420,7 @@ class DefaultQueryGatewayTest {
     void dispatchStreamingQueryWithMetaData() {
         when(mockBus.streamingQuery(any())).thenReturn(Flux.empty());
 
-        StreamingQueryMessage<String, String> testQuery = new GenericStreamingQueryMessage<>(
+        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
                 new MessageType("query"), "Query", String.class
         ).andMetaData(MetaData.with("key", "value"));
 
@@ -433,7 +433,7 @@ class DefaultQueryGatewayTest {
     }
 
     @SuppressWarnings({"unused", "SameParameterValue"})
-    private <Q, R> QueryMessage<Q, R> anyMessage(Class<Q> queryType, Class<R> responseType) {
+    private <Q, R> QueryMessage anyMessage(Class<Q> queryType, Class<R> responseType) {
         return any();
     }
 

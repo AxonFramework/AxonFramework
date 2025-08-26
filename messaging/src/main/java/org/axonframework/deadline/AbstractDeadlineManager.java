@@ -47,8 +47,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public abstract class AbstractDeadlineManager implements DeadlineManager {
 
-    private final List<MessageDispatchInterceptor<? super DeadlineMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
-    private final List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
+    private final List<MessageDispatchInterceptor<? super DeadlineMessage>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+    private final List<MessageHandlerInterceptor<? super DeadlineMessage>> handlerInterceptors = new CopyOnWriteArrayList<>();
     protected MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
     /**
@@ -69,14 +69,14 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
 
     @Override
     public Registration registerDispatchInterceptor(
-            @Nonnull MessageDispatchInterceptor<? super DeadlineMessage<?>> dispatchInterceptor) {
+            @Nonnull MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     @Override
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<DeadlineMessage<?>> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
     }
@@ -87,7 +87,7 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
      *
      * @return a list of dispatch interceptors
      */
-    protected List<MessageDispatchInterceptor<? super DeadlineMessage<?>>> dispatchInterceptors() {
+    protected List<MessageDispatchInterceptor<? super DeadlineMessage>> dispatchInterceptors() {
         return Collections.unmodifiableList(dispatchInterceptors);
     }
 
@@ -97,7 +97,7 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
      *
      * @return a list of handler interceptors
      */
-    protected List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors() {
+    protected List<MessageHandlerInterceptor<? super DeadlineMessage>> handlerInterceptors() {
         return Collections.unmodifiableList(handlerInterceptors);
     }
 
@@ -105,17 +105,16 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
      * Applies registered {@link MessageDispatchInterceptor}s to the given {@code message}.
      *
      * @param message the deadline message to be intercepted
-     * @param <T>     the type of deadline message payload
      * @return intercepted message
      */
     @SuppressWarnings("unchecked")
-    protected <T> DeadlineMessage<T> processDispatchInterceptors(DeadlineMessage<T> message) {
+    protected DeadlineMessage processDispatchInterceptors(DeadlineMessage message) {
         // FIXME: reintegrate #3065
         try {
             return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors())
                     .proceed(message, null)
                     .first()
-                    .<DeadlineMessage<T>>cast()
+                    .<DeadlineMessage>cast()
                     .asCompletableFuture()
                     .get()
                     .message();
@@ -133,22 +132,20 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
      * @param deadlineName     The name for this {@link DeadlineMessage}.
      * @param messageOrPayload A {@link Message} or payload to wrap as a DeadlineMessage
      * @param expiryTime       The timestamp at which the deadline expires
-     * @param <P>              The generic type of the expected payload of the resulting object
      * @return a DeadlineMessage using the {@code deadlineName} as its deadline qualifiedName and containing the given
      * {@code messageOrPayload} as the payload
      */
-    @SuppressWarnings("unchecked")
-    protected <P> DeadlineMessage<P> asDeadlineMessage(@Nonnull String deadlineName,
+    protected DeadlineMessage asDeadlineMessage(@Nonnull String deadlineName,
                                                        Object messageOrPayload,
                                                        @Nonnull Instant expiryTime) {
         if (messageOrPayload instanceof Message) {
-            return new GenericDeadlineMessage<>(deadlineName,
-                                                (Message<P>) messageOrPayload,
-                                                () -> expiryTime);
+            return new GenericDeadlineMessage(deadlineName,
+                                              (Message) messageOrPayload,
+                                              () -> expiryTime);
         }
         MessageType type = messageTypeResolver.resolveOrThrow(ObjectUtils.nullSafeTypeOf(messageOrPayload));
-        return new GenericDeadlineMessage<>(
-                deadlineName, new GenericMessage<>(type, (P) messageOrPayload), () -> expiryTime
+        return new GenericDeadlineMessage(
+                deadlineName, new GenericMessage(type, messageOrPayload), () -> expiryTime
         );
     }
 }

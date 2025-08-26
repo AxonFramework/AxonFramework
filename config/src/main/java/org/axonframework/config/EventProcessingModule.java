@@ -120,20 +120,20 @@ public class EventProcessingModule
     protected final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
     protected final Map<String, DeadLetteringEventHandlerInvoker> deadLetteringEventHandlerInvokers = new HashMap<>();
 
-    protected final List<BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
-    protected final Map<String, List<Function<LegacyConfiguration, MessageHandlerInterceptor<EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
+    protected final List<BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<EventMessage>>> defaultHandlerInterceptors = new ArrayList<>();
+    protected final Map<String, List<Function<LegacyConfiguration, MessageHandlerInterceptor<EventMessage>>>> handlerInterceptorsBuilders = new HashMap<>();
     protected final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
     protected final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
     protected final Map<String, Component<SequencingPolicy>> sequencingPolicies = new HashMap<>();
     protected final Map<String, MessageMonitorFactory> messageMonitorFactories = new HashMap<>();
     protected final Map<String, Component<TokenStore>> tokenStore = new HashMap<>();
     protected final Map<String, Component<TransactionManager>> transactionManagers = new HashMap<>();
-    protected final Map<String, Component<SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueues = new HashMap<>();
-    protected final Map<String, Component<EnqueuePolicy<EventMessage<?>>>> deadLetterPolicies = new HashMap<>();
+    protected final Map<String, Component<SequencedDeadLetterQueue<EventMessage>>> deadLetterQueues = new HashMap<>();
+    protected final Map<String, Component<EnqueuePolicy<EventMessage>>> deadLetterPolicies = new HashMap<>();
 
     protected final Map<String, Component<PooledStreamingProcessorConfiguration>> psepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
-    protected Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider = processingGroup -> null;
+    protected Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage>>> deadLetterQueueProvider = processingGroup -> null;
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     protected LegacyConfiguration configuration;
@@ -169,20 +169,20 @@ public class EventProcessingModule
             c -> c.getComponent(TransactionManager.class, NoTransactionManager::instance)
     );
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private final Component<EnqueuePolicy<EventMessage<?>>> defaultDeadLetterPolicy = new Component<>(
+    private final Component<EnqueuePolicy<EventMessage>> defaultDeadLetterPolicy = new Component<>(
             () -> configuration, "deadLetterPolicy",
             c -> c.getComponent(EnqueuePolicy.class,
                                 () -> (letter, cause) -> Decisions.enqueue(ThrowableCause.truncated(cause))
             )
     );
     @SuppressWarnings("unchecked")
-    private final Component<StreamableMessageSource<TrackedEventMessage<?>>> defaultStreamableSource =
+    private final Component<StreamableMessageSource<TrackedEventMessage>> defaultStreamableSource =
             new Component<>(
                     () -> configuration,
                     "defaultStreamableMessageSource",
-                    c -> (StreamableMessageSource<TrackedEventMessage<?>>) c.eventBus()
+                    c -> (StreamableMessageSource<TrackedEventMessage>) c.eventBus()
             );
-    private final Component<SubscribableMessageSource<? extends EventMessage<?>>> defaultSubscribableSource =
+    private final Component<SubscribableMessageSource<? extends EventMessage>> defaultSubscribableSource =
             new Component<>(
                     () -> configuration,
                     "defaultSubscribableMessageSource",
@@ -314,11 +314,11 @@ public class EventProcessingModule
     private DeadLetteringEventHandlerInvoker deadLetteringInvoker(String processorName,
                                                                   String processingGroup,
                                                                   List<Object> handlers) {
-        SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue =
+        SequencedDeadLetterQueue<EventMessage> deadLetterQueue =
                 deadLetterQueue(processingGroup).orElseThrow(() -> new IllegalStateException(
                         "Cannot find a Dead Letter Queue for processing group [" + processingGroup + "]."
                 ));
-        EnqueuePolicy<EventMessage<?>> enqueuePolicy =
+        EnqueuePolicy<EventMessage> enqueuePolicy =
                 deadLetterPolicy(processingGroup).orElseThrow(() -> new IllegalStateException(
                         "Cannot find a Dead Letter Policy for processing group [" + processingGroup + "]."
                 ));
@@ -402,7 +402,7 @@ public class EventProcessingModule
         return eventProcessor;
     }
 
-    private void addInterceptors(String processorName, MessageHandlerInterceptorSupport<EventMessage<?>> processor) {
+    private void addInterceptors(String processorName, MessageHandlerInterceptorSupport<EventMessage> processor) {
         handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
                                    .stream()
                                    .map(hi -> hi.apply(configuration))
@@ -485,7 +485,7 @@ public class EventProcessingModule
     }
 
     @Override
-    public MessageMonitor<? super Message<?>> messageMonitor(Class<?> componentType,
+    public MessageMonitor<? super Message> messageMonitor(Class<?> componentType,
                                                              String eventProcessorName) {
         validateConfigInitialization();
         if (messageMonitorFactories.containsKey(eventProcessorName)) {
@@ -514,7 +514,7 @@ public class EventProcessingModule
     }
 
     @Override
-    public Optional<SequencedDeadLetterQueue<EventMessage<?>>> deadLetterQueue(@Nonnull String processingGroup) {
+    public Optional<SequencedDeadLetterQueue<EventMessage>> deadLetterQueue(@Nonnull String processingGroup) {
         validateConfigInitialization();
         if (!deadLetterQueues.containsKey(processingGroup)) {
             registerDefaultDeadLetterQueueIfPresent(processingGroup);
@@ -524,7 +524,7 @@ public class EventProcessingModule
     }
 
     @Override
-    public Optional<EnqueuePolicy<EventMessage<?>>> deadLetterPolicy(@Nonnull String processingGroup) {
+    public Optional<EnqueuePolicy<EventMessage>> deadLetterPolicy(@Nonnull String processingGroup) {
         validateConfigInitialization();
         return deadLetterPolicies.containsKey(processingGroup)
                 ? Optional.ofNullable(deadLetterPolicies.get(processingGroup).get())
@@ -532,7 +532,7 @@ public class EventProcessingModule
     }
 
     @Override
-    public Optional<SequencedDeadLetterProcessor<EventMessage<?>>> sequencedDeadLetterProcessor(
+    public Optional<SequencedDeadLetterProcessor<EventMessage>> sequencedDeadLetterProcessor(
             @Nonnull String processingGroup
     ) {
         validateConfigInitialization();
@@ -594,7 +594,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer configureDefaultStreamableMessageSource(
-            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource
+            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage>> defaultSource
     ) {
         this.defaultStreamableSource.update(defaultSource);
         return this;
@@ -602,7 +602,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer configureDefaultSubscribableMessageSource(
-            Function<LegacyConfiguration, SubscribableMessageSource<EventMessage<?>>> defaultSource
+            Function<LegacyConfiguration, SubscribableMessageSource<EventMessage>> defaultSource
     ) {
         this.defaultSubscribableSource.update(defaultSource);
         return this;
@@ -657,7 +657,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerSubscribingEventProcessor(String name,
-                                                                       Function<LegacyConfiguration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
+                                                                       Function<LegacyConfiguration, SubscribableMessageSource<? extends EventMessage>> messageSource) {
         registerEventProcessor(name, (n, c, ehi) -> subscribingEventProcessor(n, ehi, messageSource.apply(c)));
         return this;
     }
@@ -718,7 +718,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerHandlerInterceptor(String processorName,
-                                                                Function<LegacyConfiguration, MessageHandlerInterceptor<EventMessage<?>>> interceptorBuilder) {
+                                                                Function<LegacyConfiguration, MessageHandlerInterceptor<EventMessage>> interceptorBuilder) {
         Component<EventProcessor> eps = eventProcessors.get(processorName);
         if (eps != null && eps.isInitialized()) {
             // TODO #3103 - implement differently
@@ -731,7 +731,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDefaultHandlerInterceptor(
-            BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<EventMessage<?>>> interceptorBuilder
+            BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<EventMessage>> interceptorBuilder
     ) {
         this.defaultHandlerInterceptors.add(interceptorBuilder);
         return this;
@@ -781,7 +781,7 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerPooledStreamingEventProcessor(
             String name,
-            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource,
+            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage>> messageSource,
             PooledStreamingProcessorConfiguration processorConfiguration
     ) {
         registerEventProcessor(
@@ -805,7 +805,7 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerDeadLetterQueue(
             @Nonnull String processingGroup,
-            @Nonnull Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>> queueBuilder
+            @Nonnull Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage>> queueBuilder
     ) {
         this.deadLetterQueues.put(
                 processingGroup, new Component<>(() -> configuration, "deadLetterQueue", queueBuilder)
@@ -815,7 +815,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDefaultDeadLetterPolicy(
-            @Nonnull Function<LegacyConfiguration, EnqueuePolicy<EventMessage<?>>> policyBuilder
+            @Nonnull Function<LegacyConfiguration, EnqueuePolicy<EventMessage>> policyBuilder
     ) {
         this.defaultDeadLetterPolicy.update(policyBuilder);
         return this;
@@ -824,7 +824,7 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerDeadLetterPolicy(
             @Nonnull String processingGroup,
-            @Nonnull Function<LegacyConfiguration, EnqueuePolicy<EventMessage<?>>> policyBuilder
+            @Nonnull Function<LegacyConfiguration, EnqueuePolicy<EventMessage>> policyBuilder
     ) {
         deadLetterPolicies.put(processingGroup,
                                new Component<>(() -> configuration, "deadLetterPolicy", policyBuilder));
@@ -853,7 +853,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDeadLetterQueueProvider(
-            Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider
+            Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage>>> deadLetterQueueProvider
     ) {
         this.deadLetterQueueProvider = deadLetterQueueProvider;
         return this;
@@ -885,7 +885,7 @@ public class EventProcessingModule
      */
     protected EventProcessor subscribingEventProcessor(String name,
                                                        EventHandlerInvoker eventHandlerInvoker,
-                                                       SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+                                                       SubscribableMessageSource<? extends EventMessage> messageSource) {
         SimpleUnitOfWorkFactory simpleUnitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
 
         return new SubscribingEventProcessor(
@@ -914,7 +914,7 @@ public class EventProcessingModule
             String name,
             EventHandlerInvoker eventHandlerInvoker,
             LegacyConfiguration config,
-            StreamableMessageSource<TrackedEventMessage<?>> messageSource,
+            StreamableMessageSource<TrackedEventMessage> messageSource,
             PooledStreamingProcessorConfiguration processorConfiguration
     ) {
         ScheduledExecutorService coordinatorExecutor = defaultExecutor(1, "Coordinator[" + name + "]");

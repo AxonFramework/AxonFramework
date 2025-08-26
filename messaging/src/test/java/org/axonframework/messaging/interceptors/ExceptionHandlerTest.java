@@ -75,7 +75,7 @@ class ExceptionHandlerTest {
 
     @Test
     void exceptionHandlerIsInvokedForAnCommandHandlerThrowingAnException() {
-        CommandMessage<SomeCommand> command = new GenericCommandMessage<>(
+        CommandMessage command = new GenericCommandMessage(
                 TEST_COMMAND_TYPE, new SomeCommand(() -> new RuntimeException("some-exception"))
         );
 
@@ -92,7 +92,7 @@ class ExceptionHandlerTest {
 
     @Test
     void exceptionHandlerIsInvokedForAnEventHandlerThrowingAnException() {
-        EventMessage<SomeEvent> event =
+        EventMessage event =
                 asEventMessage(new SomeEvent(() -> new RuntimeException("some-exception")));
 
         try {
@@ -108,7 +108,7 @@ class ExceptionHandlerTest {
 
     @Test
     void exceptionHandlerIsInvokedForAnQueryHandlerThrowingAnException() {
-        QueryMessage<SomeQuery, SomeQueryResponse> query = new GenericQueryMessage<>(
+        QueryMessage query = new GenericQueryMessage(
                 TEST_QUERY_TYPE,
                 new SomeQuery(() -> new RuntimeException("some-exception")),
                 ResponseTypes.instanceOf(SomeQueryResponse.class));
@@ -127,7 +127,7 @@ class ExceptionHandlerTest {
     @Test
     @Disabled("TODO #3062 - Exception Handler support")
     void exceptionHandlersAreInvokedInHandlerPriorityOrder() {
-        CommandMessage<SomeCommand> command = new GenericCommandMessage<>(
+        CommandMessage command = new GenericCommandMessage(
                 TEST_COMMAND_TYPE, new SomeCommand(() -> new IllegalStateException("some-exception"))
         );
 
@@ -150,7 +150,7 @@ class ExceptionHandlerTest {
      * {@link org.axonframework.eventhandling.AnnotationEventHandlerAdapter#handleSync(EventMessage,org.axonframework.messaging.unitofwork.ProcessingContext)}. Thus, mirroring
      * regular message handling components.
      */
-    private Object handle(Message<?> message) throws Exception {
+    private Object handle(Message message) throws Exception {
         Optional<MessageHandlingMember<? super ExceptionHandlingComponent>> handler =
                 inspector.getHandlers(ExceptionHandlingComponent.class)
                          .filter(h -> h.canHandle(message, new LegacyMessageSupportingContext(message)))

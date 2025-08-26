@@ -400,7 +400,7 @@ class InterceptorConfigurationTest {
 
         @Bean
         @Order(100)
-        public MyGenericDispatchInterceptor<? extends Message<?>> myFirstGenericDispatcherInterceptor(
+        public MyGenericDispatchInterceptor<? extends Message> myFirstGenericDispatcherInterceptor(
                 @Qualifier("commandDispatchInterceptorInvocations") CountDownLatch commandDispatchInterceptorInvocations,
                 @Qualifier("queryDispatchInterceptorInvocations") CountDownLatch queryDispatchInterceptorInvocations,
                 @Qualifier("eventDispatchInterceptorInvocations") CountDownLatch eventDispatchInterceptorInvocations,
@@ -507,7 +507,7 @@ class InterceptorConfigurationTest {
             return new EventHandlingComponent();
         }
 
-        public static class MyCommandHandlerInterceptor extends MyHandlerInterceptor<CommandMessage<?>> {
+        public static class MyCommandHandlerInterceptor extends MyHandlerInterceptor<CommandMessage> {
 
             public MyCommandHandlerInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
                                                LegacyConfiguration configuration) {
@@ -515,7 +515,7 @@ class InterceptorConfigurationTest {
             }
         }
 
-        public static class MyQueryHandlerInterceptor extends MyHandlerInterceptor<QueryMessage<?, ?>> {
+        public static class MyQueryHandlerInterceptor extends MyHandlerInterceptor<QueryMessage> {
 
             public MyQueryHandlerInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
                                              LegacyConfiguration configuration) {
@@ -523,7 +523,7 @@ class InterceptorConfigurationTest {
             }
         }
 
-        public static class MyEventHandlerInterceptor extends MyHandlerInterceptor<EventMessage<?>> {
+        public static class MyEventHandlerInterceptor extends MyHandlerInterceptor<EventMessage> {
 
             public MyEventHandlerInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
                                              LegacyConfiguration configuration) {
@@ -531,7 +531,7 @@ class InterceptorConfigurationTest {
             }
         }
 
-        public static class MyCommandDispatchInterceptor extends MyDispatchInterceptor<CommandMessage<?>> {
+        public static class MyCommandDispatchInterceptor extends MyDispatchInterceptor<CommandMessage> {
 
             public MyCommandDispatchInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
                                                 LegacyConfiguration configuration) {
@@ -539,7 +539,7 @@ class InterceptorConfigurationTest {
             }
         }
 
-        public static class MyQueryDispatchInterceptor extends MyDispatchInterceptor<QueryMessage<?, ?>> {
+        public static class MyQueryDispatchInterceptor extends MyDispatchInterceptor<QueryMessage> {
 
             public MyQueryDispatchInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
                                               LegacyConfiguration configuration) {
@@ -547,7 +547,7 @@ class InterceptorConfigurationTest {
             }
         }
 
-        public static class MyEventDispatchInterceptor extends MyDispatchInterceptor<EventMessage<?>> {
+        public static class MyEventDispatchInterceptor extends MyDispatchInterceptor<EventMessage> {
 
             public MyEventDispatchInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
                                               LegacyConfiguration configuration) {
@@ -555,7 +555,7 @@ class InterceptorConfigurationTest {
             }
         }
 
-        public static class MyHandlerInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T> {
+        public static class MyHandlerInterceptor<T extends Message> implements MessageHandlerInterceptor<T> {
 
             private final String name;
             private final CountDownLatch invocation;
@@ -589,7 +589,7 @@ class InterceptorConfigurationTest {
             }
         }
 
-        public static class MyDispatchInterceptor<T extends Message<?>> implements MessageDispatchInterceptor<T> {
+        public static class MyDispatchInterceptor<T extends Message> implements MessageDispatchInterceptor<T> {
 
             private final String name;
             private final CountDownLatch invocation;
@@ -618,7 +618,7 @@ class InterceptorConfigurationTest {
             }
         }
 
-        public static class MyGenericDispatchInterceptor<T extends Message<?>>
+        public static class MyGenericDispatchInterceptor<T extends Message>
                 implements MessageDispatchInterceptor<T> {
 
             private final String name;
@@ -663,7 +663,7 @@ class InterceptorConfigurationTest {
             }
         }
 
-        public static class MyGenericHandlerInterceptor implements MessageHandlerInterceptor<Message<?>> {
+        public static class MyGenericHandlerInterceptor implements MessageHandlerInterceptor<Message> {
 
             private final String name;
             private final CountDownLatch commandInvocation;
@@ -691,9 +691,9 @@ class InterceptorConfigurationTest {
 
             @Override
             @Nonnull
-            public MessageStream<?> interceptOnHandle(@Nonnull Message<?> message,
+            public MessageStream<?> interceptOnHandle(@Nonnull Message message,
                                                       @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<Message<?>> interceptorChain) {
+                                                      @Nonnull MessageHandlerInterceptorChain<Message> interceptorChain) {
                 if (message instanceof CommandMessage) {
                     commandInvocation.countDown();
                     commandHandlingOutcome.add(name);
@@ -744,13 +744,13 @@ class InterceptorConfigurationTest {
             return new MyCommandHandlerInterceptor();
         }
 
-        public static class MyCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
+        public static class MyCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage> {
 
             @Nonnull
             @Override
-            public @NotNull MessageStream<?> interceptOnHandle(@NotNull CommandMessage<?> message,
+            public @NotNull MessageStream<?> interceptOnHandle(@NotNull CommandMessage message,
                                                                @NotNull ProcessingContext context,
-                                                               @NotNull MessageHandlerInterceptorChain<CommandMessage<?>> interceptorChain) {
+                                                               @NotNull MessageHandlerInterceptorChain<CommandMessage> interceptorChain) {
                 return interceptorChain.proceed(message, context);
             }
         }

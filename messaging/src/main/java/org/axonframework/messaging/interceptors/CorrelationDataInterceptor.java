@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Rene de Waele
  * @since 3.0
  */
-public class CorrelationDataInterceptor<M extends Message<?>> implements MessageHandlerInterceptor<M> {
+public class CorrelationDataInterceptor<M extends Message> implements MessageHandlerInterceptor<M> {
 
     /**
      * Resource key the correlation data is stored in the processing context.

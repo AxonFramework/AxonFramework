@@ -50,8 +50,6 @@ import java.util.function.Predicate;
 
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineMessage;
 import static org.axonframework.deadline.quartz.DeadlineJob.DeadlineJobDataBinder.deadlineScope;
-import static org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler.DirectEventJobDataBinder.*;
-import static org.axonframework.messaging.HandlerAttributes.DEADLINE_NAME;
 
 /**
  * Quartz job which depicts handling of a scheduled deadline message. The {@link DeadlineMessage} and
@@ -121,11 +119,11 @@ public class DeadlineJob implements Job {
         ScopeAwareProvider scopeAwareComponents = (ScopeAwareProvider) schedulerContext.get(SCOPE_AWARE_RESOLVER);
         DeadlineManagerSpanFactory spanFactory = (DeadlineManagerSpanFactory) schedulerContext.get(SPAN_FACTORY);
         @SuppressWarnings("unchecked")
-        List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors =
-                (List<MessageHandlerInterceptor<? super DeadlineMessage<?>>>)
+        List<MessageHandlerInterceptor<? super DeadlineMessage>> handlerInterceptors =
+                (List<MessageHandlerInterceptor<? super DeadlineMessage>>)
                         schedulerContext.get(HANDLER_INTERCEPTORS);
 
-        DeadlineMessage<?> deadlineMessage = deadlineMessage(serializer, jobData);
+        DeadlineMessage deadlineMessage = deadlineMessage(serializer, jobData);
         ScopeDescriptor deadlineScope = deadlineScope(serializer, jobData);
 
         Span span = spanFactory.createExecuteSpan(context.getTrigger().getJobKey().getGroup(),
@@ -134,7 +132,7 @@ public class DeadlineJob implements Job {
         try (SpanScope unused = span.makeCurrent()) {
             // TODO: reintegrate as part of #3065
             /*
-            LegacyDefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(
+            LegacyDefaultUnitOfWork<DeadlineMessage> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(
                     deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult()
@@ -151,7 +149,7 @@ public class DeadlineJob implements Job {
                                                       return null;
                                                   });
 
-            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(chain::proceedSync);
+            ResultMessage resultMessage = unitOfWork.executeWithResult(chain::proceedSync);
             if (resultMessage.isExceptional()) {
                 Throwable exceptionResult = resultMessage.exceptionResult();
                 span.recordException(exceptionResult);
@@ -180,7 +178,7 @@ public class DeadlineJob implements Job {
     }
 
     private void executeScheduledDeadline(ScopeAwareProvider scopeAwareComponents,
-                                          DeadlineMessage<?> deadlineMessage,
+                                          DeadlineMessage deadlineMessage,
                                           ProcessingContext context,
                                           ScopeDescriptor deadlineScope) {
         scopeAwareComponents.provideScopeAwareStream(deadlineScope)
@@ -256,7 +254,7 @@ public class DeadlineJob implements Job {
          * @return a {@link JobDataMap} containing the {@code deadlineMessage} and {@code deadlineScope}
          */
         public static JobDataMap toJobData(Serializer serializer,
-                                           DeadlineMessage<?> deadlineMessage,
+                                           DeadlineMessage deadlineMessage,
                                            ScopeDescriptor deadlineScope) {
             JobDataMap jobData = new JobDataMap();
             putDeadlineMessage(jobData, deadlineMessage, serializer);
@@ -266,7 +264,7 @@ public class DeadlineJob implements Job {
 
         @SuppressWarnings("Duplicates")
         private static void putDeadlineMessage(JobDataMap jobData,
-                                               DeadlineMessage<?> deadlineMessage,
+                                               DeadlineMessage deadlineMessage,
                                                Serializer serializer) {
             jobData.put(DEADLINE_NAME, deadlineMessage.getDeadlineName());
             jobData.put(MESSAGE_ID, deadlineMessage.identifier());
@@ -298,9 +296,8 @@ public class DeadlineJob implements Job {
          * @param jobDataMap the {@link JobDataMap} which should contain a {@link DeadlineMessage}
          * @return the {@link DeadlineMessage} pulled from the {@code jobDataMap}
          */
-        @SuppressWarnings("unchecked")
-        public static <T> DeadlineMessage<T> deadlineMessage(Serializer serializer, JobDataMap jobDataMap) {
-            return (DeadlineMessage<T>) new GenericDeadlineMessage<>(
+        public static DeadlineMessage deadlineMessage(Serializer serializer, JobDataMap jobDataMap) {
+            return new GenericDeadlineMessage(
                     (String) jobDataMap.get(DEADLINE_NAME),
                     (String) jobDataMap.get(MESSAGE_ID),
                     MessageType.fromString((String) jobDataMap.get(TYPE)),

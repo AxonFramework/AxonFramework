@@ -64,9 +64,9 @@ public class StubDeadlineManager implements DeadlineManager {
     private final NavigableSet<ScheduledDeadlineInfo> scheduledDeadlines = new TreeSet<>();
     private final List<ScheduledDeadlineInfo> triggeredDeadlines = new CopyOnWriteArrayList<>();
     private final AtomicInteger deadlineCounter = new AtomicInteger(0);
-    private final List<MessageDispatchInterceptor<? super DeadlineMessage<?>>> dispatchInterceptors =
+    private final List<MessageDispatchInterceptor<? super DeadlineMessage>> dispatchInterceptors =
             new CopyOnWriteArrayList<>();
-    private final List<MessageHandlerInterceptor<DeadlineMessage<?>>> handlerInterceptors =
+    private final List<MessageHandlerInterceptor<DeadlineMessage>> handlerInterceptors =
             new CopyOnWriteArrayList<>();
     private Instant currentDateTime;
 
@@ -106,7 +106,7 @@ public class StubDeadlineManager implements DeadlineManager {
                            @Nonnull String deadlineName,
                            Object payloadOrMessage,
                            @Nonnull ScopeDescriptor deadlineScope) {
-        DeadlineMessage<?> scheduledMessage =
+        DeadlineMessage scheduledMessage =
                 processDispatchInterceptors(asDeadlineMessage(deadlineName, payloadOrMessage, triggerDateTime));
 
         scheduledDeadlines.add(new ScheduledDeadlineInfo(triggerDateTime,
@@ -118,18 +118,17 @@ public class StubDeadlineManager implements DeadlineManager {
         return scheduledMessage.identifier();
     }
 
-    @SuppressWarnings("unchecked")
-    private static <P> DeadlineMessage<P> asDeadlineMessage(@Nonnull String deadlineName,
-                                                            @Nullable Object messageOrPayload,
-                                                            @Nonnull Instant expiryTime) {
+    private static DeadlineMessage asDeadlineMessage(@Nonnull String deadlineName,
+                                                     @Nullable Object messageOrPayload,
+                                                     @Nonnull Instant expiryTime) {
         if (messageOrPayload instanceof Message) {
-            return new GenericDeadlineMessage<>(
-                    deadlineName, (Message<P>) messageOrPayload, () -> expiryTime
+            return new GenericDeadlineMessage(
+                    deadlineName, (Message) messageOrPayload, () -> expiryTime
             );
         }
         MessageType type = new MessageType(ObjectUtils.nullSafeTypeOf(messageOrPayload));
-        return new GenericDeadlineMessage<>(
-                deadlineName, new GenericMessage<>(type, (P) messageOrPayload), () -> expiryTime
+        return new GenericDeadlineMessage(
+                deadlineName, new GenericMessage(type, messageOrPayload), () -> expiryTime
         );
     }
 
@@ -218,7 +217,7 @@ public class StubDeadlineManager implements DeadlineManager {
     public void advanceTimeTo(Instant newDateTime, DeadlineConsumer deadlineConsumer) {
         while (!scheduledDeadlines.isEmpty() && !scheduledDeadlines.first().getScheduleTime().isAfter(newDateTime)) {
             ScheduledDeadlineInfo scheduledDeadlineInfo = advanceToNextTrigger();
-            DeadlineMessage<?> consumedMessage = consumeDeadline(deadlineConsumer, scheduledDeadlineInfo);
+            DeadlineMessage consumedMessage = consumeDeadline(deadlineConsumer, scheduledDeadlineInfo);
             triggeredDeadlines.remove(scheduledDeadlineInfo);
             triggeredDeadlines.add(scheduledDeadlineInfo.recreateWithNewMessage(consumedMessage));
         }
@@ -241,7 +240,7 @@ public class StubDeadlineManager implements DeadlineManager {
     @Override
     public @Nonnull
     Registration registerDispatchInterceptor(
-            @Nonnull MessageDispatchInterceptor<? super DeadlineMessage<?>> dispatchInterceptor) {
+            @Nonnull MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
@@ -249,34 +248,33 @@ public class StubDeadlineManager implements DeadlineManager {
     @Nonnull
     @Override
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<DeadlineMessage<?>> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
     }
 
     @SuppressWarnings("unchecked")
-    private <T> DeadlineMessage<T> processDispatchInterceptors(DeadlineMessage<T> message) {
+    private DeadlineMessage processDispatchInterceptors(DeadlineMessage message) {
         return new DefaultMessageDispatchInterceptorChain<>(
                 dispatchInterceptors
         ).proceed(message, null)
          .first()
-         .<DeadlineMessage<T>>cast()
+         .<DeadlineMessage>cast()
          .peek()
          .map(MessageStream.Entry::message)
          .get(); // TODO reintegrate as part of #3065
     }
 
-    private DeadlineMessage<?> consumeDeadline(DeadlineConsumer deadlineConsumer,
-                                               ScheduledDeadlineInfo scheduledDeadlineInfo) {
-
-        LegacyDefaultUnitOfWork<? extends DeadlineMessage<?>> uow =
+    private DeadlineMessage consumeDeadline(DeadlineConsumer deadlineConsumer,
+                                            ScheduledDeadlineInfo scheduledDeadlineInfo) {
+        LegacyDefaultUnitOfWork<? extends DeadlineMessage> uow =
                 LegacyDefaultUnitOfWork.startAndGet(scheduledDeadlineInfo.deadlineMessage());
 
-        Iterator<MessageHandlerInterceptor<DeadlineMessage<?>>> iterator = handlerInterceptors.iterator();
+        Iterator<MessageHandlerInterceptor<DeadlineMessage>> iterator = handlerInterceptors.iterator();
 
-        MessageHandlerInterceptorChain<DeadlineMessage<?>> chain = new MessageHandlerInterceptorChain<>() {
+        MessageHandlerInterceptorChain<DeadlineMessage> chain = new MessageHandlerInterceptorChain<>() {
             @Override
-            public @NotNull MessageStream<?> proceed(@NotNull DeadlineMessage<?> message,
+            public @NotNull MessageStream<?> proceed(@NotNull DeadlineMessage message,
                                                      @NotNull ProcessingContext context) {
                 try {
                     if (iterator.hasNext()) {
@@ -305,7 +303,7 @@ public class StubDeadlineManager implements DeadlineManager {
                 Throwable e = resultMessage.exceptionResult();
                 throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
             }
-            return (DeadlineMessage<?>) resultMessage.payload();
+            return (DeadlineMessage) resultMessage.payload();
         } else {
             return null;
         }

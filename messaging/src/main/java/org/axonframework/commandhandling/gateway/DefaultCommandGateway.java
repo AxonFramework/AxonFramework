@@ -94,11 +94,11 @@ public class DefaultCommandGateway implements CommandGateway {
     @Override
     public CommandResult send(@Nonnull Object command,
                               @Nullable ProcessingContext context) {
-        CommandMessage<Object> commandMessage = asCommandMessage(command, MetaData.emptyInstance());
+        CommandMessage commandMessage = asCommandMessage(command, MetaData.emptyInstance());
         return new FutureCommandResult(
                 commandBus.dispatch(commandMessage, context)
                           .thenCompose(
-                                  msg -> msg instanceof ResultMessage<?> resultMessage && resultMessage.isExceptional()
+                                  msg -> msg instanceof ResultMessage resultMessage && resultMessage.isExceptional()
                                           ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
                                           : CompletableFuture.completedFuture(msg)
                           )
@@ -109,11 +109,11 @@ public class DefaultCommandGateway implements CommandGateway {
     public CommandResult send(@Nonnull Object command,
                               @Nonnull MetaData metaData,
                               @Nullable ProcessingContext context) {
-        CommandMessage<Object> commandMessage = asCommandMessage(command, metaData);
+        CommandMessage commandMessage = asCommandMessage(command, metaData);
         return new FutureCommandResult(
                 commandBus.dispatch(commandMessage, context)
                           .thenCompose(
-                                  msg -> msg instanceof ResultMessage<?> resultMessage && resultMessage.isExceptional()
+                                  msg -> msg instanceof ResultMessage resultMessage && resultMessage.isExceptional()
                                           ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
                                           : CompletableFuture.completedFuture(msg)
                           )
@@ -132,37 +132,36 @@ public class DefaultCommandGateway implements CommandGateway {
      * implements {@code CommandMessage}, or a {@code CommandMessage} based on the result of {@link Message#payload()}
      * and {@link Message#metaData()} for other {@link Message} implementations.
      */
-    private <C> CommandMessage<C> asCommandMessage(Object command, MetaData metaData) {
-        CommandMessage<C> commandMessage = createCommandMessage(command, metaData);
+    private CommandMessage asCommandMessage(Object command, MetaData metaData) {
+        CommandMessage commandMessage = createCommandMessage(command, metaData);
         return enrichCommandMessage(commandMessage);
     }
 
-    @SuppressWarnings("unchecked")
-    private <C> CommandMessage<C> createCommandMessage(Object command, MetaData metaData) {
-        if (command instanceof CommandMessage<?>) {
-            return (CommandMessage<C>) command;
+    private CommandMessage createCommandMessage(Object command, MetaData metaData) {
+        if (command instanceof CommandMessage) {
+            return (CommandMessage) command;
         }
-        return command instanceof Message<?> message
-                ? new GenericCommandMessage<>(message.type(), (C) message.payload(), message.metaData())
-                : new GenericCommandMessage<>(messageTypeResolver.resolveOrThrow(command), (C) command, metaData);
+        return command instanceof Message message
+                ? new GenericCommandMessage(message.type(), message.payload(), message.metaData())
+                : new GenericCommandMessage(messageTypeResolver.resolveOrThrow(command), command, metaData);
     }
 
-    private <C> CommandMessage<C> enrichCommandMessage(CommandMessage<C> commandMessage) {
+    private CommandMessage enrichCommandMessage(CommandMessage commandMessage) {
         if (routingKeyResolver == null && priorityCalculator == null) {
             return commandMessage;
         }
-        return new GenericCommandMessage<>(
+        return new GenericCommandMessage(
                 commandMessage,
                 commandMessage.routingKey().orElse(resolveRoutingKey(commandMessage)),
                 commandMessage.priority().orElse(resolvePriority(commandMessage).orElse(0))
         );
     }
 
-    private String resolveRoutingKey(CommandMessage<?> commandMessage) {
+    private String resolveRoutingKey(CommandMessage commandMessage) {
         return routingKeyResolver == null ? null : routingKeyResolver.getRoutingKey(commandMessage);
     }
 
-    private OptionalInt resolvePriority(CommandMessage<?> commandMessage) {
+    private OptionalInt resolvePriority(CommandMessage commandMessage) {
         return priorityCalculator == null
                 ? OptionalInt.empty()
                 : OptionalInt.of(priorityCalculator.determinePriority(commandMessage));

@@ -356,7 +356,7 @@ class EventProcessingModuleTest {
     @Test
     void createSubscribingEventProcessorIfSubscribableMessageSourceDefinitionBuilderPresent(
             @Mock EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder mockBuilder,
-            @Mock SubscribableMessageSourceDefinition<EventMessage<?>> definition,
+            @Mock SubscribableMessageSourceDefinition<EventMessage> definition,
             @Mock SubscribableMessageSource source) {
         when(mockBuilder.build("pooled-streaming")).thenReturn(definition);
         when(mockBuilder.build("tracking")).thenReturn(definition);
@@ -412,7 +412,7 @@ class EventProcessingModuleTest {
 
         try {
             config.eventBus()
-                  .publish(new GenericEventMessage<>(new MessageType("event"), "test"));
+                  .publish(new GenericEventMessage(new MessageType("event"), "test"));
 
             assertEquals(1, subscribingMonitor.getMessages().size());
             assertTrue(trackingMonitor.await(10, TimeUnit.SECONDS));
@@ -433,8 +433,8 @@ class EventProcessingModuleTest {
         LegacyConfiguration config = configurer.start();
 
         try {
-            EventMessage<Object> message =
-                    new GenericEventMessage<>(new MessageType("event"), "test");
+            EventMessage message =
+                    new GenericEventMessage(new MessageType("event"), "test");
             config.eventBus().publish(message);
 
             spanFactory.verifySpanCompleted("EventProcessor.process", message);
@@ -448,8 +448,8 @@ class EventProcessingModuleTest {
     @Test
     @Disabled("Disabled due to lifecycle solution removal")
     void configureDefaultListenerInvocationErrorHandler() throws Exception {
-        EventMessage<Boolean> errorThrowingEventMessage =
-                new GenericEventMessage<>(new MessageType("event"), true);
+        EventMessage errorThrowingEventMessage =
+                new GenericEventMessage(new MessageType("event"), true);
 
         int expectedListenerInvocationErrorHandlerCalls = 2;
 
@@ -476,8 +476,8 @@ class EventProcessingModuleTest {
     @Test
     @Disabled("Disabled due to lifecycle solution removal")
     void configureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
-        EventMessage<Boolean> errorThrowingEventMessage =
-                new GenericEventMessage<>(new MessageType("event"), true);
+        EventMessage errorThrowingEventMessage =
+                new GenericEventMessage(new MessageType("event"), true);
 
         int expectedErrorHandlerCalls = 1;
 
@@ -508,8 +508,8 @@ class EventProcessingModuleTest {
     @Test
     @Disabled("Disabled due to lifecycle solution removal")
     void configureDefaultErrorHandler() throws Exception {
-        EventMessage<Integer> failingEventMessage =
-                new GenericEventMessage<>(new MessageType("event"), 1000);
+        EventMessage failingEventMessage =
+                new GenericEventMessage(new MessageType("event"), 1000);
 
         int expectedErrorHandlerCalls = 2;
 
@@ -565,8 +565,8 @@ class EventProcessingModuleTest {
     @Test
     @Disabled("Disabled due to lifecycle solution removal")
     void configureErrorHandlerPerEventProcessor() throws Exception {
-        EventMessage<Integer> failingEventMessage =
-                new GenericEventMessage<>(new MessageType("event"), 1000);
+        EventMessage failingEventMessage =
+                new GenericEventMessage(new MessageType("event"), 1000);
 
         int expectedErrorHandlerCalls = 1;
 
@@ -1028,7 +1028,7 @@ class EventProcessingModuleTest {
     @Disabled("Disabled due to lifecycle solution removal")
     void defaultTransactionManagerIsUsedUponEventProcessorConstruction() throws InterruptedException {
         String testName = "pooled-streaming";
-        EventMessage<Integer> testEvent = new GenericEventMessage<>(new MessageType("event"), 1000);
+        EventMessage testEvent = new GenericEventMessage(new MessageType("event"), 1000);
 
         CountDownLatch transactionCommitted = new CountDownLatch(1);
         TransactionManager defaultTransactionManager = new StubTransactionManager(transactionCommitted);
@@ -1052,7 +1052,7 @@ class EventProcessingModuleTest {
     @Disabled("Disabled due to lifecycle solution removal")
     void defaultTransactionManagerIsOverriddenByProcessorSpecificInstance() throws InterruptedException {
         String testName = "pooled-streaming";
-        EventMessage<Integer> testEvent = new GenericEventMessage<>(new MessageType("event"), 1000);
+        EventMessage testEvent = new GenericEventMessage(new MessageType("event"), 1000);
 
         TransactionManager defaultTransactionManager = spy(TransactionManager.class);
         CountDownLatch transactionCommitted = new CountDownLatch(1);
@@ -1078,7 +1078,7 @@ class EventProcessingModuleTest {
     @Disabled("TODO #3517 - Revise Dead Letter Queue")
     @Test
     void registerDeadLetterQueueConstructsDeadLetteringEventHandlerInvoker(
-            @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
+            @Mock SequencedDeadLetterQueue<EventMessage> deadLetterQueue
     ) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         String processingGroup = "pooled-streaming";
 
@@ -1090,12 +1090,12 @@ class EventProcessingModuleTest {
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
         LegacyConfiguration config = configurer.start();
 
-        Optional<EnqueuePolicy<EventMessage<?>>> optionalPolicy = config.eventProcessingConfiguration()
+        Optional<EnqueuePolicy<EventMessage>> optionalPolicy = config.eventProcessingConfiguration()
                                                                         .deadLetterPolicy(processingGroup);
         assertTrue(optionalPolicy.isPresent());
-        EnqueuePolicy<EventMessage<?>> expectedPolicy = optionalPolicy.get();
+        EnqueuePolicy<EventMessage> expectedPolicy = optionalPolicy.get();
 
-        Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
+        Optional<SequencedDeadLetterQueue<EventMessage>> configuredDlq =
                 config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
         assertTrue(configuredDlq.isPresent());
         assertEquals(deadLetterQueue, configuredDlq.get());
@@ -1124,10 +1124,10 @@ class EventProcessingModuleTest {
 
     @Disabled("TODO #3517 - Revise Dead Letter Queue")
     @Test
-    void registerDefaultDeadLetterPolicyIsUsed(@Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue)
+    void registerDefaultDeadLetterPolicyIsUsed(@Mock SequencedDeadLetterQueue<EventMessage> deadLetterQueue)
             throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         String processingGroup = "pooled-streaming";
-        EnqueuePolicy<EventMessage<?>> expectedPolicy = (letter, cause) -> Decisions.ignore();
+        EnqueuePolicy<EventMessage> expectedPolicy = (letter, cause) -> Decisions.ignore();
 
         configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .eventProcessing()
@@ -1138,13 +1138,13 @@ class EventProcessingModuleTest {
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
         LegacyConfiguration config = configurer.start();
 
-        Optional<EnqueuePolicy<EventMessage<?>>> optionalPolicy = config.eventProcessingConfiguration()
+        Optional<EnqueuePolicy<EventMessage>> optionalPolicy = config.eventProcessingConfiguration()
                                                                         .deadLetterPolicy(processingGroup);
         assertTrue(optionalPolicy.isPresent());
-        EnqueuePolicy<EventMessage<?>> resultPolicy = optionalPolicy.get();
+        EnqueuePolicy<EventMessage> resultPolicy = optionalPolicy.get();
         assertEquals(expectedPolicy, resultPolicy);
 
-        Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
+        Optional<SequencedDeadLetterQueue<EventMessage>> configuredDlq =
                 config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
         assertTrue(configuredDlq.isPresent());
         assertEquals(deadLetterQueue, configuredDlq.get());
@@ -1171,11 +1171,11 @@ class EventProcessingModuleTest {
 
     @Disabled("TODO #3517 - Revise Dead Letter Queue")
     @Test
-    void registerDeadLetterPolicyIsUsed(@Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue)
+    void registerDeadLetterPolicyIsUsed(@Mock SequencedDeadLetterQueue<EventMessage> deadLetterQueue)
             throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
-        EnqueuePolicy<EventMessage<?>> expectedPolicy = (letter, cause) -> Decisions.ignore();
-        EnqueuePolicy<EventMessage<?>> unexpectedPolicy = (letter, cause) -> Decisions.evict();
+        EnqueuePolicy<EventMessage> expectedPolicy = (letter, cause) -> Decisions.ignore();
+        EnqueuePolicy<EventMessage> unexpectedPolicy = (letter, cause) -> Decisions.evict();
 
         configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .eventProcessing()
@@ -1187,14 +1187,14 @@ class EventProcessingModuleTest {
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
         LegacyConfiguration config = configurer.start();
 
-        Optional<EnqueuePolicy<EventMessage<?>>> optionalPolicy = config.eventProcessingConfiguration()
+        Optional<EnqueuePolicy<EventMessage>> optionalPolicy = config.eventProcessingConfiguration()
                                                                         .deadLetterPolicy(processingGroup);
         assertTrue(optionalPolicy.isPresent());
-        EnqueuePolicy<EventMessage<?>> resultPolicy = optionalPolicy.get();
+        EnqueuePolicy<EventMessage> resultPolicy = optionalPolicy.get();
         assertEquals(expectedPolicy, resultPolicy);
         assertNotEquals(unexpectedPolicy, resultPolicy);
 
-        Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
+        Optional<SequencedDeadLetterQueue<EventMessage>> configuredDlq =
                 config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
         assertTrue(configuredDlq.isPresent());
         assertEquals(deadLetterQueue, configuredDlq.get());
@@ -1222,7 +1222,7 @@ class EventProcessingModuleTest {
     @Disabled("TODO #3517 - Revise Dead Letter Queue")
     @Test
     void registeredDeadLetteringEventHandlerInvokerConfigurationIsUsed(
-            @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
+            @Mock SequencedDeadLetterQueue<EventMessage> deadLetterQueue
     ) throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
 
@@ -1237,7 +1237,7 @@ class EventProcessingModuleTest {
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
         LegacyConfiguration config = configurer.start();
 
-        Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
+        Optional<SequencedDeadLetterQueue<EventMessage>> configuredDlq =
                 config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
         assertTrue(configuredDlq.isPresent());
         assertEquals(deadLetterQueue, configuredDlq.get());
@@ -1263,7 +1263,7 @@ class EventProcessingModuleTest {
 
     @Test
     void sequencedDeadLetterProcessorReturnsForProcessingGroupWithDlq(
-            @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
+            @Mock SequencedDeadLetterQueue<EventMessage> deadLetterQueue
     ) {
         String processingGroup = "pooled-streaming";
         String otherProcessingGroup = "tracking";
@@ -1280,7 +1280,7 @@ class EventProcessingModuleTest {
         LegacyConfiguration config = configurer.start();
         EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
 
-        Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
+        Optional<SequencedDeadLetterQueue<EventMessage>> configuredDlq =
                 eventProcessingConfig.deadLetterQueue(processingGroup);
         assertTrue(configuredDlq.isPresent());
         assertEquals(deadLetterQueue, configuredDlq.get());
@@ -1289,7 +1289,7 @@ class EventProcessingModuleTest {
                 eventProcessingConfig.eventProcessor(processingGroup, PooledStreamingEventProcessor.class);
         assertTrue(optionalProcessor.isPresent());
 
-        Optional<SequencedDeadLetterProcessor<EventMessage<?>>> optionalDeadLetterProcessor =
+        Optional<SequencedDeadLetterProcessor<EventMessage>> optionalDeadLetterProcessor =
                 eventProcessingConfig.sequencedDeadLetterProcessor(processingGroup);
         assertTrue(optionalDeadLetterProcessor.isPresent());
         assertFalse(eventProcessingConfig.sequencedDeadLetterProcessor(otherProcessingGroup).isPresent());
@@ -1298,7 +1298,7 @@ class EventProcessingModuleTest {
 
     @Test
     void interceptorsOnDeadLetterProcessorShouldBePresent(
-            @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
+            @Mock SequencedDeadLetterQueue<EventMessage> deadLetterQueue
     ) throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
         StubInterceptor interceptor1 = new StubInterceptor();
@@ -1316,7 +1316,7 @@ class EventProcessingModuleTest {
         LegacyConfiguration config = configurer.start();
         EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
 
-        Optional<SequencedDeadLetterProcessor<EventMessage<?>>> optionalDeadLetterProcessor =
+        Optional<SequencedDeadLetterProcessor<EventMessage>> optionalDeadLetterProcessor =
                 eventProcessingConfig.sequencedDeadLetterProcessor(processingGroup);
         assertTrue(optionalDeadLetterProcessor.isPresent());
         List<MessageHandlerInterceptor<?>> interceptors = getField("interceptors", optionalDeadLetterProcessor.get());
@@ -1326,7 +1326,7 @@ class EventProcessingModuleTest {
     @Disabled("TODO #3517 - Revise Dead Letter Queue")
     @Test
     void registerDeadLetterQueueProviderConstructsDeadLetteringEventHandlerInvoker(
-            @Mock SequencedDeadLetterQueue<EventMessage<?>> deadLetterQueue
+            @Mock SequencedDeadLetterQueue<EventMessage> deadLetterQueue
     ) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         String processingGroup = "pooled-streaming";
 
@@ -1338,12 +1338,12 @@ class EventProcessingModuleTest {
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
         LegacyConfiguration config = configurer.start();
 
-        Optional<EnqueuePolicy<EventMessage<?>>> optionalPolicy = config.eventProcessingConfiguration()
+        Optional<EnqueuePolicy<EventMessage>> optionalPolicy = config.eventProcessingConfiguration()
                                                                         .deadLetterPolicy(processingGroup);
         assertTrue(optionalPolicy.isPresent());
-        EnqueuePolicy<EventMessage<?>> expectedPolicy = optionalPolicy.get();
+        EnqueuePolicy<EventMessage> expectedPolicy = optionalPolicy.get();
 
-        Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
+        Optional<SequencedDeadLetterQueue<EventMessage>> configuredDlq =
                 config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
         assertTrue(configuredDlq.isPresent());
         assertEquals(deadLetterQueue, configuredDlq.get());
@@ -1371,8 +1371,8 @@ class EventProcessingModuleTest {
 
     @Test
     void whenADeadLetterHasBeenRegisteredForASpecificGroupItWillBeUsedInsteadOfTheGenericOne(
-            @Mock SequencedDeadLetterQueue<EventMessage<?>> specificDeadLetterQueue,
-            @Mock SequencedDeadLetterQueue<EventMessage<?>> genericDeadLetterQueue
+            @Mock SequencedDeadLetterQueue<EventMessage> specificDeadLetterQueue,
+            @Mock SequencedDeadLetterQueue<EventMessage> genericDeadLetterQueue
     ) {
         String processingGroup = "pooled-streaming";
 
@@ -1385,7 +1385,7 @@ class EventProcessingModuleTest {
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
         LegacyConfiguration config = configurer.start();
 
-        Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
+        Optional<SequencedDeadLetterQueue<EventMessage>> configuredDlq =
                 config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
         assertTrue(configuredDlq.isPresent());
         assertEquals(specificDeadLetterQueue, configuredDlq.get());
@@ -1432,7 +1432,7 @@ class EventProcessingModuleTest {
 
         private final String name;
         private final EventHandlerInvoker eventHandlerInvoker;
-        private final List<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new ArrayList<>();
+        private final List<MessageHandlerInterceptor<EventMessage>> interceptors = new ArrayList<>();
 
         public StubEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker) {
             this.name = name;
@@ -1497,13 +1497,14 @@ class EventProcessingModuleTest {
 
     }
 
-    private static class StubInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
+    private static class StubInterceptor implements MessageHandlerInterceptor<EventMessage> {
 
 
         @Nonnull
         @Override
-        public MessageStream<?> interceptOnHandle(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext context,
-                                                  @Nonnull MessageHandlerInterceptorChain<EventMessage<?>> interceptorChain) {
+        public MessageStream<?> interceptOnHandle(@Nonnull EventMessage message,
+                                                  @Nonnull ProcessingContext context,
+                                                  @Nonnull MessageHandlerInterceptorChain<EventMessage> interceptorChain) {
             return interceptorChain.proceed(message, context);
         }
     }
@@ -1569,7 +1570,7 @@ class EventProcessingModuleTest {
         }
 
         @Override
-        public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+        public void onError(@Nonnull Exception exception, @Nonnull EventMessage event,
                             @Nonnull EventMessageHandler eventHandler) {
             errorCounter.incrementAndGet();
             latch.countDown();

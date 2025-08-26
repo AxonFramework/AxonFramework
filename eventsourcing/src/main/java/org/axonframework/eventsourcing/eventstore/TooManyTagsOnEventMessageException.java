@@ -30,7 +30,7 @@ import java.util.Set;
  */
 public class TooManyTagsOnEventMessageException extends IllegalArgumentException {
 
-    private final EventMessage<?> eventMessage;
+    private final EventMessage eventMessage;
     private final Set<Tag> tags;
 
     /**
@@ -41,7 +41,7 @@ public class TooManyTagsOnEventMessageException extends IllegalArgumentException
      * @param eventMessage The violating message.
      * @param tags         The tags assigned to the message.
      */
-    public TooManyTagsOnEventMessageException(String message, EventMessage<?> eventMessage, Set<Tag> tags) {
+    public TooManyTagsOnEventMessageException(String message, EventMessage eventMessage, Set<Tag> tags) {
         super(message);
         this.eventMessage = eventMessage;
         this.tags = tags;
@@ -52,7 +52,7 @@ public class TooManyTagsOnEventMessageException extends IllegalArgumentException
      *
      * @return the message that was rejected by the storage engine.
      */
-    public EventMessage<?> eventMessage() {
+    public EventMessage eventMessage() {
         return eventMessage;
     }
 

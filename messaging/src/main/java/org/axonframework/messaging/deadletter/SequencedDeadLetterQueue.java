@@ -41,7 +41,7 @@ import jakarta.annotation.Nonnull;
  * @see DeadLetter
  * @since 4.6.0
  */
-public interface SequencedDeadLetterQueue<M extends Message<?>> {
+public interface SequencedDeadLetterQueue<M extends Message> {
 
     /**
      * Enqueues a {@link DeadLetter dead letter} containing an implementation of {@code M} to this queue.

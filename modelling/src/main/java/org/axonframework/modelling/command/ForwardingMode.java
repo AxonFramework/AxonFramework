@@ -30,7 +30,7 @@ import jakarta.annotation.Nonnull;
  * @author Steven van Beelen
  * @since 3.1
  */
-public interface ForwardingMode<T extends Message<?>> {
+public interface ForwardingMode<T extends Message> {
 
     /**
      * Initializes an instance of a {@link ForwardingMode}.

@@ -37,7 +37,7 @@ import java.util.function.UnaryOperator;
  * @author Allard Buijze
  * @since 4.6.0
  */
-public interface DeadLetter<M extends Message<?>> {
+public interface DeadLetter<M extends Message> {
 
     /**
      * The {@link Message} of type {@code M} contained in this letter.

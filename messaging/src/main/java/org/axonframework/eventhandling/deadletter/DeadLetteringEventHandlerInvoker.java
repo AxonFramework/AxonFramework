@@ -73,18 +73,18 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  */
 public class DeadLetteringEventHandlerInvoker
         extends SimpleEventHandlerInvoker
-        implements SequencedDeadLetterProcessor<EventMessage<?>>, MessageHandlerInterceptorSupport<EventMessage<?>> {
+        implements SequencedDeadLetterProcessor<EventMessage>, MessageHandlerInterceptorSupport<EventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final SequencedDeadLetterQueue<EventMessage<?>> queue;
-    private final EnqueuePolicy<EventMessage<?>> enqueuePolicy;
+    private final SequencedDeadLetterQueue<EventMessage> queue;
+    private final EnqueuePolicy<EventMessage> enqueuePolicy;
     private final TransactionManager transactionManager;
     private final boolean allowReset;
     private final boolean sequenceIdentifierCacheEnabled;
     private final int sequenceIdentifierCacheSize;
     private final Map<Segment, SequenceIdentifierCache> sequenceIdentifierCache;
-    private final List<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
+    private final List<MessageHandlerInterceptor<EventMessage>> interceptors = new CopyOnWriteArrayList<>();
 
     /**
      * Instantiate a dead-lettering {@link EventHandlerInvoker} based on the given {@link Builder builder}. Uses a
@@ -125,7 +125,7 @@ public class DeadLetteringEventHandlerInvoker
     }
 
     @Override
-    public void handle(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext context, @Nonnull Segment segment) throws Exception {
+    public void handle(@Nonnull EventMessage message, @Nonnull ProcessingContext context, @Nonnull Segment segment) throws Exception {
         if (!super.sequencingPolicyMatchesSegment(message, segment)) {
             logger.trace("Ignoring event with id [{}] as it is not assigned to segment [{}].",
                          message.identifier(), segment);
@@ -158,14 +158,14 @@ public class DeadLetteringEventHandlerInvoker
      * @return {@code true} if the identifier was already present, and the message was enqueued as consequence, or
      * {@code false} otherwise.
      */
-    private boolean isPresent(boolean mightBePresent, Object sequenceIdentifier, EventMessage<?> message) {
+    private boolean isPresent(boolean mightBePresent, Object sequenceIdentifier, EventMessage message) {
         return mightBePresent && queue.enqueueIfPresent(
                 sequenceIdentifier,
                 () -> new GenericDeadLetter<>(sequenceIdentifier, message)
         );
     }
 
-    private void invokeHandlers(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext context, @Nonnull Segment segment, Object sequenceIdentifier) {
+    private void invokeHandlers(@Nonnull EventMessage message, @Nonnull ProcessingContext context, @Nonnull Segment segment, Object sequenceIdentifier) {
         if (logger.isTraceEnabled()) {
             logger.trace("Event [{}] with queue id [{}] is not present in the dead-letter queue."
                                  + "Handle operation is delegated to the wrapped EventHandlerInvoker.",
@@ -174,8 +174,8 @@ public class DeadLetteringEventHandlerInvoker
         try {
             super.invokeHandlers(message, context);
         } catch (Exception e) {
-            DeadLetter<EventMessage<?>> letter = new GenericDeadLetter<>(sequenceIdentifier, message, e);
-            EnqueueDecision<EventMessage<?>> decision = enqueuePolicy.decide(letter, e);
+            DeadLetter<EventMessage> letter = new GenericDeadLetter<>(sequenceIdentifier, message, e);
+            EnqueueDecision<EventMessage> decision = enqueuePolicy.decide(letter, e);
             if (decision.shouldEnqueue()) {
                 Throwable cause = decision.enqueueCause().orElse(null);
                 markEnqueued(sequenceIdentifier, segment);
@@ -229,7 +229,7 @@ public class DeadLetteringEventHandlerInvoker
     }
 
     @Override
-    public boolean process(Predicate<DeadLetter<? extends EventMessage<?>>> sequenceFilter) {
+    public boolean process(Predicate<DeadLetter<? extends EventMessage>> sequenceFilter) {
         DeadLetteredEventProcessingTask processingTask =
                 new DeadLetteredEventProcessingTask(super.eventHandlers(),
                                                     interceptors,
@@ -237,12 +237,12 @@ public class DeadLetteringEventHandlerInvoker
                                                     transactionManager);
         LegacyUnitOfWork<?> uow = new LegacyDefaultUnitOfWork<>(null);
         uow.attachTransaction(transactionManager);
-        return uow.executeWithResult((ctx) -> queue.process(sequenceFilter, processingTask::process)).payload();
+        return (boolean)uow.executeWithResult((ctx) -> queue.process(sequenceFilter, processingTask::process)).payload();
     }
 
     @Override
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<EventMessage<?>> interceptor) {
+            @Nonnull MessageHandlerInterceptor<EventMessage> interceptor) {
         interceptors.add(interceptor);
         return () -> interceptors.remove(interceptor);
     }
@@ -271,8 +271,8 @@ public class DeadLetteringEventHandlerInvoker
      */
     public static class Builder extends SimpleEventHandlerInvoker.Builder<Builder> {
 
-        private SequencedDeadLetterQueue<EventMessage<?>> queue;
-        private EnqueuePolicy<EventMessage<?>> enqueuePolicy = (letter, cause) -> Decisions.enqueue(truncated(cause));
+        private SequencedDeadLetterQueue<EventMessage> queue;
+        private EnqueuePolicy<EventMessage> enqueuePolicy = (letter, cause) -> Decisions.enqueue(truncated(cause));
         private TransactionManager transactionManager;
         private boolean allowReset = false;
         private boolean sequenceIdentifierCacheEnabled = false;
@@ -291,7 +291,7 @@ public class DeadLetteringEventHandlerInvoker
          *              with.
          * @return The current Builder instance for fluent interfacing.
          */
-        public Builder queue(@Nonnull SequencedDeadLetterQueue<EventMessage<?>> queue) {
+        public Builder queue(@Nonnull SequencedDeadLetterQueue<EventMessage> queue) {
             assertNonNull(queue, "The DeadLetterQueue may not be null");
             this.queue = queue;
             return this;
@@ -307,7 +307,7 @@ public class DeadLetteringEventHandlerInvoker
          *                      {@link DeadLetter dead letter} should be added to the {@link SequencedDeadLetterQueue}.
          * @return The current Builder, for fluent interfacing.
          */
-        public Builder enqueuePolicy(EnqueuePolicy<EventMessage<?>> enqueuePolicy) {
+        public Builder enqueuePolicy(EnqueuePolicy<EventMessage> enqueuePolicy) {
             assertNonNull(enqueuePolicy, "The EnqueuePolicy should be non null");
             this.enqueuePolicy = enqueuePolicy;
             return this;

@@ -36,17 +36,17 @@ import static org.mockito.Mockito.*;
 @Disabled("TODO ")
 class TransactionManagingInterceptorTest {
 
-    private MessageHandlerInterceptorChain<Message<?>> interceptorChain;
+    private MessageHandlerInterceptorChain<Message> interceptorChain;
     private TransactionManager transactionManager;
     private Transaction transaction;
-    private TransactionManagingInterceptor<Message<?>> subject;
+    private TransactionManagingInterceptor<Message> subject;
     private ProcessingContext context;
     private Message<?> message;
 
     @BeforeEach
     void setUp() {
         interceptorChain = mock();
-        message = new GenericMessage<>(new MessageType("message"), new Object());
+        message = new GenericMessage(new MessageType("message"), new Object());
         context = StubProcessingContext.forMessage(message);
         transactionManager = mock(TransactionManager.class);
         transaction = mock(Transaction.class);
@@ -56,7 +56,6 @@ class TransactionManagingInterceptorTest {
 
     @Test
     void startTransaction() throws Exception {
-
         subject.interceptOnHandle(message, context, interceptorChain);
         verify(transactionManager).startTransaction();
         verify(interceptorChain).proceed(message, context);

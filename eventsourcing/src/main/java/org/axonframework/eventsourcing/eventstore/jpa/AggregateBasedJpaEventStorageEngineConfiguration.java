@@ -48,8 +48,8 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * @param maxGapOffset                 The maximum distance in sequence numbers between a gap and the event with the
  *                                     highest known index. Defaults to an integer of {@code 10000}.
  * @param lowestGlobalSequence         Value the first expected (auto generated)
- *                                     {@link AggregateBasedEventEntry#globalIndex() global index} of an
- *                                     {@link AggregateBasedEventEntry}. Defaults to {@code 1}.
+ *                                     {@link AggregateEventEntry#globalIndex() global index} of an
+ *                                     {@link AggregateEventEntry}. Defaults to {@code 1}.
  * @param gapTimeout                   The amount of time until a gap in a {@link GapAwareTrackingToken} may be
  *                                     considered timed out and thus ready for removal. Defaults to {@code 60000}ms.
  * @author Mateusz Nowak
@@ -58,7 +58,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  */
 public record AggregateBasedJpaEventStorageEngineConfiguration(
         @Nullable PersistenceExceptionResolver persistenceExceptionResolver,
-        @Nonnull Predicate<List<? extends AggregateBasedEventEntry>> finalBatchPredicate,
+        @Nonnull Predicate<List<? extends AggregateEventEntry>> finalBatchPredicate,
         int batchSize,
         int gapCleaningThreshold,
         int maxGapOffset,
@@ -66,7 +66,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
         int gapTimeout
 ) {
 
-    private static final Predicate<List<? extends AggregateBasedEventEntry>> DEFAULT_BATCH_PREDICATE = List::isEmpty;
+    private static final Predicate<List<? extends AggregateEventEntry>> DEFAULT_BATCH_PREDICATE = List::isEmpty;
     private static final int DEFAULT_BATCH_SIZE = 100;
     private static final int DEFAULT_GAP_CLEANING_THRESHOLD = 250;
     private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
@@ -133,7 +133,7 @@ public record AggregateBasedJpaEventStorageEngineConfiguration(
      * @return A new configuration instance, for fluent interfacing.
      */
     public AggregateBasedJpaEventStorageEngineConfiguration finalBatchPredicate(
-            @Nonnull Predicate<List<? extends AggregateBasedEventEntry>> finalBatchPredicate
+            @Nonnull Predicate<List<? extends AggregateEventEntry>> finalBatchPredicate
     ) {
         return new AggregateBasedJpaEventStorageEngineConfiguration(this.persistenceExceptionResolver,
                                                                     finalBatchPredicate,

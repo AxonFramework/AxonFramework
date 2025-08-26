@@ -35,12 +35,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericTaggedEventMessageTest {
 
     private static final MetaData TEST_META_DATA = MetaData.with("key", "value");
-    private static final EventMessage<String> TEST_EVENT = EventTestUtils.<String>asEventMessage("event")
+    private static final EventMessage TEST_EVENT = EventTestUtils.<String>asEventMessage("event")
                                                                          .withMetaData(TEST_META_DATA);
     private static final Tag TEST_TAG = new Tag("key", "value");
     private static final Set<Tag> TEST_TAGS = Set.of(TEST_TAG);
 
-    private GenericTaggedEventMessage<EventMessage<String>> testSubject;
+    private GenericTaggedEventMessage<EventMessage> testSubject;
 
     @BeforeEach
     void setUp() {

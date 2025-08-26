@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.gateway;
+package org.axonframework.commandhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentRegistry;
@@ -22,18 +22,18 @@ import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.configuration.reflection.ParameterResolverFactoryUtils;
 
 /**
- * Configuration enhancer that registers the {@link EventAppenderParameterResolverFactory} to the
+ * Configuration enhancer that registers the {@link CommandDispatcherParameterResolverFactory} to the
  * {@link ComponentRegistry} of the {@link org.axonframework.configuration.Configuration}.
  *
- * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  * @since 5.0.0
  */
-public class EventAppenderParameterResolverFactoryConfigurationEnhancer implements ConfigurationEnhancer {
+public class CommandDispatcherParameterResolverFactoryConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
         ParameterResolverFactoryUtils.registerToComponentRegistry(
-                registry, EventAppenderParameterResolverFactory::new
+                registry, config -> new CommandDispatcherParameterResolverFactory()
         );
     }
 }

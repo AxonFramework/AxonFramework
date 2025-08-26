@@ -32,12 +32,10 @@ import java.util.Map;
  * <p>
  * Handlers should only answer a query if they can respond with the appropriate response type.
  *
- * @param <P> The type of {@link #payload() payload} expressing the query in this {@link QueryMessage}.
- * @param <R> The type of {@link #responseType() response} expected from this {@link QueryMessage}.
  * @author Marc Gathier
  * @since 3.1.0
  */
-public interface QueryMessage<P, R> extends Message<P> {
+public interface QueryMessage extends Message {
 
     /**
      * The {@link ResponseType type of response} expected by the sender of the query.
@@ -45,29 +43,29 @@ public interface QueryMessage<P, R> extends Message<P> {
      * @return The {@link ResponseType type of response} expected by the sender of the query.
      */
     @Nonnull
-    ResponseType<R> responseType();
+    ResponseType<?> responseType();
 
     @Override
     @Nonnull
-    QueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData);
+    QueryMessage withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     @Nonnull
-    QueryMessage<P, R> andMetaData(@Nonnull Map<String, String> additionalMetaData);
+    QueryMessage andMetaData(@Nonnull Map<String, String> additionalMetaData);
 
     @Override
     @Nonnull
-    default <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+    default QueryMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
     @Nonnull
-    default <T> QueryMessage<T, R> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+    default QueryMessage withConvertedPayload(@Nonnull TypeReference<?> type, @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @Nonnull
-    <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    QueryMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

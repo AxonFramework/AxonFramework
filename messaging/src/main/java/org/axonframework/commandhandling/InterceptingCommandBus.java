@@ -47,8 +47,8 @@ import static java.util.Objects.requireNonNull;
 public class InterceptingCommandBus implements CommandBus {
 
     private final CommandBus delegate;
-    private final List<MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors;
-    private final List<MessageDispatchInterceptor<? super Message<?>>> dispatchInterceptors;
+    private final List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors;
+    private final List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors;
 
 
     /**
@@ -63,8 +63,8 @@ public class InterceptingCommandBus implements CommandBus {
      */
     public InterceptingCommandBus(
             @Nonnull CommandBus delegate,
-            @Nonnull List<MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors,
-            @Nonnull List<MessageDispatchInterceptor<? super Message<?>>> dispatchInterceptors
+            @Nonnull List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors,
+            @Nonnull List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors
     ) {
         this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
         this.handlerInterceptors = new ArrayList<>(
@@ -88,7 +88,7 @@ public class InterceptingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                @Nullable ProcessingContext processingContext) {
         return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors, this::dispatchMessage)
                 .proceed(requireNonNull(command, "The command message cannot be null."), processingContext)

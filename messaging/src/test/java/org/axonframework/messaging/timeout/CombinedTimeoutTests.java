@@ -48,7 +48,7 @@ class CombinedTimeoutTests {
 //        });
 //        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(500);
 //
-//        List<EventMessage<?>> batch = generateBatch(2);
+//        List<EventMessage> batch = generateBatch(2);
 //        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
 //
 //        await().until(uow::isRolledBack);
@@ -68,7 +68,7 @@ class CombinedTimeoutTests {
 //        });
 //        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(100);
 //
-//        List<EventMessage<?>> batch = generateBatch(2);
+//        List<EventMessage> batch = generateBatch(2);
 //        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
 //
 //        await().until(uow::isRolledBack);
@@ -87,7 +87,7 @@ class CombinedTimeoutTests {
 //            return null;
 //        });
 //        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(500);
-//        List<EventMessage<?>> batch = generateBatch(2);
+//        List<EventMessage> batch = generateBatch(2);
 //        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
 //        await().until(uow::isRolledBack);
 //        assertInstanceOf(AxonTimeoutException.class, uow.getExecutionResult().getExceptionResult());
@@ -105,7 +105,7 @@ class CombinedTimeoutTests {
 //            return null;
 //        });
 //        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(500);
-//        List<EventMessage<?>> batch = generateBatch(2);
+//        List<EventMessage> batch = generateBatch(2);
 //        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
 //        await().until(uow::isRolledBack);
 //        assertInstanceOf(AxonTimeoutException.class, uow.getExecutionResult().getExceptionResult());
@@ -123,7 +123,7 @@ class CombinedTimeoutTests {
 //            return null;
 //        });
 //        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(300);
-//        List<EventMessage<?>> batch = generateBatch(2);
+//        List<EventMessage> batch = generateBatch(2);
 //        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
 //        await().until(uow::isRolledBack);
 //        assertInstanceOf(AxonTimeoutException.class, uow.getExecutionResult().getExceptionResult());
@@ -141,7 +141,7 @@ class CombinedTimeoutTests {
 //            return null;
 //        });
 //        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(300);
-//        List<EventMessage<?>> batch = generateBatch(2);
+//        List<EventMessage> batch = generateBatch(2);
 //        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
 //        await().until(uow::isRolledBack);
 //        assertInstanceOf(AxonTimeoutException.class, uow.getExecutionResult().getExceptionResult());
@@ -157,7 +157,7 @@ class CombinedTimeoutTests {
 //        });
 //        UnitOfWorkTimeoutInterceptor interceptor = createTimeoutInterceptor(100000);
 //
-//        List<EventMessage<?>> batch = generateBatch(2);
+//        List<EventMessage> batch = generateBatch(2);
 //        BatchingUnitOfWork<?> uow = doExecution(batch, interceptor, mhm);
 //
 //        await().until(uow::isRolledBack);
@@ -165,15 +165,15 @@ class CombinedTimeoutTests {
 //        assertTrue(Thread.interrupted());
     }
 
-//    private List<EventMessage<?>> generateBatch(int size) {
-//        List<EventMessage<?>> batch = new LinkedList<>();
+//    private List<EventMessage> generateBatch(int size) {
+//        List<EventMessage> batch = new LinkedList<>();
 //        for (int i = 0; i < size; i++) {
-//            batch.add(new GenericEventMessage<>("TestEvent" + i));
+//            batch.add(new GenericEventMessage("TestEvent" + i));
 //        }
 //        return batch;
 //    }
 
-//    private BatchingUnitOfWork<?> doExecution(List<EventMessage<?>> batch,
+//    private BatchingUnitOfWork<?> doExecution(List<EventMessage> batch,
 //                                              UnitOfWorkTimeoutInterceptor interceptor,
 //                                              TimeoutWrappedMessageHandlingMember<Object> mhm) {
 //        BatchingUnitOfWork<?> uow = new BatchingUnitOfWork<>(batch);
@@ -216,7 +216,7 @@ class CombinedTimeoutTests {
 //        }
 //
 //        @Override
-//        public boolean canHandle(@Nonnull Message<?> message) {
+//        public boolean canHandle(@Nonnull Message message) {
 //            return true;
 //        }
 //
@@ -226,7 +226,7 @@ class CombinedTimeoutTests {
 //        }
 //
 //        @Override
-//        public Object handle(@Nonnull Message<?> message, @Nullable Object target) throws Exception {
+//        public Object handle(@Nonnull Message message, @Nullable Object target) throws Exception {
 //            callable.call();
 //            return null;
 //        }

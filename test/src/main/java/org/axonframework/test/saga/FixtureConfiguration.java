@@ -143,7 +143,7 @@ public interface FixtureConfiguration {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerDeadlineDispatchInterceptor(
-            MessageDispatchInterceptor<? super DeadlineMessage<?>> deadlineDispatchInterceptor
+            MessageDispatchInterceptor<? super DeadlineMessage> deadlineDispatchInterceptor
     );
 
     /**
@@ -154,7 +154,7 @@ public interface FixtureConfiguration {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor
+            MessageHandlerInterceptor<DeadlineMessage> deadlineHandlerInterceptor
     );
 
     /**
@@ -167,7 +167,7 @@ public interface FixtureConfiguration {
      * @return The current {@link FixtureConfiguration}, for fluent interfacing.
      */
     default FixtureConfiguration registerEventHandlerInterceptor(
-            MessageHandlerInterceptor<EventMessage<?>> eventHandlerInterceptor
+            MessageHandlerInterceptor<EventMessage> eventHandlerInterceptor
     ) {
         throw new UnsupportedOperationException(
                 "The FixtureConfiguration implementation does not support this operation"

@@ -33,15 +33,13 @@ import java.util.Map;
 /**
  * Generic implementation of the {@link QueryMessage} interface.
  *
- * @param <P> The type of {@link #payload() payload} expressing the query in this {@link QueryMessage}.
- * @param <R> The type of {@link #responseType() response} expected from this {@link QueryMessage}.
  * @author Marc Gathier
  * @author Steven van Beelen
  * @since 3.1.0
  */
-public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements QueryMessage<P, R> {
+public class GenericQueryMessage extends MessageDecorator implements QueryMessage {
 
-    private final ResponseType<R> responseType;
+    private final ResponseType<?> responseType;
 
     /**
      * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, and {@code responseType}.
@@ -50,13 +48,13 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
      * expected {@code responseType}.
      *
      * @param type         The {@link MessageType type} for this {@link QueryMessage}.
-     * @param payload      The payload of type {@code P} expressing the query for this {@link CommandMessage}.
+     * @param payload      The payload expressing the query for this {@link CommandMessage}.
      * @param responseType The expected {@link ResponseType response type} for this {@link QueryMessage}.
      */
     public GenericQueryMessage(@Nonnull MessageType type,
-                               @Nullable P payload,
-                               @Nonnull ResponseType<R> responseType) {
-        this(new GenericMessage<>(type, payload, MetaData.emptyInstance()), responseType);
+                               @Nullable Object payload,
+                               @Nonnull ResponseType<?> responseType) {
+        this(new GenericMessage(type, payload, MetaData.emptyInstance()), responseType);
     }
 
     /**
@@ -74,44 +72,43 @@ public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements Qu
      *                     {@link Message#metaData() metadata} for the {@link QueryMessage} to reconstruct.
      * @param responseType The expected {@link ResponseType response type} for this {@link QueryMessage}.
      */
-    public GenericQueryMessage(@Nonnull Message<P> delegate,
-                               @Nonnull ResponseType<R> responseType) {
+    public GenericQueryMessage(@Nonnull Message delegate,
+                               @Nonnull ResponseType<?> responseType) {
         super(delegate);
         this.responseType = responseType;
     }
 
     @Override
     @Nonnull
-    public ResponseType<R> responseType() {
+    public ResponseType<?> responseType() {
         return responseType;
     }
 
     @Override
     @Nonnull
-    public QueryMessage<P, R> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericQueryMessage<>(delegate().withMetaData(metaData), responseType);
+    public QueryMessage withMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericQueryMessage(delegate().withMetaData(metaData), responseType);
     }
 
     @Override
     @Nonnull
-    public QueryMessage<P, R> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericQueryMessage<>(delegate().andMetaData(metaData), responseType);
+    public QueryMessage andMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericQueryMessage(delegate().andMetaData(metaData), responseType);
     }
 
     @Override
     @Nonnull
-    public <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
-        T convertedPayload = payloadAs(type, converter);
+    public QueryMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
-            //noinspection unchecked
-            return (QueryMessage<T, R>) this;
+            return this;
         }
-        Message<P> delegate = delegate();
-        Message<T> converted = new GenericMessage<>(delegate.identifier(),
-                                                    delegate.type(),
-                                                    convertedPayload,
-                                                    delegate.metaData());
-        return new GenericQueryMessage<>(converted, responseType);
+        Message delegate = delegate();
+        Message converted = new GenericMessage(delegate.identifier(),
+                                               delegate.type(),
+                                               convertedPayload,
+                                               delegate.metaData());
+        return new GenericQueryMessage(converted, responseType);
     }
 
     @Override

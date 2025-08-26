@@ -31,7 +31,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @since 0.5
  */
 @FunctionalInterface
-public interface MessageHandlerInterceptorChain<M extends Message<?>> {
+public interface MessageHandlerInterceptorChain<M extends Message> {
 
     /**
      * Signals the Interceptor Chain to continue processing the message.

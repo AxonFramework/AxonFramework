@@ -34,7 +34,7 @@ import jakarta.annotation.Nonnull;
  * @author Milan Savic
  * @since 3.3
  */
-public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInterceptor<CommandMessage<?>> {
+public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInterceptor<CommandMessage> {
 
     private final MessageHandlingMember<T> delegate;
     private final T target;
@@ -54,9 +54,9 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
     @Nonnull
     @Override
     public MessageStream<?> interceptOnHandle(
-            @Nonnull CommandMessage<?> message,
+            @Nonnull CommandMessage message,
             @Nonnull ProcessingContext context,
-            @Nonnull MessageHandlerInterceptorChain<CommandMessage<?>> interceptorChain
+            @Nonnull MessageHandlerInterceptorChain<CommandMessage> interceptorChain
     ) {
         return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
                 context,

@@ -43,12 +43,12 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Ivan Dugalic
  * @since 4.1
  */
-public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
+public class MessageTimerMonitor implements MessageMonitor<Message> {
 
     private final String meterNamePrefix;
     private final MeterRegistry meterRegistry;
     private final Clock clock;
-    private final Function<Message<?>, Iterable<Tag>> tagsBuilder;
+    private final Function<Message, Iterable<Tag>> tagsBuilder;
     private final UnaryOperator<Timer.Builder> timerCustomization;
 
     /**
@@ -82,7 +82,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message<?> message) {
+    public MonitorCallback onMessageIngested(@Nonnull Message message) {
         Iterable<Tag> tags = tagsBuilder.apply(message);
         Timer allTimer = buildTimer(meterNamePrefix, "allTimer", meterRegistry, tags, timerCustomization);
         Timer successTimer = buildTimer(meterNamePrefix, "successTimer", meterRegistry, tags, timerCustomization);
@@ -139,7 +139,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
         private String meterNamePrefix;
         private MeterRegistry meterRegistry;
         private Clock clock = Clock.SYSTEM;
-        private Function<Message<?>, Iterable<Tag>> tagsBuilder = message -> Tags.empty();
+        private Function<Message, Iterable<Tag>> tagsBuilder = message -> Tags.empty();
         private UnaryOperator<Timer.Builder> timerCustomization = timerBuilder -> timerBuilder;
 
         /**
@@ -189,7 +189,7 @@ public class MessageTimerMonitor implements MessageMonitor<Message<?>> {
          *                    monitored
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder tagsBuilder(Function<Message<?>, Iterable<Tag>> tagsBuilder) {
+        public Builder tagsBuilder(Function<Message, Iterable<Tag>> tagsBuilder) {
             assertNonNull(tagsBuilder, "TagsBuilder may not be null");
             this.tagsBuilder = tagsBuilder;
             return this;

@@ -37,7 +37,7 @@ import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
  * @deprecated In favor of the {@link UnitOfWork}.
  */
 @Deprecated(since = "5.0.0", forRemoval = true)
-public class LegacyDefaultUnitOfWork<T extends Message<?>> extends AbstractLegacyUnitOfWork<T> {
+public class LegacyDefaultUnitOfWork<T extends Message> extends AbstractLegacyUnitOfWork<T> {
 
     private final MessageProcessingContext<T> processingContext;
 
@@ -51,7 +51,7 @@ public class LegacyDefaultUnitOfWork<T extends Message<?>> extends AbstractLegac
      * @param message the message that will be processed in the context of the unit of work
      * @return the started UnitOfWork instance
      */
-    public static <T extends Message<?>> LegacyDefaultUnitOfWork<T> startAndGet(T message) {
+    public static <T extends Message> LegacyDefaultUnitOfWork<T> startAndGet(T message) {
         LegacyDefaultUnitOfWork<T> uow = new LegacyDefaultUnitOfWork<>(message);
         uow.start();
         return uow;
@@ -67,7 +67,7 @@ public class LegacyDefaultUnitOfWork<T extends Message<?>> extends AbstractLegac
     }
 
     @Override
-    public <R> ResultMessage<R> executeWithResult(ProcessingContextCallable<R> task,
+    public <R> ResultMessage executeWithResult(ProcessingContextCallable<R> task,
                                                   @Nonnull RollbackConfiguration rollbackConfiguration) {
         if (phase() == Phase.NOT_STARTED) {
             start();
@@ -75,20 +75,20 @@ public class LegacyDefaultUnitOfWork<T extends Message<?>> extends AbstractLegac
         Assert.state(phase() == Phase.STARTED,
                      () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result;
-        ResultMessage<R> resultMessage;
+        ResultMessage resultMessage;
         try {
             ProcessingContext context = new LegacyMessageSupportingContext(getMessage());
             //noinspection DuplicatedCode
             result = task.call(context);
             if (result instanceof ResultMessage) {
                 //noinspection unchecked
-                resultMessage = (ResultMessage<R>) result;
+                resultMessage = (ResultMessage) result;
             } else if (result instanceof Message) {
-                resultMessage = new GenericResultMessage<>(((Message<?>) result).type(),
+                resultMessage = new GenericResultMessage(((Message) result).type(),
                                                            result,
-                                                           ((Message<?>) result).metaData());
+                                                           ((Message) result).metaData());
             } else {
-                resultMessage = new GenericResultMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result);
+                resultMessage = new GenericResultMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result);
             }
         } catch (Error | Exception e) {
             resultMessage = asResultMessage(e);
@@ -109,7 +109,7 @@ public class LegacyDefaultUnitOfWork<T extends Message<?>> extends AbstractLegac
     @Override
     protected void setRollbackCause(Throwable cause) {
         MessageType type = new MessageType(ObjectUtils.nullSafeTypeOf(cause));
-        setExecutionResult(new ExecutionResult(new GenericResultMessage<>(type, cause)));
+        setExecutionResult(new ExecutionResult(new GenericResultMessage(type, cause)));
     }
 
     @Override
@@ -130,7 +130,7 @@ public class LegacyDefaultUnitOfWork<T extends Message<?>> extends AbstractLegac
     }
 
     @Override
-    public LegacyUnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
+    public LegacyUnitOfWork<T> transformMessage(Function<T, ? extends Message> transformOperator) {
         processingContext.transformMessage(transformOperator);
         return this;
     }

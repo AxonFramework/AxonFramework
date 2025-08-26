@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  * @author Roald Bankras
  * @since 4.11.0
  */
-public class MessageAuthorizationHandlerInterceptor<M extends Message<?>> implements MessageHandlerInterceptor<M> {
+public class MessageAuthorizationHandlerInterceptor<M extends Message> implements MessageHandlerInterceptor<M> {
 
     /**
      * Metadata key for authorities.

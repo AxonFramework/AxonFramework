@@ -40,10 +40,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class SimpleEntityEvolvingComponentTest {
 
     private static final String ENTITY = "entity";
-    private static final EventMessage<String> STRING_EVENT =
-            new GenericEventMessage<>(new MessageType(String.class), "string");
-    private static final EventMessage<Integer> INT_EVENT =
-            new GenericEventMessage<>(new MessageType(Integer.class), 42);
+    private static final EventMessage STRING_EVENT =
+            new GenericEventMessage(new MessageType(String.class), "string");
+    private static final EventMessage INT_EVENT =
+            new GenericEventMessage(new MessageType(Integer.class), 42);
 
     private AtomicBoolean stringEvolverInvoked;
     private AtomicBoolean integerEvolverInvoked;
@@ -114,8 +114,8 @@ class SimpleEntityEvolvingComponentTest {
 
     @Test
     void evolveReturnsEntityAsIsForEventWithUnknownQualifiedName() {
-        GenericEventMessage<Boolean> eventWithUnknownName =
-                new GenericEventMessage<>(new MessageType(Boolean.class), true);
+        GenericEventMessage eventWithUnknownName =
+                new GenericEventMessage(new MessageType(Boolean.class), true);
 
         String result = testSubject.evolve(ENTITY, eventWithUnknownName, StubProcessingContext.forMessage(eventWithUnknownName));
 

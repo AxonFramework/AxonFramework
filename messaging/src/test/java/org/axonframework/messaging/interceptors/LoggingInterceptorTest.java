@@ -46,9 +46,9 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
 class LoggingInterceptorTest {
 
-    private LoggingInterceptor<Message<?>> testSubject;
+    private LoggingInterceptor<Message> testSubject;
     private ExtendedLogger mockLogger;
-    private MessageHandlerInterceptorChain<Message<?>> handlerChain;
+    private MessageHandlerInterceptorChain<Message> handlerChain;
     private ProcessingContext context;
     private Message<?> message;
 

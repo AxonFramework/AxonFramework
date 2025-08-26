@@ -332,13 +332,12 @@ class FixtureTest_Deadlines {
                .expectActiveSagas(0);
     }
 
-    @SuppressWarnings("unchecked")
-    private static <P> DeadlineMessage<P> asDeadlineMessage(String deadlineName,
-                                                            Object payload,
-                                                            Instant expiryTime) {
+    private static DeadlineMessage asDeadlineMessage(String deadlineName,
+                                                     Object payload,
+                                                     Instant expiryTime) {
         var type = new MessageType(payload.getClass());
-        return new GenericDeadlineMessage<>(
-                deadlineName, new GenericMessage<>(type, (P) payload), () -> expiryTime
+        return new GenericDeadlineMessage(
+                deadlineName, new GenericMessage(type, payload), () -> expiryTime
         );
     }
 

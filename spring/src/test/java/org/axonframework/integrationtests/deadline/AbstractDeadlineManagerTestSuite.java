@@ -111,7 +111,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     protected AxonConfiguration configuration;
     protected TestSpanFactory spanFactory;
-    private List<Message<?>> publishedMessages;
+    private List<Message> publishedMessages;
     private DeadlineManager deadlineManager;
     private String managerName;
 
@@ -182,12 +182,12 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
 
-        Message<?> aggregateCreatedEvent = publishedMessages.getFirst();
+        Message aggregateCreatedEvent = publishedMessages.getFirst();
         assertInstanceOf(GenericEventMessage.class, aggregateCreatedEvent);
-        assertTrue(afterDeadlineWasScheduled.isAfter(((GenericEventMessage<?>) aggregateCreatedEvent).timestamp()));
-        Message<?> deadLineEvent = publishedMessages.get(1);
+        assertTrue(afterDeadlineWasScheduled.isAfter(((GenericEventMessage) aggregateCreatedEvent).timestamp()));
+        Message deadLineEvent = publishedMessages.get(1);
         assertInstanceOf(GenericEventMessage.class, deadLineEvent);
-        assertTrue(afterDeadlineWasScheduled.isBefore(((GenericEventMessage<?>) deadLineEvent).timestamp()));
+        assertTrue(afterDeadlineWasScheduled.isBefore(((GenericEventMessage) deadLineEvent).timestamp()));
     }
 
     @Test
@@ -339,7 +339,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     void deadlineMessagesReceiveCorrelationDataThroughAggregate() {
         String expectedCorrelationData = "customValue";
-        MessageDispatchInterceptor<Message<?>> correlationDataDispatchInterceptor =
+        MessageDispatchInterceptor<Message> correlationDataDispatchInterceptor =
                 new CustomCorrelationDataDispatchInterceptor(expectedCorrelationData);
 
 //        TODO - Verify test
@@ -352,10 +352,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
 
-        Message<?> aggregateCreatedEvent = publishedMessages.getFirst();
+        Message aggregateCreatedEvent = publishedMessages.getFirst();
         assertTrue(aggregateCreatedEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
         assertEquals(expectedCorrelationData, aggregateCreatedEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
-        Message<?> deadLineEvent = publishedMessages.get(1);
+        Message deadLineEvent = publishedMessages.get(1);
         assertTrue(deadLineEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
         assertEquals(expectedCorrelationData, deadLineEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
     }
@@ -385,7 +385,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void deadlineOnSaga() {
-        EventMessage<Object> testEventMessage =
+        EventMessage testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.getComponent(EventSink.class)
                      .publish(null, testEventMessage);
@@ -500,7 +500,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void handlerInterceptorOnSaga() {
-        EventMessage<Object> testEventMessage =
+        EventMessage testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.getComponent(DeadlineManager.class)
                      .registerHandlerInterceptor((message, context, chain) ->
@@ -523,7 +523,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void dispatchInterceptorOnSaga() {
-        EventMessage<Object> testEventMessage =
+        EventMessage testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.getComponent(DeadlineManager.class)
                      .registerHandlerInterceptor((message, context, chain) ->
@@ -547,13 +547,13 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     void deadlineMessagesReceiveCorrelationDataThroughSaga() {
         String expectedCorrelationData = "customValue";
-        MessageDispatchInterceptor<Message<?>> correlationDataDispatchInterceptor =
+        MessageDispatchInterceptor<Message> correlationDataDispatchInterceptor =
                 new CustomCorrelationDataDispatchInterceptor(expectedCorrelationData);
 
         configuration.getComponent(EventSink.class);
 // TODO #3065                     .registerDispatchInterceptor(correlationDataDispatchInterceptor);
 
-        EventMessage<Object> testEventMessage =
+        EventMessage testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         configuration.getComponent(EventSink.class)
                      .publish(null, testEventMessage);
@@ -563,10 +563,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
         assertSagaIs(LIVE);
 
-        Message<?> sagaStartingEvent = publishedMessages.get(0);
+        Message sagaStartingEvent = publishedMessages.get(0);
         assertTrue(sagaStartingEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
         assertEquals(expectedCorrelationData, sagaStartingEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
-        Message<?> deadLineOccurredEvent = publishedMessages.get(1);
+        Message deadLineOccurredEvent = publishedMessages.get(1);
         assertTrue(deadLineOccurredEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
         assertEquals(expectedCorrelationData, deadLineOccurredEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
     }
@@ -591,22 +591,21 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertEquals(live, sagaIds.isEmpty());
     }
 
-    private static DeadlineMessage<DeadlinePayload> asDeadlineMessage(DeadlineMessage<?> deadlineMessage) {
+    private static DeadlineMessage asDeadlineMessage(DeadlineMessage deadlineMessage) {
         var payload = new DeadlinePayload(FAKE_IDENTIFIER);
-        return new GenericDeadlineMessage<>(
+        return new GenericDeadlineMessage(
                 deadlineMessage.getDeadlineName(),
-                new GenericMessage<>(new MessageType(payload.getClass()), payload),
+                new GenericMessage(new MessageType(payload.getClass()), payload),
                 deadlineMessage::timestamp
         );
     }
 
-    @SuppressWarnings("unchecked")
-    private static <P> DeadlineMessage<P> asDeadlineMessage(String deadlineName,
-                                                            Object payload,
-                                                            Instant expiryTime) {
+    private static DeadlineMessage asDeadlineMessage(String deadlineName,
+                                                     Object payload,
+                                                     Instant expiryTime) {
         var name = new MessageType(payload.getClass());
-        return new GenericDeadlineMessage<>(
-                deadlineName, new GenericMessage<>(name, (P) payload), () -> expiryTime
+        return new GenericDeadlineMessage(
+                deadlineName, new GenericMessage(name, payload), () -> expiryTime
         );
     }
 
@@ -1135,7 +1134,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         }
     }
 
-    private static class CustomCorrelationDataDispatchInterceptor implements MessageDispatchInterceptor<Message<?>> {
+    private static class CustomCorrelationDataDispatchInterceptor implements MessageDispatchInterceptor<Message> {
 
         private final String correlationData;
 
@@ -1144,9 +1143,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
         }
 
         @Override
-        public @NotNull MessageStream<?> interceptOnDispatch(@NotNull Message<?> message,
+        public @NotNull MessageStream<?> interceptOnDispatch(@NotNull Message message,
                                                              @Nullable ProcessingContext context,
-                                                             @NotNull MessageDispatchInterceptorChain<Message<?>> interceptorChain) {
+                                                             @NotNull MessageDispatchInterceptorChain<Message> interceptorChain) {
             return interceptorChain.proceed(message.andMetaData(MetaData.with(CUSTOM_CORRELATION_DATA_KEY, correlationData)), context);
         }
     }

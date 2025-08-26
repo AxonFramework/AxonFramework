@@ -21,6 +21,8 @@ import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingCom
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
@@ -39,9 +41,9 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
 
     @Test
     void expectCallbackForAllMessages() throws Exception {
-        List<EventMessage<Integer>> events = EventTestUtils.createEvents(2);
-        Set<EventMessage<Integer>> pending = new HashSet<>(events);
-        MessageMonitor<EventMessage<?>> messageMonitor = (message) -> new MessageMonitor.MonitorCallback() {
+        List<EventMessage> events = EventTestUtils.createEvents(2);
+        Set<EventMessage> pending = new HashSet<>(events);
+        MessageMonitor<EventMessage> messageMonitor = (message) -> new MessageMonitor.MonitorCallback() {
             @Override
             public void reportSuccess() {
                 if (!pending.contains(message)) {
@@ -67,7 +69,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
 
         // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
-        MessageHandlerInterceptor<EventMessage<?>> interceptor = (message, context, interceptorChain)
+        MessageHandlerInterceptor<EventMessage> interceptor = (message, context, interceptorChain)
                 -> interceptorChain.proceed(event(123), context);
 
         var interceptingEventHandlingComponent = new InterceptingEventHandlingComponent(
@@ -118,7 +120,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
             return false;
         }
 
-        void processInBatchingUnitOfWork(List<? extends EventMessage<?>> eventMessages)
+        void processInBatchingUnitOfWork(List<? extends EventMessage> eventMessages)
                 throws ExecutionException, InterruptedException, TimeoutException {
             var unitOfWork = UnitOfWorkTestUtils.aUnitOfWork();
             unitOfWork.executeWithResult(ctx -> processorEventHandlingComponents

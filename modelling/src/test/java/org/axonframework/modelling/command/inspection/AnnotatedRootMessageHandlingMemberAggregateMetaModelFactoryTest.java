@@ -126,8 +126,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         int expectedNumberOfAggregateEventHandlerInvocations = 2;
         int expectedNumberOfMemberEventHandlerInvocations = 1;
 
-        EventMessage<AggregateCreatedEvent> testAggregateEvent = EventTestUtils.asEventMessage(AGGREGATE_EVENT);
-        EventMessage<MemberEvent> testMemberEvent = EventTestUtils.asEventMessage(new MemberEvent());
+        EventMessage testAggregateEvent = EventTestUtils.asEventMessage(AGGREGATE_EVENT);
+        EventMessage testMemberEvent = EventTestUtils.asEventMessage(new MemberEvent());
         LeafAggregate testModel = new LeafAggregate();
 
         AggregateModel<LeafAggregate> testSubject =
@@ -144,8 +144,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         int expectedNumberOfAggregateEventHandlerInvocations = 2;
         int expectedNumberOfMemberEventHandlerInvocations = 1;
 
-        EventMessage<AggregateCreatedEvent> testAggregateEvent = EventTestUtils.asEventMessage(AGGREGATE_EVENT);
-        EventMessage<MemberEvent> testMemberEvent = EventTestUtils.asEventMessage(new MemberEvent());
+        EventMessage testAggregateEvent = EventTestUtils.asEventMessage(AGGREGATE_EVENT);
+        EventMessage testMemberEvent = EventTestUtils.asEventMessage(new MemberEvent());
         LeafAggregate testModel = new LeafAggregate();
 
         //noinspection unchecked
@@ -161,8 +161,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
 
     @Test
     void createdAggregateModelReturnsCommandHandlingFunctionFromParentAggregate() throws Exception {
-        CommandMessage<MemberCommand> testMemberCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, MEMBER_COMMAND);
+        CommandMessage testMemberCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, MEMBER_COMMAND);
         LegacyDefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
@@ -179,8 +179,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     @Test
     void createdAggregateModelReturnsCommandHandlingFunctionFromParentAggregateForPolymorphicAggregate()
             throws Exception {
-        CommandMessage<MemberCommand> testMemberCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, MEMBER_COMMAND);
+        CommandMessage testMemberCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, MEMBER_COMMAND);
         LegacyDefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
@@ -202,8 +202,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     void createdAggregateModelInvokesAllCommandInterceptors() throws Exception {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;
 
-        CommandMessage<MemberCommand> testMemberCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, MEMBER_COMMAND);
+        CommandMessage testMemberCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, MEMBER_COMMAND);
         LegacyDefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
@@ -221,8 +221,8 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     @Test
     void createdAggregateModelInvokesAllCommandInterceptorsForPolymorphicAggregate() throws Exception {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;
-        CommandMessage<MemberCommand> testMemberCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, MEMBER_COMMAND);
+        CommandMessage testMemberCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, MEMBER_COMMAND);
         LegacyDefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();

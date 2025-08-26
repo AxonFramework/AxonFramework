@@ -80,7 +80,7 @@ public class InterceptorChainParameterResolverFactory
      * @param action           The action to invoke
      * @return The response from the invocation of given {@code action}
      */
-    public static <M extends Message<?>> MessageStream<?> callWithInterceptorChain(
+    public static <M extends Message> MessageStream<?> callWithInterceptorChain(
             ProcessingContext processingContext,
             MessageHandlerInterceptorChain<M> interceptorChain,
             Function<ProcessingContext, MessageStream<?>> action
@@ -103,7 +103,7 @@ public class InterceptorChainParameterResolverFactory
         return CURRENT.get();
     }
 
-    public static <M extends Message<?>> MessageHandlerInterceptorChain<M> currentInterceptorChain(
+    public static <M extends Message> MessageHandlerInterceptorChain<M> currentInterceptorChain(
             ProcessingContext processingContext
     ) {
         //noinspection unchecked

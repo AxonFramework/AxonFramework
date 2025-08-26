@@ -33,7 +33,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public record GenericTaggedEventMessage<E extends EventMessage<?>>(
+public record GenericTaggedEventMessage<E extends EventMessage>(
         @Nonnull E event,
         @Nonnull Set<Tag> tags
 ) implements TaggedEventMessage<E> {

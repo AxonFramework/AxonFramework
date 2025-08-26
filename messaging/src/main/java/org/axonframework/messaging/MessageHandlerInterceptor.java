@@ -28,7 +28,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @author Simon Zambrovski
  * @since 0.5
  */
-public interface MessageHandlerInterceptor<M extends Message<?>> {
+public interface MessageHandlerInterceptor<M extends Message> {
 
     /**
      * Invoked before a Message is handled by a designated {@link org.axonframework.messaging.MessageHandler}.

@@ -40,8 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * @author Mitchell Herrijgers
  * @since 4.11.0
  */
-// TODO remove as part of #3559
-@Deprecated(forRemoval = true)
+// TODO revisit as part of #3559
 public class UnitOfWorkTimeoutInterceptorBuilder {
 
     private static final String TRANSACTION_TIME_LIMIT_RESOURCE_KEY = "_transactionTimeLimit";
@@ -109,19 +108,19 @@ public class UnitOfWorkTimeoutInterceptorBuilder {
         this.logger = logger;
     }
 
-    public MessageHandlerInterceptor<EventMessage<?>> buildEventInterceptor() {
+    public MessageHandlerInterceptor<EventMessage> buildEventInterceptor() {
         return build();
     }
 
-    public MessageHandlerInterceptor<QueryMessage<?, ?>> buildQueryInterceptor() {
+    public MessageHandlerInterceptor<QueryMessage> buildQueryInterceptor() {
         return build();
     }
 
-    public MessageHandlerInterceptor<DeadlineMessage<?>> buildDeadlineInterceptor() {
+    public MessageHandlerInterceptor<DeadlineMessage> buildDeadlineInterceptor() {
         return build();
     }
 
-    <T extends Message<?>> MessageHandlerInterceptor<T> build() {
+    <T extends Message> MessageHandlerInterceptor<T> build() {
         return new MessageHandlerInterceptor<>() {
 
             @Nonnull

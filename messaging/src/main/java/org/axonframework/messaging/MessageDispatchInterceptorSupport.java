@@ -27,7 +27,7 @@ import org.axonframework.common.Registration;
  * @param <M> The type of Message the interceptor works with
  * @see MessageDispatchInterceptor
  */
-public interface MessageDispatchInterceptorSupport<M extends Message<?>> {
+public interface MessageDispatchInterceptorSupport<M extends Message> {
 
     /**
      * Register the given DispatchInterceptor. After registration, the interceptor will be invoked for each Message

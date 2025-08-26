@@ -71,28 +71,28 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     void creationPolicy_NoneExists() throws Exception {
-        handle(new GenericEventMessage<>(new MessageType("event"), new StartingEvent("123")));
+        handle(new GenericEventMessage(new MessageType("event"), new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
     }
 
     @Test
     void creationPolicy_OneAlreadyExists() throws Exception {
-        handle(new GenericEventMessage<>(new MessageType("event"), new StartingEvent("123")));
-        handle(new GenericEventMessage<>(new MessageType("event"), new StartingEvent("123")));
+        handle(new GenericEventMessage(new MessageType("event"), new StartingEvent("123")));
+        handle(new GenericEventMessage(new MessageType("event"), new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
     }
 
     @Test
     void handleUnrelatedEvent() throws Exception {
-        handle(new GenericEventMessage<>(new MessageType("event"), "Unrelated"));
+        handle(new GenericEventMessage(new MessageType("event"), "Unrelated"));
         verify(sagaRepository, never()).find(isNull());
     }
 
     @Test
     void creationPolicy_CreationForced() throws Exception {
         StartingEvent startingEvent = new StartingEvent("123");
-        handle(new GenericEventMessage<>(new MessageType("event"), startingEvent));
-        handle(new GenericEventMessage<>(new MessageType("event"), new ForcingStartEvent("123")));
+        handle(new GenericEventMessage(new MessageType("event"), startingEvent));
+        handle(new GenericEventMessage(new MessageType("event"), new ForcingStartEvent("123")));
         Collection<MyTestSaga> sagas = repositoryContents("123");
         assertEquals(2, sagas.size());
         for (MyTestSaga saga : sagas) {
@@ -105,19 +105,19 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     void creationPolicy_SagaNotCreated() throws Exception {
-        handle(new GenericEventMessage<>(new MessageType("event"), new MiddleEvent("123")));
+        handle(new GenericEventMessage(new MessageType("event"), new MiddleEvent("123")));
         assertEquals(0, repositoryContents("123").size());
     }
 
     @Test
     void mostSpecificHandlerEvaluatedFirst() throws Exception {
-        handle(new GenericEventMessage<>(new MessageType("event"), new StartingEvent("12")));
-        handle(new GenericEventMessage<>(new MessageType("event"), new StartingEvent("23")));
+        handle(new GenericEventMessage(new MessageType("event"), new StartingEvent("12")));
+        handle(new GenericEventMessage(new MessageType("event"), new StartingEvent("23")));
         assertEquals(1, repositoryContents("12").size());
         assertEquals(1, repositoryContents("23").size());
 
-        handle(new GenericEventMessage<>(new MessageType("event"), new MiddleEvent("12")));
-        handle(new GenericEventMessage<>(
+        handle(new GenericEventMessage(new MessageType("event"), new MiddleEvent("12")));
+        handle(new GenericEventMessage(
                 new MessageType("event"), new MiddleEvent("23"), singletonMap("catA", "value")
         ));
         assertEquals(0, repositoryContents("12").iterator().next().getSpecificHandlerInvocations());
@@ -126,17 +126,17 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     void nullAssociationValueIsIgnored() throws Exception {
-        handle(new GenericEventMessage<>(new MessageType("event"), new StartingEvent(null)));
+        handle(new GenericEventMessage(new MessageType("event"), new StartingEvent(null)));
 
         verify(sagaRepository, never()).find(null);
     }
 
     @Test
     void lifecycle_DestroyedOnEnd() throws Exception {
-        handle(new GenericEventMessage<>(new MessageType("event"), new StartingEvent("12")));
-        handle(new GenericEventMessage<>(new MessageType("event"), new StartingEvent("23")));
-        handle(new GenericEventMessage<>(new MessageType("event"), new MiddleEvent("12")));
-        handle(new GenericEventMessage<>(
+        handle(new GenericEventMessage(new MessageType("event"), new StartingEvent("12")));
+        handle(new GenericEventMessage(new MessageType("event"), new StartingEvent("23")));
+        handle(new GenericEventMessage(new MessageType("event"), new MiddleEvent("12")));
+        handle(new GenericEventMessage(
                 new MessageType("event"), new MiddleEvent("23"), singletonMap("catA", "value")
         ));
 
@@ -144,10 +144,10 @@ public class AnnotatedSagaManagerTest {
         assertEquals(1, repositoryContents("23").size());
         assertEquals(0, repositoryContents("12").iterator().next().getSpecificHandlerInvocations());
         assertEquals(1, repositoryContents("23").iterator().next().getSpecificHandlerInvocations());
-        handle(new GenericEventMessage<>(new MessageType("event"), new EndingEvent("12")));
+        handle(new GenericEventMessage(new MessageType("event"), new EndingEvent("12")));
         assertEquals(1, repositoryContents("23").size());
         assertEquals(0, repositoryContents("12").size());
-        handle(new GenericEventMessage<>(new MessageType("event"), new EndingEvent("23")));
+        handle(new GenericEventMessage(new MessageType("event"), new EndingEvent("23")));
         assertEquals(0, repositoryContents("23").size());
         assertEquals(0, repositoryContents("12").size());
     }
@@ -159,15 +159,15 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     void lifeCycle_ExistingInstanceIgnoresEvent() throws Exception {
-        handle(new GenericEventMessage<>(new MessageType("event"), new StartingEvent("12")));
-        handle(new GenericEventMessage<>(new MessageType("event"), new StubDomainEvent()));
+        handle(new GenericEventMessage(new MessageType("event"), new StartingEvent("12")));
+        handle(new GenericEventMessage(new MessageType("event"), new StubDomainEvent()));
         assertEquals(1, repositoryContents("12").size());
         assertEquals(1, repositoryContents("12").iterator().next().getCapturedEvents().size());
     }
 
     @Test
     void lifeCycle_IgnoredEventDoesNotCreateInstance() throws Exception {
-        handle(new GenericEventMessage<>(new MessageType("event"), new StubDomainEvent()));
+        handle(new GenericEventMessage(new MessageType("event"), new StubDomainEvent()));
         assertEquals(0, repositoryContents("12").size());
     }
 
@@ -185,8 +185,8 @@ public class AnnotatedSagaManagerTest {
         assertThrows(ResetNotSupportedException.class, () -> testSubject.performReset("reset-info", null));
     }
 
-    private void handle(EventMessage<?> event) throws Exception {
-        ResultMessage<?> resultMessage = LegacyDefaultUnitOfWork.startAndGet(event).executeWithResult((ctx) -> {
+    private void handle(EventMessage event) throws Exception {
+        ResultMessage resultMessage = LegacyDefaultUnitOfWork.startAndGet(event).executeWithResult((ctx) -> {
             testSubject.handle(event, ctx, Segment.ROOT_SEGMENT);
             return null;
         });

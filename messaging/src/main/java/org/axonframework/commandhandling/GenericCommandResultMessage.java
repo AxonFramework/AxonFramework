@@ -37,7 +37,7 @@ import java.util.Map;
  * @author Steven van Beelen
  * @since 4.0.0
  */
-public class GenericCommandResultMessage<R> extends GenericResultMessage<R> implements CommandResultMessage<R> {
+public class GenericCommandResultMessage<R> extends GenericResultMessage implements CommandResultMessage<R> {
 
     /**
      * Constructs a {@link GenericResultMessage} for the given {@code type} and {@code commandResult}.
@@ -106,7 +106,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      *                 {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
-    public GenericCommandResultMessage(@Nonnull Message<R> delegate) {
+    public GenericCommandResultMessage(@Nonnull Message delegate) {
         super(delegate);
     }
 
@@ -123,7 +123,7 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link CommandResultMessage}.
      */
-    public GenericCommandResultMessage(@Nonnull Message<R> delegate,
+    public GenericCommandResultMessage(@Nonnull Message delegate,
                                        @Nullable Throwable exception) {
         super(delegate, exception);
     }
@@ -144,15 +144,14 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
 
     @Override
     @Nonnull
-    public <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Type type,
-                                                            @Nonnull Converter converter) {
-        T convertedPayload = payloadAs(type, converter);
+    public CommandResultMessage<R> withConvertedPayload(@Nonnull Type type,
+                                                        @Nonnull Converter converter) {
+        Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
-            //noinspection unchecked
-            return (CommandResultMessage<T>) this;
+            return this;
         }
-        Message<R> delegate = delegate();
-        Message<T> converted = new GenericMessage<>(delegate.identifier(),
+        Message delegate = delegate();
+        Message converted = new GenericMessage(delegate.identifier(),
                                                     delegate.type(),
                                                     convertedPayload,
                                                     delegate.metaData());

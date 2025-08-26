@@ -141,9 +141,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private IdentifierValidatingRepository<T> repository;
     private final StubDeadlineManager deadlineManager;
     private String aggregateIdentifier;
-    private Deque<DomainEventMessage<?>> givenEvents;
-    private Deque<DomainEventMessage<?>> storedEvents;
-    private List<EventMessage<?>> publishedEvents;
+    private Deque<DomainEventMessage> givenEvents;
+    private Deque<DomainEventMessage> storedEvents;
+    private List<EventMessage> publishedEvents;
     private long sequenceNumber;
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
@@ -237,13 +237,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType,
-                                                          MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler) {
+                                                          MessageHandler<CommandMessage, CommandResultMessage<?>> commandHandler) {
         return registerCommandHandler(payloadType.getName(), commandHandler);
     }
 
     @Override
     public FixtureConfiguration<T> registerCommandHandler(String commandName,
-                                                          MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler) {
+                                                          MessageHandler<CommandMessage, CommandResultMessage<?>> commandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         commandBus.subscribe(new QualifiedName(commandName), (CommandHandler) commandHandler);
@@ -278,7 +278,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerCommandDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor
+            MessageDispatchInterceptor<? super CommandMessage> commandDispatchInterceptor
     ) {
         // TODO #3073 - Revisit Aggregate Test Fixture
         throw new UnsupportedOperationException("Not implemented yet");
@@ -286,7 +286,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerCommandHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor
+            MessageHandlerInterceptor<? super CommandMessage> commandHandlerInterceptor
     ) {
         // TODO #3073 - Revisit Aggregate Test Fixture
         throw new UnsupportedOperationException("Not implemented yet");
@@ -294,14 +294,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
-            MessageDispatchInterceptor<? super DeadlineMessage<?>> deadlineDispatchInterceptor) {
+            MessageDispatchInterceptor<? super DeadlineMessage> deadlineDispatchInterceptor) {
         this.deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor) {
+            MessageHandlerInterceptor<DeadlineMessage> deadlineHandlerInterceptor) {
         this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
         return this;
     }
@@ -407,17 +407,17 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             MetaData metaData = null;
             String type = aggregateType.getSimpleName();
             if (event instanceof Message) {
-                payload = ((Message<?>) event).payload();
-                metaData = ((Message<?>) event).metaData();
+                payload = ((Message) event).payload();
+                metaData = ((Message) event).metaData();
             }
             if (event instanceof DomainEventMessage) {
-                type = ((DomainEventMessage<?>) event).getType();
+                type = ((DomainEventMessage) event).getType();
             }
-            GenericDomainEventMessage<Object> eventMessage = new GenericDomainEventMessage<>(
+            GenericDomainEventMessage eventMessage = new GenericDomainEventMessage(
                     type,
                     aggregateIdentifier,
                     sequenceNumber++,
-                    new GenericMessage<>(new MessageType(payload.getClass()), payload, metaData),
+                    new GenericMessage(new MessageType(payload.getClass()), payload, metaData),
                     deadlineManager.getCurrentDateTime()
             );
             this.givenEvents.add(eventMessage);
@@ -448,9 +448,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public TestExecutor<T> andGivenCommands(List<?> commands) {
         finalizeConfiguration();
         for (Object command : commands) {
-            CompletableFuture<Message<?>> result = new CompletableFuture<>();
-            CommandMessage<Object> commandMessage =
-                    new GenericCommandMessage<>(new MessageType(command.getClass()), command);
+            CompletableFuture<Message> result = new CompletableFuture<>();
+            CommandMessage commandMessage =
+                    new GenericCommandMessage(new MessageType(command.getClass()), command);
             executeAtSimulatedTime(() -> commandBus.dispatch(commandMessage, new LegacyMessageSupportingContext(commandMessage))
                                                    .whenComplete(FutureUtils.alsoComplete(result)));
             result.join();
@@ -510,8 +510,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public ResultValidator<T> when(Object command, Map<String, String> metaData) {
         return when(resultValidator -> {
-            CommandMessage<Object> commandMessage =
-                    new GenericCommandMessage<>(new MessageType(command.getClass()), command, metaData);
+            CommandMessage commandMessage =
+                    new GenericCommandMessage(new MessageType(command.getClass()), command, metaData);
             commandBus.dispatch(commandMessage, new LegacyMessageSupportingContext(commandMessage))
                       .whenComplete((r, e) -> {
                           if (e == null) {
@@ -576,7 +576,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      * @param aggregateDescriptor A {@link ScopeDescriptor} describing the aggregate under test
      * @param deadlineMessage     The {@link DeadlineMessage} to be handled
      */
-    protected void handleDeadline(ScopeDescriptor aggregateDescriptor, DeadlineMessage<?> deadlineMessage)
+    protected void handleDeadline(ScopeDescriptor aggregateDescriptor, DeadlineMessage deadlineMessage)
             throws Exception {
         ensureRepositoryConfiguration();
         repository.send(deadlineMessage, new LegacyMessageSupportingContext(deadlineMessage), aggregateDescriptor);
@@ -880,7 +880,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public void send(Message<?> message,
+        public void send(Message message,
                          ProcessingContext context,
                          ScopeDescriptor scopeDescription) throws Exception {
             if (canResolve(scopeDescription)) {
@@ -945,7 +945,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public void send(Message<?> message,
+        public void send(Message message,
                          ProcessingContext context,
                          ScopeDescriptor scopeDescription) throws Exception {
             if (canResolve(scopeDescription)) {
@@ -985,7 +985,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 aggregateIdentifier = identifier;
                 injectAggregateIdentifier();
             }
-            List<DomainEventMessage<?>> allEvents = new ArrayList<>(givenEvents);
+            List<DomainEventMessage> allEvents = new ArrayList<>(givenEvents);
             allEvents.addAll(storedEvents);
             if (allEvents.isEmpty()) {
                 throw new AggregateNotFoundException(identifier,
@@ -996,7 +996,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public void publish(@Nonnull List<? extends EventMessage<?>> events) {
+        public void publish(@Nonnull List<? extends EventMessage> events) {
             if (CurrentUnitOfWork.isStarted()) {
                 CurrentUnitOfWork.get().onPrepareCommit(u -> doAppendEvents(events));
             } else {
@@ -1004,21 +1004,21 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             }
         }
 
-        protected void doAppendEvents(List<? extends EventMessage<?>> events) {
+        protected void doAppendEvents(List<? extends EventMessage> events) {
             events.forEach(e -> {
                 if (!DomainEventMessage.class.isInstance(e)) {
                     // Since the event is not a domain event, only publish it i.o. validating/storing it.
                     publishedEvents.add(e);
                     return;
                 }
-                DomainEventMessage<?> event = (DomainEventMessage<?>) e;
+                DomainEventMessage event = (DomainEventMessage) e;
 
                 if (aggregateIdentifier == null) {
                     aggregateIdentifier = event.getAggregateIdentifier();
                     injectAggregateIdentifier();
                 }
 
-                DomainEventMessage<?> lastEvent = (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
+                DomainEventMessage lastEvent = (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
 
                 if (lastEvent != null) {
                     if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
@@ -1037,11 +1037,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         private void injectAggregateIdentifier() {
-            List<DomainEventMessage<?>> oldEvents = new ArrayList<>(givenEvents);
+            List<DomainEventMessage> oldEvents = new ArrayList<>(givenEvents);
             givenEvents.clear();
-            for (DomainEventMessage<?> oldEvent : oldEvents) {
+            for (DomainEventMessage oldEvent : oldEvents) {
                 if (oldEvent.getAggregateIdentifier() == null) {
-                    givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getType(),
+                    givenEvents.add(new GenericDomainEventMessage(oldEvent.getType(),
                                                                     aggregateIdentifier,
                                                                     oldEvent.getSequenceNumber(),
                                                                     oldEvent.identifier(),
@@ -1061,20 +1061,20 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
+        public void storeSnapshot(@Nonnull DomainEventMessage snapshot) {
             // A dedicated implementation is not necessary for test fixture.
         }
 
         @Nonnull
         @Override
-        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventProcessor) {
             return () -> true;
         }
 
         @Override
         public @Nonnull
         Registration registerDispatchInterceptor(
-                @Nonnull MessageDispatchInterceptor<? super EventMessage<?>> dispatchInterceptor) {
+                @Nonnull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
             return () -> true;
         }
     }
@@ -1113,7 +1113,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         @Override
-        public void send(Message<?> message, ProcessingContext context, ScopeDescriptor scopeDescription) {
+        public void send(Message message, ProcessingContext context, ScopeDescriptor scopeDescription) {
             throw new UnsupportedOperationException(
                     "Default repository does not mock loading of an aggregate, only creation of it");
         }

@@ -46,7 +46,7 @@ public class MultiCorrelationDataProvider implements CorrelationDataProvider {
 
     @Nonnull
     @Override
-    public Map<String, String> correlationDataFor(@Nonnull Message<?> message) {
+    public Map<String, String> correlationDataFor(@Nonnull Message message) {
         Map<String, String> correlationData = new HashMap<>();
         for (CorrelationDataProvider delegate : delegates) {
             correlationData.putAll(delegate.correlationDataFor(message));

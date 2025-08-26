@@ -38,7 +38,7 @@ class UnitOfWorkTimeoutInterceptorBuilderTest {
     void interruptsUnitOfWorkThatTakesTooLong() {
         MessageHandlerInterceptor<EventMessage<?>> testSubject = new UnitOfWorkTimeoutInterceptorBuilder("MyUnitOfWork", 100, 50, 10).buildEventInterceptor();
 
-        LegacyDefaultUnitOfWork<EventMessage<String>> uow = new LegacyDefaultUnitOfWork<>(
+        LegacyDefaultUnitOfWork<EventMessage> uow = new LegacyDefaultUnitOfWork<>(
                 EventTestUtils.asEventMessage("test")
         );
         EventMessageHandlerInterceptorChain interceptorChain = new EventMessageHandlerInterceptorChain(
@@ -62,7 +62,7 @@ class UnitOfWorkTimeoutInterceptorBuilderTest {
     void doesNotInterruptWorkWithinTime() {
         MessageHandlerInterceptor<EventMessage<?>> testSubject = new UnitOfWorkTimeoutInterceptorBuilder("MyUnitOfWork", 100, 50, 10).buildEventInterceptor();
 
-        LegacyDefaultUnitOfWork<EventMessage<String>> uow = new LegacyDefaultUnitOfWork<>(
+        LegacyDefaultUnitOfWork<EventMessage> uow = new LegacyDefaultUnitOfWork<>(
                 EventTestUtils.asEventMessage("test")
         );
         EventMessageHandlerInterceptorChain interceptorChain = new EventMessageHandlerInterceptorChain(

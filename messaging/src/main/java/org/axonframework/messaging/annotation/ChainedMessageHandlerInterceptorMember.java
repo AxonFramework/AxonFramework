@@ -56,7 +56,7 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message<?> message,
+    public MessageStream<?> handle(@Nonnull Message message,
                                    @Nonnull ProcessingContext context,
                                    @Nonnull T target,
                                    @Nonnull MessageHandlingMember<? super T> handler) {
@@ -75,7 +75,7 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
          */
     }
 
-    private MessageStream<?> doHandle(Message<?> message,
+    private MessageStream<?> doHandle(Message message,
                                       ProcessingContext context,
                                       T target,
                                       MessageHandlingMember<? super T> handler) {
@@ -85,7 +85,7 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
     }
 
     @Override
-    public Object handleSync(@Nonnull Message<?> message,
+    public Object handleSync(@Nonnull Message message,
                              @Nonnull ProcessingContext context,
                              @Nonnull T target,
                              @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
@@ -99,7 +99,7 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
          */
     }
 
-    private Object doHandleSync(Message<?> message,
+    private Object doHandleSync(Message message,
                                 ProcessingContext context,
                                 T target, MessageHandlingMember<? super T> handler)
             throws Exception {

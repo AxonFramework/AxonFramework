@@ -89,7 +89,7 @@ class AnnotationEventHandlerAdapterTest {
                                                         parameterResolverFactory,
                                                         messageTypeResolver);
 
-        EventMessage<Object> eventMessage = asEventMessage("count");
+        EventMessage eventMessage = asEventMessage("count");
         testSubject.handleSync(eventMessage, StubProcessingContext.forMessage(eventMessage));
         assertEquals(3, annotatedEventListener.invocations.stream().filter("count"::equals).count());
     }
@@ -97,7 +97,7 @@ class AnnotationEventHandlerAdapterTest {
     @Test
     @Disabled("TODO #3062 - Exception Handler support")
     void wrapExceptionInResultInterceptor() {
-        EventMessage<Object> testEventMessage =
+        EventMessage testEventMessage =
                 asEventMessage("testing").andMetaData(MetaData.with("key", "value"));
         ProcessingContext context = StubProcessingContext.forMessage(testEventMessage);
 
@@ -119,7 +119,7 @@ class AnnotationEventHandlerAdapterTest {
 
     @Test
     void mismatchingExceptionTypeFromHandlerIgnored() {
-        EventMessage<Object> testEventMessage =
+        EventMessage testEventMessage =
                 asEventMessage("testing").andMetaData(MetaData.with("key", "value"));
         ProcessingContext context = StubProcessingContext.forMessage(testEventMessage);
 

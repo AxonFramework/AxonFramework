@@ -48,6 +48,6 @@ public interface QueryInvocationErrorHandler {
      * @param queryMessage   The message causing the exception in the handler
      * @param messageHandler The handler that reported the exception
      */
-    void onError(@Nonnull Throwable error, @Nonnull QueryMessage<?, ?> queryMessage,
+    void onError(@Nonnull Throwable error, @Nonnull QueryMessage queryMessage,
                  @Nonnull MessageHandler messageHandler);
 }

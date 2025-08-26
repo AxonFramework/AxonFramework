@@ -27,10 +27,10 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class ConcatenatingMessageStreamTest extends MessageStreamTest<Message<String>> {
+class ConcatenatingMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
+    MessageStream<Message> completedTestSubject(List<Message> messages) {
         if (messages.isEmpty()) {
             return new ConcatenatingMessageStream<>(MessageStream.empty().cast(), MessageStream.empty().cast());
         } else if (messages.size() == 1) {
@@ -43,26 +43,26 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message<String>> 
     }
 
     @Override
-    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         Assumptions.abort("ConcatenatingMessageStream doesn't support explicit single-value streams");
         return null;
     }
 
     @Override
-    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("ConcatenatingMessageStream doesn't support explicitly empty streams");
         return null;
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+    MessageStream<Message> failingTestSubject(List<Message> messages,
                                                       Exception failure) {
         return completedTestSubject(messages).concatWith(MessageStream.failed(failure));
     }
 
     @Override
-    Message<String> createRandomMessage() {
-        return new GenericMessage<>(new MessageType("message"),
+    Message createRandomMessage() {
+        return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

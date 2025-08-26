@@ -88,7 +88,7 @@ class AnnotationQueryHandlerAdapterTest {
     @Test
     void handleQuery() throws Exception {
         String testResponse = "hello";
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), testResponse, instanceOf(String.class)
         );
         ProcessingContext context = StubProcessingContext.forMessage(testQuery);
@@ -99,7 +99,7 @@ class AnnotationQueryHandlerAdapterTest {
 
     @Test
     void handleQueryWithException() {
-        QueryMessage<String, Integer> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "hello", instanceOf(Integer.class)
         );
         ProcessingContext context = StubProcessingContext.forMessage(testQuery);
@@ -109,7 +109,7 @@ class AnnotationQueryHandlerAdapterTest {
 
     @Test
     void handleQueryWithEmptyOptional() throws Exception {
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("noEcho"), "hello", instanceOf(String.class)
         );
         ProcessingContext context = StubProcessingContext.forMessage(testQuery);
@@ -119,7 +119,7 @@ class AnnotationQueryHandlerAdapterTest {
 
     @Test
     void handleQueryWithProvidedOptional() throws Exception {
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "hello", instanceOf(String.class)
         );
         ProcessingContext context = StubProcessingContext.forMessage(testQuery);
@@ -130,7 +130,7 @@ class AnnotationQueryHandlerAdapterTest {
     @Test
     void handleQueryForCollection() throws Exception {
         int testResponse = 5;
-        QueryMessage<Integer, List<String>> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), testResponse, multipleInstancesOf(String.class)
         );
         ProcessingContext context = StubProcessingContext.forMessage(testQuery);
@@ -143,7 +143,7 @@ class AnnotationQueryHandlerAdapterTest {
 
     @Test
     void handleQueryThrowsNoHandlerForQueryException() {
-        QueryMessage<Long, List<String>> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), 42L, multipleInstancesOf(String.class)
         );
         ProcessingContext context = StubProcessingContext.forMessage(testQuery);
@@ -154,13 +154,13 @@ class AnnotationQueryHandlerAdapterTest {
     @Disabled("Reintegrate as part of #3485")
     @Test
     void interceptMessages() throws Exception {
-        List<QueryMessage<?, ?>> withInterceptor = new ArrayList<>();
-        List<QueryMessage<?, ?>> withoutInterceptor = new ArrayList<>();
+        List<QueryMessage> withInterceptor = new ArrayList<>();
+        List<QueryMessage> withoutInterceptor = new ArrayList<>();
         testSubject = new AnnotationQueryHandlerAdapter<>(
                 new MyInterceptingQueryHandler(withoutInterceptor, withInterceptor, new ArrayList<>())
         );
 
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "Hi", instanceOf(String.class)
         );
         ProcessingContext context = StubProcessingContext.forMessage(testQuery);
@@ -174,11 +174,11 @@ class AnnotationQueryHandlerAdapterTest {
 
     @Test
     void canHandleMessage() {
-        QueryMessage<String, Integer> testIntegerQuery = new GenericQueryMessage<>(
+        QueryMessage testIntegerQuery = new GenericQueryMessage(
                 new MessageType("query"), "hello", instanceOf(Integer.class)
         );
         ProcessingContext integerContext = StubProcessingContext.forMessage(testIntegerQuery);
-        QueryMessage<String, Long> testLongQuery = new GenericQueryMessage<>(
+        QueryMessage testLongQuery = new GenericQueryMessage(
                 new MessageType("query"), "hello", instanceOf(Long.class)
         );
         ProcessingContext longContext = StubProcessingContext.forMessage(testLongQuery);
@@ -195,7 +195,7 @@ class AnnotationQueryHandlerAdapterTest {
                 new MyInterceptingQueryHandler(new ArrayList<>(), new ArrayList<>(), interceptedExceptions)
         );
 
-        QueryMessage<ArrayList<Object>, Object> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), new ArrayList<>(), instanceOf(Object.class)
         );
         ProcessingContext context = StubProcessingContext.forMessage(testQuery);
@@ -268,12 +268,12 @@ class AnnotationQueryHandlerAdapterTest {
     @SuppressWarnings("unused")
     private static class MyInterceptingQueryHandler extends MyQueryHandler {
 
-        private final List<QueryMessage<?, ?>> interceptedWithoutInterceptorChain;
-        private final List<QueryMessage<?, ?>> interceptedWithInterceptorChain;
+        private final List<QueryMessage> interceptedWithoutInterceptorChain;
+        private final List<QueryMessage> interceptedWithInterceptorChain;
         private final List<Exception> interceptedExceptions;
 
-        private MyInterceptingQueryHandler(List<QueryMessage<?, ?>> interceptedWithoutInterceptorChain,
-                                           List<QueryMessage<?, ?>> interceptedWithInterceptorChain,
+        private MyInterceptingQueryHandler(List<QueryMessage> interceptedWithoutInterceptorChain,
+                                           List<QueryMessage> interceptedWithInterceptorChain,
                                            List<Exception> interceptedExceptions) {
             this.interceptedWithoutInterceptorChain = interceptedWithoutInterceptorChain;
             this.interceptedWithInterceptorChain = interceptedWithInterceptorChain;
@@ -281,12 +281,12 @@ class AnnotationQueryHandlerAdapterTest {
         }
 
         @MessageHandlerInterceptor
-        public void interceptAny(QueryMessage<?, ?> query) {
+        public void interceptAny(QueryMessage query) {
             interceptedWithoutInterceptorChain.add(query);
         }
 
         @MessageHandlerInterceptor
-        public Object interceptAny(QueryMessage<?, ?> query, MessageHandlerInterceptorChain chain, ProcessingContext context) throws Exception {
+        public Object interceptAny(QueryMessage query, MessageHandlerInterceptorChain chain, ProcessingContext context) throws Exception {
             interceptedWithInterceptorChain.add(query);
             return chain.proceed(query, context);
         }

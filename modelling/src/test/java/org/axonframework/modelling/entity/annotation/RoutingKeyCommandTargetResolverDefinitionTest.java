@@ -89,7 +89,7 @@ class RoutingKeyCommandTargetResolverDefinitionTest {
         assertThrows(UnknownRoutingKeyException.class, () -> {
             resolver.getTargetChildEntity(
                     List.of(new ChildEntityWithWrongRoutingKey()),
-                    new GenericCommandMessage<>(messageType, new MyCommandPayload("someValue")),
+                    new GenericCommandMessage(messageType, new MyCommandPayload("someValue")),
                     new StubProcessingContext()
             );
         });

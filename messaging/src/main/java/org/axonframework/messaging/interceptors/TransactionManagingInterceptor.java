@@ -33,7 +33,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @author Rene de Waele
  */
 @Deprecated(forRemoval = true)
-public class TransactionManagingInterceptor<M extends Message<?>> implements MessageHandlerInterceptor<M> {
+public class TransactionManagingInterceptor<M extends Message> implements MessageHandlerInterceptor<M> {
 
     private final TransactionManager transactionManager;
 

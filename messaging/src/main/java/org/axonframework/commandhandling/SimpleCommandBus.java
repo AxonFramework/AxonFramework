@@ -18,26 +18,22 @@ package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -98,7 +94,7 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                @Nullable ProcessingContext processingContext) {
         return findCommandHandlerFor(command)
                 .map(handler -> handle(command, handler))
@@ -107,7 +103,7 @@ public class SimpleCommandBus implements CommandBus {
                 ))));
     }
 
-    private Optional<CommandHandler> findCommandHandlerFor(CommandMessage<?> command) {
+    private Optional<CommandHandler> findCommandHandlerFor(CommandMessage command) {
         return Optional.ofNullable(subscriptions.get(command.type().qualifiedName()));
     }
 
@@ -117,7 +113,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param command The actual command to handle.
      * @param handler The handler that must be invoked for this command.
      */
-    protected CompletableFuture<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+    protected CompletableFuture<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
                                                                 @Nonnull CommandHandler handler) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling command [{} ({})]", command.identifier(), command.type());

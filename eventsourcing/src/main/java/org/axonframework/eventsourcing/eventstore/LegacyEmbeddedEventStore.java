@@ -157,7 +157,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore {
     }
 
     @Override
-    protected void afterCommit(List<? extends EventMessage<?>> events) {
+    protected void afterCommit(List<? extends EventMessage> events) {
         producer.fetchIfWaiting();
     }
 
@@ -186,10 +186,10 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore {
 
         private final long index;
         private final TrackingToken previousToken;
-        private final TrackedEventMessage<?> event;
+        private final TrackedEventMessage event;
         private volatile Node next;
 
-        private Node(long index, TrackingToken previousToken, TrackedEventMessage<?> event) {
+        private Node(long index, TrackingToken previousToken, TrackedEventMessage event) {
             this.index = index;
             this.previousToken = previousToken;
             this.event = event;
@@ -204,7 +204,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore {
         private final int cachedEvents;
         private volatile boolean shouldFetch;
         private volatile boolean closed;
-        private Stream<? extends TrackedEventMessage<?>> eventStream;
+        private Stream<? extends TrackedEventMessage> eventStream;
         private Node newest;
 
         private EventProducer(long fetchDelayNanos, int cachedEvents) {
@@ -313,11 +313,11 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore {
 
     private class EventConsumer implements TrackingEventStream {
 
-        private Stream<? extends TrackedEventMessage<?>> privateStream;
-        private Iterator<? extends TrackedEventMessage<?>> privateIterator;
+        private Stream<? extends TrackedEventMessage> privateStream;
+        private Iterator<? extends TrackedEventMessage> privateIterator;
         private volatile TrackingToken lastToken;
         private volatile Node lastNode;
-        private TrackedEventMessage<?> peekedEvent;
+        private TrackedEventMessage peekedEvent;
 
         private EventConsumer(Node lastNode) {
             this(lastNode.event.trackingToken());
@@ -329,7 +329,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore {
         }
 
         @Override
-        public Optional<TrackedEventMessage<?>> peek() {
+        public Optional<TrackedEventMessage> peek() {
             return Optional.ofNullable(peekedEvent == null && !hasNextAvailable() ? null : peekedEvent);
         }
 
@@ -339,16 +339,16 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore {
         }
 
         @Override
-        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+        public TrackedEventMessage nextAvailable() throws InterruptedException {
             while (peekedEvent == null) {
                 peekedEvent = peek(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
             }
-            TrackedEventMessage<?> result = peekedEvent;
+            TrackedEventMessage result = peekedEvent;
             peekedEvent = null;
             return result;
         }
 
-        private TrackedEventMessage<?> peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
+        private TrackedEventMessage peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
             boolean allowSwitchToTailingConsumer = optimizeEventConsumption;
             if (tailingConsumers.contains(this)) {
                 if (!behindGlobalCache()) {
@@ -370,7 +370,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore {
             this.lastNode = null; //makes old nodes garbage collectible
         }
 
-        private TrackedEventMessage<?> peekGlobalStream(int timeout, TimeUnit timeUnit) throws InterruptedException {
+        private TrackedEventMessage peekGlobalStream(int timeout, TimeUnit timeUnit) throws InterruptedException {
             Node nextNode;
             if ((nextNode = nextNode()) == null && timeout > 0) {
                 consumerLock.lock();
@@ -393,7 +393,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore {
             }
         }
 
-        private TrackedEventMessage<?> peekPrivateStream(boolean allowSwitchToTailingConsumer,
+        private TrackedEventMessage peekPrivateStream(boolean allowSwitchToTailingConsumer,
                                                          int timeout,
                                                          TimeUnit timeUnit) throws InterruptedException {
             if (privateIterator == null) {
@@ -401,7 +401,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore {
                 privateIterator = privateStream.iterator();
             }
             if (privateIterator.hasNext()) {
-                TrackedEventMessage<?> nextEvent = privateIterator.next();
+                TrackedEventMessage nextEvent = privateIterator.next();
                 lastToken = nextEvent.trackingToken();
                 return nextEvent;
             } else if (allowSwitchToTailingConsumer) {
@@ -414,7 +414,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore {
                 consumerLock.lock();
                 try {
                     if (consumableEventsCondition.await(timeout, timeUnit) && privateIterator.hasNext()) {
-                        TrackedEventMessage<?> nextEvent = privateIterator.next();
+                        TrackedEventMessage nextEvent = privateIterator.next();
                         lastToken = nextEvent.trackingToken();
                         return nextEvent;
                     }
@@ -512,7 +512,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore {
         }
 
         @Override
-        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
             super.messageMonitor(messageMonitor);
             return this;
         }

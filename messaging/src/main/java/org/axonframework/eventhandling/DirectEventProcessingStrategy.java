@@ -32,8 +32,8 @@ public enum DirectEventProcessingStrategy implements EventProcessingStrategy {
     INSTANCE;
 
     @Override
-    public void handle(@Nonnull List<? extends EventMessage<?>> events,
-                       @Nonnull Consumer<List<? extends EventMessage<?>>> processor) {
+    public void handle(@Nonnull List<? extends EventMessage> events,
+                       @Nonnull Consumer<List<? extends EventMessage>> processor) {
         processor.accept(events);
     }
 }

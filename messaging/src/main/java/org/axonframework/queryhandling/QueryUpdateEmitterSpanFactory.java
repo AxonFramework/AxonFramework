@@ -34,7 +34,7 @@ public interface QueryUpdateEmitterSpanFactory {
      * @param update The update to create a span for.
      * @return The created span.
      */
-    Span createUpdateScheduleEmitSpan(SubscriptionQueryUpdateMessage<?> update);
+    Span createUpdateScheduleEmitSpan(SubscriptionQueryUpdateMessage update);
 
     /**
      * Creates a span for the actual emit of a query update when the UnitOfWork commits (or immediately if no UnitOfWork
@@ -43,7 +43,7 @@ public interface QueryUpdateEmitterSpanFactory {
      * @param update The update to create a span for.
      * @return The created span.
      */
-    Span createUpdateEmitSpan(SubscriptionQueryUpdateMessage<?> update);
+    Span createUpdateEmitSpan(SubscriptionQueryUpdateMessage update);
 
     /**
      * Propagates the context of the current span to the given update message.
@@ -53,5 +53,5 @@ public interface QueryUpdateEmitterSpanFactory {
      * @param <M>    The type of the update message.
      * @return The update message with the propagated context.
      */
-    <T, M extends SubscriptionQueryUpdateMessage<T>> M propagateContext(M update);
+    <M extends SubscriptionQueryUpdateMessage> M propagateContext(M update);
 }

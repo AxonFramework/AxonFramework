@@ -34,8 +34,8 @@ import static org.mockito.Mockito.*;
  */
 class CorrelationDataInterceptorTest {
 
-    private CorrelationDataInterceptor<Message<?>> subject;
-    private MessageHandlerInterceptorChain<Message<?>> mockInterceptorChain;
+    private CorrelationDataInterceptor<Message> subject;
+    private MessageHandlerInterceptorChain<Message> mockInterceptorChain;
     private CorrelationDataProvider mockProvider1;
     private CorrelationDataProvider mockProvider2;
 

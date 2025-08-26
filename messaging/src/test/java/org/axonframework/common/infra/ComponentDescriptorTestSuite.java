@@ -23,8 +23,6 @@ import org.junit.jupiter.api.*;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * Test suite validating the common behavior of the {@link ComponentDescriptor}. While adding a new implementation you
  * should implement assertions with expected output for all the test cases.

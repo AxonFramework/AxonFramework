@@ -168,7 +168,7 @@ public interface FixtureConfiguration<T> {
      * @param commandHandler The handler to register
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType, MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler);
+    FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType, MessageHandler<CommandMessage, CommandResultMessage<?>> commandHandler);
 
     /**
      * Registers a {@code commandHandler} to handle commands of the given {@code commandType} with the
@@ -178,7 +178,7 @@ public interface FixtureConfiguration<T> {
      * @param commandHandler The handler to register
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandHandler(String commandName, MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler);
+    FixtureConfiguration<T> registerCommandHandler(String commandName, MessageHandler<CommandMessage, CommandResultMessage<?>> commandHandler);
 
     /**
      * Registers a resource that is eligible for injection in handler method (e.g. methods annotated with {@link
@@ -230,7 +230,7 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerCommandDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> commandDispatchInterceptor
+            MessageDispatchInterceptor<? super CommandMessage> commandDispatchInterceptor
     );
 
     /**
@@ -243,7 +243,7 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerCommandHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> commandHandlerInterceptor
+            MessageHandlerInterceptor<? super CommandMessage> commandHandlerInterceptor
     );
 
     /**
@@ -255,7 +255,7 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
-            MessageDispatchInterceptor<? super DeadlineMessage<?>> deadlineDispatchInterceptor);
+            MessageDispatchInterceptor<? super DeadlineMessage> deadlineDispatchInterceptor);
 
     /**
      * Registers a deadline handler interceptor which will always be invoked before a deadline is handled to perform a
@@ -265,7 +265,7 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<DeadlineMessage<?>> deadlineHandlerInterceptor);
+            MessageHandlerInterceptor<DeadlineMessage> deadlineHandlerInterceptor);
 
     /**
      * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing objects.

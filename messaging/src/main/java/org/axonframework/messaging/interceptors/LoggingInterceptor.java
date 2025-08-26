@@ -43,7 +43,7 @@ import java.util.function.BiFunction;
  * @author Allard Buijze
  * @since 0.6
  */
-public class LoggingInterceptor<M extends Message<?>>
+public class LoggingInterceptor<M extends Message>
         implements MessageDispatchInterceptor<M>, MessageHandlerInterceptor<M> {
 
     private final Logger logger;

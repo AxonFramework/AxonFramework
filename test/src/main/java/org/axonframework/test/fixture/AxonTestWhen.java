@@ -42,7 +42,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     private final RecordingEventSink eventSink;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
-    private Message<?> actualResult;
+    private Message actualResult;
     private Throwable actualException;
 
     public AxonTestWhen(
@@ -64,7 +64,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     @Override
     public Command command(@Nonnull Object payload, @Nonnull MetaData metaData) {
         var messageType = messageTypeResolver.resolveOrThrow(payload);
-        var message = new GenericCommandMessage<>(messageType, payload, metaData);
+        var message = new GenericCommandMessage(messageType, payload, metaData);
         inUnitOfWorkOnInvocation(processingContext ->
                                          commandBus.dispatch(message, processingContext)
                                                    .whenComplete((r, e) -> {
@@ -86,9 +86,9 @@ class AxonTestWhen implements AxonTestPhase.When {
         return events(eventMessage);
     }
 
-    private GenericEventMessage<Object> toGenericEventMessage(Object payload, MetaData metaData) {
+    private GenericEventMessage toGenericEventMessage(Object payload, MetaData metaData) {
         var messageType = messageTypeResolver.resolveOrThrow(payload);
-        return new GenericEventMessage<>(
+        return new GenericEventMessage(
                 messageType,
                 payload,
                 metaData
@@ -98,15 +98,15 @@ class AxonTestWhen implements AxonTestPhase.When {
     @Override
     public Event events(@Nonnull List<?>... events) {
         var messages = Arrays.stream(events)
-                             .map(e -> e instanceof EventMessage<?> message
+                             .map(e -> e instanceof EventMessage message
                                      ? message
                                      : toGenericEventMessage(e, MetaData.emptyInstance())
-                             ).toArray(EventMessage<?>[]::new);
+                             ).toArray(EventMessage[]::new);
         return events(messages);
     }
 
     @Override
-    public Event events(@Nonnull EventMessage<?>... messages) {
+    public Event events(@Nonnull EventMessage... messages) {
         inUnitOfWorkOnInvocation(processingContext -> eventSink.publish(processingContext, messages));
         return new Event();
     }

@@ -34,7 +34,7 @@ import java.util.function.BiFunction;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class ConcatenatingMessageStream<M extends Message<?>> implements MessageStream<M> {
+class ConcatenatingMessageStream<M extends Message> implements MessageStream<M> {
 
     private final MessageStream<M> first;
     private final MessageStream<M> second;

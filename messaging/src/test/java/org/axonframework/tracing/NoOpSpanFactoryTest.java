@@ -29,8 +29,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class NoOpSpanFactoryTest {
 
-    private static final EventMessage<String> TEST_EVENT =
-            new GenericEventMessage<>(new MessageType("event"), "payload");
+    private static final EventMessage TEST_EVENT =
+            new GenericEventMessage(new MessageType("event"), "payload");
 
     @Test
     void createRootTraceReturnsNoOpSpan() {
@@ -64,8 +64,8 @@ class NoOpSpanFactoryTest {
 
     @Test
     void propagateContextReturnsOriginal() {
-        EventMessage<String> message = TEST_EVENT;
-        EventMessage<String> result = NoOpSpanFactory.INSTANCE.propagateContext(message);
+        EventMessage message = TEST_EVENT;
+        EventMessage result = NoOpSpanFactory.INSTANCE.propagateContext(message);
         assertSame(message, result);
     }
 

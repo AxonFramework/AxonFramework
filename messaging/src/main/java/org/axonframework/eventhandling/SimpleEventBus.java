@@ -62,7 +62,7 @@ public class SimpleEventBus extends AbstractEventBus {
     public static class Builder extends AbstractEventBus.Builder {
 
         @Override
-        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
             super.messageMonitor(messageMonitor);
             return this;
         }

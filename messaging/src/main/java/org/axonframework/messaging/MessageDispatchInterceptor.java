@@ -31,8 +31,7 @@ import java.util.function.Function;
  * @author Simon Zambrovski
  * @since 2.0
  */
-public interface MessageDispatchInterceptor<M extends Message<?>> {
-
+public interface MessageDispatchInterceptor<M extends Message> {
 
     /**
      * Intercepts a message on dispatch.

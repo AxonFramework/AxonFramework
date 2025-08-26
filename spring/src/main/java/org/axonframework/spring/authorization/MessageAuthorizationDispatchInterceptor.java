@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  * @author Roald Bankras
  * @since 4.11.0
  */
-public class MessageAuthorizationDispatchInterceptor<T extends Message<?>> implements MessageDispatchInterceptor<T> {
+public class MessageAuthorizationDispatchInterceptor<T extends Message> implements MessageDispatchInterceptor<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageAuthorizationDispatchInterceptor.class);
 
