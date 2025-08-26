@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -63,8 +62,13 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
                                       EventSourcingConfigurationDefaults::defaultEventStorageEngine)
                 .registerIfNotPresent(EventStore.class, EventSourcingConfigurationDefaults::defaultEventStore)
                 .registerIfNotPresent(Snapshotter.class, EventSourcingConfigurationDefaults::defaultSnapshotter)
-                .registerIfNotPresent(StreamableEventSource.class,
-                                      EventSourcingConfigurationDefaults::defaultStreamableEventSource);
+                .registerDecorator(PooledStreamingEventProcessorModule.Customization.class,
+                                   Integer.MAX_VALUE,
+                                   (config, name, delegate) -> delegate.andThen(
+                                           (c, d) -> d.eventSource() == null
+                                                   ? d.eventSource(defaultStreamableEventSource(config)) : d
+                                   )
+                );
     }
 
     private static TagResolver defaultTagResolver(Configuration configuration) {
