@@ -41,24 +41,22 @@ class QueryMessageHandlerInterceptorChainTest {
     @BeforeEach
     void setUp() {
         mockHandler = mock();
-        when(mockHandler.handle(any(), any())).thenReturn(MessageStream.just(queryResponse("response")));
+        when(mockHandler.handle(any(), any()))
+                .thenReturn(MessageStream.just(queryResponse("response")));
     }
 
     @Test
     void chainWithDifferentProceedCalls() {
+        QueryMessage testQuery = query("message", String.class);
+
         MessageHandlerInterceptor<QueryMessage> interceptorOne =
                 (message, context, chain) -> chain.proceed(query("testing", String.class), context);
-
         MessageHandlerInterceptor<QueryMessage> interceptorTwo =
                 (message, context, chain) -> chain.proceed(message, context);
+        MessageHandlerInterceptorChain<QueryMessage> testSubject =
+                new QueryMessageHandlerInterceptorChain(asList(interceptorOne, interceptorTwo), mockHandler);
 
-        QueryMessage message = query("message", String.class);
-
-        MessageHandlerInterceptorChain<QueryMessage> testSubject = new QueryMessageHandlerInterceptorChain(
-                asList(interceptorOne, interceptorTwo), mockHandler
-        );
-
-        Message result = testSubject.proceed(message, StubProcessingContext.forMessage(message))
+        Message result = testSubject.proceed(testQuery, StubProcessingContext.forMessage(testQuery))
                                     .first()
                                     .asMono()
                                     .map(MessageStream.Entry::message)
