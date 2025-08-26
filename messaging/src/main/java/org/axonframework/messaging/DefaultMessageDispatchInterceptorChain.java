@@ -23,12 +23,13 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.function.BiFunction;
 
 /**
- * Default implementation for a dispatch handler interceptor chain.
+ * Default implementation for a {@link MessageDispatchInterceptorChain}.
  *
- * @param <M> type of message to intercept.
+ * @param <M> The type of {@link Message} intercepted by this chain.
  * @author Simon Zambrovski
  * @since 5.0.0
  */
@@ -40,43 +41,40 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
     private final BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal;
 
     /**
-     * Constructs a message dispatch interceptor chain without a target handler.
-     * <p/>
+     * Constructs a {@code DefaultMessageDispatchInterceptorChain} from the given {@code interceptors} without a
+     * terminal operation once the end of the interceptor chain has been reached.
      *
-     * @param dispatchInterceptors list of interceptors.
+     * @param interceptors The list of dispatch interceptors that are part of this chain.
      */
     public DefaultMessageDispatchInterceptorChain(
-            @Nonnull Collection<MessageDispatchInterceptor<? super M>> dispatchInterceptors
+            @Nonnull Collection<MessageDispatchInterceptor<? super M>> interceptors
     ) {
-        this(dispatchInterceptors, (message, processingContext) -> MessageStream.just(message).cast());
+        this(interceptors, (message, processingContext) -> MessageStream.just(message).cast());
     }
 
     /**
-     * Constructs a message dispatch interceptor chain with a list of interceptors and a target handler.
+     * Constructs a {@code DefaultMessageDispatchInterceptorChain} from the given {@code interceptors}, invoking the
+     * given {@code terminal} operation when reaching the end of the interceptor chain.
      *
-     * @param dispatchInterceptors list of dispatch interceptors.
-     * @param terminal             function to be invoked after the chain processing.
+     * @param interceptors The list of dispatch interceptors that are part of this chain.
+     * @param terminal     function to be invoked after the chain processing.
      */
     public DefaultMessageDispatchInterceptorChain(
-            @Nonnull Collection<MessageDispatchInterceptor<? super M>> dispatchInterceptors,
-            BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal
+            @Nonnull Collection<MessageDispatchInterceptor<? super M>> interceptors,
+            @Nonnull BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal
     ) {
         // Safe cast: each interceptor in the list can handle M,
         // because they accept "M or a supertype of M".
         //noinspection unchecked
-        this.chain = (Iterator<MessageDispatchInterceptor<M>>) (Iterator<?>) dispatchInterceptors.iterator();
-        this.terminal = terminal;
+        this.chain = (Iterator<MessageDispatchInterceptor<M>>) (Iterator<?>) interceptors.iterator();
+        this.terminal = Objects.requireNonNull(terminal, "The terminal operation may not be null.");
     }
 
     @Override
-    public @Nonnull MessageStream<?> proceed(
-            @Nonnull M message,
-            @Nullable ProcessingContext context
-    ) {
+    public @Nonnull MessageStream<?> proceed(@Nonnull M message, @Nullable ProcessingContext context) {
         try {
             if (chain.hasNext()) {
-                return chain.next().interceptOnDispatch(message,
-                                                        context, this);
+                return chain.next().interceptOnDispatch(message, context, this);
             } else {
                 return terminal.apply(message, context);
             }
