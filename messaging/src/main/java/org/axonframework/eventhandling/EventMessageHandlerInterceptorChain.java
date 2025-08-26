@@ -34,6 +34,7 @@ import java.util.Objects;
  * @author Simon Zambrovski
  * @since 5.0.0
  */
+@Internal
 public class EventMessageHandlerInterceptorChain implements MessageHandlerInterceptorChain<EventMessage> {
 
     private final EventHandler eventHandler;
