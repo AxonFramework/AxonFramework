@@ -34,6 +34,7 @@ import java.util.Objects;
  * @author Simon Zambrovski
  * @since 5.0.0
  */
+@Internal
 public class CommandMessageHandlerInterceptorChain implements MessageHandlerInterceptorChain<CommandMessage> {
 
     private final Iterator<MessageHandlerInterceptor<CommandMessage>> chain;
