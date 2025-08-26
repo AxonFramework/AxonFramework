@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.queryhandling.QueryHandler;
-import org.axonframework.queryhandling.QueryMessage;
 
 import java.util.Iterator;
 import java.util.List;
@@ -55,7 +57,7 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
     @Nonnull
     @Override
     public MessageStream<?> proceed(@Nonnull QueryMessage query,
-                                             @Nonnull ProcessingContext context) {
+                                    @Nonnull ProcessingContext context) {
         try {
             if (chain.hasNext()) {
                 return chain.next().interceptOnHandle(query, context, this);
