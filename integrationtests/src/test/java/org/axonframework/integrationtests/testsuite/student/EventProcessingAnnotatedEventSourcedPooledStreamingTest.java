@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -62,7 +63,7 @@ public class EventProcessingAnnotatedEventSourcedPooledStreamingTest extends Abs
         startApp();
 
         // when
-        var studentId = "student-id-1";
+        var studentId = UUID.randomUUID().toString();
         studentEnrolledToCourse(studentId, "my-courseId-1");
         studentEnrolledToCourse(studentId, "my-courseId-2");
         studentEnrolledToCourse(studentId, "my-courseId-3");

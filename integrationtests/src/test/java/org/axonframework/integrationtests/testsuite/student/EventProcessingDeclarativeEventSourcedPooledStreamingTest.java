@@ -38,10 +38,11 @@ import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.configuration.EntityModule;
 import org.axonframework.serialization.Converter;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -57,13 +58,13 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
  */
 public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends AbstractStudentTestSuite {
 
-    @Test
+    @RepeatedTest(20)
     void whenStudentEnrolled3CoursesThenSendNotificationTest() {
         // given
         startApp();
 
         // when
-        var studentId = "student-id-1";
+        var studentId = UUID.randomUUID().toString();
         studentEnrolledToCourse(studentId, "my-courseId-1");
         studentEnrolledToCourse(studentId, "my-courseId-2");
         studentEnrolledToCourse(studentId, "my-courseId-3");

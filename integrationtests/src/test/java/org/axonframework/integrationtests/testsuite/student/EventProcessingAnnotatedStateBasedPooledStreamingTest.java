@@ -19,6 +19,7 @@ package org.axonframework.integrationtests.testsuite.student;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.eventhandling.async.SequentialPolicy;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -50,20 +52,19 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
  */
 public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends AbstractStudentTestSuite {
 
-    public static final String STUDENT_ID = "student-id-1";
-
     @Test
     void whenStudentEnrolledThenUpdateReadModel() {
         // given
         startApp();
 
         // when
-        studentEnrolledToCourse(STUDENT_ID, "my-courseId-1");
-        studentEnrolledToCourse(STUDENT_ID, "my-courseId-2");
-        studentEnrolledToCourse(STUDENT_ID, "my-courseId-3");
+        var studentId = UUID.randomUUID().toString();
+        studentEnrolledToCourse(studentId, "my-courseId-1");
+        studentEnrolledToCourse(studentId, "my-courseId-2");
+        studentEnrolledToCourse(studentId, "my-courseId-3");
 
         // then
-        verifyReadModelState(STUDENT_ID, state -> {
+        verifyReadModelState(studentId, state -> {
             assertThat(state).isNotNull();
             assertThat(state.courses).containsExactly("my-courseId-1", "my-courseId-2", "my-courseId-3");
         });
@@ -91,7 +92,13 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
                                       .messagingModel((configuration, builder) -> builder
                                               .entityEvolver(readModelEvolver())
                                               .build())
-                                      .entityIdResolver(cfg -> (message, context) -> STUDENT_ID);
+                                      .entityIdResolver(cfg -> (message, context) -> {
+                                          var payload = (StudentEnrolledEvent) message.withConvertedPayload(
+                                                  StudentEnrolledEvent.class,
+                                                  context.component(Converter.class)
+                                          ).payload();
+                                          return payload.studentId();
+                                      });
         configurer.componentRegistry(cr -> cr.registerModule(studentCoursesEntity));
 
         var studentRegisteredCoursesProcessor = EventProcessorModule
@@ -111,18 +118,21 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
     private static EventHandlingComponent studentCoursesProjector() {
         return SimpleEventHandlingComponent
                 .builder()
-                .sequenceIdentifier(e -> STUDENT_ID)
+                .sequencingPolicy(new SequentialPolicy())
                 .handles(
                         new QualifiedName(StudentEnrolledEvent.class),
                         (event, context) -> {
                             var converter = context.component(Converter.class);
                             var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
                             var state = context.component(StateManager.class);
-                            var loadedEntity = state.loadManagedEntity(StudentCoursesReadModel.class,
-                                                                       STUDENT_ID,
-                                                                       context).join();
+                            var studentId = studentEnrolled.studentId();
+                            var loadedEntity = state.loadManagedEntity(
+                                    StudentCoursesReadModel.class,
+                                    studentId,
+                                    context
+                            ).join();
                             loadedEntity.applyStateChange(e -> Optional.ofNullable(e)
-                                                                       .orElse(new StudentCoursesReadModel(STUDENT_ID))
+                                                                       .orElse(new StudentCoursesReadModel(studentId))
                                                                        .evolve(studentEnrolled)
                             );
                             return MessageStream.empty();

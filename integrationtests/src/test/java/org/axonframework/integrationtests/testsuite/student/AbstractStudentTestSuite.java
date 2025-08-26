@@ -38,13 +38,10 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.EntityEvolver;
-import org.axonframework.modelling.StateManager;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
 import java.util.Objects;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Sets up the basics for the testsuite of the Student/Mentor/Course model.
