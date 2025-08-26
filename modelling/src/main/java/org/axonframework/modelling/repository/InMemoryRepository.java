@@ -125,32 +125,6 @@ public class InMemoryRepository<ID, E> implements Repository.LifecycleManagement
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("storageType", "ConcurrentHashMap");
         descriptor.describeProperty("storageSize", storage.size());
-        delegate.describeTo(descriptor);
-    }
-
-    /**
-     * Returns the number of entities currently stored in this repository.
-     *
-     * @return The number of entities in storage.
-     */
-    public int size() {
-        return storage.size();
-    }
-
-    /**
-     * Removes all entities from this repository.
-     */
-    public void clear() {
-        storage.clear();
-    }
-
-    /**
-     * Checks if an entity with the given identifier exists in this repository.
-     *
-     * @param identifier The identifier to check.
-     * @return {@code true} if an entity with the given identifier exists, {@code false} otherwise.
-     */
-    public boolean contains(@Nonnull ID identifier) {
-        return storage.containsKey(identifier);
+        descriptor.describeWrapperOf(delegate);
     }
 }
