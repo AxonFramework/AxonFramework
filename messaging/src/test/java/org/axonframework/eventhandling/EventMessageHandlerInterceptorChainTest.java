@@ -45,19 +45,16 @@ class EventMessageHandlerInterceptorChainTest {
 
     @Test
     void chainWithDifferentProceedCalls() {
+        EventMessage testEvent = event("message");
+
         MessageHandlerInterceptor<EventMessage> interceptorOne =
                 (message, context, chain) -> chain.proceed(event("testing"), context);
-
         MessageHandlerInterceptor<EventMessage> interceptorTwo =
                 (message, context, chain) -> chain.proceed(message, context);
+        MessageHandlerInterceptorChain<EventMessage> testSubject =
+                new EventMessageHandlerInterceptorChain(asList(interceptorOne, interceptorTwo), mockHandler);
 
-        EventMessage message = event("message");
-
-        MessageHandlerInterceptorChain<EventMessage> testSubject = new EventMessageHandlerInterceptorChain(
-                asList(interceptorOne, interceptorTwo), mockHandler
-        );
-
-        Message result = testSubject.proceed(message, StubProcessingContext.forMessage(message))
+        Message result = testSubject.proceed(testEvent, StubProcessingContext.forMessage(testEvent))
                                     .first()
                                     .asMono()
                                     .map(MessageStream.Entry::message)
