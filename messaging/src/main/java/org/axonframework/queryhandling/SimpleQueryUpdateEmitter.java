@@ -19,9 +19,7 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.OptionalResponseType;
 import org.axonframework.messaging.responsetypes.PublisherResponseType;
@@ -131,7 +129,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         });
     }
 
-    private <U> SubscriptionQueryUpdateMessage<U> intercept(SubscriptionQueryUpdateMessage<U> message) {
+    private SubscriptionQueryUpdateMessage intercept(SubscriptionQueryUpdateMessage message) {
         /*
         // TODO: reintegrate as part of #3079
         return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
@@ -191,8 +189,8 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @SuppressWarnings("unchecked")
-    private <U> void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
-                            SubscriptionQueryUpdateMessage update) {
+    private void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
+                        SubscriptionQueryUpdateMessage update) {
         MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
         try {
             ((SinkWrapper<SubscriptionQueryUpdateMessage>) updateHandler).next(update);

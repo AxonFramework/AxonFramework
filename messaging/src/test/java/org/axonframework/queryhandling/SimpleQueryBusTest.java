@@ -35,8 +35,7 @@ import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolut
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerSubscriptionException;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -464,7 +463,7 @@ class SimpleQueryBusTest {
         );
         testSubject.registerHandlerInterceptor((message, context, chain) -> {
             if (message.metaData().containsKey("key")) {
-                return MessageStream.just(new GenericQueryResponseMessage<>(new MessageType("response"), "fakeReply"));
+                return MessageStream.just(new GenericQueryResponseMessage(new MessageType("response"), "fakeReply"));
             }
             return chain.proceed(message, context);
         });
@@ -707,7 +706,7 @@ class SimpleQueryBusTest {
         );
         testSubject.registerHandlerInterceptor((message, context, chain) -> {
             if (message.metaData().containsKey("key")) {
-                return MessageStream.just(new GenericResultMessage<>(new MessageType("response"), "fakeReply"));
+                return MessageStream.just(new GenericResultMessage(new MessageType("response"), "fakeReply"));
             }
             return chain.proceed(message, context);
         });

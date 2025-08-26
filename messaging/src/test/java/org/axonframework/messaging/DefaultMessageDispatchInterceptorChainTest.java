@@ -32,7 +32,7 @@ class DefaultMessageDispatchInterceptorChainTest {
     @Test
     void registerInterceptors() {
         List<String> results = new ArrayList<>();
-        DefaultMessageDispatchInterceptorChain<Message<Object>> testSubject = new DefaultMessageDispatchInterceptorChain<>(
+        DefaultMessageDispatchInterceptorChain<Message> testSubject = new DefaultMessageDispatchInterceptorChain<>(
                 List.of(
                         (message, context, chain) -> {
                             results.add("Interceptor One");

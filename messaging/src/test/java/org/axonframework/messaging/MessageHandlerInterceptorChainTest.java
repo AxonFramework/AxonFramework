@@ -35,7 +35,7 @@ class MessageHandlerInterceptorChainTest {
     private CommandHandler mockHandler;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         mockHandler = mock();
         when(mockHandler.handle(any(), any()))
                 .thenReturn(MessageStream.just(commandResult("result", "Result")));
@@ -43,20 +43,20 @@ class MessageHandlerInterceptorChainTest {
 
     @Test
     void chainWithDifferentProceedCalls() throws Exception {
-        MessageHandlerInterceptor<CommandMessage<?>> interceptor1 = (message, context, chain) ->
+        MessageHandlerInterceptor<CommandMessage> interceptor1 = (message, context, chain) ->
                 chain.proceed(command("message", "testing"), context);
 
-        MessageHandlerInterceptor<CommandMessage<?>> interceptor2 = (message, context, chain) ->
+        MessageHandlerInterceptor<CommandMessage> interceptor2 = (message, context, chain) ->
                 chain.proceed(message, context);
 
-        CommandMessage<?> message = command("message", "original");
+        CommandMessage message = command("message", "original");
 
-        MessageHandlerInterceptorChain<CommandMessage<?>> testSubject = new CommandMessageHandlerInterceptorChain(
+        MessageHandlerInterceptorChain<CommandMessage> testSubject = new CommandMessageHandlerInterceptorChain(
                 asList(interceptor1, interceptor2), mockHandler
         );
 
 
-        Message<?> actual = testSubject
+        Message actual = testSubject
                 .proceed(message, StubProcessingContext.forMessage(message))
                 .first()
                 // .<CommandResultMessage<String>>cast()

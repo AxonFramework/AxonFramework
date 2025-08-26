@@ -174,10 +174,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         );
          */
         // TODO reintegrate with #3097
-        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(
+        ResultMessage resultMessage = unitOfWork.executeWithResult(
                 (context) -> new EventMessageHandlerInterceptorChain(
                         eventHandlerInterceptors,
-                        (EventHandler) (m, ctx) -> {
+                        (m, ctx) -> {
                             try {
                                 sagaManager.handle(m, ctx, Segment.ROOT_SEGMENT);
                                 return MessageStream.empty();

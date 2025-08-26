@@ -59,11 +59,11 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
 
     @Nonnull
     @Override
-    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage event,
-                                                     @Nonnull ProcessingContext context) {
-        return new EventMessageHandlerInterceptorChain(
-                messageHandlerInterceptors,
-                delegate
-        ).proceed(event, context).ignoreEntries().cast();
+    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
+                                               @Nonnull ProcessingContext context) {
+        return new EventMessageHandlerInterceptorChain(messageHandlerInterceptors, delegate)
+                .proceed(event, context)
+                .ignoreEntries()
+                .cast();
     }
 }

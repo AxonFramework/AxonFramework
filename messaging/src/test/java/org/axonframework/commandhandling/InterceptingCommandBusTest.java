@@ -79,8 +79,8 @@ class InterceptingCommandBusTest {
         when(mockCommandBus.dispatch(any(), any()))
                 .thenAnswer(invocation -> completedFuture(commandResult("ok")));
 
-        CommandMessage testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "test");
-        CompletableFuture<CommandResultMessage> result = testSubject
+        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "test");
+        CompletableFuture<CommandResultMessage<?>> result = testSubject
                 .dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
 
         ArgumentCaptor<CommandMessage> dispatchedMessage = ArgumentCaptor.forClass(CommandMessage.class);
@@ -217,7 +217,7 @@ class InterceptingCommandBusTest {
 
 
     @SuppressWarnings("unchecked")
-    private static class AddMetaDataCountInterceptor<M extends Message<?>>
+    private static class AddMetaDataCountInterceptor<M extends Message>
             implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
 
         private final String key;

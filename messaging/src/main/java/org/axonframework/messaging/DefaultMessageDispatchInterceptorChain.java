@@ -31,7 +31,7 @@ import java.util.function.BiFunction;
  * @author Simon Zambrovski
  * @since 5.0.0
  */
-public class DefaultMessageDispatchInterceptorChain<M extends Message<?>>
+public class DefaultMessageDispatchInterceptorChain<M extends Message>
         implements MessageDispatchInterceptorChain<M> {
 
     private final Iterator<MessageDispatchInterceptor<M>> chain;

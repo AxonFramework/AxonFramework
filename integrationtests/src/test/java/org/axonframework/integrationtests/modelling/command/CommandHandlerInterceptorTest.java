@@ -373,8 +373,8 @@ class CommandHandlerInterceptorTest {
 
         @CommandHandlerInterceptor(commandNamePattern = ".*Nested.*")
         public void interceptAllMatchingPattern(Object command,
-                                                MessageHandlerInterceptorChain<CommandMessage<?>> interceptorChain,
-                                                ProcessingContext context) throws Exception {
+                                                MessageHandlerInterceptorChain<CommandMessage> interceptorChain,
+                                                ProcessingContext context) {
             apply(new AnyCommandMatchingPatternInterceptedEvent(command.getClass().getName()));
             // TODO integrate as part of #3485
             // interceptorChain.proceed(context, command);

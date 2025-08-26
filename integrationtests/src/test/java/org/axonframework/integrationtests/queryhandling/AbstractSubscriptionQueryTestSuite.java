@@ -601,9 +601,11 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         );
         queryBus.registerHandlerInterceptor((message, context, chain) -> {
             if (message.metaData().containsKey("key")) {
-                return MessageStream.fromIterable(interceptedResponse.stream()
-                                                                     .map(p -> new GenericQueryResponseMessage<>(new MessageType(
-                                                                             "response"), p)).toList());
+                return MessageStream.fromIterable(
+                        interceptedResponse.stream()
+                                           .map(p -> new GenericQueryResponseMessage(new MessageType("response"), p))
+                                           .toList()
+                );
             }
             return chain.proceed(message, context);
         });

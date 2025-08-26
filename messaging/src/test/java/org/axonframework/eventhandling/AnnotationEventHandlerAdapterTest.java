@@ -244,7 +244,7 @@ class AnnotationEventHandlerAdapterTest {
         @MessageHandlerInterceptor
         public void intercept(String event, ProcessingContext context, MessageHandlerInterceptorChain chain) throws Exception {
             invocations.add(event);
-            chain.proceed(new GenericMessage<>(new MessageType(new QualifiedName("event", "message")), event), context);
+            chain.proceed(new GenericMessage(new MessageType(new QualifiedName("event", "message")), event), context);
         }
 
         @MessageHandlerInterceptor

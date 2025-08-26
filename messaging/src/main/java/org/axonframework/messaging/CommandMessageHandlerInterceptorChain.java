@@ -23,45 +23,47 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * Command message handler interceptor chain.
+ * A {@link MessageHandlerInterceptorChain} that intercepts {@link CommandMessage CommandMessages} for
+ * {@link CommandHandler CommandHandlers}.
  *
  * @author Simon Zambrovski
  * @since 5.0.0
  */
-public class CommandMessageHandlerInterceptorChain
-        implements MessageHandlerInterceptorChain<CommandMessage<?>> {
+public class CommandMessageHandlerInterceptorChain implements MessageHandlerInterceptorChain<CommandMessage> {
 
-    private final Iterator<MessageHandlerInterceptor<CommandMessage<?>>> chain;
-    private final CommandHandler handler;
+    private final Iterator<MessageHandlerInterceptor<CommandMessage>> chain;
+    private final CommandHandler commandHandler;
 
     /**
-     * Constructs a new chain with a list of interceptors and a command handler.
+     * Constructs a new {@code CommandMessageHandlerInterceptorChain} with a list of {@code interceptors} and an
+     * {@code commandHandler}.
      *
-     * @param handlerInterceptors list of interceptors.
-     * @param handler             command handler.
+     * @param interceptors   The list of handler interceptors that are part of this chain.
+     * @param commandHandler The command handler to be invoked at the end of the interceptor chain.
      */
     public CommandMessageHandlerInterceptorChain(
-            @Nonnull List<MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors,
-            @Nonnull CommandHandler handler) {
-        this.chain = handlerInterceptors.iterator();
-        this.handler = handler;
+            @Nonnull List<MessageHandlerInterceptor<CommandMessage>> interceptors,
+            @Nonnull CommandHandler commandHandler
+    ) {
+        this.chain = interceptors.iterator();
+        this.commandHandler = Objects.requireNonNull(commandHandler, "The Command Handler may not be null.");
     }
 
+    @Nonnull
     @Override
-    public @Nonnull MessageStream<?> proceed(
-            @Nonnull CommandMessage<?> message,
-            @Nonnull ProcessingContext context
-    ) {
+    public MessageStream<?> proceed(@Nonnull CommandMessage command,
+                                             @Nonnull ProcessingContext context) {
         try {
             if (chain.hasNext()) {
                 return this.chain.next()
-                                 .interceptOnHandle(message, context, this)
+                                 .interceptOnHandle(command, context, this)
                                  .first()
-                                 .<CommandMessage<?>>cast();
+                                 .<CommandMessage>cast();
             } else {
-                return this.handler.handle(message, context);
+                return this.commandHandler.handle(command, context);
             }
         } catch (Exception e) {
             return MessageStream.failed(e);

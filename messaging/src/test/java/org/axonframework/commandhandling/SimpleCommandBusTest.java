@@ -24,10 +24,10 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
+import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -296,8 +296,8 @@ class SimpleCommandBusTest {
 
         @Nonnull
         @Override
-        public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
-                                                                 @Nonnull ProcessingContext processingContext) {
+        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
+                                                                    @Nonnull ProcessingContext processingContext) {
             if (result instanceof Throwable error) {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> future) {

@@ -34,37 +34,37 @@ public class MessagingTestHelper {
         // avoid instantiation
     }
 
-    public static <T> Message<T> message(@Nonnull String qualifiedName, @Nullable T payload) {
-        return new GenericMessage<>(new MessageType(qualifiedName), payload);
+    public static Message message(@Nonnull String qualifiedName, @Nullable Object payload) {
+        return new GenericMessage(new MessageType(qualifiedName), payload);
     }
 
-    public static <T> Message<T> message(@Nonnull T payload) {
-        return new GenericMessage<>(new MessageType(payload.getClass()), payload);
+    public static Message message(@Nonnull Object payload) {
+        return new GenericMessage(new MessageType(payload.getClass()), payload);
     }
 
-    public static <T> CommandMessage<T> command(@Nonnull T payload) {
-        return new GenericCommandMessage<>(new MessageType(payload.getClass()), payload);
+    public static CommandMessage command(@Nonnull Object payload) {
+        return new GenericCommandMessage(new MessageType(payload.getClass()), payload);
     }
 
-    public static <T> CommandMessage<T> command(@Nonnull String qualifiedName, @Nonnull T payload) {
-        return new GenericCommandMessage<>(new MessageType(qualifiedName), payload);
+    public static CommandMessage command(@Nonnull String qualifiedName, @Nonnull Object payload) {
+        return new GenericCommandMessage(new MessageType(qualifiedName), payload);
     }
 
-    public static <T> CommandResultMessage<T> commandResult(@Nonnull T payload) {
-        return new GenericCommandResultMessage<>(new MessageType(payload.getClass()), payload);
+    public static CommandResultMessage commandResult(@Nonnull Object payload) {
+        return new GenericCommandResultMessage(new MessageType(payload.getClass()), payload);
     }
 
-    public static <T> CommandResultMessage<T> commandResult(@Nonnull String qualifiedName, @Nonnull T payload) {
-        return new GenericCommandResultMessage<>(new MessageType(qualifiedName), payload);
+    public static CommandResultMessage commandResult(@Nonnull String qualifiedName, @Nonnull Object payload) {
+        return new GenericCommandResultMessage(new MessageType(qualifiedName), payload);
     }
 
-    public static <T> EventMessage<T> event(@Nonnull T payload) {
-        return new GenericEventMessage<>(new MessageType(payload.getClass()), payload);
+    public static EventMessage event(@Nonnull Object payload) {
+        return new GenericEventMessage(new MessageType(payload.getClass()), payload);
     }
 
-    public static CommandResultMessage<?> asCommandResultMessage(CommandMessage<?> message) {
+    public static CommandResultMessage asCommandResultMessage(CommandMessage message) {
         var payload = message.payload();
         var messageType = payload != null ? new MessageType(payload.getClass()) : message.type();
-        return new GenericCommandResultMessage<>(messageType, payload);
+        return new GenericCommandResultMessage(messageType, payload);
     }
 }

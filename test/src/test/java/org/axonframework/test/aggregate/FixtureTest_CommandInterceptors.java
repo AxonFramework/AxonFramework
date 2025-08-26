@@ -17,19 +17,16 @@
 package org.axonframework.test.aggregate;
 
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.MessageDispatchInterceptorChain;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -43,23 +40,16 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
-import org.mockito.invocation.*;
 import org.mockito.junit.jupiter.*;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
-
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the registration of {@link MessageDispatchInterceptor} and {@link MessageHandlerInterceptor}
@@ -491,9 +481,11 @@ class FixtureTest_CommandInterceptors {
 
         @Nonnull
         @Override
-        public @NotNull MessageStream<?> interceptOnHandle(@NotNull CommandMessage<?> message,
-                                                           @NotNull ProcessingContext context,
-                                                           @NotNull MessageHandlerInterceptorChain<CommandMessage<?>> interceptorChain) {
+        public MessageStream<?> interceptOnHandle(
+                @NotNull CommandMessage message,
+                @NotNull ProcessingContext context,
+                @NotNull MessageHandlerInterceptorChain<CommandMessage> interceptorChain
+        ) {
 
             return interceptorChain.proceed(message, context);
         }

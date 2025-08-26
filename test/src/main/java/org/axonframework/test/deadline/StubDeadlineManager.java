@@ -291,7 +291,7 @@ public class StubDeadlineManager implements DeadlineManager {
         };
 
         // TODO reintegrate as part of #3065
-        ResultMessage<?> resultMessage = uow.executeWithResult((ctx) -> {
+        ResultMessage resultMessage = uow.executeWithResult((ctx) -> {
             var processingResult = chain.proceed(uow.getMessage(), ctx);
             if (!processingResult.hasNextAvailable()) {
                 return uow.getExecutionResult() != null ? uow.getExecutionResult() : uow.getMessage();

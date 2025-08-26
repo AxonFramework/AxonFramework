@@ -23,39 +23,44 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * Event handler interceptor chain.
+ * A {@link MessageHandlerInterceptorChain} that intercepts {@link EventMessage EventMessages} for
+ * {@link EventHandler EventHandlers}.
  *
- * @since 5.0.0
  * @author Simon Zambrovski
+ * @since 5.0.0
  */
-public class EventMessageHandlerInterceptorChain implements MessageHandlerInterceptorChain<EventMessage<?>> {
+public class EventMessageHandlerInterceptorChain implements MessageHandlerInterceptorChain<EventMessage> {
 
-    private final EventHandler handler;
-    private final Iterator<MessageHandlerInterceptor<EventMessage<?>>> chain;
+    private final EventHandler eventHandler;
+    private final Iterator<MessageHandlerInterceptor<EventMessage>> chain;
 
     /**
-     * Constructs a new chain with a list of interceptors and a query handler.
-     * @param handlerInterceptors list of interceptors.
-     * @param handler query handler.
+     * Constructs a new {@code EventMessageHandlerInterceptorChain} with a list of {@code interceptors} and an
+     * {@code eventHandler}.
+     *
+     * @param interceptors The list of handler interceptors that are part of this chain.
+     * @param eventHandler The event handler to be invoked at the end of the interceptor chain.
      */
-    public EventMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<EventMessage<?>>> handlerInterceptors,
-                                               @Nonnull EventHandler handler) {
-        this.chain = handlerInterceptors.iterator();
-        this.handler = handler;
+    public EventMessageHandlerInterceptorChain(
+            @Nonnull List<MessageHandlerInterceptor<EventMessage>> interceptors,
+            @Nonnull EventHandler eventHandler
+    ) {
+        this.chain = interceptors.iterator();
+        this.eventHandler = Objects.requireNonNull(eventHandler, "The Event Handler may not be null.");
     }
 
+    @Nonnull
     @Override
-    public @Nonnull MessageStream<?> proceed(
-            @Nonnull EventMessage<?> message,
-            @Nonnull ProcessingContext context
-    ) {
+    public MessageStream<?> proceed(@Nonnull EventMessage event,
+                                    @Nonnull ProcessingContext context) {
         try {
             if (chain.hasNext()) {
-                return chain.next().interceptOnHandle(message, context, this);
+                return chain.next().interceptOnHandle(event, context, this);
             } else {
-                return handler.handle(message, context);
+                return eventHandler.handle(event, context);
             }
         } catch (Exception e) {
             return MessageStream.failed(e);

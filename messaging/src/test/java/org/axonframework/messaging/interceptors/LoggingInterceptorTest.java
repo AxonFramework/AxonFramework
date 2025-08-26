@@ -19,12 +19,10 @@ package org.axonframework.messaging.interceptors;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.apache.logging.slf4j.Log4jLogger;
-import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
@@ -32,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
-import java.util.List;
 
 import static org.axonframework.messaging.MessagingTestHelper.message;
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,7 +47,7 @@ class LoggingInterceptorTest {
     private ExtendedLogger mockLogger;
     private MessageHandlerInterceptorChain<Message> handlerChain;
     private ProcessingContext context;
-    private Message<?> message;
+    private Message message;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -135,7 +132,7 @@ class LoggingInterceptorTest {
 
     @Test
     void dispatchInterceptorLogging() {
-        MessageDispatchInterceptorChain<Message<?>> dispatchChain = mock();
+        MessageDispatchInterceptorChain<Message> dispatchChain = mock();
         when(dispatchChain.proceed(message, null)).thenReturn(MessageStream.just(message(new StubResponse())).cast());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 

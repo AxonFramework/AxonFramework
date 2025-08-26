@@ -199,7 +199,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                             new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
                                                     .proceed(queryWithContext, null)
                                                     .first()
-                                                    .<StreamingQueryMessage<Q, R>>cast()
+                                                    .<StreamingQueryMessage>cast()
                                                     .asMono()
                                                     .map(MessageStream.Entry::message)
                                                     .flatMapMany(intercepted -> {

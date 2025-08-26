@@ -48,9 +48,9 @@ class CorrelationDataInterceptorTest {
     }
 
     @Test
-    void attachesCorrelationDataProvidersToProcessingContext() throws Exception {
+    void attachesCorrelationDataProvidersToProcessingContext() {
         ProcessingContext context = new StubProcessingContext();
-        Message<?> message = mock(Message.class);
+        Message message = mock(Message.class);
 
         when(mockProvider1.correlationDataFor(any())).thenReturn(Map.of("key1", "value"));
         when(mockProvider2.correlationDataFor(any())).thenReturn(Map.of("key1", "value2", "key2", "value2"));

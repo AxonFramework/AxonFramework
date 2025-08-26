@@ -98,8 +98,8 @@ public class InterceptingCommandBus implements CommandBus {
                 .thenApply(Entry::message);
     }
 
-    MessageStream<?> dispatchMessage(@Nonnull Message<?> message, @Nullable ProcessingContext processingContext) {
-        return MessageStream.fromFuture(delegate.dispatch((CommandMessage<?>) message, processingContext));
+    MessageStream<?> dispatchMessage(@Nonnull Message message, @Nullable ProcessingContext processingContext) {
+        return MessageStream.fromFuture(delegate.dispatch((CommandMessage) message, processingContext));
     }
 
     @Override

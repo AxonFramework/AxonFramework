@@ -123,7 +123,6 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
             // TODO - Provide implementation that handles exceptions in streams with more than one item
             return InterceptorChainParameterResolverFactory.currentInterceptorChain(context)
               .proceed(message, context)
-
                   .onErrorContinue(error -> {
                       if (expectedResultType.isInstance(error)) {
                           return MessageStream.failed(error);
@@ -139,7 +138,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                                   }
                                   return MessageStream.failed(error);
                               }
-                      );
+                      ).cast();
                   });
        }
     }

@@ -191,7 +191,7 @@ class AbstractEventBusTest {
                 }
             }
             ProcessingContext processingContext = invocation.getArgument(1);
-            MessageDispatchInterceptorChain<EventMessage<?>> chain = invocation.getArgument(2);
+            MessageDispatchInterceptorChain<EventMessage> chain = invocation.getArgument(2);
             return chain.proceed(message, processingContext);
         });
         testSubject.registerDispatchInterceptor(dispatchInterceptorMock);

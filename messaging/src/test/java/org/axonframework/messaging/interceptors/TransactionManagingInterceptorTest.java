@@ -19,11 +19,11 @@ package org.axonframework.messaging.interceptors;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import static org.mockito.Mockito.*;
@@ -41,7 +41,7 @@ class TransactionManagingInterceptorTest {
     private Transaction transaction;
     private TransactionManagingInterceptor<Message> subject;
     private ProcessingContext context;
-    private Message<?> message;
+    private Message message;
 
     @BeforeEach
     void setUp() {

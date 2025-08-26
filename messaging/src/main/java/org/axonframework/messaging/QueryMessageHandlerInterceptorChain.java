@@ -23,39 +23,44 @@ import org.axonframework.queryhandling.QueryMessage;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * Query message handler interceptor chain.
+ * A {@link MessageHandlerInterceptorChain} that intercepts {@link QueryMessage QueryMessages} for
+ * {@link QueryHandler QueryHandlers}.
  *
- * @since 5.0.0
  * @author Simon Zambrovski
+ * @since 5.0.0
  */
-public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterceptorChain<QueryMessage<?, ?>> {
+public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterceptorChain<QueryMessage> {
 
-    private final QueryHandler handler;
-    private final Iterator<MessageHandlerInterceptor<QueryMessage<?, ?>>> chain;
+    private final QueryHandler queryHandler;
+    private final Iterator<MessageHandlerInterceptor<QueryMessage>> chain;
 
     /**
-     * Constructs a new chain with a list of interceptors and a target query handler.
-     * @param handlerInterceptors list of handler interceptors.
-     * @param handler query handler.
+     * Constructs a new {@code QueryMessageHandlerInterceptorChain} with a list of {@code interceptors} and an
+     * {@code queryHandler}.
+     *
+     * @param interceptors The list of handler interceptors that are part of this chain.
+     * @param queryHandler The query handler to be invoked at the end of the interceptor chain.
      */
-    public QueryMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<QueryMessage<?, ?>>> handlerInterceptors,
-                                               @Nonnull QueryHandler handler) {
-        this.handler = handler;
-        this.chain = handlerInterceptors.iterator();
+    public QueryMessageHandlerInterceptorChain(
+            @Nonnull List<MessageHandlerInterceptor<QueryMessage>> interceptors,
+            @Nonnull QueryHandler queryHandler
+    ) {
+        this.chain = interceptors.iterator();
+        this.queryHandler = Objects.requireNonNull(queryHandler, "The Query Handler may not be null.");
     }
 
+    @Nonnull
     @Override
-    public @Nonnull MessageStream<?> proceed(
-            @Nonnull QueryMessage<?, ?> message,
-            @Nonnull ProcessingContext context
-    ) {
+    public MessageStream<?> proceed(@Nonnull QueryMessage query,
+                                             @Nonnull ProcessingContext context) {
         try {
             if (chain.hasNext()) {
-                return chain.next().interceptOnHandle(message, context, this);
+                return chain.next().interceptOnHandle(query, context, this);
             } else {
-                return handler.handle(message, context);
+                return queryHandler.handle(query, context);
             }
         } catch (Exception e) {
             return MessageStream.failed(e);
