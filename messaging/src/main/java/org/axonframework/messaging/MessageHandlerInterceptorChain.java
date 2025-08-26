@@ -20,25 +20,26 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
- * The interceptor chain manages the flow of a message through a chain of interceptors and ultimately to the message
- * handler. Interceptors may continue processing via this chain by calling the
- * {@link #proceed(Message, ProcessingContext)} method. Alternatively, they can block processing by returning without
- * calling either of these methods.
+ * An interceptor chain that manages the flow of a {@link Message} of type {@code M} through a chain of
+ * {@link MessageHandlerInterceptor interceptors}, and ultimately to a message handler.
+ * <p>
+ * Interceptors may continue processing via this chain by calling the {@link #proceed(Message, ProcessingContext)}
+ * method. Alternatively, they can block processing by returning without calling either of these methods.
  *
- * @param <M> Type of the message to intercept.
+ * @param <M> The type of {@link Message} intercepted by this chain.
  * @author Allard Buijze
  * @author Simon Zambrovski
- * @since 0.5
+ * @since 0.5.0
  */
 @FunctionalInterface
 public interface MessageHandlerInterceptorChain<M extends Message> {
 
     /**
-     * Signals the Interceptor Chain to continue processing the message.
+     * Signals this interceptor chain to continue processing the {@code message}.
      *
-     * @param message Message to pass further to the interceptors in the chain.
-     * @param context The {@link ProcessingContext} in which the reset is being prepared.
-     * @return A {@link MessageStream} containing the result of the message processing.
+     * @param message The message to pass down the chain.
+     * @param context The active processing context the given {@code message} is being processed in.
+     * @return A {@link MessageStream} containing the result of processing the given {@code message}.
      */
     @Nonnull
     MessageStream<?> proceed(@Nonnull M message, @Nonnull ProcessingContext context);

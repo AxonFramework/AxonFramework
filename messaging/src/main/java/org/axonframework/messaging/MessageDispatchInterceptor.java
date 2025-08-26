@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,28 +23,31 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.function.Function;
 
 /**
- * Interceptor that allows messages to be intercepted and modified before they are dispatched. This interceptor provides
- * a very early means to alter or reject Messages, even before any processing context is created.
+ * Interceptor that allows {@link Message messages} to be intercepted and modified before they are dispatched.
+ * <p>
+ * This interceptor provides a very early means to alter or reject message, even before any {@link ProcessingContext} is
+ * created.
  *
- * @param <M> The message type this interceptor can process
+ * @param <M> The message type this interceptor can process.
  * @author Allard Buijze
  * @author Simon Zambrovski
- * @since 2.0
+ * @since 2.0.0
  */
 public interface MessageDispatchInterceptor<M extends Message> {
 
     /**
-     * Intercepts a message on dispatch.
-     * <p />
-     * The implementer of this method might want to intercept the message before passing it to the
-     * chain (effectively before calling {@link MessageDispatchInterceptorChain#proceed(Message, ProcessingContext)})
-     * or after the chain (by mapping the resulting message by calling {@link MessageStream#mapMessage(Function)}).
+     * Intercepts a given {@code message} on dispatching.
+     * <p/>
+     * The implementer of this method might want to intercept the message before passing it to the chain (effectively
+     * before calling {@link MessageDispatchInterceptorChain#proceed(Message, ProcessingContext)}) or after the chain
+     * (by mapping the resulting message by calling {@link MessageStream#mapMessage(Function)}).
      *
-     * @param message message to intercept.
-     * @param context processing context, may be null.
-     * @param interceptorChain interceptor chain to signal that processing is finished and further
-     *                        interceptors should be called.
-     * @return message stream.
+     * @param message          The message to intercept on dispatching.
+     * @param context          The active processing context, if any. Can be used to (e.g.) validate correlation data.
+     * @param interceptorChain The interceptor chain to signal that processing is finished and further interceptors
+     *                         should be called.
+     * @return The resulting message stream from
+     * {@link MessageDispatchInterceptorChain#proceed(Message, ProcessingContext)}.
      */
     @Nonnull
     MessageStream<?> interceptOnDispatch(@Nonnull M message,
