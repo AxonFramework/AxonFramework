@@ -594,11 +594,9 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     void subscriptionQueryWithInterceptors() {
         // given
         List<String> interceptedResponse = Arrays.asList("fakeReply1", "fakeReply2");
-        queryBus.registerDispatchInterceptor(
-                (message, context, chain)
-                        -> chain.proceed(message.andMetaData(Collections.singletonMap("key", "value")),
-                                         context)
-        );
+        queryBus.registerDispatchInterceptor((message, context, chain) -> chain.proceed(
+                message.andMetaData(Collections.singletonMap("key", "value")), context
+        ));
         queryBus.registerHandlerInterceptor((message, context, chain) -> {
             if (message.metaData().containsKey("key")) {
                 return MessageStream.fromIterable(

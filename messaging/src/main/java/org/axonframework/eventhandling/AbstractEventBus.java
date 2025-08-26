@@ -245,13 +245,13 @@ public abstract class AbstractEventBus implements EventBus {
         List<EventMessage> preprocessedEvents = new ArrayList<>(events);
         for (int i = 0; i < preprocessedEvents.size(); i++) {
             try {
-                // TODO improve this, currently
+                // TODO #3392 improve this, currently
                 preprocessedEvents.set(i, new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
                         .proceed(preprocessedEvents.get(i), null)
                         .first()
                         .<EventMessage>cast()
                         .asCompletableFuture()
-                        .exceptionally(exception -> null) // TODO validate this
+                        .exceptionally(exception -> null) // TODO #3392 validate this
                         .thenApply(MessageStream.Entry::message)
                         .get());
             } catch (Exception e) {

@@ -50,7 +50,6 @@ public class InterceptingCommandBus implements CommandBus {
     private final List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors;
     private final List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors;
 
-
     /**
      * Constructs a {@code InterceptingCommandBus}, delegating dispatching and handling logic to the given
      * {@code delegate}. The given {@code handlerInterceptors} are wrapped around the
@@ -58,7 +57,8 @@ public class InterceptingCommandBus implements CommandBus {
      * before dispatching is provided to the given {@code delegate}.
      *
      * @param delegate             The delegate {@code CommandBus} that will handle all dispatching and handling logic.
-     * @param handlerInterceptors  The interceptors to invoke before handling a command and if present on the command result.
+     * @param handlerInterceptors  The interceptors to invoke before handling a command and if present on the command
+     *                             result.
      * @param dispatchInterceptors The interceptors to invoke before dispatching a command and on the command result.
      */
     public InterceptingCommandBus(
@@ -78,12 +78,13 @@ public class InterceptingCommandBus implements CommandBus {
     @Override
     public InterceptingCommandBus subscribe(@Nonnull QualifiedName name,
                                             @Nonnull CommandHandler commandHandler) {
-        CommandHandler handler = requireNonNull(commandHandler, "The command handler cannot be null.");
-        delegate.subscribe(name, (command, context)
-                -> new CommandMessageHandlerInterceptorChain(handlerInterceptors, handler)
-                .proceed(command, context)
-                .first()
-                .cast());
+        delegate.subscribe(
+                name,
+                (command, context) -> new CommandMessageHandlerInterceptorChain(handlerInterceptors, commandHandler)
+                        .proceed(command, context)
+                        .first()
+                        .cast()
+        );
         return this;
     }
 
@@ -91,14 +92,15 @@ public class InterceptingCommandBus implements CommandBus {
     public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                @Nullable ProcessingContext processingContext) {
         return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors, this::dispatchMessage)
-                .proceed(requireNonNull(command, "The command message cannot be null."), processingContext)
+                .proceed(command, processingContext)
                 .first()
                 .<CommandResultMessage<?>>cast()
                 .asCompletableFuture()
                 .thenApply(Entry::message);
     }
 
-    MessageStream<?> dispatchMessage(@Nonnull Message message, @Nullable ProcessingContext processingContext) {
+    private MessageStream<?> dispatchMessage(@Nonnull Message message,
+                                             @Nullable ProcessingContext processingContext) {
         return MessageStream.fromFuture(delegate.dispatch((CommandMessage) message, processingContext));
     }
 
