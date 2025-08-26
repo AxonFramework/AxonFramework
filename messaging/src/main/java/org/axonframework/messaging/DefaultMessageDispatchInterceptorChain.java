@@ -18,6 +18,7 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collection;
@@ -31,6 +32,7 @@ import java.util.function.BiFunction;
  * @author Simon Zambrovski
  * @since 5.0.0
  */
+@Internal
 public class DefaultMessageDispatchInterceptorChain<M extends Message>
         implements MessageDispatchInterceptorChain<M> {
 
