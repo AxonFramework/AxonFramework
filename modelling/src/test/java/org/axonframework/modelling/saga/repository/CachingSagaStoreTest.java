@@ -243,7 +243,7 @@ public abstract class CachingSagaStoreTest {
                      .mapToObj(i -> CompletableFuture.runAsync(
                              () -> {
                                  try {
-                                     LegacyUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
+                                     LegacyUnitOfWork<Message> uow = LegacyDefaultUnitOfWork.startAndGet(null);
                                      String sagaId = IdentifierFactory.getInstance().generateIdentifier();
                                      // Create instances
                                      Saga<StubSaga> saga = sagaRepository.createInstance(sagaId, StubSaga::new);

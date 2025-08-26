@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class LegacyStreamableEventSourceTest {
 
     private InMemoryStreamableEventSource legacyEventSource;
-    private LegacyStreamableEventSource<TrackedEventMessage<?>> testSubject;
+    private LegacyStreamableEventSource<TrackedEventMessage> testSubject;
 
     @BeforeEach
     void beforeEach() {
@@ -90,7 +90,7 @@ class LegacyStreamableEventSourceTest {
     @Nested
     class MessageStreamTest {
 
-        private MessageStream<TrackedEventMessage<?>> messageStream;
+        private MessageStream<TrackedEventMessage> messageStream;
 
         @BeforeEach
         void beforeEach() {
@@ -214,7 +214,7 @@ class LegacyStreamableEventSourceTest {
             }
         }
 
-        private static void assertEvent(EventMessage<?> actual, EventMessage<?> expected) {
+        private static void assertEvent(EventMessage actual, EventMessage expected) {
             assertEquals(expected.identifier(), actual.identifier());
             assertEquals(expected.payload(), actual.payload());
             assertEquals(expected.timestamp(), actual.timestamp());
@@ -231,7 +231,7 @@ class LegacyStreamableEventSourceTest {
         return new GlobalSequenceTrackingToken(globalIndex);
     }
 
-    private TrackedEventMessage<?> trackedEventMessage(String payload, TrackingToken token) {
-        return new GenericTrackedEventMessage<>(token, EventTestUtils.asEventMessage(payload));
+    private TrackedEventMessage trackedEventMessage(String payload, TrackingToken token) {
+        return new GenericTrackedEventMessage(token, EventTestUtils.asEventMessage(payload));
     }
 }

@@ -48,7 +48,7 @@ class RevisionSnapshotFilterTest {
                                       .revision(EXPECTED_REVISION)
                                       .build();
 
-        DomainEventMessage<RightAggregateTypeAndRevision> snapshotEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage snapshotEvent = new GenericDomainEventMessage(
                 RightAggregateTypeAndRevision.class.getName(), "some-aggregate-id", 0,
                 new MessageType("snapshot"), new RightAggregateTypeAndRevision("some-state")
         );
@@ -65,7 +65,7 @@ class RevisionSnapshotFilterTest {
                                       .revision(EXPECTED_REVISION)
                                       .build();
 
-        DomainEventMessage<WrongAggregateType> snapshotEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage snapshotEvent = new GenericDomainEventMessage(
                 WrongAggregateType.class.getName(), "some-aggregate-id", 0,
                 new MessageType("snapshot"), new WrongAggregateType("some-state")
         );
@@ -82,7 +82,7 @@ class RevisionSnapshotFilterTest {
                                       .revision(EXPECTED_REVISION)
                                       .build();
 
-        DomainEventMessage<RightAggregateTypeAndWrongRevision> snapshotEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage snapshotEvent = new GenericDomainEventMessage(
                 RightAggregateTypeAndWrongRevision.class.getName(), "some-aggregate-id", 0,
                 new MessageType("snapshot"), new RightAggregateTypeAndWrongRevision("some-state")
         );

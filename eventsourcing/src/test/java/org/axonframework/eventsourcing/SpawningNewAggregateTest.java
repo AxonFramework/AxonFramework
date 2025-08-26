@@ -109,8 +109,8 @@ class SpawningNewAggregateTest {
     void spawningNewAggregate() throws Exception {
         initializeAggregate1Repository(repositoryProvider);
         CreateAggregate1Command testPayload = new CreateAggregate1Command("id", "aggregate2Id");
-        CommandMessage<CreateAggregate1Command> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), testPayload);
+        CommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), testPayload);
 
         commandBus.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
 
@@ -118,7 +118,7 @@ class SpawningNewAggregateTest {
         verify(repositoryProvider).repositoryFor(Aggregate2.class);
         verify(aggregate2Repository).newInstance(any());
 
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
+        ArgumentCaptor<EventMessage> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
 
         verify(eventStore, times(2)).publish(eventCaptor.capture());
         assertEquals(new Aggregate2CreatedEvent("aggregate2Id"), eventCaptor.getAllValues().get(0).payload());
@@ -132,8 +132,8 @@ class SpawningNewAggregateTest {
         initializeAggregate1Repository(repositoryProvider);
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(null);
         CreateAggregate1Command testPayload = new CreateAggregate1Command("id", "aggregate2Id");
-        CommandMessage<CreateAggregate1Command> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), testPayload);
+        CommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), testPayload);
 
         commandBus.dispatch(
                 testCommand,
@@ -158,8 +158,8 @@ class SpawningNewAggregateTest {
     void spawningNewAggregateWhenThereIsNoRepositoryProviderProvided() throws Exception {
         initializeAggregate1Repository(null);
         CreateAggregate1Command testPayload = new CreateAggregate1Command("id", "aggregate2Id");
-        CommandMessage<CreateAggregate1Command> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), testPayload);
+        CommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), testPayload);
 
         commandBus.dispatch(
                 testCommand,

@@ -43,7 +43,7 @@ public enum NoSnapshotTriggerDefinition implements SnapshotTriggerDefinition {
     private static class NoSnapshotTrigger implements SnapshotTrigger {
 
         @Override
-        public void eventHandled(@Nonnull EventMessage<?> msg) {
+        public void eventHandled(@Nonnull EventMessage msg) {
             // No operation necessary for a no-op implementation.
         }
 

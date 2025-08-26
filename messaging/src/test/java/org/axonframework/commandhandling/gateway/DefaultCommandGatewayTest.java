@@ -108,7 +108,7 @@ class DefaultCommandGatewayTest {
         // when
         TestPayload payload = new TestPayload();
         var testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), payload);
+                new GenericCommandMessage(new MessageType("command"), payload);
         CommandResult result = testSubject.send(testCommand, null);
 
         // then

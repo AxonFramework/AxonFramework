@@ -90,7 +90,7 @@ class MultiParameterResolverFactoryTest {
     @Test
     void firstMatchingResolverMayReturnValue() throws Exception {
         Method equals = getClass().getMethod("equals", Object.class);
-        final EventMessage<Object> message = EventTestUtils.asEventMessage("test");
+        final EventMessage message = EventTestUtils.asEventMessage("test");
         ProcessingContext context = StubProcessingContext.forMessage(message);
         when(mockFactory1.createInstance(ArgumentMatchers.any(Executable.class),
                                          ArgumentMatchers.any(),

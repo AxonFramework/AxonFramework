@@ -32,7 +32,7 @@ import org.axonframework.messaging.Message;
  * @since 4.6.0
  */
 @FunctionalInterface
-public interface EnqueuePolicy<M extends Message<?>> {
+public interface EnqueuePolicy<M extends Message> {
 
     /**
      * Constructs a {@link EnqueueDecision} based on the given {@code letter} and {@code cause}. This operation is

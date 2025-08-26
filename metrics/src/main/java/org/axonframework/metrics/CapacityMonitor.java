@@ -45,7 +45,7 @@ import jakarta.annotation.Nonnull;
  * @author Marijn van Zelst
  * @since 3.0
  */
-public class CapacityMonitor implements MessageMonitor<Message<?>>, MetricSet {
+public class CapacityMonitor implements MessageMonitor<Message>, MetricSet {
 
     private final Histogram processedDurationHistogram;
     private final TimeUnit timeUnit;
@@ -88,7 +88,7 @@ public class CapacityMonitor implements MessageMonitor<Message<?>>, MetricSet {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message<?> message) {
+    public MonitorCallback onMessageIngested(@Nonnull Message message) {
         final long start = clock.getTime();
         return new MonitorCallback() {
             @Override

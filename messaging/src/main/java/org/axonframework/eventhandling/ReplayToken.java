@@ -79,7 +79,7 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      * @param message The message to inspect
      * @return {@code true} if the message is a replay
      */
-    public static boolean isReplay(Message<?> message) {
+    public static boolean isReplay(Message message) {
         return message instanceof TrackedEventMessage
                 && isReplay(((TrackedEventMessage) message).trackingToken());
     }
@@ -148,9 +148,9 @@ public class ReplayToken implements TrackingToken, WrappedToken {
      * @param <T>          The type of the context
      * @return The context, if present in the message
      */
-    public static <T> Optional<T> replayContext(EventMessage<?> message, @Nonnull Class<T> contextClass) {
+    public static <T> Optional<T> replayContext(EventMessage message, @Nonnull Class<T> contextClass) {
         if (message instanceof TrackedEventMessage) {
-            return replayContext(((TrackedEventMessage<?>) message).trackingToken(), contextClass);
+            return replayContext(((TrackedEventMessage) message).trackingToken(), contextClass);
         }
         return Optional.empty();
     }

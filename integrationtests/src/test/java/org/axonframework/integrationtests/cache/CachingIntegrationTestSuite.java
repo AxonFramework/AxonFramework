@@ -433,7 +433,7 @@ public abstract class CachingIntegrationTestSuite {
     }
 
     private void publish(Object... events) {
-        List<EventMessage<?>> eventMessages = new ArrayList<>();
+        List<EventMessage> eventMessages = new ArrayList<>();
         for (Object event : events) {
             eventMessages.add(EventTestUtils.asEventMessage(event));
         }

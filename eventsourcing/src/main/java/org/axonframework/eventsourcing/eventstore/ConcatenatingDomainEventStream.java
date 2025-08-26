@@ -63,7 +63,7 @@ public class ConcatenatingDomainEventStream implements DomainEventStream {
     }
 
     @Override
-    public DomainEventMessage<?> peek() {
+    public DomainEventMessage peek() {
         if (!hasNext()) {
             return null;
         }
@@ -88,7 +88,7 @@ public class ConcatenatingDomainEventStream implements DomainEventStream {
         }
 
         // potentially switch to a next stream, taking sequence numbers into account
-        DomainEventMessage<?> peeked = streams.peekFirst().peek();
+        DomainEventMessage peeked = streams.peekFirst().peek();
         while (lastSeenSequenceNumber != null && peeked.getSequenceNumber() <= lastSeenSequenceNumber) {
             // consume
             while (!streams.peekFirst().hasNext()) {
@@ -106,11 +106,11 @@ public class ConcatenatingDomainEventStream implements DomainEventStream {
     }
 
     @Override
-    public DomainEventMessage<?> next() {
+    public DomainEventMessage next() {
         if (!hasNext()) {
             return null;
         }
-        DomainEventMessage<?> next = streams.peekFirst().next();
+        DomainEventMessage next = streams.peekFirst().next();
         lastSeenSequenceNumber = next.getSequenceNumber();
         return next;
     }

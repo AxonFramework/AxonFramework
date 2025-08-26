@@ -66,7 +66,7 @@ public interface MessageHandlingMember<T> {
      * @param context           The context in which the message is being handled.
      * @return {@code true} if the handler is capable of handling the message, {@code false} otherwise.
      */
-    boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context);
+    boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context);
 
     /**
      * Checks if this handler is capable of handling messages with the given {@code payloadType}.
@@ -88,7 +88,6 @@ public interface MessageHandlingMember<T> {
      * @param messageType the {@link Message}'s type to check if it can be handled by this handler
      * @return {@code true} if this handler can handle the given {@code messageType}, {@code false} otherwise
      */
-    @SuppressWarnings("rawtypes")
     boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType);
 
     /**
@@ -104,19 +103,19 @@ public interface MessageHandlingMember<T> {
      *                   from the invoked method.
      */
     @Deprecated
-    Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable T target)
+    Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable T target)
             throws Exception;
 
     /**
      * TODO add documentation
      */
-    default MessageStream<?> handle(@Nonnull Message<?> message,
+    default MessageStream<?> handle(@Nonnull Message message,
                                     @Nonnull ProcessingContext context,
                                     @Nullable T target) {
         try {
             // TODO: 24-11-2023 proper impl
             Object result = handleSync(message, context, target);
-            return MessageStream.just(new GenericMessage<>(new MessageType(result.getClass()), result));
+            return MessageStream.just(new GenericMessage(new MessageType(result.getClass()), result));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }

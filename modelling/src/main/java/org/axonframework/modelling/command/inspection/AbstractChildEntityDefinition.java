@@ -59,10 +59,10 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
 
         EntityModel<Object> childEntityModel = extractChildEntityModel(declaringEntity, attributes, member);
 
-        ForwardingMode<EventMessage<?>> eventForwardingMode = instantiateForwardingMode(
+        ForwardingMode<EventMessage> eventForwardingMode = instantiateForwardingMode(
                 member,
                 childEntityModel,
-                (Class<? extends ForwardingMode<EventMessage<?>>>) attributes.get("eventForwardingMode")
+                (Class<? extends ForwardingMode<EventMessage>>) attributes.get("eventForwardingMode")
         );
 
         return Optional.of(new AnnotatedChildEntity<>(
@@ -95,10 +95,10 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
                                                                        Map<String, Object> attributes,
                                                                        Member member);
 
-    private ForwardingMode<EventMessage<?>> instantiateForwardingMode(Member member,
+    private ForwardingMode<EventMessage> instantiateForwardingMode(Member member,
                                                                       EntityModel<Object> childEntityModel,
-                                                                      Class<? extends ForwardingMode<EventMessage<?>>> forwardingModeClass) {
-        ForwardingMode<EventMessage<?>> forwardingMode;
+                                                                      Class<? extends ForwardingMode<EventMessage>> forwardingModeClass) {
+        ForwardingMode<EventMessage> forwardingMode;
         try {
             forwardingMode = forwardingModeClass.getDeclaredConstructor().newInstance();
             forwardingMode.initialize(member, childEntityModel);
@@ -122,7 +122,7 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
      * @param <T>              the type {@code T} of the given {@code parent} Entity
      * @return the Child Entity which is the target of the incoming {@link CommandMessage}.
      */
-    protected abstract <T> Object resolveCommandTarget(CommandMessage<?> msg,
+    protected abstract <T> Object resolveCommandTarget(CommandMessage msg,
                                                        T parent,
                                                        Member member,
                                                        EntityModel<Object> childEntityModel);

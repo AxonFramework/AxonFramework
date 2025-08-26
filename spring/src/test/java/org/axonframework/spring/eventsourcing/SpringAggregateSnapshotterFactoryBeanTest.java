@@ -79,10 +79,10 @@ class SpringAggregateSnapshotterFactoryBeanTest {
         aggregateIdentifier = UUID.randomUUID().toString();
 
         String type = "testAggregate";
-        DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
+        DomainEventMessage event1 = new GenericDomainEventMessage(
                 type, aggregateIdentifier, 0L, new MessageType("event"), "Mock contents"
         );
-        DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
+        DomainEventMessage event2 = new GenericDomainEventMessage(
                 type, aggregateIdentifier, 1L, new MessageType("event"), "Mock contents"
         );
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(event1, event2));
@@ -171,7 +171,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
         verify(mockTransactionManager).rollback(existingTransaction);
     }
 
-    private DomainEventMessage<?> eventSequence(final long sequenceNumber) {
+    private DomainEventMessage eventSequence(final long sequenceNumber) {
         return argThat(o -> o != null &&
                 o.getSequenceNumber() == sequenceNumber);
     }

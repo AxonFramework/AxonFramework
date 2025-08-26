@@ -17,7 +17,6 @@
 package org.axonframework.configuration;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -33,7 +32,6 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.NamespaceMessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
@@ -42,7 +40,6 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.junit.jupiter.api.*;
 
-import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;

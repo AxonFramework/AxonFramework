@@ -97,7 +97,7 @@ class GenericJpaRepositoryTest {
     @Test
     void aggregateStoredBeforeEventsPublished() throws Exception {
         //noinspection unchecked
-        Consumer<List<? extends EventMessage<?>>> mockConsumer = mock(Consumer.class);
+        Consumer<List<? extends EventMessage>> mockConsumer = mock(Consumer.class);
         eventBus.subscribe(mockConsumer);
 
         testSubject.newInstance(() -> new StubJpaAggregate("test", "payload1", "payload2"));
@@ -152,26 +152,26 @@ class GenericJpaRepositoryTest {
         });
         CurrentUnitOfWork.commit();
 
-        List<EventMessage<?>> publishedEvents = testEventBus.getPublishedEvents();
+        List<EventMessage> publishedEvents = testEventBus.getPublishedEvents();
         assertEquals(3, publishedEvents.size());
 
-        EventMessage<?> eventOne = publishedEvents.get(0);
+        EventMessage eventOne = publishedEvents.get(0);
         assertTrue(eventOne instanceof DomainEventMessage);
-        DomainEventMessage<?> domainEventOne = (DomainEventMessage<?>) eventOne;
+        DomainEventMessage domainEventOne = (DomainEventMessage) eventOne;
         assertEquals("test1", domainEventOne.payload());
         assertEquals(0, domainEventOne.getSequenceNumber());
         assertEquals("id", domainEventOne.getAggregateIdentifier());
 
-        EventMessage<?> eventTwo = publishedEvents.get(1);
+        EventMessage eventTwo = publishedEvents.get(1);
         assertTrue(eventTwo instanceof DomainEventMessage);
-        DomainEventMessage<?> domainEventTwo = (DomainEventMessage<?>) eventTwo;
+        DomainEventMessage domainEventTwo = (DomainEventMessage) eventTwo;
         assertEquals("test2", domainEventTwo.payload());
         assertEquals(1, domainEventTwo.getSequenceNumber());
         assertEquals("id", domainEventTwo.getAggregateIdentifier());
 
-        EventMessage<?> eventThree = publishedEvents.get(2);
+        EventMessage eventThree = publishedEvents.get(2);
         assertTrue(eventThree instanceof DomainEventMessage);
-        DomainEventMessage<?> domainEventThree = (DomainEventMessage<?>) eventThree;
+        DomainEventMessage domainEventThree = (DomainEventMessage) eventThree;
         assertEquals("test3", domainEventThree.payload());
         assertEquals(2, domainEventThree.getSequenceNumber());
         assertEquals("id", domainEventThree.getAggregateIdentifier());
@@ -196,14 +196,14 @@ class GenericJpaRepositoryTest {
         CurrentUnitOfWork.commit();
 
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<? extends EventMessage<?>>> eventCaptor =
-                ArgumentCaptor.forClass((Class<List<? extends EventMessage<?>>>) (Class<?>) List.class);
+        ArgumentCaptor<List<? extends EventMessage>> eventCaptor =
+                ArgumentCaptor.forClass((Class<List<? extends EventMessage>>) (Class<?>) List.class);
 
         verify(testEventBus).publish(eventCaptor.capture());
-        List<? extends EventMessage<?>> capturedEvents = eventCaptor.getValue();
+        List<? extends EventMessage> capturedEvents = eventCaptor.getValue();
 
         assertEquals(1, capturedEvents.size());
-        EventMessage<?> eventOne = capturedEvents.get(0);
+        EventMessage eventOne = capturedEvents.get(0);
         assertFalse(eventOne instanceof DomainEventMessage);
         assertEquals("test2", eventOne.payload());
     }
@@ -232,18 +232,18 @@ class GenericJpaRepositoryTest {
                                });
         CurrentUnitOfWork.commit();
 
-        List<EventMessage<?>> publishedEvents = testEventBus.getPublishedEvents();
+        List<EventMessage> publishedEvents = testEventBus.getPublishedEvents();
         assertEquals(3, publishedEvents.size());
 
-        EventMessage<?> eventOne = publishedEvents.get(0);
+        EventMessage eventOne = publishedEvents.get(0);
         assertFalse(eventOne instanceof DomainEventMessage);
         assertEquals(expectedFirstPayload, eventOne.payload());
 
-        EventMessage<?> eventTwo = publishedEvents.get(1);
+        EventMessage eventTwo = publishedEvents.get(1);
         assertFalse(eventTwo instanceof DomainEventMessage);
         assertEquals(expectedSecondPayload, eventTwo.payload());
 
-        EventMessage<?> eventThree = publishedEvents.get(2);
+        EventMessage eventThree = publishedEvents.get(2);
         assertFalse(eventThree instanceof DomainEventMessage);
         assertEquals(expectedThirdPayload, eventThree.payload());
     }
@@ -334,7 +334,7 @@ class GenericJpaRepositoryTest {
 
     private static class DomainSequenceAwareEventBus extends SimpleEventBus implements DomainEventSequenceAware {
 
-        private final List<EventMessage<?>> publishedEvents = new ArrayList<>();
+        private final List<EventMessage> publishedEvents = new ArrayList<>();
         private final Map<String, Long> sequencePerAggregate = new HashMap<>();
 
         DomainSequenceAwareEventBus() {
@@ -342,12 +342,12 @@ class GenericJpaRepositoryTest {
         }
 
         @Override
-        public void publish(@Nonnull List<? extends EventMessage<?>> events) {
+        public void publish(@Nonnull List<? extends EventMessage> events) {
             publishedEvents.addAll(events);
             super.publish(events);
         }
 
-        List<EventMessage<?>> getPublishedEvents() {
+        List<EventMessage> getPublishedEvents() {
             return publishedEvents;
         }
 

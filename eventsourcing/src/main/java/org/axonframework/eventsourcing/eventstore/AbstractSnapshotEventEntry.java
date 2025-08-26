@@ -54,7 +54,7 @@ public abstract class AbstractSnapshotEventEntry<T> extends AbstractEventEntry<T
      * @param serializer   The serializer to convert the event
      * @param contentType  The data type of the payload and metadata after serialization
      */
-    public AbstractSnapshotEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
+    public AbstractSnapshotEventEntry(DomainEventMessage eventMessage, Serializer serializer, Class<T> contentType) {
         super(eventMessage, serializer, contentType);
         type = eventMessage.getType();
         aggregateIdentifier = eventMessage.getAggregateIdentifier();

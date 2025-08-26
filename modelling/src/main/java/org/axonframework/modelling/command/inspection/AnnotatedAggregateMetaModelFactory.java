@@ -554,13 +554,13 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         @Override
-        public void publish(EventMessage<?> message, T target) {
+        public void publish(EventMessage message, T target) {
             if (target != null) {
                 runtimeModelOf(target).doPublish(message, target);
             }
         }
 
-        private void doPublish(EventMessage<?> message, T target) {
+        private void doPublish(EventMessage message, T target) {
             getHandler(message, target.getClass()).ifPresent(h -> {
                 try {
                     ProcessingContext context = new LegacyMessageSupportingContext(message);
@@ -614,7 +614,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
          * @param targetClass the target class that handler should be executed on
          * @return the handler of the message if present on the model
          */
-        protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message, Class<?> targetClass) {
+        protected Optional<MessageHandlingMember<? super T>> getHandler(Message message, Class<?> targetClass) {
             return handlers(allEventHandlers, targetClass)
                     .filter(handler -> handler.canHandle(message, new LegacyMessageSupportingContext(message)))
                     .findFirst();

@@ -47,7 +47,7 @@ public class TestSpanFactory implements SpanFactory {
 
     private final Deque<TestSpan> activeSpan = new ArrayDeque<>();
     private final List<TestSpan> createdSpans = new CopyOnWriteArrayList<>();
-    private final Map<Message<?>, TestSpan> propagatedContexts = new HashMap<>();
+    private final Map<Message, TestSpan> propagatedContexts = new HashMap<>();
 
 
     /**
@@ -85,7 +85,7 @@ public class TestSpanFactory implements SpanFactory {
      * @param name    Name of the span to verify.
      * @param message The exact message the span should have been created for.
      */
-    public void verifySpanActive(String name, Message<?> message) {
+    public void verifySpanActive(String name, Message message) {
         assertTrue(findSpan(name, message, span -> span.started && !span.ended).isPresent(),
                    () -> createErrorMessageForSpan(name));
     }
@@ -117,7 +117,7 @@ public class TestSpanFactory implements SpanFactory {
      * @param name    Name of the span to verify.
      * @param message The exact message the span should have been created for.
      */
-    public void verifySpanCompleted(String name, Message<?> message) {
+    public void verifySpanCompleted(String name, Message message) {
         assertTrue(findSpan(name, message, span -> span.started && span.ended).isPresent(),
                    () -> createErrorMessageForSpan(name));
     }
@@ -148,7 +148,7 @@ public class TestSpanFactory implements SpanFactory {
      * @param name    Name of the span to verify.
      * @param message The exact message the span should have been propagated to.
      */
-    public void verifySpanPropagated(String name, Message<?> message) {
+    public void verifySpanPropagated(String name, Message message) {
         assertTrue(createdSpans.stream()
                                .anyMatch(s -> s.name.equals(name)
                                        && propagatedContexts.containsKey(message)
@@ -192,7 +192,7 @@ public class TestSpanFactory implements SpanFactory {
                 createdSpans.stream().map(TestSpan::toString).collect(Collectors.joining("\n")));
     }
 
-    private Optional<TestSpan> findSpan(String name, Message<?> message, Predicate<TestSpan> filter) {
+    private Optional<TestSpan> findSpan(String name, Message message, Predicate<TestSpan> filter) {
         return findSpan(name, filter.and(
                 s -> s.message != null
                         && s.message.identifier().equals(message.identifier())));
@@ -206,9 +206,9 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
+    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message parentMessage,
                                   boolean isChildTrace,
-                                  Message<?>... linkedParents) {
+                                  Message... linkedParents) {
         TestSpan span = new TestSpan(isChildTrace ? TestSpanType.HANDLER_CHILD : TestSpanType.HANDLER_LINK,
                                      operationNameSupplier.get(),
                                      parentMessage);
@@ -217,8 +217,8 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
-                                   Message<?>... linkedSiblings) {
+    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message parentMessage,
+                                   Message... linkedSiblings) {
         TestSpan span = new TestSpan(TestSpanType.DISPATCH, operationNameSupplier.get(), parentMessage);
         createdSpans.add(span);
         return span;
@@ -232,7 +232,7 @@ public class TestSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message<?> message) {
+    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message message) {
         TestSpan span = new TestSpan(TestSpanType.INTERNAL, operationNameSupplier.get(), message);
         createdSpans.add(span);
         return span;
@@ -250,7 +250,7 @@ public class TestSpanFactory implements SpanFactory {
      * the metadata of the message will break this.
      */
     @Override
-    public <M extends Message<?>> M propagateContext(M message) {
+    public <M extends Message> M propagateContext(M message) {
         synchronized (activeSpan) {
             if (activeSpan.isEmpty()) {
                 return message;
@@ -282,14 +282,14 @@ public class TestSpanFactory implements SpanFactory {
         private final List<SpanScope> scopes = new CopyOnWriteArrayList<>();
         private final TestSpanType type;
         private final String name;
-        private final Message<?> message;
+        private final Message message;
         private boolean started;
         private boolean ended;
         private Throwable exception;
         private AtomicInteger scopeCount = new AtomicInteger(-1);
         private Map<String, String> attributes = new HashMap<>();
 
-        public TestSpan(TestSpanType type, String name, Message<?> message) {
+        public TestSpan(TestSpanType type, String name, Message message) {
             this.type = type;
             this.name = name;
             this.message = message;
@@ -370,7 +370,7 @@ public class TestSpanFactory implements SpanFactory {
             return attributes.get(key);
         }
 
-        public Message<?> getMessage() {
+        public Message getMessage() {
             return message;
         }
 

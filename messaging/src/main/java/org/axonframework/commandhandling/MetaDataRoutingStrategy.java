@@ -45,7 +45,7 @@ public class MetaDataRoutingStrategy implements RoutingStrategy {
     }
 
     @Override
-    public String getRoutingKey(@Nonnull CommandMessage<?> command) {
+    public String getRoutingKey(@Nonnull CommandMessage command) {
         Object value = command.metaData().get(metaDataKey);
         return value == null ? null : value.toString();
     }

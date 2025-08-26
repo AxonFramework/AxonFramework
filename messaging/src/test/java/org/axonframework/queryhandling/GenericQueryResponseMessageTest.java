@@ -27,17 +27,17 @@ import org.axonframework.messaging.MessageType;
  *
  * @author Steven van Beelen
  */
-class GenericQueryResponseMessageTest extends MessageTestSuite<QueryResponseMessage<?>> {
+class GenericQueryResponseMessageTest extends MessageTestSuite<QueryResponseMessage> {
 
     @Override
-    protected QueryResponseMessage<?> buildDefaultMessage() {
-        return new GenericQueryResponseMessage<>(new GenericMessage<>(
+    protected QueryResponseMessage buildDefaultMessage() {
+        return new GenericQueryResponseMessage(new GenericMessage(
                 TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA
         ));
     }
 
     @Override
-    protected <P> QueryResponseMessage<?> buildMessage(@Nullable P payload) {
-        return new GenericQueryResponseMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    protected <P> QueryResponseMessage buildMessage(@Nullable P payload) {
+        return new GenericQueryResponseMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 }

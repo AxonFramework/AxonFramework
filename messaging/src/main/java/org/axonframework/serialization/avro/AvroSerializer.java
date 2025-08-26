@@ -48,7 +48,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * This serializer is intended to work for classes, representing messages specified by Avro Schema. It uses a delegate
  * serializer to serialize all other artifacts: metadata, tokens, sagas, snapshots and other non-message artifacts. In
  * general, it is a good idea to configure <code>event</code> and/or
- * <code>message</code> serializer to use <code>avro</code>, but let your <code>default</code> serializer
+ * <code>Message serializer to use <code>avro</code>, but let your <code>default</code> serializer
  * use <code>jackson</code> or another serializer of your choice.
  * </p>
  * <p>

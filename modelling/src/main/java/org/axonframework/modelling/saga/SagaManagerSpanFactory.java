@@ -40,7 +40,7 @@ public interface SagaManagerSpanFactory {
      * @param sagaIdentifier The identifier of the saga.
      * @return The created span.
      */
-    Span createCreateSagaInstanceSpan(EventMessage<?> event, Class<?> sagaType, String sagaIdentifier);
+    Span createCreateSagaInstanceSpan(EventMessage event, Class<?> sagaType, String sagaIdentifier);
 
     /**
      * Creates a span that represents the invocation of a saga.
@@ -50,5 +50,5 @@ public interface SagaManagerSpanFactory {
      * @param saga     The saga that will be invoked.
      * @return The created span.
      */
-    Span createInvokeSagaSpan(EventMessage<?> event, Class<?> sagaType, Saga<?> saga);
+    Span createInvokeSagaSpan(EventMessage event, Class<?> sagaType, Saga<?> saga);
 }

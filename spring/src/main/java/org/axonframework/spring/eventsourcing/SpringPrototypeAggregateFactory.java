@@ -115,7 +115,7 @@ public class SpringPrototypeAggregateFactory<T>
     }
 
     @Override
-    public T createAggregateRoot(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
+    public T createAggregateRoot(String aggregateIdentifier, DomainEventMessage firstEvent) {
         return delegate.createAggregateRoot(aggregateIdentifier, firstEvent);
     }
 

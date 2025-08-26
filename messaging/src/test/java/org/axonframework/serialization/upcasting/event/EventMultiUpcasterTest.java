@@ -83,7 +83,7 @@ class EventMultiUpcasterTest {
 
     @Test
     void upcasterIgnoresWrongEventType() {
-        DomainEventMessage<String> testEventMessage = new GenericDomainEventMessage<>(
+        DomainEventMessage testEventMessage = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"), "someString"
         );
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
@@ -103,7 +103,7 @@ class EventMultiUpcasterTest {
     void upcasterIgnoresWrongEventRevision() {
         String expectedRevisionNumber = "1";
 
-        DomainEventMessage<StubDomainEvent> testEventMessage = new GenericDomainEventMessage<>(
+        DomainEventMessage testEventMessage = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"), new StubDomainEvent("oldName")
         );
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
@@ -172,7 +172,7 @@ class EventMultiUpcasterTest {
         String expectedSecondAndThirdRevisionNumber = null;
 
         MetaData testMetaData = MetaData.with("key", "value");
-        DomainEventMessage<StubDomainEvent> testEventMessage = new GenericDomainEventMessage<>(
+        DomainEventMessage testEventMessage = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"),
                 new StubDomainEvent("oldName"), testMetaData
         );

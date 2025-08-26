@@ -53,7 +53,7 @@ class StubEventSchedulerTest {
     void eventContainsTimestampOfScheduledTime() {
         Instant triggerTime = Instant.now().plusSeconds(60);
         testSubject.schedule(triggerTime, "gone");
-        List<EventMessage<?>> triggered = new ArrayList<>();
+        List<EventMessage> triggered = new ArrayList<>();
         testSubject.advanceTimeBy(Duration.ofMinutes(75), triggered::add);
 
         assertEquals(1, triggered.size());
@@ -68,8 +68,8 @@ class StubEventSchedulerTest {
                      () -> testSubject.initializeAt(Instant.now().minus(10, ChronoUnit.MINUTES)));
     }
 
-    private EventMessage<MockEvent> event(MockEvent mockEvent) {
-        return new GenericEventMessage<>(new MessageType("event"), mockEvent);
+    private EventMessage event(MockEvent mockEvent) {
+        return new GenericEventMessage(new MessageType("event"), mockEvent);
     }
 
     private static class MockEvent {

@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.tracing.Span;
 
 /**
@@ -37,7 +35,7 @@ public interface EventBusSpanFactory {
      * @param eventMessage The event message to create a span for.
      * @return The created span.
      */
-    Span createPublishEventSpan(EventMessage<?> eventMessage);
+    Span createPublishEventSpan(EventMessage eventMessage);
 
     /**
      * Creates a span for the committing of events. This is usually batched and done in the commit phase of a UnitOfWork.
@@ -50,8 +48,7 @@ public interface EventBusSpanFactory {
      * Propagates the context of the current span to the given event message.
      *
      * @param eventMessage The event message to propagate the context to.
-     * @param <T>          The type of the payload of the event message.
      * @return The event message with the propagated context.
      */
-    <T> EventMessage<T> propagateContext(EventMessage<T> eventMessage);
+    EventMessage propagateContext(EventMessage eventMessage);
 }

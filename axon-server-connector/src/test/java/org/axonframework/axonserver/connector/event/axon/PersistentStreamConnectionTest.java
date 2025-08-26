@@ -109,7 +109,7 @@ class PersistentStreamConnectionTest {
 
     @Test
     void consumesMessagesAndSendsAcknowledgements() {
-        List<EventMessage<?>> eventMessages = new LinkedList<>();
+        List<EventMessage> eventMessages = new LinkedList<>();
         testSubject.open(eventMessages::addAll);
         MockPersistentStream mockPersistentStream = mockPersistentStreams.get(STREAM_ID);
         mockPersistentStream.publish(0, eventWithToken(0, "AggregateId-1", 0));
@@ -126,7 +126,7 @@ class PersistentStreamConnectionTest {
 
     @Test
     void retryFailedHandler() {
-        List<EventMessage<?>> eventMessages = new LinkedList<>();
+        List<EventMessage> eventMessages = new LinkedList<>();
         AtomicInteger failureCountDown = new AtomicInteger(2);
         AtomicInteger attempts = new AtomicInteger();
         testSubject.open(m -> {

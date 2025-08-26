@@ -56,17 +56,17 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+    public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
         return delegate.canHandle(message, context);
     }
 
     @Override
-    public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context,  T target) throws Exception {
+    public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context,  T target) throws Exception {
         return delegate.handleSync(message, context, target);
     }
 
     @Override
-    public MessageStream<?> handle(@Nonnull Message<?> message,
+    public MessageStream<?> handle(@Nonnull Message message,
                                    @Nonnull ProcessingContext context,
                                    @Nullable T target) {
         return delegate.handle(message, context, target);
@@ -78,7 +78,6 @@ public abstract class WrappedMessageHandlingMember<T> implements MessageHandling
     }
 
     @Override
-    @SuppressWarnings("rawtypes")
     public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
         return delegate.canHandleMessageType(messageType);
     }

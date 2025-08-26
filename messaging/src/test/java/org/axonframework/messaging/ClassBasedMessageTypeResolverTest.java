@@ -97,7 +97,7 @@ class ClassBasedMessageTypeResolverTest {
 
             // when
             MessageType type = new MessageType("TestPayload");
-            var payload = new GenericMessage<>(type, new TestPayload());
+            var payload = new GenericMessage(type, new TestPayload());
             MessageType result = resolver.resolve(payload).get();
 
             // then
@@ -176,7 +176,7 @@ class ClassBasedMessageTypeResolverTest {
 
             // when
             MessageType type = new MessageType("TestPayload");
-            var payload = new GenericMessage<>(type, new TestPayload());
+            var payload = new GenericMessage(type, new TestPayload());
             MessageType result = resolver.resolveOrThrow(payload);
 
             // then

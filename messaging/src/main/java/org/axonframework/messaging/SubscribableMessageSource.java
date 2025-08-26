@@ -29,7 +29,7 @@ import jakarta.annotation.Nonnull;
  * @author Allard Buijze
  * @since 3.0
  */
-public interface SubscribableMessageSource<M extends Message<?>> {
+public interface SubscribableMessageSource<M extends Message> {
 
     /**
      * Subscribe the given {@code messageProcessor} to this message source. When subscribed, it will receive all

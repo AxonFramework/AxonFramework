@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventHandlingComponent;
@@ -25,10 +24,7 @@ import org.axonframework.eventhandling.annotation.AnnotatedEventHandlingComponen
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.function.BiFunction;
-import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 

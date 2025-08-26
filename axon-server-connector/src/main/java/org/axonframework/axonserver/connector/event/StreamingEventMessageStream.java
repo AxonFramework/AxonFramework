@@ -46,7 +46,7 @@ import java.util.Optional;
  * @since 5.0.0
  */
 @Internal
-public class StreamingEventMessageStream implements MessageStream<EventMessage<?>> {
+public class StreamingEventMessageStream implements MessageStream<EventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -68,7 +68,7 @@ public class StreamingEventMessageStream implements MessageStream<EventMessage<?
     }
 
     @Override
-    public Optional<Entry<EventMessage<?>>> next() {
+    public Optional<Entry<EventMessage>> next() {
         StreamEventsResponse response = stream.nextIfAvailable();
         if (response == null) {
             logger.debug("There are no more events to stream at this moment in time.");
@@ -77,15 +77,15 @@ public class StreamingEventMessageStream implements MessageStream<EventMessage<?
         return Optional.of(convertToEntry(response.getEvent()));
     }
 
-    private SimpleEntry<EventMessage<?>> convertToEntry(SequencedEvent event) {
-        EventMessage<byte[]> eventMessage = converter.convertEvent(event.getEvent());
+    private SimpleEntry<EventMessage> convertToEntry(SequencedEvent event) {
+        EventMessage eventMessage = converter.convertEvent(event.getEvent());
         TrackingToken token = new GlobalSequenceTrackingToken(event.getSequence() + 1);
         Context context = Context.with(TrackingToken.RESOURCE_KEY, token);
         return new SimpleEntry<>(eventMessage, context);
     }
 
     @Override
-    public Optional<Entry<EventMessage<?>>> peek() {
+    public Optional<Entry<EventMessage>> peek() {
         StreamEventsResponse response = stream.peek();
         if (response == null) {
             logger.debug("There are no more events to peek at this moment in time.");

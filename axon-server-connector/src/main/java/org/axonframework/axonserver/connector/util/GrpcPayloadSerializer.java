@@ -28,9 +28,9 @@ import java.util.function.Function;
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class GrpcPayloadSerializer implements Function<Message<?>, io.axoniq.axonserver.grpc.SerializedObject> {
+public class GrpcPayloadSerializer implements Function<Message, io.axoniq.axonserver.grpc.SerializedObject> {
 
-    private final GrpcObjectSerializer<Message<?>> delegate;
+    private final GrpcObjectSerializer<Message> delegate;
 
     /**
      * Constructs a {@link GrpcPayloadSerializer} using the given {@code serializer} to serialize messages with
@@ -38,19 +38,19 @@ public class GrpcPayloadSerializer implements Function<Message<?>, io.axoniq.axo
      * @param serializer the {@link Serializer} used to serialize messages with
      */
     public GrpcPayloadSerializer(Serializer serializer) {
-        this(new GrpcObjectSerializer.Serializer<Message<?>>() {
+        this(new GrpcObjectSerializer.Serializer<Message>() {
             @Override
-            public <T> SerializedObject<T> serialize(Message<?> object, Class<T> expectedRepresentation) {
+            public <T> SerializedObject<T> serialize(Message object, Class<T> expectedRepresentation) {
                 return serializer.serialize(object.payload(), expectedRepresentation);
             }
         });
     }
 
-    private GrpcPayloadSerializer(GrpcObjectSerializer.Serializer<Message<?>> messageSerializer) {
+    private GrpcPayloadSerializer(GrpcObjectSerializer.Serializer<Message> messageSerializer) {
         this(new GrpcObjectSerializer<>(messageSerializer));
     }
 
-    private GrpcPayloadSerializer(GrpcObjectSerializer<Message<?>> delegate) {
+    private GrpcPayloadSerializer(GrpcObjectSerializer<Message> delegate) {
         this.delegate = delegate;
     }
 

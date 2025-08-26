@@ -61,12 +61,12 @@ import static org.hamcrest.CoreMatchers.*;
 @Deprecated(since = "5.0.0", forRemoval = true)
 public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
-    private final List<EventMessage<?>> publishedEvents;
+    private final List<EventMessage> publishedEvents;
     private final Reporter reporter = new Reporter();
     private final FieldFilter fieldFilter;
     private final Supplier<Aggregate<T>> state;
     private final DeadlineManagerValidator deadlineManagerValidator;
-    private Message<?> actualReturnValue;
+    private Message actualReturnValue;
     private Throwable actualException;
 
     /**
@@ -75,7 +75,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
      * @param publishedEvents The events that were published during command execution
      * @param fieldFilter     The filter describing which fields to include in the comparison
      */
-    public ResultValidatorImpl(List<EventMessage<?>> publishedEvents,
+    public ResultValidatorImpl(List<EventMessage> publishedEvents,
                                FieldFilter fieldFilter,
                                Supplier<Aggregate<T>> aggregateState,
                                StubDeadlineManager stubDeadlineManager) {
@@ -91,9 +91,9 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
             reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
         }
 
-        Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
+        Iterator<EventMessage> iterator = publishedEvents.iterator();
         for (Object expectedEvent : expectedEvents) {
-            EventMessage<?> actualEvent = iterator.next();
+            EventMessage actualEvent = iterator.next();
             if (!verifyPayloadEquality(expectedEvent, actualEvent.payload())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
@@ -102,12 +102,12 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     }
 
     @Override
-    public ResultValidator<T> expectEvents(EventMessage<?>... expectedEvents) {
+    public ResultValidator<T> expectEvents(EventMessage... expectedEvents) {
         this.expectEvents(Stream.of(expectedEvents).map(Message::payload).toArray());
 
-        Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
-        for (EventMessage<?> expectedEvent : expectedEvents) {
-            EventMessage<?> actualEvent = iterator.next();
+        Iterator<EventMessage> iterator = publishedEvents.iterator();
+        for (EventMessage expectedEvent : expectedEvents) {
+            EventMessage actualEvent = iterator.next();
             if (!verifyMetaDataEquality(expectedEvent.payloadType(),
                                         expectedEvent.metaData(),
                                         actualEvent.metaData())) {
@@ -118,14 +118,14 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     }
 
     @Override
-    public ResultValidator<T> expectEventsMatching(Matcher<? extends List<? super EventMessage<?>>> matcher) {
+    public ResultValidator<T> expectEventsMatching(Matcher<? extends List<? super EventMessage>> matcher) {
         if (!matcher.matches(publishedEvents)) {
             final Description expectation = new StringDescription();
             matcher.describeTo(expectation);
-            
+
             final Description mismatch = new StringDescription();
             matcher.describeMismatch(publishedEvents, mismatch);
-            
+
             reporter.reportWrongEvent(publishedEvents, expectation, mismatch, actualException);
         }
         return this;
@@ -138,7 +138,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
     @Override
     public ResultValidator<T> expectState(Consumer<T> aggregateStateValidator) {
-        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         try {
             state.get().execute(aggregateStateValidator);
         } finally {
@@ -149,7 +149,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
     @Override
     public ResultValidator<T> expectScheduledDeadlineMatching(Duration duration,
-                                                              Matcher<? super DeadlineMessage<?>> matcher) {
+                                                              Matcher<? super DeadlineMessage> matcher) {
         deadlineManagerValidator.assertScheduledDeadlineMatching(duration, matcher);
         return this;
     }
@@ -174,7 +174,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
     @Override
     public ResultValidator<T> expectScheduledDeadlineMatching(Instant scheduledTime,
-                                                              Matcher<? super DeadlineMessage<?>> matcher) {
+                                                              Matcher<? super DeadlineMessage> matcher) {
         deadlineManagerValidator.assertScheduledDeadlineMatching(scheduledTime, matcher);
         return this;
     }
@@ -207,14 +207,14 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     }
 
     @Override
-    public ResultValidator<T> expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage<?>> matcher) {
+    public ResultValidator<T> expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage> matcher) {
         deadlineManagerValidator.assertNoScheduledDeadlineMatching(matcher);
         return this;
     }
 
     @Override
     public ResultValidator<T> expectNoScheduledDeadlineMatching(Duration durationToScheduledTime,
-                                                                Matcher<? super DeadlineMessage<?>> matcher) {
+                                                                Matcher<? super DeadlineMessage> matcher) {
         Instant scheduledTime = deadlineManagerValidator.currentDateTime().plus(durationToScheduledTime);
         return expectNoScheduledDeadlineMatching(scheduledTime, matcher);
     }
@@ -241,7 +241,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
     @Override
     public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant scheduledTime,
-                                                                Matcher<? super DeadlineMessage<?>> matcher) {
+                                                                Matcher<? super DeadlineMessage> matcher) {
         return expectNoScheduledDeadlineMatching(matches(
                 deadlineMessage -> deadlineMessage.timestamp().equals(scheduledTime)
                         && matcher.matches(deadlineMessage)
@@ -270,7 +270,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     }
 
     @Override
-    public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage<?>> matcher) {
+    public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage> matcher) {
         return expectNoScheduledDeadlineMatching(matches(
                 deadlineMessage -> !(deadlineMessage.timestamp().isBefore(from) || deadlineMessage.timestamp().isAfter(to))
                         && matcher.matches(deadlineMessage)
@@ -294,7 +294,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
     @Override
     public ResultValidator<T> expectTriggeredDeadlinesMatching(
-            Matcher<? extends List<? super DeadlineMessage<?>>> matcher
+            Matcher<? extends List<? super DeadlineMessage>> matcher
     ) {
         deadlineManagerValidator.assertTriggeredDeadlinesMatching(matcher);
         return this;
@@ -481,8 +481,8 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
         return this;
     }
 
-    public void recordResult(@Nonnull CommandMessage<?> commandMessage,
-                             @Nonnull Message<?> result) {
+    public void recordResult(@Nonnull CommandMessage commandMessage,
+                             @Nonnull Message result) {
         if (result instanceof ResultMessage commandResultMessage && commandResultMessage.isExceptional()) {
             recordException(commandResultMessage.exceptionResult());
         } else {

@@ -95,7 +95,7 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
     }
 
     @Override
-    public Object handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) throws Exception {
+    public Object handle(@Nonnull Message message, @Nonnull ProcessingContext context) throws Exception {
         Object result = wrappedAggregate.handle(message, context);
         // we need to ensure the lock is acquired, as this may not have happened earlier
         lock.acquire();

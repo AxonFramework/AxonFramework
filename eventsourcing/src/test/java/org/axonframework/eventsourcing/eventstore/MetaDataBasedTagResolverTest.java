@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class MetaDataBasedTagResolverTest {
 
     private static final String META_DATA_KEY = "testKey";
-    private static final GenericEventMessage<String> TEST_EVENT = new GenericEventMessage<>(
+    private static final GenericEventMessage TEST_EVENT = new GenericEventMessage(
             new MessageType("test", "event", "0.0.1"),
             "payload",
             Map.of(META_DATA_KEY, "testValue")

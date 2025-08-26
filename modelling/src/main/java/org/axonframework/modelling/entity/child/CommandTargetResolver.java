@@ -49,7 +49,7 @@ public interface CommandTargetResolver<E> {
      */
     @Nullable
     E getTargetChildEntity(@Nonnull List<E> candidates,
-                           @Nonnull CommandMessage<?> message,
+                           @Nonnull CommandMessage message,
                            @Nonnull ProcessingContext context);
 
 

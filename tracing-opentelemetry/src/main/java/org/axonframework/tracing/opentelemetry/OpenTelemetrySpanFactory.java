@@ -61,7 +61,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     private final Tracer tracer;
     private final TextMapPropagator textMapPropagator;
     private final List<SpanAttributesProvider> spanAttributesProviders;
-    private final TextMapGetter<Message<?>> textMapGetter;
+    private final TextMapGetter<Message> textMapGetter;
     private final TextMapSetter<Map<String, String>> textMapSetter;
 
     /**
@@ -91,7 +91,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <M extends Message<?>> M propagateContext(M message) {
+    public <M extends Message> M propagateContext(M message) {
         HashMap<String, String> additionalMetadataProperties = new HashMap<>();
         textMapPropagator.inject(Context.current(), additionalMetadataProperties, textMapSetter);
         return (M) message.andMetaData(additionalMetadataProperties);
@@ -106,9 +106,9 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
+    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message parentMessage,
                                   boolean isChildTrace,
-                                  Message<?>... linkedParents) {
+                                  Message... linkedParents) {
         Context parentContext = textMapPropagator.extract(Context.current(),
                                                           parentMessage,
                                                           textMapGetter);
@@ -126,8 +126,8 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
-                                   Message<?>... linkedSiblings) {
+    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message parentMessage,
+                                   Message... linkedSiblings) {
         SpanBuilder spanBuilder = createSpanBuilderWithCurrentContext(
                 formatName(operationNameSupplier.get(), parentMessage),
                 SpanKind.PRODUCER);
@@ -136,8 +136,8 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
         return new OpenTelemetrySpan(spanBuilder);
     }
 
-    private void addLinks(SpanBuilder spanBuilder, Message<?>[] linkedMessages) {
-        for (Message<?> message : linkedMessages) {
+    private void addLinks(SpanBuilder spanBuilder, Message[] linkedMessages) {
+        for (Message message : linkedMessages) {
             Context linkedContext = textMapPropagator.extract(Context.current(),
                                                               message,
                                                               textMapGetter);
@@ -155,7 +155,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message<?> message) {
+    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message message) {
         SpanBuilder spanBuilder = createSpanBuilderWithCurrentContext(
                 formatName(operationNameSupplier.get(), message),
                 SpanKind.INTERNAL
@@ -169,7 +169,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
         spanAttributesProviders.add(provider);
     }
 
-    private String formatName(String operationName, Message<?> message) {
+    private String formatName(String operationName, Message message) {
         if (message == null) {
             return operationName;
         }
@@ -178,7 +178,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
                              determineMessageName(message));
     }
 
-    private void addMessageAttributes(SpanBuilder spanBuilder, Message<?> message) {
+    private void addMessageAttributes(SpanBuilder spanBuilder, Message message) {
         if (message == null) {
             return;
         }
@@ -212,7 +212,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
         private Tracer tracer = null;
         private TextMapPropagator textMapPropagator = null;
         private TextMapSetter<Map<String, String>> textMapSetter = MetadataContextSetter.INSTANCE;
-        private TextMapGetter<Message<?>> textMapGetter = MetadataContextGetter.INSTANCE;
+        private TextMapGetter<Message> textMapGetter = MetadataContextGetter.INSTANCE;
 
         private final List<SpanAttributesProvider> spanAttributesProviders = new LinkedList<>();
 
@@ -272,7 +272,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
          * @param textMapGetter The {@link TextMapGetter} to configure for use.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder textMapGetter(TextMapGetter<Message<?>> textMapGetter) {
+        public Builder textMapGetter(TextMapGetter<Message> textMapGetter) {
             BuilderUtils.assertNonNull(textMapGetter, "The TextMapGetter should not be null");
             this.textMapGetter = textMapGetter;
             return this;

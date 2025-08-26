@@ -83,8 +83,8 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
     @Autowired
     private EntityManagerProvider entityManagerProvider;
     private final Serializer serializer = TestSerializer.JACKSON.getSerializer();
-    private final DeadLetterJpaConverter<EventMessage<?>> converter = new EventMessageDeadLetterJpaConverter();
-    private JpaSequencedDeadLetterQueue<EventMessage<?>> jpaDeadLetterQueue;
+    private final DeadLetterJpaConverter<EventMessage> converter = new EventMessageDeadLetterJpaConverter();
+    private JpaSequencedDeadLetterQueue<EventMessage> jpaDeadLetterQueue;
 
     @BeforeEach
     public void clear() {
@@ -99,7 +99,7 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
     }
 
     @Override
-    protected SequencedDeadLetterQueue<EventMessage<?>> buildDeadLetterQueue() {
+    protected SequencedDeadLetterQueue<EventMessage> buildDeadLetterQueue() {
         jpaDeadLetterQueue = JpaSequencedDeadLetterQueue.builder()
                                                         .processingGroup(PROCESSING_GROUP)
                                                         .entityManagerProvider(entityManagerProvider)
@@ -113,9 +113,9 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
     @Test
     void deadLetterSequenceReturnsMatchingEnqueuedLettersInInsertOrder() {
         String aggregateId = UUID.randomUUID().toString();
-        Map<Integer, GenericDeadLetter<EventMessage<?>>> insertedLetters = new HashMap<>();
+        Map<Integer, GenericDeadLetter<EventMessage>> insertedLetters = new HashMap<>();
 
-        Iterator<DeadLetter<? extends EventMessage<?>>> resultIterator =
+        Iterator<DeadLetter<? extends EventMessage>> resultIterator =
                 jpaDeadLetterQueue.deadLetterSequence(aggregateId).iterator();
         assertFalse(resultIterator.hasNext());
 
@@ -123,22 +123,22 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
                  .boxed()
                  .sorted(Collections.reverseOrder())
                  .forEach(i -> {
-                     GenericDeadLetter<EventMessage<?>> letter =
+                     GenericDeadLetter<EventMessage> letter =
                              new GenericDeadLetter<>(aggregateId, asEventMessage(i));
                      insertLetterAtIndex(aggregateId, letter, i);
                      insertedLetters.put(i, letter);
                  });
 
         resultIterator = jpaDeadLetterQueue.deadLetterSequence(aggregateId).iterator();
-        for (Map.Entry<Integer, GenericDeadLetter<EventMessage<?>>> entry : insertedLetters.entrySet()) {
+        for (Map.Entry<Integer, GenericDeadLetter<EventMessage>> entry : insertedLetters.entrySet()) {
             Integer sequenceIndex = entry.getKey();
             Supplier<String> assertMessageSupplier = () -> "Failed asserting event [" + sequenceIndex + "]";
             assertTrue(resultIterator.hasNext(), assertMessageSupplier);
 
-            GenericDeadLetter<EventMessage<?>> expected = entry.getValue();
-            DeadLetter<? extends EventMessage<?>> result = resultIterator.next();
+            GenericDeadLetter<EventMessage> expected = entry.getValue();
+            DeadLetter<? extends EventMessage> result = resultIterator.next();
             assertTrue(result instanceof JpaDeadLetter);
-            JpaDeadLetter<? extends EventMessage<?>> actual = ((JpaDeadLetter<? extends EventMessage<?>>) result);
+            JpaDeadLetter<? extends EventMessage> actual = ((JpaDeadLetter<? extends EventMessage>) result);
 
             assertEquals(expected.getSequenceIdentifier(), actual.getSequenceIdentifier(), assertMessageSupplier);
             assertEquals(expected.message().payload(), actual.message().payload(), assertMessageSupplier);
@@ -148,7 +148,7 @@ class SpringJpaDeadLetteringIntegrationTest extends DeadLetteringEventIntegratio
         }
     }
 
-    private void insertLetterAtIndex(String aggregateId, DeadLetter<EventMessage<?>> letter, int index) {
+    private void insertLetterAtIndex(String aggregateId, DeadLetter<EventMessage> letter, int index) {
         transactionManager.executeInTransaction(() -> {
             DeadLetterEventEntry eventEntry = converter.convert(letter.message(), serializer, serializer);
             DeadLetterEntry deadLetter = new DeadLetterEntry(PROCESSING_GROUP,

@@ -45,15 +45,15 @@ public abstract class EventUtils {
      * @param <T>           the payload type of the event
      * @return the message converted to a tracked event message
      */
-    public static <T> TrackedEventMessage<T> asTrackedEventMessage(EventMessage<T> eventMessage,
+    public static <T> TrackedEventMessage asTrackedEventMessage(EventMessage eventMessage,
                                                                    TrackingToken trackingToken) {
         if (eventMessage instanceof TrackedEventMessage) {
-            return ((TrackedEventMessage<T>) eventMessage).withTrackingToken(trackingToken);
+            return ((TrackedEventMessage) eventMessage).withTrackingToken(trackingToken);
         }
-        if (eventMessage instanceof DomainEventMessage<?>) {
-            return new GenericTrackedDomainEventMessage<>(trackingToken, (DomainEventMessage<T>) eventMessage);
+        if (eventMessage instanceof DomainEventMessage) {
+            return new GenericTrackedDomainEventMessage(trackingToken, (DomainEventMessage) eventMessage);
         }
-        return new GenericTrackedEventMessage<>(trackingToken, eventMessage);
+        return new GenericTrackedEventMessage(trackingToken, eventMessage);
     }
 
     /**
@@ -69,7 +69,7 @@ public abstract class EventUtils {
      * @return a stream of lazy deserializing events
      */
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    public static Stream<TrackedEventMessage<?>> upcastAndDeserializeTrackedEvents(
+    public static Stream<TrackedEventMessage> upcastAndDeserializeTrackedEvents(
             Stream<? extends TrackedEventData<?>> eventEntryStream,
             Serializer serializer,
             EventUpcaster upcasterChain
@@ -78,20 +78,20 @@ public abstract class EventUtils {
                 upcastAndDeserialize(eventEntryStream, upcasterChain,
                                      entry -> new InitialEventRepresentation(entry, serializer));
         return upcastResult.map(ir -> {
-            SerializedMessage<?> serializedMessage = new SerializedMessage<>(
+            SerializedMessage serializedMessage = new SerializedMessage(
                     ir.getMessageIdentifier(),
                     new MessageType(serializer.classForType(ir.getType())),
                     new LazyDeserializingObject<>(ir::getData, ir.getType(), serializer),
                     ir.getMetaData()
             );
             if (ir.getAggregateIdentifier().isPresent()) {
-                return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(),
+                return new GenericTrackedDomainEventMessage(ir.getTrackingToken().get(),
                                                               ir.getAggregateType().orElse(null),
                                                               ir.getAggregateIdentifier().get(),
                                                               ir.getSequenceNumber().get(), serializedMessage,
                                                               ir::getTimestamp);
             } else {
-                return new GenericTrackedEventMessage<>(ir.getTrackingToken().get(), serializedMessage,
+                return new GenericTrackedEventMessage(ir.getTrackingToken().get(), serializedMessage,
                                                         ir::getTimestamp);
             }
         });

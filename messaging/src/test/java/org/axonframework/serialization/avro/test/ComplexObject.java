@@ -144,7 +144,6 @@ public class ComplexObject extends org.apache.avro.specific.SpecificRecordBase
 
     // Used by DatumReader.  Applications should not call.
     @Override
-    @SuppressWarnings(value = "unchecked")
     public void put(int field$, Object value$) {
         switch (field$) {
             case 0:
@@ -398,7 +397,6 @@ public class ComplexObject extends org.apache.avro.specific.SpecificRecordBase
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public ComplexObject build() {
             try {
                 ComplexObject record = new ComplexObject();
@@ -416,7 +414,7 @@ public class ComplexObject extends org.apache.avro.specific.SpecificRecordBase
 
     @SuppressWarnings("unchecked")
     private static final org.apache.avro.io.DatumWriter<ComplexObject>
-            WRITER$ = (org.apache.avro.io.DatumWriter<ComplexObject>) MODEL$.createDatumWriter(SCHEMA$);
+            WRITER$ = MODEL$.createDatumWriter(SCHEMA$);
 
     @Override
     public void writeExternal(java.io.ObjectOutput out)
@@ -426,7 +424,7 @@ public class ComplexObject extends org.apache.avro.specific.SpecificRecordBase
 
     @SuppressWarnings("unchecked")
     private static final org.apache.avro.io.DatumReader<ComplexObject>
-            READER$ = (org.apache.avro.io.DatumReader<ComplexObject>) MODEL$.createDatumReader(SCHEMA$);
+            READER$ = MODEL$.createDatumReader(SCHEMA$);
 
     @Override
     public void readExternal(java.io.ObjectInput in)
