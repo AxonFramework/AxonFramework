@@ -145,8 +145,11 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
     private static EntityEvolver<StudentCoursesReadModel> readModelEvolver() {
         return (entity, event, context) -> {
             if (event.type().qualifiedName().equals(new QualifiedName(StudentEnrolledEvent.class))) {
-                return entity.evolve(event.withConvertedPayload(StudentEnrolledEvent.class,
-                                                                context.component(Converter.class)).payload());
+                var payload = (StudentEnrolledEvent) event.withConvertedPayload(
+                        StudentEnrolledEvent.class,
+                        context.component(Converter.class)
+                ).payload();
+                return entity.evolve(payload);
             }
             return entity;
         };

@@ -130,7 +130,8 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
         return configureProcessorWithDeclarativeEventHandlingComponent(configurer);
     }
 
-    private static EventSourcingConfigurer configureProcessorWithDeclarativeEventHandlingComponent(EventSourcingConfigurer configurer) {
+    private static EventSourcingConfigurer configureProcessorWithDeclarativeEventHandlingComponent(
+            EventSourcingConfigurer configurer) {
         var studentRegisteredCoursesProcessor = EventProcessorModule
                 .pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
                 .eventHandlingComponents(components -> components.declarative(
@@ -148,9 +149,13 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
     private static void configureEntityAndCommandHandler(EventSourcingConfigurer configurer) {
         EntityModule<String, StudentCoursesAutomationState> studentCoursesEntity =
                 EventSourcedEntityModule.declarative(String.class, StudentCoursesAutomationState.class)
-                                        .messagingModel((c, model) -> model.entityEvolver(automationStateEvolver()).build())
-                                        .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(StudentCoursesAutomationState::new))
-                                        .criteriaResolver(c -> (id, ctx) -> EventCriteria.havingTags(Tag.of("Student", id))).build();
+                                        .messagingModel((c, model) -> model.entityEvolver(automationStateEvolver())
+                                                                           .build())
+                                        .entityFactory(c -> EventSourcedEntityFactory.fromIdentifier(
+                                                StudentCoursesAutomationState::new))
+                                        .criteriaResolver(c -> (id, ctx) -> EventCriteria.havingTags(Tag.of("Student",
+                                                                                                            id)))
+                                        .build();
         configurer.componentRegistry(cr -> cr.registerModule(studentCoursesEntity));
 
         CommandHandlingModule sendMaxCoursesNotificationCommandHandler = CommandHandlingModule
@@ -176,12 +181,18 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
     private static EntityEvolver<StudentCoursesAutomationState> automationStateEvolver() {
         return (entity, event, context) -> {
             if (event.type().qualifiedName().equals(new QualifiedName(StudentEnrolledEvent.class))) {
-                return entity.evolve(event.withConvertedPayload(StudentEnrolledEvent.class,
-                                                                context.component(Converter.class)).payload());
+                var payload = (StudentEnrolledEvent) event.withConvertedPayload(
+                        StudentEnrolledEvent.class,
+                        context.component(Converter.class)
+                ).payload();
+                return entity.evolve(payload);
             }
             if (event.type().qualifiedName().equals(new QualifiedName(MaxCoursesNotificationSentEvent.class))) {
-                return entity.evolve(event.withConvertedPayload(MaxCoursesNotificationSentEvent.class,
-                                                                context.component(Converter.class)).payload());
+                var payload = (MaxCoursesNotificationSentEvent) event.withConvertedPayload(
+                        MaxCoursesNotificationSentEvent.class,
+                        context.component(Converter.class)
+                ).payload();
+                return entity.evolve(payload);
             }
             return entity;
         };

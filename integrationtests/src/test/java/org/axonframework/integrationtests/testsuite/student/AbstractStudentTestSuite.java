@@ -173,7 +173,7 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
 
     protected <T> void storeEvent(Class<T> clazz, T payload) {
         UnitOfWork uow = unitOfWorkFactory.create();
-        var eventMessage = new GenericEventMessage<T>(
+        var eventMessage = new GenericEventMessage(
                 new MessageType(clazz),
                 payload
         );

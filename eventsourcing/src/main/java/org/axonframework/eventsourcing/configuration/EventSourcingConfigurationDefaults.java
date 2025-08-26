@@ -94,12 +94,12 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
         };
     }
 
-    private static StreamableEventSource<? extends EventMessage<?>> defaultStreamableEventSource(
+    private static StreamableEventSource<? extends EventMessage> defaultStreamableEventSource(
             Configuration configuration
     ) {
         EventStore eventStore = configuration.getComponent(EventStore.class);
         if (eventStore instanceof StreamableEventSource) {
-            return (StreamableEventSource<? extends EventMessage<?>>) eventStore;
+            return (StreamableEventSource<? extends EventMessage>) eventStore;
         }
         throw new AxonConfigurationException(
                 "The EventStore is not a StreamableEventSource, so the StreamableEventSource must be configured explicitly.");

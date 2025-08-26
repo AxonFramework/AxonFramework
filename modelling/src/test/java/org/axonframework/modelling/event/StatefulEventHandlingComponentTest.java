@@ -67,7 +67,7 @@ class StatefulEventHandlingComponentTest {
             });
 
             // when
-            GenericEventMessage<String> event = new GenericEventMessage<>(new MessageType("test-event"), "my-payload");
+            GenericEventMessage event = new GenericEventMessage(new MessageType("test-event"), "my-payload");
             testSubject.handle(event, messageProcessingContext(event)).asCompletableFuture().join();
 
             // then
@@ -86,7 +86,7 @@ class StatefulEventHandlingComponentTest {
             });
 
             // when
-            GenericEventMessage<String> event = new GenericEventMessage<>(new MessageType("test-event"), "my-payload");
+            GenericEventMessage event = new GenericEventMessage(new MessageType("test-event"), "my-payload");
             testSubject.handle(event, messageProcessingContext(event)).asCompletableFuture().join();
 
             // then
@@ -103,7 +103,7 @@ class StatefulEventHandlingComponentTest {
 
             // when / then
             var exception = assertThrows(RuntimeException.class, () -> {
-                GenericEventMessage<String> event = new GenericEventMessage<>(new MessageType("test-event"),
+                GenericEventMessage event = new GenericEventMessage(new MessageType("test-event"),
                                                                               "my-payload");
                 testSubject.handle(event, messageProcessingContext(event))
                            .asCompletableFuture()
@@ -166,7 +166,7 @@ class StatefulEventHandlingComponentTest {
             });
 
             // when
-            GenericEventMessage<String> event = new GenericEventMessage<>(new MessageType("test-event"), "my-payload");
+            GenericEventMessage event = new GenericEventMessage(new MessageType("test-event"), "my-payload");
             testSubject.handle(event, messageProcessingContext(event)).asCompletableFuture().join();
 
             // then
@@ -188,7 +188,7 @@ class StatefulEventHandlingComponentTest {
             });
 
             // when
-            GenericEventMessage<String> event = new GenericEventMessage<>(new MessageType("test-event"), "my-payload");
+            GenericEventMessage event = new GenericEventMessage(new MessageType("test-event"), "my-payload");
             testSubject.handle(event, messageProcessingContext(event)).asCompletableFuture().join();
 
             // then
@@ -197,7 +197,7 @@ class StatefulEventHandlingComponentTest {
     }
 
     @Nonnull
-    private ProcessingContext messageProcessingContext(GenericEventMessage<String> event) {
+    private ProcessingContext messageProcessingContext(GenericEventMessage event) {
         return StubProcessingContext.withComponent(StateManager.class, stateManager).withMessage(event);
     }
 }
