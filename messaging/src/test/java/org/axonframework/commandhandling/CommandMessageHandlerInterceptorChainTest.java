@@ -46,32 +46,27 @@ class CommandMessageHandlerInterceptorChainTest {
     void setUp() {
         mockHandler = mock();
         when(mockHandler.handle(any(), any()))
-                .thenReturn(MessageStream.just(commandResult("result", "Result")));
+                .thenReturn(MessageStream.just(commandResult("result", "Result")).cast());
     }
 
     @Test
     void chainWithDifferentProceedCalls() {
-        MessageHandlerInterceptor<CommandMessage> interceptor1 = (message, context, chain) ->
+        CommandMessage testCommand = command("message", "original");
+
+        MessageHandlerInterceptor<CommandMessage> interceptorOne = (message, context, chain) ->
                 chain.proceed(command("message", "testing"), context);
-
-        MessageHandlerInterceptor<CommandMessage> interceptor2 = (message, context, chain) ->
+        MessageHandlerInterceptor<CommandMessage> interceptorTwo = (message, context, chain) ->
                 chain.proceed(message, context);
+        MessageHandlerInterceptorChain<CommandMessage> testSubject =
+                new CommandMessageHandlerInterceptorChain(asList(interceptorOne, interceptorTwo), mockHandler);
 
-        CommandMessage message = command("message", "original");
-
-        MessageHandlerInterceptorChain<CommandMessage> testSubject = new CommandMessageHandlerInterceptorChain(
-                asList(interceptor1, interceptor2), mockHandler
-        );
-
-
-        Message actual = testSubject
-                .proceed(message, StubProcessingContext.forMessage(message))
-                .first()
-                .asMono()
-                .map(MessageStream.Entry::message)
-                .block();
-        assertNotNull(actual);
-        assertSame("Result", actual.payload());
+        Message result = testSubject.proceed(testCommand, StubProcessingContext.forMessage(testCommand))
+                                    .first()
+                                    .asMono()
+                                    .map(MessageStream.Entry::message)
+                                    .block();
+        assertNotNull(result);
+        assertSame("Result", result.payload());
         verify(mockHandler).handle(argThat(x -> (x != null) && "testing".equals(x.payload())), any());
     }
 
