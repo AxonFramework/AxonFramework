@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
 /**
  * Message handler chain interceptor test.
  */
-class MessageHandlerInterceptorChainTest {
+class CommandMessageHandlerInterceptorChainTest {
 
     private CommandHandler mockHandler;
 
