@@ -33,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class RecordingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
-    private final List<EventMessage<?>> recorded = new CopyOnWriteArrayList<>();
+    private final List<EventMessage> recorded = new CopyOnWriteArrayList<>();
 
     /**
      * Constructs the component with given {@code delegate} to receive calls.
@@ -46,9 +46,9 @@ public class RecordingEventHandlingComponent extends DelegatingEventHandlingComp
 
     @Nonnull
     @Override
-    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                      @Nonnull ProcessingContext context) {
-        CompletableFuture<Message<Void>> resultFuture = new CompletableFuture<>();
+        CompletableFuture<Message> resultFuture = new CompletableFuture<>();
         delegate.handle(event, context).asCompletableFuture()
                 .whenComplete((r, e) -> {
                     recorded.add(event);
@@ -61,7 +61,7 @@ public class RecordingEventHandlingComponent extends DelegatingEventHandlingComp
         return MessageStream.fromFuture(resultFuture).ignoreEntries();
     }
 
-    public List<EventMessage<?>> recorded() {
+    public List<EventMessage> recorded() {
         return recorded;
     }
 
@@ -69,7 +69,7 @@ public class RecordingEventHandlingComponent extends DelegatingEventHandlingComp
         return !recorded.isEmpty();
     }
 
-    public boolean handled(EventMessage<?> event) {
+    public boolean handled(EventMessage event) {
         return recorded.contains(event);
     }
 }

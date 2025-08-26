@@ -204,7 +204,7 @@ class FixtureTest_MatcherParams {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
-        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> mockCommandHandler = mock(MessageHandler.class);
+        MessageHandler<CommandMessage, CommandResultMessage<?>> mockCommandHandler = mock(MessageHandler.class);
         fixture.registerCommandHandler(StrangeCommand.class, mockCommandHandler);
         fixture
                 .given(givenEvents)

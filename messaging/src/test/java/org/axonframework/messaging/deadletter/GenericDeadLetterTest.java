@@ -36,14 +36,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class GenericDeadLetterTest {
 
     private static final String SEQUENCE_IDENTIFIER = "sesequenceIdentifier";
-    private static final EventMessage<String> MESSAGE = EventTestUtils.asEventMessage("payload");
+    private static final EventMessage MESSAGE = EventTestUtils.asEventMessage("payload");
 
     @Test
     void constructorForIdentifierAndMessageSetsGivenIdentifierAndMessage() {
         Instant expectedTime = Instant.now();
         GenericDeadLetter.clock = Clock.fixed(expectedTime, ZoneId.systemDefault());
 
-        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
+        DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
 
         assertEquals(MESSAGE, testSubject.message());
         assertFalse(testSubject.cause().isPresent());
@@ -59,7 +59,7 @@ class GenericDeadLetterTest {
         Instant expectedTime = Instant.now();
         GenericDeadLetter.clock = Clock.fixed(expectedTime, ZoneId.systemDefault());
 
-        DeadLetter<EventMessage<String>> testSubject =
+        DeadLetter<EventMessage> testSubject =
                 new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE, testThrowable);
 
         assertEquals(MESSAGE, testSubject.message());
@@ -78,7 +78,7 @@ class GenericDeadLetterTest {
         Instant expectedLastTouched = Instant.now();
         MetaData expectedDiagnostics = MetaData.with("key", "value");
 
-        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(
+        DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(
                 SEQUENCE_IDENTIFIER, MESSAGE, expectedCause, expectedEnqueuedAt, expectedLastTouched,
                 expectedDiagnostics
         );
@@ -94,11 +94,11 @@ class GenericDeadLetterTest {
 
     @Test
     void invokingMarkTouchedAdjustsLastTouched() {
-        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
+        DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
 
         Instant expectedLastTouched = Instant.now();
         GenericDeadLetter.clock = Clock.fixed(expectedLastTouched, ZoneId.systemDefault());
-        DeadLetter<EventMessage<String>> result = testSubject.markTouched();
+        DeadLetter<EventMessage> result = testSubject.markTouched();
 
         assertEquals(testSubject.message(), result.message());
         Optional<Cause> resultCause = result.cause();
@@ -116,9 +116,9 @@ class GenericDeadLetterTest {
         Throwable testThrowable = new RuntimeException("just because");
         ThrowableCause expectedCause = new ThrowableCause(testThrowable);
 
-        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
+        DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
 
-        DeadLetter<EventMessage<String>> result = testSubject.withCause(testThrowable);
+        DeadLetter<EventMessage> result = testSubject.withCause(testThrowable);
 
         assertEquals(testSubject.message(), result.message());
         Optional<Cause> resultCause = result.cause();
@@ -138,10 +138,10 @@ class GenericDeadLetterTest {
         Throwable testThrowable = new RuntimeException("just because");
         ThrowableCause expectedCause = new ThrowableCause(testThrowable);
 
-        DeadLetter<EventMessage<String>> testSubject =
+        DeadLetter<EventMessage> testSubject =
                 new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE, originalThrowable);
 
-        DeadLetter<EventMessage<String>> result = testSubject.withCause(testThrowable);
+        DeadLetter<EventMessage> result = testSubject.withCause(testThrowable);
 
         assertEquals(testSubject.message(), result.message());
         Optional<Cause> resultCause = result.cause();
@@ -157,9 +157,9 @@ class GenericDeadLetterTest {
         // Fix the clock to keep time consistent after withCause invocation.
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
-        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
+        DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE);
 
-        DeadLetter<EventMessage<String>> result = testSubject.withCause(null);
+        DeadLetter<EventMessage> result = testSubject.withCause(null);
 
         assertEquals(testSubject.message(), result.message());
         assertFalse(result.cause().isPresent());
@@ -176,10 +176,10 @@ class GenericDeadLetterTest {
         Throwable testThrowable = new RuntimeException("just because");
         ThrowableCause expectedCause = new ThrowableCause(testThrowable);
 
-        DeadLetter<EventMessage<String>> testSubject =
+        DeadLetter<EventMessage> testSubject =
                 new GenericDeadLetter<>(SEQUENCE_IDENTIFIER, MESSAGE, testThrowable);
 
-        DeadLetter<EventMessage<String>> result = testSubject.withCause(null);
+        DeadLetter<EventMessage> result = testSubject.withCause(null);
 
         assertEquals(testSubject.message(), result.message());
         Optional<Cause> resultCause = result.cause();
@@ -199,11 +199,11 @@ class GenericDeadLetterTest {
         MetaData originalDiagnostics = MetaData.with("old-key", "old-value");
         MetaData expectedDiagnostics = MetaData.with("new-key", "new-value");
 
-        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(
+        DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(
                 SEQUENCE_IDENTIFIER, MESSAGE, null, expectedTime, expectedTime, originalDiagnostics
         );
 
-        DeadLetter<EventMessage<String>> result = testSubject.withDiagnostics(expectedDiagnostics);
+        DeadLetter<EventMessage> result = testSubject.withDiagnostics(expectedDiagnostics);
 
         assertEquals(testSubject.message(), result.message());
         Optional<Cause> resultCause = result.cause();
@@ -222,11 +222,11 @@ class GenericDeadLetterTest {
         MetaData originalDiagnostics = MetaData.with("old-key", "old-value");
         MetaData expectedDiagnostics = MetaData.with("old-key", "old-value").and("new-key", "new-value");
 
-        DeadLetter<EventMessage<String>> testSubject = new GenericDeadLetter<>(
+        DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(
                 SEQUENCE_IDENTIFIER, MESSAGE, null, expectedTime, expectedTime, originalDiagnostics
         );
 
-        DeadLetter<EventMessage<String>> result =
+        DeadLetter<EventMessage> result =
                 testSubject.withDiagnostics(original -> original.and("new-key", "new-value"));
 
         assertEquals(testSubject.message(), result.message());

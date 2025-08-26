@@ -53,8 +53,8 @@ class ContextAwareCommandDispatcherTest {
     private CommandDispatcher testSubject;
 
     private ArgumentCaptor<Object> payloadCaptor;
-    private CompletableFuture<Message<?>> messageOneFuture;
-    private CompletableFuture<Message<?>> messageTwoFuture;
+    private CompletableFuture<Message> messageOneFuture;
+    private CompletableFuture<Message> messageTwoFuture;
 
     @BeforeEach
     void setUp() {
@@ -77,13 +77,13 @@ class ContextAwareCommandDispatcherTest {
     @Test
     void sendCommandsAreGivenToCommandGateway() {
         CommandResult resultOne = testSubject.send(TEST_COMMAND_PAYLOAD_ONE);
-        CompletableFuture<? extends Message<?>> resultMessageOne = resultOne.getResultMessage();
+        CompletableFuture<? extends Message> resultMessageOne = resultOne.getResultMessage();
         assertThat(resultMessageOne).isNotCompleted();
         messageOneFuture.complete(TEST_RESULT_MESSAGE_ONE);
         assertThat(resultMessageOne).isCompleted();
 
         CommandResult resultTwo = testSubject.send(TEST_COMMAND_PAYLOAD_TWO);
-        CompletableFuture<? extends Message<?>> resultMessageTwo = resultTwo.getResultMessage();
+        CompletableFuture<? extends Message> resultMessageTwo = resultTwo.getResultMessage();
         assertThat(resultMessageTwo).isNotCompleted();
         messageTwoFuture.complete(TEST_RESULT_MESSAGE_TWO);
         assertThat(resultMessageTwo).isCompleted();
@@ -104,13 +104,13 @@ class ContextAwareCommandDispatcherTest {
         MetaData metaDataTwo = MetaData.with("keyTwo", "valueTwo");
 
         CommandResult resultOne = testSubject.send(TEST_COMMAND_PAYLOAD_ONE, metaDataOne);
-        CompletableFuture<? extends Message<?>> resultMessageOne = resultOne.getResultMessage();
+        CompletableFuture<? extends Message> resultMessageOne = resultOne.getResultMessage();
         assertThat(resultMessageOne).isNotCompleted();
         messageOneFuture.complete(new GenericCommandResultMessage<>(new MessageType("result"), "resultOne"));
         assertThat(resultMessageOne).isCompleted();
 
         CommandResult resultTwo = testSubject.send(TEST_COMMAND_PAYLOAD_TWO, metaDataTwo);
-        CompletableFuture<? extends Message<?>> resultMessageTwo = resultTwo.getResultMessage();
+        CompletableFuture<? extends Message> resultMessageTwo = resultTwo.getResultMessage();
         assertThat(resultMessageTwo).isNotCompleted();
         messageTwoFuture.complete(TEST_RESULT_MESSAGE_TWO);
         assertThat(resultMessageTwo).isCompleted();

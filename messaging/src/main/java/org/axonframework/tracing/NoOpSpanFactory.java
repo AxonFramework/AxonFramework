@@ -41,15 +41,15 @@ public class NoOpSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
+    public Span createHandlerSpan(Supplier<String> operationNameSupplier, Message parentMessage,
                                   boolean isChildTrace,
-                                  Message<?>... linkedParents) {
+                                  Message... linkedParents) {
         return NoOpSpan.INSTANCE;
     }
 
     @Override
-    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message<?> parentMessage,
-                                   Message<?>... linkedSiblings) {
+    public Span createDispatchSpan(Supplier<String> operationNameSupplier, Message parentMessage,
+                                   Message... linkedSiblings) {
         return NoOpSpan.INSTANCE;
     }
 
@@ -59,7 +59,7 @@ public class NoOpSpanFactory implements SpanFactory {
     }
 
     @Override
-    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message<?> message) {
+    public Span createInternalSpan(Supplier<String> operationNameSupplier, Message message) {
         return NoOpSpan.INSTANCE;
     }
 
@@ -69,7 +69,7 @@ public class NoOpSpanFactory implements SpanFactory {
     }
 
     @Override
-    public <M extends Message<?>> M propagateContext(M message) {
+    public <M extends Message> M propagateContext(M message) {
         return message;
     }
 

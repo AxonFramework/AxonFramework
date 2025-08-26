@@ -50,17 +50,17 @@ class DefaultEventMessageConverterTest {
         metaData.put("string", "world");
         Instant instant = Instant.EPOCH;
 
-        EventMessage<EventPayload> axonMessage =
-                new GenericEventMessage<>(id, name, payload, metaData, instant);
+        EventMessage axonMessage =
+                new GenericEventMessage(id, name, payload, metaData, instant);
 
-        EventMessage<EventPayload> convertedAxonMessage = eventMessageConverter.convertFromInboundMessage(
+        EventMessage convertedAxonMessage = eventMessageConverter.convertFromInboundMessage(
                 eventMessageConverter.convertToOutboundMessage(axonMessage)
         );
 
         assertEquals(instant, convertedAxonMessage.timestamp());
         assertEquals("100", convertedAxonMessage.metaData().get("number"));
         assertEquals("world", convertedAxonMessage.metaData().get("string"));
-        assertEquals("hello", convertedAxonMessage.payload().name);
+        assertEquals("hello", convertedAxonMessage.payloadAs(EventPayload.class).name);
         assertEquals(id, convertedAxonMessage.identifier());
     }
 
@@ -75,19 +75,19 @@ class DefaultEventMessageConverterTest {
         metaData.put("string", "world");
         Instant instant = Instant.EPOCH;
 
-        EventMessage<EventPayload> axonMessage =
-                new GenericDomainEventMessage<>("foo", aggId, 1, id, name, payload, metaData, instant);
-        EventMessage<EventPayload> convertedAxonMessage = eventMessageConverter.convertFromInboundMessage(
+        EventMessage axonMessage =
+                new GenericDomainEventMessage("foo", aggId, 1, id, name, payload, metaData, instant);
+        EventMessage convertedAxonMessage = eventMessageConverter.convertFromInboundMessage(
                 eventMessageConverter.convertToOutboundMessage(axonMessage)
         );
 
         assertInstanceOf(DomainEventMessage.class, convertedAxonMessage);
 
-        DomainEventMessage<EventPayload> convertDomainMessage = (DomainEventMessage<EventPayload>) convertedAxonMessage;
+        DomainEventMessage convertDomainMessage = (DomainEventMessage) convertedAxonMessage;
         assertEquals(instant, convertDomainMessage.timestamp());
         assertEquals("100", convertDomainMessage.metaData().get("number"));
         assertEquals("world", convertDomainMessage.metaData().get("string"));
-        assertEquals("hello", convertDomainMessage.payload().name);
+        assertEquals("hello", convertDomainMessage.payloadAs(EventPayload.class).name);
         assertEquals(id, convertDomainMessage.identifier());
         assertEquals("foo", convertDomainMessage.getType());
         assertEquals(aggId, convertDomainMessage.getAggregateIdentifier());

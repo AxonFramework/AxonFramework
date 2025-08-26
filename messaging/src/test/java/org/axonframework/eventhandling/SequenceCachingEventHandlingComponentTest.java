@@ -53,7 +53,7 @@ class SequenceCachingEventHandlingComponentTest {
         @Test
         void shouldCacheSequenceIdentifierForSameEvent() {
             // given
-            EventMessage<String> event = EventTestUtils.asEventMessage("test-payload");
+            EventMessage event = EventTestUtils.asEventMessage("test-payload");
             ProcessingContext context = new StubProcessingContext();
             Object expectedSequenceId = "sequence-123";
 
@@ -72,8 +72,8 @@ class SequenceCachingEventHandlingComponentTest {
         @Test
         void shouldInvokeDelegateForDifferentEvents() {
             // given
-            EventMessage<String> event1 = EventTestUtils.asEventMessage("payload-1");
-            EventMessage<String> event2 = EventTestUtils.asEventMessage("payload-2");
+            EventMessage event1 = EventTestUtils.asEventMessage("payload-1");
+            EventMessage event2 = EventTestUtils.asEventMessage("payload-2");
             ProcessingContext context = new StubProcessingContext();
             Object sequenceId1 = "sequence-1";
             Object sequenceId2 = "sequence-2";
@@ -95,8 +95,8 @@ class SequenceCachingEventHandlingComponentTest {
         @Test
         void shouldCacheDifferentSequenceIdentifiersForDifferentEvents() {
             // given
-            EventMessage<String> event1 = EventTestUtils.asEventMessage("payload-1");
-            EventMessage<String> event2 = EventTestUtils.asEventMessage("payload-2");
+            EventMessage event1 = EventTestUtils.asEventMessage("payload-1");
+            EventMessage event2 = EventTestUtils.asEventMessage("payload-2");
             ProcessingContext context = new StubProcessingContext();
             Object sequenceId1 = "sequence-1";
             Object sequenceId2 = "sequence-2";
@@ -124,7 +124,7 @@ class SequenceCachingEventHandlingComponentTest {
         @Test
         void shouldNotCacheAcrossDifferentProcessingContexts() {
             // given
-            EventMessage<String> event = EventTestUtils.asEventMessage("test-payload");
+            EventMessage event = EventTestUtils.asEventMessage("test-payload");
             ProcessingContext context1 = new StubProcessingContext();
             ProcessingContext context2 = new StubProcessingContext();
             Object sequenceId1 = "sequence-1";
@@ -147,7 +147,7 @@ class SequenceCachingEventHandlingComponentTest {
         @Test
         void shouldCachePerProcessingContext() {
             // given
-            EventMessage<String> event = EventTestUtils.asEventMessage("test-payload");
+            EventMessage event = EventTestUtils.asEventMessage("test-payload");
             ProcessingContext context1 = new StubProcessingContext();
             ProcessingContext context2 = new StubProcessingContext();
             Object sequenceId1 = "sequence-1";
@@ -174,11 +174,11 @@ class SequenceCachingEventHandlingComponentTest {
         @Test
         void shouldHandleMixedEventsAndCachingCorrectly() {
             // given
-            EventMessage<String> event1 = EventTestUtils.asEventMessage("payload-1");
-            EventMessage<String> event2 = EventTestUtils.asEventMessage("payload-2");
-            EventMessage<String> event3 = EventTestUtils.asEventMessage("payload-3");
+            EventMessage event1 = EventTestUtils.asEventMessage("payload-1");
+            EventMessage event2 = EventTestUtils.asEventMessage("payload-2");
+            EventMessage event3 = EventTestUtils.asEventMessage("payload-3");
             ProcessingContext context = new StubProcessingContext();
-            
+
             Object sequenceId1 = "sequence-1";
             Object sequenceId2 = "sequence-2";
             Object sequenceId3 = "sequence-3";
@@ -208,7 +208,7 @@ class SequenceCachingEventHandlingComponentTest {
         @Test
         void shouldDelegateHandleToDelegate() {
             // given
-            EventMessage<String> event = EventTestUtils.asEventMessage("test-payload");
+            EventMessage event = EventTestUtils.asEventMessage("test-payload");
             ProcessingContext context = new StubProcessingContext();
 
             // when

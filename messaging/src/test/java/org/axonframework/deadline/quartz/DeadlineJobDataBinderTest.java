@@ -26,7 +26,6 @@ import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.TestSerializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -48,15 +47,15 @@ class DeadlineJobDataBinderTest {
     private static final String TEST_DEADLINE_NAME = "deadline-name";
     private static final String TEST_DEADLINE_PAYLOAD = "deadline-payload";
 
-    private final DeadlineMessage<String> testDeadlineMessage;
+    private final DeadlineMessage testDeadlineMessage;
     private final MetaData testMetaData;
     private final ScopeDescriptor testDeadlineScope;
 
     public DeadlineJobDataBinderTest() {
-        DeadlineMessage<String> testDeadlineMessage =
-                new GenericDeadlineMessage<>(
+        DeadlineMessage testDeadlineMessage =
+                new GenericDeadlineMessage(
                         TEST_DEADLINE_NAME,
-                        new GenericMessage<>(new MessageType(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
+                        new GenericMessage(new MessageType(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
                         Instant::now
                 );
         testMetaData = MetaData.with("some-key", "some-value");
@@ -110,7 +109,7 @@ class DeadlineJobDataBinderTest {
     ) {
         JobDataMap testJobDataMap = toJobData(serializer, testDeadlineMessage, testDeadlineScope);
 
-        DeadlineMessage<String> result = deadlineMessage(serializer, testJobDataMap);
+        DeadlineMessage result = deadlineMessage(serializer, testJobDataMap);
 
         assertEquals(testDeadlineMessage.getDeadlineName(), result.getDeadlineName());
         assertEquals(testDeadlineMessage.identifier(), result.identifier());

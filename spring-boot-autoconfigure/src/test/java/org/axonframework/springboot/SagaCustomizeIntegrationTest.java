@@ -115,8 +115,8 @@ class SagaCustomizeIntegrationTest {
                 });
     }
 
-    private static EventMessage<Object> asEventMessage(Object payload) {
-        return new GenericEventMessage<>(new MessageType("event"), payload);
+    private static EventMessage asEventMessage(Object payload) {
+        return new GenericEventMessage(new MessageType("event"), payload);
     }
 
     @AutoConfigureBefore(LegacyAxonAutoConfiguration.class)

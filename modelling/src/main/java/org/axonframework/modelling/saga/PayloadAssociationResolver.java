@@ -52,7 +52,7 @@ public class PayloadAssociationResolver implements AssociationResolver {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage<?> message,
+    public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage message,
                               @Nonnull MessageHandlingMember<T> handler) {
         return getProperty(associationPropertyName, handler).getValue(message.payload());
     }

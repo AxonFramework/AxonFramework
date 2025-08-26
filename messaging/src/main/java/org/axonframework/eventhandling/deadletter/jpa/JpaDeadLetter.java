@@ -36,7 +36,7 @@ import java.util.Optional;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
-public class JpaDeadLetter<M extends EventMessage<?>> implements DeadLetter<M> {
+public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
 
     private final String id;
     private final Long index;

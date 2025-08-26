@@ -20,8 +20,6 @@ import org.axonframework.common.BuilderUtils;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 
-import static java.lang.String.format;
-
 /**
  * Default implementation of the {@link EventBusSpanFactory}.
  *
@@ -43,7 +41,7 @@ public class DefaultEventBusSpanFactory implements EventBusSpanFactory {
     }
 
     @Override
-    public Span createPublishEventSpan(EventMessage<?> eventMessage) {
+    public Span createPublishEventSpan(EventMessage eventMessage) {
         return spanFactory.createDispatchSpan(() -> "EventBus.publishEvent", eventMessage);
     }
 
@@ -53,7 +51,7 @@ public class DefaultEventBusSpanFactory implements EventBusSpanFactory {
     }
 
     @Override
-    public <T> EventMessage<T> propagateContext(EventMessage<T> eventMessage) {
+    public EventMessage propagateContext(EventMessage eventMessage) {
         return spanFactory.propagateContext(eventMessage);
     }
 

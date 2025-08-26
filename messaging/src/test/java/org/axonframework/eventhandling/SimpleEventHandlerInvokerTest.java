@@ -55,7 +55,7 @@ class SimpleEventHandlerInvokerTest {
 
     @Test
     void singleEventPublication() throws Exception {
-        EventMessage<?> event = createDomainEvent();
+        EventMessage event = createDomainEvent();
 
         ProcessingContext context = StubProcessingContext.forMessage(event);
         testSubject.handle(event, context, Segment.ROOT_SEGMENT);
@@ -68,9 +68,9 @@ class SimpleEventHandlerInvokerTest {
 
     @Test
     void repeatedEventPublication() throws Exception {
-        List<? extends EventMessage<?>> events = createDomainEvents(2);
+        List<? extends EventMessage> events = createDomainEvents(2);
 
-        for (EventMessage<?> event : events) {
+        for (EventMessage event : events) {
             testSubject.handle(event, StubProcessingContext.forMessage(event), Segment.ROOT_SEGMENT);
         }
 

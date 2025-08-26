@@ -87,7 +87,7 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable T target) throws Exception {
+        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable T target) throws Exception {
             Object result = super.handleSync(message, context, target);
             if (result instanceof Optional) {
                 return ((Optional<?>) result).orElse(null);
@@ -120,11 +120,11 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
             return super.canHandle(message, context)
                     && message instanceof QueryMessage
                     && queryName.equals(message.type().name())
-                    && ((QueryMessage<?, ?>) message).responseType().matches(resultType);
+                    && ((QueryMessage) message).responseType().matches(resultType);
         }
 
         @Override

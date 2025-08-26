@@ -36,7 +36,7 @@ public interface CommandBusSpanFactory {
      * @param distributed    Whether the command is distributed or not.
      * @return The created span.
      */
-    Span createDispatchCommandSpan(CommandMessage<?> commandMessage, boolean distributed);
+    Span createDispatchCommandSpan(CommandMessage commandMessage, boolean distributed);
 
     /**
      * Creates a span for the handling of a command.
@@ -45,7 +45,7 @@ public interface CommandBusSpanFactory {
      * @param distributed    Whether the command is distributed or not.
      * @return The created span.
      */
-    Span createHandleCommandSpan(CommandMessage<?> commandMessage, boolean distributed);
+    Span createHandleCommandSpan(CommandMessage commandMessage, boolean distributed);
 
     /**
      * Propagates the context of the current span to the given command message.
@@ -54,5 +54,5 @@ public interface CommandBusSpanFactory {
      * @param <T>            The type of the payload of the command message.
      * @return The command message with the propagated context.
      */
-    <T> CommandMessage<T> propagateContext(CommandMessage<T> commandMessage);
+    <T> CommandMessage propagateContext(CommandMessage commandMessage);
 }

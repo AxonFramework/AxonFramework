@@ -37,7 +37,7 @@ import java.util.Map;
  * @author Steven van Beelen
  * @since 3.2.0
  */
-public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> implements QueryResponseMessage<R> {
+public class GenericQueryResponseMessage extends GenericResultMessage implements QueryResponseMessage {
 
     /**
      * Constructs a {@code GenericQueryResponseMessage} for the given {@code type} and {@code payload}.
@@ -45,10 +45,10 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * The {@link MetaData} defaults to an empty instance.
      *
      * @param type   The {@link MessageType type} for this {@link QueryResponseMessage}.
-     * @param result The result of type {@code R} for this {@link QueryResponseMessage}.
+     * @param result The result for this {@link QueryResponseMessage}.
      */
     public GenericQueryResponseMessage(@Nonnull MessageType type,
-                                       @Nullable R result) {
+                                       @Nullable Object result) {
         this(type, result, ObjectUtils.nullSafeTypeOf(result), MetaData.emptyInstance());
     }
 
@@ -63,9 +63,9 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      *                           {@code null}.
      * @param declaredResultType The declared result type of this {@link QueryResponseMessage}.
      */
-    public GenericQueryResponseMessage(@Nonnull MessageType type,
-                                       @Nullable R result,
-                                       @Nonnull Class<R> declaredResultType) {
+    public <R> GenericQueryResponseMessage(@Nonnull MessageType type,
+                                           @Nullable R result,
+                                           @Nonnull Class<R> declaredResultType) {
         this(type, result, declaredResultType, MetaData.emptyInstance());
     }
 
@@ -79,7 +79,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      */
     public GenericQueryResponseMessage(@Nonnull MessageType type,
                                        @Nonnull Throwable exception,
-                                       @Nonnull Class<R> declaredResultType) {
+                                       @Nonnull Class<?> declaredResultType) {
         this(type, exception, declaredResultType, MetaData.emptyInstance());
     }
 
@@ -90,13 +90,13 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * This constructor allows the actual result to be {@code null}.
      *
      * @param type     The {@link MessageType type} for this {@link QueryResponseMessage}.
-     * @param result   The result of type {@code R} for this {@link QueryResponseMessage}. May be {@code null}.
+     * @param result   The result for this {@link QueryResponseMessage}. May be {@code null}.
      * @param metaData The metadata for this {@link QueryResponseMessage}.
      */
     public GenericQueryResponseMessage(@Nonnull MessageType type,
-                                       @Nullable R result,
+                                       @Nullable Object result,
                                        @Nonnull Map<String, String> metaData) {
-        super(new GenericMessage<>(type, result, metaData));
+        super(new GenericMessage(type, result, metaData));
     }
 
     /**
@@ -111,11 +111,11 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * @param declaredResultType The declared result type of this {@link QueryResponseMessage}.
      * @param metaData           The metadata for this {@link QueryResponseMessage}.
      */
-    public GenericQueryResponseMessage(@Nonnull MessageType type,
-                                       @Nullable R result,
-                                       @Nonnull Class<R> declaredResultType,
-                                       @Nonnull Map<String, ?> metaData) {
-        super(new GenericMessage<>(type, result, declaredResultType, metaData));
+    public <R> GenericQueryResponseMessage(@Nonnull MessageType type,
+                                           @Nullable R result,
+                                           @Nonnull Class<R> declaredResultType,
+                                           @Nonnull Map<String, ?> metaData) {
+        super(new GenericMessage(type, result, declaredResultType, metaData));
     }
 
     /**
@@ -130,9 +130,9 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      */
     public GenericQueryResponseMessage(@Nonnull MessageType type,
                                        @Nonnull Throwable exception,
-                                       @Nonnull Class<R> declaredResultType,
+                                       @Nonnull Class<?> declaredResultType,
                                        @Nonnull Map<String, ?> metaData) {
-        super(new GenericMessage<>(type, null, declaredResultType, metaData), exception);
+        super(new GenericMessage(type, null, declaredResultType, metaData), exception);
     }
 
     /**
@@ -146,7 +146,7 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      *                 {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
-    public GenericQueryResponseMessage(@Nonnull Message<R> delegate) {
+    public GenericQueryResponseMessage(@Nonnull Message delegate) {
         super(delegate);
     }
 
@@ -163,38 +163,37 @@ public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> impl
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link QueryResponseMessage}.
      */
-    public GenericQueryResponseMessage(@Nonnull Message<R> delegate,
+    public GenericQueryResponseMessage(@Nonnull Message delegate,
                                        @Nonnull Throwable exception) {
         super(delegate, exception);
     }
 
     @Override
     @Nonnull
-    public QueryResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericQueryResponseMessage<>(delegate().withMetaData(metaData));
+    public QueryResponseMessage withMetaData(@Nonnull Map<String, String> metaData) {
+        return new GenericQueryResponseMessage(delegate().withMetaData(metaData));
     }
 
     @Override
     @Nonnull
-    public QueryResponseMessage<R> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
-        return new GenericQueryResponseMessage<>(delegate().andMetaData(additionalMetaData));
+    public QueryResponseMessage andMetaData(@Nonnull Map<String, String> additionalMetaData) {
+        return new GenericQueryResponseMessage(delegate().andMetaData(additionalMetaData));
     }
 
     @Override
     @Nonnull
-    public <T> QueryResponseMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
-        T convertedPayload = payloadAs(type, converter);
+    public QueryResponseMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+        Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
-            //noinspection unchecked
-            return (QueryResponseMessage<T>) this;
+            return this;
         }
-        Message<R> delegate = delegate();
-        Message<T> converted = new GenericMessage<>(delegate.identifier(),
+        Message delegate = delegate();
+        Message converted = new GenericMessage(delegate.identifier(),
                                                     delegate.type(),
                                                     convertedPayload,
                                                     delegate.metaData());
         return optionalExceptionResult().isPresent()
-                ? new GenericQueryResponseMessage<>(converted, optionalExceptionResult().get())
-                : new GenericQueryResponseMessage<>(converted);
+                ? new GenericQueryResponseMessage(converted, optionalExceptionResult().get())
+                : new GenericQueryResponseMessage(converted);
     }
 }

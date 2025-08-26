@@ -187,7 +187,7 @@ class AnnotatedEventHandlingComponentTest {
         }
     }
 
-    private static void assertSuccessfulStream(MessageStream.Empty<Message<Void>> result) {
+    private static void assertSuccessfulStream(MessageStream.Empty<Message> result) {
         assertTrue(result.error().isEmpty());
     }
 
@@ -300,12 +300,12 @@ class AnnotatedEventHandlingComponentTest {
         }
     }
 
-    private static DomainEventMessage<?> domainEvent(int seq) {
+    private static DomainEventMessage domainEvent(int seq) {
         return domainEvent(seq, null);
     }
 
-    private static DomainEventMessage<?> domainEvent(int seq, String sampleMetaData) {
-        return new GenericDomainEventMessage<>(
+    private static DomainEventMessage domainEvent(int seq, String sampleMetaData) {
+        return new GenericDomainEventMessage(
                 "test",
                 "id",
                 seq,

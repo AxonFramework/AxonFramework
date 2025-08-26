@@ -32,7 +32,7 @@ import org.axonframework.serialization.Serializer;
 @Table(indexes = @Index(columnList = "aggregateIdentifier,sequenceNumber,type", unique = true))
 public class TestDomainEventEntry extends AbstractSequencedDomainEventEntry<String> {
 
-    public TestDomainEventEntry(DomainEventMessage<?> event, Serializer serializer) {
+    public TestDomainEventEntry(DomainEventMessage event, Serializer serializer) {
         super(event, serializer, String.class);
     }
 

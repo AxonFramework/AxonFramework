@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class IgnoreTest {
 
-    private DeadLetter<EventMessage<String>> testLetter;
+    private DeadLetter<EventMessage> testLetter;
 
     @BeforeEach
     void setUp() {
@@ -46,23 +46,23 @@ class IgnoreTest {
 
     @Test
     void constructorIgnoreAllowsEnqueueing() {
-        Ignore<Message<?>> testSubject = new Ignore<>();
+        Ignore<Message> testSubject = new Ignore<>();
 
         assertTrue(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
+        DeadLetter<? extends Message> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 
     @Test
     void decisionsIgnoreAllowsEnqueueing() {
-        Ignore<Message<?>> testSubject = Decisions.ignore();
+        Ignore<Message> testSubject = Decisions.ignore();
 
         assertTrue(testSubject.shouldEnqueue());
         assertFalse(testSubject.enqueueCause().isPresent());
 
-        DeadLetter<? extends Message<?>> result = testSubject.withDiagnostics(testLetter);
+        DeadLetter<? extends Message> result = testSubject.withDiagnostics(testLetter);
         assertEquals(testLetter, result);
     }
 }

@@ -41,8 +41,8 @@ import jakarta.annotation.Nonnull;
  * @author Steven van Beelen
  * @since 3.0
  */
-public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?>> & MetricSet>
-        implements MessageMonitor<Message<?>>, MetricSet {
+public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message> & MetricSet>
+        implements MessageMonitor<Message>, MetricSet {
 
     private final Supplier<T> monitorSupplier;
     private final Function<Class<?>, String> monitorNameBuilder;
@@ -76,10 +76,10 @@ public class PayloadTypeMessageMonitorWrapper<T extends MessageMonitor<Message<?
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message<?> message) {
+    public MonitorCallback onMessageIngested(@Nonnull Message message) {
         String monitorName = monitorNameBuilder.apply(message.payloadType());
 
-        MessageMonitor<Message<?>> messageMonitorForPayloadType =
+        MessageMonitor<Message> messageMonitorForPayloadType =
                 payloadTypeMonitors.computeIfAbsent(monitorName, payloadType -> monitorSupplier.get());
 
         return messageMonitorForPayloadType.onMessageIngested(message);

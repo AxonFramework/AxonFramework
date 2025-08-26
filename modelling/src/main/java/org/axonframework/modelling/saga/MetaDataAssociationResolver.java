@@ -42,7 +42,7 @@ public class MetaDataAssociationResolver implements AssociationResolver {
      * org.axonframework.messaging.MetaData}.
      */
     @Override
-    public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage<?> message,
+    public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage message,
                               @Nonnull MessageHandlingMember<T> handler) {
         return message.metaData().get(associationPropertyName);
     }

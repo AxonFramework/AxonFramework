@@ -28,7 +28,7 @@ class MultiMessageMonitorTest {
 
     @Test
     void onMessageIngested_SingleMessageMonitor_failure() {
-        MessageMonitor<Message<?>> messageMonitorMock = mock(MessageMonitor.class);
+        MessageMonitor<Message> messageMonitorMock = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback = mock(MessageMonitor.MonitorCallback.class);
         MultiMessageMonitor multiMessageMonitor = new MultiMessageMonitor(Arrays.asList(messageMonitorMock));
         Message messageMock = mock(Message.class);
@@ -44,7 +44,7 @@ class MultiMessageMonitorTest {
 
     @Test
     void onMessageIngested_SingleMessageMonitor_success() {
-        MessageMonitor<Message<?>> messageMonitorMock = mock(MessageMonitor.class);
+        MessageMonitor<Message> messageMonitorMock = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback = mock(MessageMonitor.MonitorCallback.class);
         MultiMessageMonitor multiMessageMonitor = new MultiMessageMonitor(Arrays.asList(messageMonitorMock));
         Message messageMock = mock(Message.class);
@@ -59,9 +59,9 @@ class MultiMessageMonitorTest {
 
     @Test
     void onMessageIngested_MultipleMessageMonitors() {
-        MessageMonitor<Message<?>> messageMonitorMock1 = mock(MessageMonitor.class);
+        MessageMonitor<Message> messageMonitorMock1 = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback1 = mock(MessageMonitor.MonitorCallback.class);
-        MessageMonitor<Message<?>> messageMonitorMock2 = mock(MessageMonitor.class);
+        MessageMonitor<Message> messageMonitorMock2 = mock(MessageMonitor.class);
         MessageMonitor.MonitorCallback callback2 = mock(MessageMonitor.MonitorCallback.class);
         MultiMessageMonitor multiMessageMonitor = new MultiMessageMonitor(Arrays.asList(messageMonitorMock1, messageMonitorMock2));
         Message messageMock = mock(Message.class);

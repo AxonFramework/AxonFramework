@@ -43,7 +43,7 @@ class StubDeadlineManagerTest {
         MockScope.execute(() ->
                                   testSubject.schedule(triggerTime, "gone")
         );
-        List<DeadlineMessage<?>> triggered = new ArrayList<>();
+        List<DeadlineMessage> triggered = new ArrayList<>();
         testSubject.advanceTimeBy(Duration.ofMinutes(75), (s, message) -> triggered.add(message));
 
         assertEquals(1, triggered.size());

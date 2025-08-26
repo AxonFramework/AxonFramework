@@ -135,7 +135,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public Object handleSync(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) throws Exception {
+    public Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) throws Exception {
         Optional<MessageHandlingMember<? super Object>> handler =
                 inspector.getHandlers(listenerType)
                          .filter(h -> h.canHandle(event, context))
@@ -148,7 +148,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     }
 
     @Override
-    public boolean canHandle(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    public boolean canHandle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return inspector.getHandlers(listenerType)
                         .anyMatch(h -> h.canHandle(event, context));
     }
@@ -173,7 +173,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     @Override
     public <R> void prepareReset(R resetContext, ProcessingContext context) {
         try {
-            ResetContext<?> resetMessage = asResetContext(resetContext);
+            ResetContext resetMessage = asResetContext(resetContext);
             ProcessingContext messageProcessingContext = new LegacyMessageSupportingContext(resetMessage);
             inspector.getHandlers(listenerType)
                      .filter(h -> h.canHandle(resetMessage, messageProcessingContext))
@@ -196,21 +196,20 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
      * {@code messageOrPayload} is wrapped into a {@link GenericResetContext} as its payload.
      *
      * @param messageOrPayload the payload to wrap or cast as {@link ResetContext}
-     * @param <T>              the type of payload contained in the message
      * @return a {@link ResetContext} containing given {@code messageOrPayload} as payload, or the
      * {@code messageOrPayload} if it already implements {@code ResetContext}.
      */
-    @SuppressWarnings("unchecked")
-    private <T> ResetContext<T> asResetContext(Object messageOrPayload) {
-        if (messageOrPayload instanceof ResetContext) {
-            return (ResetContext<T>) messageOrPayload;
-        } else if (messageOrPayload instanceof Message) {
-            return new GenericResetContext<>((Message<T>) messageOrPayload);
+    private ResetContext asResetContext(Object messageOrPayload) {
+        if (messageOrPayload instanceof ResetContext rc) {
+            return rc;
+        }
+        if (messageOrPayload instanceof Message m) {
+            return new GenericResetContext(m);
         }
         MessageType type = messageOrPayload == null
                 ? new MessageType("empty.reset.context")
                 : messageTypeResolver.resolveOrThrow(messageOrPayload);
-        return new GenericResetContext<>(type, (T) messageOrPayload);
+        return new GenericResetContext(type, messageOrPayload);
     }
 
     /**

@@ -59,13 +59,13 @@ public class DefaultSagaManagerSpanFactory implements SagaManagerSpanFactory {
     }
 
     @Override
-    public Span createCreateSagaInstanceSpan(EventMessage<?> event, Class<?> sagaType, String sagaIdentifier) {
+    public Span createCreateSagaInstanceSpan(EventMessage event, Class<?> sagaType, String sagaIdentifier) {
         return spanFactory.createInternalSpan(() -> "SagaManager.createSaga(" + sagaType.getSimpleName() + ")", event)
                           .addAttribute(sagaIdentifierAttribute, sagaIdentifier);
     }
 
     @Override
-    public Span createInvokeSagaSpan(EventMessage<?> event, Class<?> sagaType, Saga<?> saga) {
+    public Span createInvokeSagaSpan(EventMessage event, Class<?> sagaType, Saga<?> saga) {
         return spanFactory.createInternalSpan(() -> "SagaManager.invokeSaga(" + sagaType.getSimpleName() + ")", event)
                           .addAttribute(sagaIdentifierAttribute, saga.getSagaIdentifier());
     }

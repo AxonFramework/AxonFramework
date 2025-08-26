@@ -56,7 +56,7 @@ class SequenceIdentifierCache {
      *                  only keeping track of the sequence identifiers which are enqueued. If it's not empty we need to
      *                  check every identifier at least one to know it's not present yet.
      */
-    SequenceIdentifierCache(int segmentId, int maxSize, SequencedDeadLetterQueue<EventMessage<?>> queue) {
+    SequenceIdentifierCache(int segmentId, int maxSize, SequencedDeadLetterQueue<EventMessage> queue) {
         this.segmentId = segmentId;
         this.maxSize = maxSize;
         this.startedEmpty = queue.amountOfSequences() == 0L;

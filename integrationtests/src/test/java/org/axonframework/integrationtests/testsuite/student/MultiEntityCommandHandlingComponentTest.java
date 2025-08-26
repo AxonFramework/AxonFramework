@@ -183,7 +183,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractCommandHandlingStu
 
             @Override
             @Nonnull
-            public String resolve(@Nonnull Message<?> command, @Nonnull ProcessingContext context) {
+            public String resolve(@Nonnull Message command, @Nonnull ProcessingContext context) {
                 //noinspection unused
                 if (command.payload() instanceof AssignMentorCommand(String studentId, String mentorId)) {
                     return studentId;

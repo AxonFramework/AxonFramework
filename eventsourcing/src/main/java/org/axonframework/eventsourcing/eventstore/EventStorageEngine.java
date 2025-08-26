@@ -105,7 +105,7 @@ public interface EventStorageEngine extends DescribableComponent {
      * @return A <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
      * {@code condition}.
      */
-    MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition);
+    MessageStream<EventMessage> source(@Nonnull SourcingCondition condition);
 
     /**
      * Creates an <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
@@ -120,7 +120,7 @@ public interface EventStorageEngine extends DescribableComponent {
      * @return An <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
      * {@code condition}.
      */
-    MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition);
+    MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition);
 
     /**
      * Creates a {@link TrackingToken} that is at the first position of an event stream.

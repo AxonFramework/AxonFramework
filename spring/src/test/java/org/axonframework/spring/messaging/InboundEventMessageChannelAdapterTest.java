@@ -43,13 +43,13 @@ class InboundEventMessageChannelAdapterTest {
     void messagePayloadIsPublished() {
         testSubject = new InboundEventMessageChannelAdapter();
         StubDomainEvent event = new StubDomainEvent();
-        testSubject.handleMessage(new GenericMessage<Object>(event));
+        testSubject.handleMessage(new GenericMessage(event));
 
         verify(mockEventBus, never()).publish(isA(EventMessage.class));
 
         testSubject.subscribe(mockEventBus::publish);
 
-        testSubject.handleMessage(new GenericMessage<Object>(event));
+        testSubject.handleMessage(new GenericMessage(event));
 
         verify(mockEventBus).publish(ArgumentMatchers.anyList());
     }

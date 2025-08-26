@@ -45,5 +45,5 @@ public interface CommandTargetResolver {
      * @see AggregateCreationPolicy#ALWAYS
      * @see AggregateCreationPolicy#CREATE_IF_MISSING
      */
-    String resolveTarget(@Nonnull CommandMessage<?> command);
+    String resolveTarget(@Nonnull CommandMessage command);
 }

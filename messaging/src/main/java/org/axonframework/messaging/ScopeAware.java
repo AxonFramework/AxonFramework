@@ -38,7 +38,7 @@ public interface ScopeAware {
      * @throws Exception if sending the {@code message} failed. Might occur if the message handling process throws an
      *                   exception.
      */
-    void send(Message<?> message, ProcessingContext context, ScopeDescriptor scopeDescription) throws Exception;
+    void send(Message message, ProcessingContext context, ScopeDescriptor scopeDescription) throws Exception;
 
     /**
      * Check whether this implementation can resolve a {@link Scope} object based on the provided

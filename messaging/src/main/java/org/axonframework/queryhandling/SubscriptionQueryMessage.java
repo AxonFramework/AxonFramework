@@ -40,7 +40,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 3.3.0
  */
-public interface SubscriptionQueryMessage<P, I, U> extends QueryMessage<P, I> {
+public interface SubscriptionQueryMessage<P, I, U> extends QueryMessage {
 
     /**
      * The {@link ResponseType type of incremental responses} expected by the sender of the query.
@@ -60,19 +60,19 @@ public interface SubscriptionQueryMessage<P, I, U> extends QueryMessage<P, I> {
 
     @Override
     @Nonnull
-    default <T> SubscriptionQueryMessage<T, I, U> withConvertedPayload(@Nonnull Class<T> type,
-                                                                       @Nonnull Converter converter) {
+    default SubscriptionQueryMessage<?, I, U> withConvertedPayload(@Nonnull Class<?> type,
+                                                                   @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
     @Nonnull
-    default <T> SubscriptionQueryMessage<T, I, U> withConvertedPayload(@Nonnull TypeReference<T> type,
-                                                                       @Nonnull Converter converter) {
+    default SubscriptionQueryMessage<?, I, U> withConvertedPayload(@Nonnull TypeReference<?> type,
+                                                                   @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @Nonnull
-    <T> SubscriptionQueryMessage<T, I, U> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    SubscriptionQueryMessage<?, I, U> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

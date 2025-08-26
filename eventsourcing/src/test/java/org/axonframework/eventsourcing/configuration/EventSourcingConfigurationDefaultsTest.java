@@ -95,7 +95,7 @@ class EventSourcingConfigurationDefaultsTest {
     private static class TestTagResolver implements TagResolver {
 
         @Override
-        public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
+        public Set<Tag> resolve(@Nonnull EventMessage event) {
             throw new UnsupportedOperationException();
         }
     }

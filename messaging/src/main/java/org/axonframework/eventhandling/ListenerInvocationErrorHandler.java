@@ -41,7 +41,7 @@ public interface ListenerInvocationErrorHandler {
      * @param eventHandler The listener that failed to handle given event
      * @throws Exception To stop further handling of the event
      */
-    void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+    void onError(@Nonnull Exception exception, @Nonnull EventMessage event,
                  @Nonnull EventMessageHandler eventHandler) throws Exception;
 
 }

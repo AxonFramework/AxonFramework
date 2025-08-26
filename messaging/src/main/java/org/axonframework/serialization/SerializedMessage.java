@@ -35,7 +35,6 @@ import java.util.Map;
  * The {@code SerializedMessage} guarantees that the payload and metadata will not be deserialized more than once.
  * Messages of this type  will not be serialized more than once by the same serializer.
  *
- * @param <P> The type of {@link #payload() payload} contained in this {@link org.axonframework.messaging.Message}.
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
@@ -43,9 +42,9 @@ import java.util.Map;
  * @deprecated By shifting from the {@link Serializer} to the {@link Converter}, this exception becomes obsolete.
  */
 @Deprecated(forRemoval = true, since = "5.0.0")
-public class SerializedMessage<P> extends AbstractMessage<P> {
+public class SerializedMessage<P> extends AbstractMessage {
 
-    private final LazyDeserializingObject<P> payload;
+    private final LazyDeserializingObject<?> payload;
     private final LazyDeserializingObject<MetaData> metaData;
 
     /**
@@ -84,21 +83,21 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
      */
     public SerializedMessage(@Nonnull String identifier,
                              @Nonnull MessageType type,
-                             @Nonnull LazyDeserializingObject<P> payload,
+                             @Nonnull LazyDeserializingObject<?> payload,
                              @Nonnull LazyDeserializingObject<MetaData> metaData) {
         super(identifier, type);
         this.metaData = metaData;
         this.payload = payload;
     }
 
-    private SerializedMessage(@Nonnull SerializedMessage<P> message,
+    private SerializedMessage(@Nonnull SerializedMessage message,
                               @Nonnull LazyDeserializingObject<MetaData> newMetaData) {
         this(message.identifier(), message.type(), message.payload, newMetaData);
     }
 
     @Override
     @Nullable
-    public P payload() {
+    public Object payload() {
         try {
             return payload.getObject();
         } catch (SerializationException e) {
@@ -125,33 +124,33 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
 
     @Override
     @Nonnull
-    public Class<P> payloadType() {
+    public Class<?> payloadType() {
         return payload.getType();
     }
 
     @Override
-    protected SerializedMessage<P> withMetaData(MetaData metaData) {
+    protected SerializedMessage withMetaData(MetaData metaData) {
         if (metaData().equals(metaData)) {
             return this;
         }
-        return new SerializedMessage<>(this, new LazyDeserializingObject<>(metaData));
+        return new SerializedMessage(this, new LazyDeserializingObject<>(metaData));
     }
 
     @Override
     @Nonnull
-    public SerializedMessage<P> withMetaData(@Nonnull Map<String, String> metaData) {
-        return (SerializedMessage<P>) super.withMetaData(metaData);
+    public SerializedMessage withMetaData(@Nonnull Map<String, String> metaData) {
+        return (SerializedMessage) super.withMetaData(metaData);
     }
 
     @Override
     @Nonnull
-    public SerializedMessage<P> andMetaData(@Nonnull Map<String, String> metaData) {
-        return (SerializedMessage<P>) super.andMetaData(metaData);
+    public SerializedMessage andMetaData(@Nonnull Map<String, String> metaData) {
+        return (SerializedMessage) super.andMetaData(metaData);
     }
 
     @Override
     @Nonnull
-    public <T> Message<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+    public Message withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         // This class will be removed/replaced by the ConversionAwareMessage, so skipping implementation
         return null;
     }

@@ -112,7 +112,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public void handle(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext context, @Nonnull Segment segment)
+    public void handle(@Nonnull EventMessage message, @Nonnull ProcessingContext context, @Nonnull Segment segment)
             throws Exception {
         if (!sequencingPolicyMatchesSegment(message, segment)) {
             return;
@@ -120,15 +120,15 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         invokeHandlers(message, context);
     }
 
-    protected boolean sequencingPolicyMatchesSegment(@Nonnull EventMessage<?> message, @Nonnull Segment segment) {
+    protected boolean sequencingPolicyMatchesSegment(@Nonnull EventMessage message, @Nonnull Segment segment) {
         return segmentMatcher.matches(segment, message);
     }
 
-    protected Object sequenceIdentifier(EventMessage<?> event) {
+    protected Object sequenceIdentifier(EventMessage event) {
         return segmentMatcher.sequenceIdentifier(event);
     }
 
-    protected void invokeHandlers(EventMessage<?> message, ProcessingContext context) throws Exception {
+    protected void invokeHandlers(EventMessage message, ProcessingContext context) throws Exception {
         for (EventMessageHandler handler : eventHandlingComponents) {
             try {
                 handler.handleSync(message, context);
@@ -139,7 +139,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     @Override
-    public boolean canHandle(@Nonnull EventMessage<?> eventMessage,
+    public boolean canHandle(@Nonnull EventMessage eventMessage,
                              @Nonnull ProcessingContext context,
                              @Nonnull Segment segment) {
         return hasHandler(eventMessage, context) && segmentMatcher.matches(segment, eventMessage);
@@ -150,7 +150,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         return eventHandlingComponents.stream().anyMatch(eh -> eh.canHandleType(payloadType));
     }
 
-    private boolean hasHandler(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context) {
+    private boolean hasHandler(@Nonnull EventMessage eventMessage, @Nonnull ProcessingContext context) {
         for (EventMessageHandler eventHandler : eventHandlingComponents) {
             if (eventHandler.canHandle(eventMessage, context)) {
                 return true;

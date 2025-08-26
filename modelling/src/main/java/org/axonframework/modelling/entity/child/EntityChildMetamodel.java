@@ -56,7 +56,7 @@ public interface EntityChildMetamodel<C, P> extends EntityEvolver<P> {
      * @param context      The {@link ProcessingContext} for the command.
      * @return {@code true} if this child can handle the command, {@code false} otherwise.
      */
-    boolean canHandle(@Nonnull CommandMessage<?> message, @Nonnull P parentEntity, @Nonnull ProcessingContext context);
+    boolean canHandle(@Nonnull CommandMessage message, @Nonnull P parentEntity, @Nonnull ProcessingContext context);
 
     /**
      * Handles the given {@link CommandMessage} for the given child entity, using the provided parent entity.
@@ -67,7 +67,7 @@ public interface EntityChildMetamodel<C, P> extends EntityEvolver<P> {
      * @return The result of the command handling, which may be a {@link CommandResultMessage} or an error message.
      */
     @Nonnull
-    MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+    MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage message,
                                                          @Nonnull P parentEntity,
                                                          @Nonnull ProcessingContext context);
 

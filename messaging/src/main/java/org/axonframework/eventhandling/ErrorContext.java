@@ -29,7 +29,7 @@ public class ErrorContext {
 
     private final String eventProcessor;
     private final Throwable error;
-    private final List<? extends EventMessage<?>> failedEvents;
+    private final List<? extends EventMessage> failedEvents;
 
     /**
      * Instantiate an ErrorContext for the given {@code eventProcessor}, due to the given {@code error}, with the given
@@ -40,7 +40,7 @@ public class ErrorContext {
      * @param failedEvents   the list of events that triggered the error
      */
     public ErrorContext(@Nonnull String eventProcessor, @Nonnull Throwable error,
-                        @Nonnull List<? extends EventMessage<?>> failedEvents) {
+                        @Nonnull List<? extends EventMessage> failedEvents) {
         this.eventProcessor = eventProcessor;
         this.error = error;
         this.failedEvents = failedEvents;
@@ -70,7 +70,7 @@ public class ErrorContext {
      *
      * @return events part of the batch that failed, if any
      */
-    public List<? extends EventMessage<?>> failedEvents() {
+    public List<? extends EventMessage> failedEvents() {
         return failedEvents;
     }
 }

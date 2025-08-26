@@ -47,7 +47,7 @@ class AxonServerSubscriptionQueryResultTest {
 
     private SubscriptionQueryUpdateBuffer subscriptionQueryUpdateBuffer;
 
-    private AxonServerSubscriptionQueryResult<String, String> testSubject;
+    private AxonServerSubscriptionQueryResult testSubject;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
@@ -76,11 +76,11 @@ class AxonServerSubscriptionQueryResultTest {
         QueryBusSpanFactory noOpSpanFactory = DefaultQueryBusSpanFactory.builder()
                                                                         .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                         .build();
-        testSubject = new AxonServerSubscriptionQueryResult<>(null,
-                                                              result,
-                                                              testSerializer,
-                                                              noOpSpanFactory,
-                                                              NoOpSpanFactory.NoOpSpan.INSTANCE);
+        testSubject = new AxonServerSubscriptionQueryResult(null,
+                                                            result,
+                                                            testSerializer,
+                                                            noOpSpanFactory,
+                                                            NoOpSpanFactory.NoOpSpan.INSTANCE);
     }
 
     @AfterEach

@@ -31,7 +31,7 @@ import java.util.function.Predicate;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
+class FilteringMessageStream<M extends Message> implements MessageStream<M> {
 
     private final MessageStream<M> delegate;
     private final Predicate<Entry<M>> filter;
@@ -113,7 +113,7 @@ class FilteringMessageStream<M extends Message<?>> implements MessageStream<M> {
      *
      * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
      */
-    static class Single<M extends Message<?>> extends FilteringMessageStream<M> implements MessageStream.Single<M> {
+    static class Single<M extends Message> extends FilteringMessageStream<M> implements MessageStream.Single<M> {
 
         /**
          * Construct a {@link MessageStream stream} filtering only the first {@link Entry} of the given

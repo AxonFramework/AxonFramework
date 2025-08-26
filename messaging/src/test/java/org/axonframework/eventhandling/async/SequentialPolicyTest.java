@@ -46,8 +46,8 @@ class SequentialPolicyTest {
         assertEquals(id1, id3);
     }
 
-    private DomainEventMessage<Object> newStubDomainEvent(Object aggregateIdentifier) {
-        return new GenericDomainEventMessage<>(
+    private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
+        return new GenericDomainEventMessage(
                 "aggregateType", aggregateIdentifier.toString(), 0L,
                 new MessageType("event"), new Object()
         );

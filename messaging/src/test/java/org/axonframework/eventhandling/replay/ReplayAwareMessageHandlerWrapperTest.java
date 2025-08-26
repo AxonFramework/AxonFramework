@@ -62,10 +62,10 @@ class ReplayAwareMessageHandlerWrapperTest {
 
     @Test
     void invokeWithReplayTokens() throws Exception {
-        GenericTrackedEventMessage<Object> stringEvent = new GenericTrackedEventMessage<>(replayToken,
+        GenericTrackedEventMessage stringEvent = new GenericTrackedEventMessage(replayToken,
                                                                                           asEventMessage("1"));
         ProcessingContext stringContext = StubProcessingContext.forMessage(stringEvent);
-        GenericTrackedEventMessage<Object> longEvent = new GenericTrackedEventMessage<>(replayToken,
+        GenericTrackedEventMessage longEvent = new GenericTrackedEventMessage(replayToken,
                                                                                         asEventMessage(1L));
         ProcessingContext longContext = StubProcessingContext.forMessage(longEvent);
         assertTrue(testSubject.canHandle(stringEvent, stringContext));

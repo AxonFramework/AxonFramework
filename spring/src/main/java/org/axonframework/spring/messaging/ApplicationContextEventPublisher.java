@@ -33,7 +33,7 @@ import jakarta.annotation.Nonnull;
  */
 public class ApplicationContextEventPublisher implements InitializingBean, ApplicationContextAware {
 
-    private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
+    private final SubscribableMessageSource<? extends EventMessage> messageSource;
     private ApplicationContext applicationContext;
 
     /**
@@ -42,7 +42,7 @@ public class ApplicationContextEventPublisher implements InitializingBean, Appli
      *
      * @param messageSource The source to subscribe to.
      */
-    public ApplicationContextEventPublisher(SubscribableMessageSource<? extends EventMessage<?>> messageSource) {
+    public ApplicationContextEventPublisher(SubscribableMessageSource<? extends EventMessage> messageSource) {
         this.messageSource = messageSource;
     }
 
@@ -62,7 +62,7 @@ public class ApplicationContextEventPublisher implements InitializingBean, Appli
      * @param eventMessage The EventMessage to transform
      * @return the Spring ApplicationEvent representing the Axon EventMessage
      */
-    protected ApplicationEvent convert(EventMessage<?> eventMessage) {
+    protected ApplicationEvent convert(EventMessage eventMessage) {
         return new PayloadApplicationEvent<>(messageSource, eventMessage.payload());
     }
 

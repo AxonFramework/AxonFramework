@@ -40,7 +40,7 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-public abstract class MessageStreamTest<M extends Message<?>> {
+public abstract class MessageStreamTest<M extends Message> {
 
     /**
      * Construct a test subject using the given {@code messages} as the source.

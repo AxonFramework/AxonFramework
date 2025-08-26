@@ -157,7 +157,7 @@ class PooledStreamingEventProcessorModuleTest {
             configuration.start();
 
             // when
-            EventMessage<String> sampleEvent = EventTestUtils.asEventMessage("test-event");
+            EventMessage sampleEvent = EventTestUtils.asEventMessage("test-event");
             eventSource.publishMessage(sampleEvent);
 
             // then

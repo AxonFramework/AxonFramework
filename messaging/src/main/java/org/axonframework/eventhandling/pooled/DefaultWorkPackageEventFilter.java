@@ -74,7 +74,7 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
      */
     @Override
     public boolean canHandle(
-            @Nonnull EventMessage<?> eventMessage,
+            @Nonnull EventMessage eventMessage,
             @Nonnull ProcessingContext context,
             @Nonnull Segment segment
     ) throws Exception {

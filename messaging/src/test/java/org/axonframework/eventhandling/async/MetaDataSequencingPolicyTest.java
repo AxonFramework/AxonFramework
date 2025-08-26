@@ -44,7 +44,7 @@ public class MetaDataSequencingPolicyTest {
                 .metaDataKey("metaDataKey")
                 .build();
 
-        DomainEventMessage<?> testEvent =
+        DomainEventMessage testEvent =
                 newStubDomainEvent("42", Collections.singletonMap("metaDataKey", "metaDataValue"));
 
         assertThat(metaDataPolicy.getSequenceIdentifierFor(testEvent)).contains("metaDataValue");
@@ -68,13 +68,13 @@ public class MetaDataSequencingPolicyTest {
                              .build());
     }
 
-    private DomainEventMessage<?> newStubDomainEvent(final Object payload, Map<String, String> metaData) {
-        return new GenericDomainEventMessage<>(
+    private DomainEventMessage newStubDomainEvent(final Object payload, Map<String, String> metaData) {
+        return new GenericDomainEventMessage(
                 "aggregateType", "A", 0L, new MessageType("event"), payload, MetaData.from(metaData)
         );
     }
 
-    private DomainEventMessage<?> newStubDomainEvent(final Object payload) {
+    private DomainEventMessage newStubDomainEvent(final Object payload) {
         return newStubDomainEvent(payload, Collections.emptyMap());
     }
 }

@@ -20,8 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,7 +155,7 @@ class SequencingEventHandlingComponentTest {
 
         // when & then - Should complete without issues
         assertThatNoException().isThrownBy(() -> {
-            EventMessage<?> event = testEvent("event-1_seq-A");
+            EventMessage event = testEvent("event-1_seq-A");
             var unitOfWork = aUnitOfWork();
             var result = unitOfWork.executeWithResult((ctx) -> eventHandlingComponent.handle(event, ctx)
                                                                                      .asCompletableFuture());
@@ -178,7 +176,7 @@ class SequencingEventHandlingComponentTest {
         eventHandlingComponent.subscribe(eventType, failingHandler);
 
         // when
-        EventMessage<?> event = testEvent("event-1_seq-A");
+        EventMessage event = testEvent("event-1_seq-A");
         var unitOfWork = aUnitOfWork();
         var result = unitOfWork.executeWithResult((ctx) -> eventHandlingComponent.handle(event, ctx)
                                                                                  .asCompletableFuture());
@@ -194,7 +192,7 @@ class SequencingEventHandlingComponentTest {
     }
 
     @Nonnull
-    private static EventMessage<Object> testEvent(String payload) {
+    private static EventMessage testEvent(String payload) {
         return EventTestUtils.asEventMessage(new TestPayload(payload));
     }
 
@@ -209,7 +207,7 @@ class SequencingEventHandlingComponentTest {
     }
 
     @Nonnull
-    private List<String> payloadsOfSequence(List<EventMessage<?>> handledEvents, String sequence) {
+    private List<String> payloadsOfSequence(List<EventMessage> handledEvents, String sequence) {
         return handledEvents.stream()
                             .filter(event -> event.payload().toString().contains("seq-" + sequence))
                             .map(Message::payload)
@@ -222,7 +220,7 @@ class SequencingEventHandlingComponentTest {
             CountDownLatch processingBarrier = new CountDownLatch(1);
             CountDownLatch completionBarrier = new CountDownLatch(1);
 
-            CompletableFuture<EventMessage<Object>> asyncPipeline = CompletableFuture
+            CompletableFuture<EventMessage> asyncPipeline = CompletableFuture
                     .runAsync(() -> {
                         try {
                             processingBarrier.await(100, TimeUnit.MILLISECONDS);
@@ -249,7 +247,7 @@ class SequencingEventHandlingComponentTest {
      * Extracts the sequence identifier from an event with string representation containing "_seq-" pattern. For
      * example, "event-1_seq-A" returns "A", "event-2_seq-B" returns "B".
      */
-    private static String sequenceOf(EventMessage<?> event) {
+    private static String sequenceOf(EventMessage event) {
         var input = event.payload().toString();
         if (input == null) {
             return "";

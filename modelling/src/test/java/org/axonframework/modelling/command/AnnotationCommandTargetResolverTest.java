@@ -47,8 +47,8 @@ class AnnotationCommandTargetResolverTest {
 
     @Test
     void resolveTarget_CommandWithoutAnnotations() {
-        CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, "That won't work");
+        CommandMessage testCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, "That won't work");
 
         assertThrows(IllegalArgumentException.class, () -> testSubject.resolveTarget(testCommand));
     }
@@ -56,7 +56,7 @@ class AnnotationCommandTargetResolverTest {
     @Test
     void resolveTarget_WithAnnotatedMethod() {
         final UUID aggregateIdentifier = UUID.randomUUID();
-        CommandMessage<MethodDefaultAnnotatedIdCommand> testCommand = new GenericCommandMessage<>(
+        CommandMessage testCommand = new GenericCommandMessage(
                 TEST_COMMAND_TYPE, new MethodDefaultAnnotatedIdCommand(aggregateIdentifier)
         );
 
@@ -83,8 +83,8 @@ class AnnotationCommandTargetResolverTest {
     @Test
     void resolveTarget_WithAnnotatedMethodAndVersion() {
         final UUID aggregateIdentifier = UUID.randomUUID();
-        CommandMessage<MethodDefaultAnnotatedCommand> testCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new MethodDefaultAnnotatedCommand(aggregateIdentifier));
+        CommandMessage testCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new MethodDefaultAnnotatedCommand(aggregateIdentifier));
 
         String actual = testSubject.resolveTarget(testCommand);
 
@@ -102,8 +102,8 @@ class AnnotationCommandTargetResolverTest {
 
     @Test
     void resolveTarget_WithAnnotatedMethodAndVoidIdentifier() {
-        CommandMessage<Object> testCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new MethodDefaultAnnotatedVoidIdCommand());
+        CommandMessage testCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new MethodDefaultAnnotatedVoidIdCommand());
 
         assertThrows(IllegalArgumentException.class, () -> testSubject.resolveTarget(testCommand));
     }
@@ -122,8 +122,8 @@ class AnnotationCommandTargetResolverTest {
     @Test
     void resolveTarget_WithAnnotatedField() {
         final UUID aggregateIdentifier = UUID.randomUUID();
-        CommandMessage<FieldAnnotatedCommand> testCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier));
+        CommandMessage testCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier));
 
         String actual = testSubject.resolveTarget(testCommand);
 
@@ -133,8 +133,8 @@ class AnnotationCommandTargetResolverTest {
     @Test
     void resolveTarget_WithAnnotatedFields_StringIdentifier() {
         final UUID aggregateIdentifier = UUID.randomUUID();
-        CommandMessage<FieldAnnotatedCommand> testCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier));
+        CommandMessage testCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier));
 
         String actual = testSubject.resolveTarget(testCommand);
 
@@ -144,8 +144,8 @@ class AnnotationCommandTargetResolverTest {
     @Test
     void resolveTarget_WithAnnotatedFields_ObjectIdentifier() {
         final Object aggregateIdentifier = new Object();
-        CommandMessage<FieldAnnotatedCommand> testCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier));
+        CommandMessage testCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new FieldAnnotatedCommand(aggregateIdentifier));
 
         String actual = testSubject.resolveTarget(testCommand);
 
@@ -160,8 +160,8 @@ class AnnotationCommandTargetResolverTest {
     void metaAnnotationsOnMethods() {
         final UUID aggregateIdentifier = UUID.randomUUID();
 
-        CommandMessage<MethodMetaAnnotatedCommand> testCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new MethodMetaAnnotatedCommand(aggregateIdentifier));
+        CommandMessage testCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new MethodMetaAnnotatedCommand(aggregateIdentifier));
 
         String actual = testSubject.resolveTarget(testCommand);
 
@@ -179,7 +179,7 @@ class AnnotationCommandTargetResolverTest {
     @Test
     void metaAnnotationsOnField() {
         final UUID aggregateIdentifier = UUID.randomUUID();
-        CommandMessage<FieldMetaAnnotatedCommand> testCommand = new GenericCommandMessage<>(
+        CommandMessage testCommand = new GenericCommandMessage(
                 TEST_COMMAND_TYPE, new FieldMetaAnnotatedCommand(aggregateIdentifier)
         );
 
@@ -197,8 +197,8 @@ class AnnotationCommandTargetResolverTest {
                                                      .build();
 
         final UUID aggregateIdentifier = UUID.randomUUID();
-        CommandMessage<MethodCustomAnnotatedCommand> testCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new MethodCustomAnnotatedCommand(aggregateIdentifier));
+        CommandMessage testCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new MethodCustomAnnotatedCommand(aggregateIdentifier));
 
         String actual = testSubject.resolveTarget(testCommand);
         assertEquals(aggregateIdentifier.toString(), actual);
@@ -221,8 +221,8 @@ class AnnotationCommandTargetResolverTest {
                                                      .build();
 
         final UUID aggregateIdentifier = UUID.randomUUID();
-        CommandMessage<FieldCustomAnnotatedCommand> testCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new FieldCustomAnnotatedCommand(aggregateIdentifier));
+        CommandMessage testCommand =
+                new GenericCommandMessage(TEST_COMMAND_TYPE, new FieldCustomAnnotatedCommand(aggregateIdentifier));
 
         String actual = testSubject.resolveTarget(testCommand);
 
