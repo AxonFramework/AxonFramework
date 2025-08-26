@@ -23,7 +23,11 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
+import java.util.Optional;
+
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.MessagingTestHelper.query;
 import static org.axonframework.messaging.MessagingTestHelper.queryResponse;
 import static org.junit.jupiter.api.Assertions.*;
@@ -64,5 +68,22 @@ class QueryMessageHandlerInterceptorChainTest {
         assertNotNull(result);
         assertSame("response", result.payload());
         verify(mockHandler).handle(argThat(x -> (x != null) && "testing".equals(x.payload())), any());
+    }
+
+    @Test
+    void returnsFailedMessageStreamWhenInterceptorThrowsException() {
+        QueryMessage testQuery = query("message", String.class);
+
+        MessageHandlerInterceptor<QueryMessage> faultyInterceptor = (message, context, chain) -> {
+            throw new RuntimeException("whoops");
+        };
+        MessageHandlerInterceptorChain<QueryMessage> testSubject =
+                new QueryMessageHandlerInterceptorChain(List.of(faultyInterceptor), mockHandler);
+
+        Optional<Throwable> exceptionalResult =
+                testSubject.proceed(testQuery, StubProcessingContext.forMessage(testQuery))
+                           .error();
+        assertThat(exceptionalResult).isPresent();
+        assertThat(exceptionalResult.get()).isInstanceOf(RuntimeException.class);
     }
 }
