@@ -107,11 +107,11 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void handlesSequenceOfEvents() {
             // when
-            DomainEventMessage<?> event0 = domainEvent(0);
+            DomainEventMessage event0 = domainEvent(0);
             var result1 = eventHandlingComponent.handle(event0, messageProcessingContext(event0));
-            DomainEventMessage<?> event1 = domainEvent(1);
+            DomainEventMessage event1 = domainEvent(1);
             var result2 = eventHandlingComponent.handle(event1, messageProcessingContext(event1));
-            DomainEventMessage<?> event2 = domainEvent(2);
+            DomainEventMessage event2 = domainEvent(2);
             var result3 = eventHandlingComponent.handle(event2, messageProcessingContext(event2));
 
             // then
@@ -375,7 +375,7 @@ class AnnotatedEventHandlingComponentTest {
     }
 
     @Nonnull
-    private static ProcessingContext messageProcessingContext(DomainEventMessage<?> event) {
+    private static ProcessingContext messageProcessingContext(DomainEventMessage event) {
         return StubProcessingContext.withComponent(Converter.class, PassThroughConverter.INSTANCE).withMessage(event);
     }
 }
