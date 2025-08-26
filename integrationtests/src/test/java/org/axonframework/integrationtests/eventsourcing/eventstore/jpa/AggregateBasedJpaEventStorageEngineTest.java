@@ -136,7 +136,7 @@ class AggregateBasedJpaEventStorageEngineTest
     void gapsForVeryOldEventsAreNotIncluded() {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         Transaction transaction = transactionManager.startTransaction();
-        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee").executeUpdate();
+        entityManager.createQuery("DELETE FROM AggregateEventEntry dee").executeUpdate();
         entityManager.clear();
         transaction.commit();
 
@@ -161,7 +161,7 @@ class AggregateBasedJpaEventStorageEngineTest
         entityManager.clear();
         transaction.commit();
         transaction = transactionManager.startTransaction();
-        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee WHERE dee.aggregateSequenceNumber < 0")
+        entityManager.createQuery("DELETE FROM AggregateEventEntry dee WHERE dee.aggregateSequenceNumber < 0")
                      .executeUpdate();
         transaction.commit();
 
@@ -197,7 +197,7 @@ class AggregateBasedJpaEventStorageEngineTest
 
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         Transaction transaction = transactionManager.startTransaction();
-        entityManager.createQuery("DELETE FROM AggregateBasedEventEntry dee").executeUpdate();
+        entityManager.createQuery("DELETE FROM AggregateEventEntry dee").executeUpdate();
         entityManager.clear();
         transaction.commit();
 
@@ -238,7 +238,7 @@ class AggregateBasedJpaEventStorageEngineTest
         // Let's create some gaps by removing all events where the aggregate identifier is not "remove"
         transaction = transactionManager.startTransaction();
         entityManager.createQuery(
-                             "DELETE FROM AggregateBasedEventEntry entry WHERE entry.aggregateIdentifier = :aggregateIdentifier"
+                             "DELETE FROM AggregateEventEntry entry WHERE entry.aggregateIdentifier = :aggregateIdentifier"
                      )
                      .setParameter("aggregateIdentifier", "remove")
                      .executeUpdate();
@@ -249,7 +249,7 @@ class AggregateBasedJpaEventStorageEngineTest
         // Some "magic" because sequences aren't reset between tests. Finding the sequence positions to use in assertions
         List<Long> sequences =
                 entityManager.createQuery(
-                                     "SELECT e.globalIndex FROM AggregateBasedEventEntry e WHERE e.aggregateIdentifier = :aggregateIdentifier",
+                                     "SELECT e.globalIndex FROM AggregateEventEntry e WHERE e.aggregateIdentifier = :aggregateIdentifier",
                                      Long.class
                              )
                              .setParameter("aggregateIdentifier", "keep")
