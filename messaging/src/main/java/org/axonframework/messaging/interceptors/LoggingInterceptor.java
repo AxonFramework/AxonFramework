@@ -28,20 +28,18 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.function.BiFunction;
-
 /**
- * {@link MessageDispatchInterceptor} and {@link MessageHandlerInterceptor} implementation that logs dispatched and
- * incoming messages, and their result, to a SLF4J logger. Allows configuration of the name under which the logger
- * should log the statements.
+ * A {@link MessageDispatchInterceptor} and {@link MessageHandlerInterceptor} implementation that logs dispatched and
+ * incoming messages, and their result, to a {@link Logger}.
+ * <p>
+ * Allows configuration of the name under which the logger should log the statements.
  * <p/>
  * Dispatched, incoming messages and successful executions are logged at the {@code INFO} level. Processing errors are
  * logged using the {@code WARN} level.
  *
- * @param <M> Type of message to operate on.
+ * @param <M> The message type this interceptor can process.
  * @author Allard Buijze
- * @since 0.6
+ * @since 0.6.0
  */
 public class LoggingInterceptor<M extends Message>
         implements MessageDispatchInterceptor<M>, MessageHandlerInterceptor<M> {
@@ -49,19 +47,20 @@ public class LoggingInterceptor<M extends Message>
     private final Logger logger;
 
     /**
-     * Initialize the LoggingInterceptor with the given {@code loggerName}. The actual logging implementation will use
-     * this name to decide the appropriate log level and location. See the documentation of your logging implementation
-     * for more information.
+     * Initialize the {@code LoggingInterceptor} with the given {@code loggerName}.
+     * <p>
+     * The actual logging implementation will use this name to decide the appropriate log level and location. See the
+     * documentation of your logging implementation for more information.
      *
-     * @param loggerName the name of the logger
+     * @param loggerName The name of the logger.
      */
     public LoggingInterceptor(String loggerName) {
         this.logger = LoggerFactory.getLogger(loggerName);
     }
 
     /**
-     * Initialize the LoggingInterceptor with the default logger name, which is the fully qualified class name of this
-     * logger.
+     * Initialize the {@code LoggingInterceptor} with the default logger name, which is the fully qualified class name
+     * of this logger.
      *
      * @see LoggingInterceptor#LoggingInterceptor(String)
      */
