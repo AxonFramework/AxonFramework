@@ -29,10 +29,11 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
+import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
@@ -41,12 +42,10 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AnnotatedEventHandlingComponent}.
@@ -84,7 +83,7 @@ class AnnotatedEventHandlingComponentTest {
             var event = domainEvent(0);
 
             // when
-            var result = eventHandlingComponent.handle(event, StubProcessingContext.forMessage(event));
+            var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
 
             // then
             assertSuccessfulStream(result);
@@ -97,7 +96,7 @@ class AnnotatedEventHandlingComponentTest {
             var event = domainEvent(0);
 
             // when
-            var result = eventHandlingComponent.handle(event, StubProcessingContext.forMessage(event));
+            var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
 
             // then
             assertSuccessfulStream(result);
@@ -109,11 +108,11 @@ class AnnotatedEventHandlingComponentTest {
         void handlesSequenceOfEvents() {
             // when
             DomainEventMessage<?> event0 = domainEvent(0);
-            var result1 = eventHandlingComponent.handle(event0, StubProcessingContext.forMessage(event0));
+            var result1 = eventHandlingComponent.handle(event0, messageProcessingContext(event0));
             DomainEventMessage<?> event1 = domainEvent(1);
-            var result2 = eventHandlingComponent.handle(event1, StubProcessingContext.forMessage(event1));
+            var result2 = eventHandlingComponent.handle(event1, messageProcessingContext(event1));
             DomainEventMessage<?> event2 = domainEvent(2);
-            var result3 = eventHandlingComponent.handle(event2, StubProcessingContext.forMessage(event2));
+            var result3 = eventHandlingComponent.handle(event2, messageProcessingContext(event2));
 
             // then
             assertSuccessfulStream(result1);
@@ -133,7 +132,7 @@ class AnnotatedEventHandlingComponentTest {
             var event = domainEvent(0, "sampleValue");
 
             // when
-            var result = eventHandlingComponent.handle(event, StubProcessingContext.forMessage(event));
+            var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
 
             // then
             assertSuccessfulStream(result);
@@ -146,7 +145,7 @@ class AnnotatedEventHandlingComponentTest {
             var event = domainEvent(0);
 
             // when
-            var result = eventHandlingComponent.handle(event, StubProcessingContext.forMessage(event));
+            var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
 
             // then
             assertSuccessfulStream(result);
@@ -159,7 +158,7 @@ class AnnotatedEventHandlingComponentTest {
             var event = domainEvent(0);
 
             // when
-            var result = eventHandlingComponent.handle(event, StubProcessingContext.forMessage(event));
+            var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
 
             // then
             assertSuccessfulStream(result);
@@ -175,7 +174,7 @@ class AnnotatedEventHandlingComponentTest {
             var event = domainEvent(0);
 
             // when
-            var result = eventHandlingComponent.handle(event, StubProcessingContext.forMessage(event));
+            var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
 
             // then
             assertSuccessfulStream(result);
@@ -203,7 +202,7 @@ class AnnotatedEventHandlingComponentTest {
             var event = domainEvent(0);
 
             // when
-            var result = eventHandlingComponent.handle(event, StubProcessingContext.forMessage(event));
+            var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
 
             // then
             assertTrue(result.error().isPresent());
@@ -219,7 +218,7 @@ class AnnotatedEventHandlingComponentTest {
             var event = domainEvent(0);
 
             // when
-            var result = eventHandlingComponent.handle(event, StubProcessingContext.forMessage(event));
+            var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
 
             // then
             assertSuccessfulStream(result);
@@ -240,7 +239,7 @@ class AnnotatedEventHandlingComponentTest {
             var event = domainEvent(0);
 
             // when
-            var result = eventHandlingComponent.handle(event, StubProcessingContext.forMessage(event));
+            var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
 
             // then
             assertTrue(result.error().isPresent());
@@ -253,7 +252,7 @@ class AnnotatedEventHandlingComponentTest {
         void rejectsNullEvent() {
             // when-then
             assertThrows(NullPointerException.class,
-                         () -> eventHandlingComponent.handle(null, StubProcessingContext.forMessage(null)),
+                         () -> eventHandlingComponent.handle(null, messageProcessingContext(null)),
                          "Event Message may not be null");
         }
 
@@ -371,8 +370,12 @@ class AnnotatedEventHandlingComponentTest {
     private static AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent(Object eventHandler) {
         return new AnnotatedEventHandlingComponent<>(
                 eventHandler,
-                ClasspathParameterResolverFactory.forClass(eventHandler.getClass()),
-                PassThroughConverter.INSTANCE
+                ClasspathParameterResolverFactory.forClass(eventHandler.getClass())
         );
+    }
+
+    @Nonnull
+    private static ProcessingContext messageProcessingContext(DomainEventMessage<?> event) {
+        return StubProcessingContext.withComponent(Converter.class, PassThroughConverter.INSTANCE).withMessage(event);
     }
 }
