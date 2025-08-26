@@ -23,7 +23,11 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
+import java.util.Optional;
+
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.MessagingTestHelper.event;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -61,5 +65,22 @@ class EventMessageHandlerInterceptorChainTest {
                                     .block();
         assertNull(result);
         verify(mockHandler).handle(argThat(x -> (x != null) && "testing".equals(x.payload())), any());
+    }
+
+    @Test
+    void returnsFailedMessageStreamWhenInterceptorThrowsException() {
+        EventMessage testEvent = event("message");
+
+        MessageHandlerInterceptor<EventMessage> faultyInterceptor = (message, context, chain) -> {
+            throw new RuntimeException("whoops");
+        };
+        MessageHandlerInterceptorChain<EventMessage> testSubject =
+                new EventMessageHandlerInterceptorChain(List.of(faultyInterceptor), mockHandler);
+
+        Optional<Throwable> exceptionalResult =
+                testSubject.proceed(testEvent, StubProcessingContext.forMessage(testEvent))
+                           .error();
+        assertThat(exceptionalResult).isPresent();
+        assertThat(exceptionalResult.get()).isInstanceOf(RuntimeException.class);
     }
 }
