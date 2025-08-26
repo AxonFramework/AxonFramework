@@ -30,7 +30,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Message handler chain interceptor test.
+ * Test class validating the {@link CommandMessageHandlerInterceptorChain}.
+ *
+ * @author Simon Zambrovski
  */
 class CommandMessageHandlerInterceptorChainTest {
 
@@ -44,7 +46,7 @@ class CommandMessageHandlerInterceptorChainTest {
     }
 
     @Test
-    void chainWithDifferentProceedCalls() throws Exception {
+    void chainWithDifferentProceedCalls() {
         MessageHandlerInterceptor<CommandMessage> interceptor1 = (message, context, chain) ->
                 chain.proceed(command("message", "testing"), context);
 
@@ -61,7 +63,6 @@ class CommandMessageHandlerInterceptorChainTest {
         Message actual = testSubject
                 .proceed(message, StubProcessingContext.forMessage(message))
                 .first()
-                // .<CommandResultMessage<String>>cast()
                 .asMono()
                 .map(MessageStream.Entry::message)
                 .block();
