@@ -24,6 +24,11 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.queryhandling.GenericQueryMessage;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
 
 /**
  * Helper to create messages in tests.
@@ -66,5 +71,15 @@ public class MessagingTestHelper {
         var payload = message.payload();
         var messageType = payload != null ? new MessageType(payload.getClass()) : message.type();
         return new GenericCommandResultMessage(messageType, payload);
+    }
+
+    public static QueryMessage query(@Nonnull Object payload, @Nonnull Class<?> singleResponseType) {
+        return new GenericQueryMessage(new MessageType(payload.getClass()),
+                                       payload,
+                                       ResponseTypes.instanceOf(singleResponseType));
+    }
+
+    public static QueryResponseMessage queryResponse(@Nonnull Object result) {
+        return new GenericQueryResponseMessage(new MessageType(result.getClass()), result);
     }
 }
