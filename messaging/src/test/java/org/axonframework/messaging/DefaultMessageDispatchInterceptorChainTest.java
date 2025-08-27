@@ -18,11 +18,12 @@ package org.axonframework.messaging;
 
 import org.junit.jupiter.api.*;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.MessagingTestHelper.message;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link DefaultMessageDispatchInterceptorChain}.
@@ -30,24 +31,39 @@ import static org.junit.jupiter.api.Assertions.*;
 class DefaultMessageDispatchInterceptorChainTest {
 
     @Test
-    void registerInterceptors() {
-        List<String> results = new ArrayList<>();
-        DefaultMessageDispatchInterceptorChain<Message> testSubject = new DefaultMessageDispatchInterceptorChain<>(
-                List.of(
-                        (message, context, chain) -> {
-                            results.add("Interceptor One");
-                            return chain.proceed(message, context);
-                        },
-                        (message, context, chain) -> {
-                            results.add("Interceptor Two");
-                            return chain.proceed(message, context);
-                        }
-                )
+    void proceedInvokesRegisteredInterceptorsInOrder() {
+        MessageDispatchInterceptor<Message> interceptorOne = (message, context, chain) -> chain.proceed(
+                message.andMetaData(Map.of("interceptorOne", "valueOne")), context
         );
+        MessageDispatchInterceptor<Message> interceptorTwo = (message, context, chain) -> chain.proceed(
+                message.andMetaData(Map.of("interceptorTwo", "valueTwo")), context
+        );
+        DefaultMessageDispatchInterceptorChain<Message> testSubject =
+                new DefaultMessageDispatchInterceptorChain<>(List.of(interceptorOne, interceptorTwo));
 
-        testSubject.proceed(message("message", "payload"), null);
-        assertEquals("Interceptor One", results.get(0));
-        assertEquals("Interceptor Two", results.get(1));
-        assertEquals(2, results.size());
+        MessageStream<?> resultStream = testSubject.proceed(message("message", "payload"), null);
+
+        assertThat(resultStream.error()).isNotPresent();
+        Optional<? extends MessageStream.Entry<?>> messageEntry = resultStream.next();
+        assertThat(messageEntry).isPresent();
+        MetaData resultMetadata = messageEntry.get().message().metaData();
+        assertThat(resultMetadata.size()).isEqualTo(2);
+        assertThat(resultMetadata.get("interceptorOne")).isEqualTo("valueOne");
+        assertThat(resultMetadata.get("interceptorTwo")).isEqualTo("valueTwo");
+    }
+
+    @Test
+    void proceedReturnsFaultyMessageStreamWhenInterceptorThrowsException() {
+        MessageDispatchInterceptor<Message> faultyInterceptor = (message, context, chain) -> {
+            throw new RuntimeException("whoops");
+        };
+        DefaultMessageDispatchInterceptorChain<Message> testSubject =
+                new DefaultMessageDispatchInterceptorChain<>(List.of(faultyInterceptor));
+
+        MessageStream<?> resultStream = testSubject.proceed(message("message", "payload"), null);
+        Optional<Throwable> streamError = resultStream.error();
+
+        assertThat(streamError).isPresent();
+        assertThat(streamError.get()).isInstanceOf(RuntimeException.class);
     }
 }
