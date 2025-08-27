@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.testsuite.administration;
 
 import org.axonframework.configuration.Configuration;
-import org.axonframework.eventhandling.EventConverter;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;

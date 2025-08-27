@@ -16,9 +16,9 @@
 
 package org.axonframework.modelling;
 
-import org.axonframework.eventhandling.DelegatingEventConverter;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventConverter;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SequenceNumber;

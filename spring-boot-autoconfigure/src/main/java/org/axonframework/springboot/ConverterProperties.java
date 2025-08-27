@@ -18,6 +18,7 @@ package org.axonframework.springboot;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.Message;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -29,7 +30,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * The <b>events</b> {@code Converter}, if specified, is used to convert the {@link EventMessage#payload()} of
  * {@link org.axonframework.eventhandling.EventMessage EventMessages} as they are stored in the event store and
  * published. To ensure the <b>events</b> {@code Converter} only converts {@code EventMessages}, it will be wrapped in a
- * {@link org.axonframework.eventhandling.DelegatingEventConverter}. When no event {@code Converter} is specified, it
+ * {@link DelegatingEventConverter}. When no event {@code Converter} is specified, it
  * defaults to the <b>messages</b> {@code Converter}.
  * <p>
  * The <b>messages</b> {@code Converter} is used to converter the {@link Message#payload()} of <b>all</b>
@@ -76,7 +77,7 @@ public class ConverterProperties {
      * {@link EventMessage#payload()} of {@link org.axonframework.eventhandling.EventMessage EventMessages}.
      * <p>
      * The constructed {@code Converter} will <b>always</b> be wrapped in a
-     * {@link org.axonframework.eventhandling.DelegatingEventConverter}, ensuring the {@code Converter}
+     * {@link DelegatingEventConverter}, ensuring the {@code Converter}
      * <b>only</b> deals with {@code EventMessages}.
      * <p>
      * Defaults to the <b>messages</b> {@code Converter} when set, or otherwise the <b>general</b> {@code Converter}.
@@ -149,7 +150,7 @@ public class ConverterProperties {
      * {@link EventMessage#payload()} of {@link org.axonframework.eventhandling.EventMessage EventMessages}.
      * <p>
      * The constructed {@code Converter} will <b>always</b> be wrapped in a
-     * {@link org.axonframework.eventhandling.DelegatingEventConverter}, ensuring the {@code Converter}
+     * {@link DelegatingEventConverter}, ensuring the {@code Converter}
      * <b>only</b> deals with {@code EventMessages}.
      * <p>
      * Defaults to the <b>messages</b> {@code Converter} when set, or otherwise the <b>general</b> {@code Converter}.
@@ -167,7 +168,7 @@ public class ConverterProperties {
      * {@link EventMessage#payload()} of {@link org.axonframework.eventhandling.EventMessage EventMessages}.
      * <p>
      * The constructed {@code Converter} will <b>always</b> be wrapped in a
-     * {@link org.axonframework.eventhandling.DelegatingEventConverter}, ensuring the {@code Converter}
+     * {@link DelegatingEventConverter}, ensuring the {@code Converter}
      * <b>only</b> deals with {@code EventMessages}.
      * <p>
      * Defaults to the <b>messages</b> {@code Converter} when set, or otherwise the <b>general</b> {@code Converter}.

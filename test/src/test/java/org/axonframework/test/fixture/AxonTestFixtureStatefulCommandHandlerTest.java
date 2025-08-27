@@ -19,7 +19,7 @@ package org.axonframework.test.fixture;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
 import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.eventhandling.EventConverter;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;

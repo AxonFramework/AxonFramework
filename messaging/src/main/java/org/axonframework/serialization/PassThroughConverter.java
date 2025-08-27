@@ -19,8 +19,8 @@ package org.axonframework.serialization;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.DelegatingEventConverter;
-import org.axonframework.eventhandling.EventConverter;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.DelegatingMessageConverter;
 import org.axonframework.messaging.MessageConverter;
 

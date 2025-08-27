@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.conversion;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
@@ -48,7 +49,7 @@ public interface EventConverter extends Converter {
     default <E extends EventMessage, T> T convertPayload(@Nonnull E event, @Nonnull Class<T> targetType) {
         return convertPayload(event, (Type) targetType);
     }
-
+// todo move to converter specific folder
     /**
      * Converts the given {@code event's} {@link EventMessage#payload() payload} into a payload of the given
      * {@code targetType}.

@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.conversion;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.DelegatingMessageConverter;
 import org.axonframework.messaging.MessageConverter;
 import org.axonframework.serialization.Converter;
