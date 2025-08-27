@@ -53,7 +53,7 @@ public class TaggedEventConverter implements DescribableComponent {
     private final EventConverter converter;
 
     /**
-     * Constructs an {@code TaggedEventConverter} using the given {@code converter} to convert the
+     * Constructs a {@code TaggedEventConverter} using the given {@code converter} to convert the
      * {@link EventMessage#payload() event payload}.
      *
      * @param converter The converter used to {@link EventConverter#convert(Object, Class)} the
