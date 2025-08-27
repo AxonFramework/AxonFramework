@@ -23,13 +23,13 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
+import static java.util.Objects.requireNonNullElse;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -48,7 +48,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     private final EventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
-    private final TagResolver tagResolver;
+    private final Function<EventMessage, TaggedEventMessage<?>> eventPreProcessors;
+
     private final List<Consumer<EventMessage>> callbacks;
 
     private final ResourceKey<AppendCondition> appendConditionKey;
@@ -63,15 +64,16 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      *                           with.
      * @param processingContext  The {@link ProcessingContext} from which to
      *                           {@link #appendEvent(EventMessage) append events} and attach resources to.
-     * @param tagResolver        The {@link TagResolver} used to resolve tags while
-     *                           {@link #appendEvent(EventMessage) appending events}.
+     * @param eventPreProcessors A function that will pre-process each {@link EventMessage}, typically to attachs
+     *                           {@link org.axonframework.eventstreaming.Tag Tags}, before it is added to the
+     *                           transaction.
      */
     public DefaultEventStoreTransaction(@Nonnull EventStorageEngine eventStorageEngine,
                                         @Nonnull ProcessingContext processingContext,
-                                        @Nonnull TagResolver tagResolver) {
+                                        @Nonnull Function<EventMessage, TaggedEventMessage<?>> eventPreProcessors) {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
-        this.tagResolver = tagResolver;
+        this.eventPreProcessors = eventPreProcessors;
         this.callbacks = new CopyOnWriteArrayList<>();
 
         this.appendConditionKey = ResourceKey.withLabel("appendCondition");
@@ -130,10 +132,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                     return new CopyOnWriteArrayList<>();
                 }
         );
-
-        var tags = tagResolver.resolve(eventMessage);
-        eventQueue.add(new GenericTaggedEventMessage<>(eventMessage, tags));
-
+        eventQueue.add(eventPreProcessors.apply(eventMessage));
         callbacks.forEach(callback -> callback.accept(eventMessage));
     }
 
