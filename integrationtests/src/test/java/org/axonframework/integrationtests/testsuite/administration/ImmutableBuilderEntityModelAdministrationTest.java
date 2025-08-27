@@ -47,7 +47,6 @@ import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
-import org.axonframework.serialization.Converter;
 
 import java.util.Objects;
 
@@ -137,11 +136,14 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                                       return null;
                                   })
                                   .eventTargetMatcher((o, eventMessage, ctx) -> {
-                                      if(eventMessage.type().name().equals(TaskCompleted.class.getName())) {
+                                      if (eventMessage.type().name().equals(TaskCompleted.class.getName())) {
                                           TaskCompleted taskCompleted = eventConverter.convertPayload(
                                                   eventMessage, TaskCompleted.class
                                           );
-                                          Objects.requireNonNull(taskCompleted, "TaskCompleted event payload cannot be null");
+                                          Objects.requireNonNull(
+                                                  taskCompleted,
+                                                  "TaskCompleted event payload cannot be null"
+                                          );
                                           return o.getTaskId().equals(taskCompleted.taskId());
                                       }
                                       return false;
@@ -199,14 +201,14 @@ public class ImmutableBuilderEntityModelAdministrationTest extends AbstractAdmin
                 .declarative(PersonIdentifier.class, ImmutablePerson.class)
                 .messagingModel(this::buildEntityMetamodel)
                 .entityFactory(c -> EventSourcedEntityFactory.fromEventMessage((identifier, eventMessage) -> {
-                    Converter converter = c.getComponent(Converter.class);
-                    if(eventMessage.type().name().equals(EmployeeCreated.class.getName())) {
-                        var employeeCreated = converter.convert(eventMessage.payload(), EmployeeCreated.class);
+                    EventConverter converter = c.getComponent(EventConverter.class);
+                    if (eventMessage.type().name().equals(EmployeeCreated.class.getName())) {
+                        var employeeCreated = converter.convertPayload(eventMessage, EmployeeCreated.class);
                         Objects.requireNonNull(employeeCreated, "EmployeeCreated event payload cannot be null");
                         return new ImmutableEmployee(employeeCreated);
                     }
-                    if(eventMessage.type().name().equals(CustomerCreated.class.getName())) {
-                        var customerCreated = converter.convert(eventMessage.payload(), CustomerCreated.class);
+                    if (eventMessage.type().name().equals(CustomerCreated.class.getName())) {
+                        var customerCreated = converter.convertPayload(eventMessage, CustomerCreated.class);
                         Objects.requireNonNull(customerCreated, "CustomerCreated event payload cannot be null");
                         return new ImmutableCustomer(customerCreated);
                     }
