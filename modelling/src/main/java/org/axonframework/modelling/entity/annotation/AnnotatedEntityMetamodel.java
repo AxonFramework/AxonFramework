@@ -479,7 +479,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      *
      * @return The {@link MessageConverter} configured in this {@link EntityMetamodel} implementation.
      */
-    public MessageConverter messageConverter() {
+    MessageConverter messageConverter() {
         return messageConverter;
     }
 }
