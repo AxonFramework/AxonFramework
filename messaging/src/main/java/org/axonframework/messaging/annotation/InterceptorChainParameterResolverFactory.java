@@ -113,10 +113,10 @@ public class InterceptorChainParameterResolverFactory
     @Nullable
     @Override
     public MessageHandlerInterceptorChain<?> resolveParameterValue(@Nonnull ProcessingContext context) {
-        MessageHandlerInterceptorChain<?> interceptorChain = (context
-                == null) // FIXME: checking for null in a method that requires param to be non-null
-                ? null
-                : context.getResource(INTERCEPTOR_CHAIN_KEY);
+        // TODO #3485 - The MessageHandlerInterceptorChain should be registered as a resource to the ProcessingContext
+        //  and retrieved from the given context here upon resolution i.o. using a thread local.
+        MessageHandlerInterceptorChain<?> interceptorChain =
+                (context == null)  ? null : context.getResource(INTERCEPTOR_CHAIN_KEY);
         if (interceptorChain == null) {
             interceptorChain = CURRENT.get();
         }

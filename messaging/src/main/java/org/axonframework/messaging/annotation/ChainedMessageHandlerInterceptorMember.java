@@ -61,7 +61,8 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
                                    @Nonnull T target,
                                    @Nonnull MessageHandlingMember<? super T> handler) {
 
-        // FIXME -> validate..
+        // TODO #3485 - Implement this accordingly for annotated interceptors.
+        //  Or, fully replace this for MessageHandlingComponent decoration instead.
         return doHandle(message, context, target, handler);
         /*
         Why is this called using an interceptor chain? Do handle effectively does the same!
@@ -89,7 +90,8 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
                              @Nonnull ProcessingContext context,
                              @Nonnull T target,
                              @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
-        // FIXME -> validate...
+        // TODO #3485 - Implement this accordingly for annotated interceptors.
+        //  Or, fully replace this for MessageHandlingComponent decoration instead.
         return doHandleSync(message, context, target, handler);
         /*
         return InterceptorChainParameterResolverFactory.callWithInterceptorChainSync(
