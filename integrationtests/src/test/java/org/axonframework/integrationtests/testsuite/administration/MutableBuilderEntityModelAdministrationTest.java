@@ -70,7 +70,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
                                             CompleteTaskCommand convertedPayload =
-                                                    messageConverter.convertPayload(command, CompleteTaskCommand.class);
+                                                    command.payloadAs(CompleteTaskCommand.class, messageConverter);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         })
@@ -86,7 +86,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
                                             GiveRaise convertedPayload =
-                                                    messageConverter.convertPayload(command, GiveRaise.class);
+                                                    command.payloadAs(GiveRaise.class, messageConverter);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         })
@@ -102,7 +102,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                                         ((command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
                                             CreateEmployee convertedPayload =
-                                                    messageConverter.convertPayload(command, CreateEmployee.class);
+                                                    command.payloadAs(CreateEmployee.class, messageConverter);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         }))
@@ -110,7 +110,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                                         ((command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
                                             AssignTaskCommand convertedPayload =
-                                                    messageConverter.convertPayload(command, AssignTaskCommand.class);
+                                                    command.payloadAs(AssignTaskCommand.class, messageConverter);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         }))
@@ -167,7 +167,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                         ((command, entity, context) -> {
                             EventAppender eventAppender = EventAppender.forContext(context);
                             CreateCustomer convertedPayload =
-                                    messageConverter.convertPayload(command, CreateCustomer.class);
+                                    command.payloadAs(CreateCustomer.class, messageConverter);
                             entity.handle(convertedPayload, eventAppender);
                             return MessageStream.empty().cast();
                         }))
@@ -185,7 +185,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                                         (command, entity, context) -> {
                                             EventAppender eventAppender = EventAppender.forContext(context);
                                             ChangeEmailAddress convertedPayload =
-                                                    messageConverter.convertPayload(command, ChangeEmailAddress.class);
+                                                    command.payloadAs(ChangeEmailAddress.class, messageConverter);
                                             entity.handle(convertedPayload, eventAppender);
                                             return MessageStream.empty().cast();
                                         })

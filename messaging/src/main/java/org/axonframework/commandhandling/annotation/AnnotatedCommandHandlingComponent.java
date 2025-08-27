@@ -145,13 +145,18 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
                                              .orElseGet(() -> new QualifiedName(payloadType));
 
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
-        handlingComponent.subscribe(qualifiedName, (command, ctx) -> {
-            CommandMessage converted = converter.convertMessage(command, payloadType);
-            return interceptorChain.handle(converted, ctx, target, handler)
-                                   .mapMessage(this::asCommandResultMessage)
-                                   .first()
-                                   .cast();
-        });
+        handlingComponent.subscribe(
+                qualifiedName,
+                (command, ctx) -> interceptorChain.handle(
+                                                          command.withConvertedPayload(payloadType, converter),
+                                                          ctx,
+                                                          target,
+                                                          handler
+                                                  )
+                                                  .mapMessage(this::asCommandResultMessage)
+                                                  .first()
+                                                  .cast()
+        );
     }
 
     @Nonnull

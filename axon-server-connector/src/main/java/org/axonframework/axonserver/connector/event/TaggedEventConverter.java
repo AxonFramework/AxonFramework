@@ -91,7 +91,8 @@ public class TaggedEventConverter implements DescribableComponent {
     }
 
     private ByteString convertPayload(EventMessage payload) {
-        return ByteString.copyFrom(converter.convertPayload(payload, byte[].class));
+        byte[] bytes = payload.payloadAs(byte[].class, converter);
+        return bytes == null || bytes.length == 0 ? ByteString.EMPTY : ByteString.copyFrom(bytes);
     }
 
     private Map<String, String> convertMetaData(MetaData metaData) {
@@ -130,10 +131,10 @@ public class TaggedEventConverter implements DescribableComponent {
      */
     public EventMessage convertEvent(@Nonnull Event event) {
         return new GenericEventMessage(event.getIdentifier(),
-                                         new MessageType(event.getName(), event.getVersion()),
-                                         event.getPayload().toByteArray(),
-                                         event.getMetadataMap(),
-                                         Instant.ofEpochMilli(event.getTimestamp()));
+                                       new MessageType(event.getName(), event.getVersion()),
+                                       event.getPayload().toByteArray(),
+                                       event.getMetadataMap(),
+                                       Instant.ofEpochMilli(event.getTimestamp()));
     }
 
     @Override

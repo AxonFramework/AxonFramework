@@ -77,7 +77,7 @@ class ConverterAutoConfigurationTest {
     @Test
     void overrideAllConverterOptions() {
         testContext.withUserConfiguration(CustomContext.class).run(context -> {
-            assertThat(context).hasSingleBean(Converter.class);
+            assertThat(context.getBeansOfType(Converter.class).size()).isEqualTo(3);
             assertThat(context).hasBean("customConverter");
             assertThat(context).hasSingleBean(MessageConverter.class);
             assertThat(context).hasBean("customMessageConverter");

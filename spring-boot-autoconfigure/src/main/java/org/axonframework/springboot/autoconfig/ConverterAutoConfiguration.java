@@ -81,6 +81,7 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
         return buildConverter(generalConverterType, null);
     }
 
+    // todo javadoc
     @Bean
     @ConditionalOnMissingBean
     public MessageConverter messageConverter(Converter generalConverter, ConverterProperties converterProperties) {

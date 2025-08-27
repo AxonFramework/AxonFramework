@@ -80,7 +80,7 @@ public class ConvertingCommandGateway implements CommandGateway {
         @Override
         public <R> CompletableFuture<R> resultAs(@Nonnull Class<R> type) {
             return delegate.getResultMessage()
-                           .thenApply(resultMessage -> commandConverter.convertPayload(resultMessage, type));
+                           .thenApply(resultMessage -> resultMessage.payloadAs(type, commandConverter));
         }
 
         @Override
@@ -90,7 +90,7 @@ public class ConvertingCommandGateway implements CommandGateway {
             delegate.getResultMessage()
                     .whenComplete((message, e) -> {
                         if (e == null) {
-                            successHandler.accept(commandConverter.convertPayload(message, resultType), message);
+                            successHandler.accept(message.payloadAs(resultType, commandConverter), message);
                         }
                     });
             return this;

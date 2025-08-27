@@ -314,7 +314,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * @return The {@link Class} of the expected representation for handlers of the given {@code qualifiedName}, or
      * {@code null} if no such representation is found.
      */
-    @Nullable
+    @Nullable // TODO make non-nullable
     public Class<?> getExpectedRepresentation(@Nonnull QualifiedName qualifiedName) {
         if (payloadTypes.containsKey(qualifiedName)) {
             return payloadTypes.get(qualifiedName);
@@ -439,8 +439,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage message,
                                                                       @Nonnull ProcessingContext context) {
         logger.debug("Handling creation command: {} for type: {}", message.type(), entityType());
-        var convertedMessage =
-                messageConverter.convertMessage(message, getExpectedRepresentation(message.type().qualifiedName()));
+        Class<?> expectedRepresentation = getExpectedRepresentation(message.type().qualifiedName());
+        CommandMessage convertedMessage = message.withConvertedPayload(expectedRepresentation, messageConverter);
         return delegateMetamodel.handleCreate(convertedMessage, context);
     }
 
@@ -450,8 +450,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                                                                         @Nonnull E entity,
                                                                         @Nonnull ProcessingContext context) {
         logger.debug("Handling instance command: {} for entity: {} of type: {}", message.type(), entity, entityType());
-        var convertedMessage =
-                messageConverter.convertMessage(message, getExpectedRepresentation(message.type().qualifiedName()));
+        Class<?> expectedRepresentation = getExpectedRepresentation(message.type().qualifiedName());
+        CommandMessage convertedMessage = message.withConvertedPayload(expectedRepresentation, messageConverter);
         return delegateMetamodel.handleInstance(convertedMessage, entity, context);
     }
 
@@ -481,14 +481,5 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      */
     public MessageConverter messageConverter() {
         return messageConverter;
-    }
-
-    /**
-     * Returns the {@link EventConverter} configured in this {@link EntityMetamodel} implementation.
-     *
-     * @return The {@link EventConverter} configured in this {@link EntityMetamodel} implementation.
-     */
-    public EventConverter eventConverter() {
-        return eventConverter;
     }
 }
