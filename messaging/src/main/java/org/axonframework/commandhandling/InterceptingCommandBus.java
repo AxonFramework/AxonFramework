@@ -31,6 +31,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 import static java.util.Objects.requireNonNull;
 
@@ -48,6 +49,8 @@ public class InterceptingCommandBus implements CommandBus {
     private final CommandBus delegate;
     private final List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors;
     private final List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors;
+
+    private final InterceptingDispatcher interceptingDispatcher;
 
     /**
      * Constructs a {@code InterceptingCommandBus}, delegating dispatching and handling logic to the given
@@ -72,30 +75,20 @@ public class InterceptingCommandBus implements CommandBus {
         this.dispatchInterceptors = new ArrayList<>(
                 requireNonNull(dispatchInterceptors, "The dispatch interceptors must not be null.")
         );
+        this.interceptingDispatcher = new InterceptingDispatcher(dispatchInterceptors, this::dispatchMessage);
     }
 
     @Override
     public InterceptingCommandBus subscribe(@Nonnull QualifiedName name,
                                             @Nonnull CommandHandler commandHandler) {
-        delegate.subscribe(
-                name,
-                (command, context) -> new CommandMessageHandlerInterceptorChain(handlerInterceptors, commandHandler)
-                        .proceed(command, context)
-                        .first()
-                        .cast()
-        );
+        delegate.subscribe(name, new InterceptingCommandHandler(commandHandler, handlerInterceptors));
         return this;
     }
 
     @Override
     public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                @Nullable ProcessingContext processingContext) {
-        return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors, this::dispatchMessage)
-                .proceed(command, processingContext)
-                .first()
-                .<CommandResultMessage<?>>cast()
-                .asCompletableFuture()
-                .thenApply(Entry::message);
+        return interceptingDispatcher.interceptAndDispatch(command, processingContext);
     }
 
     private MessageStream<?> dispatchMessage(@Nonnull Message message,
@@ -108,5 +101,47 @@ public class InterceptingCommandBus implements CommandBus {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("handlerInterceptors", handlerInterceptors);
         descriptor.describeProperty("dispatchInterceptors", dispatchInterceptors);
+    }
+
+    private static class InterceptingCommandHandler implements CommandHandler {
+
+        private final CommandMessageHandlerInterceptorChain interceptorChain;
+
+        private InterceptingCommandHandler(CommandHandler handler,
+                                           List<MessageHandlerInterceptor<CommandMessage>> interceptors) {
+            this.interceptorChain = new CommandMessageHandlerInterceptorChain(interceptors, handler);
+        }
+
+        @Nonnull
+        @Override
+        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
+                                                                    @Nonnull ProcessingContext context) {
+            return interceptorChain.proceed(command, context)
+                                   .first()
+                                   .cast();
+        }
+    }
+
+    private static class InterceptingDispatcher {
+
+        private final DefaultMessageDispatchInterceptorChain<Message> interceptorChain;
+
+        private InterceptingDispatcher(
+                List<MessageDispatchInterceptor<? super Message>> interceptors,
+                BiFunction<? super Message, ProcessingContext, MessageStream<?>> dispatcher
+        ) {
+            this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, dispatcher);
+        }
+
+        private CompletableFuture<CommandResultMessage<?>> interceptAndDispatch(
+                @Nonnull CommandMessage message,
+                @Nullable ProcessingContext processingContext
+        ) {
+            return interceptorChain.proceed(message, processingContext)
+                                   .first()
+                                   .<CommandResultMessage<?>>cast()
+                                   .asCompletableFuture()
+                                   .thenApply(Entry::message);
+        }
     }
 }
