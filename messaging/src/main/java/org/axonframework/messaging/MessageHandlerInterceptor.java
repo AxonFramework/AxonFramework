@@ -23,7 +23,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * Workflow interface that allows for customized message handler invocation chains. A MessageHandlerInterceptor can add
  * customized behavior to message handler invocations, both before and after the invocation.
  *
- * @param <M> The message type this interceptor can process
+ * @param <M> The message type this interceptor can process.
  * @author Allard Buijze
  * @author Simon Zambrovski
  * @since 0.5.0

@@ -16,49 +16,65 @@
 
 package org.axonframework.messaging.interceptors;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Context.ResourceKey;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import jakarta.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Message interceptor that registers {@link CorrelationDataProvider CorrelationDataProviders} with the Unit of Work.
+ * A {@link MessageHandlerInterceptor} that constructs a collection of correlation data through the given
+ * {@link CorrelationDataProvider CorrelationDataProviders}.
  * <p/>
- * The registered CorrelationDataProviders copy correlation MetaData over from the Message processed by the Unit of Work
- * to new Messages that are created during processing.
+ * The correlation data is registered with the {@link ProcessingContext} upon
+ * {@link #interceptOnHandle(Message, ProcessingContext, MessageHandlerInterceptorChain) intercepting} of a
+ * {@code message} under {@link ResourceKey} {@link #CORRELATION_DATA}. Dispatching logic should use this resource when
+ * constructing new message as part of the intercepted {@code ProcessingContext}.
  *
- * @param <M> The type of Message that can be intercepted
+ * @param <M> The message type this interceptor can process.
  * @author Rene de Waele
- * @since 3.0
+ * @since 3.0.0
  */
 public class CorrelationDataInterceptor<M extends Message> implements MessageHandlerInterceptor<M> {
 
     /**
-     * Resource key the correlation data is stored in the processing context.
+     * Resource key the correlation data is stored in the {@link ProcessingContext}.
      */
     public static final ResourceKey<Map<String, Object>> CORRELATION_DATA = ResourceKey.withLabel("CorrelationData");
+
     private final List<CorrelationDataProvider> correlationDataProviders;
 
     /**
-     * Initializes the interceptor that registers given {@code correlationDataProviders} with the current Unit of Work.
+     * Construct a {@code CorrelationDataInterceptor} that generates correlation data from
+     * {@link #interceptOnHandle(Message, ProcessingContext, MessageHandlerInterceptorChain) intercepted messages} with
+     * the given {@code correlationDataProviders}.
      *
-     * @param correlationDataProviders The CorrelationDataProviders to register with the Interceptor
+     * @param correlationDataProviders The correlation data providers to generate correlation data from
+     *                                 {@link #interceptOnHandle(Message, ProcessingContext,
+     *                                 MessageHandlerInterceptorChain) intercepted messages}.
      */
     public CorrelationDataInterceptor(CorrelationDataProvider... correlationDataProviders) {
         this(Arrays.asList(correlationDataProviders));
     }
 
     /**
-     * Initializes the interceptor that registers given {@code correlationDataProviders} with the current Unit of Work.
+     * Construct a {@code CorrelationDataInterceptor} that generates correlation data from
+     * {@link #interceptOnHandle(Message, ProcessingContext, MessageHandlerInterceptorChain) intercepted messages} with
+     * the given {@code correlationDataProviders}.
      *
-     * @param correlationDataProviders The CorrelationDataProviders to register with the Interceptor
+     * @param correlationDataProviders The correlation data providers to generate correlation data from
+     *                                 {@link #interceptOnHandle(Message, ProcessingContext,
+     *                                 MessageHandlerInterceptorChain) intercepted messages}.
      */
     public CorrelationDataInterceptor(Collection<CorrelationDataProvider> correlationDataProviders) {
         this.correlationDataProviders = new ArrayList<>(correlationDataProviders);
@@ -66,13 +82,11 @@ public class CorrelationDataInterceptor<M extends Message> implements MessageHan
 
     @Override
     @Nonnull
-    public MessageStream<?> interceptOnHandle(
-            @Nonnull M message,
-            @Nonnull ProcessingContext context,
-            @Nonnull MessageHandlerInterceptorChain<M> interceptorChain
-    ) {
-        Map<String, Object> map = new ConcurrentHashMap<>();
-        correlationDataProviders.forEach(c -> map.putAll(c.correlationDataFor(message)));
-        return interceptorChain.proceed(message, context.withResource(CORRELATION_DATA, map));
+    public MessageStream<?> interceptOnHandle(@Nonnull M message,
+                                              @Nonnull ProcessingContext context,
+                                              @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
+        Map<String, Object> correlationData = new ConcurrentHashMap<>();
+        correlationDataProviders.forEach(c -> correlationData.putAll(c.correlationDataFor(message)));
+        return interceptorChain.proceed(message, context.withResource(CORRELATION_DATA, correlationData));
     }
 }

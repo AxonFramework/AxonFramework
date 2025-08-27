@@ -30,10 +30,8 @@ import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -41,9 +39,9 @@ import java.util.function.Function;
  * {@link JSR303ViolationException} is thrown, holding the constraint violations. This interceptor can either be used as
  * a {@link MessageHandlerInterceptor} or as a {@link MessageDispatchInterceptor}.
  *
- * @param <M> Type of message the interceptor works with.
+ * @param <M> The message type this interceptor can process.
  * @author Allard Buijze
- * @since 1.1
+ * @since 1.1.0
  */
 public class BeanValidationInterceptor<M extends Message>
         implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
@@ -73,9 +71,7 @@ public class BeanValidationInterceptor<M extends Message>
     public MessageStream<?> interceptOnDispatch(@Nonnull M message,
                                                 @Nullable ProcessingContext context,
                                                 @Nonnull MessageDispatchInterceptorChain<M> dispatchInterceptorChain) {
-        return interceptOrContinue(message,
-                                   (m) -> dispatchInterceptorChain.proceed(m, context)
-        );
+        return interceptOrContinue(message, (m) -> dispatchInterceptorChain.proceed(m, context));
     }
 
     @Nonnull
@@ -83,9 +79,7 @@ public class BeanValidationInterceptor<M extends Message>
     public MessageStream<?> interceptOnHandle(@Nonnull M message,
                                               @Nonnull ProcessingContext context,
                                               @Nonnull MessageHandlerInterceptorChain<M> handlerInterceptorChain) {
-        return interceptOrContinue(message,
-                                   (m) -> handlerInterceptorChain.proceed(m, context)
-        );
+        return interceptOrContinue(message, (m) -> handlerInterceptorChain.proceed(m, context));
     }
 
     @Nonnull
