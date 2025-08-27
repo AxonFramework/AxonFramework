@@ -28,7 +28,7 @@ import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageConverter;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;

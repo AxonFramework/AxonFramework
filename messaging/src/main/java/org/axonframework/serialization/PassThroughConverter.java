@@ -21,8 +21,8 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.conversion.EventConverter;
-import org.axonframework.messaging.DelegatingMessageConverter;
-import org.axonframework.messaging.MessageConverter;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.conversion.MessageConverter;
 
 import java.lang.reflect.Type;
 

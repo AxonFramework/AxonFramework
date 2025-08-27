@@ -18,7 +18,7 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageConverter;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 

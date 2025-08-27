@@ -37,7 +37,7 @@ import org.axonframework.integrationtests.testsuite.administration.state.mutable
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutablePerson;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableSalaryInformation;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableTask;
-import org.axonframework.messaging.MessageConverter;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;

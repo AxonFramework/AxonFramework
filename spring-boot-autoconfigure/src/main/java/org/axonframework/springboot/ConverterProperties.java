@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -38,7 +39,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * events, including the {@link org.axonframework.commandhandling.CommandResultMessage} and
  * {@link org.axonframework.queryhandling.QueryResponseMessage} are converted using this {@code Converter}. To ensure
  * the <b>messages</b> {@code Converter} only converts {@code Messages}, it will be wrapped in a
- * {@link org.axonframework.messaging.DelegatingMessageConverter}. When no message {@code Converter} is specified, it
+ * {@link DelegatingMessageConverter}. When no message {@code Converter} is specified, it
  * defaults to the <b>general</b> {@code Converter}.
  * <p>
  * The <b>general</b> {@code Converter} is used to convert the rest of the objects, like for example snapshots and other
@@ -65,7 +66,7 @@ public class ConverterProperties {
      * any type of {@link org.axonframework.messaging.Message}.
      * <p>
      * The constructed {@code Converter} will <b>always</b> be wrapped in a
-     * {@link org.axonframework.messaging.DelegatingMessageConverter}, ensuring the {@code Converter}
+     * {@link DelegatingMessageConverter}, ensuring the {@code Converter}
      * <b>only</b> deals with {@code Messages}.
      * <p>
      * Defaults to the <b>general</b> {@code Converter}.
@@ -115,7 +116,7 @@ public class ConverterProperties {
      * any type of {@link org.axonframework.messaging.Message}.
      * <p>
      * The constructed {@code Converter} will <b>always</b> be wrapped in a
-     * {@link org.axonframework.messaging.DelegatingMessageConverter}, ensuring the {@code Converter}
+     * {@link DelegatingMessageConverter}, ensuring the {@code Converter}
      * <b>only</b> deals with {@code Messages}.
      * <p>
      * Defaults to the {@link #getGeneral() <b>general</b> Converter}.
@@ -133,7 +134,7 @@ public class ConverterProperties {
      * {@link Message#payload()} of any type of {@link org.axonframework.messaging.Message}.
      * <p>
      * The constructed {@code Converter} will <b>always</b> be wrapped in a
-     * {@link org.axonframework.messaging.DelegatingMessageConverter}, ensuring the {@code Converter}
+     * {@link DelegatingMessageConverter}, ensuring the {@code Converter}
      * <b>only</b> deals with {@code Messages}.
      * <p>
      * Defaults to the <b>general</b> {@code Converter}.
