@@ -515,7 +515,7 @@ public class SimpleQueryBus implements QueryBus {
     ) {
         return uow.executeWithResult((ctx) -> {
             ResponseType<?> responseType = uow.getMessage().responseType();
-            // TODO: reintegrate as part of #3079
+            // TODO #3488 - Reintegrate, and construct chain only once!
             /*
             QueryHandler queryHandler = new QueryHandler() {
                 @Nonnull
@@ -603,7 +603,7 @@ public class SimpleQueryBus implements QueryBus {
             LegacyDefaultUnitOfWork<StreamingQueryMessage> uow = LegacyDefaultUnitOfWork.startAndGet(query);
             return uow.executeWithResult((ctx) -> {
                 /*
-                // TODO: reintegrate as part of #3079
+                // TODO #3488 - Reintegrate, and construct chain only once!
                 QueryHandler queryHandler = new QueryHandler() {
                     @Nonnull
                     @Override
@@ -663,7 +663,7 @@ public class SimpleQueryBus implements QueryBus {
 
     private <Q, R, T extends QueryMessage> T intercept(T query) {
         /*
-        // TODO: reintegrate as part of #3079
+        // TODO #3488 - Reintegrate, and construct chain only once!
         return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
                 .proceed(query, null)
                 .first()

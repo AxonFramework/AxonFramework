@@ -215,7 +215,7 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @SuppressWarnings("unchecked")
     private <T extends QueryMessage> T processInterceptors(T query) {
-        // TODO: reintegrate as part of #3079
+        // TODO #3488 - Reintegrate, and construct chain only once!
         return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
                 .proceed(query, null)
                 .first()

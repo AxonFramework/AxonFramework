@@ -131,7 +131,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     private SubscriptionQueryUpdateMessage intercept(SubscriptionQueryUpdateMessage message) {
         /*
-        // TODO: reintegrate as part of #3079
+        // TODO #3488 - Reintegrate, and construct chain only once!
         return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
                 .proceed(message, null)
                 .first()
