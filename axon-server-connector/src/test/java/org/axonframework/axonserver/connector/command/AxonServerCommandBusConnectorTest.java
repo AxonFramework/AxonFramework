@@ -348,7 +348,7 @@ class AxonServerCommandBusConnectorTest {
 
     @Test
     void afterShutdownDispatchingAnShutdownInProgressExceptionIsThrownOnDispatchInvocation() {
-        CommandMessage<byte[]> testCommand = new GenericCommandMessage<>(ANY_TEST_TYPE, ANY_TEST_PAYLOAD);
+        CommandMessage testCommand = new GenericCommandMessage(ANY_TEST_TYPE, ANY_TEST_PAYLOAD);
 
         // when...
         testSubject.shutdownDispatching();
@@ -361,7 +361,7 @@ class AxonServerCommandBusConnectorTest {
 
     @Test
     void shutdownDispatchingWaitsForCommandsInTransitToComplete() {
-        CommandMessage<byte[]> testCommand = new GenericCommandMessage<>(ANY_TEST_TYPE, ANY_TEST_PAYLOAD);
+        CommandMessage testCommand = new GenericCommandMessage(ANY_TEST_TYPE, ANY_TEST_PAYLOAD);
         CompletableFuture<CommandResponse> testResponseFuture = new CompletableFuture<>();
         AtomicBoolean handled = new AtomicBoolean(false);
         when(commandChannel.sendCommand(any())).thenReturn(testResponseFuture);
