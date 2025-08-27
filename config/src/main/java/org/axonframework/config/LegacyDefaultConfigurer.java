@@ -371,19 +371,21 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     protected QueryBus defaultQueryBus(LegacyConfiguration config) {
         return defaultComponent(QueryBus.class, config)
                 .orElseGet(() -> {
-                    QueryBus queryBus = SimpleQueryBus.builder()
-                                                      .messageMonitor(config.messageMonitor(SimpleQueryBus.class,
-                                                                                            "queryBus"))
-                                                      .transactionManager(config.getComponent(
-                                                              TransactionManager.class, NoTransactionManager::instance
-                                                      ))
-                                                      .errorHandler(config.getComponent(
-                                                              QueryInvocationErrorHandler.class,
-                                                              () -> LoggingQueryInvocationErrorHandler.builder().build()
-                                                      ))
-                                                      .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                                                      .spanFactory(config.getComponent(QueryBusSpanFactory.class))
-                                                      .build();
+                    SimpleQueryBus queryBus = SimpleQueryBus.builder()
+                                                            .messageMonitor(config.messageMonitor(SimpleQueryBus.class,
+                                                                                                  "queryBus"))
+                                                            .transactionManager(config.getComponent(
+                                                                    TransactionManager.class,
+                                                                    NoTransactionManager::instance
+                                                            ))
+                                                            .errorHandler(config.getComponent(
+                                                                    QueryInvocationErrorHandler.class,
+                                                                    () -> LoggingQueryInvocationErrorHandler.builder()
+                                                                                                            .build()
+                                                            ))
+                                                            .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
+                                                            .spanFactory(config.getComponent(QueryBusSpanFactory.class))
+                                                            .build();
                     queryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
                     return queryBus;
                 });

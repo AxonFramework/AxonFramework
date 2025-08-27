@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.deadletter;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.TransactionManager;
@@ -28,7 +29,6 @@ import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
@@ -37,8 +37,8 @@ import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +49,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
@@ -73,7 +72,7 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  */
 public class DeadLetteringEventHandlerInvoker
         extends SimpleEventHandlerInvoker
-        implements SequencedDeadLetterProcessor<EventMessage>, MessageHandlerInterceptorSupport<EventMessage> {
+        implements SequencedDeadLetterProcessor<EventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -240,7 +239,6 @@ public class DeadLetteringEventHandlerInvoker
         return (boolean)uow.executeWithResult((ctx) -> queue.process(sequenceFilter, processingTask::process)).payload();
     }
 
-    @Override
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<EventMessage> interceptor) {
         interceptors.add(interceptor);

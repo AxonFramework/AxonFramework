@@ -206,7 +206,6 @@ public class DefaultQueryGateway implements QueryGateway {
         );
     }
 
-    @Override
     public Registration registerDispatchInterceptor(
             @Nonnull MessageDispatchInterceptor<? super QueryMessage> interceptor) {
         dispatchInterceptors.add(interceptor);

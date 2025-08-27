@@ -15,10 +15,9 @@
  */
 package org.axonframework.queryhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -29,7 +28,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
 /**
  * The mechanism that dispatches Query objects to their appropriate QueryHandlers. QueryHandlers can subscribe and
@@ -41,8 +39,7 @@ import jakarta.annotation.Nonnull;
  * @author Allard Buijze
  * @since 3.1
  */
-public interface QueryBus extends MessageHandlerInterceptorSupport<QueryMessage>,
-        MessageDispatchInterceptorSupport<QueryMessage> {
+public interface QueryBus {
 
     /**
      * Subscribe the given {@code handler} to queries with the given {@code queryName} and {@code responseType}.

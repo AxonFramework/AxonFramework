@@ -66,6 +66,7 @@ import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
@@ -137,7 +138,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final AxonServerConfiguration configuration;
     private final QueryUpdateEmitter updateEmitter;
-    private final QueryBus localSegment;
+    private final SimpleQueryBus localSegment;
     private final QuerySerializer serializer;
     private final SubscriptionMessageSerializer subscriptionSerializer;
     private final QueryPriorityCalculator priorityCalculator;
@@ -539,13 +540,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         return localSegment;
     }
 
-    @Override
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<QueryMessage> interceptor) {
         return localSegment.registerHandlerInterceptor(interceptor);
     }
 
-    @Override
     public @Nonnull
     Registration registerDispatchInterceptor(
             @Nonnull MessageDispatchInterceptor<? super QueryMessage> dispatchInterceptor) {
@@ -604,7 +603,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         private AxonServerConnectionManager axonServerConnectionManager;
         private AxonServerConfiguration configuration;
-        private QueryBus localSegment;
+        private SimpleQueryBus localSegment;
         private QueryUpdateEmitter updateEmitter;
         private Serializer messageSerializer;
         private Serializer genericSerializer;
@@ -670,7 +669,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          * @param localSegment a {@link QueryBus} used to dispatch incoming queries to the local environment
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder localSegment(QueryBus localSegment) {
+        public Builder localSegment(SimpleQueryBus localSegment) {
             assertNonNull(localSegment, "Local QueryBus may not be null");
             this.localSegment = localSegment;
             return this;

@@ -67,14 +67,12 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
         }
     }
 
-    @Override
     public Registration registerDispatchInterceptor(
             @Nonnull MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
-    @Override
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);

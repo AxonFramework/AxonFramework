@@ -47,7 +47,6 @@ import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -402,7 +401,7 @@ public class EventProcessingModule
         return eventProcessor;
     }
 
-    private void addInterceptors(String processorName, MessageHandlerInterceptorSupport<EventMessage> processor) {
+    private void addInterceptors(String processorName, DeadLetteringEventHandlerInvoker processor) {
         handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
                                    .stream()
                                    .map(hi -> hi.apply(configuration))

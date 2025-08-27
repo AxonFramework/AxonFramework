@@ -109,7 +109,6 @@ public abstract class AbstractEventBus implements EventBus {
      *
      * @param dispatchInterceptor
      */
-    @Override
     public Registration registerDispatchInterceptor(
             @Nonnull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);

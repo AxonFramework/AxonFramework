@@ -237,7 +237,6 @@ public class StubDeadlineManager implements DeadlineManager {
         advanceTimeTo(currentDateTime.plus(duration), deadlineConsumer);
     }
 
-    @Override
     public @Nonnull
     Registration registerDispatchInterceptor(
             @Nonnull MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
@@ -246,7 +245,6 @@ public class StubDeadlineManager implements DeadlineManager {
     }
 
     @Nonnull
-    @Override
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);

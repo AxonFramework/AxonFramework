@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.MessageDispatchInterceptorSupport;
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.reactivestreams.Publisher;
@@ -24,7 +24,6 @@ import reactor.util.concurrent.Queues;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
 /**
  * Interface towards the Query Handling components of an application. This interface provides a friendlier API toward
@@ -36,7 +35,7 @@ import jakarta.annotation.Nonnull;
  * @author Milan Savic
  * @since 3.1
  */
-public interface QueryGateway extends MessageDispatchInterceptorSupport<QueryMessage> {
+public interface QueryGateway {
 
     /**
      * Sends given {@code query} over the {@link org.axonframework.queryhandling.QueryBus}, expecting a response with

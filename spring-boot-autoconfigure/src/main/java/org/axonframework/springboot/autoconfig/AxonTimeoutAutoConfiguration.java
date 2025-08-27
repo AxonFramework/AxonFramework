@@ -86,18 +86,18 @@ public class AxonTimeoutAutoConfiguration {
 //                        properties.getCommandBus().getWarningThresholdMs(),
 //                        properties.getCommandBus().getWarningIntervalMs()
 //                ));
-                c.queryBus().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptorBuilder(
-                        c.queryBus().getClass().getSimpleName(),
-                        properties.getQueryBus().getTimeoutMs(),
-                        properties.getQueryBus().getWarningThresholdMs(),
-                        properties.getQueryBus().getWarningIntervalMs()
-                ).buildQueryInterceptor());
-                c.deadlineManager().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptorBuilder(
-                        c.deadlineManager().getClass().getSimpleName(),
-                        properties.getDeadline().getTimeoutMs(),
-                        properties.getDeadline().getWarningThresholdMs(),
-                        properties.getDeadline().getWarningIntervalMs()
-                ).buildDeadlineInterceptor());
+//                c.queryBus().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptorBuilder(
+//                        c.queryBus().getClass().getSimpleName(),
+//                        properties.getQueryBus().getTimeoutMs(),
+//                        properties.getQueryBus().getWarningThresholdMs(),
+//                        properties.getQueryBus().getWarningIntervalMs()
+//                ).buildQueryInterceptor());
+//                c.deadlineManager().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptorBuilder(
+//                        c.deadlineManager().getClass().getSimpleName(),
+//                        properties.getDeadline().getTimeoutMs(),
+//                        properties.getDeadline().getWarningThresholdMs(),
+//                        properties.getDeadline().getWarningIntervalMs()
+//                ).buildDeadlineInterceptor());
             });
         }
 

@@ -628,7 +628,6 @@ public class SimpleQueryBus implements QueryBus {
      * it is returned directly. Otherwise, a new QueryResponseMessage is created with the result as payload.
      *
      * @param result The result of a Query, to be wrapped in a QueryResponseMessage
-     * @param <R>    The type of response expected
      * @return a QueryResponseMessage for the given {@code result}, or the result itself, if already a
      * QueryResponseMessage.
      * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
@@ -692,7 +691,6 @@ public class SimpleQueryBus implements QueryBus {
      * @param interceptor the interceptor to invoke before passing a Query to the handler
      * @return handle to deregister the interceptor
      */
-    @Override
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<QueryMessage> interceptor) {
         handlerInterceptors.add(interceptor);
@@ -706,7 +704,6 @@ public class SimpleQueryBus implements QueryBus {
      * @param interceptor the interceptor to invoke when sending a Query
      * @return handle to deregister the interceptor
      */
-    @Override
     public @Nonnull
     Registration registerDispatchInterceptor(
             @Nonnull MessageDispatchInterceptor<? super QueryMessage> interceptor) {

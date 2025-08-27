@@ -1071,7 +1071,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             return () -> true;
         }
 
-        @Override
         public @Nonnull
         Registration registerDispatchInterceptor(
                 @Nonnull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {

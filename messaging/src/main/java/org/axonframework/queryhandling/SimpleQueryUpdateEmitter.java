@@ -154,7 +154,6 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         runOnAfterCommitOrNow(() -> doCompleteExceptionally(filter, cause));
     }
 
-    @Override
     public @Nonnull
     Registration registerDispatchInterceptor(
             @Nonnull MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage> interceptor) {
