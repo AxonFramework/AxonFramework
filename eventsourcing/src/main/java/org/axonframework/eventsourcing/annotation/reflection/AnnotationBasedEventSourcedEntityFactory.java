@@ -22,6 +22,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
@@ -31,7 +32,6 @@ import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.PayloadParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -71,26 +71,27 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     private final IdTypeParameterResolver idTypeParameterResolver = new IdTypeParameterResolver();
     private final ParameterResolverFactory resolverFactory;
     private final MessageTypeResolver messageTypeResolver;
-    private final Converter converter;
+    private final EventConverter converter;
 
     /**
      * Instantiate an annotation-based {@link EventSourcedEntityFactory} for the given concrete {@code entityType}. When
      * using a polymorphic entity type, you can use the
      * {@link #AnnotationBasedEventSourcedEntityFactory(Class, Class, Set, ParameterResolverFactory,
-     * MessageTypeResolver, Converter)}, so that all subtypes of the entity type will be scanned for static methods and
-     * constructors.
+     * MessageTypeResolver, EventConverter)}, so that all subtypes of the entity type will be scanned for static methods
+     * and constructors.
      *
      * @param entityType               The type of the entity to create. Must be concrete.
      * @param idType                   The type of the identifier used by the entity.
      * @param parameterResolverFactory The factory to use to resolve parameters.
      * @param messageTypeResolver      The factory to use to resolve the payload type.
-     * @param converter                The converter to use for converting event payloads to the handler's expected type.
+     * @param converter                The converter to use for converting event payloads to the handler's expected
+     *                                 type.
      */
     public AnnotationBasedEventSourcedEntityFactory(@Nonnull Class<E> entityType,
                                                     @Nonnull Class<ID> idType,
                                                     @Nonnull ParameterResolverFactory parameterResolverFactory,
                                                     @Nonnull MessageTypeResolver messageTypeResolver,
-                                                    @Nonnull Converter converter
+                                                    @Nonnull EventConverter converter
     ) {
         this(entityType, idType, Collections.emptySet(), parameterResolverFactory, messageTypeResolver, converter);
     }
@@ -106,14 +107,15 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
      * @param subTypes                 The concrete types that extend the {@code entityType}.
      * @param parameterResolverFactory The factory to use to resolve parameters.
      * @param messageTypeResolver      The factory to use to resolve the payload type.
-     * @param converter                The converter to use for converting event payloads to the handler's expected type.
+     * @param converter                The converter to use for converting event payloads to the handler's expected
+     *                                 type.
      */
     public AnnotationBasedEventSourcedEntityFactory(@Nonnull Class<E> entityType,
                                                     @Nonnull Class<ID> idType,
                                                     @Nonnull Set<Class<? extends E>> subTypes,
                                                     @Nonnull ParameterResolverFactory parameterResolverFactory,
                                                     @Nonnull MessageTypeResolver messageTypeResolver,
-                                                    @Nonnull Converter converter
+                                                    @Nonnull EventConverter converter
     ) {
         this.entityType = Objects.requireNonNull(entityType, "The entityType must not be null.");
         this.types = new HashSet<>(subTypes);

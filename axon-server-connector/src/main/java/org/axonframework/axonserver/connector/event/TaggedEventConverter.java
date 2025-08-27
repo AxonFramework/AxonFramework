@@ -23,14 +23,13 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.Converter;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -41,7 +40,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Wrapper around standard Axon Framework {@link Converter} that can convert
+ * Wrapper around standard Axon Framework {@link EventConverter} that can convert
  * {@link TaggedEventMessage TaggedEventMessages} (Axon Framework representation) to {@link TaggedEvent TaggedEvents}
  * (Axon Server representation).
  *
@@ -57,7 +56,7 @@ public class TaggedEventConverter implements DescribableComponent {
      * Constructs an {@code TaggedEventConverter} using the given {@code converter} to convert the
      * {@link EventMessage#payload() event payload}.
      *
-     * @param converter The converter used to {@link Converter#convert(Object, Class)} the
+     * @param converter The converter used to {@link EventConverter#convert(Object, Class)} the
      *                  {@link EventMessage#payload()} for the {@link Event}.
      */
     public TaggedEventConverter(@Nonnull EventConverter converter) {

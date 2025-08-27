@@ -26,7 +26,6 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.InstantiatedComponentDefinition;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.conversion.EventConverter;
-import org.axonframework.serialization.Converter;
 
 import java.util.Optional;
 
@@ -54,7 +53,7 @@ public class AxonServerEventStorageEngineFactory implements ComponentFactory<Axo
 
     /**
      * Constructs an {@link AxonServerEventStorageEngine} for the given {@code context}, retrieving a
-     * {@link AxonServerConnectionManager} and {@link Converter} from the given {@code config}.
+     * {@link AxonServerConnectionManager} and {@link EventConverter} from the given {@code config}.
      * <p>
      * The {@code context} is used to request an {@link AxonServerConnection} from the
      * {@code AxonServerConnectionManager}.
@@ -62,7 +61,7 @@ public class AxonServerEventStorageEngineFactory implements ComponentFactory<Axo
      * @param context The name of the context for which to open an {@link AxonServerConnection} for the
      *                {@link AxonServerEventStorageEngine} under construction.
      * @param config  The configuration from which to retrieve an {@link AxonServerConnectionManager} and
-     *                {@link Converter} for the {@link AxonServerEventStorageEngine} under construction.
+     *                {@link EventConverter} for the {@link AxonServerEventStorageEngine} under construction.
      * @return An {@link AxonServerEventStorageEngine}, connecting to the given {@code context}.
      */
     @Nonnull

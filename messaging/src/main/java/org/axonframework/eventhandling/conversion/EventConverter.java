@@ -27,7 +27,7 @@ import java.lang.reflect.Type;
  * A converter specific for {@link EventMessage EventMessages}, acting on the {@link EventMessage#payload() payload}.
  * <p>
  * This interface serves the purpose of enforcing use of the right type of converter. Implementation of this interface
- * typically delegate operations to a {@link org.axonframework.serialization.Converter} instance.
+ * typically delegate operations to a {@link org.axonframework.messaging.conversion.MessageConverter} instance.
  *
  * @author Steven van Beelen
  * @since 5.0.0

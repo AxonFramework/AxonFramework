@@ -25,12 +25,11 @@ import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.command.EntityIdResolver;
-import org.axonframework.serialization.Converter;
 
 import java.util.Objects;
 
 /**
- * Implementation of the {@link EntityIdResolver} that converts the payload through the configured {@link Converter}
+ * Implementation of the {@link EntityIdResolver} that converts the payload through the configured {@link MessageConverter}
  * the, taking the expected representation of the message handler through the {@link AnnotatedEntityMetamodel}. It will
  * then use the delegate {@link EntityIdResolver} to resolve the id, defaulting to the
  * {@link AnnotationBasedEntityIdResolver}.
@@ -52,7 +51,7 @@ public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, Desc
      *
      * @param metamodel The metamodel that dictates the expected representation of the message.
      * @param idType    The type of the id that will be resolved.
-     * @param converter The {@link Converter to use}.
+     * @param converter The {@link MessageConverter} to use.
      * @param delegate  The {@link EntityIdResolver} to use on the message after conversion.
      */
     public AnnotatedEntityIdResolver(@Nonnull AnnotatedEntityMetamodel<?> metamodel,

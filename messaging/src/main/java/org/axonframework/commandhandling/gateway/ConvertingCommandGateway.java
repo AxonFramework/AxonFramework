@@ -19,10 +19,9 @@ package org.axonframework.commandhandling.gateway;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.Converter;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -31,7 +30,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link CommandGateway} implementation that wraps the {@link CommandResult} of the delegate into a result that can
- * convert the payload of the result using a provided {@link Converter}.
+ * convert the payload of the result using a provided {@link MessageConverter}.
  *
  * @author Allard Buijze
  * @author Mitchell Herrijgers
