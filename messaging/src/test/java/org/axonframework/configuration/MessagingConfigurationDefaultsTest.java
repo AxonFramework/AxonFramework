@@ -89,8 +89,10 @@ class MessagingConfigurationDefaultsTest {
         assertInstanceOf(DelegatingMessageConverter.class, messageConverter);
         EventConverter eventConverter = resultConfig.getComponent(EventConverter.class);
         assertInstanceOf(DelegatingEventConverter.class, eventConverter);
-        assertThat(generalConverter).isEqualTo(((DelegatingMessageConverter) messageConverter).converter());
-        assertThat(generalConverter).isEqualTo(((DelegatingEventConverter) eventConverter).converter());
+        Converter messageConverterDelegate = ((DelegatingMessageConverter) messageConverter).delegate();
+        assertThat(generalConverter).isEqualTo(messageConverterDelegate);
+        MessageConverter eventConverterDelegate = ((DelegatingEventConverter) eventConverter).delegate();
+        assertThat(messageConverter).isEqualTo(eventConverterDelegate);
         // The specific CommandGateway-implementation registered by default may be overridden by the serviceloader-mechanism.
         // So we just check if _any_ CommandGateway has been added to the configuration.
         assertTrue(resultConfig.hasComponent(CommandGateway.class));

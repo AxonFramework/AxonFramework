@@ -139,8 +139,6 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     private static DelegatingEventConverter defaultEventConverter(Configuration c) {
         return c.getOptionalComponent(MessageConverter.class)
-                .filter(messageConverter -> messageConverter instanceof DelegatingMessageConverter)
-                .map(messageConverter -> ((DelegatingMessageConverter) messageConverter).converter())
                 .map(DelegatingEventConverter::new)
                 .orElse(new DelegatingEventConverter(c.getComponent(Converter.class)));
     }

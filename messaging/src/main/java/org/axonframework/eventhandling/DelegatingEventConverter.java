@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.DelegatingMessageConverter;
 import org.axonframework.messaging.MessageConverter;
@@ -27,7 +28,7 @@ import java.lang.reflect.Type;
 import java.util.Objects;
 
 /**
- * An {@link EventConverter} implementation delegating conversion operations to a {@link Converter}.
+ * An {@link EventConverter} implementation delegating conversion operations to a {@link MessageConverter}.
  * <p>
  * Useful to ensure callers of this component <b>only</b> convert {@link EventMessage} implementations.
  *
@@ -36,7 +37,7 @@ import java.util.Objects;
  */
 public class DelegatingEventConverter implements EventConverter {
 
-    private final MessageConverter messageConverter;
+    private final MessageConverter delegate;
 
     /**
      * Constructs a {@code DelegatingEventConverter}, delegating operations to a {@link DelegatingMessageConverter}
@@ -46,37 +47,57 @@ public class DelegatingEventConverter implements EventConverter {
      *                  operations to.
      */
     public DelegatingEventConverter(@Nonnull Converter converter) {
-        this(new DelegatingMessageConverter(Objects.requireNonNull(converter, "The Converter must not be null.")));
+        this(converter instanceof MessageConverter messageConverter
+                     ? messageConverter
+                     : new DelegatingMessageConverter(converter));
     }
 
     /**
      * Constructs a {@code DelegatingEventConverter}, delegating operations to the given {@code converter}.
      *
-     * @param messageConverter The converter to delegate all conversion operations to.
+     * @param delegate The converter to delegate all conversion operations to.
      */
-    public DelegatingEventConverter(@Nonnull MessageConverter messageConverter) {
-        this.messageConverter = Objects.requireNonNull(messageConverter, "The Converter must not be null.");
+    public DelegatingEventConverter(@Nonnull MessageConverter delegate) {
+        this.delegate = Objects.requireNonNull(delegate, "The Converter must not be null.");
+    }
+
+    @Override
+    public boolean canConvert(@Nonnull Type sourceType, @Nonnull Type targetType) {
+        return delegate.canConvert(sourceType, targetType);
+    }
+
+    @Nullable
+    @Override
+    public <T> T convert(@Nullable Object input, @Nonnull Type targetType) {
+        return delegate.convert(input, targetType);
     }
 
     @Override
     @Nullable
     public <E extends EventMessage, T> T convertPayload(@Nonnull E event, @Nonnull Type targetType) {
-        return messageConverter.convertPayload(event, targetType);
+        return delegate.convertPayload(event, targetType);
     }
 
     @Override
     @Nonnull
     public <E extends EventMessage> E convertEvent(@Nonnull E event, @Nonnull Type targetType) {
-        return messageConverter.convertMessage(event, targetType);
+        return delegate.convertMessage(event, targetType);
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("messageConverter", messageConverter);
+        descriptor.describeProperty("messageConverter", delegate);
     }
 
-    @Override
-    public Converter converter() {
-        return messageConverter.converter();
+    /**
+     * Returns the {@link MessageConverter} this {@code EventConverter} delegates too.
+     * <p>
+     * Useful to construct other instances with the exact same {@code Converter}.
+     *
+     * @return The {@link MessageConverter} this {@code EventConverter} delegates too.
+     */
+    @Internal
+    public MessageConverter delegate() {
+        return delegate;
     }
 }

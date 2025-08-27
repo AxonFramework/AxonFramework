@@ -66,10 +66,10 @@ class ConverterAutoConfigurationTest {
 
             assertThat(generalConverter).isInstanceOf(JacksonConverter.class);
             assertThat(messageConverter).isInstanceOf(DelegatingMessageConverter.class);
-            Converter wrappedMessageConverter = ((DelegatingMessageConverter) messageConverter).converter();
+            Converter wrappedMessageConverter = ((DelegatingMessageConverter) messageConverter).delegate();
             assertThat(wrappedMessageConverter).isEqualTo(generalConverter);
             assertThat(eventConverter).isInstanceOf(DelegatingEventConverter.class);
-            MessageConverter wrappedEventConverter = ((DelegatingEventConverter) eventConverter).converter();
+            MessageConverter wrappedEventConverter = ((DelegatingEventConverter) eventConverter).delegate();
             assertThat(wrappedEventConverter).isEqualTo(messageConverter);
         });
     }
@@ -214,12 +214,12 @@ class ConverterAutoConfigurationTest {
 
     private static Converter getWrappedMessageConverter(MessageConverter messageConverter) {
         assertThat(messageConverter).isInstanceOf(DelegatingMessageConverter.class);
-        return ((DelegatingMessageConverter) messageConverter).converter();
+        return ((DelegatingMessageConverter) messageConverter).delegate();
     }
 
     private static Converter getWrappedEventConverter(EventConverter eventConverter) {
         assertThat(eventConverter).isInstanceOf(DelegatingEventConverter.class);
-        return getWrappedMessageConverter(((DelegatingEventConverter) eventConverter).converter());
+        return getWrappedMessageConverter(((DelegatingEventConverter) eventConverter).delegate());
     }
 
     @Configuration
