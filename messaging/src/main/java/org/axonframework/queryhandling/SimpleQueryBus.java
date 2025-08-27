@@ -15,6 +15,7 @@
  */
 package org.axonframework.queryhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
@@ -30,7 +31,6 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
@@ -69,7 +69,6 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
@@ -115,9 +114,10 @@ public class SimpleQueryBus implements QueryBus {
         builder.validate();
         this.messageMonitor = builder.messageMonitor;
         this.errorHandler = builder.errorHandler;
-        if (builder.transactionManager != NoTransactionManager.INSTANCE) {
-            registerHandlerInterceptor(new TransactionManagingInterceptor<>(builder.transactionManager));
-        }
+        // TODO #3488 - Replace for TransactionalUnitOfWorkFactory
+//        if (builder.transactionManager != NoTransactionManager.INSTANCE) {
+//            registerHandlerInterceptor(new TransactionManagingInterceptor<>(builder.transactionManager));
+//        }
         this.queryUpdateEmitter = builder.queryUpdateEmitter;
         this.duplicateQueryHandlerResolver = builder.duplicateQueryHandlerResolver;
         this.spanFactory = builder.spanFactory;
