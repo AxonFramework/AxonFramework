@@ -125,7 +125,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     @Override
     public void appendEvent(@Nonnull EventMessage eventMessage) {
-        var eventQueue = processingContext.computeResourceIfAbsent(
+        List<TaggedEventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
                     attachAppendEventsStep();
@@ -164,10 +164,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         return tx.commit()
                  .whenComplete((position, exception) -> {
                      if (position != null) {
-                         commitContext.updateResource(appendPositionKey,
-                                                      other -> position.upperBound(Objects.requireNonNullElse(
-                                                              other,
-                                                              ConsistencyMarker.ORIGIN)));
+                         commitContext.updateResource(
+                                 appendPositionKey,
+                                 other -> position.upperBound(requireNonNullElse(other, ConsistencyMarker.ORIGIN)));
                      }
                  });
     }
