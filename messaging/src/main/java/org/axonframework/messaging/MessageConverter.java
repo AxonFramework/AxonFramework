@@ -74,6 +74,7 @@ public interface MessageConverter extends DescribableComponent {
      * @return A new {@code Message} containing the converted version of the given {@code message's}
      * {@link Message#payload() payload} into the given {@code targetType}.
      */
+    @Nonnull
     default <M extends Message, T> M convertMessage(@Nonnull M message, @Nonnull Class<T> targetType) {
         return convertMessage(message, (Type) targetType);
     }
@@ -88,5 +89,6 @@ public interface MessageConverter extends DescribableComponent {
      * @return A new {@code Message} containing the converted version of the given {@code message's}
      * {@link Message#payload() payload} into the given {@code targetType}.
      */
+    @Nonnull
     <M extends Message> M convertMessage(@Nonnull M message, @Nonnull Type targetType);
 }

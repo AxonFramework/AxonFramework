@@ -46,14 +46,14 @@ public class DelegatingMessageConverter implements MessageConverter {
         this.converter = Objects.requireNonNull(converter, "The Converter must not be null.");
     }
 
-    @Nullable
     @Override
+    @Nullable
     public <M extends Message, T> T convertPayload(@Nonnull M message, @Nonnull Type targetType) {
-        //noinspection unchecked
-        return (T) message.payloadAs(targetType, converter);
+        return message.payloadAs(targetType, converter);
     }
 
     @Override
+    @Nonnull
     public <M extends Message> M convertMessage(@Nonnull M message, @Nonnull Type targetType) {
         //noinspection unchecked
         return (M) message.withConvertedPayload(targetType, converter);

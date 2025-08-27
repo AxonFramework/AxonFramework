@@ -59,13 +59,14 @@ public class DelegatingEventConverter implements EventConverter {
         this.messageConverter = Objects.requireNonNull(messageConverter, "The Converter must not be null.");
     }
 
-    @Nullable
     @Override
+    @Nullable
     public <E extends EventMessage, T> T convertPayload(@Nonnull E event, @Nonnull Type targetType) {
         return messageConverter.convertPayload(event, targetType);
     }
 
     @Override
+    @Nonnull
     public <E extends EventMessage> E convertEvent(@Nonnull E event, @Nonnull Type targetType) {
         return messageConverter.convertMessage(event, targetType);
     }

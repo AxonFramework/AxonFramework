@@ -74,6 +74,7 @@ public interface EventConverter extends DescribableComponent {
      * @return A new {@code EventMessage} containing the converted version of the given {@code event's}
      * {@link EventMessage#payload() payload} into the given {@code targetType}.
      */
+    @Nonnull
     default <E extends EventMessage, T> E convertEvent(@Nonnull E event, @Nonnull Class<T> targetType) {
         return convertEvent(event, (Type) targetType);
     }
@@ -88,5 +89,6 @@ public interface EventConverter extends DescribableComponent {
      * @return A new {@code EventMessage} containing the converted version of the given {@code event's}
      * {@link EventMessage#payload() payload} into the given {@code targetType}.
      */
+    @Nonnull
     <E extends EventMessage> E convertEvent(@Nonnull E event, @Nonnull Type targetType);
 }
