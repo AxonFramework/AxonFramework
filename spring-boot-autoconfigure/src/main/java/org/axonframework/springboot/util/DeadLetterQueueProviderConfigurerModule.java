@@ -45,7 +45,7 @@ import java.util.function.Function;
 public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule {
 
     private final EventProcessorProperties eventProcessorProperties;
-    private final Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider;
+    private final Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage>>> deadLetterQueueProvider;
 
     /**
      * Construct a {@link DeadLetterQueueProviderConfigurerModule}, using the given {@code eventProcessorProperties} to
@@ -58,7 +58,7 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule
      */
     public DeadLetterQueueProviderConfigurerModule(
             EventProcessorProperties eventProcessorProperties,
-            Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider
+            Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage>>> deadLetterQueueProvider
     ) {
         this.eventProcessorProperties = eventProcessorProperties;
         this.deadLetterQueueProvider = deadLetterQueueProvider;

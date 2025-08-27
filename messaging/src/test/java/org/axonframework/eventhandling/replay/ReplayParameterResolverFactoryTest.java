@@ -55,9 +55,9 @@ class ReplayParameterResolverFactoryTest {
 
     @Test
     void invokeWithReplayTokens() throws Exception {
-        GenericTrackedEventMessage<Object> replayEvent = new GenericTrackedEventMessage<>(replayToken, asEventMessage(1L));
+        GenericTrackedEventMessage replayEvent = new GenericTrackedEventMessage(replayToken, asEventMessage(1L));
         ProcessingContext replayContext = StubProcessingContext.forMessage(replayEvent);
-        GenericTrackedEventMessage<Object> liveEvent = new GenericTrackedEventMessage<>(regularToken, asEventMessage(2L));
+        GenericTrackedEventMessage liveEvent = new GenericTrackedEventMessage(regularToken, asEventMessage(2L));
         ProcessingContext liveContext = StubProcessingContext.forMessage(liveEvent);
         assertTrue(testSubject.canHandle(replayEvent, replayContext));
         assertTrue(testSubject.canHandle(liveEvent, liveContext));

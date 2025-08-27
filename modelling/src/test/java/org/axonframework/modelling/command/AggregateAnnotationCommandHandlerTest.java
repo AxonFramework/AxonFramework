@@ -198,11 +198,11 @@ class AggregateAnnotationCommandHandlerTest {
     void commandHandlerCreatesAggregateInstance() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-//        final CommandMessage<Object> message = asCommandMessage(new CreateCommand("id", "Hi"));
+//        final CommandMessage message = asCommandMessage(new CreateCommand("id", "Hi"));
 //        commandBus.dispatch(message, callback);
 //        verify(mockRepository).newInstance(any());
 //        // make sure the identifier was invoked in the callback
-//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandMessage> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
 //        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
 //                .forClass(CommandResultMessage.class);
 //        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
@@ -215,11 +215,11 @@ class AggregateAnnotationCommandHandlerTest {
     void commandHandlerCreatesAlwaysAggregateInstance() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-//        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "parameter"));
+//        final CommandMessage message = asCommandMessage(new AlwaysCreateCommand("id", "parameter"));
 //        commandBus.dispatch(message, callback);
 //        verify(mockRepository).newInstance(any(), any());
 //        // make sure the identifier was invoked in the callback
-//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandMessage> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
 //        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
 //                ArgumentCaptor.forClass(CommandResultMessage.class);
 //        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
@@ -235,11 +235,11 @@ class AggregateAnnotationCommandHandlerTest {
     void commandHandlerCreatesAlwaysAggregateInstanceWithNullId() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-//        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand(null, "parameter"));
+//        final CommandMessage message = asCommandMessage(new AlwaysCreateCommand(null, "parameter"));
 //        commandBus.dispatch(message, callback);
 //        verify(mockRepository).newInstance(any(), any());
 //        // make sure the identifier was invoked in the callback
-//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandMessage> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
 //        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
 //                ArgumentCaptor.forClass(CommandResultMessage.class);
 //        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
@@ -255,7 +255,7 @@ class AggregateAnnotationCommandHandlerTest {
     void commandHandlerCreatesOrUpdatesAggregateInstance() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-//        final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand("id", "Hi"));
+//        final CommandMessage message = asCommandMessage(new CreateOrUpdateCommand("id", "Hi"));
 //
 //        AnnotatedAggregate<StubCommandAnnotatedAggregate> spyAggregate = spy(createAggregate(new StubCommandAnnotatedAggregate()));
 //        ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> factoryCaptor = ArgumentCaptor.forClass(Callable.class);
@@ -264,7 +264,7 @@ class AggregateAnnotationCommandHandlerTest {
 //
 //        commandBus.dispatch(message, callback);
 //        verify(mockRepository).loadOrCreate(anyString(), any());
-//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandMessage> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
 //        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
 //                .forClass(CommandResultMessage.class);
 //        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
@@ -281,7 +281,7 @@ class AggregateAnnotationCommandHandlerTest {
     void commandHandlerCreatesOrUpdatesAggregateInstanceSupportsNullId() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-//        final CommandMessage<Object> message = asCommandMessage(new CreateOrUpdateCommand(null, "Hi"));
+//        final CommandMessage message = asCommandMessage(new CreateOrUpdateCommand(null, "Hi"));
 //
 //        ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> loadOrCreateFactoryCaptor =
 //                ArgumentCaptor.forClass(Callable.class);
@@ -289,7 +289,7 @@ class AggregateAnnotationCommandHandlerTest {
 //                .thenThrow(new IllegalArgumentException("This is not supposed to be invoked"));
 //        commandBus.dispatch(message, callback);
 //        verify(mockRepository).newInstance(any(), any());
-//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandMessage> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
 //        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
 //                .forClass(CommandResultMessage.class);
 //        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
@@ -306,11 +306,11 @@ class AggregateAnnotationCommandHandlerTest {
     public void commandHandlerAlwaysCreatesAggregateInstance() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-//        final CommandMessage<Object> message = asCommandMessage(new AlwaysCreateCommand("id", "Hi"));
+//        final CommandMessage message = asCommandMessage(new AlwaysCreateCommand("id", "Hi"));
 //
 //        commandBus.dispatch(message, callback);
 //        verify(mockRepository).newInstance(any(), any());
-//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandMessage> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
 //        ArgumentCaptor<CommandResultMessage<String>> responseCaptor =
 //                ArgumentCaptor.forClass(CommandResultMessage.class);
 //        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
@@ -323,11 +323,11 @@ class AggregateAnnotationCommandHandlerTest {
     void commandHandlerCreatesAggregateInstanceWithFactoryMethod() throws Exception {
         fail("Not implemented");
 //        final CommandCallback<Object, Object> callback = spy(LoggingCallback.INSTANCE);
-//        final CommandMessage<Object> message = asCommandMessage(new CreateFactoryMethodCommand("id", "Hi"));
+//        final CommandMessage message = asCommandMessage(new CreateFactoryMethodCommand("id", "Hi"));
 //        commandBus.dispatch(message, callback);
 //        verify(mockRepository).newInstance(any());
 //        // make sure the identifier was invoked in the callback
-//        ArgumentCaptor<CommandMessage<Object>> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+//        ArgumentCaptor<CommandMessage> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
 //        ArgumentCaptor<CommandResultMessage<String>> responseCaptor = ArgumentCaptor
 //                .forClass(CommandResultMessage.class);
 //        verify(callback).onResult(commandCaptor.capture(), responseCaptor.capture());
@@ -809,7 +809,7 @@ class AggregateAnnotationCommandHandlerTest {
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(CreateCommand createCommand,
                            MetaData metaData,
-                           LegacyUnitOfWork<CommandMessage<?>> unitOfWork,
+                           LegacyUnitOfWork<CommandMessage> unitOfWork,
                            @MetaDataValue("notExist") String value) {
             this.setIdentifier(createCommand.getId());
             assertNotNull(metaData);

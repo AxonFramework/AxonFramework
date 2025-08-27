@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
  * @deprecated In favor of the {@code org.axonframework.eventsourcing.eventstore.StreamableEventSource}.
  */
 @Deprecated(since = "5.0.0", forRemoval = true)
-public interface StreamableMessageSource<M extends Message<?>> extends TrackingTokenSource {
+public interface StreamableMessageSource<M extends Message> extends TrackingTokenSource {
 
     /**
      * Open a stream containing all messages since given tracking token. Pass a {@code trackingToken} of {@code null} to

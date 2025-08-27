@@ -40,7 +40,7 @@ public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationE
     }
 
     @Override
-    public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+    public void onError(@Nonnull Exception exception, @Nonnull EventMessage event,
                         @Nonnull EventMessageHandler eventHandler) throws Exception {
         throw exception;
     }

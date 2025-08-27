@@ -32,7 +32,7 @@ import jakarta.annotation.Nonnull;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
-public class MetadataContextGetter implements TextMapGetter<Message<?>> {
+public class MetadataContextGetter implements TextMapGetter<Message> {
 
     /**
      * Singleton instance of the {@link MetadataContextGetter}, used by the {@link OpenTelemetrySpanFactory}.
@@ -44,12 +44,12 @@ public class MetadataContextGetter implements TextMapGetter<Message<?>> {
     }
 
     @Override
-    public Iterable<String> keys(Message<?> message) {
+    public Iterable<String> keys(Message message) {
         return message.metaData().keySet();
     }
 
     @Override
-    public String get(Message<?> message, @Nonnull String key) {
+    public String get(Message message, @Nonnull String key) {
         if (message == null) {
             return null;
         }

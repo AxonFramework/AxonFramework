@@ -21,7 +21,6 @@ import jakarta.annotation.Nullable;
 import org.axonframework.configuration.ComponentNotFoundException;
 import org.axonframework.messaging.Message;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -50,7 +49,7 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
      *
      * @param message The message to be used as the only resource in this context.
      */
-    public LegacyMessageSupportingContext(@Nonnull Message<?> message) {
+    public LegacyMessageSupportingContext(@Nonnull Message message) {
         this.resources = new ConcurrentHashMap<>();
         Message.addToContext(this, message);
     }

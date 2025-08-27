@@ -95,7 +95,7 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
     }
 
     @Override
-    public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    public E evolve(@Nonnull E entity, @Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         var superTypeEvolvedEntity = superTypeMetamodel.evolve(entity, event, context);
         return metamodelFor(entity).evolve(superTypeEvolvedEntity, event, context);
     }
@@ -129,7 +129,7 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage<?> message,
+    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage message,
                                                                       @Nonnull ProcessingContext context) {
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
             return MessageStream.failed(new EntityMissingForInstanceCommandHandler(message));
@@ -147,7 +147,7 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handleInstance(@Nonnull CommandMessage<?> message,
+    public MessageStream.Single<CommandResultMessage<?>> handleInstance(@Nonnull CommandMessage message,
                                                                         @Nonnull E entity,
                                                                         @Nonnull ProcessingContext context) {
         if (isCreationalCommand(message) && !isInstanceCommand(message)) {
@@ -180,11 +180,11 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
         return superTypeMetamodel.entityType();
     }
 
-    private boolean isCreationalCommand(CommandMessage<?> message) {
+    private boolean isCreationalCommand(CommandMessage message) {
         return supportedCreationalCommandNames.contains(message.type().qualifiedName());
     }
 
-    private boolean isInstanceCommand(CommandMessage<?> message) {
+    private boolean isInstanceCommand(CommandMessage message) {
         return supportedInstanceCommandNames.contains(message.type().qualifiedName());
     }
 

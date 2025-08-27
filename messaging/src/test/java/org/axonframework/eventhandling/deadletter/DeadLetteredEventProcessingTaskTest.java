@@ -46,14 +46,13 @@ import static org.mockito.Mockito.*;
  */
 class DeadLetteredEventProcessingTaskTest {
 
-    @SuppressWarnings("rawtypes") // The DeadLetter mocks don't like the generic, at all...
     private static final EventMessage TEST_EVENT =
             EventTestUtils.asEventMessage("Then this happened..." + UUID.randomUUID());
-    private static final EnqueueDecision<EventMessage<?>> TEST_DECISION = Decisions.ignore();
+    private static final EnqueueDecision<EventMessage> TEST_DECISION = Decisions.ignore();
 
     private EventMessageHandler eventHandlerOne;
     private EventMessageHandler eventHandlerTwo;
-    private EnqueuePolicy<EventMessage<?>> enqueuePolicy;
+    private EnqueuePolicy<EventMessage> enqueuePolicy;
     private TransactionManager transactionManager;
 
     private List<EventMessageHandler> eventHandlingComponents;
@@ -81,11 +80,11 @@ class DeadLetteredEventProcessingTaskTest {
     @Test
     void taskProcessesLetterSuccessfully() throws Exception {
         //noinspection unchecked
-        DeadLetter<EventMessage<?>> testLetter = mock(DeadLetter.class);
+        DeadLetter<EventMessage> testLetter = mock(DeadLetter.class);
         //noinspection unchecked
         when(testLetter.message()).thenReturn(TEST_EVENT);
 
-        EnqueueDecision<EventMessage<?>> result = testSubject.process(testLetter);
+        EnqueueDecision<EventMessage> result = testSubject.process(testLetter);
 
         assertEquals(DoNotEnqueue.class, result.getClass());
         verify(transactionManager).startTransaction();
@@ -97,14 +96,14 @@ class DeadLetteredEventProcessingTaskTest {
     @Test
     void taskProcessesLetterUnsuccessfullyWhenHandlersThrowsAnException() throws Exception {
         //noinspection unchecked
-        DeadLetter<EventMessage<?>> testLetter = mock(DeadLetter.class);
+        DeadLetter<EventMessage> testLetter = mock(DeadLetter.class);
         //noinspection unchecked
         when(testLetter.message()).thenReturn(TEST_EVENT);
         Exception testException = new RuntimeException();
 
         when(eventHandlerTwo.handleSync(eq(TEST_EVENT), any())).thenThrow(testException);
 
-        EnqueueDecision<EventMessage<?>> result = testSubject.process(testLetter);
+        EnqueueDecision<EventMessage> result = testSubject.process(testLetter);
 
         assertEquals(TEST_DECISION, result);
         verify(transactionManager).startTransaction();
@@ -121,14 +120,14 @@ class DeadLetteredEventProcessingTaskTest {
                                                           enqueuePolicy,
                                                           transactionManager);
         //noinspection unchecked
-        DeadLetter<EventMessage<?>> testLetter = mock(DeadLetter.class);
+        DeadLetter<EventMessage> testLetter = mock(DeadLetter.class);
         //noinspection unchecked
         when(testLetter.message()).thenReturn(TEST_EVENT);
         Exception testException = new RuntimeException();
 
         when(eventHandlerTwo.handleSync(eq(TEST_EVENT), any())).thenThrow(testException);
 
-        EnqueueDecision<EventMessage<?>> result = testSubject.process(testLetter);
+        EnqueueDecision<EventMessage> result = testSubject.process(testLetter);
 
         assertFalse(result.shouldEnqueue());
         assertTrue(invoked.get());
@@ -147,7 +146,7 @@ class DeadLetteredEventProcessingTaskTest {
         }
     }
 
-    private MessageHandlerInterceptor<? super EventMessage<?>> errorCatchingInterceptor(AtomicBoolean invoked) {
+    private MessageHandlerInterceptor<? super EventMessage> errorCatchingInterceptor(AtomicBoolean invoked) {
         return (unitOfWork, context, chain) -> {
             invoked.set(true);
             try {

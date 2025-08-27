@@ -91,7 +91,7 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                @Nullable ProcessingContext processingContext) {
         return connector.dispatch(command, processingContext);
     }
@@ -107,7 +107,7 @@ public class DistributedCommandBus implements CommandBus {
         private static final AtomicLong TASK_SEQUENCE = new AtomicLong(Long.MIN_VALUE);
 
         @Override
-        public void handle(@Nonnull CommandMessage<?> commandMessage,
+        public void handle(@Nonnull CommandMessage commandMessage,
                            @Nonnull CommandBusConnector.ResultCallback callback) {
             int priority = commandMessage.priority().orElse(0);
             if (logger.isDebugEnabled()) {
@@ -123,7 +123,7 @@ public class DistributedCommandBus implements CommandBus {
             ));
         }
 
-        private void doHandleCommand(CommandMessage<?> commandMessage,
+        private void doHandleCommand(CommandMessage commandMessage,
                                      CommandBusConnector.ResultCallback callback) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Processing incoming command [{}] with priority [{}] and routing key [{}]",
@@ -146,13 +146,13 @@ public class DistributedCommandBus implements CommandBus {
             });
         }
 
-        private void handleError(CommandMessage<?> commandMessage, CommandBusConnector.ResultCallback callback,
+        private void handleError(CommandMessage commandMessage, CommandBusConnector.ResultCallback callback,
                                  Throwable e) {
             logger.error("Error processing incoming command [{}]", commandMessage.type(), e);
             callback.onError(e);
         }
 
-        private void handleSuccess(CommandMessage<?> commandMessage, CommandBusConnector.ResultCallback callback,
+        private void handleSuccess(CommandMessage commandMessage, CommandBusConnector.ResultCallback callback,
                                    CommandResultMessage<?> resultMessage) {
             logger.debug("Successfully processed command [{}] with result [{}]", commandMessage.type(), resultMessage);
             callback.onSuccess(resultMessage);

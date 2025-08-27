@@ -61,15 +61,15 @@ import static org.mockito.Mockito.*;
  */
 class DeadLetteringEventHandlerInvokerTest {
 
-    private static final DomainEventMessage<String> TEST_EVENT = createDomainEvent();
+    private static final DomainEventMessage TEST_EVENT = createDomainEvent();
     private static final Object TEST_SEQUENCE_ID = TEST_EVENT.getAggregateIdentifier();
-    private static final DeadLetter<EventMessage<?>> TEST_DEAD_LETTER =
+    private static final DeadLetter<EventMessage> TEST_DEAD_LETTER =
             new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
 
     private EventMessageHandler handler;
     private SequencingPolicy sequencingPolicy;
-    private SequencedDeadLetterQueue<EventMessage<?>> queue;
-    private EnqueuePolicy<EventMessage<?>> enqueuePolicy;
+    private SequencedDeadLetterQueue<EventMessage> queue;
+    private EnqueuePolicy<EventMessage> enqueuePolicy;
     private TransactionManager transactionManager;
 
     private DeadLetteringEventHandlerInvoker testSubject;
@@ -122,7 +122,7 @@ class DeadLetteringEventHandlerInvokerTest {
     void handleMethodHandlesEventJustFine() throws Exception {
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
-        DeadLetter<EventMessage<?>> expectedIfPresentLetter = new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
+        DeadLetter<EventMessage> expectedIfPresentLetter = new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
@@ -133,7 +133,7 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(handler).handleSync(TEST_EVENT, context);
 
         //noinspection unchecked
-        ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage<?>>>> enqueueIfPresentCaptor =
+        ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage>>> enqueueIfPresentCaptor =
                 ArgumentCaptor.forClass(Supplier.class);
         verify(queue).enqueueIfPresent(eq(TEST_SEQUENCE_ID), enqueueIfPresentCaptor.capture());
         assertLetter(expectedIfPresentLetter, enqueueIfPresentCaptor.getValue().get());
@@ -189,9 +189,9 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        EventMessage<?> eventMessageOne = createDomainEvent("foo", 2);
-        EventMessage<?> eventMessageTwo = createDomainEvent("bar", 2);
-        EventMessage<?> eventMessageThree = createDomainEvent("foo", 3);
+        EventMessage eventMessageOne = createDomainEvent("foo", 2);
+        EventMessage eventMessageTwo = createDomainEvent("bar", 2);
+        EventMessage eventMessageThree = createDomainEvent("foo", 3);
 
         testSubject.handle(eventMessageOne, StubProcessingContext.forMessage(eventMessageOne), Segment.ROOT_SEGMENT);
         testSubject.handle(eventMessageTwo, StubProcessingContext.forMessage(eventMessageTwo), Segment.ROOT_SEGMENT);
@@ -216,9 +216,9 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        DomainEventMessage<?> eventMessageOne = createDomainEvent("foo", 2);
-        DomainEventMessage<?> eventMessageTwo = createDomainEvent("bar", 2);
-        DomainEventMessage<?> eventMessageThree = nextMessage(eventMessageOne);
+        DomainEventMessage eventMessageOne = createDomainEvent("foo", 2);
+        DomainEventMessage eventMessageTwo = createDomainEvent("bar", 2);
+        DomainEventMessage eventMessageThree = nextMessage(eventMessageOne);
 
         testSubject.handle(eventMessageOne, StubProcessingContext.forMessage(eventMessageOne), Segment.ROOT_SEGMENT);
         // as eventMessageTwo has a different sequence identifier, and the size of the sequenceIdentifierCache is set
@@ -271,8 +271,8 @@ class DeadLetteringEventHandlerInvokerTest {
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
         RuntimeException testCause = new RuntimeException("some-cause");
-        DeadLetter<EventMessage<?>> expectedIfPresentLetter = new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
-        DeadLetter<EventMessage<?>> expectedEnqueuedLetter =
+        DeadLetter<EventMessage> expectedIfPresentLetter = new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
+        DeadLetter<EventMessage> expectedEnqueuedLetter =
                 new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT, testCause);
 
         ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
@@ -285,18 +285,18 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(handler).handleSync(TEST_EVENT, context);
 
         //noinspection unchecked
-        ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage<?>>>> enqueueIfPresentCaptor =
+        ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage>>> enqueueIfPresentCaptor =
                 ArgumentCaptor.forClass(Supplier.class);
         verify(queue).enqueueIfPresent(eq(TEST_SEQUENCE_ID), enqueueIfPresentCaptor.capture());
         assertLetter(expectedIfPresentLetter, enqueueIfPresentCaptor.getValue().get());
 
         //noinspection unchecked
-        ArgumentCaptor<DeadLetter<EventMessage<?>>> policyCaptor = ArgumentCaptor.forClass(DeadLetter.class);
+        ArgumentCaptor<DeadLetter<EventMessage>> policyCaptor = ArgumentCaptor.forClass(DeadLetter.class);
         verify(enqueuePolicy).decide(policyCaptor.capture(), eq(testCause));
         assertLetter(expectedEnqueuedLetter, policyCaptor.getValue());
 
         //noinspection unchecked
-        ArgumentCaptor<DeadLetter<EventMessage<?>>> enqueueCaptor = ArgumentCaptor.forClass(DeadLetter.class);
+        ArgumentCaptor<DeadLetter<EventMessage>> enqueueCaptor = ArgumentCaptor.forClass(DeadLetter.class);
         verify(queue).enqueue(eq(TEST_SEQUENCE_ID), enqueueCaptor.capture());
         assertLetter(expectedEnqueuedLetter, enqueueCaptor.getValue());
         verifyNoInteractions(transactionManager);
@@ -331,9 +331,9 @@ class DeadLetteringEventHandlerInvokerTest {
         GenericDeadLetter.clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
         RuntimeException testCause = new RuntimeException("some-cause");
-        DeadLetter<EventMessage<?>> expectedIfPresentLetter =
+        DeadLetter<EventMessage> expectedIfPresentLetter =
                 new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT);
-        DeadLetter<EventMessage<?>> expectedEnqueuedLetter =
+        DeadLetter<EventMessage> expectedEnqueuedLetter =
                 new GenericDeadLetter<>(TEST_SEQUENCE_ID, TEST_EVENT, testCause);
         ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
 
@@ -345,13 +345,13 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(handler).handleSync(TEST_EVENT, context);
 
         //noinspection unchecked
-        ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage<?>>>> enqueueIfPresentCaptor =
+        ArgumentCaptor<Supplier<DeadLetter<? extends EventMessage>>> enqueueIfPresentCaptor =
                 ArgumentCaptor.forClass(Supplier.class);
         verify(queue).enqueueIfPresent(eq(TEST_SEQUENCE_ID), enqueueIfPresentCaptor.capture());
         assertLetter(expectedIfPresentLetter, enqueueIfPresentCaptor.getValue().get());
 
         //noinspection unchecked
-        ArgumentCaptor<DeadLetter<EventMessage<?>>> policyCaptor = ArgumentCaptor.forClass(DeadLetter.class);
+        ArgumentCaptor<DeadLetter<EventMessage>> policyCaptor = ArgumentCaptor.forClass(DeadLetter.class);
         verify(enqueuePolicy).decide(policyCaptor.capture(), eq(testCause));
         assertLetter(expectedEnqueuedLetter, policyCaptor.getValue());
 
@@ -429,17 +429,17 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(transactionManager).startTransaction();
 
         //noinspection unchecked
-        ArgumentCaptor<Predicate<DeadLetter<? extends EventMessage<?>>>> filterCaptor =
+        ArgumentCaptor<Predicate<DeadLetter<? extends EventMessage>>> filterCaptor =
                 ArgumentCaptor.forClass(Predicate.class);
         verify(queue).process(filterCaptor.capture(), any());
 
-        Predicate<DeadLetter<? extends EventMessage<?>>> letterFilter = filterCaptor.getValue();
+        Predicate<DeadLetter<? extends EventMessage>> letterFilter = filterCaptor.getValue();
         assertTrue(letterFilter.test(null));
     }
 
     @Test
     void processAnyLettersReturnsTrueWhenFirstInvocationReturnsTrue() {
-        DeadLetter<EventMessage<?>> testDeadLetter =
+        DeadLetter<EventMessage> testDeadLetter =
                 new GenericDeadLetter<>("expectedIdentifier", EventTestUtils.asEventMessage("payload"));
 
         when(queue.process(any(), any())).thenReturn(true)
@@ -452,10 +452,10 @@ class DeadLetteringEventHandlerInvokerTest {
 
 
         //noinspection unchecked
-        ArgumentCaptor<Predicate<DeadLetter<? extends EventMessage<?>>>> filterCaptor =
+        ArgumentCaptor<Predicate<DeadLetter<? extends EventMessage>>> filterCaptor =
                 ArgumentCaptor.forClass(Predicate.class);
         //noinspection unchecked
-        ArgumentCaptor<Function<DeadLetter<? extends EventMessage<?>>, EnqueueDecision<EventMessage<?>>>> taskFilterCaptor =
+        ArgumentCaptor<Function<DeadLetter<? extends EventMessage>, EnqueueDecision<EventMessage>>> taskFilterCaptor =
                 ArgumentCaptor.forClass(Function.class);
 
         verify(queue).process(filterCaptor.capture(), taskFilterCaptor.capture());
@@ -470,7 +470,7 @@ class DeadLetteringEventHandlerInvokerTest {
     @Test
     void processLettersMatchingSequenceReturnsFalseWhenFirstInvocationReturnsFalse() {
         AtomicBoolean filterInvoked = new AtomicBoolean();
-        Predicate<DeadLetter<? extends EventMessage<?>>> testFilter = letter -> {
+        Predicate<DeadLetter<? extends EventMessage>> testFilter = letter -> {
             filterInvoked.set(true);
             return true;
         };
@@ -482,22 +482,22 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(transactionManager).startTransaction();
 
         //noinspection unchecked
-        ArgumentCaptor<Predicate<DeadLetter<? extends EventMessage<?>>>> filterCaptor =
+        ArgumentCaptor<Predicate<DeadLetter<? extends EventMessage>>> filterCaptor =
                 ArgumentCaptor.forClass(Predicate.class);
         verify(queue).process(filterCaptor.capture(), any());
 
-        Predicate<DeadLetter<? extends EventMessage<?>>> letterFilter = filterCaptor.getValue();
+        Predicate<DeadLetter<? extends EventMessage>> letterFilter = filterCaptor.getValue();
         assertTrue(letterFilter.test(null));
         assertTrue(filterInvoked.get());
     }
 
     @Test
     void processLettersMatchingSequenceReturnsTrueWhenFirstInvocationReturnsTrue() {
-        DeadLetter<EventMessage<?>> testDeadLetter =
+        DeadLetter<EventMessage> testDeadLetter =
                 new GenericDeadLetter<>("expectedIdentifier", EventTestUtils.asEventMessage("payload"));
 
         AtomicBoolean filterInvoked = new AtomicBoolean();
-        Predicate<DeadLetter<? extends EventMessage<?>>> testFilter = letter -> {
+        Predicate<DeadLetter<? extends EventMessage>> testFilter = letter -> {
             filterInvoked.set(true);
             return true;
         };
@@ -510,10 +510,10 @@ class DeadLetteringEventHandlerInvokerTest {
         verify(transactionManager).startTransaction();
 
         //noinspection unchecked
-        ArgumentCaptor<Predicate<DeadLetter<? extends EventMessage<?>>>> letterFilterCaptor =
+        ArgumentCaptor<Predicate<DeadLetter<? extends EventMessage>>> letterFilterCaptor =
                 ArgumentCaptor.forClass(Predicate.class);
         //noinspection unchecked
-        ArgumentCaptor<Function<DeadLetter<? extends EventMessage<?>>, EnqueueDecision<EventMessage<?>>>> taskFilterCaptor =
+        ArgumentCaptor<Function<DeadLetter<? extends EventMessage>, EnqueueDecision<EventMessage>>> taskFilterCaptor =
                 ArgumentCaptor.forClass(Function.class);
 
         verify(queue).process(letterFilterCaptor.capture(), taskFilterCaptor.capture());
@@ -586,8 +586,8 @@ class DeadLetteringEventHandlerInvokerTest {
         }
     }
 
-    private static void assertLetter(DeadLetter<? extends EventMessage<?>> expected,
-                                     DeadLetter<? extends EventMessage<?>> result) {
+    private static void assertLetter(DeadLetter<? extends EventMessage> expected,
+                                     DeadLetter<? extends EventMessage> result) {
         assertEquals(expected.message(), result.message());
         assertEquals(expected.cause(), result.cause());
         assertEquals(expected.enqueuedAt(), result.enqueuedAt());
@@ -595,7 +595,7 @@ class DeadLetteringEventHandlerInvokerTest {
         assertEquals(expected.diagnostics(), result.diagnostics());
     }
 
-    private static DomainEventMessage<?> nextMessage(DomainEventMessage<?> domainEventMessage) {
+    private static DomainEventMessage nextMessage(DomainEventMessage domainEventMessage) {
         return createDomainEvent(domainEventMessage.getAggregateIdentifier(), domainEventMessage.getSequenceNumber() + 1L);
     }
 }

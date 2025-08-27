@@ -50,7 +50,7 @@ import static org.mockito.Mockito.*;
  */
 class DistributedCommandBusTest {
 
-    private CommandMessage<?> testCommand;
+    private CommandMessage testCommand;
 
     private StubConnector connector;
     private SimpleCommandBus delegate;
@@ -58,7 +58,7 @@ class DistributedCommandBusTest {
 
     @BeforeEach
     void setUp() {
-        testCommand = new GenericCommandMessage<>(new MessageType("command"), "test");
+        testCommand = new GenericCommandMessage(new MessageType("command"), "test");
 
         connector = new StubConnector();
         delegate = aCommandBus();
@@ -70,7 +70,7 @@ class DistributedCommandBusTest {
 
     @Test
     void publishedCommandsAreSentToConnector() {
-        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, null);
+        CompletableFuture<? extends Message> result = testSubject.dispatch(testCommand, null);
 
         assertSame(result, connector.getDispatchedCommands().get(testCommand));
         // the connector doesn't actually dispatch commands, so we expect the CompletableFuture to remain unfinished
@@ -112,14 +112,14 @@ class DistributedCommandBusTest {
 
     private static class StubConnector implements CommandBusConnector {
 
-        private final Map<CommandMessage<?>, CompletableFuture<?>> dispatchedCommands = new ConcurrentHashMap<>();
+        private final Map<CommandMessage, CompletableFuture<?>> dispatchedCommands = new ConcurrentHashMap<>();
         private final Map<QualifiedName, Integer> subscriptions = new ConcurrentHashMap<>();
         private final AtomicReference<Handler> handler = new AtomicReference<>();
 
 
         @Nonnull
         @Override
-        public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+        public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                    @Nullable ProcessingContext processingContext) {
             CompletableFuture<CommandResultMessage<?>> future = new CompletableFuture<>();
             dispatchedCommands.put(command, future);
@@ -141,7 +141,7 @@ class DistributedCommandBusTest {
             this.handler.set(handler);
         }
 
-        public Map<CommandMessage<?>, CompletableFuture<?>> getDispatchedCommands() {
+        public Map<CommandMessage, CompletableFuture<?>> getDispatchedCommands() {
             return dispatchedCommands;
         }
     }

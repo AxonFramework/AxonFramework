@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  * @author Steven van Beelen
  */
 @Deprecated(since = "5.0.0", forRemoval = true)
-public class InMemoryStreamableEventSource implements StreamableMessageSource<TrackedEventMessage<?>> {
+public class InMemoryStreamableEventSource implements StreamableMessageSource<TrackedEventMessage> {
 
     /**
      * An {@link EventMessage#payload()} representing a failed event.
@@ -51,11 +51,11 @@ public class InMemoryStreamableEventSource implements StreamableMessageSource<Tr
     /**
      * An {@link EventMessage} representing a failed event.
      */
-    public static final EventMessage<String> FAIL_EVENT = EventTestUtils.asEventMessage(FAIL_PAYLOAD);
+    public static final EventMessage FAIL_EVENT = EventTestUtils.asEventMessage(FAIL_PAYLOAD);
 
-    private List<TrackedEventMessage<?>> messages = new CopyOnWriteArrayList<>();
+    private List<TrackedEventMessage> messages = new CopyOnWriteArrayList<>();
     private final boolean streamCallbackSupported;
-    private final List<TrackedEventMessage<?>> ignoredEvents = new CopyOnWriteArrayList<>();
+    private final List<TrackedEventMessage> ignoredEvents = new CopyOnWriteArrayList<>();
     private Runnable onAvailableCallback = null;
 
     /**
@@ -77,13 +77,13 @@ public class InMemoryStreamableEventSource implements StreamableMessageSource<Tr
     }
 
     @Override
-    public BlockingStream<TrackedEventMessage<?>> openStream(TrackingToken trackingToken) {
-        return new BlockingStream<TrackedEventMessage<?>>() {
+    public BlockingStream<TrackedEventMessage> openStream(TrackingToken trackingToken) {
+        return new BlockingStream<>() {
 
             private int lastToken;
 
             @Override
-            public Optional<TrackedEventMessage<?>> peek() {
+            public Optional<TrackedEventMessage> peek() {
                 if (messages.size() > lastToken) {
                     return Optional.of(messages.get(lastToken));
                 }
@@ -96,8 +96,8 @@ public class InMemoryStreamableEventSource implements StreamableMessageSource<Tr
             }
 
             @Override
-            public TrackedEventMessage<?> nextAvailable() {
-                TrackedEventMessage<?> next = peek().orElseThrow(
+            public TrackedEventMessage nextAvailable() {
+                TrackedEventMessage next = peek().orElseThrow(
                         () -> new RuntimeException("The processor should never perform a blocking call")
                 );
                 this.lastToken = (int) next.trackingToken()
@@ -117,7 +117,7 @@ public class InMemoryStreamableEventSource implements StreamableMessageSource<Tr
             }
 
             @Override
-            public void skipMessagesWithPayloadTypeOf(TrackedEventMessage<?> ignoredEvent) {
+            public void skipMessagesWithPayloadTypeOf(TrackedEventMessage ignoredEvent) {
                 ignoredEvents.add(ignoredEvent);
             }
 
@@ -162,9 +162,9 @@ public class InMemoryStreamableEventSource implements StreamableMessageSource<Tr
      *
      * @param event The event to publish on this {@link StreamableMessageSource}.
      */
-    public synchronized void publishMessage(EventMessage<?> event) {
+    public synchronized void publishMessage(EventMessage event) {
         int nextToken = messages.size();
-        messages.add(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(nextToken + 1), event));
+        messages.add(new GenericTrackedEventMessage(new GlobalSequenceTrackingToken(nextToken + 1), event));
     }
 
     /**
@@ -174,7 +174,7 @@ public class InMemoryStreamableEventSource implements StreamableMessageSource<Tr
      * @return A {@link List} of {@link TrackedEventMessage TrackedEventMessages} that have been ignored the stream
      * consumer.
      */
-    public List<TrackedEventMessage<?>> getIgnoredEvents() {
+    public List<TrackedEventMessage> getIgnoredEvents() {
         return Collections.unmodifiableList(ignoredEvents);
     }
 

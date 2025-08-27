@@ -52,7 +52,7 @@ class AbstractUnitOfWorkTest {
             CurrentUnitOfWork.get().rollback();
         }
         subject = spy(new LegacyDefaultUnitOfWork(
-                new GenericEventMessage<>(new MessageType("event"), "Input 1")
+                new GenericEventMessage(new MessageType("event"), "Input 1")
         ) {
             @Override
             public String toString() {
@@ -147,8 +147,8 @@ class AbstractUnitOfWorkTest {
 
     @Test
     void executeTaskReturnsResultMessage() throws Exception {
-        ResultMessage<Object> resultMessage = asResultMessage(new Object());
-        LegacyUnitOfWork.ProcessingContextCallable<ResultMessage<Object>> task = mock(LegacyUnitOfWork.ProcessingContextCallable.class);
+        ResultMessage resultMessage = asResultMessage(new Object());
+        LegacyUnitOfWork.ProcessingContextCallable<ResultMessage> task = mock(LegacyUnitOfWork.ProcessingContextCallable.class);
         when(task.call(any())).thenReturn(resultMessage);
         ResultMessage actualResultMessage = subject.executeWithResult(task);
         assertSame(resultMessage, actualResultMessage);

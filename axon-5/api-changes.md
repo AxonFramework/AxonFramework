@@ -318,7 +318,10 @@ The following classes have undergone changes to accompany this shift:
 
 ## Command Dispatching and Handling
 
-This section describes numerous changes around Command Dispatching and Handling
+This section describes numerous changes around Command Dispatching and Handling. For a reintroduction to the
+`CommandBus` and `CommandGateway`, check [this](#command-bus) and [this](#command-gateway) section respectively. For the
+newly **recommended** approach to dispatch commands from within another message handling function, please check
+the [Command Dispatcher](#command-dispatcher) section. 
 
 ### Command Bus
 
@@ -376,6 +379,53 @@ Last point of note on the Command Gateway, is the removal of the `CommandGateway
 `DisruptorCommandBus`, we saw limited usages through our users. If you feel strongly about the `CommandGatewayFactory`
 and would like to see it return to Axon Framework 5, be sure to
 open [an issue](https://github.com/AxonFramework/AxonFramework/issues) for this. 
+
+### Command Dispatcher
+
+The `CommandDispatcher` is the "new kid on the block" for command dispatching.
+Where the `CommandBus` is the lowest level means to dispatch `CommandMessages`, the `CommandGateway` is the integration
+point between other services to automatically wrap a user's command into a `CommandMessage`. To achieve this, the
+`CommandGateway` uses a `CommandBus` to add the command wrapping and response unwrapping.
+
+From there, the `CommandDispatcher` is the [processing context](#unit-of-work)-aware command dispatcher. To that end, is
+uses a `CommandGateway`, automatically passing the active `ProcessingContext` for the handler it's invoked in. Due to
+this knowledge, it is the recommended approach to dispatch commands when **inside** another message handling function.
+
+To clarify, let us show the approach to dispatch a command as part of an existing `ProcessingContext` without the
+`CommandDispatcher`:
+
+```java
+
+@EventHandler
+public void handle(MoneyTransferredEvent event,
+                   ProcessingContext context,
+                   CommandGateway commandGateway) {
+    // Checks/validation...
+    commandGateway.send(new IncreaseBalanceCommand(/*...*/), context);
+}
+```
+
+By dispatching a command while providing the `ProcessingContext`, you ensure that, for example, correlation data is kept
+from one message to another. For distributed tracing, this is a must. As such, the `ProcessingContext` would become a
+component users **always** need to wire into their message handler.
+
+It is this requirement that the `CommandDispatcher` solves:
+
+```java
+
+@EventHandler
+public void on(MoneyTransferredEvent event,
+               CommandDispatcher commandDispatcher) {
+    // Checks/validation...
+    commandDispatcher.send(new IncreaseBalanceCommand(/*...*/));
+}
+```
+
+Axon Framework automatically wires a `CommandDispatcher` for you that is aware of the `ProcessingContext` of the
+`MoneyTransferredEvent`. This makes the `CommandDispatcher` an added convenience over the `CommandGateway` **within**
+message handling functions. Note that this means that the `CommandDispatcher` does not, for example, work from a REST
+endpoint. Axon Framework's `ProcessingContext` has not started at that point in time and as such, there is no
+`CommandDispatcher` available.
 
 ## Event Store
 
@@ -1344,16 +1394,16 @@ Stored Format Changes
 
 ## Events
 
-The JPA `org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry` is replaced entirely for the `org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry`.
-This thus changes the default table name from `domain_event_entry` to `aggregate_based_event_entry`.
+The JPA `org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry` is replaced entirely for the `org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry`.
+This thus changes the default table name from `domain_event_entry` to `aggregate_event_entry`.
 
 Besides the entry and table rename, several columns have been renamed compared to the `DomainEventEntry`, being:
-1. `DomainEventEntry#eventIdentifier` (inherited from `AbstractEventEntry`) is now called `AggregateBasedEventEntry#identifier`.
-2. `DomainEventEntry#payloadType` (inherited from `AbstractEventEntry`) is now called `AggregateBasedEventEntry#type`.
-3. `DomainEventEntry#payloadRevision` (inherited from `AbstractEventEntry`) is now called `AggregateBasedEventEntry#version`.
-4. `DomainEventEntry#timeStamp` (inherited from `AbstractEventEntry`) is now called `AggregateBasedEventEntry#timestamp`.
-5. `DomainEventEntry#type` (inherited from `AbstractDomainEventEntry`) is now called `AggregateBasedEventEntry#aggregateType`.
-6. `DomainEventEntry#sequenceNumber` (inherited from `AbstractDomainEventEntry`) is now called `AggregateBasedEventEntry#aggregateSequenceNumber`.
+1. `DomainEventEntry#eventIdentifier` (inherited from `AbstractEventEntry`) is now called `AggregateEventEntry#identifier`.
+2. `DomainEventEntry#payloadType` (inherited from `AbstractEventEntry`) is now called `AggregateEventEntry#type`.
+3. `DomainEventEntry#payloadRevision` (inherited from `AbstractEventEntry`) is now called `AggregateEventEntry#version`.
+4. `DomainEventEntry#timeStamp` (inherited from `AbstractEventEntry`) is now called `AggregateEventEntry#timestamp`.
+5. `DomainEventEntry#type` (inherited from `AbstractDomainEventEntry`) is now called `AggregateEventEntry#aggregateType`.
+6. `DomainEventEntry#sequenceNumber` (inherited from `AbstractDomainEventEntry`) is now called `AggregateEventEntry#aggregateSequenceNumber`.
 
 Furthermore, some of the expectations placed on the fields have adjusted, being:
 1. The `payloadRevision`, renamed to `version`, is **not** optional anymore.
@@ -1363,18 +1413,18 @@ Furthermore, some of the expectations placed on the fields have adjusted, being:
 5. The `sequenceNumber`, renamed to `aggregateSequenceNumber`, is **not** optional anymore.
 
 Lastly, the sequence generator for the global index (resulting in the event's position in the event store) has been
-specified in more detail for the `AggregateBasedEventEntry`. The `DomainEventEntry` had a simple `@GeneratedValue`. With
+specified in more detail for the `AggregateEventEntry`. The `DomainEventEntry` had a simple `@GeneratedValue`. With
 the upgrade from Hibernate 5 to Hibernate 6, this caused issues, as the default sequence generator configuration
 changed. Notable changes were switching to an automated generator type, using a unique sequence generator per table and
 a default allocation size of 50.
 
 The automated generator type selection is not ideal for Axon Framework. Hence, this is fixed to a sequence-based
 generator.
-The 'generator-per-table' is desired and as such specified for the `AggregateBasedEventEntry` under the sequence name
-`aggregate-based-event-global-index-sequence`. The default allocation size of 50 is far from desired, however. This
+The 'generator-per-table' is desired and as such specified for the `AggregateEventEntry` under the sequence name
+`aggregate-event-global-index-sequence`. The default allocation size of 50 is far from desired, however. This
 introduces large amounts of gaps, which will slow down event streaming to event processors. Hence, the allocation size
 is fixed to 1 to minimize the amount of gaps. Although this enforces a round trip to the database to retrieve the
-`AggregateBasedEventEntry#globalIndex` for **every** event that is being appended, this outweighs the concerns on
+`AggregateEventEntry#globalIndex` for **every** event that is being appended, this outweighs the concerns on
 consuming events through the `EventStorageEngine#stream(StreamingCondition)` method tremendously.
 
 ## Dead Letters
@@ -1490,10 +1540,10 @@ This section contains five tables:
 | org.axonframework.eventhandling.EventData                                                | Removed in favor of the `EventMessage` carrying all required data to map from stored to read formats.                                          |
 | org.axonframework.eventhandling.AbstractEventEntry                                       | Replaced by `...`                                                                                                                              |
 | org.axonframework.eventhandling.DomainEventData                                          | Removed in favor of the `EventMessage` carrying all required data to map from stored to read formats.                                          |
-| org.axonframework.eventhandling.AbstractDomainEventEntry                                 | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry                                                            |
-| org.axonframework.eventhandling.GenericDomainEventEntry                                  | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry                                                            |
-| org.axonframework.eventhandling.AbstractSequencedDomainEventEntry                        | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry                                                            |
-| org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry                          | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedEventEntry                                                            |
+| org.axonframework.eventhandling.AbstractDomainEventEntry                                 | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry                                                            |
+| org.axonframework.eventhandling.GenericDomainEventEntry                                  | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry                                                            |
+| org.axonframework.eventhandling.AbstractSequencedDomainEventEntry                        | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry                                                            |
+| org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry                          | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry                                                            |
 | org.axonframework.eventhandling.TrackedEventData                                         | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 | org.axonframework.eventhandling.TrackedDomainEventData                                   | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 | org.axonframework.messaging.Headers                                                      | Removed due to lack of use and foreseen use.                                                                                                   |

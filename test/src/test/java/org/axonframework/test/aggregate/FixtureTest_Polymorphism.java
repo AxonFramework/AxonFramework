@@ -67,10 +67,10 @@ class FixtureTest_Polymorphism {
                .when(commandBuilder.apply(id))
                .expectEventsMatching(Matchers.predicate(events -> {
                    //noinspection unchecked
-                   DomainEventMessage<CreatedEvent> evt = (DomainEventMessage<CreatedEvent>) events.getFirst();
+                   DomainEventMessage evt = (DomainEventMessage) events.getFirst();
                    return evt.getType().equals(aggregateType)
                            && events.size() == 1
-                           && evt.payload().id.equals(id);
+                           && evt.payloadAs(CreatedEvent.class).id.equals(id);
                }));
     }
 
@@ -79,7 +79,7 @@ class FixtureTest_Polymorphism {
     @Disabled("TODO #3061 - Revisit Aggregate Polymorphism")
     void commonCommandOnAggregate(String aggregateType) {
         String id = "id";
-        DomainEventMessage<CreatedEvent> creationEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage creationEvent = new GenericDomainEventMessage(
                 aggregateType, id, 0, new MessageType("event"), new CreatedEvent(id)
         );
         fixture.given(creationEvent)

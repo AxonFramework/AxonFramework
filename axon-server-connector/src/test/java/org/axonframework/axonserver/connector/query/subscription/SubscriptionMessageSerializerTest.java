@@ -57,10 +57,10 @@ class SubscriptionMessageSerializerTest {
         List<String> payload = new ArrayList<>();
         payload.add("A");
         payload.add("B");
-        SubscriptionQueryUpdateMessage<List<String>> message =
-                new GenericSubscriptionQueryUpdateMessage<>(new MessageType("query"), payload);
+        SubscriptionQueryUpdateMessage message =
+                new GenericSubscriptionQueryUpdateMessage(new MessageType("query"), payload);
         QueryUpdate result = testSubject.serialize(message);
-        SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
+        SubscriptionQueryUpdateMessage deserialized = testSubject.deserialize(result);
         assertEquals(message.identifier(), deserialized.identifier());
         assertEquals(message.payload(), deserialized.payload());
         assertEquals(message.payloadType(), deserialized.payloadType());
@@ -70,11 +70,11 @@ class SubscriptionMessageSerializerTest {
     @Test
     void exceptionalUpdate() {
         MetaData metaData = MetaData.with("k1", "v1");
-        SubscriptionQueryUpdateMessage<String> message = new GenericSubscriptionQueryUpdateMessage<>(
+        SubscriptionQueryUpdateMessage message = new GenericSubscriptionQueryUpdateMessage(
                 new MessageType("query"), new RuntimeException("oops"), String.class, metaData
         );
         QueryUpdate result = testSubject.serialize(message);
-        SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
+        SubscriptionQueryUpdateMessage deserialized = testSubject.deserialize(result);
         assertEquals(message.identifier(), deserialized.identifier());
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), result.getErrorCode());
         assertEquals(message.metaData(), deserialized.metaData());
@@ -86,12 +86,12 @@ class SubscriptionMessageSerializerTest {
     @Test
     void nonTransientExceptionalUpdate() {
         MetaData metaData = MetaData.with("k1", "v1");
-        SubscriptionQueryUpdateMessage<String> message = new GenericSubscriptionQueryUpdateMessage<>(
+        SubscriptionQueryUpdateMessage message = new GenericSubscriptionQueryUpdateMessage(
                 new MessageType("query"), new SerializationException("oops"), String.class, metaData
         );
         QueryUpdate result = testSubject.serialize(message);
         assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), result.getErrorCode());
-        SubscriptionQueryUpdateMessage<Object> deserialized = testSubject.deserialize(result);
+        SubscriptionQueryUpdateMessage deserialized = testSubject.deserialize(result);
         assertEquals(message.identifier(), deserialized.identifier());
         assertEquals(message.metaData(), deserialized.metaData());
         assertTrue(deserialized.isExceptional());

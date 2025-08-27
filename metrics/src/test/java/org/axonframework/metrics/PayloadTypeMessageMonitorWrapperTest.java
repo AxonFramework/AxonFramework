@@ -34,12 +34,12 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
-class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> & MetricSet> {
+class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message> & MetricSet> {
 
-    private static final CommandMessage<Object> STRING_MESSAGE =
-            new GenericCommandMessage<>(new MessageType("command"), "stringCommand");
-    private static final CommandMessage<Object> INTEGER_MESSAGE =
-            new GenericCommandMessage<>(new MessageType("command"), 1);
+    private static final CommandMessage STRING_MESSAGE =
+            new GenericCommandMessage(new MessageType("command"), "stringCommand");
+    private static final CommandMessage INTEGER_MESSAGE =
+            new GenericCommandMessage(new MessageType("command"), 1);
 
     private PayloadTypeMessageMonitorWrapper<CapacityMonitor> testSubject;
 
@@ -62,7 +62,7 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> 
 
         Map<String, T> payloadTypeMonitors = ReflectionUtils.getFieldValue(payloadTypeMonitorsField, testSubject);
         assertEquals(1, payloadTypeMonitors.size());
-        MessageMonitor<Message<?>> messageMessageMonitor = payloadTypeMonitors.get(expectedMonitorName);
+        MessageMonitor<Message> messageMessageMonitor = payloadTypeMonitors.get(expectedMonitorName);
         assertNotNull(messageMessageMonitor);
         assertTrue(expectedMonitorClass.isInstance(messageMessageMonitor));
 
@@ -86,7 +86,7 @@ class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> 
         Map<String, T> payloadTypeMonitors = ReflectionUtils.getFieldValue(payloadTypeMonitorsField, testSubject);
         assertEquals(2, payloadTypeMonitors.size());
 
-        MessageMonitor<Message<?>> messageMessageMonitor = payloadTypeMonitors.get(expectedStringMonitorName);
+        MessageMonitor<Message> messageMessageMonitor = payloadTypeMonitors.get(expectedStringMonitorName);
         assertNotNull(messageMessageMonitor);
         assertTrue(expectedMonitorClass.isInstance(messageMessageMonitor));
 

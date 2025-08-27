@@ -27,11 +27,10 @@ import java.util.Map;
  * that reported it. The {@code DomainEventMessage's} sequence number allows messages to be placed in their order of
  * generation.
  *
- * @param <P> The type of {@link #payload() payload} contained in this {@link DomainEventMessage}.
  * @author Allard Buijze
  * @since 2.0.0
  */
-public interface DomainEventMessage<P> extends EventMessage<P> {
+public interface DomainEventMessage extends EventMessage {
 
     /**
      * Returns the sequence number that allows DomainEvents originating from the same Aggregate to be placed in the
@@ -69,7 +68,7 @@ public interface DomainEventMessage<P> extends EventMessage<P> {
      */
     @Override
     @Nonnull
-    DomainEventMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
+    DomainEventMessage withMetaData(@Nonnull Map<String, String> metaData);
 
     /**
      * Returns a copy of this DomainEventMessage with its MetaData merged with the given {@code metaData}. The payload,
@@ -82,5 +81,5 @@ public interface DomainEventMessage<P> extends EventMessage<P> {
      */
     @Override
     @Nonnull
-    DomainEventMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
+    DomainEventMessage andMetaData(@Nonnull Map<String, String> metaData);
 }

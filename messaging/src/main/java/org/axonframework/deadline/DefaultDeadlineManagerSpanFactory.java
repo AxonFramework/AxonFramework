@@ -17,7 +17,6 @@
 package org.axonframework.deadline;
 
 import org.axonframework.common.BuilderUtils;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
@@ -67,7 +66,7 @@ public class DefaultDeadlineManagerSpanFactory implements DeadlineManagerSpanFac
     }
 
     @Override
-    public Span createScheduleSpan(String deadlineName, String deadlineId, DeadlineMessage<?> deadlineMessage) {
+    public Span createScheduleSpan(String deadlineName, String deadlineId, DeadlineMessage deadlineMessage) {
         return spanFactory.createDispatchSpan(
                 () -> "DeadlineManager.scheduleDeadline(" + deadlineName + ")",
                 deadlineMessage
@@ -96,7 +95,7 @@ public class DefaultDeadlineManagerSpanFactory implements DeadlineManagerSpanFac
     }
 
     @Override
-    public Span createExecuteSpan(String deadlineName, String deadlineId, DeadlineMessage<?> deadlineMessage) {
+    public Span createExecuteSpan(String deadlineName, String deadlineId, DeadlineMessage deadlineMessage) {
         return spanFactory.createLinkedHandlerSpan(
                 () -> "DeadlineManager.executeDeadline(" + deadlineName + ")",
                 deadlineMessage
@@ -104,7 +103,7 @@ public class DefaultDeadlineManagerSpanFactory implements DeadlineManagerSpanFac
     }
 
     @Override
-    public <T> DeadlineMessage<T> propagateContext(DeadlineMessage<T> eventMessage) {
+    public DeadlineMessage propagateContext(DeadlineMessage eventMessage) {
         return spanFactory.propagateContext(eventMessage);
     }
 

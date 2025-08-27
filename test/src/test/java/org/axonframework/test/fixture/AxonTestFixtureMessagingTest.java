@@ -631,12 +631,12 @@ class AxonTestFixtureMessagingTest {
         }
     }
 
-    private static GenericEventMessage<StudentNameChangedEvent> studentNameChangedEventMessage(
+    private static GenericEventMessage studentNameChangedEventMessage(
             String id,
             String name,
             int change
     ) {
-        return new GenericEventMessage<>(
+        return new GenericEventMessage(
                 new MessageType(StudentNameChangedEvent.class),
                 studentNameChangedEvent(id, name, change)
         );

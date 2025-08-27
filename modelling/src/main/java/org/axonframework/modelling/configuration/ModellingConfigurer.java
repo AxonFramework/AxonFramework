@@ -109,6 +109,22 @@ public class ModellingConfigurer implements ApplicationConfigurer {
     }
 
     /**
+     * Registers the given {@code entityModule} on the root-level {@link org.axonframework.configuration.Configuration}.
+     * This will make the entity available in the globally available {@link org.axonframework.modelling.StateManager}.
+     *
+     * @param entityModule The entity module to register.
+     * @param <I>          The type of identifier used to identify the entity that's being built.
+     * @param <E>          The type of the entity being built.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    @Nonnull
+    public <I, E> ModellingConfigurer registerEntity(@Nonnull EntityModule<I, E> entityModule){
+        Objects.requireNonNull(entityModule, "EntityModule may not be null");
+        delegate.componentRegistry(cr -> cr.registerModule(entityModule));
+        return this;
+    }
+
+    /**
      * Delegates the given {@code configurerTask} to the {@link MessagingConfigurer} this {@code ModellingConfigurer}
      * delegates.
      * <p>

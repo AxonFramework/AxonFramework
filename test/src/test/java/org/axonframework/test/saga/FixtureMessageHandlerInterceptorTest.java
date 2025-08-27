@@ -59,7 +59,7 @@ class FixtureMessageHandlerInterceptorTest {
                .expectDispatchedCommands(new StartProcessCommand(testId, testValue));
     }
 
-    private static class CustomEventHandlerInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
+    private static class CustomEventHandlerInterceptor implements MessageHandlerInterceptor<EventMessage> {
 
         private final String value;
 
@@ -68,7 +68,7 @@ class FixtureMessageHandlerInterceptorTest {
         }
 
         @Override
-        public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+        public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage> unitOfWork,
                              @Nonnull ProcessingContext context,
                              @Nonnull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.transformMessage(event -> event.withMetaData(MetaData.with(META_DATA_KEY, value)));

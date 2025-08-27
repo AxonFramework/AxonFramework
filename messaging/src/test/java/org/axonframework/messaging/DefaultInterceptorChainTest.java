@@ -31,8 +31,8 @@ import static org.mockito.Mockito.*;
  */
 class DefaultInterceptorChainTest {
 
-    private LegacyUnitOfWork<Message<?>> unitOfWork;
-    private MessageHandler<Message<?>, Message<Object>> mockHandler;
+    private LegacyUnitOfWork<Message> unitOfWork;
+    private MessageHandler<Message, Message> mockHandler;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -46,7 +46,7 @@ class DefaultInterceptorChainTest {
     @SuppressWarnings("unchecked")
     void chainWithDifferentProceedCalls() throws Exception {
         MessageHandlerInterceptor interceptor1 = (unitOfWork, context, interceptorChain) -> {
-            unitOfWork.transformMessage(m -> new GenericMessage<>(
+            unitOfWork.transformMessage(m -> new GenericMessage(
                     new MessageType("message"), "testing"
             ));
             return interceptorChain.proceedSync(context);
@@ -55,7 +55,7 @@ class DefaultInterceptorChainTest {
                 context);
 
 
-        unitOfWork.transformMessage(m -> new GenericMessage<>(
+        unitOfWork.transformMessage(m -> new GenericMessage(
                 new MessageType("message"), "original"
         ));
         DefaultInterceptorChain testSubject = new DefaultInterceptorChain(

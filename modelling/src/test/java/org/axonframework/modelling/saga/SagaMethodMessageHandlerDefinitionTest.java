@@ -42,17 +42,17 @@ class SagaMethodMessageHandlerDefinitionTest {
 
     @Test
     void shouldWrapHandler() {
-        EventMessage<?> eventMessage = asEventMessage(new TestEvent(TEST_PROPERTY_VALUE));
+        EventMessage eventMessage = asEventMessage(new TestEvent(TEST_PROPERTY_VALUE));
         testWrapHandler(eventMessage);
     }
 
     @Test
     void shouldWrapHandlerConcurrently() {
-        EventMessage<?> eventMessage = asEventMessage(new TestEvent(TEST_PROPERTY_VALUE));
+        EventMessage eventMessage = asEventMessage(new TestEvent(TEST_PROPERTY_VALUE));
         testConcurrent(4, () -> testWrapHandler(eventMessage));
     }
 
-    public void testWrapHandler(EventMessage<?> eventMessage) {
+    public void testWrapHandler(EventMessage eventMessage) {
         MessageHandlingMember<?> result = testSubject.wrapHandler(sagaModel.findHandlerMethods(eventMessage,
                                                                                                StubProcessingContext.forMessage(eventMessage)).get(0));
         assertNotNull(result);

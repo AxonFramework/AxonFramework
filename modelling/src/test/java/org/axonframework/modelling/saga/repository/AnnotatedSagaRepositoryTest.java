@@ -89,7 +89,7 @@ class AnnotatedSagaRepositoryTest {
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
         Saga<Object> saga2 =
                 startAndGet(null).executeWithResult((ctx) -> testSubject.load(saga.getSagaIdentifier()))
-                                 .payload();
+                                 .payloadAs(Saga.class);
 
         assertSame(saga, saga2);
         currentUnitOfWork.commit();
@@ -167,7 +167,7 @@ class AnnotatedSagaRepositoryTest {
                                                                                   .build();
         Saga<TestSaga> saga =
                 sagaRepository.createInstance(IdentifierFactory.getInstance().generateIdentifier(), TestSaga::new);
-        EventMessage<Object> message = EventTestUtils.asEventMessage(new Object());
+        EventMessage message = EventTestUtils.asEventMessage(new Object());
         saga.handleSync(message, StubProcessingContext.forMessage(message));
 
         assertEquals(1, CountingInterceptors.counter.get());
@@ -182,7 +182,7 @@ class AnnotatedSagaRepositoryTest {
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message,
+        public Object handleSync(@Nonnull Message message,
                                  @Nonnull ProcessingContext context,
                                  @Nonnull TestSaga target,
                                  @Nonnull MessageHandlingMember<? super TestSaga> handler) throws Exception {

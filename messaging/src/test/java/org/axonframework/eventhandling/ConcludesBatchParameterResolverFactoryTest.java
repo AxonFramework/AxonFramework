@@ -46,7 +46,7 @@ class ConcludesBatchParameterResolverFactoryTest {
     @Test
     void onlyMatchesEventMessages() {
         assertTrue(testSubject.matches(forMessage(asEventMessage("testEvent"))));
-        assertFalse(testSubject.matches(forMessage(new GenericCommandMessage<>(
+        assertFalse(testSubject.matches(forMessage(new GenericCommandMessage(
                 new MessageType("command"), "testCommand")
         )));
     }
@@ -59,14 +59,14 @@ class ConcludesBatchParameterResolverFactoryTest {
 
     @Test
     void resolvesToTrueWithRegularUnitOfWork() {
-        EventMessage<?> event = asEventMessage("testEvent");
+        EventMessage event = asEventMessage("testEvent");
         LegacyDefaultUnitOfWork.startAndGet(event)
                                .execute((ctx) -> assertEquals(Boolean.TRUE, testSubject.resolveParameterValue(ctx)));
     }
 
     @Test
     void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsNotLast() {
-        List<? extends EventMessage<?>> events = createDomainEvents(5);
+        List<? extends EventMessage> events = createDomainEvents(5);
         new LegacyBatchingUnitOfWork<>(events)
                 .execute((ctx) -> {
                     ProcessingContext event0Context = forMessage(events.get(0));
@@ -76,7 +76,7 @@ class ConcludesBatchParameterResolverFactoryTest {
 
     @Test
     void resolvesToTrueWithBatchingUnitOfWorkIfMessageIsLast() {
-        List<? extends EventMessage<?>> events = createDomainEvents(5);
+        List<? extends EventMessage> events = createDomainEvents(5);
         new LegacyBatchingUnitOfWork<>(events)
                 .execute((ctx) -> {
                     ProcessingContext lastEventContext = forMessage(events.get(4));

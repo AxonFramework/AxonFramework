@@ -81,7 +81,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<SnapshotFilter> snapshotFilter;
     private final Component<CommandTargetResolver> commandTargetResolver;
     private final Component<AggregateModel<A>> metaModel;
-    private final Component<Predicate<? super DomainEventMessage<?>>> eventStreamFilter;
+    private final Component<Predicate<? super DomainEventMessage>> eventStreamFilter;
     private final Component<Boolean> filterEventsByType;
     private final Set<Class<? extends A>> subtypes = new HashSet<>();
     private final List<Registration> registrations = new ArrayList<>();
@@ -382,7 +382,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @see LegacyEventSourcingRepository.Builder#eventStreamFilter(Predicate)
      */
     public AggregateConfigurer<A> configureEventStreamFilter(
-            Function<LegacyConfiguration, Predicate<? super DomainEventMessage<?>>> filterBuilder
+            Function<LegacyConfiguration, Predicate<? super DomainEventMessage>> filterBuilder
     ) {
         this.eventStreamFilter.update(filterBuilder);
         return this;

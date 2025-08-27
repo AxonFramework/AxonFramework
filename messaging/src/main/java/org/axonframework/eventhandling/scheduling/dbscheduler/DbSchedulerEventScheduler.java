@@ -152,7 +152,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
                     if (isNull(eventScheduler)) {
                         throw new EventSchedulerNotSuppliedException();
                     }
-                    EventMessage<?> eventMessage = eventScheduler.fromDbSchedulerEventData(ti.getData());
+                    EventMessage eventMessage = eventScheduler.fromDbSchedulerEventData(ti.getData());
                     eventScheduler.publishEventMessage(eventMessage);
                 });
     }
@@ -175,7 +175,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
                     if (isNull(eventScheduler)) {
                         throw new EventSchedulerNotSuppliedException();
                     }
-                    EventMessage<?> eventMessage = eventScheduler.fromDbSchedulerEventData(ti.getData());
+                    EventMessage eventMessage = eventScheduler.fromDbSchedulerEventData(ti.getData());
                     eventScheduler.publishEventMessage(eventMessage);
                 });
     }
@@ -183,7 +183,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
     private TaskInstance<?> getBinaryTask(DbSchedulerScheduleToken taskInstanceId, Object event) {
         DbSchedulerBinaryEventData data;
         if (event instanceof EventMessage) {
-            data = binaryDataFromEvent((EventMessage<?>) event);
+            data = binaryDataFromEvent((EventMessage) event);
         } else {
             data = binaryDataFromObject(event);
         }
@@ -198,7 +198,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         return new DbSchedulerBinaryEventData(serializedPayload, payloadClass, revision, null);
     }
 
-    private DbSchedulerBinaryEventData binaryDataFromEvent(EventMessage<?> eventMessage) {
+    private DbSchedulerBinaryEventData binaryDataFromEvent(EventMessage eventMessage) {
         SerializedObject<byte[]> serialized = serializer.serialize(eventMessage.payload(), byte[].class);
         byte[] serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
@@ -210,7 +210,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
     private TaskInstance<?> getHumanReadableTask(DbSchedulerScheduleToken taskInstanceId, Object event) {
         DbSchedulerHumanReadableEventData data;
         if (event instanceof EventMessage) {
-            data = humanReadableDataFromEvent((EventMessage<?>) event);
+            data = humanReadableDataFromEvent((EventMessage) event);
         } else {
             data = humanReadableDataFromObject(event);
         }
@@ -225,7 +225,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         return new DbSchedulerHumanReadableEventData(serializedPayload, payloadClass, revision, null);
     }
 
-    private DbSchedulerHumanReadableEventData humanReadableDataFromEvent(EventMessage<?> eventMessage) {
+    private DbSchedulerHumanReadableEventData humanReadableDataFromEvent(EventMessage eventMessage) {
         SerializedObject<String> serialized = serializer.serialize(eventMessage.payload(), String.class);
         String serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
@@ -234,12 +234,12 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         return new DbSchedulerHumanReadableEventData(serializedPayload, payloadClass, revision, serializedMetadata);
     }
 
-    private EventMessage<?> fromDbSchedulerEventData(DbSchedulerBinaryEventData data) {
+    private EventMessage fromDbSchedulerEventData(DbSchedulerBinaryEventData data) {
         SimpleSerializedObject<byte[]> serializedObject = new SimpleSerializedObject<>(
                 data.getP(), byte[].class, data.getC(), data.getR()
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        EventMessage<?> eventMessage = asEventMessage(deserializedPayload);
+        EventMessage eventMessage = asEventMessage(deserializedPayload);
         if (!isNull(data.getM())) {
             SimpleSerializedObject<byte[]> serializedMetaData = new SimpleSerializedObject<>(
                     data.getM(), byte[].class, MetaData.class.getName(), null
@@ -249,27 +249,26 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         return eventMessage;
     }
 
-    @SuppressWarnings("unchecked")
-    private <E> EventMessage<E> asEventMessage(@Nonnull Object event) {
-        if (event instanceof EventMessage<?>) {
-            return (EventMessage<E>) event;
-        } else if (event instanceof Message<?>) {
-            Message<E> message = (Message<E>) event;
-            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+    private EventMessage asEventMessage(@Nonnull Object event) {
+        if (event instanceof EventMessage e) {
+            return e;
         }
-        return new GenericEventMessage<>(
+        if (event instanceof Message message) {
+            return new GenericEventMessage(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage(
                 messageTypeResolver.resolveOrThrow(event),
-                (E) event,
+                event,
                 MetaData.emptyInstance()
         );
     }
 
-    private EventMessage<?> fromDbSchedulerEventData(DbSchedulerHumanReadableEventData data) {
+    private EventMessage fromDbSchedulerEventData(DbSchedulerHumanReadableEventData data) {
         SimpleSerializedObject<String> serializedObject = new SimpleSerializedObject<>(
                 data.getSerializedPayload(), String.class, data.getPayloadClass(), data.getRevision()
         );
         Object deserializedPayload = serializer.deserialize(serializedObject);
-        EventMessage<?> eventMessage = asEventMessage(deserializedPayload);
+        EventMessage eventMessage = asEventMessage(deserializedPayload);
         if (!isNull(data.getSerializedMetadata())) {
             SimpleSerializedObject<String> serializedMetaData = new SimpleSerializedObject<>(
                     data.getSerializedMetadata(), String.class, MetaData.class.getName(), null
@@ -320,9 +319,8 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         }
     }
 
-    @SuppressWarnings("rawtypes")
     private void publishEventMessage(EventMessage eventMessage) {
-        LegacyUnitOfWork<EventMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<EventMessage> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
         unitOfWork.attachTransaction(transactionManager);
         unitOfWork.execute((ctx) -> eventBus.publish(eventMessage));
     }

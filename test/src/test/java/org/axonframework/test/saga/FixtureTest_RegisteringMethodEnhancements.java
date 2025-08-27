@@ -77,9 +77,9 @@ public class FixtureTest_RegisteringMethodEnhancements {
                    })));
     }
 
-    private static <P> EventMessage<P> asEventMessage(P event) {
-        return new GenericEventMessage<>(
-                new GenericMessage<>(new MessageType(event.getClass()), event),
+    private static <P> EventMessage asEventMessage(P event) {
+        return new GenericEventMessage(
+                new GenericMessage(new MessageType(event.getClass()), event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -145,7 +145,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            Message<?> message = Message.fromContext(context);
+            Message message = Message.fromContext(context);
             return message.payloadType().isAssignableFrom(ParameterResolvedEvent.class);
         }
     }

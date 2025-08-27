@@ -44,7 +44,7 @@ class IntermediateRepresentationTest {
 
     @Test
     public void canConvertDataTo() {
-        DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"), "someString"
         );
         EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);

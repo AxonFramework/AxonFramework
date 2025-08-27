@@ -68,14 +68,14 @@ public enum UnresolvedRoutingKeyPolicy implements RoutingStrategy {
      */
     STATIC_KEY(command -> "unresolved");
 
-    private final Function<CommandMessage<?>, String> routingKeyResolver;
+    private final Function<CommandMessage, String> routingKeyResolver;
 
-    UnresolvedRoutingKeyPolicy(Function<CommandMessage<?>, String> routingKeyResolver) {
+    UnresolvedRoutingKeyPolicy(Function<CommandMessage, String> routingKeyResolver) {
         this.routingKeyResolver = routingKeyResolver;
     }
 
     @Override
-    public String getRoutingKey(@Nonnull CommandMessage<?> command) {
+    public String getRoutingKey(@Nonnull CommandMessage command) {
         return routingKeyResolver.apply(command);
     }
 }

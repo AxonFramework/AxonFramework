@@ -47,7 +47,7 @@ public interface EventTargetMatcher<E> {
      * @return {@code true} if the entity should be invoked for the message, {@code false} otherwise.
      */
     boolean matches(@Nonnull E targetEntity,
-                    @Nonnull EventMessage<?> message,
+                    @Nonnull EventMessage message,
                     @Nonnull ProcessingContext processingContext);
 
 

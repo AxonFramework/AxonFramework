@@ -366,7 +366,7 @@ public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implem
     }
 
     @Override
-    public void send(@Nonnull Message<?> message,
+    public void send(@Nonnull Message message,
                      ProcessingContext context,
                      @Nonnull ScopeDescriptor scopeDescription) throws Exception {
         if (canResolve(scopeDescription)) {

@@ -86,7 +86,7 @@ public class CommandConverter {
      * @param command The command message to convert to a {@link Command}.
      * @return The given {@code command} converted to a {@link Command}.
      */
-    public static Command convertCommandMessage(@Nonnull CommandMessage<?> command) {
+    public static Command convertCommandMessage(@Nonnull CommandMessage command) {
         Object payload = command.payload();
         if (!(payload instanceof byte[] payloadAsBytes)) {
             throw new IllegalArgumentException(
@@ -110,7 +110,7 @@ public class CommandConverter {
                       .build();
     }
 
-    private static void addRoutingKey(Command.Builder builder, CommandMessage<?> command) {
+    private static void addRoutingKey(Command.Builder builder, CommandMessage command) {
         Optional<String> routingKey = command.routingKey();
         if (routingKey.isEmpty()) {
             return;
@@ -120,7 +120,7 @@ public class CommandConverter {
         builder.addProcessingInstructions(instruction).build();
     }
 
-    private static void addPriority(Command.Builder builder, CommandMessage<?> command) {
+    private static void addPriority(Command.Builder builder, CommandMessage command) {
         OptionalInt priority = command.priority();
         if (priority.isEmpty()) {
             return;
@@ -153,7 +153,7 @@ public class CommandConverter {
         MessageType messageType = new MessageType(commandResponse.getPayload().getType(),
                                                   commandResponse.getPayload().getRevision());
         Map<String, String> metadata = convertMetaDataValuesToGrpc(commandResponse.getMetaDataMap());
-        return CompletableFuture.completedFuture(new GenericCommandResultMessage<>(new GenericMessage<>(
+        return CompletableFuture.completedFuture(new GenericCommandResultMessage<>(new GenericMessage(
                 commandResponse.getMessageIdentifier(),
                 messageType,
                 commandResponse.getPayload().getData().toByteArray(),
@@ -181,12 +181,12 @@ public class CommandConverter {
      * @param command The command to convert to a {@link CommandMessage}.
      * @return The given {@code command} converted into a {@link CommandMessage}.
      */
-    public static CommandMessage<?> convertCommand(@Nonnull Command command) {
+    public static CommandMessage convertCommand(@Nonnull Command command) {
         SerializedObject commandPayload = command.getPayload();
         int priority = priority(command.getProcessingInstructionsList());
         String routingKey = ProcessingInstructionHelper.routingKey(command.getProcessingInstructionsList());
-        return new GenericCommandMessage<>(
-                new GenericMessage<>(
+        return new GenericCommandMessage(
+                new GenericMessage(
                         command.getMessageIdentifier(),
                         new MessageType(commandPayload.getType(), commandPayload.getRevision()),
                         commandPayload.getData().toByteArray(),

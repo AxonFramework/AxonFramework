@@ -33,7 +33,7 @@ import static java.util.Collections.singletonMap;
 public class MessageIdSpanAttributesProvider implements SpanAttributesProvider {
 
     @Override
-    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message<?> message) {
+    public @Nonnull Map<String, String> provideForMessage(@Nonnull Message message) {
         return singletonMap("axon_message_id", message.identifier());
     }
 }

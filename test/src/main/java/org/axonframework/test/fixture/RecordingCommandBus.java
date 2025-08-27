@@ -46,7 +46,7 @@ import java.util.concurrent.CompletableFuture;
 public class RecordingCommandBus implements CommandBus {
 
     private final CommandBus delegate;
-    private final Map<CommandMessage<?>, Message<?>> recorded = new HashMap<>();
+    private final Map<CommandMessage, Message> recorded = new HashMap<>();
 
     /**
      * Creates a new {@link RecordingCommandBus} that will record all commands dispatched to the given {@code delegate}.
@@ -58,7 +58,7 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                @Nullable ProcessingContext processingContext) {
         recorded.put(command, null);
         var commandResult = delegate.dispatch(command, processingContext);
@@ -79,15 +79,15 @@ public class RecordingCommandBus implements CommandBus {
         descriptor.describeWrapperOf(delegate);
     }
 
-    public Map<CommandMessage<?>, Message<?>> recorded() {
+    public Map<CommandMessage, Message> recorded() {
         return Map.copyOf(recorded);
     }
 
-    public List<CommandMessage<?>> recordedCommands() {
+    public List<CommandMessage> recordedCommands() {
         return List.copyOf(recorded.keySet());
     }
 
-    public Message<?> resultOf(CommandMessage<?> command) {
+    public Message resultOf(CommandMessage command) {
         return recorded.get(command);
     }
 

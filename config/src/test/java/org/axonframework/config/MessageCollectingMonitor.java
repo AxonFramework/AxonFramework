@@ -26,8 +26,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import jakarta.annotation.Nonnull;
 
-public class MessageCollectingMonitor implements MessageMonitor<Message<?>> {
-    private final List<Message<?>> messages = new ArrayList<>();
+public class MessageCollectingMonitor implements MessageMonitor<Message> {
+    private final List<Message> messages = new ArrayList<>();
     private final CountDownLatch latch;
 
     public MessageCollectingMonitor() {
@@ -39,7 +39,7 @@ public class MessageCollectingMonitor implements MessageMonitor<Message<?>> {
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull Message<?> message) {
+    public MonitorCallback onMessageIngested(@Nonnull Message message) {
         messages.add(message);
         if (latch != null) {
             latch.countDown();
@@ -47,7 +47,7 @@ public class MessageCollectingMonitor implements MessageMonitor<Message<?>> {
         return NoOpMessageMonitorCallback.INSTANCE;
     }
 
-    public List<Message<?>> getMessages() {
+    public List<Message> getMessages() {
         return messages;
     }
 

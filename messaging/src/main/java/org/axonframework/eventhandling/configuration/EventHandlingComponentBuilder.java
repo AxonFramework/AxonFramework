@@ -61,7 +61,7 @@ public interface EventHandlingComponentBuilder {
          */
         @Nonnull
         default RequiredEventHandlerPhase sequenceIdentifier(
-                @Nonnull Function<EventMessage<?>, Object> sequencingPolicy
+                @Nonnull Function<EventMessage, Object> sequencingPolicy
         ) {
             return sequencingPolicy(event -> Optional.of(sequencingPolicy.apply(event)));
         }

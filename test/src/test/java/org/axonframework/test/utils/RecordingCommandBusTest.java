@@ -47,19 +47,19 @@ class RecordingCommandBusTest {
 
     @Test
     void publishCommand() throws Exception {
-        CommandMessage<String> firstTestCommand = new GenericCommandMessage<>(TEST_TYPE, "First");
-        CommandMessage<String> secondTestCommand = new GenericCommandMessage<>(TEST_TYPE, "Second");
+        CommandMessage firstTestCommand = new GenericCommandMessage(TEST_TYPE, "First");
+        CommandMessage secondTestCommand = new GenericCommandMessage(TEST_TYPE, "Second");
 
         testSubject.dispatch(firstTestCommand, null);
         var result = testSubject.dispatch(secondTestCommand, null);
 
-        Message<?> commandResultMessage = result.get();
+        Message commandResultMessage = result.get();
         if (commandResultMessage instanceof CommandResultMessage cmr && cmr.isExceptional()) {
             fail("Didn't expect handling to fail");
         }
         assertNull(commandResultMessage.payload(),
                    "Expected default callback behavior to invoke onResult(null)");
-        List<CommandMessage<?>> actual = testSubject.getDispatchedCommands();
+        List<CommandMessage> actual = testSubject.getDispatchedCommands();
         assertEquals(2, actual.size());
         assertEquals("First", actual.get(0).payload());
         assertEquals("Second", actual.get(1).payload());
@@ -67,8 +67,8 @@ class RecordingCommandBusTest {
 
     @Test
     void publishCommandWithCallbackBehavior() throws Exception {
-        CommandMessage<String> firstTestCommand = new GenericCommandMessage<>(TEST_TYPE, "First");
-        CommandMessage<String> secondTestCommand = new GenericCommandMessage<>(TEST_TYPE, "Second");
+        CommandMessage firstTestCommand = new GenericCommandMessage(TEST_TYPE, "First");
+        CommandMessage secondTestCommand = new GenericCommandMessage(TEST_TYPE, "Second");
 
         testSubject.setCallbackBehavior((commandPayload, commandMetaData) -> "callbackResult");
         testSubject.dispatch(firstTestCommand, null);
@@ -78,7 +78,7 @@ class RecordingCommandBusTest {
             fail("Didn't expect handling to fail");
         }
         assertEquals("callbackResult", commandResultMessage.payload());
-        List<CommandMessage<?>> actual = testSubject.getDispatchedCommands();
+        List<CommandMessage> actual = testSubject.getDispatchedCommands();
         assertEquals(2, actual.size());
         assertEquals("First", actual.get(0).payload());
         assertEquals("Second", actual.get(1).payload());

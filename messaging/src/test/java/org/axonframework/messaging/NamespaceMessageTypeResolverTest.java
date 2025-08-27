@@ -157,7 +157,7 @@ class NamespaceMessageTypeResolverTest {
     void shouldRetrieveOriginalMessageTypeFromNamespace() {
         // given
         var originalType = new MessageType("test.original", "original-version");
-        var message = new GenericMessage<>(originalType, "payload");
+        var message = new GenericMessage(originalType, "payload");
 
         // Use a different resolver for String
         var resolver = NamespaceMessageTypeResolver
