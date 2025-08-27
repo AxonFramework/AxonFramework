@@ -130,5 +130,6 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStorageEngine", eventStorageEngine);
+        descriptor.describeProperty("tagResolver", tagResolver);
     }
 }
