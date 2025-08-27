@@ -35,6 +35,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.modelling.configuration.EntityModule;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
 
 import java.util.Objects;
@@ -129,6 +130,20 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
         return modelling(modellingConfigurer -> modellingConfigurer.registerCommandHandlingModule(
                 moduleBuilder
         ));
+    }
+
+    /**
+     * Registers the given {@code entityModule} on the root-level {@link org.axonframework.configuration.Configuration}.
+     * This will make the entity available in the globally available {@link org.axonframework.modelling.StateManager}.
+     *
+     * @param entityModule The entity module to register.
+     * @param <I>          The type of identifier used to identify the entity that's being built.
+     * @param <E>          The type of the entity being built.
+     * @return A {@code EventSourcingConfigurer} instance for further configuring.
+     */
+    @Nonnull
+    public <I, E> EventSourcingConfigurer registerEntity(@Nonnull EntityModule<I, E> entityModule) {
+        return modelling(modellingConfigurer -> modellingConfigurer.registerEntity(entityModule));
     }
 
     /**
