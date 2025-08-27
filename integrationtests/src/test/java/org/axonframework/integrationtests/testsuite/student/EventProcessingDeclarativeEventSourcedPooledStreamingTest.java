@@ -46,8 +46,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Test class validating the declarative {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}

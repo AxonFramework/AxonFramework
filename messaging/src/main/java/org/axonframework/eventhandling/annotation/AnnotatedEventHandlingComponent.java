@@ -52,7 +52,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
-    private final SimpleEventHandlingComponent handlingComponent;
+    private final EventHandlingComponent delegate;
 
     /**
      * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
@@ -64,10 +64,33 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      */
     public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
-                                           @Nonnull ParameterResolverFactory parameterResolverFactory) {
+                                           @Nonnull ParameterResolverFactory parameterResolverFactory
+    ) {
         this(
                 annotatedEventHandler,
                 parameterResolverFactory,
+                new SimpleEventHandlingComponent(),
+                ClasspathHandlerDefinition.forClass(annotatedEventHandler.getClass())
+        );
+    }
+
+    /**
+     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
+     * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
+     *
+     * @param annotatedEventHandler    The object containing the
+     *                                 {@link org.axonframework.eventhandling.annotation.EventHandler} annotated
+     *                                 methods.
+     * @param parameterResolverFactory The strategy for resolving handler method parameter values.
+     * @param delegate                 The delegate event handling component to which the handlers will be subscribed.
+     */
+    public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
+                                           @Nonnull ParameterResolverFactory parameterResolverFactory,
+                                           @Nonnull EventHandlingComponent delegate) {
+        this(
+                annotatedEventHandler,
+                parameterResolverFactory,
+                delegate,
                 ClasspathHandlerDefinition.forClass(annotatedEventHandler.getClass())
         );
     }
@@ -81,14 +104,16 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      *                                 methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      * @param handlerDefinition        The handler definition used to create concrete handlers.
-     * @param converter
+     * @param delegate                 The delegate event handling component to which the handlers will be subscribed.
      */
     @SuppressWarnings("unchecked")
     public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
                                            @Nonnull ParameterResolverFactory parameterResolverFactory,
+                                           @Nonnull EventHandlingComponent delegate,
                                            @Nonnull HandlerDefinition handlerDefinition) {
         this(
                 annotatedEventHandler,
+                delegate,
                 AnnotatedHandlerInspector.inspectType((Class<T>) annotatedEventHandler.getClass(),
                                                       parameterResolverFactory,
                                                       handlerDefinition)
@@ -101,15 +126,17 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      *
      * @param annotatedEventHandler The object containing the
      *                              {@link org.axonframework.eventhandling.annotation.EventHandler} annotated methods.
+     * @param delegate              The delegate event handling component to which the handlers will be subscribed.
      * @param model                 The inspector to use to find the annotated handlers on the annotatedEventHandler.
      */
     public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
+                                           @Nonnull EventHandlingComponent delegate,
                                            @Nonnull AnnotatedHandlerInspector<T> model
     ) {
         this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null");
         this.model = requireNonNull(model, "The Annotated Handler Inspector may not be null");
 
-        this.handlingComponent = new SimpleEventHandlingComponent();
+        this.delegate = delegate;
         initializeHandlersBasedOnModel();
     }
 
@@ -125,7 +152,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         QualifiedName qualifiedName = new QualifiedName(handler.payloadType()); // TODO #3098 - allow to define eventName on the handling member
 
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
-        handlingComponent.subscribe(
+        delegate.subscribe(
                 qualifiedName,
                 (event, ctx) ->
                         interceptorChain.handle(
@@ -139,18 +166,24 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     @Override
     public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
-        return handlingComponent.subscribe(name, eventHandler);
+        return delegate.subscribe(name, eventHandler);
     }
 
     @Nonnull
     @Override
     public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                                     @Nonnull ProcessingContext context) {
-        return handlingComponent.handle(event, context);
+                                               @Nonnull ProcessingContext context) {
+        return delegate.handle(event, context);
     }
 
     @Override
     public Set<QualifiedName> supportedEvents() {
-        return Set.copyOf(handlingComponent.supportedEvents());
+        return Set.copyOf(delegate.supportedEvents());
+    }
+
+    @Nonnull
+    @Override
+    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        return delegate.sequenceIdentifierFor(event, context);
     }
 }
