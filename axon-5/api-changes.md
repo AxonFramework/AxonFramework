@@ -1378,6 +1378,20 @@ described [here](#metadata-with-string-values)) and the conversion support on th
 described [here](#message-conversion--serialization)). The changes on the `Message` directly are more apparent to the
 user and worthwhile to be aware of.
 
+###  Converter types
+
+Since Axon Framework 3, you had the opportunity to define three levels of Serializer/Converter, being:
+
+1. `general` - Used for everything that needs to be converted, unless defined more specifically by the other levels.
+2. `messages` - Used to convert **all** `Message` implementations, unless defined more specifically by the last level.
+3. `events` - Used to convert **all** `EventMessage` implementations.
+
+These levels still remain, but we streamlined configuration of these `Converters`. We did so, by introduced a dedicated
+`MessageConverter` and `EventConverter` for the `messages` and `events` level respectively. Furthermore, we enforced
+usages of a `MessageConverter` and `EventConverter` whenever Axon Framework expects it so.
+For example, an `EventStorageEngine` would **always** need an `EventConverter` and nothing else. Hence, constructors of
+the `EventStorageEngines` expect an `EventConverter`. 
+
 Minor API Changes
 =================
 
