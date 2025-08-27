@@ -24,6 +24,7 @@ import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.TopologyChangeListener;
 import org.axonframework.commandhandling.distributed.DistributedCommandBusConfiguration;
+import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.DecoratorDefinition;
@@ -58,6 +59,14 @@ import java.util.List;
 @EnableConfigurationProperties(AxonServerConfiguration.class)
 public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
+    /**
+     * Constant specifying the order used to
+     * {@link ComponentRegistry#registerDecorator(Class, int, ComponentDecorator) decorate} the
+     * {@link AxonServerConfiguration} and {@link DistributedCommandBusConfiguration} with specifics of the Spring Boot
+     * autoconfiguration.
+     */
+    public static final int AXON_SERVER_CONFIGURATION_ENHANCEMENT_ORDER = -100;
+
     private ApplicationContext applicationContext;
 
     @Bean
@@ -81,7 +90,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     public ConfigurationEnhancer axonServerConfigurationEnhancer() {
         return registry -> registry.registerDecorator(
                                            AxonServerConfiguration.class,
-                                           -100,
+                                           AXON_SERVER_CONFIGURATION_ENHANCEMENT_ORDER,
                                            (config, name, axonServerConfig) -> {
                                                axonServerConfig.setComponentName(clientName(applicationContext.getId()));
                                                return axonServerConfig;
@@ -89,7 +98,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
                                    )
                                    .registerDecorator(
                                            DistributedCommandBusConfiguration.class,
-                                           -100,
+                                           AXON_SERVER_CONFIGURATION_ENHANCEMENT_ORDER,
                                            (config, name, distributedCommandBusConfig) -> {
                                                AxonServerConfiguration serverConfig =
                                                        config.getComponent(AxonServerConfiguration.class);
@@ -116,7 +125,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     ) {
         return registry -> registry.registerDecorator(
                 AxonServerConfiguration.class,
-                -100,
+                AXON_SERVER_CONFIGURATION_ENHANCEMENT_ORDER,
                 (config, name, axonServerConfig) -> {
                     axonServerConfig.setServers(connectionDetails.routingServers());
                     return axonServerConfig;
