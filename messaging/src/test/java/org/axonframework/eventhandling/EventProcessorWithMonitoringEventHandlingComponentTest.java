@@ -16,13 +16,10 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
@@ -34,7 +31,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.axonframework.messaging.MessagingTestHelper.event;
+import static org.axonframework.messaging.MessagingTestUtils.event;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EventProcessorWithMonitoringEventHandlingComponentTest {

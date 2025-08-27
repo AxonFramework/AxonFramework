@@ -28,8 +28,8 @@ import java.util.Optional;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.messaging.MessagingTestHelper.query;
-import static org.axonframework.messaging.MessagingTestHelper.queryResponse;
+import static org.axonframework.messaging.MessagingTestUtils.query;
+import static org.axonframework.messaging.MessagingTestUtils.queryResponse;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

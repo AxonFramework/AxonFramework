@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.messaging.MessagingTestHelper.message;
+import static org.axonframework.messaging.MessagingTestUtils.message;
 
 /**
  * Test class validating the {@link DefaultMessageDispatchInterceptorChain}.

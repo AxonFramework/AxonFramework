@@ -31,7 +31,7 @@ import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 
-import static org.axonframework.messaging.MessagingTestHelper.message;
+import static org.axonframework.messaging.MessagingTestUtils.message;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

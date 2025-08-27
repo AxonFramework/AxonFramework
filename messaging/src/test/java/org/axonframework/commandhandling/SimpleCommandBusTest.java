@@ -40,7 +40,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.messaging.MessagingTestHelper.asCommandResultMessage;
+import static org.axonframework.messaging.MessagingTestUtils.asCommandResultMessage;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;

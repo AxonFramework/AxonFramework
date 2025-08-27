@@ -40,7 +40,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static org.axonframework.messaging.MessagingTestHelper.commandResult;
+import static org.axonframework.messaging.MessagingTestUtils.commandResult;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 

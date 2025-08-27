@@ -28,7 +28,7 @@ import java.util.Optional;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.messaging.MessagingTestHelper.event;
+import static org.axonframework.messaging.MessagingTestUtils.event;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
