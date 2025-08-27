@@ -40,7 +40,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Wrapper around standard Axon Framework {@link EventConverter} that can convert
+ * Wrapper around the Axon Framework {@link EventConverter} that can convert
  * {@link TaggedEventMessage TaggedEventMessages} (Axon Framework representation) to {@link TaggedEvent TaggedEvents}
  * (Axon Server representation).
  *
