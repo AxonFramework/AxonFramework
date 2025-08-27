@@ -42,13 +42,13 @@ class EventProcessorLatencyMonitorTest {
 
     @Test
     void messages() {
-        EventMessage<?> firstEventMessage = mock(EventMessage.class);
+        EventMessage firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.timestamp()).thenReturn(Instant.ofEpochMilli(0));
 
-        EventMessage<?> secondEventMessage = mock(EventMessage.class);
+        EventMessage secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.timestamp()).thenReturn(Instant.now().minusMillis(1000));
 
-        Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject.onMessagesIngested(
+        Map<? super EventMessage, MessageMonitor.MonitorCallback> callbacks = testSubject.onMessagesIngested(
                 Arrays.asList(firstEventMessage, secondEventMessage)
         );
 
@@ -62,13 +62,13 @@ class EventProcessorLatencyMonitorTest {
 
     @Test
     void failureMessage() {
-        EventMessage<?> firstEventMessage = mock(EventMessage.class);
+        EventMessage firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.timestamp()).thenReturn(Instant.ofEpochMilli(0));
 
-        EventMessage<?> secondEventMessage = mock(EventMessage.class);
+        EventMessage secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.timestamp()).thenReturn(Instant.now().minusMillis(1000));
 
-        Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject.onMessagesIngested(
+        Map<? super EventMessage, MessageMonitor.MonitorCallback> callbacks = testSubject.onMessagesIngested(
                 Arrays.asList(firstEventMessage, secondEventMessage)
         );
 

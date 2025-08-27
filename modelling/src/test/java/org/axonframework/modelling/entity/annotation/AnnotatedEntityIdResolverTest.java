@@ -17,6 +17,7 @@
 package org.axonframework.modelling.entity.annotation;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -42,15 +43,16 @@ class AnnotatedEntityIdResolverTest {
 
     @BeforeEach
     void setUp() {
-        resolver = new AnnotatedEntityIdResolver<>(
-                metamodel, String.class, new JacksonConverter(), new AnnotationBasedEntityIdResolver<>()
-        );
+        resolver = new AnnotatedEntityIdResolver<>(metamodel,
+                                                   String.class,
+                                                   new DelegatingMessageConverter(new JacksonConverter()),
+                                                   new AnnotationBasedEntityIdResolver<>());
     }
 
     @Test
     void canResolveIdFromSerializedMessage() {
         MessageType messageType = new MessageType(MyIdHoldingObject.class);
-        var serializedMessage = new GenericMessage<>(messageType, """
+        var serializedMessage = new GenericMessage(messageType, """
                 {"identifier": "test5362"}""");
 
         QualifiedName qualifiedName = messageType.qualifiedName();
@@ -66,7 +68,7 @@ class AnnotatedEntityIdResolverTest {
     @Test
     void throwsExceptionWhenExpectedRepresentationIsMissing() {
         MessageType messageType = new MessageType(MyIdHoldingObject.class);
-        var serializedMessage = new GenericMessage<>(messageType, """
+        var serializedMessage = new GenericMessage(messageType, """
                 {"identifier": "test5362"}""");
 
         assertThrows(AxonConfigurationException.class, () -> {

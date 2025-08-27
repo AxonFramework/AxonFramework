@@ -43,8 +43,8 @@ class GlobalMetricRegistryTest {
 
     @Test
     void createEventProcessorMonitor() {
-        MessageMonitor<? super EventMessage<?>> monitor1 = subject.registerEventProcessor("test1");
-        MessageMonitor<? super EventMessage<?>> monitor2 = subject.registerEventProcessor("test2");
+        MessageMonitor<? super EventMessage> monitor1 = subject.registerEventProcessor("test1");
+        MessageMonitor<? super EventMessage> monitor2 = subject.registerEventProcessor("test2");
 
         monitor1.onMessageIngested(asEventMessage("test")).reportSuccess();
         monitor2.onMessageIngested(asEventMessage("test")).reportSuccess();
@@ -59,7 +59,7 @@ class GlobalMetricRegistryTest {
 
     @Test
     void createEventBusMonitor() {
-        MessageMonitor<? super EventMessage<?>> monitor = subject.registerEventBus("eventBus");
+        MessageMonitor<? super EventMessage> monitor = subject.registerEventBus("eventBus");
 
         monitor.onMessageIngested(asEventMessage("test")).reportSuccess();
 
@@ -72,9 +72,9 @@ class GlobalMetricRegistryTest {
 
     @Test
     void createCommandBusMonitor() {
-        MessageMonitor<? super CommandMessage<?>> monitor = subject.registerCommandBus("commandBus");
+        MessageMonitor<? super CommandMessage> monitor = subject.registerCommandBus("commandBus");
 
-        monitor.onMessageIngested(new GenericCommandMessage<>(new MessageType("command"), "test"))
+        monitor.onMessageIngested(new GenericCommandMessage(new MessageType("command"), "test"))
                .reportSuccess();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -86,12 +86,12 @@ class GlobalMetricRegistryTest {
 
     @Test
     void createMonitorForUnknownComponent() {
-        MessageMonitor<? extends Message<?>> actual = subject.registerComponent(String.class, "test");
+        MessageMonitor<? extends Message> actual = subject.registerComponent(String.class, "test");
 
         assertSame(NoOpMessageMonitor.instance(), actual);
     }
 
-    private static EventMessage<Object> asEventMessage(String payload) {
-        return new GenericEventMessage<>(new MessageType("event"), payload);
+    private static EventMessage asEventMessage(String payload) {
+        return new GenericEventMessage(new MessageType("event"), payload);
     }
 }

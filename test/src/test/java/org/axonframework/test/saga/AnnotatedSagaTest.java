@@ -46,9 +46,9 @@ import static org.mockito.Mockito.*;
  */
 class AnnotatedSagaTest {
 
-    private static <P> EventMessage<P> asEventMessage(P event) {
-        return new GenericEventMessage<>(
-                new GenericMessage<>(new MessageType(event.getClass()), (P) event),
+    private static <P> EventMessage asEventMessage(P event) {
+        return new GenericEventMessage(
+                new GenericMessage(new MessageType(event.getClass()), (P) event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -122,7 +122,7 @@ class AnnotatedSagaTest {
     void fixtureApi_PublishedEvent_NoHistoricActivity() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
-               .whenPublishingA(new GenericEventMessage<>(
+               .whenPublishingA(new GenericEventMessage(
                        new MessageType("event"), new TriggerSagaStartEvent("id")
                ))
                .expectActiveSagas(1)

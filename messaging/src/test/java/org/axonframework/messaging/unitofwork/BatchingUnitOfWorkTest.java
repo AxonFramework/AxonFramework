@@ -56,21 +56,21 @@ class BatchingUnitOfWorkTest {
 
     @Test
     void executeTask() {
-        List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
+        List<Message> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         subject = new LegacyBatchingUnitOfWork<>(messages);
         subject.executeWithResult((ctx) -> {
             registerListeners(subject);
             return resultFor(subject.getMessage());
         });
         validatePhaseTransitions(Arrays.asList(PREPARE_COMMIT, COMMIT, AFTER_COMMIT, CLEANUP), messages);
-        Map<Message<?>, ExecutionResult> expectedResults = new HashMap<>();
+        Map<Message, ExecutionResult> expectedResults = new HashMap<>();
         messages.forEach(m -> expectedResults.put(m, new ExecutionResult(asResultMessage(resultFor(m)))));
         assertExecutionResults(expectedResults, subject.getExecutionResults());
     }
 
     @Test
     void rollback() {
-        List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
+        List<Message> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         subject = new LegacyBatchingUnitOfWork<>(messages);
         MockException e = new MockException();
         try {
@@ -84,14 +84,14 @@ class BatchingUnitOfWorkTest {
         } catch (Exception ignored) {
         }
         validatePhaseTransitions(Arrays.asList(ROLLBACK, CLEANUP), messages.subList(0, 2));
-        Map<Message<?>, ExecutionResult> expectedResult = new HashMap<>();
+        Map<Message, ExecutionResult> expectedResult = new HashMap<>();
         messages.forEach(m -> expectedResult.put(m, new ExecutionResult(asResultMessage(e))));
         assertExecutionResults(expectedResult, subject.getExecutionResults());
     }
 
     @Test
     void suppressedExceptionOnRollback() {
-        List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
+        List<Message> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
         AtomicInteger cleanupCounter = new AtomicInteger();
         subject = new LegacyBatchingUnitOfWork<>(messages);
         MockException taskException = new MockException("task exception");
@@ -117,7 +117,7 @@ class BatchingUnitOfWorkTest {
         } catch (Exception ignored) {
         }
         validatePhaseTransitions(Arrays.asList(PREPARE_COMMIT, ROLLBACK, CLEANUP), messages);
-        Map<Message<?>, ExecutionResult> expectedResult = new HashMap<>();
+        Map<Message, ExecutionResult> expectedResult = new HashMap<>();
         expectedResult.put(messages.get(0), new ExecutionResult(asResultMessage(commitException)));
         expectedResult.put(messages.get(1), new ExecutionResult(asResultMessage(commitException)));
         expectedResult.put(messages.get(2), new ExecutionResult(asResultMessage(taskException)));
@@ -134,18 +134,18 @@ class BatchingUnitOfWorkTest {
         unitOfWork.onCleanup(u -> transitions.add(new PhaseTransition(u.getMessage(), CLEANUP)));
     }
 
-    private static Message<?> toMessage(Object payload) {
-        return new GenericMessage<>(new MessageType(payload.getClass()), payload);
+    private static Message toMessage(Object payload) {
+        return new GenericMessage(new MessageType(payload.getClass()), payload);
     }
 
-    public static Object resultFor(Message<?> message) {
+    public static Object resultFor(Message message) {
         return "Result for: " + message.payload();
     }
 
-    private void validatePhaseTransitions(List<LegacyUnitOfWork.Phase> phases, List<Message<?>> messages) {
+    private void validatePhaseTransitions(List<LegacyUnitOfWork.Phase> phases, List<Message> messages) {
         Iterator<PhaseTransition> iterator = transitions.iterator();
         for (LegacyUnitOfWork.Phase phase : phases) {
-            Iterator<Message<?>> messageIterator = phase.isReverseCallbackOrder()
+            Iterator<Message> messageIterator = phase.isReverseCallbackOrder()
                     ? new LinkedList<>(messages).descendingIterator() : messages.iterator();
             messageIterator.forEachRemaining(message -> {
                 PhaseTransition expected = new PhaseTransition(message, phase);
@@ -156,15 +156,15 @@ class BatchingUnitOfWorkTest {
         }
     }
 
-    private void assertExecutionResults(Map<Message<?>, ExecutionResult> expected,
-                                        Map<Message<?>, ExecutionResult> actual) {
+    private void assertExecutionResults(Map<Message, ExecutionResult> expected,
+                                        Map<Message, ExecutionResult> actual) {
         assertEquals(expected.keySet(), actual.keySet());
-        List<ResultMessage<?>> expectedMessages = expected.values()
+        List<ResultMessage> expectedMessages = expected.values()
                                                           .stream()
                                                           .map(ExecutionResult::getResult)
                                                           .collect(Collectors.toList());
 
-        List<ResultMessage<?>> actualMessages = actual.values()
+        List<ResultMessage> actualMessages = actual.values()
                                                       .stream()
                                                       .map(ExecutionResult::getResult)
                                                       .collect(Collectors.toList());
@@ -201,9 +201,9 @@ class BatchingUnitOfWorkTest {
     private static class PhaseTransition {
 
         private final LegacyUnitOfWork.Phase phase;
-        private final Message<?> message;
+        private final Message message;
 
-        public PhaseTransition(Message<?> message, LegacyUnitOfWork.Phase phase) {
+        public PhaseTransition(Message message, LegacyUnitOfWork.Phase phase) {
             this.message = message;
             this.phase = phase;
         }

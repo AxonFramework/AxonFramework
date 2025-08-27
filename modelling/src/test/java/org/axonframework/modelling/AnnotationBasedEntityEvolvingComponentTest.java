@@ -16,7 +16,9 @@
 
 package org.axonframework.modelling;
 
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SequenceNumber;
@@ -28,7 +30,6 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
@@ -46,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotationBasedEntityEvolvingComponentTest {
 
-    private static final Converter converter = new JacksonConverter();
+    private static final EventConverter converter = new DelegatingEventConverter(new JacksonConverter());
     private static final ClassBasedMessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
     private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolvingComponent<>(
             TestState.class,
@@ -87,9 +88,9 @@ class AnnotationBasedEntityEvolvingComponentTest {
         void handlesSequenceOfEvents() {
             // given
             var state = new TestState();
-            DomainEventMessage<?> event0 = domainEvent(0);
-            DomainEventMessage<?> event1 = domainEvent(1);
-            DomainEventMessage<?> event2 = domainEvent(2);
+            DomainEventMessage event0 = domainEvent(0);
+            DomainEventMessage event1 = domainEvent(1);
+            DomainEventMessage event2 = domainEvent(2);
 
             // when
             state = ENTITY_EVOLVER.evolve(state, event0, StubProcessingContext.forMessage(event0));
@@ -287,12 +288,12 @@ class AnnotationBasedEntityEvolvingComponentTest {
         }
     }
 
-    private static DomainEventMessage<?> domainEvent(int seq) {
+    private static DomainEventMessage domainEvent(int seq) {
         return domainEvent(seq, null);
     }
 
-    private static DomainEventMessage<?> domainEvent(int seq, String sampleMetaData) {
-        return new GenericDomainEventMessage<>(
+    private static DomainEventMessage domainEvent(int seq, String sampleMetaData) {
+        return new GenericDomainEventMessage(
                 "test",
                 "id",
                 seq,

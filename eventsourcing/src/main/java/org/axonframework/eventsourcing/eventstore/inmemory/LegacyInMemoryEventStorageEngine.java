@@ -59,8 +59,8 @@ import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
 public class LegacyInMemoryEventStorageEngine implements LegacyEventStorageEngine {
 
     @SuppressWarnings("SortedCollectionWithNonComparableKeys")
-    private final NavigableMap<TrackingToken, TrackedEventMessage<?>> events = new ConcurrentSkipListMap<>();
-    private final Map<String, List<DomainEventMessage<?>>> snapshots = new ConcurrentHashMap<>();
+    private final NavigableMap<TrackingToken, TrackedEventMessage> events = new ConcurrentSkipListMap<>();
+    private final Map<String, List<DomainEventMessage>> snapshots = new ConcurrentHashMap<>();
     private final long offset;
 
     /**
@@ -80,7 +80,7 @@ public class LegacyInMemoryEventStorageEngine implements LegacyEventStorageEngin
     }
 
     @Override
-    public void appendEvents(@Nonnull List<? extends EventMessage<?>> events) {
+    public void appendEvents(@Nonnull List<? extends EventMessage> events) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().onPrepareCommit(uow -> storeEvents(events));
         } else {
@@ -88,13 +88,13 @@ public class LegacyInMemoryEventStorageEngine implements LegacyEventStorageEngin
         }
     }
 
-    private void storeEvents(List<? extends EventMessage<?>> events) {
+    private void storeEvents(List<? extends EventMessage> events) {
         synchronized (this.events) {
             GlobalSequenceTrackingToken trackingToken = nextTrackingToken();
             this.events.putAll(
                     IntStream.range(0, events.size())
                              .mapToObj(i -> asTrackedEventMessage(
-                                     (EventMessage<?>) events.get(i), trackingToken.offsetBy(i)
+                                     (EventMessage) events.get(i), trackingToken.offsetBy(i)
                              ))
                              .collect(Collectors.toMap(TrackedEventMessage::trackingToken, Function.identity()))
             );
@@ -102,10 +102,10 @@ public class LegacyInMemoryEventStorageEngine implements LegacyEventStorageEngin
     }
 
     @Override
-    public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
+    public void storeSnapshot(@Nonnull DomainEventMessage snapshot) {
         snapshots.compute(snapshot.getAggregateIdentifier(), (aggregateId, snapshotsSoFar) -> {
             if (snapshotsSoFar == null) {
-                CopyOnWriteArrayList<DomainEventMessage<?>> newSnapshots = new CopyOnWriteArrayList<>();
+                CopyOnWriteArrayList<DomainEventMessage> newSnapshots = new CopyOnWriteArrayList<>();
                 newSnapshots.add(snapshot);
                 return newSnapshots;
             }
@@ -120,16 +120,16 @@ public class LegacyInMemoryEventStorageEngine implements LegacyEventStorageEngin
      * This implementation produces non-blocking event streams.
      */
     @Override
-    public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
+    public Stream<? extends TrackedEventMessage> readEvents(TrackingToken trackingToken, boolean mayBlock) {
         return StreamSupport.stream(new MapEntrySpliterator(events, trackingToken), false);
     }
 
     @Override
     public DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber) {
         AtomicReference<Long> sequenceNumber = new AtomicReference<>();
-        Stream<? extends DomainEventMessage<?>> stream =
-                events.values().stream().filter(event -> event instanceof DomainEventMessage<?>)
-                      .map(event -> (DomainEventMessage<?>) event)
+        Stream<? extends DomainEventMessage> stream =
+                events.values().stream().filter(event -> event instanceof DomainEventMessage)
+                      .map(event -> (DomainEventMessage) event)
                       .filter(event -> aggregateIdentifier.equals(event.getAggregateIdentifier())
                               && event.getSequenceNumber() >= firstSequenceNumber)
                       .peek(event -> sequenceNumber.set(event.getSequenceNumber()));
@@ -137,7 +137,7 @@ public class LegacyInMemoryEventStorageEngine implements LegacyEventStorageEngin
     }
 
     @Override
-    public Optional<DomainEventMessage<?>> readSnapshot(@Nonnull String aggregateIdentifier) {
+    public Optional<DomainEventMessage> readSnapshot(@Nonnull String aggregateIdentifier) {
         return snapshots.getOrDefault(aggregateIdentifier, Collections.emptyList())
                         .stream()
                         .max(Comparator.comparingLong(DomainEventMessage::getSequenceNumber));
@@ -185,12 +185,12 @@ public class LegacyInMemoryEventStorageEngine implements LegacyEventStorageEngin
                 : ((GlobalSequenceTrackingToken) events.lastKey()).next();
     }
 
-    private static class MapEntrySpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
+    private static class MapEntrySpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage> {
 
-        private final NavigableMap<TrackingToken, TrackedEventMessage<?>> source;
+        private final NavigableMap<TrackingToken, TrackedEventMessage> source;
         private volatile TrackingToken lastToken;
 
-        public MapEntrySpliterator(NavigableMap<TrackingToken, TrackedEventMessage<?>> source,
+        public MapEntrySpliterator(NavigableMap<TrackingToken, TrackedEventMessage> source,
                                    TrackingToken trackingToken) {
             super(Long.MAX_VALUE, Spliterator.ORDERED);
             this.source = source;
@@ -198,8 +198,8 @@ public class LegacyInMemoryEventStorageEngine implements LegacyEventStorageEngin
         }
 
         @Override
-        public boolean tryAdvance(Consumer<? super TrackedEventMessage<?>> action) {
-            Map.Entry<TrackingToken, TrackedEventMessage<?>> next;
+        public boolean tryAdvance(Consumer<? super TrackedEventMessage> action) {
+            Map.Entry<TrackingToken, TrackedEventMessage> next;
             if (lastToken != null) {
                 next = source.higherEntry(lastToken);
             } else {

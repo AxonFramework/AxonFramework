@@ -28,11 +28,15 @@ import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -81,8 +85,14 @@ class MessagingConfigurationDefaultsTest {
         assertInstanceOf(ClassBasedMessageTypeResolver.class, resultConfig.getComponent(MessageTypeResolver.class));
         Converter generalConverter = resultConfig.getComponent(Converter.class);
         assertInstanceOf(JacksonConverter.class, generalConverter);
-        assertThat(generalConverter).isEqualTo(resultConfig.getComponent(Converter.class, "messageConverter"));
-        assertThat(generalConverter).isEqualTo(resultConfig.getComponent(Converter.class, "eventConverter"));
+        MessageConverter messageConverter = resultConfig.getComponent(MessageConverter.class);
+        assertInstanceOf(DelegatingMessageConverter.class, messageConverter);
+        EventConverter eventConverter = resultConfig.getComponent(EventConverter.class);
+        assertInstanceOf(DelegatingEventConverter.class, eventConverter);
+        Converter messageConverterDelegate = ((DelegatingMessageConverter) messageConverter).delegate();
+        assertThat(generalConverter).isEqualTo(messageConverterDelegate);
+        MessageConverter eventConverterDelegate = ((DelegatingEventConverter) eventConverter).delegate();
+        assertThat(messageConverter).isEqualTo(eventConverterDelegate);
         // The specific CommandGateway-implementation registered by default may be overridden by the serviceloader-mechanism.
         // So we just check if _any_ CommandGateway has been added to the configuration.
         assertTrue(resultConfig.hasComponent(CommandGateway.class));
@@ -120,7 +130,7 @@ class MessagingConfigurationDefaultsTest {
     private static class TestCommandBus implements CommandBus {
 
         @Override
-        public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+        public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                    @Nullable ProcessingContext processingContext) {
             throw new UnsupportedOperationException();
         }

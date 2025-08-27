@@ -73,8 +73,8 @@ import static org.junit.jupiter.api.Assertions.*;
         assertThat(sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent("42"))).hasValue("A");
     }
 
-    private DomainEventMessage<?> newStubDomainEvent(final Object payload) {
-        return new GenericDomainEventMessage<>("type", "A", 0L, new MessageType("event"), payload);
+    private DomainEventMessage newStubDomainEvent(final Object payload) {
+        return new GenericDomainEventMessage("type", "A", 0L, new MessageType("event"), payload);
     }
 
     private record TestEvent(String id) {

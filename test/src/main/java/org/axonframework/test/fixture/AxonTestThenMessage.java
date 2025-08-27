@@ -77,9 +77,9 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
             reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
         }
 
-        Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
+        Iterator<EventMessage> iterator = publishedEvents.iterator();
         for (Object expectedEvent : expectedEvents) {
-            EventMessage<?> actualEvent = iterator.next();
+            EventMessage actualEvent = iterator.next();
             if (!verifyPayloadEquality(expectedEvent, actualEvent.payload())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
@@ -88,13 +88,13 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(@Nonnull EventMessage<?>... expectedEvents) {
+    public T events(@Nonnull EventMessage... expectedEvents) {
         this.events(Stream.of(expectedEvents).map(org.axonframework.messaging.Message::payload).toArray());
 
         var publishedEvents = eventSink.recorded();
-        Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
-        for (EventMessage<?> expectedEvent : expectedEvents) {
-            EventMessage<?> actualEvent = iterator.next();
+        Iterator<EventMessage> iterator = publishedEvents.iterator();
+        for (EventMessage expectedEvent : expectedEvents) {
+            EventMessage actualEvent = iterator.next();
             if (!verifyMetaDataEquality(expectedEvent.payloadType(),
                                         expectedEvent.metaData(),
                                         actualEvent.metaData())) {
@@ -105,7 +105,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T eventsSatisfy(@Nonnull Consumer<List<EventMessage<?>>> consumer) {
+    public T eventsSatisfy(@Nonnull Consumer<List<EventMessage>> consumer) {
         var publishedEvents = eventSink.recorded();
         try {
             consumer.accept(publishedEvents);
@@ -116,7 +116,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T eventsMatch(@Nonnull Predicate<List<EventMessage<?>>> predicate) {
+    public T eventsMatch(@Nonnull Predicate<List<EventMessage>> predicate) {
         var publishedEvents = eventSink.recorded();
         var result = predicate.test(publishedEvents);
         if (!result) {
@@ -132,13 +132,13 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commands(@Nonnull CommandMessage<?>... expectedCommands) {
+    public T commands(@Nonnull CommandMessage... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(List.of(expectedCommands));
         return self();
     }
 
     @Override
-    public T commandsSatisfy(@Nonnull Consumer<List<CommandMessage<?>>> consumer) {
+    public T commandsSatisfy(@Nonnull Consumer<List<CommandMessage>> consumer) {
         var dispatchedCommands = commandBus.recordedCommands();
         try {
             consumer.accept(dispatchedCommands);
@@ -149,7 +149,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commandsMatch(@Nonnull Predicate<List<CommandMessage<?>>> predicate) {
+    public T commandsMatch(@Nonnull Predicate<List<CommandMessage>> predicate) {
         var dispatchedCommands = commandBus.recordedCommands();
         var result = predicate.test(dispatchedCommands);
         if (!result) {

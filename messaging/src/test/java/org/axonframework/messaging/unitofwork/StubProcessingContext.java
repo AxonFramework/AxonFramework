@@ -18,7 +18,6 @@ package org.axonframework.messaging.unitofwork;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
@@ -33,7 +32,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -196,7 +194,7 @@ public class StubProcessingContext implements ProcessingContext {
      * @param message The message to create a context for.
      * @return A new {@link ProcessingContext} instance containing the given {@code message} as a resource.
      */
-    public static ProcessingContext forMessage(Message<?> message) {
+    public static ProcessingContext forMessage(Message message) {
         return Message.addToContext(new StubProcessingContext(), message);
     }
 
@@ -251,7 +249,7 @@ public class StubProcessingContext implements ProcessingContext {
      * @param message The message to add to the context.
      * @return A new {@link ProcessingContext} instance containing the given {@code message} as a resource.
      */
-    public ProcessingContext withMessage(Message<?> message) {
+    public ProcessingContext withMessage(Message message) {
         return Message.addToContext(this, message);
     }
 

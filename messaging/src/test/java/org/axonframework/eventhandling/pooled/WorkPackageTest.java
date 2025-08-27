@@ -32,7 +32,6 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.junit.jupiter.api.*;
@@ -75,8 +74,8 @@ class WorkPackageTest {
 
     private TrackerStatus trackerStatus;
     private List<TrackerStatus> trackerStatusUpdates;
-    private Predicate<EventMessage<?>> eventFilterPredicate;
-    private BiPredicate<List<? extends EventMessage<?>>, TrackingToken> batchProcessorPredicate;
+    private Predicate<EventMessage> eventFilterPredicate;
+    private BiPredicate<List<? extends EventMessage>, TrackingToken> batchProcessorPredicate;
 
     @BeforeEach
     void setUp() {
@@ -208,7 +207,7 @@ class WorkPackageTest {
 
         testSubject.scheduleEvent(expectedEvent);
 
-        List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
+        List<EventMessage> validatedEvents = eventFilter.getValidatedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, validatedEvents.size()));
         assertEquals(testMessage, validatedEvents.get(0));
 
@@ -411,7 +410,7 @@ class WorkPackageTest {
         TrackingToken testTokenTwo = new GlobalSequenceTrackingToken(2L);
         var testEventTwo = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"),
                                              trackingTokenContext(testTokenTwo));
-        List<MessageStream.Entry<? extends EventMessage<?>>> testEvents = new ArrayList<>();
+        List<MessageStream.Entry<? extends EventMessage>> testEvents = new ArrayList<>();
         testEvents.add(testEventOne);
         testEvents.add(testEventTwo);
 
@@ -428,7 +427,7 @@ class WorkPackageTest {
                                              trackingTokenContext(testToken));
         var testEventTwo = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"),
                                              trackingTokenContext(testToken));
-        List<MessageStream.Entry<? extends EventMessage<?>>> testEvents = new ArrayList<>();
+        List<MessageStream.Entry<? extends EventMessage>> testEvents = new ArrayList<>();
         testEvents.add(testEventOne);
         testEvents.add(testEventTwo);
 
@@ -450,7 +449,7 @@ class WorkPackageTest {
                                               trackingTokenContext(expectedToken));
         var expectedEvent = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"),
                                               trackingTokenContext(expectedToken));
-        List<MessageStream.Entry<? extends EventMessage<?>>> testEvents = new ArrayList<>();
+        List<MessageStream.Entry<? extends EventMessage>> testEvents = new ArrayList<>();
         testEvents.add(filteredEvent);
         testEvents.add(expectedEvent);
 
@@ -460,7 +459,7 @@ class WorkPackageTest {
 
         assertTrue(result);
 
-        List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
+        List<EventMessage> validatedEvents = eventFilter.getValidatedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(2, validatedEvents.size()));
         assertTrue(validatedEvents.containsAll(testEvents.stream().map(MessageStream.Entry::message).toList()));
 
@@ -486,7 +485,7 @@ class WorkPackageTest {
                                                  trackingTokenContext(expectedToken));
         var expectedEventTwo = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"),
                                                  trackingTokenContext(expectedToken));
-        List<MessageStream.Entry<? extends EventMessage<?>>> expectedEvents = new ArrayList<>();
+        List<MessageStream.Entry<? extends EventMessage>> expectedEvents = new ArrayList<>();
         expectedEvents.add(expectedEventOne);
         expectedEvents.add(expectedEventTwo);
 
@@ -494,7 +493,7 @@ class WorkPackageTest {
 
         assertTrue(result);
 
-        List<EventMessage<?>> validatedEvents = eventFilter.getValidatedEvents();
+        List<EventMessage> validatedEvents = eventFilter.getValidatedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(2, validatedEvents.size()));
         assertTrue(validatedEvents.containsAll(expectedEvents.stream().map(MessageStream.Entry::message).toList()));
 
@@ -526,16 +525,16 @@ class WorkPackageTest {
 
     private class TestEventFilter implements WorkPackage.EventFilter {
 
-        private final List<EventMessage<?>> validatedEvents = new ArrayList<>();
+        private final List<EventMessage> validatedEvents = new ArrayList<>();
 
         @Override
-        public boolean canHandle(EventMessage<?> eventMessage, ProcessingContext context, Segment segment)
+        public boolean canHandle(EventMessage eventMessage, ProcessingContext context, Segment segment)
                 throws Exception {
             validatedEvents.add(eventMessage);
             return eventFilterPredicate.test(eventMessage);
         }
 
-        public List<EventMessage<?>> getValidatedEvents() {
+        public List<EventMessage> getValidatedEvents() {
             return validatedEvents;
         }
     }
@@ -545,7 +544,7 @@ class WorkPackageTest {
         private final List<ContextMessage> processedEvents = new ArrayList<>();
 
         @Override
-        public MessageStream.Empty<Message<Void>> process(@Nonnull List<? extends EventMessage<?>> events, ProcessingContext context) {
+        public MessageStream.Empty<Message> process(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
             if (batchProcessorPredicate.test(events, TrackingToken.fromContext(context).orElse(null))) {
                 processedEvents.addAll(events.stream().map(m -> new ContextMessage(m, context)).toList());
             }
@@ -557,7 +556,7 @@ class WorkPackageTest {
         }
     }
 
-    record ContextMessage(EventMessage<?> message, Context context) {
+    record ContextMessage(EventMessage message, Context context) {
 
     }
 }

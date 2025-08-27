@@ -49,7 +49,7 @@ class MetaDataRoutingStrategyTest {
         String expectedRoutingKey = "some-routing-key";
 
         MetaData testMetaData = MetaData.from(Collections.singletonMap(META_DATA_KEY, expectedRoutingKey));
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_NAME, "some-payload", testMetaData);
+        CommandMessage testCommand = new GenericCommandMessage(TEST_NAME, "some-payload", testMetaData);
 
         assertEquals(expectedRoutingKey, testSubject.getRoutingKey(testCommand));
         verifyNoInteractions(fallbackRoutingStrategy);
@@ -58,7 +58,7 @@ class MetaDataRoutingStrategyTest {
     @Test
     void returnsNullOnUnresolvedMetadataKey() {
         MetaData noMetaData = MetaData.emptyInstance();
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_NAME, "some-payload", noMetaData);
+        CommandMessage testCommand = new GenericCommandMessage(TEST_NAME, "some-payload", noMetaData);
 
         assertNull(testSubject.getRoutingKey(testCommand));
     }

@@ -74,11 +74,11 @@ class FixtureTest_CommandInterceptors {
     private FixtureConfiguration<InterceptorAggregate> fixture;
 
     @Mock
-    private MessageDispatchInterceptor<CommandMessage<?>> firstMockCommandDispatchInterceptor;
+    private MessageDispatchInterceptor<CommandMessage> firstMockCommandDispatchInterceptor;
     @Mock
-    private MessageDispatchInterceptor<CommandMessage<?>> secondMockCommandDispatchInterceptor;
+    private MessageDispatchInterceptor<CommandMessage> secondMockCommandDispatchInterceptor;
     @Mock
-    private MessageHandlerInterceptor<CommandMessage<?>> mockCommandHandlerInterceptor;
+    private MessageHandlerInterceptor<CommandMessage> mockCommandHandlerInterceptor;
     private static AtomicBoolean intercepted;
 
     @BeforeEach
@@ -102,17 +102,17 @@ class FixtureTest_CommandInterceptors {
                .when(expectedCommand);
 
         //noinspection unchecked
-        ArgumentCaptor<GenericCommandMessage<?>> firstCommandMessageCaptor =
+        ArgumentCaptor<GenericCommandMessage> firstCommandMessageCaptor =
                 ArgumentCaptor.forClass(GenericCommandMessage.class);
         verify(firstMockCommandDispatchInterceptor).handle(firstCommandMessageCaptor.capture());
-        GenericCommandMessage<?> firstResult = firstCommandMessageCaptor.getValue();
+        GenericCommandMessage firstResult = firstCommandMessageCaptor.getValue();
         assertEquals(expectedCommand, firstResult.payload());
 
         //noinspection unchecked
-        ArgumentCaptor<GenericCommandMessage<?>> secondCommandMessageCaptor =
+        ArgumentCaptor<GenericCommandMessage> secondCommandMessageCaptor =
                 ArgumentCaptor.forClass(GenericCommandMessage.class);
         verify(secondMockCommandDispatchInterceptor).handle(secondCommandMessageCaptor.capture());
-        GenericCommandMessage<?> secondResult = secondCommandMessageCaptor.getValue();
+        GenericCommandMessage secondResult = secondCommandMessageCaptor.getValue();
         assertEquals(expectedCommand, secondResult.payload());
     }
 
@@ -163,12 +163,12 @@ class FixtureTest_CommandInterceptors {
                .when(expectedCommand, expectedMetaDataMap);
 
         //noinspection unchecked
-        ArgumentCaptor<LegacyUnitOfWork<? extends CommandMessage<?>>> unitOfWorkCaptor =
+        ArgumentCaptor<LegacyUnitOfWork<? extends CommandMessage>> unitOfWorkCaptor =
                 ArgumentCaptor.forClass(LegacyUnitOfWork.class);
         ArgumentCaptor<InterceptorChain> interceptorChainCaptor = ArgumentCaptor.forClass(InterceptorChain.class);
         verify(mockCommandHandlerInterceptor).handle(unitOfWorkCaptor.capture(), any(), interceptorChainCaptor.capture());
-        LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWorkResult = unitOfWorkCaptor.getValue();
-        Message<?> messageResult = unitOfWorkResult.getMessage();
+        LegacyUnitOfWork<? extends CommandMessage> unitOfWorkResult = unitOfWorkCaptor.getValue();
+        Message messageResult = unitOfWorkResult.getMessage();
         assertEquals(expectedCommand, messageResult.payload());
         assertEquals(expectedMetaDataMap, messageResult.metaData());
     }
@@ -362,7 +362,7 @@ class FixtureTest_CommandInterceptors {
     private static class InterceptorEntity {
 
         @CommandHandlerInterceptor
-        public void intercept(CommandMessage<?> command,
+        public void intercept(CommandMessage command,
                               InterceptorChain interceptorChain,
                               ProcessingContext context
         ) throws Exception {
@@ -437,12 +437,12 @@ class FixtureTest_CommandInterceptors {
         }
     }
 
-    private static class TestCommandDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
+    private static class TestCommandDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage> {
 
         @Nonnull
         @Override
-        public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(
-                @Nonnull List<? extends CommandMessage<?>> messages
+        public BiFunction<Integer, CommandMessage, CommandMessage> handle(
+                @Nonnull List<? extends CommandMessage> messages
         ) {
             return (index, message) -> {
                 Map<String, String> testMetaDataMap = new HashMap<>();
@@ -453,10 +453,10 @@ class FixtureTest_CommandInterceptors {
         }
     }
 
-    private static class TestCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
+    private static class TestCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage> {
 
         @Override
-        public Object handle(@Nonnull LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWork,
+        public Object handle(@Nonnull LegacyUnitOfWork<? extends CommandMessage> unitOfWork,
                              @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.registerCorrelationDataProvider(new SimpleCorrelationDataProvider(HANDLER_META_DATA_KEY));
             return interceptorChain.proceedSync(context);

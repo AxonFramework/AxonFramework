@@ -72,20 +72,20 @@ public class LegacySequenceEventStorageEngine implements LegacyEventStorageEngin
     }
 
     @Override
-    public void appendEvents(@Nonnull List<? extends EventMessage<?>> events) {
+    public void appendEvents(@Nonnull List<? extends EventMessage> events) {
         activeStorage.appendEvents(events);
     }
 
     @Override
-    public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
+    public void storeSnapshot(@Nonnull DomainEventMessage snapshot) {
         activeStorage.storeSnapshot(snapshot);
     }
 
     @Override
-    public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
-        Spliterator<? extends TrackedEventMessage<?>> historicSpliterator =
+    public Stream<? extends TrackedEventMessage> readEvents(TrackingToken trackingToken, boolean mayBlock) {
+        Spliterator<? extends TrackedEventMessage> historicSpliterator =
                 historicStorage.readEvents(trackingToken, mayBlock).spliterator();
-        Spliterator<? extends TrackedEventMessage<?>> merged = new ConcatenatingSpliterator(
+        Spliterator<? extends TrackedEventMessage> merged = new ConcatenatingSpliterator(
                 trackingToken,
                 historicSpliterator,
                 mayBlock,
@@ -102,8 +102,8 @@ public class LegacySequenceEventStorageEngine implements LegacyEventStorageEngin
     }
 
     @Override
-    public Optional<DomainEventMessage<?>> readSnapshot(@Nonnull String aggregateIdentifier) {
-        Optional<DomainEventMessage<?>> optionalDomainEventMessage = activeStorage.readSnapshot(aggregateIdentifier);
+    public Optional<DomainEventMessage> readSnapshot(@Nonnull String aggregateIdentifier) {
+        Optional<DomainEventMessage> optionalDomainEventMessage = activeStorage.readSnapshot(aggregateIdentifier);
         return optionalDomainEventMessage.isPresent()
                 ? optionalDomainEventMessage
                 : historicStorage.readSnapshot(aggregateIdentifier);
@@ -137,19 +137,19 @@ public class LegacySequenceEventStorageEngine implements LegacyEventStorageEngin
         return tokenFromActiveStorage;
     }
 
-    private static class ConcatenatingSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
+    private static class ConcatenatingSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage> {
 
-        private final Spliterator<? extends TrackedEventMessage<?>> historicSpliterator;
+        private final Spliterator<? extends TrackedEventMessage> historicSpliterator;
         private final boolean mayBlock;
-        private final Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider;
+        private final Function<TrackingToken, Spliterator<? extends TrackedEventMessage>> nextProvider;
 
         private TrackingToken lastToken;
-        private Spliterator<? extends TrackedEventMessage<?>> active;
+        private Spliterator<? extends TrackedEventMessage> active;
 
         public ConcatenatingSpliterator(TrackingToken initialToken,
-                                        Spliterator<? extends TrackedEventMessage<?>> historicSpliterator,
+                                        Spliterator<? extends TrackedEventMessage> historicSpliterator,
                                         boolean mayBlock,
-                                        Function<TrackingToken, Spliterator<? extends TrackedEventMessage<?>>> nextProvider) {
+                                        Function<TrackingToken, Spliterator<? extends TrackedEventMessage>> nextProvider) {
             super(Long.MAX_VALUE, Spliterator.ORDERED);
             this.lastToken = initialToken;
             this.historicSpliterator = historicSpliterator;
@@ -158,8 +158,8 @@ public class LegacySequenceEventStorageEngine implements LegacyEventStorageEngin
         }
 
         @Override
-        public boolean tryAdvance(Consumer<? super TrackedEventMessage<?>> action) {
-            if (active == null && historicSpliterator.tryAdvance((Consumer<TrackedEventMessage<?>>) message -> {
+        public boolean tryAdvance(Consumer<? super TrackedEventMessage> action) {
+            if (active == null && historicSpliterator.tryAdvance((Consumer<TrackedEventMessage>) message -> {
                 lastToken = message.trackingToken();
                 action.accept(message);
             })) {
@@ -214,7 +214,7 @@ public class LegacySequenceEventStorageEngine implements LegacyEventStorageEngin
         }
 
         @Override
-        public DomainEventMessage<?> next() {
+        public DomainEventMessage next() {
             initActiveIfRequired();
             if (actual == null) {
                 return historic.next();
@@ -224,7 +224,7 @@ public class LegacySequenceEventStorageEngine implements LegacyEventStorageEngin
         }
 
         @Override
-        public DomainEventMessage<?> peek() {
+        public DomainEventMessage peek() {
             initActiveIfRequired();
             if (actual == null) {
                 return historic.peek();

@@ -132,11 +132,11 @@ public class LegacyAxonAutoConfiguration {
                                 Object bean = applicationContext.getBean(settings.getSource());
                                 // TODO #3520
 //                                if (bean instanceof SubscribableMessageSourceDefinition) {
-//                                    return ((SubscribableMessageSourceDefinition<? extends EventMessage<?>>) bean)
+//                                    return ((SubscribableMessageSourceDefinition<? extends EventMessage>) bean)
 //                                            .create(c);
 //                                }
                                 if (bean instanceof SubscribableMessageSource) {
-                                    return (SubscribableMessageSource<? extends EventMessage<?>>) bean;
+                                    return (SubscribableMessageSource<? extends EventMessage>) bean;
                                 }
                                 throw new AxonConfigurationException(format(
                                         "Invalid message source [%s] configured for Event Processor [%s]. "
@@ -166,10 +166,10 @@ public class LegacyAxonAutoConfiguration {
     }
 
     @SuppressWarnings("unchecked")
-    private Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> resolveMessageSource(
+    private Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage>> resolveMessageSource(
             ApplicationContext applicationContext, EventProcessorProperties.ProcessorSettings v
     ) {
-        Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource;
+        Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage>> messageSource;
         if (v.getSource() == null) {
             messageSource = LegacyConfiguration::eventStore;
         } else {

@@ -115,7 +115,7 @@ class DefaultEventHandlingComponentsConfigurerTest {
             SampleDecoration decoration1 = (SampleDecoration) decoratedComponents.get(0);
             SampleDecoration decoration2 = (SampleDecoration) decoratedComponents.get(1);
 
-            EventMessage<String> sampleMessage = EventTestUtils.asEventMessage("Message1");
+            EventMessage sampleMessage = EventTestUtils.asEventMessage("Message1");
             decoration1.handle(sampleMessage, STUB_PROCESSING_CONTEXT);
             decoration2.handle(sampleMessage, STUB_PROCESSING_CONTEXT);
 
@@ -133,8 +133,8 @@ class DefaultEventHandlingComponentsConfigurerTest {
 
             @Nonnull
             @Override
-            public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
-                                                             @Nonnull ProcessingContext context) {
+            public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
+                                                       @Nonnull ProcessingContext context) {
                 invoked.set(true);
                 return super.handle(event, context);
             }

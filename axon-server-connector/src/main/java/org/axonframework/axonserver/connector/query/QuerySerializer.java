@@ -98,7 +98,7 @@ public class QuerySerializer {
      * @param <R>          a generic specifying the response type of the given {@code queryMessage}
      * @return a {@link QueryRequest} based on the provided {@code queryMessage}
      */
-    public <Q, R> QueryRequest serializeRequest(QueryMessage<Q, R> queryMessage,
+    public <Q, R> QueryRequest serializeRequest(QueryMessage queryMessage,
                                                 int nrResults,
                                                 long timeout,
                                                 int priority) {
@@ -119,7 +119,7 @@ public class QuerySerializer {
      * @param <R>          a generic specifying the response type of the given {@code queryMessage}
      * @return a {@link QueryRequest} based on the provided {@code queryMessage}
      */
-    public <Q, R> QueryRequest serializeRequest(QueryMessage<Q, R> queryMessage, int nrResults, long timeout,
+    public <Q, R> QueryRequest serializeRequest(QueryMessage queryMessage, int nrResults, long timeout,
                                                 int priority, boolean stream) {
         return QueryRequest.newBuilder()
                            .setTimestamp(System.currentTimeMillis())
@@ -177,7 +177,7 @@ public class QuerySerializer {
      * @param requestMessageId a {@link String} specifying the identity of the original request message
      * @return a {@link QueryResponse} based on the provided {@code queryResponse}
      */
-    public QueryResponse serializeResponse(QueryResponseMessage<?> queryResponse, String requestMessageId) {
+    public QueryResponse serializeResponse(QueryResponseMessage queryResponse, String requestMessageId) {
         QueryResponse.Builder responseBuilder = QueryResponse.newBuilder();
 
         if (queryResponse.isExceptional()) {
@@ -211,7 +211,7 @@ public class QuerySerializer {
      * @param <R>          a generic specifying the response type of the {@link QueryMessage} to convert to
      * @return a {@link QueryMessage} based on the provided {@code queryRequest}
      */
-    public <Q, R> QueryMessage<Q, R> deserializeRequest(QueryRequest queryRequest) {
+    public <Q, R> QueryMessage deserializeRequest(QueryRequest queryRequest) {
         return new GrpcBackedQueryMessage<>(queryRequest, messageSerializer, serializer);
     }
 
@@ -222,7 +222,7 @@ public class QuerySerializer {
      * @param <R>           a generic specifying the type of the {@link QueryResponseMessage} to convert to
      * @return a {@link QueryResponseMessage} based on the provided {@code queryResponse}
      */
-    public <R> QueryResponseMessage<R> deserializeResponse(QueryResponse queryResponse,
+    public <R> QueryResponseMessage deserializeResponse(QueryResponse queryResponse,
                                                            ResponseType<R> expectedResponseType) {
         return new ConvertingResponseMessage<>(
                 expectedResponseType, new GrpcBackedResponseMessage<>(queryResponse, messageSerializer)
@@ -236,7 +236,7 @@ public class QuerySerializer {
      * @param queryResponse a {@link QueryResponse} to convert into a {@link QueryResponseMessage}
      * @return a {@link QueryResponseMessage} based on the provided {@code queryResponse}
      */
-    public QueryResponseMessage<?> deserializeResponse(QueryResponse queryResponse) {
+    public QueryResponseMessage deserializeResponse(QueryResponse queryResponse) {
         return new GrpcBackedResponseMessage<>(queryResponse, messageSerializer);
     }
 }

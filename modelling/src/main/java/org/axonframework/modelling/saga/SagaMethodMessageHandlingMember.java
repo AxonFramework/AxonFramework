@@ -68,7 +68,7 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
      * @param eventMessage The event message containing the value of the association
      * @return the AssociationValue to find the saga instance with, or {@code null} if none found
      */
-    public AssociationValue getAssociationValue(EventMessage<?> eventMessage) {
+    public AssociationValue getAssociationValue(EventMessage eventMessage) {
         if (associationResolver == null) {
             return null;
         }
@@ -77,7 +77,7 @@ public class SagaMethodMessageHandlingMember<T> extends WrappedMessageHandlingMe
     }
 
     @Override
-    public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, T target)
+    public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, T target)
             throws Exception {
         return delegate.handleSync(message, context, target);
     }

@@ -23,6 +23,6 @@ import org.axonframework.common.stream.BlockingStream;
  *
  * @author Rene de Waele
  */
-public interface TrackingEventStream extends BlockingStream<TrackedEventMessage<?>> {
+public interface TrackingEventStream extends BlockingStream<TrackedEventMessage> {
 
 }

@@ -80,7 +80,7 @@ public class GlobalMetricRegistry {
         return configurer.configureMessageMonitor(
                 configuration
                         -> (componentType, componentName)
-                        -> (MessageMonitor<Message<?>>) registerComponent(componentType, componentName)
+                        -> (MessageMonitor<Message>) registerComponent(componentType, componentName)
         );
     }
 
@@ -93,7 +93,7 @@ public class GlobalMetricRegistry {
      * @param componentName the name under which the component should be registered to the registry
      * @return a {@link MessageMonitor} to monitor the behavior of the given {@code componentType}
      */
-    public MessageMonitor<? extends Message<?>> registerComponent(Class<?> componentType, String componentName) {
+    public MessageMonitor<? extends Message> registerComponent(Class<?> componentType, String componentName) {
         if (EventProcessor.class.isAssignableFrom(componentType)) {
             return registerEventProcessor(componentName);
         }
@@ -122,7 +122,7 @@ public class GlobalMetricRegistry {
      * @param eventProcessorName the name under which the {@link EventProcessor} should be registered to the registry
      * @return a {@link MessageMonitor} to monitor the behavior of an {@link EventProcessor}
      */
-    public MessageMonitor<? super EventMessage<?>> registerEventProcessor(String eventProcessorName) {
+    public MessageMonitor<? super EventMessage> registerEventProcessor(String eventProcessorName) {
         MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.builder().build();
         EventProcessorLatencyMonitor eventProcessorLatencyMonitor = new EventProcessorLatencyMonitor();
         CapacityMonitor capacityMonitor = new CapacityMonitor(1, TimeUnit.MINUTES);
@@ -135,7 +135,7 @@ public class GlobalMetricRegistry {
         eventProcessingRegistry.register("capacity", capacityMonitor);
         registry.register(eventProcessorName, eventProcessingRegistry);
 
-        List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
+        List<MessageMonitor<? super EventMessage>> monitors = new ArrayList<>();
         monitors.add(messageTimerMonitor);
         monitors.add(eventProcessorLatencyMonitor);
         monitors.add(capacityMonitor);
@@ -151,7 +151,7 @@ public class GlobalMetricRegistry {
      * @param commandBusName the name under which the commandBus should be registered to the registry
      * @return a {@link MessageMonitor} to monitor the behavior of a CommandBus
      */
-    public MessageMonitor<? super CommandMessage<?>> registerCommandBus(String commandBusName) {
+    public MessageMonitor<? super CommandMessage> registerCommandBus(String commandBusName) {
         return registerDefaultHandlerMessageMonitor(commandBusName);
     }
 
@@ -163,7 +163,7 @@ public class GlobalMetricRegistry {
      * @param eventBusName the name under which the {@link EventBus} should be registered to the registry
      * @return a {@link MessageMonitor} to monitor the behavior of an {@link EventBus}
      */
-    public MessageMonitor<? super EventMessage<?>> registerEventBus(String eventBusName) {
+    public MessageMonitor<? super EventMessage> registerEventBus(String eventBusName) {
         MessageCountingMonitor messageCounterMonitor = new MessageCountingMonitor();
         MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.builder().build();
 
@@ -183,7 +183,7 @@ public class GlobalMetricRegistry {
      * @param queryBusName the name under which the {@link QueryBus} should be registered to the registry
      * @return a {@link MessageMonitor} to monitor the behavior of a {@link QueryBus}
      */
-    public MessageMonitor<? super QueryMessage<?, ?>> registerQueryBus(String queryBusName) {
+    public MessageMonitor<? super QueryMessage> registerQueryBus(String queryBusName) {
         return registerDefaultHandlerMessageMonitor(queryBusName);
     }
 
@@ -196,11 +196,11 @@ public class GlobalMetricRegistry {
      *                          registry
      * @return a {@link MessageMonitor} to monitor the behavior of a {@link QueryUpdateEmitter}
      */
-    private MessageMonitor<? extends Message<?>> registerQueryUpdateEmitter(String updateEmitterName) {
+    private MessageMonitor<? extends Message> registerQueryUpdateEmitter(String updateEmitterName) {
         return registerDefaultHandlerMessageMonitor(updateEmitterName);
     }
 
-    private MessageMonitor<Message<?>> registerDefaultHandlerMessageMonitor(String name) {
+    private MessageMonitor<Message> registerDefaultHandlerMessageMonitor(String name) {
         MessageTimerMonitor messageTimerMonitor = MessageTimerMonitor.builder().build();
         CapacityMonitor capacityMonitor = new CapacityMonitor(1, TimeUnit.MINUTES);
         MessageCountingMonitor messageCountingMonitor = new MessageCountingMonitor();

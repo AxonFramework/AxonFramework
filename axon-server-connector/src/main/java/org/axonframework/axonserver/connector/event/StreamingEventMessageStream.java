@@ -46,12 +46,12 @@ import java.util.Optional;
  * @since 5.0.0
  */
 @Internal
-public class StreamingEventMessageStream implements MessageStream<EventMessage<?>> {
+public class StreamingEventMessageStream implements MessageStream<EventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final ResultStream<StreamEventsResponse> stream;
-    private final EventConverter converter;
+    private final TaggedEventConverter converter;
 
     /**
      * Constructs a {@code StreamingMessageStream} with the given {@code stream} and {@code converter}.
@@ -62,13 +62,13 @@ public class StreamingEventMessageStream implements MessageStream<EventMessage<?
      *                  {@link EventMessage EventMessages} for this {@link MessageStream} implementation.
      */
     public StreamingEventMessageStream(@Nonnull ResultStream<StreamEventsResponse> stream,
-                                       @Nonnull EventConverter converter) {
+                                       @Nonnull TaggedEventConverter converter) {
         this.stream = Objects.requireNonNull(stream, "The result stream cannot be null.");
         this.converter = Objects.requireNonNull(converter, "The converter cannot be null.");
     }
 
     @Override
-    public Optional<Entry<EventMessage<?>>> next() {
+    public Optional<Entry<EventMessage>> next() {
         StreamEventsResponse response = stream.nextIfAvailable();
         if (response == null) {
             logger.debug("There are no more events to stream at this moment in time.");
@@ -77,15 +77,15 @@ public class StreamingEventMessageStream implements MessageStream<EventMessage<?
         return Optional.of(convertToEntry(response.getEvent()));
     }
 
-    private SimpleEntry<EventMessage<?>> convertToEntry(SequencedEvent event) {
-        EventMessage<byte[]> eventMessage = converter.convertEvent(event.getEvent());
+    private SimpleEntry<EventMessage> convertToEntry(SequencedEvent event) {
+        EventMessage eventMessage = converter.convertEvent(event.getEvent());
         TrackingToken token = new GlobalSequenceTrackingToken(event.getSequence() + 1);
         Context context = Context.with(TrackingToken.RESOURCE_KEY, token);
         return new SimpleEntry<>(eventMessage, context);
     }
 
     @Override
-    public Optional<Entry<EventMessage<?>>> peek() {
+    public Optional<Entry<EventMessage>> peek() {
         StreamEventsResponse response = stream.peek();
         if (response == null) {
             logger.debug("There are no more events to peek at this moment in time.");

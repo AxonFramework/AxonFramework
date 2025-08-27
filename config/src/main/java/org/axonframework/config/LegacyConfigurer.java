@@ -82,7 +82,7 @@ public interface LegacyConfigurer extends LifecycleOperations {
      * @return the current instance of the Configurer, for chaining purposes
      */
     LegacyConfigurer configureMessageMonitor(
-            @Nonnull Function<LegacyConfiguration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryBuilder
+            @Nonnull Function<LegacyConfiguration, BiFunction<Class<?>, String, MessageMonitor<Message>>> messageMonitorFactoryBuilder
     );
 
     /**
@@ -106,7 +106,7 @@ public interface LegacyConfigurer extends LifecycleOperations {
      * @return the current instance of the Configurer, for chaining purposes
      */
     default LegacyConfigurer configureMessageMonitor(@Nonnull Class<?> componentType,
-                                                     @Nonnull Function<LegacyConfiguration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+                                                     @Nonnull Function<LegacyConfiguration, MessageMonitor<Message>> messageMonitorBuilder) {
         return configureMessageMonitor(componentType,
                                        (configuration, type, name) -> messageMonitorBuilder.apply(configuration));
     }
@@ -154,7 +154,7 @@ public interface LegacyConfigurer extends LifecycleOperations {
      * @return the current instance of the Configurer, for chaining purposes
      */
     default LegacyConfigurer configureMessageMonitor(@Nonnull Class<?> componentType, @Nonnull String componentName,
-                                                     @Nonnull Function<LegacyConfiguration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+                                                     @Nonnull Function<LegacyConfiguration, MessageMonitor<Message>> messageMonitorBuilder) {
         return configureMessageMonitor(componentType,
                                        componentName,
                                        (configuration, type, name) -> messageMonitorBuilder.apply(configuration));

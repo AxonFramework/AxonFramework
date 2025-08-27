@@ -24,6 +24,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
+import org.mockito.Mockito;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -58,16 +59,16 @@ class EventProcessorLatencyMonitorTest {
         EventProcessorLatencyMonitor testSubject = testSubjectBuilder.build();
 
         //noinspection unchecked
-        EventMessage<String> firstEventMessage = mock(EventMessage.class);
+        EventMessage firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.timestamp()).thenReturn(Instant.ofEpochMilli(0));
-        when(firstEventMessage.payloadType()).thenReturn(String.class);
+        Mockito.<Class<?>>when(firstEventMessage.payloadType()).thenReturn(String.class);
 
         //noinspection unchecked
-        EventMessage<Integer> secondEventMessage = mock(EventMessage.class);
+        EventMessage secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.timestamp()).thenReturn(Instant.ofEpochMilli(1000));
-        when(secondEventMessage.payloadType()).thenReturn(Integer.class);
+        Mockito.<Class<?>>when(secondEventMessage.payloadType()).thenReturn(Integer.class);
 
-        Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+        Map<? super EventMessage, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(firstEventMessage, secondEventMessage));
         callbacks.get(firstEventMessage).reportSuccess();
 
@@ -82,16 +83,16 @@ class EventProcessorLatencyMonitorTest {
         ).build();
 
         //noinspection unchecked
-        EventMessage<String> firstEventMessage = mock(EventMessage.class);
+        EventMessage firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.timestamp()).thenReturn(Instant.now());
-        when(firstEventMessage.payloadType()).thenReturn(String.class);
+        Mockito.<Class<?>>when(firstEventMessage.payloadType()).thenReturn(String.class);
 
         //noinspection unchecked
-        EventMessage<Integer> secondEventMessage = mock(EventMessage.class);
+        EventMessage secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.timestamp()).thenReturn(Instant.now().minusMillis(1000));
-        when(secondEventMessage.payloadType()).thenReturn(Integer.class);
+        Mockito.<Class<?>>when(secondEventMessage.payloadType()).thenReturn(Integer.class);
 
-        Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+        Map<? super EventMessage, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(firstEventMessage, secondEventMessage));
         callbacks.get(firstEventMessage).reportSuccess();
 
@@ -110,16 +111,16 @@ class EventProcessorLatencyMonitorTest {
         ).build();
 
         //noinspection unchecked
-        EventMessage<String> firstEventMessage = mock(EventMessage.class);
+        EventMessage firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.timestamp()).thenReturn(Instant.now().minusMillis(1000));
-        when(firstEventMessage.payloadType()).thenReturn(String.class);
+        Mockito.<Class<?>>when(firstEventMessage.payloadType()).thenReturn(String.class);
 
         //noinspection unchecked
-        EventMessage<Integer> secondEventMessage = mock(EventMessage.class);
+        EventMessage secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.timestamp()).thenReturn(Instant.now());
-        when(secondEventMessage.payloadType()).thenReturn(Integer.class);
+        Mockito.<Class<?>>when(secondEventMessage.payloadType()).thenReturn(Integer.class);
 
-        Map<? super EventMessage<?>, MessageMonitor.MonitorCallback> callbacks = testSubject
+        Map<? super EventMessage, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(firstEventMessage, secondEventMessage));
         callbacks.get(firstEventMessage).reportFailure(null);
 

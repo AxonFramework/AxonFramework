@@ -85,14 +85,14 @@ class SimpleEventSchedulerTest {
             latch.countDown();
             return null;
         }).when(eventBus).publish(isA(EventMessage.class));
-        EventMessage<Object> event1 = createEvent();
-        final EventMessage<Object> event2 = createEvent();
+        EventMessage event1 = createEvent();
+        final EventMessage event2 = createEvent();
         ScheduleToken token1 = testSubject.schedule(Duration.ofMillis(100), event1);
         testSubject.schedule(Duration.ofMillis(120), event2);
         testSubject.cancelSchedule(token1);
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus, never()).publish(event1);
-        verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage<Object>>) item -> (item != null)
+        verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) item -> (item != null)
                 && event2.payload().equals(item.payload())
                 && event2.metaData().equals(item.metaData())));
         scheduledExecutorService.shutdown();
@@ -112,7 +112,7 @@ class SimpleEventSchedulerTest {
         verify(scheduledExecutorService).shutdown();
     }
 
-    private EventMessage<Object> createEvent() {
-        return new GenericEventMessage<>(new MessageType("event"), new Object());
+    private EventMessage createEvent() {
+        return new GenericEventMessage(new MessageType("event"), new Object());
     }
 }

@@ -46,7 +46,7 @@ import jakarta.annotation.Nonnull;
  * @author Allard Buijze
  * @since 3.0
  */
-public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage<?>>, MetricSet {
+public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage>, MetricSet {
 
     private final Clock clock;
     private final AtomicLong processTime = new AtomicLong();
@@ -68,7 +68,7 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
     }
 
     @Override
-    public MonitorCallback onMessageIngested(@Nonnull EventMessage<?> message) {
+    public MonitorCallback onMessageIngested(@Nonnull EventMessage message) {
         //noinspection ConstantConditions
         if (message != null) {
             this.processTime.set(Duration.between(message.timestamp(), clock.instant()).toMillis());

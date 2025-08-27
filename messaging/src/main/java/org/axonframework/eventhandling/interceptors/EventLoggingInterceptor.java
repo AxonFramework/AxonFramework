@@ -42,7 +42,7 @@ import jakarta.annotation.Nonnull;
  * @author Rene de Waele
  * @since 3.0
  */
-public class EventLoggingInterceptor implements MessageDispatchInterceptor<EventMessage<?>> {
+public class EventLoggingInterceptor implements MessageDispatchInterceptor<EventMessage> {
 
     private final Logger logger;
 
@@ -69,14 +69,14 @@ public class EventLoggingInterceptor implements MessageDispatchInterceptor<Event
 
     @Nonnull
     @Override
-    public BiFunction<Integer, EventMessage<?>, EventMessage<?>> handle(
-            @Nonnull List<? extends EventMessage<?>> messages) {
+    public BiFunction<Integer, EventMessage, EventMessage> handle(
+            @Nonnull List<? extends EventMessage> messages) {
         StringBuilder sb = new StringBuilder(String.format("Events published: [%s]",
                                                            messages.stream()
                                                                    .map(m -> m.type().name())
                                                                    .collect(Collectors.joining(", "))));
         CurrentUnitOfWork.ifStarted(unitOfWork -> {
-            Message<?> message = unitOfWork.getMessage();
+            Message message = unitOfWork.getMessage();
             if (message == null) {
                 sb.append(" while processing an operation not tied to an incoming message");
             } else {

@@ -33,7 +33,7 @@ class EventMessageHandlerTest {
     @SuppressWarnings("Convert2Lambda") // Cannot spy a lambda
     private final EventMessageHandler testSubject = spy(new EventMessageHandler() {
         @Override
-        public Object handleSync(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) throws Exception {
+        public Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) throws Exception {
             return null;
         }
     });

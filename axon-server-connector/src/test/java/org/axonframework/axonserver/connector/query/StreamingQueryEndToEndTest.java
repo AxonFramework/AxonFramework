@@ -20,8 +20,8 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
+import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.IllegalPayloadAccessException;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @Testcontainers
 class StreamingQueryEndToEndTest {
-
+    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {};
     private static final int HTTP_PORT = 8024;
     private static final int GRPC_PORT = 8124;
     private static final String HOSTNAME = "localhost";
@@ -158,11 +158,11 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void streamingFluxQuery(boolean supportsStreaming) {
-        StreamingQueryMessage<FluxQuery, String> testQuery = new GenericStreamingQueryMessage<>(
+        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
                 new MessageType(FluxQuery.class), new FluxQuery(), String.class
         );
 
-        StepVerifier.create(streamingQueryPayloads(testQuery, supportsStreaming))
+        StepVerifier.create(streamingQueryPayloads(testQuery, String.class, supportsStreaming))
                     .expectNextCount(1000)
                     .verifyComplete();
     }
@@ -175,9 +175,10 @@ class StreamingQueryEndToEndTest {
 
         StepVerifier.create(Flux.range(0, count)
                                 .flatMap(i -> streamingQueryPayloads(
-                                        new GenericStreamingQueryMessage<>(new MessageType(FluxQuery.class),
-                                                                           new FluxQuery(),
-                                                                           String.class),
+                                        new GenericStreamingQueryMessage(new MessageType(FluxQuery.class),
+                                                                         new FluxQuery(),
+                                                                         String.class),
+                                        String.class,
                                         supportsStreaming
                                 ))
                     )
@@ -188,11 +189,11 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void streamingErrorFluxQuery(boolean supportsStreaming) {
-        StreamingQueryMessage<ErrorFluxQuery, String> testQuery = new GenericStreamingQueryMessage<>(
+        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
                 new MessageType(ErrorFluxQuery.class), new ErrorFluxQuery(), String.class
         );
 
-        StepVerifier.create(streamingQueryPayloads(testQuery, supportsStreaming))
+        StepVerifier.create(streamingQueryPayloads(testQuery, String.class, supportsStreaming))
                     .expectErrorMatches(t -> t instanceof QueryExecutionException
                             && t.getMessage().equals("oops"))
                     .verify();
@@ -200,11 +201,11 @@ class StreamingQueryEndToEndTest {
 
     @Test
     void streamingHandlerErrorFluxQuery() {
-        StreamingQueryMessage<HandlerErrorFluxQuery, String> testQuery = new GenericStreamingQueryMessage<>(
+        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
                 new MessageType(HandlerErrorFluxQuery.class), new HandlerErrorFluxQuery(), String.class
         );
 
-        StepVerifier.create(streamingQueryPayloads(testQuery, true))
+        StepVerifier.create(streamingQueryPayloads(testQuery, String.class, true))
                     .expectErrorMatches(t -> t instanceof QueryExecutionException
                             && t.getMessage().startsWith("Error starting stream"))
                     .verify();
@@ -213,11 +214,11 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void streamingListQuery(boolean supportsStreaming) {
-        StreamingQueryMessage<ListQuery, String> testQuery = new GenericStreamingQueryMessage<>(
+        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
                 new MessageType(ListQuery.class), new ListQuery(), String.class
         );
 
-        StepVerifier.create(streamingQueryPayloads(testQuery, supportsStreaming))
+        StepVerifier.create(streamingQueryPayloads(testQuery, String.class, supportsStreaming))
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
     }
@@ -225,30 +226,31 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void listQuery(boolean supportsStreaming) throws Throwable {
-        QueryMessage<ListQuery, List<String>> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(ListQuery.class), new ListQuery(), multipleInstancesOf(String.class)
         );
 
-        assertEquals(asList("a", "b", "c", "d"), directQueryPayload(testQuery, supportsStreaming));
+        assertEquals(asList("a", "b", "c", "d"), directQueryPayload(testQuery, LIST_OF_STRINGS, supportsStreaming));
     }
 
-    private <R> Flux<R> streamingQueryPayloads(StreamingQueryMessage<?, R> query, boolean supportsStreaming) {
+    private <R> Flux<R> streamingQueryPayloads(StreamingQueryMessage query, Class<R> cls, boolean supportsStreaming) {
         if (supportsStreaming) {
             return Flux.from(senderQueryBus.streamingQuery(query))
-                       .map(Message::payload);
+                       .map(m -> m.payloadAs(cls));
         }
         return Flux.from(nonStreamingSenderQueryBus.streamingQuery(query))
-                   .map(Message::payload);
+                   .map(m -> m.payloadAs(cls));
     }
 
-    private <R> R directQueryPayload(QueryMessage<?, R> query,
+    private <R> R directQueryPayload(QueryMessage query,
+                                     TypeReference<R> type,
                                      boolean supportsStreaming) throws Throwable {
-        QueryResponseMessage<R> response = null;
+        QueryResponseMessage response = null;
         try {
             response = supportsStreaming
                     ? senderQueryBus.query(query).get()
                     : nonStreamingSenderQueryBus.query(query).get();
-            return response.payload();
+            return response.payloadAs(type);
         } catch (IllegalPayloadAccessException e) {
             if (response != null && response.optionalExceptionResult().isPresent()) {
                 throw response.optionalExceptionResult().get();

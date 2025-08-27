@@ -31,9 +31,9 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
 
 /**
  * Utility class that matches an entity instance to a message based on the routing key of a message and the routing key
- * of the entity. The expected payload type of the message is requested from the
- * {@link AnnotatedEntityMetamodel} to be able to resolve the payload and extract the requested properties.
- * Once extracted, both routing keys are then compared for a match.
+ * of the entity. The expected payload type of the message is requested from the {@link AnnotatedEntityMetamodel} to be
+ * able to resolve the payload and extract the requested properties. Once extracted, both routing keys are then compared
+ * for a match.
  *
  * @param <E> The type of the entity this matcher is used for.
  * @author Mitchell Herrijgers
@@ -82,7 +82,7 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
      * @param message The message to match against.
      * @return {@code true} if the routing keys match, {@code false} otherwise.
      */
-    public boolean matches(@Nonnull E entity, @Nonnull Message<?> message) {
+    public boolean matches(@Nonnull E entity, @Nonnull Message message) {
         Class<?> payloadType = metamodel.getExpectedRepresentation(message.type().qualifiedName());
         if (payloadType == null) {
             // This message is not handled in this entity metamodel, so we cannot match it.
@@ -98,7 +98,7 @@ public class AnnotatedEntityModelRoutingKeyMatcher<E> {
                     messageRoutingProperty,
                     metamodel.entityType()));
         }
-        Object convertedPayload = metamodel.converter().convert(message.payload(), payloadType);
+        Object convertedPayload = metamodel.messageConverter().convertPayload(message, payloadType);
 
         Object routingValue = routingProperty.getValue(convertedPayload);
         return matchesInstance(entity, routingValue);

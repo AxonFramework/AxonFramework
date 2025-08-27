@@ -45,7 +45,7 @@ public interface EntityCommandHandler<E> extends MessageHandler {
      * @return The result of the command handling, which may be a {@link CommandResultMessage} or an error message.
      */
     @Nonnull
-    MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+    MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
                                                          @Nonnull E entity,
                                                          @Nonnull ProcessingContext context);
 }

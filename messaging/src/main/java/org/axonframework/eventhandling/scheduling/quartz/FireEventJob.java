@@ -80,12 +80,12 @@ public class FireEventJob implements Job {
             Object event = jobDataBinder.fromJobData(jobData);
             MessageTypeResolver messageTypeResolver = (MessageTypeResolver) schedulerContext.get(
                     MESSAGE_TYPE_RESOLVER_KEY);
-            EventMessage<?> eventMessage = createMessage(event, messageTypeResolver);
+            EventMessage eventMessage = createMessage(event, messageTypeResolver);
 
             EventBus eventBus = (EventBus) schedulerContext.get(EVENT_BUS_KEY);
             TransactionManager txManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
 
-            LegacyUnitOfWork<EventMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
+            LegacyUnitOfWork<EventMessage> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
             if (txManager != null) {
                 unitOfWork.attachTransaction(txManager);
             }
@@ -109,11 +109,11 @@ public class FireEventJob implements Job {
      * @param messageTypeResolver used to resolve the {@link QualifiedName} when publishing {@link EventMessage EventMessages}.
      * @return the message to publish
      */
-    private EventMessage<?> createMessage(Object event, MessageTypeResolver messageTypeResolver) {
+    private EventMessage createMessage(Object event, MessageTypeResolver messageTypeResolver) {
         return event instanceof EventMessage
-                ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
-                                            ((EventMessage<?>) event).payload(),
-                                            ((EventMessage<?>) event).metaData())
-                : new GenericEventMessage<>(messageTypeResolver.resolveOrThrow(event), event);
+                ? new GenericEventMessage(((EventMessage) event).type(),
+                                            ((EventMessage) event).payload(),
+                                            ((EventMessage) event).metaData())
+                : new GenericEventMessage(messageTypeResolver.resolveOrThrow(event), event);
     }
 }

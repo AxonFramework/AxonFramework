@@ -22,19 +22,22 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.avro.AvroSerializer;
 import org.axonframework.serialization.avro.AvroSerializerStrategy;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.springboot.ConverterProperties;
-import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -63,10 +66,10 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
     private ApplicationContext applicationContext;
     private ClassLoader classLoader;
 
-    @Bean(name = "converter")
+    @Bean
     @Primary
-    @ConditionalOnMissingQualifiedBean(beanClass = Converter.class, qualifier = "!eventConverter,messageConverter")
-    public Converter generalConverter(ConverterProperties converterProperties) {
+    @ConditionalOnMissingBean
+    public Converter converter(ConverterProperties converterProperties) {
         ConverterProperties.ConverterType generalConverterType = converterProperties.getGeneral();
         if (ConverterProperties.ConverterType.AVRO == generalConverterType) {
             throw new AxonConfigurationException(format(
@@ -75,39 +78,40 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
                     generalConverterType.name()
             ));
         }
-        return buildSerializer(generalConverterType, null);
+        return buildConverter(generalConverterType, null);
     }
 
+    // todo javadoc
     @Bean
-    @Qualifier("messageConverter")
-    @ConditionalOnMissingQualifiedBean(beanClass = Converter.class, qualifier = "messageConverter")
-    public Converter messageConverter(Converter generalConverter, ConverterProperties converterProperties) {
+    @ConditionalOnMissingBean
+    public MessageConverter messageConverter(Converter generalConverter, ConverterProperties converterProperties) {
         ConverterProperties.ConverterType messagesConverterType = converterProperties.getMessages();
         if (ConverterProperties.ConverterType.DEFAULT == messagesConverterType
                 || converterProperties.getGeneral() == messagesConverterType) {
-            return generalConverter;
+            return new DelegatingMessageConverter(generalConverter);
+        } else {
+            return new DelegatingMessageConverter(buildConverter(messagesConverterType, generalConverter));
         }
-        return buildSerializer(messagesConverterType, generalConverter);
     }
 
     @Bean
-    @Qualifier("eventConverter")
-    @ConditionalOnMissingQualifiedBean(beanClass = Converter.class, qualifier = "eventConverter")
-    public Converter eventConverter(Converter generalConverter,
-                                    @Qualifier("messageConverter") Converter messageConverter,
-                                    ConverterProperties converterProperties) {
+    @ConditionalOnMissingBean
+    public EventConverter eventConverter(Converter generalConverter,
+                                         MessageConverter messageConverter,
+                                         ConverterProperties converterProperties) {
         ConverterProperties.ConverterType eventsConverterType = converterProperties.getEvents();
         if (ConverterProperties.ConverterType.DEFAULT == eventsConverterType
                 || converterProperties.getMessages() == eventsConverterType) {
-            return messageConverter;
+            return new DelegatingEventConverter(messageConverter);
         } else if (converterProperties.getGeneral() == eventsConverterType) {
-            return generalConverter;
+            return new DelegatingEventConverter(generalConverter);
         }
-        return buildSerializer(eventsConverterType, generalConverter);
+        return new DelegatingEventConverter(buildConverter(eventsConverterType, generalConverter));
     }
 
-    private Converter buildSerializer(@Nonnull ConverterProperties.ConverterType converterType,
-                                      @Nullable Converter generalConverter) {
+    @Nonnull
+    private Converter buildConverter(@Nonnull ConverterProperties.ConverterType converterType,
+                                     @Nullable Converter generalConverter) {
         switch (converterType) {
             case AVRO:
                 if (generalConverter == null) {

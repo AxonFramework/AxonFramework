@@ -32,9 +32,9 @@ import static org.mockito.Mockito.*;
  */
 class SimpleEventBusTest {
 
-    private Consumer<List<? extends EventMessage<?>>> listener1;
-    private Consumer<List<? extends EventMessage<?>>> listener2;
-    private Consumer<List<? extends EventMessage<?>>> listener3;
+    private Consumer<List<? extends EventMessage>> listener1;
+    private Consumer<List<? extends EventMessage>> listener2;
+    private Consumer<List<? extends EventMessage>> listener3;
 
     private EventBus testSubject;
 
@@ -73,7 +73,7 @@ class SimpleEventBusTest {
         verify(listener3, times(2)).accept(anyList());
     }
 
-    private EventMessage<Object> newEvent() {
-        return new GenericEventMessage<>(new MessageType("event"), new Object());
+    private EventMessage newEvent() {
+        return new GenericEventMessage(new MessageType("event"), new Object());
     }
 }

@@ -37,7 +37,6 @@ import java.util.function.UnaryOperator;
 @SuppressWarnings("rawtypes")
 public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
 
-    @SuppressWarnings("rawtypes")
     private final Ehcache ehCache;
 
     /**
@@ -45,7 +44,6 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
      *
      * @param ehCache The cache instance to forward calls to
      */
-    @SuppressWarnings("rawtypes")
     public EhCacheAdapter(Ehcache ehCache) {
         this.ehCache = ehCache;
     }
@@ -125,13 +123,12 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
         return newValue != null ? ehCache.replace(key, oldValue, newValue) : remove(key);
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     protected CacheEventListener createListenerAdapter(EntryListener cacheEntryListener) {
         return new EhCacheAdapter.CacheEventListenerAdapter(cacheEntryListener);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     @Override
     protected Registration doRegisterListener(CacheEventListener listenerAdapter) {
         ehCache.getRuntimeConfiguration().registerCacheEventListener(
@@ -150,7 +147,6 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
         };
     }
 
-    @SuppressWarnings("rawtypes")
     private static class CacheEventListenerAdapter implements CacheEventListener {
 
         private final EntryListener delegate;

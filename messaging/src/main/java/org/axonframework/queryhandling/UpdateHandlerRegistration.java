@@ -26,10 +26,10 @@ import reactor.core.publisher.Flux;
  * @author Milan Savic
  * @since 4.0
  */
-public class UpdateHandlerRegistration<U> {
+public class UpdateHandlerRegistration {
 
     private final Registration registration;
-    private final Flux<SubscriptionQueryUpdateMessage<U>> updates;
+    private final Flux<SubscriptionQueryUpdateMessage> updates;
     private final Runnable completeHandler;
 
     /**
@@ -40,7 +40,7 @@ public class UpdateHandlerRegistration<U> {
      * @param completeHandler handler invoked on {@link #complete()}
      */
     public UpdateHandlerRegistration(Registration registration,
-                                     Flux<SubscriptionQueryUpdateMessage<U>> updates,
+                                     Flux<SubscriptionQueryUpdateMessage> updates,
                                      Runnable completeHandler) {
         this.registration = registration;
         this.updates = updates;
@@ -61,7 +61,7 @@ public class UpdateHandlerRegistration<U> {
      *
      * @return a {@link Flux} for subscribing to the update stream
      */
-    public Flux<SubscriptionQueryUpdateMessage<U>> getUpdates() {
+    public Flux<SubscriptionQueryUpdateMessage> getUpdates() {
         return updates;
     }
 

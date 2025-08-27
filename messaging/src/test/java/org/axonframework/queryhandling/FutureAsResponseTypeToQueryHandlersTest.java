@@ -16,13 +16,10 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
-import org.axonframework.queryhandling.annotation.QueryHandler;
-import org.junit.jupiter.api.*;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
+import static java.util.Arrays.asList;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Collection;
 import java.util.List;
@@ -34,10 +31,16 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
-import static org.junit.jupiter.api.Assertions.*;
+import org.axonframework.common.TypeReference;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 /**
  * Tests for different types of queries hitting query handlers with {@link Future} or {@link CompletableFuture} as the
@@ -46,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Milan Savic
  */
 class FutureAsResponseTypeToQueryHandlersTest {
-
+    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {};
     private static final int FUTURE_RESOLVING_TIMEOUT = 500;
 
     private final SimpleQueryBus queryBus = SimpleQueryBus.builder().build();
@@ -61,38 +64,38 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void queryWithMultipleResponses() throws ExecutionException, InterruptedException {
-        QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("myQueryWithMultipleResponses"), "criteria",
                 multipleInstancesOf(String.class)
         );
 
-        List<String> response = queryBus.query(testQuery).get().payload();
+        List<?> response = queryBus.query(testQuery).get().payloadAs(List.class);
 
         assertEquals(asList("Response1", "Response2"), response);
     }
 
     @Test
     void queryWithSingleResponse() throws ExecutionException, InterruptedException {
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("myQueryWithSingleResponse"), "criteria",
                 instanceOf(String.class)
         );
 
-        String response = queryBus.query(testQuery).get().payload();
+        Object response = queryBus.query(testQuery).get().payload();
 
         assertEquals("Response", response);
     }
 
     @Test
     void scatterGatherQueryWithMultipleResponses() {
-        QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("myQueryWithMultipleResponses"), "criteria",
                 multipleInstancesOf(String.class)
         );
 
         List<String> response =
                 queryBus.scatterGather(testQuery, FUTURE_RESOLVING_TIMEOUT * 2, TimeUnit.MILLISECONDS)
-                        .map(Message::payload)
+                        .map(m -> m.payloadAs(LIST_OF_STRINGS))
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList());
 
@@ -101,12 +104,12 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void scatterGatherQueryWithSingleResponse() {
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("myQueryWithSingleResponse"), "criteria",
                 instanceOf(String.class)
         );
 
-        String response =
+        Object response =
                 queryBus.scatterGather(testQuery, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
                         .map(Message::payload)
                         .findFirst()
@@ -124,7 +127,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
         Mono<List<String>> response = queryBus.subscriptionQuery(testQuery)
                                               .initialResult()
-                                              .map(Message::payload);
+                                              .map(m -> m.payloadAs(LIST_OF_STRINGS));
 
         StepVerifier.create(response)
                     .expectNext(asList("Response1", "Response2"))
@@ -140,7 +143,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
         Mono<String> response = queryBus.subscriptionQuery(testQuery)
                                         .initialResult()
-                                        .map(Message::payload);
+                                        .map(m -> m.payloadAs(String.class));
 
         StepVerifier.create(response)
                     .expectNext("Response")
@@ -149,28 +152,28 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void futureQueryWithMultipleResponses() throws ExecutionException, InterruptedException {
-        QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("myQueryFutureWithMultipleResponses"), "criteria",
                 multipleInstancesOf(String.class)
         );
 
         List<String> result = queryBus.query(testQuery)
                                       .get()
-                                      .payload();
+                                      .payloadAs(LIST_OF_STRINGS);
 
         assertEquals(asList("Response1", "Response2"), result);
     }
 
     @Test
     void futureScatterGatherQueryWithMultipleResponses() {
-        QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("myQueryFutureWithMultipleResponses"), "criteria",
                 multipleInstancesOf(String.class)
         );
 
         List<String> result =
                 queryBus.scatterGather(testQuery, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
-                        .map(Message::payload)
+                        .map(m -> m.payloadAs(LIST_OF_STRINGS))
                         .findFirst()
                         .orElse(null);
 
@@ -186,7 +189,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
         Mono<List<String>> response = queryBus.subscriptionQuery(testQuery)
                                               .initialResult()
-                                              .map(Message::payload);
+                                              .map(m -> m.payloadAs(LIST_OF_STRINGS));
 
         StepVerifier.create(response)
                     .expectNext(asList("Response1", "Response2"))

@@ -31,7 +31,7 @@ class SequenceIdentifierCacheTest {
     private final int CACHE_SIZE = 10;
     private final int SEGMENT_ID = 2;
     private SequenceIdentifierCache testSubject;
-    private SequencedDeadLetterQueue<EventMessage<?>> mockSequencedDeadLetterQueue;
+    private SequencedDeadLetterQueue<EventMessage> mockSequencedDeadLetterQueue;
 
     @BeforeEach
     void setUp() {

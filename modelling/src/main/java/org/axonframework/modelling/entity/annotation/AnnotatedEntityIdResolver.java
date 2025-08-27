@@ -21,15 +21,15 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.command.EntityIdResolver;
-import org.axonframework.serialization.Converter;
 
 import java.util.Objects;
 
 /**
- * Implementation of the {@link EntityIdResolver} that converts the payload through the configured {@link Converter}
+ * Implementation of the {@link EntityIdResolver} that converts the payload through the configured {@link MessageConverter}
  * the, taking the expected representation of the message handler through the {@link AnnotatedEntityMetamodel}. It will
  * then use the delegate {@link EntityIdResolver} to resolve the id, defaulting to the
  * {@link AnnotationBasedEntityIdResolver}.
@@ -41,7 +41,7 @@ import java.util.Objects;
 public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, DescribableComponent {
 
     private final AnnotatedEntityMetamodel<?> metamodel;
-    private final Converter converter;
+    private final MessageConverter converter;
     private final EntityIdResolver<ID> delegate;
     private final Class<ID> idType;
 
@@ -51,12 +51,12 @@ public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, Desc
      *
      * @param metamodel The metamodel that dictates the expected representation of the message.
      * @param idType    The type of the id that will be resolved.
-     * @param converter The {@link Converter to use}.
+     * @param converter The {@link MessageConverter} to use.
      * @param delegate  The {@link EntityIdResolver} to use on the message after conversion.
      */
     public AnnotatedEntityIdResolver(@Nonnull AnnotatedEntityMetamodel<?> metamodel,
                                      @Nonnull Class<ID> idType,
-                                     @Nonnull Converter converter,
+                                     @Nonnull MessageConverter converter,
                                      @Nonnull EntityIdResolver<ID> delegate) {
         this.idType = Objects.requireNonNull(idType, "The idType should not be null.");
         this.metamodel = Objects.requireNonNull(metamodel, "The metamodel should not be null,");
@@ -66,14 +66,14 @@ public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, Desc
 
     @Nonnull
     @Override
-    public ID resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+    public ID resolve(@Nonnull Message message, @Nonnull ProcessingContext context) {
         Class<?> expectedRepresentation = metamodel.getExpectedRepresentation(message.type().qualifiedName());
         if (expectedRepresentation != null) {
-            Message<?> convertedMessage = message.withConvertedPayload(expectedRepresentation, converter);
-            return delegate.resolve(convertedMessage, context);
+            return delegate.resolve(message.withConvertedPayload(expectedRepresentation, converter), context);
         }
         throw new AxonConfigurationException(
-                "No expected representation found for message type [" + message.type().qualifiedName() + "]");
+                "No expected representation found for message type [" + message.type().qualifiedName() + "]"
+        );
     }
 
     @Override

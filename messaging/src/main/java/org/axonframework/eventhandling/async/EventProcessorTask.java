@@ -70,8 +70,8 @@ public class EventProcessorTask implements Runnable {
      * @return true if the event was scheduled successfully, false if this scheduler is not available to process events
      * @throws IllegalStateException if the queue in this scheduler does not have the capacity to add this event
      */
-    public synchronized boolean scheduleEvents(List<? extends EventMessage<?>> events,
-                                               Consumer<List<? extends EventMessage<?>>> processor) {
+    public synchronized boolean scheduleEvents(List<? extends EventMessage> events,
+                                               Consumer<List<? extends EventMessage>> processor) {
         if (cleanedUp) {
             // this scheduler has been shut down; accept no more events
             return false;
@@ -157,11 +157,11 @@ public class EventProcessorTask implements Runnable {
     }
 
     private static class ProcessingTask {
-        private final List<? extends EventMessage<?>> events;
-        private final Consumer<List<? extends EventMessage<?>>> processor;
+        private final List<? extends EventMessage> events;
+        private final Consumer<List<? extends EventMessage>> processor;
 
-        public ProcessingTask(List<? extends EventMessage<?>> events,
-                              Consumer<List<? extends EventMessage<?>>> processor) {
+        public ProcessingTask(List<? extends EventMessage> events,
+                              Consumer<List<? extends EventMessage>> processor) {
             this.events = events;
             this.processor = processor;
         }

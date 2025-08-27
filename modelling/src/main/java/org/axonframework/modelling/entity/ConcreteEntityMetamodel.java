@@ -126,7 +126,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
 
     @Override
     @Nonnull
-    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage<?> message,
+    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage message,
                                                                       @Nonnull ProcessingContext context) {
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
             return MessageStream.failed(new EntityMissingForInstanceCommandHandler(message));
@@ -146,7 +146,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
     @Override
     @Nonnull
     public MessageStream.Single<CommandResultMessage<?>> handleInstance(
-            @Nonnull CommandMessage<?> message,
+            @Nonnull CommandMessage message,
             @Nonnull E entity,
             @Nonnull ProcessingContext context
     ) {
@@ -176,7 +176,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
 
     @Nullable
     @Override
-    public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    public E evolve(@Nonnull E entity, @Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         var currentEntity = entity;
         for (EntityChildMetamodel<?, E> child : children) {
             currentEntity = child.evolve(currentEntity, event, context);
@@ -196,7 +196,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
      */
     private MessageStream.Single<CommandResultMessage<?>> handleForChildren(
             List<EntityChildMetamodel<?, E>> childrenWithCommandHandler,
-            CommandMessage<?> message,
+            CommandMessage message,
             E entity,
             ProcessingContext context
     ) {
@@ -227,11 +227,11 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
         return entityType;
     }
 
-    private boolean isCreationalCommand(CommandMessage<?> message) {
+    private boolean isCreationalCommand(CommandMessage message) {
         return creationalCommandHandlers.containsKey(message.type().qualifiedName());
     }
 
-    private boolean isInstanceCommand(CommandMessage<?> message) {
+    private boolean isInstanceCommand(CommandMessage message) {
         return instanceCommandHandlers.containsKey(message.type().qualifiedName());
     }
 

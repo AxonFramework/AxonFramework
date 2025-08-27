@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MetadataContextGetterTest {
 
-    private final EventMessage<String> message = asEventMessage("MyEvent")
+    private final EventMessage message = asEventMessage("MyEvent")
             .andMetaData(Collections.singletonMap("myKeyOne", "myValueTwo"))
             .andMetaData(Collections.singletonMap("MyKeyTwo", "2"));
 
@@ -54,9 +54,9 @@ class MetadataContextGetterTest {
         assertNull(MetadataContextGetter.INSTANCE.get(null, "myKeyOne"));
     }
 
-    private static <P> EventMessage<P> asEventMessage(P event) {
-        return new GenericEventMessage<>(
-                new GenericMessage<>(new MessageType(event.getClass()), event),
+    private static <P> EventMessage asEventMessage(P event) {
+        return new GenericEventMessage(
+                new GenericMessage(new MessageType(event.getClass()), event),
                 () -> GenericEventMessage.clock.instant()
         );
     }

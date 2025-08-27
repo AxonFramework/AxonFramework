@@ -20,10 +20,15 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -33,7 +38,6 @@ import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 
 import java.util.LinkedList;
@@ -42,9 +46,9 @@ import java.util.Set;
 import java.util.concurrent.CompletionException;
 
 /**
- * Abstract base class for tests of the {@link AnnotatedEntityMetamodel} that provide common setup for
- * parameter resolver factory and message type resolver. In addition, it makes it easier to fire commands and events
- * against the metamodel.
+ * Abstract base class for tests of the {@link AnnotatedEntityMetamodel} that provide common setup for parameter
+ * resolver factory and message type resolver. In addition, it makes it easier to fire commands and events against the
+ * metamodel.
  * <p>
  * This class evolves the entity based on any events published, mimicking the behavior of a repository.
  *
@@ -55,7 +59,8 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
 
     protected final ParameterResolverFactory parameterResolverFactory = createParameterResolverFactory();
     protected final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
-    protected final Converter converter = new JacksonConverter();
+    protected final MessageConverter messageConverter = new DelegatingMessageConverter(new JacksonConverter());
+    protected final EventConverter eventConverter = new DelegatingEventConverter(new JacksonConverter());
     protected final AnnotatedEntityMetamodel<E> metamodel = getMetamodel();
     protected E entityState = null;
     protected List<Object> publishedEvents = new LinkedList<>();
@@ -63,7 +68,7 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
     protected abstract AnnotatedEntityMetamodel<E> getMetamodel();
 
     protected Object dispatchInstanceCommand(Object command) {
-        CommandMessage<?> message = createCommand(command);
+        CommandMessage message = createCommand(command);
         try {
             return metamodel.handleInstance(message, entityState, StubProcessingContext.forMessage(message))
                             .first()
@@ -80,7 +85,7 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
     }
 
     protected Object dispatchCreateCommand(Object command) {
-        CommandMessage<?> message = createCommand(command);
+        CommandMessage message = createCommand(command);
         try {
             return metamodel.handleCreate(message, StubProcessingContext.forMessage(message))
                             .first()
@@ -96,17 +101,12 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
         }
     }
 
-    protected E evolve(E entity, Object event) {
-        EventMessage<?> message = new GenericEventMessage<>(new MessageType(event.getClass()), event);
-        return metamodel.evolve(entity, message, StubProcessingContext.forMessage(message));
+    protected <P> CommandMessage createCommand(P command) {
+        return new GenericCommandMessage(new MessageType(command.getClass()), command);
     }
 
-    protected <P> CommandMessage<P> createCommand(P command) {
-        return new GenericCommandMessage<>(new MessageType(command.getClass()), command);
-    }
-
-    protected <P> EventMessage<P> createEvent(P event) {
-        return new GenericEventMessage<>(new MessageType(event.getClass()), event);
+    protected <P> EventMessage createEvent(P event) {
+        return new GenericEventMessage(new MessageType(event.getClass()), event);
     }
 
     protected ParameterResolverFactory createParameterResolverFactory() {
@@ -131,14 +131,19 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
                 return;
             }
             events.forEach(event -> {
-                EventMessage<?> eventMessage;
+                EventMessage eventMessage;
                 if (event instanceof EventMessage) {
-                    eventMessage = (EventMessage<?>) event;
+                    eventMessage = (EventMessage) event;
                 } else {
                     eventMessage = createEvent(event);
                 }
                 metamodel.evolve(entityState, eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            throw new UnsupportedOperationException("Not required for testing");
         }
     }
 }

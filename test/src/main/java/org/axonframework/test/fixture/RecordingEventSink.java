@@ -41,7 +41,7 @@ import java.util.concurrent.CompletableFuture;
 public class RecordingEventSink implements EventSink {
 
     protected final EventSink delegate;
-    private final List<EventMessage<?>> recorded;
+    private final List<EventMessage> recorded;
 
     /**
      * Creates a new {@link RecordingEventSink} that will record all events published to the given {@code delegate}.
@@ -54,12 +54,12 @@ public class RecordingEventSink implements EventSink {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<EventMessage<?>> events) {
+                                           @Nonnull List<EventMessage> events) {
         return delegate.publish(context, events)
                        .thenRun(() -> recorded.addAll(events));
     }
 
-    public List<EventMessage<?>> recorded() {
+    public List<EventMessage> recorded() {
         return List.copyOf(recorded);
     }
 

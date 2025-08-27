@@ -41,7 +41,7 @@ import java.util.function.Supplier;
  * @author Marc Gathier
  * @since 4.0.0
  */
-public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
+public class GrpcBackedQueryMessage<P, R> implements QueryMessage {
 
     private final QueryRequest query;
     private final LazyDeserializingObject<P> serializedPayload;
@@ -144,7 +144,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
 
     @Override
     @Nonnull
-    public <T> QueryMessage<T, R> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
+    public QueryMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
         return null;
     }

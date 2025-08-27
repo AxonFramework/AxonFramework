@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.event;
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.event.dcb.Event;
 import io.axoniq.axonserver.grpc.event.dcb.TaggedEvent;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.GenericTaggedEventMessage;
@@ -31,6 +32,7 @@ import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -42,11 +44,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link EventConverter}.
+ * Test class validating the {@link TaggedEventConverter}.
  *
  * @author Steven van Beelen
  */
-class EventConverterTest {
+class TaggedEventConverterTest {
 
     private static final String EVENT_ID = UUID.randomUUID().toString();
     private static final Long EVENT_TIMESTAMP = Instant.now().toEpochMilli();
@@ -57,7 +59,7 @@ class EventConverterTest {
 
     private Converter converter;
 
-    private EventConverter testSubject;
+    private TaggedEventConverter testSubject;
 
     private TestEvent eventPayload;
     private byte[] eventPayloadByteArray;
@@ -66,7 +68,7 @@ class EventConverterTest {
     void setUp() {
         converter = spy(new JacksonConverter());
 
-        testSubject = new EventConverter(converter);
+        testSubject = new TaggedEventConverter(new DelegatingEventConverter(converter));
 
         eventPayload = new TestEvent("Lorem Ipsum", 42, List.of(true, false));
         eventPayloadByteArray = converter.convert(eventPayload, byte[].class);
@@ -77,7 +79,7 @@ class EventConverterTest {
     @Test
     void throwsNullPointerExceptionForNullConverter() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new EventConverter(null));
+        assertThrows(NullPointerException.class, () -> new TaggedEventConverter(null));
     }
 
     @Test
@@ -89,11 +91,11 @@ class EventConverterTest {
     @Test
     void convertTaggedEventMessageWorksAsExpected() {
         // given...
-        EventMessage<TestEvent> eventMessage = new GenericEventMessage<>(
+        EventMessage eventMessage = new GenericEventMessage(
                 EVENT_ID, EVENT_TYPE, eventPayload, EVENT_METADATA, Instant.ofEpochMilli(EVENT_TIMESTAMP)
         );
         Set<Tag> tags = Set.of(Tag.of("key", "value"), Tag.of("key2", "value2"), Tag.of("key3", "value3"));
-        TaggedEventMessage<EventMessage<TestEvent>> taggedEventMessage =
+        TaggedEventMessage<EventMessage> taggedEventMessage =
                 new GenericTaggedEventMessage<>(eventMessage, tags);
         // when...
         TaggedEvent result = testSubject.convertTaggedEventMessage(taggedEventMessage);
@@ -103,7 +105,7 @@ class EventConverterTest {
         assertEquals(EVENT_TIMESTAMP, resultEvent.getTimestamp());
         assertEquals(EVENT_NAME, resultEvent.getName());
         assertEquals(EVENT_VERSION, resultEvent.getVersion());
-        verify(converter).convert(eventPayload, byte[].class);
+        verify(converter).convert(eventPayload, (Type) byte[].class);
         assertArrayEquals(eventPayloadByteArray, resultEvent.getPayload().toByteArray());
         Map<String, String> resultMetaData = resultEvent.getMetadataMap();
         assertEquals(1, resultMetaData.size());
@@ -144,8 +146,8 @@ class EventConverterTest {
                 "Byte", "4",
                 "Boolean", "false"
         ));
-        EventMessage<TestEvent> eventMessage = new GenericEventMessage<>(EVENT_TYPE, eventPayload, metaData);
-        TaggedEventMessage<EventMessage<TestEvent>> taggedEventMessage =
+        EventMessage eventMessage = new GenericEventMessage(EVENT_TYPE, eventPayload, metaData);
+        TaggedEventMessage<EventMessage> taggedEventMessage =
                 new GenericTaggedEventMessage<>(eventMessage, Set.of(Tag.of("key", "value")));
         // when...
         Map<String, String> result = testSubject.convertTaggedEventMessage(taggedEventMessage)
@@ -181,11 +183,11 @@ class EventConverterTest {
                                .putAllMetadata(EVENT_METADATA)
                                .build();
         // when...
-        EventMessage<byte[]> result = testSubject.convertEvent(testEvent);
+        EventMessage result = testSubject.convertEvent(testEvent);
         // then...
         assertEquals(EVENT_ID, result.identifier());
         assertEquals(EVENT_TYPE, result.type());
-        assertArrayEquals(eventPayloadByteArray, result.payload());
+        assertArrayEquals(eventPayloadByteArray, result.payloadAs(byte[].class));
         assertEquals(EVENT_METADATA, result.metaData());
         assertEquals(EVENT_TIMESTAMP, result.timestamp().toEpochMilli());
     }

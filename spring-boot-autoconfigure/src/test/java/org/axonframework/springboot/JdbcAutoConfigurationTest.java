@@ -198,7 +198,7 @@ public class JdbcAutoConfigurationTest {
                        EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
                        assertNotNull(eventProcessingConfig);
 
-                       Optional<SequencedDeadLetterQueue<EventMessage<?>>> dlq =
+                       Optional<SequencedDeadLetterQueue<EventMessage>> dlq =
                                eventProcessingConfig.deadLetterQueue("first");
                        assertTrue(dlq.isPresent());
                        assertTrue(dlq.get() instanceof JdbcSequencedDeadLetterQueue);
@@ -218,7 +218,7 @@ public class JdbcAutoConfigurationTest {
                        EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
                        assertNotNull(eventProcessingConfig);
 
-                       Optional<SequencedDeadLetterQueue<EventMessage<?>>> dlq =
+                       Optional<SequencedDeadLetterQueue<EventMessage>> dlq =
                                eventProcessingConfig.deadLetterQueue("first");
                        assertTrue(dlq.isPresent());
                        assertTrue(dlq.get() instanceof JdbcSequencedDeadLetterQueue);

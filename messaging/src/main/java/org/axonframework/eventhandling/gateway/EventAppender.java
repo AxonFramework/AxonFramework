@@ -16,8 +16,11 @@
 
 package org.axonframework.eventhandling.gateway;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.annotation.EventAppenderParameterResolverFactory;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -25,12 +28,13 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import jakarta.annotation.Nonnull;
 
 /**
- * Component that publishes events to an {@link EventSink} in the context of a {@link ProcessingContext}. The events
- * will be published in the context this appender was created for. You can construct one through the
- * {@link #forContext(ProcessingContext, Configuration)}.
+ * Component that appends events to an {@link EventSink} in the context of a {@link ProcessingContext}. This makes the
+ * {@code EventAppender} the <b>preferred</b> way to append events from within another message handling method.
+ * <p>
+ * The events will be appended in the context this appender was created for. You can construct one through the
+ * {@link #forContext(ProcessingContext)}.
  * <p>
  * When using annotation-based {@link org.axonframework.messaging.annotation.MessageHandler @MessageHandler-methods} and
  * you have declared an argument of type {@link EventAppender}, the appender will automatically be injected by the
@@ -41,7 +45,7 @@ import jakarta.annotation.Nonnull;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public interface EventAppender {
+public interface EventAppender extends DescribableComponent {
 
     /**
      * The {@link Context.ResourceKey} used to store the {@link EventAppender} in the {@link ProcessingContext}.
@@ -49,24 +53,16 @@ public interface EventAppender {
     Context.ResourceKey<ProcessingContextEventAppender> RESOURCE_KEY = Context.ResourceKey.withLabel("EventAppender");
 
     /**
-     * Creates an appender for the given {@link ProcessingContext} and {@link Configuration}. You can use this appender
-     * only for the context it was created for. There is no harm in using this method more than once, as the same
-     * appender will be returned.
+     * Creates an appender for the given {@link ProcessingContext}.
+     * <p>
+     * You can use this appender only for the context it was created for. There is no harm in using this method more
+     * than once, as the same appender will be returned.
      *
-     * @param context       The {@link ProcessingContext} to create the appender for.
-     * @param configuration The {@link Configuration} to use for the appender.
+     * @param context The {@link ProcessingContext} to create the appender for.
      * @return The created appender.
      */
-    static EventAppender forContext(
-            @Nonnull ProcessingContext context,
-            @Nonnull Configuration configuration
-    ) {
-        Objects.requireNonNull(configuration, "The configuration must not be null.");
-        return forContext(
-                context,
-                configuration.getComponent(EventSink.class),
-                configuration.getComponent(MessageTypeResolver.class)
-        );
+    static EventAppender forContext(@Nonnull ProcessingContext context) {
+        return forContext(context, context.component(EventSink.class), context.component(MessageTypeResolver.class));
     }
 
     /**

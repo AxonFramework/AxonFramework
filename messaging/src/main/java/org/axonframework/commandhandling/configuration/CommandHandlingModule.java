@@ -24,14 +24,13 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.serialization.Converter;
 
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.configuration.MessagingConfigurationDefaults.MESSAGE_CONVERTER_NAME;
 
 /**
  * A {@link Module} and {@link ModuleBuilder} implementation providing operation to construct a command
@@ -199,7 +198,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
             return commandHandlingComponent(c -> new AnnotatedCommandHandlingComponent<>(
                     handlingComponentBuilder.build(c),
                     c.getComponent(ParameterResolverFactory.class),
-                    c.getComponent(Converter.class, MESSAGE_CONVERTER_NAME)
+                    c.getComponent(MessageConverter.class)
             ));
         }
     }

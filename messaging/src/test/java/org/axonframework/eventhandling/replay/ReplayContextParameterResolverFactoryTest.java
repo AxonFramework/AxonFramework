@@ -57,25 +57,25 @@ class ReplayContextParameterResolverFactoryTest {
 
     @Test
     void resolvesIfMatching() throws Exception {
-        GenericTrackedEventMessage<Object> replayEvent = new GenericTrackedEventMessage<>(replayToken,
+        GenericTrackedEventMessage replayEvent = new GenericTrackedEventMessage(replayToken,
                                                                                           asEventMessage(1L));
         ProcessingContext replayEventContext = StubProcessingContext.forMessage(replayEvent);
-        GenericTrackedEventMessage<Object> liveEvent = new GenericTrackedEventMessage<>(regularToken,
+        GenericTrackedEventMessage liveEvent = new GenericTrackedEventMessage(regularToken,
                                                                                         asEventMessage(2L));
         ProcessingContext liveEventContext = StubProcessingContext.forMessage(liveEvent);
 
         assertTrue(testSubject.canHandle(replayEvent, replayEventContext));
         assertTrue(testSubject.canHandle(liveEvent, liveEventContext));
-        TrackedEventMessage<Object> event1 = createMessage(1L, true);
+        TrackedEventMessage event1 = createMessage(1L, true);
         ProcessingContext event1Context = StubProcessingContext.forMessage(event1);
         testSubject.handleSync(event1, event1Context);
-        TrackedEventMessage<Object> event2 = createMessage(2L, true);
+        TrackedEventMessage event2 = createMessage(2L, true);
         ProcessingContext event2Context = StubProcessingContext.forMessage(event2);
         testSubject.handleSync(event2, event2Context);
-        TrackedEventMessage<Object> event3 = createMessage(3L, true);
+        TrackedEventMessage event3 = createMessage(3L, true);
         ProcessingContext event3Context = StubProcessingContext.forMessage(event3);
         testSubject.handleSync(event3, event3Context);
-        TrackedEventMessage<Object> event4 = createMessage(4L, false);
+        TrackedEventMessage event4 = createMessage(4L, false);
         ProcessingContext event4Context = StubProcessingContext.forMessage(event4);
         testSubject.handleSync(event4, event4Context);
 
@@ -83,8 +83,8 @@ class ReplayContextParameterResolverFactoryTest {
         assertEquals(asList(2L, 3L), handler.receivedInReplay);
     }
 
-    private TrackedEventMessage<Object> createMessage(Long position, boolean replay) {
-        return new GenericTrackedEventMessage<>(createToken(position, replay), asEventMessage(position));
+    private TrackedEventMessage createMessage(Long position, boolean replay) {
+        return new GenericTrackedEventMessage(createToken(position, replay), asEventMessage(position));
     }
 
     private TrackingToken createToken(Long position, boolean replay) {

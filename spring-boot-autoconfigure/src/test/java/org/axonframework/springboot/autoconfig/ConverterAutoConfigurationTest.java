@@ -19,6 +19,10 @@ package org.axonframework.springboot.autoconfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
@@ -34,8 +38,9 @@ import org.springframework.context.annotation.Configuration;
 
 import java.lang.reflect.Field;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link ConverterAutoConfiguration}, {@link ObjectMapperAutoConfiguration}, and
@@ -56,12 +61,28 @@ class ConverterAutoConfigurationTest {
     void defaultConverterConfigurationUsesJacksonConverterThroughout() {
         testContext.run(context -> {
             Converter generalConverter = context.getBean(Converter.class);
-            Converter messageConverter = context.getBean("messageConverter", Converter.class);
-            Converter eventConverter = context.getBean("eventConverter", Converter.class);
+            MessageConverter messageConverter = context.getBean(MessageConverter.class);
+            EventConverter eventConverter = context.getBean(EventConverter.class);
 
             assertThat(generalConverter).isInstanceOf(JacksonConverter.class);
-            assertThat(messageConverter).isInstanceOf(JacksonConverter.class);
-            assertThat(eventConverter).isInstanceOf(JacksonConverter.class);
+            assertThat(messageConverter).isInstanceOf(DelegatingMessageConverter.class);
+            Converter wrappedMessageConverter = ((DelegatingMessageConverter) messageConverter).delegate();
+            assertThat(wrappedMessageConverter).isEqualTo(generalConverter);
+            assertThat(eventConverter).isInstanceOf(DelegatingEventConverter.class);
+            MessageConverter wrappedEventConverter = ((DelegatingEventConverter) eventConverter).delegate();
+            assertThat(wrappedEventConverter).isEqualTo(messageConverter);
+        });
+    }
+
+    @Test
+    void overrideAllConverterOptions() {
+        testContext.withUserConfiguration(CustomContext.class).run(context -> {
+            assertThat(context.getBeansOfType(Converter.class).size()).isEqualTo(3);
+            assertThat(context).hasBean("customConverter");
+            assertThat(context).hasSingleBean(MessageConverter.class);
+            assertThat(context).hasBean("customMessageConverter");
+            assertThat(context).hasSingleBean(EventConverter.class);
+            assertThat(context).hasBean("customEventConverter");
         });
     }
 
@@ -77,8 +98,8 @@ class ConverterAutoConfigurationTest {
             Field objectMapperField = JacksonConverter.class.getDeclaredField("objectMapper");
 
             Converter generalConverter = context.getBean(Converter.class);
-            Converter messageConverter = context.getBean("messageConverter", Converter.class);
-            Converter eventConverter = context.getBean("eventConverter", Converter.class);
+            Converter messageConverter = getWrappedMessageConverter(context.getBean(MessageConverter.class));
+            Converter eventConverter = getWrappedEventConverter(context.getBean(EventConverter.class));
 
             ObjectMapper objectMapper = context.getBean("defaultAxonObjectMapper", ObjectMapper.class);
 
@@ -110,8 +131,8 @@ class ConverterAutoConfigurationTest {
             Field objectMapperField = JacksonConverter.class.getDeclaredField("objectMapper");
 
             Converter generalConverter = context.getBean(Converter.class);
-            Converter messageConverter = context.getBean("messageConverter", Converter.class);
-            Converter eventConverter = context.getBean("eventConverter", Converter.class);
+            Converter messageConverter = getWrappedMessageConverter(context.getBean(MessageConverter.class));
+            Converter eventConverter = getWrappedEventConverter(context.getBean(EventConverter.class));
             ObjectMapper objectMapper = context.getBean("testObjectMapper", ObjectMapper.class);
 
             ObjectMapper resultGeneralMapper = ReflectionUtils.getFieldValue(objectMapperField, generalConverter);
@@ -140,8 +161,8 @@ class ConverterAutoConfigurationTest {
             Field objectMapperField = JacksonConverter.class.getDeclaredField("objectMapper");
 
             Converter generalConverter = context.getBean(Converter.class);
-            Converter messageConverter = context.getBean("messageConverter", Converter.class);
-            Converter eventConverter = context.getBean("eventConverter", Converter.class);
+            Converter messageConverter = getWrappedMessageConverter(context.getBean(MessageConverter.class));
+            Converter eventConverter = getWrappedEventConverter(context.getBean(EventConverter.class));
 
             ObjectMapper resultGeneralMapper = ReflectionUtils.getFieldValue(objectMapperField, generalConverter);
             ObjectMapper resultMessageMapper = ReflectionUtils.getFieldValue(objectMapperField, messageConverter);
@@ -174,8 +195,8 @@ class ConverterAutoConfigurationTest {
             Field objectMapperField = JacksonConverter.class.getDeclaredField("objectMapper");
 
             Converter generalConverter = context.getBean(Converter.class);
-            Converter messageConverter = context.getBean("messageConverter", Converter.class);
-            Converter eventConverter = context.getBean("eventConverter", Converter.class);
+            Converter messageConverter = getWrappedMessageConverter(context.getBean(MessageConverter.class));
+            Converter eventConverter = getWrappedEventConverter(context.getBean(EventConverter.class));
             CBORMapper cborMapper = context.getBean("testCborMapper", CBORMapper.class);
 
             ObjectMapper resultGeneralMapper = ReflectionUtils.getFieldValue(objectMapperField, generalConverter);
@@ -191,6 +212,16 @@ class ConverterAutoConfigurationTest {
         });
     }
 
+    private static Converter getWrappedMessageConverter(MessageConverter messageConverter) {
+        assertThat(messageConverter).isInstanceOf(DelegatingMessageConverter.class);
+        return ((DelegatingMessageConverter) messageConverter).delegate();
+    }
+
+    private static Converter getWrappedEventConverter(EventConverter eventConverter) {
+        assertThat(eventConverter).isInstanceOf(DelegatingEventConverter.class);
+        return getWrappedMessageConverter(((DelegatingEventConverter) eventConverter).delegate());
+    }
+
     @Configuration
     @EnableAutoConfiguration(exclude = {
             JmxAutoConfiguration.class,
@@ -201,6 +232,33 @@ class ConverterAutoConfigurationTest {
     })
     public static class TestContext {
 
+
+    }
+
+    @Configuration
+    @EnableAutoConfiguration(exclude = {
+            JmxAutoConfiguration.class,
+            WebClientAutoConfiguration.class,
+            DataSourceAutoConfiguration.class,
+            JacksonAutoConfiguration.class,
+            HttpMessageConvertersAutoConfiguration.class,
+    })
+    public static class CustomContext {
+
+        @Bean
+        public Converter customConverter() {
+            return mock(Converter.class);
+        }
+
+        @Bean
+        public MessageConverter customMessageConverter() {
+            return mock(MessageConverter.class);
+        }
+
+        @Bean
+        public EventConverter customEventConverter() {
+            return mock(EventConverter.class);
+        }
     }
 
     @Configuration

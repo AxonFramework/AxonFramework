@@ -41,7 +41,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public class SimpleEventStore implements EventStore, StreamableEventSource<EventMessage<?>> {
+public class SimpleEventStore implements EventStore, StreamableEventSource<EventMessage> {
 
     private final EventStorageEngine eventStorageEngine;
     private final TagResolver tagResolver;
@@ -77,11 +77,11 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
-                                           @Nonnull List<EventMessage<?>> events) {
+                                           @Nonnull List<EventMessage> events) {
         if (context == null) {
             AppendCondition none = AppendCondition.none();
             List<TaggedEventMessage<?>> taggedEvents = new ArrayList<>();
-            for (EventMessage<?> event : events) {
+            for (EventMessage event : events) {
                 taggedEvents.add(new GenericTaggedEventMessage<>(event, tagResolver.resolve(event)));
             }
             return eventStorageEngine.appendEvents(none, taggedEvents)
@@ -96,15 +96,15 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
     }
 
     private void appendToTransaction(ProcessingContext context,
-                                     List<EventMessage<?>> events) {
+                                     List<EventMessage> events) {
         EventStoreTransaction transaction = transaction(context);
-        for (EventMessage<?> event : events) {
+        for (EventMessage event : events) {
             transaction.appendEvent(event);
         }
     }
 
     @Override
-    public MessageStream<EventMessage<?>> open(@Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition) {
         return eventStorageEngine.stream(condition);
     }
 

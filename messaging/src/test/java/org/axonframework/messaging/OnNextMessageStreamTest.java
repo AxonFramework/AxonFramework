@@ -35,29 +35,29 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
+class OnNextMessageStreamTest extends MessageStreamTest<Message> {
 
-    private static final Consumer<Entry<Message<String>>> NO_OP_ON_NEXT = message -> {
+    private static final Consumer<Entry<Message>> NO_OP_ON_NEXT = message -> {
     };
 
     @Override
-    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
+    MessageStream<Message> completedTestSubject(List<Message> messages) {
         return new OnNextMessageStream<>(MessageStream.fromIterable(messages), NO_OP_ON_NEXT);
     }
 
     @Override
-    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         return new OnNextMessageStream.Single<>(MessageStream.just(message), NO_OP_ON_NEXT);
     }
 
     @Override
-    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("OnNextMessageStream does not support empty streams");
         return null;
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+    MessageStream<Message> failingTestSubject(List<Message> messages,
                                                       Exception failure) {
         return new OnNextMessageStream<>(MessageStream.fromIterable(messages)
                                                       .concatWith(MessageStream.failed(failure)),
@@ -65,16 +65,16 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
     }
 
     @Override
-    Message<String> createRandomMessage() {
-        return new GenericMessage<>(new MessageType("message"),
+    Message createRandomMessage() {
+        return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test
     void onNextNotInvokedOnEmptyStream() {
         //noinspection unchecked
-        Consumer<Entry<Message<Void>>> handler = mock();
-        MessageStream<Message<Void>> testSubject = MessageStream.empty().onNext(handler);
+        Consumer<Entry<Message>> handler = mock();
+        MessageStream<Message> testSubject = MessageStream.empty().onNext(handler);
 
         testSubject.first().asCompletableFuture().isDone();
         verify(handler, never()).accept(any());
@@ -82,11 +82,11 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Test
     void verifyOnNextInvokedForFirstElementWhenUsingOnCompletableFuture() {
-        List<Entry<Message<String>>> seen = new ArrayList<>();
-        Message<String> first = createRandomMessage();
-        List<Message<String>> messages = List.of(first, createRandomMessage());
+        List<Entry<Message>> seen = new ArrayList<>();
+        Message first = createRandomMessage();
+        List<Message> messages = List.of(first, createRandomMessage());
 
-        CompletableFuture<Message<String>> actual = MessageStream.fromIterable(messages)
+        CompletableFuture<Message> actual = MessageStream.fromIterable(messages)
                                                                  .onNext(seen::add)
                                                                  .first()
                                                                  .asCompletableFuture()
@@ -99,10 +99,10 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Test
     void verifyOnNextInvokedForAllElementsWhenUsingAsFlux() {
-        List<Entry<Message<String>>> seen = new ArrayList<>();
-        Message<String> first = createRandomMessage();
-        Message<String> second = createRandomMessage();
-        List<Message<String>> messages = List.of(first, second);
+        List<Entry<Message>> seen = new ArrayList<>();
+        Message first = createRandomMessage();
+        Message second = createRandomMessage();
+        List<Message> messages = List.of(first, second);
 
         StepVerifier.create(MessageStream.fromIterable(messages)
                                          .onNext(seen::add)

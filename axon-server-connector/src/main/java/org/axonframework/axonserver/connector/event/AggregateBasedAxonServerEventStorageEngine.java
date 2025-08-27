@@ -33,6 +33,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
@@ -48,7 +49,6 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.Converter;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -72,7 +72,7 @@ import static org.axonframework.eventsourcing.eventstore.AggregateBasedEventStor
 public class AggregateBasedAxonServerEventStorageEngine implements EventStorageEngine {
 
     private final AxonServerConnection connection;
-    private final Converter converter;
+    private final EventConverter converter;
 
     /**
      * Initialize the {@code LegacyAxonServerEventStorageEngine} with given {@code connection} to Axon Server and given
@@ -82,7 +82,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
      * @param converter The converter to use to serialize payloads to bytes
      */
     public AggregateBasedAxonServerEventStorageEngine(@Nonnull AxonServerConnection connection,
-                                                      @Nonnull Converter converter) {
+                                                      @Nonnull EventConverter converter) {
         this.connection = Objects.requireNonNull(connection, "The connection must not be null.");
         this.converter = Objects.requireNonNull(converter, "The converter must not be null.");
     }
@@ -106,7 +106,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         AppendEventsTransaction tx = connection.eventChannel().startAppendEventsTransaction();
         try {
             events.forEach(taggedEvent -> {
-                EventMessage<?> event = taggedEvent.event();
+                EventMessage event = taggedEvent.event();
                 ByteString payloadData = ByteString.copyFrom(event.payloadAs(byte[].class, converter));
                 Event.Builder builder = Event.newBuilder()
                                              .setPayload(SerializedObject.newBuilder()
@@ -161,7 +161,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
         CompletableFuture<Void> endOfStreams = new CompletableFuture<>();
         List<AggregateSource> aggregateSources = condition.criteria()
                                                           .flatten()
@@ -191,7 +191,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
                 connection.eventChannel()
                           .openAggregateStream(aggregateIdentifier, condition.start());
 
-        MessageStream<EventMessage<?>> source =
+        MessageStream<EventMessage> source =
                 MessageStream.fromStream(aggregateStream.asStream(),
                                          this::convertToMessage,
                                          event -> setMarkerAndBuildContext(event.getAggregateIdentifier(),
@@ -225,7 +225,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
         TrackingToken trackingToken = condition.position();
         if (trackingToken instanceof GlobalSequenceTrackingToken gtt) {
             return new AxonServerMessageStream(connection.eventChannel().openStream(gtt.getGlobalIndex(), 32),
@@ -237,9 +237,9 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         }
     }
 
-    private EventMessage<byte[]> convertToMessage(Event event) {
+    private EventMessage convertToMessage(Event event) {
         SerializedObject payload = event.getPayload();
-        return new GenericEventMessage<>(
+        return new GenericEventMessage(
                 event.getMessageIdentifier(),
                 new MessageType(payload.getType(), payload.getRevision()),
                 payload.getData().toByteArray(),
@@ -284,7 +284,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
      */
     private record AggregateSource(
             AtomicReference<AggregateBasedConsistencyMarker> markerReference,
-            MessageStream<EventMessage<?>> source
+            MessageStream<EventMessage> source
     ) {
 
     }

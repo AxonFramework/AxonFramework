@@ -59,14 +59,14 @@ public class AggregateSnapshotterTest {
     @Test
     void createSnapshot() {
         String aggregateIdentifier = UUID.randomUUID().toString();
-        DomainEventMessage<?> firstEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage firstEvent = new GenericDomainEventMessage(
                 "type", aggregateIdentifier, 0L, new MessageType("event"), "Mock contents"
         );
         DomainEventStream eventStream = DomainEventStream.of(firstEvent);
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
         when(mockAggregateFactory.createAggregateRoot(aggregateIdentifier, firstEvent)).thenReturn(aggregate);
 
-        DomainEventMessage<?> snapshot =
+        DomainEventMessage snapshot =
                 testSubject.createSnapshot(StubAggregate.class, aggregateIdentifier, eventStream);
         verify(mockAggregateFactory).createAggregateRoot(aggregateIdentifier, firstEvent);
         assertSame(aggregate, snapshot.payload());
@@ -77,18 +77,18 @@ public class AggregateSnapshotterTest {
         UUID aggregateIdentifier = UUID.randomUUID();
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
 
-        DomainEventMessage<StubAggregate> first = new GenericDomainEventMessage<>(
+        DomainEventMessage first = new GenericDomainEventMessage(
                 "type", aggregate.getIdentifier(), 0, new MessageType("snapshot"), aggregate
         );
-        DomainEventMessage<String> second = new GenericDomainEventMessage<>(
+        DomainEventMessage second = new GenericDomainEventMessage(
                 "type", aggregateIdentifier.toString(), 0, new MessageType("event"), "Mock contents"
         );
         DomainEventStream eventStream = DomainEventStream.of(first, second);
 
         when(mockAggregateFactory.createAggregateRoot(any(), any(DomainEventMessage.class)))
-                .thenAnswer(invocation -> ((DomainEventMessage<?>) invocation.getArguments()[1]).payload());
+                .thenAnswer(invocation -> ((DomainEventMessage) invocation.getArguments()[1]).payload());
 
-        DomainEventMessage<?> snapshot =
+        DomainEventMessage snapshot =
                 testSubject.createSnapshot(StubAggregate.class, aggregateIdentifier.toString(), eventStream);
         assertSame(aggregate, snapshot.payload(), "Snapshotter did not recognize the aggregate snapshot");
 
@@ -98,17 +98,17 @@ public class AggregateSnapshotterTest {
     @Test
     void createSnapshot_AggregateMarkedDeletedWillNotGenerateSnapshot() {
         String aggregateIdentifier = UUID.randomUUID().toString();
-        DomainEventMessage<?> firstEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage firstEvent = new GenericDomainEventMessage(
                 "type", aggregateIdentifier, 0L, new MessageType("event"), "Mock contents"
         );
-        DomainEventMessage<?> secondEvent = new GenericDomainEventMessage<>(
+        DomainEventMessage secondEvent = new GenericDomainEventMessage(
                 "type", aggregateIdentifier, 0L, new MessageType("event"), "deleted"
         );
         DomainEventStream eventStream = DomainEventStream.of(firstEvent, secondEvent);
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
         when(mockAggregateFactory.createAggregateRoot(aggregateIdentifier, firstEvent)).thenReturn(aggregate);
 
-        DomainEventMessage<?> snapshot =
+        DomainEventMessage snapshot =
                 testSubject.createSnapshot(StubAggregate.class, aggregateIdentifier, eventStream);
 
         verify(mockAggregateFactory).createAggregateRoot(aggregateIdentifier, firstEvent);
@@ -138,8 +138,8 @@ public class AggregateSnapshotterTest {
         }
 
         @EventSourcingHandler
-        protected void handle(EventMessage<?> event) {
-            identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
+        protected void handle(EventMessage event) {
+            identifier = ((DomainEventMessage) event).getAggregateIdentifier();
             // See Issue #
             if ("Mock contents".equals(event.payload().toString())) {
                 apply("Another");

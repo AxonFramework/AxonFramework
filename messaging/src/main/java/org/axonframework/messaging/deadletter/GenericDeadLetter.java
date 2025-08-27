@@ -34,7 +34,7 @@ import jakarta.annotation.Nonnull;
  * @author Mitchell Herrijgers
  * @since 4.6.0
  */
-public class GenericDeadLetter<M extends Message<?>> implements DeadLetter<M> {
+public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
 
     /**
      * {@link Clock} instance used to set the {@link DeadLetter#enqueuedAt()} and {@link DeadLetter#lastTouched()} times

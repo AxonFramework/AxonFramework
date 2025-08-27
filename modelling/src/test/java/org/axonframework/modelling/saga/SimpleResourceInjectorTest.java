@@ -109,7 +109,7 @@ class SimpleResourceInjectorTest {
         }
 
         @Override
-        public boolean canHandle(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
             return true;
         }
 

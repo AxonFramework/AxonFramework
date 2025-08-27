@@ -26,7 +26,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @author Rene de Waele
  * @since 3.0
  */
-public interface MessageHandler<T extends Message<?>, R extends Message<?>> {
+public interface MessageHandler<T extends Message, R extends Message> {
 
     /**
      * Handles the given {@code message}.

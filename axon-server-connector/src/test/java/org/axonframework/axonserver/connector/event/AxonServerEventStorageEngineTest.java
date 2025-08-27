@@ -20,6 +20,8 @@ import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import org.axonframework.common.infra.MockComponentDescriptor;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
 import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.test.server.AxonServerContainer;
@@ -70,7 +72,8 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
                                                            container.getHttpPort(),
                                                            CONTEXT,
                                                            AxonServerContainerUtils.DCB_CONTEXT);
-        return new AxonServerEventStorageEngine(connection, new ChainingContentTypeConverter());
+        EventConverter eventConverter = new DelegatingEventConverter(new ChainingContentTypeConverter());
+        return new AxonServerEventStorageEngine(connection, eventConverter);
     }
 
     @Test
