@@ -19,6 +19,7 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
 
@@ -91,4 +92,16 @@ public interface EventConverter extends DescribableComponent {
      */
     @Nonnull
     <E extends EventMessage> E convertEvent(@Nonnull E event, @Nonnull Type targetType);
+
+    /**
+     * Returns the {@link Converter} this {@code EventConverter} delegates too.
+     * <p>
+     * Useful to invoke {@link org.axonframework.messaging.Message#payloadAs(Type, Converter)} and
+     * {@link org.axonframework.messaging.Message#withConvertedPayload(Type, Converter)}, as well as to construct other
+     * instances with the exact same {@code Converter}.
+     *
+     * @return The {@link Converter} this {@code EventConverter} delegates too.
+     */
+    @Nullable
+    Converter converter();
 }

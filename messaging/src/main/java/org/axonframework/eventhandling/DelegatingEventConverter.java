@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.DelegatingMessageConverter;
 import org.axonframework.messaging.MessageConverter;
@@ -76,15 +75,8 @@ public class DelegatingEventConverter implements EventConverter {
         descriptor.describeProperty("messageConverter", messageConverter);
     }
 
-    /**
-     * Returns the {@link MessageConverter} this {@code EventConverter} delegates too.
-     * <p>
-     * Used to automatically construct other instances with the exact same {@code MessageConverter}.
-     *
-     * @return The {@link MessageConverter} this {@code EventConverter} delegates too.
-     */
-    @Internal
-    public MessageConverter converter() {
-        return messageConverter;
+    @Override
+    public Converter converter() {
+        return messageConverter.converter();
     }
 }

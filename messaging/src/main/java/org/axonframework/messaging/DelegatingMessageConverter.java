@@ -18,7 +18,6 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.serialization.Converter;
 
@@ -64,14 +63,7 @@ public class DelegatingMessageConverter implements MessageConverter {
         descriptor.describeWrapperOf(converter);
     }
 
-    /**
-     * Returns the {@link Converter} this {@code MessageConverter} delegates too.
-     * <p>
-     * Used to automatically construct other instances with the exact same {@code Converter}.
-     *
-     * @return The {@link Converter} this {@code MessageConverter} delegates too.
-     */
-    @Internal
+    @Override
     public Converter converter() {
         return converter;
     }
