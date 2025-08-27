@@ -41,7 +41,7 @@ import java.util.List;
  */
 public class InterceptingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
-    private final List<MessageHandlerInterceptor<EventMessage>> messageHandlerInterceptors;
+    private final EventMessageHandlerInterceptorChain interceptorChain;
 
     /**
      * Constructs the component with the given delegate and interceptors.
@@ -54,16 +54,15 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
             @Nonnull EventHandlingComponent delegate
     ) {
         super(delegate);
-        this.messageHandlerInterceptors = List.copyOf(messageHandlerInterceptors);
+        this.interceptorChain = new EventMessageHandlerInterceptorChain(messageHandlerInterceptors, delegate);
     }
 
     @Nonnull
     @Override
     public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                @Nonnull ProcessingContext context) {
-        return new EventMessageHandlerInterceptorChain(messageHandlerInterceptors, delegate)
-                .proceed(event, context)
-                .ignoreEntries()
-                .cast();
+        return interceptorChain.proceed(event, context)
+                               .ignoreEntries()
+                               .cast();
     }
 }
