@@ -15,13 +15,11 @@
  */
 package org.axonframework.messaging.timeout;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryMessage;
@@ -121,22 +119,15 @@ public class UnitOfWorkTimeoutInterceptorBuilder {
     }
 
     <T extends Message> MessageHandlerInterceptor<T> build() {
-        return new MessageHandlerInterceptor<>() {
-
-            @Nonnull
-            @Override
-            public MessageStream<?> interceptOnHandle(@Nonnull T message,
-                                                      @Nonnull ProcessingContext context,
-                                                      @Nonnull MessageHandlerInterceptorChain<T> interceptorChain) {
-                initializeTimeoutIfNotInitialized(context);
-                AxonTimeLimitedTask task = context.getResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY);
-                try {
-                    MessageStream<?> proceed = interceptorChain.proceed(message, context);
-                    task.ensureNoInterruptionWasSwallowed();
-                    return proceed;
-                } catch (Exception e) {
-                    return MessageStream.failed(task.detectInterruptionInsteadOfException(e));
-                }
+        return (message, context, interceptorChain) -> {
+            initializeTimeoutIfNotInitialized(context);
+            AxonTimeLimitedTask task = context.getResource(TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY);
+            try {
+                MessageStream<?> proceed = interceptorChain.proceed(message, context);
+                task.ensureNoInterruptionWasSwallowed();
+                return proceed;
+            } catch (Exception e) {
+                return MessageStream.failed(task.detectInterruptionInsteadOfException(e));
             }
         };
     }
