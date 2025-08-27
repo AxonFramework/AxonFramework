@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.eventhandling.async.SequentialPolicy;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
@@ -58,7 +59,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
  */
 public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends AbstractStudentTestSuite {
 
-    @RepeatedTest(20)
+    @Test
     void whenStudentEnrolled3CoursesThenSendNotificationTest() {
         // given
         startApp();
@@ -94,27 +95,29 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
 
     @Nonnull
     private static EventHandlingComponent whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation() {
-        var eventHandlingComponent = new SimpleEventHandlingComponent();
-        eventHandlingComponent.subscribe(
-                new QualifiedName(StudentEnrolledEvent.class),
-                (event, context) -> {
-                    var converter = context.component(Converter.class);
-                    var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
-                    var studentId = studentEnrolled.studentId();
-                    var state = context.component(StateManager.class);
-                    var loadedState = state.loadEntity(StudentCoursesAutomationState.class,
-                                                       studentId,
-                                                       context).join();
-                    var readModel = loadedState != null ? loadedState : new StudentCoursesAutomationState(studentId);
-                    if (readModel.courses.size() >= 3) {
-                        var commandGateway = context.component(CommandGateway.class);
-                        var cr = commandGateway.send(new SendMaxCoursesNotificationCommand(studentId), context);
-                        return MessageStream.fromFuture(cr.getResultMessage()).ignoreEntries().cast();
-                    }
-                    return MessageStream.empty();
-                }
-        );
-        return eventHandlingComponent;
+        return SimpleEventHandlingComponent
+                .builder()
+                .sequencingPolicy(new SequentialPolicy())
+                .handles(
+                        new QualifiedName(StudentEnrolledEvent.class),
+                        (event, context) -> {
+                            var converter = context.component(Converter.class);
+                            var studentEnrolled = event.payloadAs(StudentEnrolledEvent.class, converter);
+                            var studentId = studentEnrolled.studentId();
+                            var state = context.component(StateManager.class);
+                            var loadedState = state.loadEntity(StudentCoursesAutomationState.class,
+                                                               studentId,
+                                                               context).join();
+                            var readModel = loadedState != null ? loadedState : new StudentCoursesAutomationState(
+                                    studentId);
+                            if (readModel.courses.size() >= 3) {
+                                var commandGateway = context.component(CommandGateway.class);
+                                var cr = commandGateway.send(new SendMaxCoursesNotificationCommand(studentId), context);
+                                return MessageStream.fromFuture(cr.getResultMessage()).ignoreEntries().cast();
+                            }
+                            return MessageStream.empty();
+                        }
+                ).build();
     }
 
     protected void verifyNotificationSentTo(String studentId) {
