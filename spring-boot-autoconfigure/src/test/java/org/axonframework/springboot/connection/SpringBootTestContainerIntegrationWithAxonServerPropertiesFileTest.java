@@ -44,7 +44,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("custom")
-@Disabled("TODO #3496")
 class SpringBootTestContainerIntegrationWithAxonServerPropertiesFileTest {
 
     @Container

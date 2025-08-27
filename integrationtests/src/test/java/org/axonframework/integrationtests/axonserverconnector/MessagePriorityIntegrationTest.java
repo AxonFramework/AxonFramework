@@ -102,8 +102,9 @@ class MessagePriorityIntegrationTest {
                 c -> c.workScheduler(Executors.newSingleThreadExecutor())
         );
         var localCommandBus = new SimpleCommandBus(unitOfWorkFactory, Collections.emptyList());
-        var commandBusConnector = new AxonServerCommandBusConnector(connectionManager.getConnection());
-        CommandBusConnector serializingConnector = new PayloadConvertingCommandBusConnector<>(
+        var commandBusConnector =
+                new AxonServerCommandBusConnector(connectionManager.getConnection(), new AxonServerConfiguration());
+        CommandBusConnector serializingConnector = new PayloadConvertingCommandBusConnector(
                 commandBusConnector,
                 new JacksonConverter(),
                 byte[].class

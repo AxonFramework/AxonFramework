@@ -21,7 +21,6 @@ import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -35,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public abstract class DelegatingCommandBusConnector implements CommandBusConnector, DescribableComponent {
+public abstract class DelegatingCommandBusConnector implements CommandBusConnector {
 
     private final CommandBusConnector delegate;
 
