@@ -60,7 +60,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(queryMessage, 1024);
+        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(queryMessage, 1024);
 
         testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
@@ -77,7 +77,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> registration = testSubject.registerUpdateHandler(queryMessage, 128);
+        UpdateHandlerRegistration registration = testSubject.registerUpdateHandler(queryMessage, 128);
 
         ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (int i = 0; i < 100; i++) {
@@ -97,7 +97,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> registration = testSubject.registerUpdateHandler(queryMessage, 128);
+        UpdateHandlerRegistration registration = testSubject.registerUpdateHandler(queryMessage, 128);
 
         ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (int i = 0; i < 100; i++) {
@@ -117,7 +117,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(queryMessage, 1024);
+        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(queryMessage, 1024);
 
         testSubject.emit(any -> true, "some-awesome-text");
         result.getRegistration().cancel();
@@ -134,7 +134,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
                 queryMessage,
                 1024
         );
@@ -155,7 +155,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
                 queryMessage,
                 1024
         );
@@ -179,7 +179,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(Integer.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
                 queryMessage,
                 1024
         );
@@ -201,7 +201,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), multipleInstancesOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
                 queryMessage,
                 1024
         );
@@ -230,7 +230,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), optionalInstanceOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
                 queryMessage,
                 1024
         );
@@ -259,7 +259,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), publisherOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
                 queryMessage,
                 1024
         );
@@ -315,7 +315,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), multipleInstancesOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
                 queryMessage,
                 1024
         );
@@ -337,7 +337,7 @@ class SimpleQueryUpdateEmitterTest {
                 optionalInstanceOf(String.class), optionalInstanceOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
                 queryMessage,
                 1024
         );
@@ -359,7 +359,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration<Object> result = testSubject.registerUpdateHandler(
+        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
                 queryMessage,
                 1024
         );

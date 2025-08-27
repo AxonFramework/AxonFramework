@@ -33,8 +33,8 @@ import jakarta.annotation.Nullable;
  * @author Steven van Beelen
  * @since 3.3
  */
-public interface DeadlineManager extends MessageDispatchInterceptorSupport<DeadlineMessage<?>>,
-        MessageHandlerInterceptorSupport<DeadlineMessage<?>> {
+public interface DeadlineManager extends MessageDispatchInterceptorSupport<DeadlineMessage>,
+        MessageHandlerInterceptorSupport<DeadlineMessage> {
 
     /**
      * Schedules a deadline at given {@code triggerDateTime} with given {@code deadlineName}. The payload of this

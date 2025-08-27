@@ -79,7 +79,7 @@ public class TaggedEventConverter implements DescribableComponent {
                           .build();
     }
 
-    private Event convertEventMessage(EventMessage<?> eventMessage) {
+    private Event convertEventMessage(EventMessage eventMessage) {
         return Event.newBuilder()
                     .setIdentifier(eventMessage.identifier())
                     .setTimestamp(eventMessage.timestamp().toEpochMilli())
@@ -128,8 +128,8 @@ public class TaggedEventConverter implements DescribableComponent {
      * @param event The event to convert into an {@link EventMessage}.
      * @return An {@code EventMessage} based on the given {@code event}.
      */
-    public EventMessage<byte[]> convertEvent(@Nonnull Event event) {
-        return new GenericEventMessage<>(event.getIdentifier(),
+    public EventMessage convertEvent(@Nonnull Event event) {
+        return new GenericEventMessage(event.getIdentifier(),
                                          new MessageType(event.getName(), event.getVersion()),
                                          event.getPayload().toByteArray(),
                                          event.getMetadataMap(),

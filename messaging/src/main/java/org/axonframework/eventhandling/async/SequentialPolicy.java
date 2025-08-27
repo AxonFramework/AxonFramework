@@ -32,7 +32,7 @@ public class SequentialPolicy implements SequencingPolicy {
     private static final Object FULL_SEQUENTIAL_POLICY = new Object();
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> task) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage task) {
         return Optional.of(FULL_SEQUENTIAL_POLICY);
     }
 }

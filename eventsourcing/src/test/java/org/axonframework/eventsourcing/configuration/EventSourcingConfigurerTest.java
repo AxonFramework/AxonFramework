@@ -163,7 +163,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                       .build();
 
         Configuration configuration =
-                testSubject.componentRegistry(cr -> cr.registerModule(testEntityBuilder))
+                testSubject.registerEntity(testEntityBuilder)
                            .build();
 
         assertThat(configuration.getModuleConfiguration("SimpleStateBasedEntityModule<String, Object>")).isPresent();

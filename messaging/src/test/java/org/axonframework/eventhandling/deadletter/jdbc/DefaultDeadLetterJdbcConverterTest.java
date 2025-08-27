@@ -83,9 +83,9 @@ class DefaultDeadLetterJdbcConverterTest {
 
         JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
 
-        EventMessage<?> resultMessage = result.message();
+        EventMessage resultMessage = result.message();
         assertTrue(resultMessage instanceof GenericTrackedDomainEventMessage);
-        GenericTrackedDomainEventMessage<?> castedResultMessage = (GenericTrackedDomainEventMessage<?>) resultMessage;
+        GenericTrackedDomainEventMessage castedResultMessage = (GenericTrackedDomainEventMessage) resultMessage;
         TrackingToken resultToken = castedResultMessage.trackingToken();
         assertEquals(TRACKING_TOKEN, resultToken);
         assertEquals(AGGREGATE_ID, castedResultMessage.getAggregateIdentifier());
@@ -102,9 +102,9 @@ class DefaultDeadLetterJdbcConverterTest {
 
         JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
 
-        EventMessage<?> resultMessage = result.message();
+        EventMessage resultMessage = result.message();
         assertTrue(resultMessage instanceof GenericTrackedEventMessage);
-        assertEquals(TRACKING_TOKEN, ((GenericTrackedEventMessage<?>) resultMessage).trackingToken());
+        assertEquals(TRACKING_TOKEN, ((GenericTrackedEventMessage) resultMessage).trackingToken());
     }
 
     @Test
@@ -116,9 +116,9 @@ class DefaultDeadLetterJdbcConverterTest {
 
         JdbcDeadLetter<?> result = testSubject.convertToLetter(resultSet);
 
-        EventMessage<?> resultMessage = result.message();
+        EventMessage resultMessage = result.message();
         assertTrue(resultMessage instanceof GenericDomainEventMessage);
-        GenericDomainEventMessage<?> castedResultMessage = (GenericDomainEventMessage<?>) resultMessage;
+        GenericDomainEventMessage castedResultMessage = (GenericDomainEventMessage) resultMessage;
         assertEquals(AGGREGATE_ID, castedResultMessage.getAggregateIdentifier());
         assertEquals(AGGREGATE_TYPE, castedResultMessage.getType());
         assertEquals(SEQ_NO, castedResultMessage.getSequenceNumber());

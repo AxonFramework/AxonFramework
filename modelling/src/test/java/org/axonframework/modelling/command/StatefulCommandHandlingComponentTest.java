@@ -61,7 +61,7 @@ class StatefulCommandHandlingComponentTest {
             return MessageStream.empty().cast();
         });
 
-        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("test-command"),
+        GenericCommandMessage command = new GenericCommandMessage(new MessageType("test-command"),
                                                                             "my-payload");
         testSubject.handle(command, messageProcessingContext(command)).asCompletableFuture().join();
         assertTrue(invoked.get());
@@ -76,7 +76,7 @@ class StatefulCommandHandlingComponentTest {
             return MessageStream.empty().cast();
         });
 
-        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("test-command"),
+        GenericCommandMessage command = new GenericCommandMessage(new MessageType("test-command"),
                                                                             "my-payload");
         testSubject.handle(command, messageProcessingContext(command))
                    .asCompletableFuture().join();
@@ -103,7 +103,7 @@ class StatefulCommandHandlingComponentTest {
         });
 
         CompletionException exception = assertThrows(CompletionException.class, () -> {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("test-command"),
+            GenericCommandMessage command = new GenericCommandMessage(new MessageType("test-command"),
                                                                                 "my-payload");
             testSubject.handle(command, StubProcessingContext.forMessage(command))
                        .asCompletableFuture()
@@ -114,7 +114,7 @@ class StatefulCommandHandlingComponentTest {
         assertEquals("Faking an exception", exception.getCause().getMessage());
     }
 
-    private ProcessingContext messageProcessingContext(GenericCommandMessage<String> command) {
+    private ProcessingContext messageProcessingContext(GenericCommandMessage command) {
         return StubProcessingContext.withComponent(StateManager.class, stateManager).withMessage(command);
     }
 }

@@ -85,8 +85,8 @@ class AxonServerCommandBusConnectorTest {
 
     @Test
     void dispatchingCommandMessageWithInvalidPayloadTypeFails() {
-        CommandMessage<String> command = new GenericCommandMessage<>(
-                new GenericMessage<>(ANY_TEST_MESSAGE_ID,
+        CommandMessage command = new GenericCommandMessage(
+                new GenericMessage(ANY_TEST_MESSAGE_ID,
                                      new MessageType(ANY_TEST_COMMAND_TYPE, ANY_TEST_REVISION),
                                      "invalid-payload",
                                      new HashMap<>())
@@ -97,7 +97,7 @@ class AxonServerCommandBusConnectorTest {
     @Test
     void dispatchingCommandMessageWithValidPayloadResultsToResponse() {
         // Arrange
-        CommandMessage<byte[]> command = createTestCommandMessage();
+        CommandMessage command = createTestCommandMessage();
         CommandResponse response = createSuccessfulCommandResponse();
 
         when(commandChannel.sendCommand(any(Command.class)))
@@ -115,8 +115,8 @@ class AxonServerCommandBusConnectorTest {
     void dispatchingBuildsCorrectOutgoingCommand() {
         // Arrange
         Map<String, String> metadata = Map.of("key1", "value1", "key2", "value2");
-        CommandMessage<byte[]> command = new GenericCommandMessage<>(
-                new GenericMessage<>(ANY_TEST_MESSAGE_ID,
+        CommandMessage command = new GenericCommandMessage(
+                new GenericMessage(ANY_TEST_MESSAGE_ID,
                                      new MessageType(ANY_TEST_COMMAND_TYPE, ANY_TEST_REVISION),
                                      ANY_TEST_PAYLOAD,
                                      metadata),
@@ -148,7 +148,7 @@ class AxonServerCommandBusConnectorTest {
     @Test
     void dispatchingWithEmptyPriorityDoesNotAddPriorityInstruction() {
         // Arrange
-        CommandMessage<byte[]> command = createTestCommandMessage();
+        CommandMessage command = createTestCommandMessage();
 
         when(commandChannel.sendCommand(any(Command.class)))
                 .thenReturn(CompletableFuture.completedFuture(createSuccessfulCommandResponse()));
@@ -169,7 +169,7 @@ class AxonServerCommandBusConnectorTest {
     @Test
     void dispatchingHandlesErrorResponse() {
         // Arrange
-        CommandMessage<byte[]> command = createTestCommandMessage();
+        CommandMessage command = createTestCommandMessage();
         CommandResponse errorResponse = CommandResponse.newBuilder()
                                                        .setMessageIdentifier(UUID.randomUUID().toString())
                                                        .setErrorCode("COMMAND_EXECUTION_ERROR")
@@ -191,7 +191,7 @@ class AxonServerCommandBusConnectorTest {
     @Test
     void dispatchingHandlesEmptyPayloadResponse() {
         // Arrange
-        CommandMessage<byte[]> command = createTestCommandMessage();
+        CommandMessage command = createTestCommandMessage();
         CommandResponse response = CommandResponse.newBuilder()
                                                   .setMessageIdentifier(UUID.randomUUID().toString())
                                                   .setPayload(SerializedObject.newBuilder()
@@ -320,9 +320,9 @@ class AxonServerCommandBusConnectorTest {
     }
 
     // Helpers
-    private CommandMessage<byte[]> createTestCommandMessage() {
-        return new GenericCommandMessage<>(
-                new GenericMessage<>(ANY_TEST_MESSAGE_ID,
+    private CommandMessage createTestCommandMessage() {
+        return new GenericCommandMessage(
+                new GenericMessage(ANY_TEST_MESSAGE_ID,
                                      new MessageType(ANY_TEST_COMMAND_TYPE, ANY_TEST_REVISION),
                                      ANY_TEST_PAYLOAD,
                                      new HashMap<>())

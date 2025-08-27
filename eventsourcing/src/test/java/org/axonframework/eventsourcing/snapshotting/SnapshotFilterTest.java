@@ -37,7 +37,7 @@ class SnapshotFilterTest {
 
     private static final DomainEventData<?> NO_SNAPSHOT_DATA = null;
     private static final DomainEventData<?> MOCK_SNAPSHOT_DATA = mock(DomainEventData.class);
-    private static final SnapshotEventEntry TEST_SNAPSHOT_DATA = new SnapshotEventEntry(new GenericDomainEventMessage<>(
+    private static final SnapshotEventEntry TEST_SNAPSHOT_DATA = new SnapshotEventEntry(new GenericDomainEventMessage(
             "some-type", "some-aggregate-id", 0, new MessageType("snapshot"), "some-payload"
     ), JacksonSerializer.defaultSerializer());
 

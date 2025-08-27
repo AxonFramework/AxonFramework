@@ -61,7 +61,7 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
 
     @Test
     void connectionIsWrappedWhenUnitOfWorkIsActive() throws SQLException {
-        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         Connection actual = testSubject.getConnection();
         assertNotSame(actual, mockConnection);
 
@@ -76,7 +76,7 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
 
     @Test
     void wrappedConnectionBlocksCommitCallsUntilUnitOfWorkCommit() throws SQLException {
-        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         when(mockConnection.getAutoCommit()).thenReturn(false);
         when(mockConnection.isClosed()).thenReturn(false);
 
@@ -96,7 +96,7 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
 
     @Test
     void wrappedConnectionRollsBackCallsWhenUnitOfWorkRollback() throws SQLException {
-        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         when(mockConnection.getAutoCommit()).thenReturn(false);
         when(mockConnection.isClosed()).thenReturn(false);
 
@@ -117,7 +117,7 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
 
     @Test
     void originalExceptionThrewWhenRollbackFailed() throws SQLException {
-        LegacyDefaultUnitOfWork<Message<?>> uow = new LegacyDefaultUnitOfWork<>(null) {
+        LegacyDefaultUnitOfWork<Message> uow = new LegacyDefaultUnitOfWork<>(null) {
             @Override
             public ExecutionResult getExecutionResult() {
                 return new ExecutionResult(
@@ -142,12 +142,12 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
         when(mockConnection.getAutoCommit()).thenReturn(false);
         when(mockConnection.isClosed()).thenReturn(false);
 
-        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         Connection actualOuter = testSubject.getConnection();
 
         verify(mockConnectionProvider, times(1)).getConnection();
 
-        LegacyDefaultUnitOfWork<Message<?>> innerUow = LegacyDefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message> innerUow = LegacyDefaultUnitOfWork.startAndGet(null);
         Connection actualInner = testSubject.getConnection();
 
         verify(mockConnectionProvider, times(1)).getConnection();

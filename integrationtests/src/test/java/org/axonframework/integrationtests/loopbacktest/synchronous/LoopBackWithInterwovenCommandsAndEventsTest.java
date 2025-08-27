@@ -69,7 +69,7 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
                                    .configureAggregateFactory(c -> new AggregateFactory<>() {
                                        @Override
                                        public MyAggregate createAggregateRoot(String aggregateIdentifier,
-                                                                              DomainEventMessage<?> firstEvent) {
+                                                                              DomainEventMessage firstEvent) {
                                            return new MyAggregate(aggregateIdentifier);
                                        }
 
@@ -106,9 +106,9 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
         LegacyRepository<MyAggregate> repository = configuration.repository(MyAggregate.class);
         configuration.commandGateway().sendAndWait(command);
 
-        CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), "loading");
-        LegacyUnitOfWork<CommandMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(testCommand);
+        CommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), "loading");
+        LegacyUnitOfWork<CommandMessage> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(testCommand);
         MyAggregate loadedAggregate = repository.load(aggregateIdentifier).invoke(Function.identity());
         unitOfWork.commit();
 

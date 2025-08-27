@@ -32,7 +32,7 @@ import jakarta.annotation.Nullable;
  * @author Allard Buijze
  * @since 2.0
  */
-public interface MessageDispatchInterceptor<T extends Message<?>> {
+public interface MessageDispatchInterceptor<T extends Message> {
 
     /**
      * Invoked each time a message is about to be dispatched. The given {@code message} represents the message being
@@ -59,7 +59,7 @@ public interface MessageDispatchInterceptor<T extends Message<?>> {
     BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages);
 
 
-    default <M extends T, R extends Message<?>> MessageStream<R> interceptOnDispatch(@Nonnull M message,
+    default <M extends T, R extends Message> MessageStream<R> interceptOnDispatch(@Nonnull M message,
                                                                                      @Nullable ProcessingContext context,
                                                                                      @Nonnull InterceptorChain<M, R> interceptorChain) {
         throw new UnsupportedOperationException("Not implemented yet");

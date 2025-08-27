@@ -37,5 +37,5 @@ public interface TagResolver {
      * @param event The event to resolve a {@link Set} of {@link Tag Tags} for.
      * @return A {@link Set} of {@link Tag Tags} for the given {@code event}.
      */
-    Set<Tag> resolve(@Nonnull EventMessage<?> event);
+    Set<Tag> resolve(@Nonnull EventMessage event);
 }

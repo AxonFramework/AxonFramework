@@ -92,7 +92,7 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      */
     @Nonnull
     MessageStream.Single<CommandResultMessage<?>> handleCreate(
-            @Nonnull CommandMessage<?> message, @Nonnull ProcessingContext context
+            @Nonnull CommandMessage message, @Nonnull ProcessingContext context
     );
 
     /**
@@ -113,7 +113,7 @@ public interface EntityMetamodel<E> extends EntityEvolver<E>, DescribableCompone
      */
     @Nonnull
     MessageStream.Single<CommandResultMessage<?>> handleInstance(
-            @Nonnull CommandMessage<?> message, @Nonnull E entity, @Nonnull ProcessingContext context
+            @Nonnull CommandMessage message, @Nonnull E entity, @Nonnull ProcessingContext context
     );
 
     /**

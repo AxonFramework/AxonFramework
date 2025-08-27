@@ -48,7 +48,7 @@ public class LoggingErrorHandler implements ListenerInvocationErrorHandler {
     }
 
     @Override
-    public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+    public void onError(@Nonnull Exception exception, @Nonnull EventMessage event,
                         @Nonnull EventMessageHandler eventHandler) {
         logger.error("EventListener [{}] failed to handle event [{}] ({}). " +
                              "Continuing processing with next listener",

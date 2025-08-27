@@ -72,7 +72,7 @@ class SimpleCommandHandlingComponentTest {
 
     @Test
     void handlesTheMostSpecificRegisteredHandler() {
-        GenericCommandMessage<String> command1 = new GenericCommandMessage<>(new MessageType("Command1"), "");
+        GenericCommandMessage command1 = new GenericCommandMessage(new MessageType("Command1"), "");
         handlingComponent.handle(command1, StubProcessingContext.forMessage(command1));
         assertTrue(command1Handled.get());
         assertFalse(command2HandledParent.get());
@@ -81,7 +81,7 @@ class SimpleCommandHandlingComponentTest {
 
         command1Handled.set(false);
 
-        GenericCommandMessage<String> command2 = new GenericCommandMessage<>(new MessageType("Command2"), "");
+        GenericCommandMessage command2 = new GenericCommandMessage(new MessageType("Command2"), "");
         handlingComponent.handle(command2, StubProcessingContext.forMessage(command2));
         assertFalse(command1Handled.get());
         assertFalse(command2HandledParent.get());
@@ -89,7 +89,7 @@ class SimpleCommandHandlingComponentTest {
         assertFalse(command3Handled.get());
 
         command2HandledChild.set(false);
-        GenericCommandMessage<String> command3 = new GenericCommandMessage<>(new MessageType("Command3"), "");
+        GenericCommandMessage command3 = new GenericCommandMessage(new MessageType("Command3"), "");
         handlingComponent.handle(command3, StubProcessingContext.forMessage(command3));
         assertFalse(command1Handled.get());
         assertFalse(command2HandledParent.get());
@@ -108,7 +108,7 @@ class SimpleCommandHandlingComponentTest {
     @Test
     void handleWithUnknownPayloadReturnsInFailure() {
         CompletionException exception = assertThrows(CompletionException.class, () -> {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("Command4"), "");
+            GenericCommandMessage command = new GenericCommandMessage(new MessageType("Command4"), "");
             handlingComponent.handle(command, StubProcessingContext.forMessage(command))
                              .asCompletableFuture()
                              .join();

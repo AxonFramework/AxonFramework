@@ -55,7 +55,7 @@ public interface CommandGateway {
      * {@code CommandMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.MetaData}.
      *
-     * @param command      The command to dispatch.
+     * @param command      The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
      * @param context      The processing context, if any, to dispatch the given {@code command} in.
      * @param expectedType The expected result type.
      * @param <R>          The generic type of the expected response.
@@ -69,60 +69,10 @@ public interface CommandGateway {
     }
 
     /**
-     * Sends the given {@code command} and returns a {@link CompletableFuture} immediately, without waiting for the
-     * command to execute.
-     * <p>
-     * The caller will therefore not receive any immediate feedback on the {@code command's} execution. Instead, hooks
-     * <em>can</em> be added to the returned {@code CompletableFuture} to react on success or failure of command
-     * execution.
-     * <p>
-     * Note that this operation expects the {@link org.axonframework.commandhandling.CommandBus} to use new threads for
-     * command execution.
-     * <p/>
-     * The given {@code command} is wrapped as the payload of the {@link CommandMessage} that is eventually posted on
-     * the {@code CommandBus}, unless the {@code command} already implements {@link Message}. In that case, a
-     * {@code CommandMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.MetaData}.
-     *
-     * @param command The command to dispatch.
-     * @param context The processing context, if any, to dispatch the given {@code command} in.
-     * @return A {@link CompletableFuture} that will be resolved successfully or exceptionally based on the eventual
-     * command execution result.
-     */
-    CommandResult send(@Nonnull Object command,
-                       @Nullable ProcessingContext context);
-
-    /**
-     * Sends the given {@code command} with the given {@code metaData} and returns a {@link CompletableFuture}
-     * immediately, without waiting for the command to execute.
-     * <p>
-     * The caller will therefore not receive any immediate feedback on the {@code command}'s execution. Instead, hooks
-     * <em>can</em> be added to the returned {@code CompletableFuture} to react on success or failure of command
-     * execution.
-     * <p>
-     * Note that this operation expects the {@link org.axonframework.commandhandling.CommandBus} to use new threads for
-     * command execution.
-     * <p/>
-     * The given {@code command} and {@code metaData} are wrapped as the payload of the {@link CommandMessage} that is
-     * eventually posted on the {@link org.axonframework.commandhandling.CommandBus}, unless the {@code command} already
-     * implements {@link Message}. In that case, a {@code CommandMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.MetaData}. The provided {@code metaData} is attached afterward in this case.
-     *
-     * @param command  The command to dispatch.
-     * @param metaData Meta-data that must be registered with the {@code command}.
-     * @param context  The processing context, if any, to dispatch the given {@code command} in.
-     * @return A {@link CompletableFuture} that will be resolved successfully or exceptionally based on the eventual
-     * command execution result.
-     */
-    CommandResult send(@Nonnull Object command,
-                       @Nonnull MetaData metaData,
-                       @Nullable ProcessingContext context);
-
-    /**
      * Send the given command and waits for completion, disregarding the result. To retrieve the result, use
      * {@link #sendAndWait(Object, Class)} instead, as it allows for type conversion of the result payload.
      *
-     * @param command The payload or Command Message to send
+     * @param command The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
      * @throws CommandExecutionException When an exception occurs while handling the command.
      */
     default void sendAndWait(@Nonnull Object command) {
@@ -137,13 +87,13 @@ public interface CommandGateway {
     }
 
     /**
-     * Send the given command and waits for the result. The result will be converted to the specified {@code returnType}
-     * if possible.
+     * Send the given command and waits for the result.
      * <p>
-     * The payload of the resulting message is returned, or a {@link CommandExecutionException} is thrown when the
-     * command completed with an exception.
+     * The result will be converted to the specified {@code returnType} if possible. The payload of the resulting
+     * message is returned, or a {@link CommandExecutionException} is thrown when the command completed with an
+     * exception.
      *
-     * @param command    The command to dispatch.
+     * @param command    The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
      * @param resultType The class representing the type of the expected command result.
      * @param <R>        The generic type of the expected response.
      * @return The payload of the result message of type {@code R}.
@@ -160,4 +110,59 @@ public interface CommandGateway {
             throw new CommandExecutionException("Exception while handling command", e);
         }
     }
+
+    /**
+     * Sends the given {@code command} in the provided {@code context} (if available) and returns a
+     * {@link CommandResult} immediately, without waiting for the command to execute.
+     * <p>
+     * The caller will therefore not receive any immediate feedback on the {@code command's} execution. Instead, hooks
+     * <em>can</em> be added to the returned {@code CommandResult} to react on success or failure of command
+     * execution. A shorthand to retrieve a {@link CompletableFuture} is available through the
+     * {@link CommandResult#getResultMessage()} operation.
+     * <p>
+     * Note that this operation expects the {@link org.axonframework.commandhandling.CommandBus} to use new threads for
+     * command execution.
+     * <p/>
+     * The given {@code command} is wrapped as the payload of the
+     * {@link org.axonframework.commandhandling.CommandMessage} that is eventually posted on the {@code CommandBus},
+     * unless the {@code command} already implements {@link org.axonframework.messaging.Message}. In that case, a
+     * {@code CommandMessage} is constructed from that message's payload and
+     * {@link org.axonframework.messaging.MetaData}.
+     *
+     * @param command The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
+     * @param context The processing context, if any, to dispatch the given {@code command} in.
+     * @return A command result success and failure hooks can be registered. The
+     * {@link CommandResult#getResultMessage()} serves as a shorthand to retrieve the response.
+     */
+    CommandResult send(@Nonnull Object command,
+                       @Nullable ProcessingContext context);
+
+    /**
+     * Sends the given {@code command} with the given {@code metaData} in the provided {@code context} (if available)
+     * and returns a {@link CommandResult} immediately, without waiting for the command to execute.
+     * <p>
+     * The caller will therefore not receive any immediate feedback on the {@code command's} execution. Instead, hooks
+     * <em>can</em> be added to the returned {@code CommandResult} to react on success or failure of command
+     * execution. A shorthand to retrieve a {@link CompletableFuture} is available through the
+     * {@link CommandResult#getResultMessage()} operation.
+     * <p>
+     * Note that this operation expects the {@link org.axonframework.commandhandling.CommandBus} to use new threads for
+     * command execution.
+     * <p/>
+     * The given {@code command} and {@code metaData} are wrapped as the payload of the
+     * {@link org.axonframework.commandhandling.CommandMessage} that is eventually posted on the
+     * {@link org.axonframework.commandhandling.CommandBus}, unless the {@code command} already implements
+     * {@link org.axonframework.messaging.Message}. In that case, a {@code CommandMessage} is constructed from that
+     * message's payload and {@link org.axonframework.messaging.MetaData}. The provided {@code metaData} is attached
+     * afterward in this case.
+     *
+     * @param command  The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
+     * @param metaData Meta-data that must be registered with the {@code command}.
+     * @param context  The processing context, if any, to dispatch the given {@code command} in.
+     * @return A command result success and failure hooks can be registered. The
+     * {@link CommandResult#getResultMessage()} serves as a shorthand to retrieve the response.
+     */
+    CommandResult send(@Nonnull Object command,
+                       @Nonnull MetaData metaData,
+                       @Nullable ProcessingContext context);
 }

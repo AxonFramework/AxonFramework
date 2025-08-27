@@ -66,7 +66,7 @@ public class StubSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleSagaStart(TriggerSagaStartEvent event,
                                 TrackingToken trackingToken,
-                                EventMessage<TriggerSagaStartEvent> message,
+                                EventMessage message,
                                 @MetaDataValue("extraIdentifier") Object extraIdentifier) {
         assertNotNull(trackingToken);
         handledEvents.add(event);
@@ -77,7 +77,7 @@ public class StubSaga {
 
         timer = scheduler.schedule(
                 message.timestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
-                new GenericEventMessage<>(
+                new GenericEventMessage(
                         new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
                 )
         );
@@ -89,7 +89,7 @@ public class StubSaga {
         handledEvents.add(event);
         timer = scheduler.schedule(
                 timestamp.plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
-                new GenericEventMessage<>(
+                new GenericEventMessage(
                         new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
                 )
         );
@@ -98,7 +98,7 @@ public class StubSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleEvent(TriggerExistingSagaEvent event, EventBus eventBus) {
         handledEvents.add(event);
-        eventBus.publish(new GenericEventMessage<>(
+        eventBus.publish(new GenericEventMessage(
                 new MessageType("event"), new SagaWasTriggeredEvent(this)
         ));
     }
@@ -138,7 +138,7 @@ public class StubSaga {
         scheduler.cancelSchedule(timer);
         timer = scheduler.schedule(
                 Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
-                new GenericEventMessage<>(
+                new GenericEventMessage(
                         new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
                 )
         );

@@ -31,31 +31,31 @@ import java.util.Map;
  * @author Milan Savic
  * @since 3.3.0
  */
-public interface SubscriptionQueryUpdateMessage<U> extends ResultMessage<U> {
+public interface SubscriptionQueryUpdateMessage extends ResultMessage {
 
     @Override
     @Nonnull
-    SubscriptionQueryUpdateMessage<U> withMetaData(@Nonnull Map<String, String> metaData);
+    SubscriptionQueryUpdateMessage withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     @Nonnull
-    SubscriptionQueryUpdateMessage<U> andMetaData(@Nonnull Map<String, String> metaData);
+    SubscriptionQueryUpdateMessage andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     @Nonnull
-    default <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Class<T> type,
+    default SubscriptionQueryUpdateMessage withConvertedPayload(@Nonnull Class<?> type,
                                                                        @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
     @Nonnull
-    default <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type,
+    default SubscriptionQueryUpdateMessage withConvertedPayload(@Nonnull TypeReference<?> type,
                                                                        @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @Nonnull
-    <T> SubscriptionQueryUpdateMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    SubscriptionQueryUpdateMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

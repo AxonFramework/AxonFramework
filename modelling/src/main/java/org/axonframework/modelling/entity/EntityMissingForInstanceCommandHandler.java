@@ -33,7 +33,7 @@ public class EntityMissingForInstanceCommandHandler extends RuntimeException {
      *
      * @param commandMessage The {@link CommandMessage} that was handled.
      */
-    public EntityMissingForInstanceCommandHandler(CommandMessage<?> commandMessage) {
+    public EntityMissingForInstanceCommandHandler(CommandMessage commandMessage) {
         super(String.format(
                 "Entity was missing for instance command handler for command [%s]",
                 commandMessage.type()

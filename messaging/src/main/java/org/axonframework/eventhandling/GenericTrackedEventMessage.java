@@ -30,7 +30,7 @@ import java.util.function.Supplier;
  * {@link EventMessage}.
  */
 @Deprecated
-public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implements TrackedEventMessage<T> {
+public class GenericTrackedEventMessage extends GenericEventMessage implements TrackedEventMessage {
 
     private final TrackingToken trackingToken;
 
@@ -40,7 +40,7 @@ public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implem
      * @param trackingToken tracking token of the event
      * @param delegate      delegate message containing payload, metadata, identifier and timestamp
      */
-    public GenericTrackedEventMessage(TrackingToken trackingToken, EventMessage<T> delegate) {
+    public GenericTrackedEventMessage(TrackingToken trackingToken, EventMessage delegate) {
         super(delegate, delegate.timestamp());
         this.trackingToken = trackingToken;
     }
@@ -53,7 +53,7 @@ public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implem
      * @param delegate      delegate message containing payload, metadata, identifier and timestamp
      * @param timestamp     supplier of the message's timestamp
      */
-    public GenericTrackedEventMessage(TrackingToken trackingToken, Message<T> delegate, Supplier<Instant> timestamp) {
+    public GenericTrackedEventMessage(TrackingToken trackingToken, Message delegate, Supplier<Instant> timestamp) {
         super(delegate, timestamp);
         this.trackingToken = trackingToken;
     }
@@ -66,7 +66,7 @@ public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implem
      * @param delegate      the message that will be used as delegate
      * @param timestamp     the timestamp of the resulting event message
      */
-    protected GenericTrackedEventMessage(TrackingToken trackingToken, Message<T> delegate, Instant timestamp) {
+    protected GenericTrackedEventMessage(TrackingToken trackingToken, Message delegate, Instant timestamp) {
         super(delegate, timestamp);
         this.trackingToken = trackingToken;
     }
@@ -85,8 +85,8 @@ public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implem
     }
 
     @Override
-    public GenericTrackedEventMessage<T> withTrackingToken(TrackingToken trackingToken) {
-        return new GenericTrackedEventMessage<>(trackingToken, this);
+    public GenericTrackedEventMessage withTrackingToken(TrackingToken trackingToken) {
+        return new GenericTrackedEventMessage(trackingToken, this);
     }
 
     @Override

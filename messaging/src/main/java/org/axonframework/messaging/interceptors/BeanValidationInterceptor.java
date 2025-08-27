@@ -43,7 +43,7 @@ import jakarta.annotation.Nullable;
  * @author Allard Buijze
  * @since 1.1
  */
-public class BeanValidationInterceptor<T extends Message<?>>
+public class BeanValidationInterceptor<T extends Message>
         implements MessageHandlerInterceptor<T>, MessageDispatchInterceptor<T> {
 
     private final ValidatorFactory validatorFactory;
@@ -67,20 +67,20 @@ public class BeanValidationInterceptor<T extends Message<?>>
     }
 
     @Override
-    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnDispatch(@Nonnull M message,
+    public <M extends T, R extends Message> MessageStream<R> interceptOnDispatch(@Nonnull M message,
                                                                                     @Nullable ProcessingContext context,
                                                                                     @Nonnull InterceptorChain<M, R> interceptorChain) {
         return intercept(message, context, interceptorChain);
     }
 
     @Override
-    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
+    public <M extends T, R extends Message> MessageStream<R> interceptOnHandle(@Nonnull M message,
                                                                                   @Nonnull ProcessingContext context,
                                                                                   @Nonnull InterceptorChain<M, R> interceptorChain) {
         return intercept(message, context, interceptorChain);
     }
 
-    private <M extends T, R extends Message<?>> MessageStream<R> intercept(M message,
+    private <M extends T, R extends Message> MessageStream<R> intercept(M message,
                                                                            @Nullable ProcessingContext context,
                                                                            InterceptorChain<M, R> interceptorChain) {
         Set<ConstraintViolation<Object>> violations = validate(message);
@@ -90,7 +90,7 @@ public class BeanValidationInterceptor<T extends Message<?>>
         return interceptorChain.proceed(message, context);
     }
 
-    private Set<ConstraintViolation<Object>> validate(Message<?> message) {
+    private Set<ConstraintViolation<Object>> validate(Message message) {
         Validator validator = validatorFactory.getValidator();
         return validateMessage(message.payload(), validator);
     }

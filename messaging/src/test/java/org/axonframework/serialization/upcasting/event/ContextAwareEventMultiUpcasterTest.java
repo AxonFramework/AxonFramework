@@ -88,7 +88,7 @@ class ContextAwareEventMultiUpcasterTest {
 
         MetaData testMetaData = MetaData.with("key", "value");
 
-        DomainEventMessage<SecondStubEvent> firstTestEventMessage = new GenericDomainEventMessage<>(
+        DomainEventMessage firstTestEventMessage = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"),
                 new SecondStubEvent(expectedContextEventString, expectedContextEventNumber), testMetaData
         );
@@ -96,7 +96,7 @@ class ContextAwareEventMultiUpcasterTest {
         InitialEventRepresentation firstTestRepresentation =
                 new InitialEventRepresentation(firstTestEventData, serializer);
 
-        DomainEventMessage<StubDomainEvent> secondTestEventMessage = new GenericDomainEventMessage<>(
+        DomainEventMessage secondTestEventMessage = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"),
                 new StubDomainEvent("oldName"), testMetaData
         );

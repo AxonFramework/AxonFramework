@@ -52,7 +52,7 @@ class AnnotatedEntityIdResolverTest {
     @Test
     void canResolveIdFromSerializedMessage() {
         MessageType messageType = new MessageType(MyIdHoldingObject.class);
-        var serializedMessage = new GenericMessage<>(messageType, """
+        var serializedMessage = new GenericMessage(messageType, """
                 {"identifier": "test5362"}""");
 
         QualifiedName qualifiedName = messageType.qualifiedName();
@@ -68,7 +68,7 @@ class AnnotatedEntityIdResolverTest {
     @Test
     void throwsExceptionWhenExpectedRepresentationIsMissing() {
         MessageType messageType = new MessageType(MyIdHoldingObject.class);
-        var serializedMessage = new GenericMessage<>(messageType, """
+        var serializedMessage = new GenericMessage(messageType, """
                 {"identifier": "test5362"}""");
 
         assertThrows(AxonConfigurationException.class, () -> {

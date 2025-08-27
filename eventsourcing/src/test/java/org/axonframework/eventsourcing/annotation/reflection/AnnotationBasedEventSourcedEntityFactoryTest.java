@@ -49,7 +49,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
     private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
     @Mock
-    private EventMessage<?> eventMessage;
+    private EventMessage eventMessage;
 
     private final Converter converter = PassThroughConverter.INSTANCE;
 
@@ -94,7 +94,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
         public static class EventMessageTestEntity {
 
             private final String id;
-            private final EventMessage<?> eventMessage;
+            private final EventMessage eventMessage;
 
             @EntityCreator
             public EventMessageTestEntity(@InjectEntityId String id) {
@@ -103,7 +103,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             }
 
             @EntityCreator
-            public EventMessageTestEntity(@InjectEntityId String id, EventMessage<?> eventMessage) {
+            public EventMessageTestEntity(@InjectEntityId String id, EventMessage eventMessage) {
                 this.id = id;
                 this.eventMessage = eventMessage;
             }
@@ -112,7 +112,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                 return id;
             }
 
-            public EventMessage<?> getEventMessage() {
+            public EventMessage getEventMessage() {
                 return eventMessage;
             }
         }
@@ -163,20 +163,20 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
         public static class PayloadTypeSpecificTestEntity {
 
-            private final EventMessage<?> eventMessage;
+            private final EventMessage eventMessage;
 
             @EntityCreator(payloadQualifiedNames = "matching-test-type")
-            public PayloadTypeSpecificTestEntity(EventMessage<String> eventMessage) {
+            public PayloadTypeSpecificTestEntity(EventMessage eventMessage) {
                 this.eventMessage = eventMessage;
             }
 
 
             @EntityCreator(payloadQualifiedNames = "metadata-required-test-type")
-            public PayloadTypeSpecificTestEntity(EventMessage<String> eventMessage, @MetaDataValue(required = true, value = "blabla") Integer blabla) {
+            public PayloadTypeSpecificTestEntity(EventMessage eventMessage, @MetaDataValue(required = true, value = "blabla") Integer blabla) {
                 this.eventMessage = eventMessage;
             }
 
-            public EventMessage<?> getEventMessage() {
+            public EventMessage getEventMessage() {
                 return eventMessage;
             }
         }
@@ -201,7 +201,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
         @Test
         void usesEventPayloadConstructorWithCorrectPayloadType() {
-            eventMessage = new GenericEventMessage<>(new MessageType(PayloadSpecificPayload.class), new PayloadSpecificPayload("my-specific-payload"));
+            eventMessage = new GenericEventMessage(new MessageType(PayloadSpecificPayload.class), new PayloadSpecificPayload("my-specific-payload"));
             PayloadSpecificTestEntity entity = factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             assertNotNull(entity);
             assertEquals("my-specific-payload", entity.getPayload());
@@ -209,7 +209,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
         @Test
         void throwsErrorIfNoMatchingPayloadType() {
-            eventMessage = new GenericEventMessage<>(new MessageType("non-matching-test-type"), new PayloadSpecificPayload("my-specific-payload"));
+            eventMessage = new GenericEventMessage(new MessageType("non-matching-test-type"), new PayloadSpecificPayload("my-specific-payload"));
             AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
                 factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
@@ -270,9 +270,9 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
         public static class FactoryMethodsTestEntity {
 
             private final String id;
-            private final EventMessage<?> eventMessage;
+            private final EventMessage eventMessage;
 
-            private FactoryMethodsTestEntity(String id, EventMessage<?> eventMessage) {
+            private FactoryMethodsTestEntity(String id, EventMessage eventMessage) {
                 this.id = id;
                 this.eventMessage = eventMessage;
             }
@@ -283,7 +283,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
             }
 
             @EntityCreator
-            public static FactoryMethodsTestEntity create(@InjectEntityId String id, EventMessage<?> eventMessage) {
+            public static FactoryMethodsTestEntity create(@InjectEntityId String id, EventMessage eventMessage) {
                 return new FactoryMethodsTestEntity(id, eventMessage);
             }
 
@@ -291,7 +291,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                 return id;
             }
 
-            public EventMessage<?> getEventMessage() {
+            public EventMessage getEventMessage() {
                 return eventMessage;
             }
         }

@@ -81,7 +81,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements SequencedDeadLetterQueue<E> {
+public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements SequencedDeadLetterQueue<E> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -152,7 +152,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
      *            {@link SequencedDeadLetterQueue}.
      * @return A Builder that can construct an {@link JdbcSequencedDeadLetterQueue}.
      */
-    public static <E extends EventMessage<?>> Builder<E> builder() {
+    public static <E extends EventMessage> Builder<E> builder() {
         return new Builder<>();
     }
 
@@ -367,7 +367,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
         //noinspection DuplicatedCode
         return () -> {
             Iterator<String> sequenceIterator = sequenceIdentifiers.iterator();
-            return new Iterator<Iterable<DeadLetter<? extends E>>>() {
+            return new Iterator<>() {
                 @Override
                 public boolean hasNext() {
                     return sequenceIterator.hasNext();
@@ -642,7 +642,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage<?>> implements 
      * @param <E> The type of {@link EventMessage} maintained in the {@link DeadLetter dead letter} of this
      *            {@link SequencedDeadLetterQueue}.
      */
-    public static class Builder<E extends EventMessage<?>> {
+    public static class Builder<E extends EventMessage> {
 
         private String processingGroup;
         private ConnectionProvider connectionProvider;

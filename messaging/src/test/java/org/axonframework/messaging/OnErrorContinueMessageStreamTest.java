@@ -27,28 +27,28 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message<String>> {
+class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message> {
 
     @Override
-    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
+    MessageStream<Message> completedTestSubject(List<Message> messages) {
         return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages),
                                                   error -> MessageStream.empty().cast());
     }
 
     @Override
-    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+    MessageStream.Single<Message> completedSingleStreamTestSubject(Message message) {
         Assumptions.abort("OnErrorContinueMessageStream doesn't support explicit single-value streams");
         return null;
     }
 
     @Override
-    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+    MessageStream.Empty<Message> completedEmptyStreamTestSubject() {
         Assumptions.abort("OnErrorContinueMessageStream doesn't support explicitly empty streams");
         return null;
     }
 
     @Override
-    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
+    MessageStream<Message> failingTestSubject(List<Message> messages,
                                                       Exception failure) {
         return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages)
                                                                .concatWith(MessageStream.failed(new RuntimeException(
@@ -57,8 +57,8 @@ class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message<String>
     }
 
     @Override
-    Message<String> createRandomMessage() {
-        return new GenericMessage<>(new MessageType("message"),
+    Message createRandomMessage() {
+        return new GenericMessage(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

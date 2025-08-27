@@ -71,14 +71,14 @@ class AggregateCreationFromCommandsTest {
         String aggregateId = UUID.randomUUID().toString();
         StubAggregateForCreation.CreateAlwaysCommand testPayload =
                 new StubAggregateForCreation.CreateAlwaysCommand(aggregateId);
-        CommandMessage<StubAggregateForCreation.CreateAlwaysCommand> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), testPayload);
+        CommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), testPayload);
 
-        CompletableFuture<? extends Message<?>> dispatchingResult =
+        CompletableFuture<? extends Message> dispatchingResult =
                 commandBus.dispatch(testCommand, null);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
-        List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
+        List<? extends DomainEventMessage> events = eventStore.readEvents(aggregateId).asStream()
                                                                  .toList();
         assertEquals(1, events.size());
         assertEquals(aggregateId, events.getFirst().getAggregateIdentifier());
@@ -91,13 +91,13 @@ class AggregateCreationFromCommandsTest {
         String aggregateId = UUID.randomUUID().toString();
         StubAggregateForCreation.CreateIfMissingCommand testPayload =
                 new StubAggregateForCreation.CreateIfMissingCommand(aggregateId);
-        CommandMessage<StubAggregateForCreation.CreateIfMissingCommand> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), testPayload);
+        CommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), testPayload);
 
-        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(testCommand, null);
+        CompletableFuture<? extends Message> dispatchingResult = commandBus.dispatch(testCommand, null);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
-        List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
+        List<? extends DomainEventMessage> events = eventStore.readEvents(aggregateId).asStream()
                                                                  .toList();
         assertEquals(1, events.size());
         assertEquals(aggregateId, events.getFirst().getAggregateIdentifier());
@@ -110,13 +110,13 @@ class AggregateCreationFromCommandsTest {
         String aggregateId = UUID.randomUUID().toString();
         StubAggregateForCreation.CreateAlwaysCommand testPayload =
                 new StubAggregateForCreation.CreateAlwaysCommand(aggregateId);
-        CommandMessage<StubAggregateForCreation.CreateAlwaysCommand> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), testPayload);
+        CommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), testPayload);
 
-        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(testCommand, null);
+        CompletableFuture<? extends Message> dispatchingResult = commandBus.dispatch(testCommand, null);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
-        List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
+        List<? extends DomainEventMessage> events = eventStore.readEvents(aggregateId).asStream()
                                                                  .toList();
         assertEquals(1, events.size());
         assertEquals(aggregateId, events.getFirst().getAggregateIdentifier());
@@ -130,13 +130,13 @@ class AggregateCreationFromCommandsTest {
         String aggregateId = UUID.randomUUID().toString();
         StubAggregateForCreation.CreateIfMissingCommand testPayload =
                 new StubAggregateForCreation.CreateIfMissingCommand(aggregateId);
-        GenericCommandMessage<StubAggregateForCreation.CreateIfMissingCommand> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), testPayload);
+        GenericCommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), testPayload);
 
-        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(testCommand, null);
+        CompletableFuture<? extends Message> dispatchingResult = commandBus.dispatch(testCommand, null);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
-        List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
+        List<? extends DomainEventMessage> events = eventStore.readEvents(aggregateId).asStream()
                                                                  .toList();
         assertEquals(1, events.size());
         assertEquals(aggregateId, events.getFirst().getAggregateIdentifier());

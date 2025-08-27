@@ -53,7 +53,7 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
 
     @Nonnull
     @Override
-    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event, 
+    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event, 
                                                      @Nonnull ProcessingContext context) {
         try {
             Segment segment = Segment.fromContext(context).orElse(Segment.ROOT_SEGMENT);
@@ -80,7 +80,7 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
 
     @Nonnull
     @Override
-    public Object sequenceIdentifierFor(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return switch (eventHandlerInvoker) {
             case MultiEventHandlerInvoker multiInvoker when !multiInvoker.delegates().isEmpty() ->
                     Optional.ofNullable(multiInvoker.delegates().getFirst())

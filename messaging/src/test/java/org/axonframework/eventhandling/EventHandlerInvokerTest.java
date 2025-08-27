@@ -33,12 +33,12 @@ class EventHandlerInvokerTest {
 
     private final EventHandlerInvoker testSubject = spy(new EventHandlerInvoker() {
         @Override
-        public boolean canHandle(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
+        public boolean canHandle(@Nonnull EventMessage eventMessage, @Nonnull ProcessingContext context, @Nonnull Segment segment) {
             return true;
         }
 
         @Override
-        public void handle(@Nonnull EventMessage<?> message, @Nonnull ProcessingContext processingContext,
+        public void handle(@Nonnull EventMessage message, @Nonnull ProcessingContext processingContext,
                            @Nonnull Segment segment) throws Exception {
             // Do nothing
         }

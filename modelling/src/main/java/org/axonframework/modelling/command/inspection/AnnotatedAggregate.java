@@ -373,9 +373,9 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      *
      * @param msg the event message to publish
      */
-    protected void publish(EventMessage<?> msg) {
+    protected void publish(EventMessage msg) {
         if (msg instanceof DomainEventMessage) {
-            lastKnownSequence = ((DomainEventMessage<?>) msg).getSequenceNumber();
+            lastKnownSequence = ((DomainEventMessage) msg).getSequenceNumber();
         }
         inspector.publish(msg, aggregateRoot);
         publishOnEventBus(msg);
@@ -386,20 +386,20 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      *
      * @param msg the event message to publish
      */
-    protected void publishOnEventBus(EventMessage<?> msg) {
+    protected void publishOnEventBus(EventMessage msg) {
         if (eventBus != null) {
             eventBus.publish(msg);
         }
     }
 
     @Override
-    public Object handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) throws Exception {
+    public Object handle(@Nonnull Message message, @Nonnull ProcessingContext context) throws Exception {
         Callable<Object> messageHandling;
 
         if (message instanceof CommandMessage) {
-            messageHandling = () -> handle((CommandMessage<?>) message, context);
+            messageHandling = () -> handle((CommandMessage) message, context);
         } else if (message instanceof EventMessage) {
-            messageHandling = () -> handle((EventMessage<?>) message);
+            messageHandling = () -> handle((EventMessage) message);
         } else {
             throw new IllegalArgumentException("Unsupported message type: " + message.getClass());
         }
@@ -407,7 +407,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         return executeWithResult(messageHandling);
     }
 
-    private Object handle(CommandMessage<?> commandMessage, ProcessingContext context) throws Exception {
+    private Object handle(CommandMessage commandMessage, ProcessingContext context) throws Exception {
         //noinspection unchecked
         List<AnnotatedCommandHandlerInterceptor<? super T>> interceptors =
                 inspector.commandHandlerInterceptors((Class<? extends T>) aggregateRoot.getClass())
@@ -429,7 +429,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         } else {
             //noinspection unchecked
             result = new DefaultInterceptorChain<>(
-                    (LegacyUnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
+                    (LegacyUnitOfWork<CommandMessage>) CurrentUnitOfWork.get(),
                     interceptors,
                     (m, ctx) -> findHandlerAndHandleCommand(potentialHandlers, commandMessage, context)
             ).proceedSync(context);
@@ -438,7 +438,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     }
 
     private Object findHandlerAndHandleCommand(List<MessageHandlingMember<? super T>> handlers,
-                                               CommandMessage<?> command,
+                                               CommandMessage command,
                                                ProcessingContext context) throws Exception {
         //noinspection unchecked
         return handlers.stream()
@@ -453,7 +453,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                        .handleSync(command, context, aggregateRoot);
     }
 
-    private Object handle(EventMessage<?> eventMessage) {
+    private Object handle(EventMessage eventMessage) {
         inspector.publish(eventMessage, aggregateRoot);
         return null;
     }
@@ -492,7 +492,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @param <P>      the payload type
      * @return the resulting message
      */
-    protected <P> EventMessage<P> createMessage(P payload, MetaData metaData) {
+    protected <P> EventMessage createMessage(P payload, MetaData metaData) {
         MessageType type = new MessageType(payload.getClass());
         if (lastKnownSequence != null) {
             String aggregateType = inspector.declaredType(rootType())
@@ -504,9 +504,9 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                              () -> "The aggregate identifier has not been set. It must be set at the latest when applying the creation event");
                 return new LazyIdentifierDomainEventMessage<>(aggregateType, seq, type, payload, metaData);
             }
-            return new GenericDomainEventMessage<>(aggregateType, identifierAsString(), seq, type, payload, metaData);
+            return new GenericDomainEventMessage(aggregateType, identifierAsString(), seq, type, payload, metaData);
         }
-        return new GenericEventMessage<>(type, payload, metaData);
+        return new GenericEventMessage(type, payload, metaData);
     }
 
     /**
@@ -542,14 +542,14 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * @param payloadOrMessage defines the payload and optionally metadata to apply to the aggregate
      */
     protected void applyMessageOrPayload(Object payloadOrMessage) {
-        if (payloadOrMessage instanceof Message<?> message) {
+        if (payloadOrMessage instanceof Message message) {
             apply(message.payload(), message.metaData());
         } else if (payloadOrMessage != null) {
             apply(payloadOrMessage, MetaData.emptyInstance());
         }
     }
 
-    private class LazyIdentifierDomainEventMessage<P> extends GenericDomainEventMessage<P> {
+    private class LazyIdentifierDomainEventMessage<P> extends GenericDomainEventMessage {
 
         public LazyIdentifierDomainEventMessage(String aggregateType,
                                                 long seq,
@@ -566,10 +566,10 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
         @Override
         @Nonnull
-        public GenericDomainEventMessage<P> withMetaData(@Nonnull Map<String, String> newMetaData) {
+        public GenericDomainEventMessage withMetaData(@Nonnull Map<String, String> newMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
-                return new GenericDomainEventMessage<>(
+                return new GenericDomainEventMessage(
                         getType(), getAggregateIdentifier(), getSequenceNumber(),
                         identifier(), type(), payload(), metaData(), timestamp()
                 );
@@ -583,10 +583,10 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
         @Override
         @Nonnull
-        public GenericDomainEventMessage<P> andMetaData(@Nonnull Map<String, String> additionalMetaData) {
+        public GenericDomainEventMessage andMetaData(@Nonnull Map<String, String> additionalMetaData) {
             String identifier = identifierAsString();
             if (identifier != null) {
-                return new GenericDomainEventMessage<>(
+                return new GenericDomainEventMessage(
                         getType(), getAggregateIdentifier(), getSequenceNumber(),
                         identifier(), type(), payload(), metaData(), timestamp()
                 ).andMetaData(additionalMetaData);

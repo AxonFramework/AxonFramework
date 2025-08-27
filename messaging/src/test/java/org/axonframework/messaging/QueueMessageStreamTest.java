@@ -28,32 +28,32 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class QueueMessageStreamTest extends MessageStreamTest<EventMessage<String>> {
+class QueueMessageStreamTest extends MessageStreamTest<EventMessage> {
 
     @Override
-    MessageStream<EventMessage<String>> completedTestSubject(List<EventMessage<String>> messages) {
-        QueueMessageStream<EventMessage<String>> testSubject = new QueueMessageStream<>();
+    MessageStream<EventMessage> completedTestSubject(List<EventMessage> messages) {
+        QueueMessageStream<EventMessage> testSubject = new QueueMessageStream<>();
         messages.forEach(m -> testSubject.offer(m, Context.empty()));
         testSubject.complete();
         return testSubject;
     }
 
     @Override
-    MessageStream.Single<EventMessage<String>> completedSingleStreamTestSubject(EventMessage<String> message) {
+    MessageStream.Single<EventMessage> completedSingleStreamTestSubject(EventMessage message) {
         Assumptions.abort("QueueMessageStream does not support explicit single-item streams");
         return null;
     }
 
     @Override
-    MessageStream.Empty<EventMessage<String>> completedEmptyStreamTestSubject() {
+    MessageStream.Empty<EventMessage> completedEmptyStreamTestSubject() {
         Assumptions.abort("QueueMessageStream does not support explicit zero-item streams");
         return null;
     }
 
     @Override
-    protected QueueMessageStream<EventMessage<String>> uncompletedTestSubject(List<EventMessage<String>> messages,
+    protected QueueMessageStream<EventMessage> uncompletedTestSubject(List<EventMessage> messages,
                                                                               CompletableFuture<Void> completionCallback) {
-        QueueMessageStream<EventMessage<String>> testSubject = new QueueMessageStream<>();
+        QueueMessageStream<EventMessage> testSubject = new QueueMessageStream<>();
         messages.forEach(m -> testSubject.offer(m, Context.empty()));
 
         completionCallback.whenComplete((r, e) -> {
@@ -67,28 +67,28 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage<String>> {
     }
 
     @Override
-    protected void publishAdditionalMessage(MessageStream<EventMessage<String>> testSubject,
-                                            EventMessage<String> randomMessage) {
-        ((QueueMessageStream<EventMessage<String>>) testSubject).offer(randomMessage, Context.empty());
+    protected void publishAdditionalMessage(MessageStream<EventMessage> testSubject,
+                                            EventMessage randomMessage) {
+        ((QueueMessageStream<EventMessage>) testSubject).offer(randomMessage, Context.empty());
     }
 
     @Override
-    MessageStream<EventMessage<String>> failingTestSubject(List<EventMessage<String>> messages, Exception failure) {
-        QueueMessageStream<EventMessage<String>> testSubject = new QueueMessageStream<>();
+    MessageStream<EventMessage> failingTestSubject(List<EventMessage> messages, Exception failure) {
+        QueueMessageStream<EventMessage> testSubject = new QueueMessageStream<>();
         messages.forEach(m -> testSubject.offer(m, Context.empty()));
         testSubject.completeExceptionally(failure);
         return testSubject;
     }
 
     @Override
-    EventMessage<String> createRandomMessage() {
-        return new GenericEventMessage<>(new MessageType("message"),
+    EventMessage createRandomMessage() {
+        return new GenericEventMessage(new MessageType("message"),
                                          "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test
     void shouldInvokeConsumeCallbackWhenMessageIsConsumed() {
-        QueueMessageStream<EventMessage<String>> testSubject = uncompletedTestSubject(List.of(createRandomMessage()),
+        QueueMessageStream<EventMessage> testSubject = uncompletedTestSubject(List.of(createRandomMessage()),
                                                                                       new CompletableFuture<>());
 
         AtomicBoolean invoked = new AtomicBoolean(false);
@@ -101,10 +101,10 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage<String>> {
 
     @Test
     void shouldRefuseNewItemWhenCapacityHasBeenReached() {
-        QueueMessageStream<EventMessage<String>> testSubject = new QueueMessageStream<>(new ArrayBlockingQueue<>(2));
+        QueueMessageStream<EventMessage> testSubject = new QueueMessageStream<>(new ArrayBlockingQueue<>(2));
 
-        EventMessage<String> message1 = createRandomMessage();
-        EventMessage<String> message2 = createRandomMessage();
+        EventMessage message1 = createRandomMessage();
+        EventMessage message2 = createRandomMessage();
 
         assertTrue(testSubject.offer(message1, Context.empty()));
         assertTrue(testSubject.offer(message2, Context.empty()));

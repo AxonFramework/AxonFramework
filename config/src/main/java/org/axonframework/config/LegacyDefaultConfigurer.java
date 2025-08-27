@@ -161,7 +161,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     private final LegacyConfiguration config = new ConfigurationImpl();
 
     private final MessageMonitorFactoryBuilder messageMonitorFactoryBuilder = new MessageMonitorFactoryBuilder();
-    private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryComponent =
+    private final Component<BiFunction<Class<?>, String, MessageMonitor<Message>>> messageMonitorFactoryComponent =
             new Component<>(config, "monitorFactory", messageMonitorFactoryBuilder::build);
     private final Component<List<CorrelationDataProvider>> correlationProviders = new Component<>(
             config, "correlationProviders",
@@ -394,7 +394,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     protected QueryUpdateEmitter defaultQueryUpdateEmitter(LegacyConfiguration config) {
         return defaultComponent(QueryUpdateEmitter.class, config)
                 .orElseGet(() -> {
-                    MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor =
+                    MessageMonitor<? super SubscriptionQueryUpdateMessage> updateMessageMonitor =
                             config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
                     return SimpleQueryUpdateEmitter.builder()
                                                    .updateMessageMonitor(updateMessageMonitor)
@@ -455,7 +455,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                             : simpleUnitOfWorkFactory;
                     SimpleCommandBus commandBus = new SimpleCommandBus(unitOfWorkFactory, Collections.emptyList());
                     if (!config.correlationDataProviders().isEmpty()) {
-                        CorrelationDataInterceptor<Message<?>> interceptor =
+                        CorrelationDataInterceptor<Message> interceptor =
                                 new CorrelationDataInterceptor<>(config.correlationDataProviders());
                         return new InterceptingCommandBus(commandBus, List.of(interceptor), List.of());
                     }
@@ -784,7 +784,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     @Override
     public LegacyConfigurer configureMessageMonitor(
-            @Nonnull Function<LegacyConfiguration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> builder
+            @Nonnull Function<LegacyConfiguration, BiFunction<Class<?>, String, MessageMonitor<Message>>> builder
     ) {
         messageMonitorFactoryBuilder.add((conf, type, name) -> builder.apply(conf).apply(type, name));
         return this;
@@ -888,7 +888,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
             @Nonnull Function<LegacyConfiguration, LegacyEventStorageEngine> storageEngineBuilder
     ) {
         return configureEventStore(c -> {
-            MessageMonitor<Message<?>> monitor =
+            MessageMonitor<Message> monitor =
                     messageMonitorFactoryComponent.get()
                                                   .apply(LegacyEmbeddedEventStore.class, "eventStore");
             LegacyEmbeddedEventStore eventStore = LegacyEmbeddedEventStore.builder()
@@ -1136,7 +1136,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         }
 
         @Override
-        public <M extends Message<?>> MessageMonitor<? super M> messageMonitor(@Nonnull Class<?> componentType,
+        public <M extends Message> MessageMonitor<? super M> messageMonitor(@Nonnull Class<?> componentType,
                                                                                @Nonnull String componentName) {
             return messageMonitorFactoryComponent.get().apply(componentType, componentName);
         }

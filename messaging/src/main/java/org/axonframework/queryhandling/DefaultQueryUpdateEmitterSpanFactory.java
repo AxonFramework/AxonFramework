@@ -52,17 +52,17 @@ public class DefaultQueryUpdateEmitterSpanFactory implements QueryUpdateEmitterS
     }
 
     @Override
-    public Span createUpdateScheduleEmitSpan(SubscriptionQueryUpdateMessage<?> update) {
+    public Span createUpdateScheduleEmitSpan(SubscriptionQueryUpdateMessage update) {
         return spanFactory.createInternalSpan(() -> "QueryUpdateEmitter.scheduleQueryUpdateMessage", update);
     }
 
     @Override
-    public Span createUpdateEmitSpan(SubscriptionQueryUpdateMessage<?> update) {
+    public Span createUpdateEmitSpan(SubscriptionQueryUpdateMessage update) {
         return spanFactory.createDispatchSpan(() -> "QueryUpdateEmitter.emitQueryUpdateMessage", update);
     }
 
     @Override
-    public <T, M extends SubscriptionQueryUpdateMessage<T>> M propagateContext(M update) {
+    public <M extends SubscriptionQueryUpdateMessage> M propagateContext(M update) {
         return spanFactory.propagateContext(update);
     }
 

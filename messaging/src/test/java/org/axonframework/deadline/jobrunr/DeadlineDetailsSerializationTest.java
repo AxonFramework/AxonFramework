@@ -39,7 +39,6 @@ class DeadlineDetailsSerializationTest {
     private static final String TEST_DEADLINE_NAME = "deadline-name";
     private static final String TEST_DEADLINE_PAYLOAD = "deadline-payload";
     private static MetaData metaData;
-    @SuppressWarnings("rawtypes")
     private static DeadlineMessage message;
 
     @BeforeAll
@@ -48,9 +47,9 @@ class DeadlineDetailsSerializationTest {
         map.put("someStringValue", "foo");
         map.put("someIntValue", "2");
         metaData = new MetaData(map);
-        message = new GenericDeadlineMessage<>(
+        message = new GenericDeadlineMessage(
                 TEST_DEADLINE_NAME,
-                new GenericMessage<>(new MessageType(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
+                new GenericMessage(new MessageType(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
                 Instant::now
         ).withMetaData(metaData);
     }
@@ -61,7 +60,6 @@ class DeadlineDetailsSerializationTest {
         testSerialisationWithSpecificSerializer(serializer);
     }
 
-    @SuppressWarnings("rawtypes")
     private void testSerialisationWithSpecificSerializer(Serializer serializer) {
         String expectedType = "aggregateType";
         String expectedIdentifier = "identifier";

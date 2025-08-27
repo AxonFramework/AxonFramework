@@ -66,7 +66,7 @@ class AggregateTypeParameterResolverFactoryTest {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(aggregateTypeMethod, aggregateTypeMethod.getParameters(), 0);
         assertNotNull(resolver);
-        final DomainEventMessage<Object> eventMessage = new GenericDomainEventMessage<>(
+        final DomainEventMessage eventMessage = new GenericDomainEventMessage(
                 "aggregateType", "id", 0L, new MessageType("event"), "payload"
         );
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
@@ -78,7 +78,7 @@ class AggregateTypeParameterResolverFactoryTest {
     void ignoredForNonDomainEventMessage() {
         ParameterResolver<String> resolver = testSubject.createInstance(aggregateTypeMethod, aggregateTypeMethod.getParameters(), 0);
         assertNotNull(resolver);
-        EventMessage<Object> eventMessage = EventTestUtils.asEventMessage("test");
+        EventMessage eventMessage = EventTestUtils.asEventMessage("test");
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
         assertFalse(resolver.matches(context));
     }

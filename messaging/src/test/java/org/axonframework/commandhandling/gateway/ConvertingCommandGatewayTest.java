@@ -53,7 +53,7 @@ class ConvertingCommandGatewayTest {
     @Test
     void resultIsDeserializedWhenRetrievedFromCommandResult() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
-                CompletableFuture.completedFuture(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE))
+                CompletableFuture.completedFuture(new GenericMessage(TEST_TYPE, HELLO_MESSAGE))
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
@@ -67,7 +67,7 @@ class ConvertingCommandGatewayTest {
     @Test
     void resultIsDeserializedWhenRetrievedDirectly() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
-                CompletableFuture.completedFuture(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE))
+                CompletableFuture.completedFuture(new GenericMessage(TEST_TYPE, HELLO_MESSAGE))
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
@@ -81,7 +81,7 @@ class ConvertingCommandGatewayTest {
     @Test
     void commandResultProvidesAccessToOriginalMessage() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
-                CompletableFuture.completedFuture(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE))
+                CompletableFuture.completedFuture(new GenericMessage(TEST_TYPE, HELLO_MESSAGE))
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
@@ -96,7 +96,7 @@ class ConvertingCommandGatewayTest {
 
     @Test
     void onSuccessCallbackIsInvokedWhenFutureCompletes() {
-        CompletableFuture<Message<Object>> completableFuture = new CompletableFuture<>();
+        CompletableFuture<Message> completableFuture = new CompletableFuture<>();
         CommandResult stubResult = new FutureCommandResult(completableFuture);
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
@@ -114,7 +114,7 @@ class ConvertingCommandGatewayTest {
             invoked.set(true);
         });
 
-        completableFuture.complete(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE));
+        completableFuture.complete(new GenericMessage(TEST_TYPE, HELLO_MESSAGE));
 
         assertTrue(actual.isDone());
         assertTrue(invoked.get());

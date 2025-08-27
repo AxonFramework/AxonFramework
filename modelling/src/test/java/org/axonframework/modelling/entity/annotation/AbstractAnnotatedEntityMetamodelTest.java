@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.DelegatingEventConverter;
 import org.axonframework.eventhandling.EventConverter;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.gateway.EventAppender;
@@ -67,7 +68,7 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
     protected abstract AnnotatedEntityMetamodel<E> getMetamodel();
 
     protected Object dispatchInstanceCommand(Object command) {
-        CommandMessage<?> message = createCommand(command);
+        CommandMessage message = createCommand(command);
         try {
             return metamodel.handleInstance(message, entityState, StubProcessingContext.forMessage(message))
                             .first()
@@ -84,7 +85,7 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
     }
 
     protected Object dispatchCreateCommand(Object command) {
-        CommandMessage<?> message = createCommand(command);
+        CommandMessage message = createCommand(command);
         try {
             return metamodel.handleCreate(message, StubProcessingContext.forMessage(message))
                             .first()
@@ -100,12 +101,12 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
         }
     }
 
-    protected <P> CommandMessage<P> createCommand(P command) {
-        return new GenericCommandMessage<>(new MessageType(command.getClass()), command);
+    protected <P> CommandMessage createCommand(P command) {
+        return new GenericCommandMessage(new MessageType(command.getClass()), command);
     }
 
-    protected <P> EventMessage<P> createEvent(P event) {
-        return new GenericEventMessage<>(new MessageType(event.getClass()), event);
+    protected <P> EventMessage createEvent(P event) {
+        return new GenericEventMessage(new MessageType(event.getClass()), event);
     }
 
     protected ParameterResolverFactory createParameterResolverFactory() {
@@ -130,14 +131,19 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
                 return;
             }
             events.forEach(event -> {
-                EventMessage<?> eventMessage;
+                EventMessage eventMessage;
                 if (event instanceof EventMessage) {
-                    eventMessage = (EventMessage<?>) event;
+                    eventMessage = (EventMessage) event;
                 } else {
                     eventMessage = createEvent(event);
                 }
                 metamodel.evolve(entityState, eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            throw new UnsupportedOperationException("Not required for testing");
         }
     }
 }

@@ -68,11 +68,11 @@ class MessageTimerMonitorTest {
     void messagesWithoutTags() {
         MessageTimerMonitor testSubject = testSubjectBuilder.build();
 
-        EventMessage<Object> foo = asEventMessage(1);
-        EventMessage<Object> bar = asEventMessage("bar");
-        EventMessage<Object> baz = asEventMessage("baz");
+        EventMessage foo = asEventMessage(1);
+        EventMessage bar = asEventMessage("bar");
+        EventMessage baz = asEventMessage("baz");
 
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks =
+        Map<? super Message, MessageMonitor.MonitorCallback> callbacks =
                 testSubject.onMessagesIngested(Arrays.asList(foo, bar, baz));
 
         mockedClock.addSeconds(1);
@@ -97,11 +97,11 @@ class MessageTimerMonitorTest {
                 message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.payloadType().getSimpleName())
         ).build();
 
-        EventMessage<Object> foo = asEventMessage(1);
-        EventMessage<Object> bar = asEventMessage("bar");
-        EventMessage<Object> baz = asEventMessage("baz");
+        EventMessage foo = asEventMessage(1);
+        EventMessage bar = asEventMessage("bar");
+        EventMessage baz = asEventMessage("baz");
 
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks =
+        Map<? super Message, MessageMonitor.MonitorCallback> callbacks =
                 testSubject.onMessagesIngested(Arrays.asList(foo, bar, baz));
 
         mockedClock.addSeconds(1);
@@ -150,14 +150,14 @@ class MessageTimerMonitorTest {
                 message -> Tags.of("myMetaData", message.metaData().get("myMetadataKey").toString())
         ).build();
 
-        EventMessage<Object> foo = asEventMessage("foo").withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage foo = asEventMessage("foo").withMetaData(Collections.singletonMap("myMetadataKey",
                                                                                                "myMetadataValue1"));
-        EventMessage<Object> bar = asEventMessage("bar").withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage bar = asEventMessage("bar").withMetaData(Collections.singletonMap("myMetadataKey",
                                                                                                "myMetadataValue2"));
-        EventMessage<Object> baz = asEventMessage("baz").withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage baz = asEventMessage("baz").withMetaData(Collections.singletonMap("myMetadataKey",
                                                                                                "myMetadataValue2"));
 
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks =
+        Map<? super Message, MessageMonitor.MonitorCallback> callbacks =
                 testSubject.onMessagesIngested(Arrays.asList(foo, bar, baz));
 
         mockedClock.addSeconds(1);
@@ -207,9 +207,9 @@ class MessageTimerMonitorTest {
                         timerBuilder -> timerBuilder.publishPercentiles(0.5, 0.75, 0.95)
                 ).build();
 
-        EventMessage<Object> testEvent = asEventMessage(1);
+        EventMessage testEvent = asEventMessage(1);
 
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> result =
+        Map<? super Message, MessageMonitor.MonitorCallback> result =
                 customTimerTestSubject.onMessagesIngested(Collections.singletonList(testEvent));
 
         mockedClock.addSeconds(1);
@@ -283,7 +283,7 @@ class MessageTimerMonitorTest {
         assertThrows(AxonConfigurationException.class, () -> testSubject.timerCustomization(null));
     }
 
-    private static EventMessage<Object> asEventMessage(Object payload) {
-        return new GenericEventMessage<>(new MessageType("event"), payload);
+    private static EventMessage asEventMessage(Object payload) {
+        return new GenericEventMessage(new MessageType("event"), payload);
     }
 }

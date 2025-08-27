@@ -67,10 +67,10 @@ public class AnnotatedEntityIdResolver<ID> implements EntityIdResolver<ID>, Desc
 
     @Nonnull
     @Override
-    public ID resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+    public ID resolve(@Nonnull Message message, @Nonnull ProcessingContext context) {
         Class<?> expectedRepresentation = metamodel.getExpectedRepresentation(message.type().qualifiedName());
         if (expectedRepresentation != null) {
-            Message<?> convertedMessage = converter.convertMessage(message, expectedRepresentation);
+            Message convertedMessage = converter.convertMessage(message, expectedRepresentation);
             return delegate.resolve(convertedMessage, context);
         }
         throw new AxonConfigurationException(

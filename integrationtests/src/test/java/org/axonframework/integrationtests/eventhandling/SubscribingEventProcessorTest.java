@@ -99,7 +99,7 @@ class SubscribingEventProcessorTest {
         testSubject.start();
 
         // then
-        List<EventMessage<Integer>> events = createEvents(2);
+        List<EventMessage> events = createEvents(2);
         eventBus.publish(events);
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 2 published events");
     }
@@ -119,7 +119,7 @@ class SubscribingEventProcessorTest {
         testSubject.start();
 
         // then
-        List<EventMessage<Integer>> events = createEvents(2);
+        List<EventMessage> events = createEvents(2);
         eventBus.publish(events);
         events.forEach(e -> spanFactory.verifySpanCompleted("EventProcessor.process", e));
     }

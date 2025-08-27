@@ -128,7 +128,7 @@ class MessagingConfigurationDefaultsTest {
     private static class TestCommandBus implements CommandBus {
 
         @Override
-        public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+        public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                                    @Nullable ProcessingContext processingContext) {
             throw new UnsupportedOperationException();
         }

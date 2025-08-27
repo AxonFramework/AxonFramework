@@ -33,14 +33,14 @@ class AxonTestThenCommand
 
     private final Reporter reporter = new Reporter();
 
-    private final Message<?> actualResult;
+    private final Message actualResult;
 
     public AxonTestThenCommand(
             Configuration configuration,
             AxonTestFixture.Customization customization,
             RecordingCommandBus commandBus,
             RecordingEventSink eventSink,
-            Message<?> lastCommandResult,
+            Message lastCommandResult,
             Throwable lastCommandException
     ) {
         super(configuration, customization, commandBus, eventSink, lastCommandException);

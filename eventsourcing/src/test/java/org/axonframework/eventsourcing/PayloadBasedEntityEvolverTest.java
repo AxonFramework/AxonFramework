@@ -44,7 +44,7 @@ class PayloadBasedEntityEvolverTest {
 
     @Test
     void evolveAppliesEventWhenPayloadTypeIsConvertible() {
-        EventMessage<String> testEvent = new GenericEventMessage<>(new MessageType(String.class), PAYLOAD);
+        EventMessage testEvent = new GenericEventMessage(new MessageType(String.class), PAYLOAD);
 
         String result = testSubject.evolve(ENTITY, testEvent, StubProcessingContext.forMessage(testEvent));
 
@@ -53,15 +53,15 @@ class PayloadBasedEntityEvolverTest {
 
     @Test
     void evolveThrowsExceptionWhenPayloadTypeCannotBeConverted() {
-        EventMessage<StringBuilder> testEvent =
-                new GenericEventMessage<>(new MessageType(String.class), new StringBuilder());
+        EventMessage testEvent =
+                new GenericEventMessage(new MessageType(String.class), new StringBuilder());
 
         assertThrows(ClassCastException.class, () -> testSubject.evolve(ENTITY, testEvent, StubProcessingContext.forMessage(testEvent)));
     }
 
     @Test
     void evolveIsInvokedSuccessfullyRegardlessOfQualifiedNameMismatch() {
-        EventMessage<String> testEvent = new GenericEventMessage<>(new MessageType(Integer.class), PAYLOAD);
+        EventMessage testEvent = new GenericEventMessage(new MessageType(Integer.class), PAYLOAD);
 
         String result = testSubject.evolve(ENTITY, testEvent, StubProcessingContext.forMessage(testEvent));
 
@@ -70,7 +70,7 @@ class PayloadBasedEntityEvolverTest {
 
     @Test
     void evolveThrowsNullPointerExceptionForNullEntity() {
-        EventMessage<String> testEvent = new GenericEventMessage<>(new MessageType(String.class), PAYLOAD);
+        EventMessage testEvent = new GenericEventMessage(new MessageType(String.class), PAYLOAD);
 
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> testSubject.evolve(null, testEvent, StubProcessingContext.forMessage(testEvent)));

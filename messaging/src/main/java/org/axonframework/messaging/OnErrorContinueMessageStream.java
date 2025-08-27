@@ -31,7 +31,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class OnErrorContinueMessageStream<M extends Message<?>> implements MessageStream<M> {
+class OnErrorContinueMessageStream<M extends Message> implements MessageStream<M> {
 
     private final MessageStream<M> delegate;
     private final AtomicReference<MessageStream<M>> onErrorStream = new AtomicReference<>();

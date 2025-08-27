@@ -88,9 +88,9 @@ class AnnotationBasedEntityEvolvingComponentTest {
         void handlesSequenceOfEvents() {
             // given
             var state = new TestState();
-            DomainEventMessage<?> event0 = domainEvent(0);
-            DomainEventMessage<?> event1 = domainEvent(1);
-            DomainEventMessage<?> event2 = domainEvent(2);
+            DomainEventMessage event0 = domainEvent(0);
+            DomainEventMessage event1 = domainEvent(1);
+            DomainEventMessage event2 = domainEvent(2);
 
             // when
             state = ENTITY_EVOLVER.evolve(state, event0, StubProcessingContext.forMessage(event0));
@@ -288,12 +288,12 @@ class AnnotationBasedEntityEvolvingComponentTest {
         }
     }
 
-    private static DomainEventMessage<?> domainEvent(int seq) {
+    private static DomainEventMessage domainEvent(int seq) {
         return domainEvent(seq, null);
     }
 
-    private static DomainEventMessage<?> domainEvent(int seq, String sampleMetaData) {
-        return new GenericDomainEventMessage<>(
+    private static DomainEventMessage domainEvent(int seq, String sampleMetaData) {
+        return new GenericDomainEventMessage(
                 "test",
                 "id",
                 seq,

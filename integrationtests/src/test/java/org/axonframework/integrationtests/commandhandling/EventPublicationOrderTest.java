@@ -70,16 +70,16 @@ class EventPublicationOrderTest {
     void publicationOrderIsMaintained_AggregateAdded() {
         String aggregateId = UUID.randomUUID().toString();
         UpdateStubAggregateWithExtraEventCommand testPayload = new UpdateStubAggregateWithExtraEventCommand(aggregateId);
-        CommandMessage<UpdateStubAggregateWithExtraEventCommand> testCommand =
-                new GenericCommandMessage<>(new MessageType("command"), testPayload);
-        DomainEventMessage<StubAggregateCreatedEvent> event = new GenericDomainEventMessage<>(
+        CommandMessage testCommand =
+                new GenericCommandMessage(new MessageType("command"), testPayload);
+        DomainEventMessage event = new GenericDomainEventMessage(
                 "test", aggregateId, 0, new MessageType("event"),
                 new StubAggregateCreatedEvent(aggregateId)
         );
         when(eventStore.readEvents(aggregateId)).thenReturn(DomainEventStream.of(event));
         doAnswer(invocation -> Void.class).when(eventStore).publish(isA(EventMessage.class));
 
-        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(testCommand, null);
+        CompletableFuture<? extends Message> dispatchingResult = commandBus.dispatch(testCommand, null);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         InOrder inOrder = inOrder(eventStore, eventStore, eventStore);
@@ -88,7 +88,7 @@ class EventPublicationOrderTest {
         inOrder.verify(eventStore).publish(isA(DomainEventMessage.class));
     }
 
-    private static class NotADomainEventMatcher implements ArgumentMatcher<EventMessage<?>> {
+    private static class NotADomainEventMatcher implements ArgumentMatcher<EventMessage> {
 
         @Override
         public boolean matches(EventMessage o) {

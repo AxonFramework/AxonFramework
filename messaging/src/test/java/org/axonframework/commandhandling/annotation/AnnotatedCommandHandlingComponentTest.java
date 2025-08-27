@@ -73,7 +73,7 @@ class AnnotatedCommandHandlingComponentTest {
 
     @Test
     void handlerDispatchingVoidReturnType() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(new MessageType(String.class),
+        CommandMessage testCommand = new GenericCommandMessage(new MessageType(String.class),
                                                                          "myStringPayload");
 
         Object result = testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
@@ -90,7 +90,7 @@ class AnnotatedCommandHandlingComponentTest {
 
     @Test
     void handlerDispatchingWithReturnType() {
-        CommandMessage<Long> testCommand = new GenericCommandMessage<>(new MessageType(Long.class), 1L);
+        CommandMessage testCommand = new GenericCommandMessage(new MessageType(Long.class), 1L);
 
         Object result = testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
                                    .first()
@@ -106,8 +106,8 @@ class AnnotatedCommandHandlingComponentTest {
 
     @Test
     void handlerDispatchingWithCustomCommandName() {
-        CommandMessage<Long> testCommand =
-                new GenericCommandMessage<>(new GenericMessage<>(new MessageType("almostLong"), 1L));
+        CommandMessage testCommand =
+                new GenericCommandMessage(new GenericMessage(new MessageType("almostLong"), 1L));
 
         Object result = testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
                                    .first()
@@ -125,7 +125,7 @@ class AnnotatedCommandHandlingComponentTest {
     @Test
     void handlerDispatchingThrowingException() {
         try {
-            GenericCommandMessage<HashSet<Object>> command = new GenericCommandMessage<>(new MessageType(HashSet.class),
+            GenericCommandMessage command = new GenericCommandMessage(new MessageType(HashSet.class),
                                                                                          new HashSet<>());
             testSubject.handle(command, StubProcessingContext.forMessage(command))
                        .first()
@@ -142,7 +142,7 @@ class AnnotatedCommandHandlingComponentTest {
 
     @Test
     void handleNoHandlerForCommand() {
-        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_TYPE, new LinkedList<>());
+        CommandMessage command = new GenericCommandMessage(TEST_TYPE, new LinkedList<>());
 
         var exception = assertThrows(CompletionException.class,
                                      () -> testSubject.handle(command, mock(ProcessingContext.class)).first()
@@ -152,9 +152,9 @@ class AnnotatedCommandHandlingComponentTest {
 
     @Test
     void messageHandlerInterceptorAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
-        CommandMessage<String> testCommandMessage = new GenericCommandMessage<>(new MessageType(String.class), "");
-        List<CommandMessage<?>> withInterceptor = new ArrayList<>();
-        List<CommandMessage<?>> withoutInterceptor = new ArrayList<>();
+        CommandMessage testCommandMessage = new GenericCommandMessage(new MessageType(String.class), "");
+        List<CommandMessage> withInterceptor = new ArrayList<>();
+        List<CommandMessage> withoutInterceptor = new ArrayList<>();
         annotatedCommandHandler = new MyInterceptingCommandHandler(withoutInterceptor,
                                                                    withInterceptor,
                                                                    new ArrayList<>());
@@ -179,7 +179,7 @@ class AnnotatedCommandHandlingComponentTest {
     @Test
     @Disabled("TODO #3062 - Exception Handler support")
     void exceptionHandlerAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
-        CommandMessage<List<?>> testCommandMessage = new GenericCommandMessage<>(TEST_TYPE, new ArrayList<>());
+        CommandMessage testCommandMessage = new GenericCommandMessage(TEST_TYPE, new ArrayList<>());
         List<Exception> interceptedExceptions = new ArrayList<>();
         annotatedCommandHandler = new MyInterceptingCommandHandler(new ArrayList<>(),
                                                                    new ArrayList<>(),
@@ -242,12 +242,12 @@ class AnnotatedCommandHandlingComponentTest {
     @SuppressWarnings("unused")
     private static class MyInterceptingCommandHandler extends MyCommandHandler {
 
-        private final List<CommandMessage<?>> interceptedWithoutInterceptorChain;
-        private final List<CommandMessage<?>> interceptedWithInterceptorChain;
+        private final List<CommandMessage> interceptedWithoutInterceptorChain;
+        private final List<CommandMessage> interceptedWithInterceptorChain;
         private final List<Exception> interceptedExceptions;
 
-        private MyInterceptingCommandHandler(List<CommandMessage<?>> interceptedWithoutInterceptorChain,
-                                             List<CommandMessage<?>> interceptedWithInterceptorChain,
+        private MyInterceptingCommandHandler(List<CommandMessage> interceptedWithoutInterceptorChain,
+                                             List<CommandMessage> interceptedWithInterceptorChain,
                                              List<Exception> interceptedExceptions) {
             this.interceptedWithoutInterceptorChain = interceptedWithoutInterceptorChain;
             this.interceptedWithInterceptorChain = interceptedWithInterceptorChain;
@@ -255,12 +255,12 @@ class AnnotatedCommandHandlingComponentTest {
         }
 
         @MessageHandlerInterceptor
-        public void interceptAny(CommandMessage<?> command) {
+        public void interceptAny(CommandMessage command) {
             interceptedWithoutInterceptorChain.add(command);
         }
 
         @MessageHandlerInterceptor
-        public Object interceptAny(CommandMessage<?> command, ProcessingContext context, InterceptorChain chain)
+        public Object interceptAny(CommandMessage command, ProcessingContext context, InterceptorChain chain)
                 throws Exception {
             interceptedWithInterceptorChain.add(command);
             return chain.proceedSync(context);

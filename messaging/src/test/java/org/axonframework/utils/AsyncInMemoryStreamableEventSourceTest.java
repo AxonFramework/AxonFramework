@@ -43,8 +43,8 @@ class AsyncInMemoryStreamableEventSourceTest {
     @DisplayName("Both implementations handle normal event flow identically")
     void normalEventFlowCompatibility() throws ExecutionException, InterruptedException {
         // Given - Same events for both implementations
-        EventMessage<String> event1 = EventTestUtils.asEventMessage("Test Event 1");
-        EventMessage<String> event2 = EventTestUtils.asEventMessage("Test Event 2");
+        EventMessage event1 = EventTestUtils.asEventMessage("Test Event 1");
+        EventMessage event2 = EventTestUtils.asEventMessage("Test Event 2");
 
         AsyncInMemoryStreamableEventSource asyncSource = new AsyncInMemoryStreamableEventSource();
         InMemoryStreamableEventSource legacySource = new InMemoryStreamableEventSource();
@@ -64,7 +64,7 @@ class AsyncInMemoryStreamableEventSourceTest {
 
         // And both should deliver same events in same order
         StreamingCondition condition = StreamingCondition.startingFrom(null);
-        MessageStream<EventMessage<?>> asyncStream = asyncSource.open(condition);
+        MessageStream<EventMessage> asyncStream = asyncSource.open(condition);
         try (var legacyStream = legacySource.openStream(null)) {
 
             // First event
@@ -72,7 +72,7 @@ class AsyncInMemoryStreamableEventSourceTest {
             assertTrue(legacyStream.hasNextAvailable(0, java.util.concurrent.TimeUnit.MILLISECONDS));
 
             var asyncEntry1 = asyncStream.next().orElseThrow();
-            TrackedEventMessage<?> legacyEvent1 = legacyStream.nextAvailable();
+            TrackedEventMessage legacyEvent1 = legacyStream.nextAvailable();
 
             assertEquals(legacyEvent1.payload(), asyncEntry1.message().payload());
             assertEquals(legacyEvent1.trackingToken().position(),
@@ -80,7 +80,7 @@ class AsyncInMemoryStreamableEventSourceTest {
 
             // Second event
             var asyncEntry2 = asyncStream.next().orElseThrow();
-            TrackedEventMessage<?> legacyEvent2 = legacyStream.nextAvailable();
+            TrackedEventMessage legacyEvent2 = legacyStream.nextAvailable();
 
             assertEquals(legacyEvent2.payload(), asyncEntry2.message().payload());
             assertEquals(legacyEvent2.trackingToken().position(),
@@ -107,7 +107,7 @@ class AsyncInMemoryStreamableEventSourceTest {
         StreamingCondition condition = StreamingCondition.startingFrom(null);
 
         // Test async implementation
-        MessageStream<EventMessage<?>> asyncStream = asyncSource.open(condition);
+        MessageStream<EventMessage> asyncStream = asyncSource.open(condition);
         IllegalStateException asyncException = assertThrows(IllegalStateException.class,
                                                             asyncStream::next);
         assertTrue(asyncException.getMessage().contains("Cannot retrieve event at position [0]"));
@@ -128,7 +128,7 @@ class AsyncInMemoryStreamableEventSourceTest {
         InMemoryStreamableEventSource legacySource = new InMemoryStreamableEventSource();
 
         // Publish events to both
-        EventMessage<String> event = EventTestUtils.asEventMessage("Test Event");
+        EventMessage event = EventTestUtils.asEventMessage("Test Event");
         asyncSource.publishMessage(event);
         legacySource.publishMessage(event);
 
@@ -138,7 +138,7 @@ class AsyncInMemoryStreamableEventSourceTest {
 
         // When - Open and close streams (triggers destructive behavior)
         StreamingCondition condition = StreamingCondition.startingFrom(null);
-        MessageStream<EventMessage<?>> asyncStream = asyncSource.open(condition);
+        MessageStream<EventMessage> asyncStream = asyncSource.open(condition);
         asyncStream.close();
         try (var legacyStream = legacySource.openStream(null)) {
             // Just open and close
@@ -149,7 +149,7 @@ class AsyncInMemoryStreamableEventSourceTest {
         assertNull(legacySource.createHeadToken());
 
         // And new streams should see no events
-        MessageStream<EventMessage<?>> newAsyncStream = asyncSource.open(condition);
+        MessageStream<EventMessage> newAsyncStream = asyncSource.open(condition);
         assertFalse(newAsyncStream.hasNextAvailable());
 
         try (var newLegacyStream = legacySource.openStream(null)) {
@@ -166,8 +166,8 @@ class AsyncInMemoryStreamableEventSourceTest {
             // Given
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
 
-            EventMessage<String> event1 = EventTestUtils.asEventMessage("Event 1");
-            EventMessage<String> event2 = EventTestUtils.asEventMessage("Event 2");
+            EventMessage event1 = EventTestUtils.asEventMessage("Event 1");
+            EventMessage event2 = EventTestUtils.asEventMessage("Event 2");
 
             eventSource.publishMessage(event1);
             eventSource.publishMessage(event2);
@@ -176,13 +176,13 @@ class AsyncInMemoryStreamableEventSourceTest {
             StreamingCondition condition = StreamingCondition.startingFrom(null);
 
             // Then - Should read all events from position 1
-            MessageStream<EventMessage<?>> stream = eventSource.open(condition);
-            Optional<MessageStream.Entry<EventMessage<?>>> entry1 = stream.next();
+            MessageStream<EventMessage> stream = eventSource.open(condition);
+            Optional<MessageStream.Entry<EventMessage>> entry1 = stream.next();
             assertTrue(entry1.isPresent());
             assertEquals("Event 1", entry1.get().message().payload());
             assertEquals(1, TrackingToken.fromContext(entry1.get()).orElseThrow().position().orElse(-1));
 
-            Optional<MessageStream.Entry<EventMessage<?>>> entry2 = stream.next();
+            Optional<MessageStream.Entry<EventMessage>> entry2 = stream.next();
             assertTrue(entry2.isPresent());
             assertEquals("Event 2", entry2.get().message().payload());
             assertEquals(2, TrackingToken.fromContext(entry2.get()).orElseThrow().position().orElse(-1));
@@ -194,7 +194,7 @@ class AsyncInMemoryStreamableEventSourceTest {
             // Given
             AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
 
-            EventMessage<String> event1 = EventTestUtils.asEventMessage("Event 1");
+            EventMessage event1 = EventTestUtils.asEventMessage("Event 1");
             eventSource.publishMessage(event1);
 
             // When - Start from token position 5 (beyond available events)
@@ -202,7 +202,7 @@ class AsyncInMemoryStreamableEventSourceTest {
             StreamingCondition condition = StreamingCondition.startingFrom(futureToken);
 
             // Then - Should have no events available
-            MessageStream<EventMessage<?>> stream = eventSource.open(condition);
+            MessageStream<EventMessage> stream = eventSource.open(condition);
             assertFalse(stream.hasNextAvailable(),
                         "Stream should have no events when starting beyond available events");
             assertTrue(stream.next().isEmpty(), "next() should return empty Optional");

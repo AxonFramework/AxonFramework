@@ -146,7 +146,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
 
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         handlingComponent.subscribe(qualifiedName, (command, ctx) -> {
-            CommandMessage<?> converted = converter.convertMessage(command, payloadType);
+            CommandMessage converted = converter.convertMessage(command, payloadType);
             return interceptorChain.handle(converted, ctx, target, handler)
                                    .mapMessage(this::asCommandResultMessage)
                                    .first()
@@ -156,7 +156,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
                                                                 @Nonnull ProcessingContext processingContext) {
         return handlingComponent.handle(command, processingContext);
     }
@@ -166,7 +166,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
         if (commandResult instanceof CommandResultMessage) {
             return (CommandResultMessage<R>) commandResult;
         } else if (commandResult instanceof Message) {
-            Message<R> commandResultMessage = (Message<R>) commandResult;
+            Message commandResultMessage = (Message) commandResult;
             return new GenericCommandResultMessage<>(commandResultMessage);
         }
         MessageType type = messageTypeResolver.resolveOrThrow(ObjectUtils.nullSafeTypeOf(commandResult));

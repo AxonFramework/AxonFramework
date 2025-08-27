@@ -53,13 +53,13 @@ public class EventProcessorConfiguration implements DescribableComponent {
     protected ErrorHandler errorHandler = PropagatingErrorHandler.INSTANCE;
 
     // TODO #3098 - Remove MessageMonitor from EventProcessorConfiguration, keep the usages just in some decorator around EventHandlingComponent
-    protected MessageMonitor<? super EventMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
+    protected MessageMonitor<? super EventMessage> messageMonitor = NoOpMessageMonitor.INSTANCE;
 
     // TODO #3098 - Remove EventProcessorSpanFactory from EventProcessorConfiguration, keep the usages just in some decorator around EventHandlingComponent
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
                                                                                       .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                       .build();
-    private List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors = new ArrayList<>();
+    private List<MessageHandlerInterceptor<? super EventMessage>> interceptors = new ArrayList<>();
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
 
     /**
@@ -106,7 +106,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      *                       processed
      * @return The current instance, for fluent interfacing.
      */
-    public EventProcessorConfiguration messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
+    public EventProcessorConfiguration messageMonitor(@Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
         assertNonNull(messageMonitor, "MessageMonitor may not be null");
         this.messageMonitor = messageMonitor;
         return this;
@@ -129,7 +129,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
 
     @Deprecated(since = "5.0.0", forRemoval = true)
     public EventProcessorConfiguration interceptors(
-            @Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+            @Nonnull List<MessageHandlerInterceptor<? super EventMessage>> interceptors) {
         assertNonNull(spanFactory, "interceptors may not be null");
         this.interceptors = interceptors;
         return this;
@@ -173,7 +173,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      *
      * @return The {@link MessageMonitor} for this {@link EventProcessor} implementation.
      */
-    public MessageMonitor<? super EventMessage<?>> messageMonitor() {
+    public MessageMonitor<? super EventMessage> messageMonitor() {
         return messageMonitor;
     }
 
@@ -191,7 +191,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      *
      * @return The list of interceptors for this {@link EventProcessor} implementation.
      */
-    public List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors() {
+    public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
         return interceptors;
     }
 
