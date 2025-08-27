@@ -72,9 +72,7 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
                                       .persister(c -> (id, entity, context) -> null)
                                       .build();
 
-        Configuration configuration =
-                testSubject.componentRegistry(cr -> cr.registerModule(testEntityBuilder))
-                           .build();
+        Configuration configuration = testSubject.registerEntity(testEntityBuilder).build();
 
         assertThat(configuration.getModuleConfiguration("SimpleStateBasedEntityModule<String, Object>")).isPresent();
     }

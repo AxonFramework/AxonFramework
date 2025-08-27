@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class FutureCommandResult implements CommandResult {
 
-    private final CompletableFuture<? extends Message<?>> completableFuture;
+    private final CompletableFuture<? extends Message> completableFuture;
 
     /**
      * Initializes the CommandResult based on the given {@code result} the completes when the result {@link Message}
@@ -38,12 +38,12 @@ public class FutureCommandResult implements CommandResult {
      *
      * @param result The completable future that provides the result message when available
      */
-    public FutureCommandResult(@Nonnull CompletableFuture<? extends Message<?>> result) {
+    public FutureCommandResult(@Nonnull CompletableFuture<? extends Message> result) {
         this.completableFuture = Objects.requireNonNull(result, "The result may not be null.");
     }
 
     @Override
-    public CompletableFuture<? extends Message<?>> getResultMessage() {
+    public CompletableFuture<? extends Message> getResultMessage() {
         return completableFuture;
     }
 }

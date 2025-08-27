@@ -38,7 +38,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
+class FluxMessageStream<M extends Message> implements MessageStream<M> {
 
     private final Flux<Entry<M>> source;
     private final BlockingQueue<Entry<M>> peeked = new LinkedBlockingQueue<>(5);
@@ -65,7 +65,7 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+    public <RM extends Message> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         return new FluxMessageStream<>(source.map(mapper));
     }
 

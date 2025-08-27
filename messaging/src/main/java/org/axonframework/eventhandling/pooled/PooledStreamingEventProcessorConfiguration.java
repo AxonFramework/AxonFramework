@@ -83,7 +83,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  */
 public class PooledStreamingEventProcessorConfiguration extends EventProcessorConfiguration {
 
-    private StreamableEventSource<? extends EventMessage<?>> eventSource;
+    private StreamableEventSource<? extends EventMessage> eventSource;
     private TokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
     private ScheduledExecutorService workerExecutor;
@@ -99,7 +99,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     private boolean coordinatorExtendsClaims = false;
     private Function<Set<QualifiedName>, EventCriteria> eventCriteriaProvider =
             (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
-    private Consumer<? super EventMessage<?>> ignoredMessageHandler = eventMessage -> messageMonitor.onMessageIngested(
+    private Consumer<? super EventMessage> ignoredMessageHandler = eventMessage -> messageMonitor.onMessageIngested(
             eventMessage).reportIgnored();
 
     /**
@@ -126,7 +126,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
 
     @Override
     public PooledStreamingEventProcessorConfiguration messageMonitor(
-            @Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
+            @Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
         super.messageMonitor(messageMonitor);
         return this;
     }
@@ -139,7 +139,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
 
     @Override
     public PooledStreamingEventProcessorConfiguration interceptors(
-            @Nonnull List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptors) {
+            @Nonnull List<MessageHandlerInterceptor<? super EventMessage>> interceptors) {
         super.interceptors(interceptors);
         return this;
     }
@@ -160,7 +160,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration eventSource(
-            @Nonnull StreamableEventSource<? extends EventMessage<?>> eventSource) {
+            @Nonnull StreamableEventSource<? extends EventMessage> eventSource) {
         assertNonNull(eventSource, "StreamableEventSource may not be null");
         this.eventSource = eventSource;
         return this;
@@ -373,7 +373,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return The current Builder instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration ignoredMessageHandler(
-            Consumer<? super EventMessage<?>> ignoredMessageHandler) {
+            Consumer<? super EventMessage> ignoredMessageHandler) {
         this.ignoredMessageHandler = ignoredMessageHandler;
         return this;
     }
@@ -425,7 +425,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @return The {@link StreamableEventSource} for this processor.
      */
-    public StreamableEventSource<? extends EventMessage<?>> eventSource() {
+    public StreamableEventSource<? extends EventMessage> eventSource() {
         return eventSource;
     }
 
@@ -542,7 +542,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @return The ignored message handler.
      */
-    public Consumer<? super EventMessage<?>> ignoredMessageHandler() {
+    public Consumer<? super EventMessage> ignoredMessageHandler() {
         return ignoredMessageHandler;
     }
 

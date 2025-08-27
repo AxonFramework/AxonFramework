@@ -45,7 +45,7 @@ public class DefaultCommandBusSpanFactory implements CommandBusSpanFactory {
     }
 
     @Override
-    public Span createDispatchCommandSpan(CommandMessage<?> commandMessage, boolean distributed) {
+    public Span createDispatchCommandSpan(CommandMessage commandMessage, boolean distributed) {
         if (distributed) {
             return spanFactory.createDispatchSpan(() -> "CommandBus.dispatchDistributedCommand", commandMessage);
         }
@@ -53,7 +53,7 @@ public class DefaultCommandBusSpanFactory implements CommandBusSpanFactory {
     }
 
     @Override
-    public Span createHandleCommandSpan(CommandMessage<?> commandMessage, boolean distributed) {
+    public Span createHandleCommandSpan(CommandMessage commandMessage, boolean distributed) {
         if (distributed) {
             if (distributedInSameTrace) {
                 return spanFactory.createChildHandlerSpan(() -> "CommandBus.handleDistributedCommand", commandMessage);
@@ -64,7 +64,7 @@ public class DefaultCommandBusSpanFactory implements CommandBusSpanFactory {
     }
 
     @Override
-    public <T> CommandMessage<T> propagateContext(CommandMessage<T> commandMessage) {
+    public CommandMessage propagateContext(CommandMessage commandMessage) {
         return spanFactory.propagateContext(commandMessage);
     }
 

@@ -41,7 +41,7 @@ class DeadlineMethodMessageHandlerDefinitionTest {
 
     @Test
     void deadlineManagerIsEvaluatedBeforeGenericEventHandler() throws Exception {
-        GenericDeadlineMessage<String> event = new GenericDeadlineMessage<>(
+        GenericDeadlineMessage event = new GenericDeadlineMessage(
                 "someDeadline", new MessageType("deadline"), "test"
         );
         handlerAdapter.handleSync(event, StubProcessingContext.forMessage(event));
@@ -52,7 +52,7 @@ class DeadlineMethodMessageHandlerDefinitionTest {
 
     @Test
     void namedDeadlineManagerIsEvaluatedBeforeGenericOne() throws Exception {
-        GenericDeadlineMessage<String> event = new GenericDeadlineMessage<>(
+        GenericDeadlineMessage event = new GenericDeadlineMessage(
                 "specificDeadline", new MessageType("deadline"), "test"
         );
         handlerAdapter.handleSync(event, StubProcessingContext.forMessage(event));

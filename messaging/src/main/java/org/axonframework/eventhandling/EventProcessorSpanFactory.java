@@ -36,7 +36,7 @@ public interface EventProcessorSpanFactory {
      * @param eventMessages The event messages that are in the batch.
      * @return The created span.
      */
-    Span createBatchSpan(boolean streaming, List<? extends EventMessage<?>> eventMessages);
+    Span createBatchSpan(boolean streaming, List<? extends EventMessage> eventMessages);
 
     /**
      * Creates a span for the handling of an event. This entails the entire interceptor chain and the handler.
@@ -45,5 +45,5 @@ public interface EventProcessorSpanFactory {
      * @param eventMessage The event message that is handled.
      * @return The created span.
      */
-    Span createProcessEventSpan(boolean streaming, EventMessage<?> eventMessage);
+    Span createProcessEventSpan(boolean streaming, EventMessage eventMessage);
 }

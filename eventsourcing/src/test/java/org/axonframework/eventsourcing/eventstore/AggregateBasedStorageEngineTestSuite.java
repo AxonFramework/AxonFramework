@@ -140,7 +140,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                                  taggedEventMessage("event-6", emptySet())).thenCompose(AppendTransaction::commit)
                    .join();
 
-        MessageStream<EventMessage<?>> result =
+        MessageStream<EventMessage> result =
                 testSubject.stream(StreamingCondition.startingFrom(trackingTokenAt(0)));
 
         StepVerifier.create(result.asFlux())
@@ -169,7 +169,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                                  taggedEventMessage("event-6", TEST_AGGREGATE_TAGS)).thenCompose(
                 AppendTransaction::commit).join();
 
-        MessageStream<EventMessage<?>> result =
+        MessageStream<EventMessage> result =
                 testSubject.stream(StreamingCondition.startingFrom(trackingTokenAt(2)));
 
         StepVerifier.create(result.asFlux())
@@ -200,7 +200,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                                  taggedEventMessage("event-6", Set.of())).thenCompose(
                 AppendTransaction::commit).join();
 
-        MessageStream<EventMessage<?>> result = testSubject.stream(StreamingCondition.startingFrom(
+        MessageStream<EventMessage> result = testSubject.stream(StreamingCondition.startingFrom(
                 trackingTokenAt(10)).or(expectedCriteria));
 
         try {
@@ -342,11 +342,11 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
 
         // when...
         SourcingCondition testCondition = SourcingCondition.conditionFor(1, TEST_AGGREGATE_CRITERIA);
-        MessageStream<EventMessage<?>> result = testSubject.source(testCondition);
+        MessageStream<EventMessage> result = testSubject.source(testCondition);
         // then...
         StepVerifier.create(result.asFlux())
-                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payload()))
-                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payload()))
+                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
+                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
                     .assertNext(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
         assertEquals(expected, actual);
@@ -367,7 +367,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                    .thenCompose(AppendTransaction::commit).join();
 
         // when...
-        MessageStream<EventMessage<?>> source;
+        MessageStream<EventMessage> source;
         SourcingCondition testCondition =
                 SourcingCondition.conditionFor(1, TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
         try {
@@ -378,10 +378,10 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
 
         // then...
         StepVerifier.create(source.asFlux())
-                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payload()))
-                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payload()))
-                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payload()))
-                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payload()))
+                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
+                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
+                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
+                    .consumeNextWith(entry -> actual.add(entry.map(this::convertPayload).message().payloadAs(String.class)))
                     .assertNext(AggregateBasedStorageEngineTestSuite::assertMarkerEntry)
                     .verifyComplete();
         assertEquals(expected, actual);
@@ -396,7 +396,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         // when...
         SourcingCondition testCondition =
                 SourcingCondition.conditionFor(0, TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA));
-        MessageStream<EventMessage<?>> result = testSubject.source(testCondition);
+        MessageStream<EventMessage> result = testSubject.source(testCondition);
         // then...
         StepVerifier.create(result.asFlux())
                     .assertNext(entry -> assertEquals(
@@ -550,7 +550,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         }
     }
 
-    private void assertTrackedEntry(Entry<EventMessage<?>> actual, EventMessage<?> expected, long eventNumber) {
+    private void assertTrackedEntry(Entry<EventMessage> actual, EventMessage expected, long eventNumber) {
         Optional<TrackingToken> actualToken = TrackingToken.fromContext(actual);
         assertTrue(actualToken.isPresent());
         OptionalLong actualPosition = actualToken.get().position();
@@ -559,16 +559,16 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         assertEvent(actual.message(), expected);
     }
 
-    private void assertEvent(EventMessage<?> actual, EventMessage<?> expected) {
+    private void assertEvent(EventMessage actual, EventMessage expected) {
         assertEquals(expected.payload(), convertPayload(actual).payload());
         assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.timestamp().toEpochMilli(), actual.timestamp().toEpochMilli());
         assertEquals(expected.metaData(), actual.metaData());
     }
 
-    protected abstract EventMessage<String> convertPayload(EventMessage<?> original);
+    protected abstract EventMessage convertPayload(EventMessage original);
 
-    private static boolean assertMarkerEntry(Entry<EventMessage<?>> entry) {
+    private static boolean assertMarkerEntry(Entry<EventMessage> entry) {
         return entry.getResource(ConsistencyMarker.RESOURCE_KEY) instanceof AggregateBasedConsistencyMarker
                 && entry.message().equals(TerminalEventMessage.INSTANCE);
     }
@@ -579,12 +579,12 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
 
     protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags, MetaData metaData) {
         return new GenericTaggedEventMessage<>(
-                new GenericEventMessage<>(new MessageType("event"), payload, metaData),
+                new GenericEventMessage(new MessageType("event"), payload, metaData),
                 tags
         );
     }
 
-    private @Nonnull Predicate<Entry<EventMessage<?>>> entryWithAggregateEvent(String expectedPayload,
+    private @Nonnull Predicate<Entry<EventMessage>> entryWithAggregateEvent(String expectedPayload,
                                                                                int expectedSequence) {
         return e -> expectedPayload.equals(convertPayload(e.message()).payload())
                 && TEST_AGGREGATE_ID.equals(e.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY))

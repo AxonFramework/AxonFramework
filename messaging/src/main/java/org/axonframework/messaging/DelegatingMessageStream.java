@@ -29,7 +29,7 @@ import java.util.Optional;
  * @since 5.0.0
  * @author Allard Buijze
  */
-public abstract class DelegatingMessageStream<DM extends Message<?>, RM extends Message<?>>
+public abstract class DelegatingMessageStream<DM extends Message, RM extends Message>
         implements MessageStream<RM> {
 
     private final MessageStream<DM> delegate;

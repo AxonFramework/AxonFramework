@@ -46,7 +46,7 @@ class ProcessingContextEventAppenderTest {
         );
 
         //noinspection unchecked
-        ArgumentCaptor<List<EventMessage<?>>> captor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<EventMessage>> captor = ArgumentCaptor.forClass(List.class);
 
         String payload1 = "My Event 1";
         Integer payload2 = 500;
@@ -56,10 +56,10 @@ class ProcessingContextEventAppenderTest {
                 captor.capture()
         );
 
-        List<EventMessage<?>> publishedEvents = captor.getValue();
+        List<EventMessage> publishedEvents = captor.getValue();
         assertEquals(2, publishedEvents.size());
-        EventMessage<?> publishedEvent1 = publishedEvents.get(0);
-        EventMessage<?> publishedEvent2 = publishedEvents.get(1);
+        EventMessage publishedEvent1 = publishedEvents.get(0);
+        EventMessage publishedEvent2 = publishedEvents.get(1);
         assertEquals(payload1, publishedEvent1.payload());
         assertEquals(payload2, publishedEvent2.payload());
         assertEquals(

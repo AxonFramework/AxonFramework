@@ -106,11 +106,8 @@ class AxonServerCommandBusConnectorTest {
 
     @Test
     void dispatchingCommandMessageWithInvalidPayloadTypeFails() {
-        CommandMessage<String> command = new GenericCommandMessage<>(
-                new GenericMessage<>(ANY_TEST_MESSAGE_ID,
-                                     ANY_TEST_TYPE,
-                                     "invalid-payload",
-                                     new HashMap<>())
+        CommandMessage command = new GenericCommandMessage(
+                new GenericMessage(ANY_TEST_MESSAGE_ID, ANY_TEST_TYPE, "invalid-payload", new HashMap<>())
         );
         assertThrows(IllegalArgumentException.class, () -> testSubject.dispatch(command, null));
     }
@@ -118,7 +115,7 @@ class AxonServerCommandBusConnectorTest {
     @Test
     void dispatchingCommandMessageWithValidPayloadResultsToResponse() {
         // Arrange
-        CommandMessage<byte[]> command = createTestCommandMessage();
+        CommandMessage command = createTestCommandMessage();
         CommandResponse response = createSuccessfulCommandResponse();
         ArgumentCaptor<Command> commandCaptor = ArgumentCaptor.forClass(Command.class);
         when(commandChannel.sendCommand(commandCaptor.capture()))
@@ -139,11 +136,8 @@ class AxonServerCommandBusConnectorTest {
     void dispatchingBuildsCorrectOutgoingCommand() {
         // Arrange
         Map<String, String> metadata = Map.of("key1", "value1", "key2", "value2");
-        CommandMessage<byte[]> command = new GenericCommandMessage<>(
-                new GenericMessage<>(ANY_TEST_MESSAGE_ID,
-                                     ANY_TEST_TYPE,
-                                     ANY_TEST_PAYLOAD,
-                                     metadata),
+        CommandMessage command = new GenericCommandMessage(
+                new GenericMessage(ANY_TEST_MESSAGE_ID, ANY_TEST_TYPE, ANY_TEST_PAYLOAD, metadata),
                 ANY_TEST_ROUTING_KEY,
                 ANY_TEST_PRIORITY
         );
@@ -172,7 +166,7 @@ class AxonServerCommandBusConnectorTest {
     @Test
     void dispatchingWithEmptyPriorityDoesNotAddPriorityInstruction() {
         // Arrange
-        CommandMessage<byte[]> command = createTestCommandMessage();
+        CommandMessage command = createTestCommandMessage();
 
         when(commandChannel.sendCommand(any(Command.class)))
                 .thenReturn(CompletableFuture.completedFuture(createSuccessfulCommandResponse()));
@@ -193,7 +187,7 @@ class AxonServerCommandBusConnectorTest {
     @Test
     void dispatchingHandlesErrorResponse() {
         // Arrange
-        CommandMessage<byte[]> command = createTestCommandMessage();
+        CommandMessage command = createTestCommandMessage();
         CommandResponse errorResponse = CommandResponse.newBuilder()
                                                        .setMessageIdentifier(UUID.randomUUID().toString())
                                                        .setErrorCode("COMMAND_EXECUTION_ERROR")
@@ -215,7 +209,7 @@ class AxonServerCommandBusConnectorTest {
     @Test
     void dispatchingHandlesEmptyPayloadResponse() {
         // Arrange
-        CommandMessage<byte[]> command = createTestCommandMessage();
+        CommandMessage command = createTestCommandMessage();
         CommandResponse response = CommandResponse.newBuilder()
                                                   .setMessageIdentifier(UUID.randomUUID().toString())
                                                   .setPayload(SerializedObject.newBuilder()
@@ -401,11 +395,11 @@ class AxonServerCommandBusConnectorTest {
     }
 
     // Helpers
-    private CommandMessage<byte[]> createTestCommandMessage() {
-        return new GenericCommandMessage<>(new GenericMessage<>(ANY_TEST_MESSAGE_ID,
-                                                                ANY_TEST_TYPE,
-                                                                ANY_TEST_PAYLOAD,
-                                                                new HashMap<>()));
+    private CommandMessage createTestCommandMessage() {
+        return new GenericCommandMessage(new GenericMessage(ANY_TEST_MESSAGE_ID,
+                                                            ANY_TEST_TYPE,
+                                                            ANY_TEST_PAYLOAD,
+                                                            new HashMap<>()));
     }
 
     private CommandResponse createSuccessfulCommandResponse() {

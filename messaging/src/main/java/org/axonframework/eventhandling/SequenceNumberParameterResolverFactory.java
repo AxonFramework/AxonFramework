@@ -63,7 +63,7 @@ public final class SequenceNumberParameterResolverFactory extends
         @Nullable
         @Override
         public Long resolveParameterValue(@Nonnull ProcessingContext context) {
-            if (Message.fromContext(context) instanceof DomainEventMessage<?> domainEventMessage) {
+            if (Message.fromContext(context) instanceof DomainEventMessage domainEventMessage) {
                 return domainEventMessage.getSequenceNumber();
             }
             return null;

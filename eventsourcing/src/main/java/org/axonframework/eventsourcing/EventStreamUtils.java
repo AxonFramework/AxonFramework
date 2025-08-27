@@ -75,22 +75,22 @@ public abstract class EventStreamUtils {
                     currentSequenceNumber.set(result.getSequenceNumber().get());
                     return result;
                 });
-        Stream<? extends DomainEventMessage<?>> stream = upcastResult.map(ir -> {
-            SerializedMessage<?> serializedMessage = new SerializedMessage<>(
+        Stream<? extends DomainEventMessage> stream = upcastResult.map(ir -> {
+            SerializedMessage serializedMessage = new SerializedMessage(
                     ir.getMessageIdentifier(),
                     new MessageType(serializer.classForType(ir.getType())),
                     new LazyDeserializingObject<>(ir::getData, ir.getType(), serializer),
                     ir.getMetaData()
             );
             if (ir.getTrackingToken().isPresent()) {
-                return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(), ir.getAggregateType().get(),
-                                                              ir.getAggregateIdentifier().get(),
-                                                              ir.getSequenceNumber().get(), serializedMessage,
-                                                              ir::getTimestamp);
+                return new GenericTrackedDomainEventMessage(ir.getTrackingToken().get(), ir.getAggregateType().get(),
+                                                            ir.getAggregateIdentifier().get(),
+                                                            ir.getSequenceNumber().get(), serializedMessage,
+                                                            ir::getTimestamp);
             } else {
-                return new GenericDomainEventMessage<>(ir.getAggregateType().get(), ir.getAggregateIdentifier().get(),
-                                                       ir.getSequenceNumber().get(), serializedMessage,
-                                                       ir::getTimestamp);
+                return new GenericDomainEventMessage(ir.getAggregateType().get(), ir.getAggregateIdentifier().get(),
+                                                     ir.getSequenceNumber().get(), serializedMessage,
+                                                     ir::getTimestamp);
             }
         });
         return DomainEventStream.of(stream, currentSequenceNumber::get);
@@ -102,7 +102,7 @@ public abstract class EventStreamUtils {
      * @param domainEventStream the input {@link DomainEventStream}
      * @return the output {@link Stream} after conversion
      */
-    public static Stream<? extends DomainEventMessage<?>> asStream(DomainEventStream domainEventStream) {
+    public static Stream<? extends DomainEventMessage> asStream(DomainEventStream domainEventStream) {
         return stream(spliteratorUnknownSize(domainEventStream, DISTINCT | NONNULL | ORDERED), false);
     }
 

@@ -111,7 +111,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void instanceCommandForParentWillOnlyCallParent() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(
+            GenericCommandMessage command = new GenericCommandMessage(
                     new MessageType(PARENT_ONLY_INSTANCE_COMMAND), "myPayload");
             MessageStream.Single<CommandResultMessage<?>> result = metamodel.handleInstance(command, entity, context);
 
@@ -124,7 +124,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void commandDefinedInChildOneWillOnlyCallChildOne() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(CHILD_ONE_ONLY_COMMAND),
+            GenericCommandMessage command = new GenericCommandMessage(new MessageType(CHILD_ONE_ONLY_COMMAND),
                                                                                 "myPayload");
             MessageStream.Single<CommandResultMessage<?>> result = metamodel.handleInstance(command, entity, context);
 
@@ -137,7 +137,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void commandDefinedInChildTwoWillOnlyCallChildTwo() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(CHILD_TWO_ONLY_COMMAND),
+            GenericCommandMessage command = new GenericCommandMessage(new MessageType(CHILD_TWO_ONLY_COMMAND),
                                                                                 "myPayload");
             MessageStream.Single<CommandResultMessage<?>> result = metamodel.handleInstance(command, entity, context);
 
@@ -150,7 +150,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void commandDefinedInBothChildrenWillThrowExceptionIfBothCanHandleInstanceCommand() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(SHARED_CHILD_COMMAND),
+            GenericCommandMessage command = new GenericCommandMessage(new MessageType(SHARED_CHILD_COMMAND),
                                                                                 "myPayload");
 
             when(childModelMockOne.canHandle(any(), any(), any())).thenReturn(true);
@@ -164,7 +164,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void commandDefinedInBothChildrenWillCallChildOneIfOnlyChildOneCanHandleInstance() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(
+            GenericCommandMessage command = new GenericCommandMessage(
                     new MessageType(SHARED_CHILD_COMMAND), "myPayload");
 
             when(childModelMockOne.canHandle(any(), any(), any())).thenReturn(true);
@@ -179,7 +179,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void commandDefinedInBothChildrenWillCallChildTwoIfOnlyChildTwoCanHandleInstance() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(
+            GenericCommandMessage command = new GenericCommandMessage(
                     new MessageType(SHARED_CHILD_COMMAND), "myPayload");
 
             when(childModelMockOne.canHandle(any(), any(), any())).thenReturn(false);
@@ -194,7 +194,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void instanceCommandHandlerBeingCalledWithCreateResultsInFailedMessageStream() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(
+            GenericCommandMessage command = new GenericCommandMessage(
                     new MessageType(PARENT_ONLY_INSTANCE_COMMAND), "myPayload");
 
             MessageStreamTestUtils.assertCompletedExceptionally(
@@ -206,7 +206,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void returnsFailedMessageStreamOnUnknownCommandType() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(
+            GenericCommandMessage command = new GenericCommandMessage(
                     new MessageType("UnknownCommand"), "myPayload");
 
             MessageStreamTestUtils.assertCompletedExceptionally(
@@ -218,7 +218,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void returnsFailedMessageStreamIfParentCommandHandlerThrowsException() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(
+            GenericCommandMessage command = new GenericCommandMessage(
                     new MessageType(PARENT_ONLY_INSTANCE_COMMAND), "myPayload");
             when(parentInstanceCommandHandler.handle(any(), any(), any())).thenThrow(new IllegalStateException(
                     "Test exception"));
@@ -231,7 +231,7 @@ class SimpleEntityMetamodelTest {
         }
         @Test
         void returnsFailedMessageStreamIfChildCommandHandlerThrowsException() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(
+            GenericCommandMessage command = new GenericCommandMessage(
                     new MessageType(CHILD_TWO_ONLY_COMMAND), "myPayload");
             when(childModelMockTwo.handle(any(), any(), any())).thenThrow(new IllegalStateException("Test exception"));
 
@@ -248,7 +248,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void creationalCommandForParentWillOnlyCallParent() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(
+            GenericCommandMessage command = new GenericCommandMessage(
                     new MessageType(PARENT_ONLY_CREATIONAL_COMMAND), "myPayload");
             MessageStream.Single<CommandResultMessage<?>> result = metamodel.handleCreate(command, context);
 
@@ -260,7 +260,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void creationalCommandHandlerBeingCalledWithInstanceResultsInFailedMessageStream() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(
+            GenericCommandMessage command = new GenericCommandMessage(
                     new MessageType(PARENT_ONLY_CREATIONAL_COMMAND), "myPayload");
 
             MessageStreamTestUtils.assertCompletedExceptionally(
@@ -272,7 +272,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void returnsFailedMessageStreamOnUnknownCommandType() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(
+            GenericCommandMessage command = new GenericCommandMessage(
                     new MessageType("UnknownCommand"), "myPayload");
 
             MessageStreamTestUtils.assertCompletedExceptionally(
@@ -284,7 +284,7 @@ class SimpleEntityMetamodelTest {
 
         @Test
         void returnsFailedMessageStreamIfParentCommandHandlerThrowsException() {
-            GenericCommandMessage<String> command = new GenericCommandMessage<>(
+            GenericCommandMessage command = new GenericCommandMessage(
                     new MessageType(PARENT_ONLY_CREATIONAL_COMMAND), "myPayload");
             when(parentCreationalCommandHandler.handle(any(), any())).thenThrow(new IllegalStateException(
                     "Test exception"));
@@ -307,7 +307,7 @@ class SimpleEntityMetamodelTest {
                 .addChild(childModelMockTwo)
                 .build();
 
-        GenericEventMessage<String> event = new GenericEventMessage<>(SHARED_EVENT, "myPayload");
+        GenericEventMessage event = new GenericEventMessage(SHARED_EVENT, "myPayload");
         metamodel.evolve(entity, event, context);
 
         verify(childModelMockOne).evolve(entity, event, context);
@@ -316,7 +316,7 @@ class SimpleEntityMetamodelTest {
 
     @Test
     void callsChildrenEvolversAndParentEvolverInThatOrder() {
-        GenericEventMessage<String> event = new GenericEventMessage<>(SHARED_EVENT, "myPayload");
+        GenericEventMessage event = new GenericEventMessage(SHARED_EVENT, "myPayload");
         metamodel.evolve(entity, event, context);
 
         InOrder inOrder = inOrder(childModelMockOne, childModelMockTwo, parentEntityEvolver);
@@ -339,7 +339,7 @@ class SimpleEntityMetamodelTest {
 
     @Test
     void returnsFailedMessageStreamIfChildCommandHandlerThrowsException() {
-        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(CHILD_TWO_ONLY_COMMAND),
+        GenericCommandMessage command = new GenericCommandMessage(new MessageType(CHILD_TWO_ONLY_COMMAND),
                                                                             "myPayload");
         when(childModelMockTwo.handle(any(), any(), any())).thenThrow(new IllegalStateException("Test exception"));
 

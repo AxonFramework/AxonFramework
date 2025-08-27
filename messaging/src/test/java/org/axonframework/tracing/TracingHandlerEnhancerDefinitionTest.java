@@ -64,7 +64,7 @@ class TracingHandlerEnhancerDefinitionTest {
                                                                                       .build();
         MessageHandlingMember<TracingHandlerEnhancerDefinitionTest> messageHandlingMember = definition.wrapHandler(
                 original);
-        Message<?> message = mock(Message.class);
+        Message message = mock(Message.class);
         when(original.handleSync(any(), any(), any())).thenAnswer(invocationOnMock -> {
             spanFactory.verifySpanActive("TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
             invoked = true;
@@ -99,7 +99,7 @@ class TracingHandlerEnhancerDefinitionTest {
                                                                                       .build();
         MessageHandlingMember<TracingHandlerEnhancerDefinitionTest> messageHandlingMember = definition.wrapHandler(
                 original);
-        Message<?> message = mock(Message.class);
+        Message message = mock(Message.class);
         when(original.handleSync(any(), any(), any())).thenAnswer(invocationOnMock -> {
             spanFactory.verifySpanActive("TracingHandlerEnhancerDefinitionTest.executable(MyEvent,CommandGateway)");
             invoked = true;

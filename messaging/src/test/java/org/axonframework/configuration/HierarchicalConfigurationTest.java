@@ -19,8 +19,6 @@ package org.axonframework.configuration;
 import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 

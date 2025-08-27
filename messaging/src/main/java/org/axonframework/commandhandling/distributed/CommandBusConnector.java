@@ -49,7 +49,7 @@ public interface CommandBusConnector extends DescribableComponent {
      * @return A {@link CompletableFuture} that will complete with the result of the command handling.
      */
     @Nonnull
-    CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+    CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
                                                         @Nullable ProcessingContext processingContext);
 
     /**
@@ -90,7 +90,7 @@ public interface CommandBusConnector extends DescribableComponent {
          * @param commandMessage The command message to handle.
          * @param callback       The callback to invoke with the result of handling the command.
          */
-        void handle(@Nonnull CommandMessage<?> commandMessage, @Nonnull ResultCallback callback);
+        void handle(@Nonnull CommandMessage commandMessage, @Nonnull ResultCallback callback);
     }
 
     /**

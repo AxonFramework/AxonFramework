@@ -68,15 +68,15 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
 
     @Nonnull
     @Override
-    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
-                                                     @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
+                                               @Nonnull ProcessingContext context) {
         Objects.requireNonNull(event, "Event may not be null");
         Objects.requireNonNull(context, "ProcessingContext may not be null");
         Map<Object, CompletableFuture<?>> invocationsBySequenceIdentifier =
                 context.computeResourceIfAbsent(sequencedInvocationsKey, ConcurrentHashMap::new);
 
         //noinspection unchecked
-        CompletableFuture<Message<Void>> resultFuture = (CompletableFuture<Message<Void>>) invocationsBySequenceIdentifier.compute(
+        CompletableFuture<Message> resultFuture = (CompletableFuture<Message>) invocationsBySequenceIdentifier.compute(
                 sequenceIdentifierFor(event, context),
                 (sequenceIdentifier, previousInvocation) -> chainedSequenceInvocations(
                         sequenceIdentifier,
@@ -90,7 +90,7 @@ public class SequencingEventHandlingComponent extends DelegatingEventHandlingCom
     private CompletableFuture<?> chainedSequenceInvocations(
             Object sequenceIdentifier,
             CompletableFuture<?> previousInvocation,
-            EventMessage<?> event,
+            EventMessage event,
             ProcessingContext context
     ) {
         if (previousInvocation == null) {

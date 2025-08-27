@@ -89,7 +89,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            Message<?> message = Message.fromContext(context);
+            Message message = Message.fromContext(context);
             if (message == null) {
                 return false;
             }
@@ -111,7 +111,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         @Nullable
         @Override
         public MetaData resolveParameterValue(@Nonnull ProcessingContext context) {
-            Message<?> message = Message.fromContext(context);
+            Message message = Message.fromContext(context);
             return message.metaData();
         }
 
@@ -121,7 +121,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
     }
 
-    private static class MessageParameterResolver implements ParameterResolver<Message<?>> {
+    private static class MessageParameterResolver implements ParameterResolver<Message> {
 
         private final Class<?> parameterType;
 
@@ -131,13 +131,13 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
 
         @Nullable
         @Override
-        public Message<?> resolveParameterValue(@Nonnull ProcessingContext context) {
+        public Message resolveParameterValue(@Nonnull ProcessingContext context) {
             return Message.fromContext(context);
         }
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            Message<?> message = Message.fromContext(context);
+            Message message = Message.fromContext(context);
             if (message == null) {
                 return false;
             }

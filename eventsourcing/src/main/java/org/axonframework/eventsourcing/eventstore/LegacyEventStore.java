@@ -38,7 +38,7 @@ import jakarta.annotation.Nonnull;
  */
 @Deprecated(since = "5.0.0", forRemoval = true)
 public interface LegacyEventStore
-        extends EventBus, StreamableMessageSource<TrackedEventMessage<?>>, DomainEventSequenceAware {
+        extends EventBus, StreamableMessageSource<TrackedEventMessage>, DomainEventSequenceAware {
 
     /**
      * Open an event stream containing all domain events belonging to the given {@code aggregateIdentifier}.
@@ -86,7 +86,7 @@ public interface LegacyEventStore
      *
      * @param snapshot The snapshot to replace part of the DomainEventStream.
      */
-    void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot);
+    void storeSnapshot(@Nonnull DomainEventMessage snapshot);
 
     @Override
     default Optional<Long> lastSequenceNumberFor(String aggregateIdentifier) {

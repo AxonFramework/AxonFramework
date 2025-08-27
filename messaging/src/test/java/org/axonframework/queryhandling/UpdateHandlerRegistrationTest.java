@@ -35,7 +35,7 @@ class UpdateHandlerRegistrationTest {
         AtomicBoolean registrationInvocation = new AtomicBoolean(false);
         AtomicBoolean completeInvocation = new AtomicBoolean(false);
 
-        UpdateHandlerRegistration<Object> testSubject = new UpdateHandlerRegistration<>(
+        UpdateHandlerRegistration testSubject = new UpdateHandlerRegistration(
                 () -> {
                     registrationInvocation.set(true);
                     return true;

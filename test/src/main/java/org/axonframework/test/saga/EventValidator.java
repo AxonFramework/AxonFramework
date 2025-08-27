@@ -43,7 +43,7 @@ import static org.axonframework.test.saga.DescriptionUtils.describe;
  */
 public class EventValidator implements EventMessageHandler {
 
-    private final List<EventMessage<?>> publishedEvents = new ArrayList<>();
+    private final List<EventMessage> publishedEvents = new ArrayList<>();
     private final EventBus eventBus;
     private final FieldFilter fieldFilter;
     private boolean recording = false;
@@ -92,7 +92,7 @@ public class EventValidator implements EventMessageHandler {
     }
 
     @Override
-    public Object handleSync(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    public Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         publishedEvents.add(event);
         return null;
     }

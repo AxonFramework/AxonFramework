@@ -21,8 +21,6 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 
 import java.util.List;
@@ -37,11 +35,8 @@ import java.util.stream.IntStream;
  */
 public abstract class EventTestUtils {
 
-    private static final MessageType TYPE = new MessageType("event");
     public static final String PAYLOAD = "payload";
     public static final String AGGREGATE = "aggregate";
-    private static final String AGGREGATE_TYPE = "aggregateType";
-    private static final MetaData METADATA = MetaData.emptyInstance();
 
     private EventTestUtils() {
         // Utility class
@@ -53,12 +48,11 @@ public abstract class EventTestUtils {
      * The {@link EventMessage#payload() payload} of the events equals it's position within the sequence.
      *
      * @param number The number of events to construct.
-     * @param <P>    The generic type of the expected payload of the resulting object.
      * @return A {@link List} of {@link EventMessage EventMessages} with a size equalling the given {@code number}.
      */
-    public static <P> List<EventMessage<P>> createEvents(int number) {
+    public static List<EventMessage> createEvents(int number) {
         return IntStream.range(0, number)
-                        .mapToObj(EventTestUtils::<P>createEvent)
+                        .mapToObj(EventTestUtils::createEvent)
                         .toList();
     }
 
@@ -66,10 +60,9 @@ public abstract class EventTestUtils {
      * Constructs an {@link EventMessage} with the given {@code seq} as the {@link EventMessage#payload() payload}.
      *
      * @param seq The payload for the message to construct.
-     * @param <P> The generic type of the expected payload of the resulting object.
      * @return An {@link EventMessage} with the given {@code seq} as the {@link EventMessage#payload() payload}.
      */
-    public static <P> EventMessage<P> createEvent(int seq) {
+    public static EventMessage createEvent(int seq) {
         return EventTestUtils.asEventMessage(seq);
     }
 
@@ -81,20 +74,18 @@ public abstract class EventTestUtils {
      * {@code event} is wrapped into a {@link GenericEventMessage} as its payload.
      *
      * @param event The event to wrap as {@link EventMessage}.
-     * @param <P>   The generic type of the expected payload of the resulting object.
      * @return An {@link EventMessage} containing given {@code event} as payload, or {@code event} if it already
      * implements {@code EventMessage}.
      */
-    @SuppressWarnings("unchecked")
-    public static <P> EventMessage<P> asEventMessage(@Nonnull Object event) {
-        if (event instanceof EventMessage) {
-            return (EventMessage<P>) event;
-        } else if (event instanceof Message) {
-            Message<P> message = (Message<P>) event;
-            return new GenericEventMessage<>(message, GenericEventMessage.clock.instant());
+    public static EventMessage asEventMessage(@Nonnull Object event) {
+        if (event instanceof EventMessage e) {
+            return e;
         }
-        return new GenericEventMessage<>(
-                new GenericMessage<>(new MessageType(event.getClass()), (P) event),
+        if (event instanceof Message message) {
+            return new GenericEventMessage(message, GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage(
+                new GenericMessage(new MessageType(event.getClass()), event),
                 GenericEventMessage.clock.instant()
         );
     }
@@ -108,7 +99,7 @@ public abstract class EventTestUtils {
      * @param handler The {@link EventHandler} to handle the events.
      * @param event   The {@link EventMessage} to handle.
      */
-    public static <T> void handleEventInUnitOfWork(EventHandler handler, EventMessage<T> event) {
+    public static void handleEventInUnitOfWork(EventHandler handler, EventMessage event) {
         handleEventsInUnitOfWork(handler, List.of(event));
     }
 
@@ -121,10 +112,10 @@ public abstract class EventTestUtils {
      * @param handler     The {@link EventHandler} to handle the events.
      * @param eventsBatch The batch of {@link EventMessage EventMessages} to handle.
      */
-    public static <T> void handleEventsInUnitOfWork(EventHandler handler, List<EventMessage<T>> eventsBatch) {
+    public static void handleEventsInUnitOfWork(EventHandler handler, List<EventMessage> eventsBatch) {
         var unitOfWork = UnitOfWorkTestUtils.aUnitOfWork();
         unitOfWork.onInvocation(context -> {
-            MessageStream<Message<Void>> batchResult = MessageStream.empty().cast();
+            MessageStream<Message> batchResult = MessageStream.empty().cast();
             for (var event : eventsBatch) {
                 var eventResult = handler.handle(event, context);
                 batchResult = batchResult.concatWith(eventResult.cast());

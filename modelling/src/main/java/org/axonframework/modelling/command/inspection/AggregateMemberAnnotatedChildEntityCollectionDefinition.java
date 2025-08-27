@@ -78,7 +78,7 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
     }
 
     @Override
-    protected <T> Object resolveCommandTarget(CommandMessage<?> msg,
+    protected <T> Object resolveCommandTarget(CommandMessage msg,
                                               T parent,
                                               Member member,
                                               EntityModel<Object> childEntityModel) {

@@ -46,7 +46,7 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  */
 @Entity
 @Table(indexes = @Index(columnList = "aggregateIdentifier,aggregateSequenceNumber", unique = true))
-public class AggregateBasedEventEntry {
+public class AggregateEventEntry {
 
     // Deliberate field ordering for column ordering
     @Id
@@ -56,7 +56,7 @@ public class AggregateBasedEventEntry {
     )
     @SequenceGenerator(
             name = "globalIndexGenerator",
-            sequenceName = "aggregate-based-event-global-index-sequence",
+            sequenceName = "aggregate-event-global-index-sequence",
             allocationSize = 1
     )
     private long globalIndex;
@@ -78,7 +78,7 @@ public class AggregateBasedEventEntry {
     private String identifier;
 
     /**
-     * Constructor for a {@code AggregateBasedEventEntry} when <b>appending</b> events, since the
+     * Constructor for a {@code AggregateEventEntry} when <b>appending</b> events, since the
      * {@link #globalIndex()} will be defined by the storage layer.
      *
      * @param identifier              The identifier of the {@link EventMessage}.
@@ -94,15 +94,15 @@ public class AggregateBasedEventEntry {
      * @param aggregateSequenceNumber The sequence number of the {@link EventMessage} in the aggregate. May be
      *                                {@code null} if the event does not originate from an aggregate.
      */
-    public AggregateBasedEventEntry(@Nonnull String identifier,
-                                    @Nonnull String type,
-                                    @Nonnull String version,
-                                    @Nonnull byte[] payload,
-                                    @Nonnull byte[] metaData,
-                                    @Nonnull Object timestamp,
-                                    @Nullable String aggregateType,
-                                    @Nullable String aggregateIdentifier,
-                                    @Nullable Long aggregateSequenceNumber) {
+    public AggregateEventEntry(@Nonnull String identifier,
+                               @Nonnull String type,
+                               @Nonnull String version,
+                               @Nonnull byte[] payload,
+                               @Nonnull byte[] metaData,
+                               @Nonnull Object timestamp,
+                               @Nullable String aggregateType,
+                               @Nullable String aggregateIdentifier,
+                               @Nullable Long aggregateSequenceNumber) {
         this.identifier = identifier;
         this.type = type;
         this.version = version;
@@ -117,7 +117,7 @@ public class AggregateBasedEventEntry {
     }
 
     /**
-     * Constructor for an {@code AggregateBasedEventEntry} when <b>reading</b> events, since all parameters should be
+     * Constructor for an {@code AggregateEventEntry} when <b>reading</b> events, since all parameters should be
      * given.
      *
      * @param globalIndex             The position of the {@link EventMessage} in the event store.
@@ -134,16 +134,16 @@ public class AggregateBasedEventEntry {
      * @param aggregateSequenceNumber The sequence number of the {@link EventMessage} in the aggregate. May be
      *                                {@code null} if the event does not originate from an aggregate.
      */
-    public AggregateBasedEventEntry(long globalIndex,
-                                    @Nonnull String identifier,
-                                    @Nonnull String type,
-                                    @Nonnull String version,
-                                    @Nonnull byte[] payload,
-                                    @Nonnull byte[] metaData,
-                                    @Nonnull String timestamp,
-                                    @Nullable String aggregateType,
-                                    @Nullable String aggregateIdentifier,
-                                    @Nullable Long aggregateSequenceNumber) {
+    public AggregateEventEntry(long globalIndex,
+                               @Nonnull String identifier,
+                               @Nonnull String type,
+                               @Nonnull String version,
+                               @Nonnull byte[] payload,
+                               @Nonnull byte[] metaData,
+                               @Nonnull String timestamp,
+                               @Nullable String aggregateType,
+                               @Nullable String aggregateIdentifier,
+                               @Nullable Long aggregateSequenceNumber) {
         this.globalIndex = globalIndex;
         this.identifier = identifier;
         this.type = type;
@@ -159,7 +159,7 @@ public class AggregateBasedEventEntry {
     /**
      * Default constructor required by JPA.
      */
-    protected AggregateBasedEventEntry() {
+    protected AggregateEventEntry() {
         //Default constructor required by JPA.
     }
 

@@ -80,9 +80,9 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
     private final LegacyRepository<T> repository;
     private final CommandTargetResolver commandTargetResolver;
-    private final List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlers;
+    private final List<MessageHandler<CommandMessage, CommandResultMessage<?>>> handlers;
     private final Set<QualifiedName> supportedCommands;
-    private final Map<String, Set<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>>> supportedCommandsByName;
+    private final Map<String, Set<MessageHandler<CommandMessage, CommandResultMessage<?>>>> supportedCommandsByName;
     private final Map<Class<? extends T>, CreationPolicyAggregateFactory<T>> factoryPerType;
     private final MessageTypeResolver messageTypeResolver;
 
@@ -154,10 +154,10 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * Initializes all the handlers. Handlers are deduplicated based on their signature. The signature includes the name
      * of the method and all parameter types. This is an effective override in the hierarchy.
      */
-    private List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> initializeHandlers(
+    private List<MessageHandler<CommandMessage, CommandResultMessage<?>>> initializeHandlers(
             AggregateModel<T> aggregateModel
     ) {
-        List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlersFound = new ArrayList<>();
+        List<MessageHandler<CommandMessage, CommandResultMessage<?>>> handlersFound = new ArrayList<>();
 
         aggregateModel.allCommandHandlers()
                       .values()
@@ -182,13 +182,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
     private void initializeHandler(AggregateModel<T> aggregateModel,
                                    MessageHandlingMember<? super T> handler,
-                                   List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlersFound) {
+                                   List<MessageHandler<CommandMessage, CommandResultMessage<?>>> handlersFound) {
 
         handler.unwrap(CommandMessageHandlingMember.class).ifPresent(cmh -> {
             Optional<AggregateCreationPolicy> policy = handler.unwrap(CreationPolicyMember.class)
                                                               .map(CreationPolicyMember::creationPolicy);
 
-            MessageHandler<CommandMessage<?>, CommandResultMessage<?>> messageHandler;
+            MessageHandler<CommandMessage, CommandResultMessage<?>> messageHandler;
             if (cmh.isFactoryHandler()) {
                 assertThat(
                         policy,
@@ -217,7 +217,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage message,
                                                                 @Nonnull ProcessingContext context) {
         return handlers.stream()
                        .filter(ch -> ch.canHandle(message, context))
@@ -237,14 +237,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         if (commandResult instanceof CommandResultMessage) {
             return (CommandResultMessage<R>) commandResult;
         } else if (commandResult instanceof Message) {
-            Message<R> commandResultMessage = (Message<R>) commandResult;
+            Message commandResultMessage = (Message) commandResult;
             return new GenericCommandResultMessage<>(commandResultMessage);
         }
         MessageType type = typeResolver.apply(ObjectUtils.nullSafeTypeOf(commandResult));
         return new GenericCommandResultMessage<>(type, (R) commandResult);
     }
 
-    public boolean canHandle(CommandMessage<?> message, ProcessingContext context) {
+    public boolean canHandle(CommandMessage message, ProcessingContext context) {
         return handlers.stream()
                        .anyMatch(ch -> ch.canHandle(message, context));
     }
@@ -259,7 +259,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * @param createdAggregate The aggregate that has been created as a result of the command
      * @return The value to report as result of the command
      */
-    protected Object resolveReturnValue(@SuppressWarnings("unused") CommandMessage<?> command,
+    protected Object resolveReturnValue(@SuppressWarnings("unused") CommandMessage command,
                                         Aggregate<T> createdAggregate) {
         return createdAggregate.identifier();
     }
@@ -470,7 +470,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     }
 
     private class AggregateConstructorCommandHandler
-            implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
+            implements MessageHandler<CommandMessage, CommandResultMessage<?>> {
 
         private final MessageHandlingMember<?> handler;
 
@@ -480,20 +480,20 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
         @SuppressWarnings("unchecked")
         @Override
-        public Object handleSync(@Nonnull CommandMessage<?> command,
+        public Object handleSync(@Nonnull CommandMessage command,
                                  @Nonnull ProcessingContext context) throws Exception {
             Aggregate<T> aggregate = repository.newInstance(() -> (T) handler.handleSync(command, context, null));
             return resolveReturnValue(command, aggregate);
         }
 
         @Override
-        public boolean canHandle(@Nonnull CommandMessage<?> message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@Nonnull CommandMessage message, @Nonnull ProcessingContext context) {
             return handler.canHandle(message, context);
         }
     }
 
     private class AlwaysCreateAggregateCommandHandler
-            implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
+            implements MessageHandler<CommandMessage, CommandResultMessage<?>> {
 
         private final MessageHandlingMember<? super T> handler;
         private final CreationPolicyAggregateFactory<T> factoryMethod;
@@ -505,7 +505,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         @Override
-        public Object handleSync(@Nonnull CommandMessage<?> command,
+        public Object handleSync(@Nonnull CommandMessage command,
                                  @Nonnull ProcessingContext context) throws Exception {
             return handleNewInstanceCreation(command,
                                              context,
@@ -515,13 +515,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         @Override
-        public boolean canHandle(@Nonnull CommandMessage<?> message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@Nonnull CommandMessage message, @Nonnull ProcessingContext context) {
             return handler.canHandle(message, context);
         }
     }
 
     private class AggregateCreateOrUpdateCommandHandler
-            implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
+            implements MessageHandler<CommandMessage, CommandResultMessage<?>> {
 
         private final MessageHandlingMember<? super T> handler;
         private final CreationPolicyAggregateFactory<T> factoryMethod;
@@ -533,7 +533,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         @Override
-        public Object handleSync(@Nonnull CommandMessage<?> command,
+        public Object handleSync(@Nonnull CommandMessage command,
                                  @Nonnull ProcessingContext context) throws Exception {
             String aggregateId = resolveNullableAggregateId(command);
 
@@ -550,14 +550,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         @Override
-        public boolean canHandle(@Nonnull CommandMessage<?> message,
+        public boolean canHandle(@Nonnull CommandMessage message,
                                  @Nonnull ProcessingContext context) {
             return handler.canHandle(message, context);
         }
     }
 
     @Nullable
-    private String resolveNullableAggregateId(CommandMessage<?> command) {
+    private String resolveNullableAggregateId(CommandMessage command) {
         try {
             return commandTargetResolver.resolveTarget(command);
         } catch (IdentifierMissingException e) {
@@ -574,7 +574,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
     }
 
-    private Object handleNewInstanceCreation(CommandMessage<?> command,
+    private Object handleNewInstanceCreation(CommandMessage command,
                                              ProcessingContext context,
                                              CreationPolicyAggregateFactory<T> factoryMethod,
                                              MessageHandlingMember<? super T> handler,
@@ -607,7 +607,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                       .isPresent();
     }
 
-    private class AggregateCommandHandler implements MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
+    private class AggregateCommandHandler implements MessageHandler<CommandMessage, CommandResultMessage<?>> {
 
         private final MessageHandlingMember<? super T> handler;
 
@@ -616,14 +616,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         @Override
-        public Object handleSync(@Nonnull CommandMessage<?> command,
+        public Object handleSync(@Nonnull CommandMessage command,
                                  @Nonnull ProcessingContext context) throws Exception {
             String aggregateIdentifier = commandTargetResolver.resolveTarget(command);
             return repository.load(aggregateIdentifier).handle(command, context);
         }
 
         @Override
-        public boolean canHandle(@Nonnull CommandMessage<?> message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@Nonnull CommandMessage message, @Nonnull ProcessingContext context) {
             return handler.canHandle(message, context);
         }
     }

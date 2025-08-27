@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.gateway;
+package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.DefaultComponentRegistry;
@@ -24,6 +24,11 @@ import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link EventAppenderParameterResolverFactoryConfigurationEnhancer}.
+ *
+ * @author Mitchell Herrijgers.
+ */
 class EventAppenderParameterResolverFactoryConfigurationEnhancerTest {
 
     @Test

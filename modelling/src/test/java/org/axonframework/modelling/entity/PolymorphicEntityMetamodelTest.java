@@ -125,7 +125,7 @@ class PolymorphicEntityMetamodelTest {
 
     @Test
     void canHandleInstanceCommandForConcreteTypeOne() {
-        CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(CONCRETE_ONE_INSTANCE_COMMAND),
+        CommandMessage commandMessage = new GenericCommandMessage(new MessageType(CONCRETE_ONE_INSTANCE_COMMAND),
                                                                        "concrete-one-instance");
 
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
@@ -145,7 +145,7 @@ class PolymorphicEntityMetamodelTest {
 
     @Test
     void canHandleCreationalCommandForConcreteTypeOne() {
-        CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(CONCRETE_ONE_CREATIONAL_COMMAND),
+        CommandMessage commandMessage = new GenericCommandMessage(new MessageType(CONCRETE_ONE_CREATIONAL_COMMAND),
                                                                        "concrete-one-creational");
 
         ProcessingContext context = new StubProcessingContext();
@@ -163,7 +163,7 @@ class PolymorphicEntityMetamodelTest {
 
     @Test
     void canHandleInstanceCommandForConcreteTypeTwo() {
-        CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(CONCRETE_TWO_INSTANCE_COMMAND),
+        CommandMessage commandMessage = new GenericCommandMessage(new MessageType(CONCRETE_TWO_INSTANCE_COMMAND),
                                                                        "concrete-two-instance");
 
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
@@ -183,7 +183,7 @@ class PolymorphicEntityMetamodelTest {
 
     @Test
     void canHandleCreationalCommandForConcreteTypeTwo() {
-        CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(CONCRETE_TWO_CREATIONAL_COMMAND),
+        CommandMessage commandMessage = new GenericCommandMessage(new MessageType(CONCRETE_TWO_CREATIONAL_COMMAND),
                                                                        "concrete-two-creational");
 
         ProcessingContext context = new StubProcessingContext();
@@ -200,7 +200,7 @@ class PolymorphicEntityMetamodelTest {
 
     @Test
     void canHandleInstanceSuperCommandForConcreteTypeOne() {
-        CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(SUPER_TYPE_INSTANCE_COMMAND),
+        CommandMessage commandMessage = new GenericCommandMessage(new MessageType(SUPER_TYPE_INSTANCE_COMMAND),
                                                                        "concrete-one");
 
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
@@ -221,7 +221,7 @@ class PolymorphicEntityMetamodelTest {
 
     @Test
     void canHandleCreationalSuperCommand() {
-        CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(SUPER_TYPE_CREATIONAL_COMMAND),
+        CommandMessage commandMessage = new GenericCommandMessage(new MessageType(SUPER_TYPE_CREATIONAL_COMMAND),
                                                                        "super-type");
 
         ProcessingContext context = new StubProcessingContext();
@@ -239,7 +239,7 @@ class PolymorphicEntityMetamodelTest {
 
     @Test
     void canHandleInstanceSuperCommandForConcreteTypeTwo() {
-        CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(SUPER_TYPE_INSTANCE_COMMAND),
+        CommandMessage commandMessage = new GenericCommandMessage(new MessageType(SUPER_TYPE_INSTANCE_COMMAND),
                                                                        "concrete-two");
 
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
@@ -256,7 +256,7 @@ class PolymorphicEntityMetamodelTest {
 
     @Test
     void throwsWrongPolymorphicTypeExceptionForWrongTypeDuringCommand() {
-        CommandMessage<?> commandMessage = new GenericCommandMessage<>(
+        CommandMessage commandMessage = new GenericCommandMessage(
                 new MessageType(CONCRETE_TWO_INSTANCE_COMMAND), "concrete-two");
         ProcessingContext context = StubProcessingContext.forMessage(commandMessage);
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
@@ -270,7 +270,7 @@ class PolymorphicEntityMetamodelTest {
 
     @Test
     void callsSuperTypeAndConcreteOneEntityEvolverForConcreteTypeOne() {
-        EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(CONCRETE_ONE_EVENT), "event");
+        EventMessage eventMessage = new GenericEventMessage(new MessageType(CONCRETE_ONE_EVENT), "event");
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
 
@@ -286,7 +286,7 @@ class PolymorphicEntityMetamodelTest {
 
     @Test
     void callsSuperTypeAndConcreteOneEntityEvolverForConcreteTypeTwo() {
-        EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(CONCRETE_TWO_EVENT), "event");
+        EventMessage eventMessage = new GenericEventMessage(new MessageType(CONCRETE_TWO_EVENT), "event");
         ConcreteTestEntityTwo entity = new ConcreteTestEntityTwo();
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
 
@@ -314,7 +314,7 @@ class PolymorphicEntityMetamodelTest {
         when(concreteTestEntityTwoEntityMetamodel.evolve(any(),
                                                          any(),
                                                          any())).thenAnswer(invocation -> invocation.getArgument(0));
-        EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(SUPER_TYPE_EVENT), "event");
+        EventMessage eventMessage = new GenericEventMessage(new MessageType(SUPER_TYPE_EVENT), "event");
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
         AbstractTestEntity result = polymorphicMetamodel.evolve(entity, eventMessage, context);
@@ -334,7 +334,7 @@ class PolymorphicEntityMetamodelTest {
         when(concreteTestEntityTwoEntityMetamodel.evolve(any(),
                                                          any(),
                                                          any())).thenAnswer(invocation -> invocation.getArgument(0));
-        EventMessage<?> eventMessage = new GenericEventMessage<>(new MessageType(SUPER_TYPE_EVENT), "event");
+        EventMessage eventMessage = new GenericEventMessage(new MessageType(SUPER_TYPE_EVENT), "event");
         ConcreteTestEntityOne entity = new ConcreteTestEntityOne();
         ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
         AbstractTestEntity result = polymorphicMetamodel.evolve(entity, eventMessage, context);

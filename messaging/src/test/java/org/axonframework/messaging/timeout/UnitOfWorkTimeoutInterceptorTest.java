@@ -37,10 +37,10 @@ class UnitOfWorkTimeoutInterceptorTest {
     void interruptsUnitOfWorkThatTakesTooLong() {
         UnitOfWorkTimeoutInterceptor testSubject = new UnitOfWorkTimeoutInterceptor("MyUnitOfWork", 100, 50, 10);
 
-        LegacyDefaultUnitOfWork<EventMessage<String>> uow = new LegacyDefaultUnitOfWork<>(
+        LegacyDefaultUnitOfWork<EventMessage> uow = new LegacyDefaultUnitOfWork<>(
                 EventTestUtils.asEventMessage("test")
         );
-        DefaultInterceptorChain<EventMessage<String>, Message<Void>> interceptorChain = new DefaultInterceptorChain<>(
+        DefaultInterceptorChain<EventMessage, Message> interceptorChain = new DefaultInterceptorChain<>(
                 uow,
                 Collections.singletonList(testSubject),
                 (message, ctx) -> {
@@ -59,10 +59,10 @@ class UnitOfWorkTimeoutInterceptorTest {
     void doesNotInterruptWorkWithinTime() {
         UnitOfWorkTimeoutInterceptor testSubject = new UnitOfWorkTimeoutInterceptor("MyUnitOfWork", 100, 50, 10);
 
-        LegacyDefaultUnitOfWork<EventMessage<String>> uow = new LegacyDefaultUnitOfWork<>(
+        LegacyDefaultUnitOfWork<EventMessage> uow = new LegacyDefaultUnitOfWork<>(
                 EventTestUtils.asEventMessage("test")
         );
-        DefaultInterceptorChain<EventMessage<String>, Message<Void>> interceptorChain = new DefaultInterceptorChain<>(
+        DefaultInterceptorChain<EventMessage, Message> interceptorChain = new DefaultInterceptorChain<>(
                 uow,
                 Collections.singletonList(testSubject),
                 (message, ctx) -> {

@@ -88,13 +88,13 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public boolean canHandle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+        public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
             return ResultParameterResolverFactory.ignoringResultParameters(context,
                                                                            pc -> super.canHandle(message, pc));
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable T target)
+        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable T target)
                 throws Exception {
             InterceptorChain chain = InterceptorChainParameterResolverFactory.currentInterceptorChain();
             try {
@@ -113,15 +113,13 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public MessageStream<?> handle(@Nonnull Message<?> message,
+        public MessageStream<?> handle(@Nonnull Message message,
                                        @Nonnull ProcessingContext context,
                                        @Nullable T target) {
-            InterceptorChain<Message<?>, Message<?>> chain =
+            InterceptorChain<Message, Message> chain =
                     InterceptorChainParameterResolverFactory.currentInterceptorChain(context);
             // TODO - Provide implementation that handles exceptions in streams with more than one item
-            //noinspection unchecked
             return chain.proceed(message, context)
-                        .map(r -> (Entry<Message<?>>) r)
                         .onErrorContinue(error -> {
                             if (expectedResultType.isInstance(error)) {
                                 return MessageStream.failed(error);
@@ -133,7 +131,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                                         if (super.canHandle(message, pc)) {
                                             //noinspection unchecked
                                             return super.handle(message, pc, target)
-                                                        .map(r -> (Entry<Message<?>>) r);
+                                                        .map(r -> (Entry<Message>) r);
                                         }
                                         return MessageStream.failed(error);
                                     }
@@ -165,7 +163,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nonnull ProcessingContext context, @Nullable T target)
+        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable T target)
                 throws Exception {
             Object result = super.handleSync(message, context, target);
             if (shouldInvokeInterceptorChain) {

@@ -36,8 +36,8 @@ import static org.mockito.Mockito.*;
  */
 class RecordingListenerInvocationErrorHandlerTest {
 
-    private static final EventMessage<String> TEST_EVENT =
-            new GenericEventMessage<>(new MessageType("event"), "test");
+    private static final EventMessage TEST_EVENT =
+            new GenericEventMessage(new MessageType("event"), "test");
     private static final Exception TEST_EXCEPTION = new IllegalArgumentException("This argument is illegal");
 
     private ListenerInvocationErrorHandler wrappedErrorHandler;
@@ -114,7 +114,7 @@ class RecordingListenerInvocationErrorHandlerTest {
     private static class NoOpListenerInvocationErrorHandler implements ListenerInvocationErrorHandler {
 
         @Override
-        public void onError(@Nonnull Exception exception, @Nonnull EventMessage<?> event,
+        public void onError(@Nonnull Exception exception, @Nonnull EventMessage event,
                             @Nonnull EventMessageHandler eventHandler) throws Exception {
             // No-op
         }

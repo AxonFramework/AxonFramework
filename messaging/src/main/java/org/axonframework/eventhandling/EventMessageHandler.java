@@ -37,7 +37,7 @@ import java.util.Set;
  * @deprecated Replace in favor of org.axonframework.eventhandling.EventHandler
  */
 @Deprecated // Replace in favor of org.axonframework.eventhandling.EventHandler
-public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Message<Void>> {
+public interface EventMessageHandler extends MessageHandler<EventMessage, Message> {
 
     /**
      * Process the given event. The implementation may decide to process or skip the given event. It is highly
@@ -47,9 +47,9 @@ public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Mes
      * @return the result of the event handler invocation. Is generally ignored
      * @throws Exception when an exception is raised during event handling
      */
-    Object handleSync(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) throws Exception;
+    Object handleSync(@Nonnull EventMessage event, @Nonnull ProcessingContext context) throws Exception;
 
-    default MessageStream<Message<Void>> handle(@Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+    default MessageStream<Message> handle(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         try {
             handleSync(event, context);
             return MessageStream.empty();

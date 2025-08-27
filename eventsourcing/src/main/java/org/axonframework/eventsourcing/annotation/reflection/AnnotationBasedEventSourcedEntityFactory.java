@@ -246,7 +246,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
                        .collect(Collectors.toSet());
     }
 
-    private Set<ScannedEntityCreator> getMethodsCompatibleWithIdAndMessage(ID id, EventMessage<?> eventMessage) {
+    private Set<ScannedEntityCreator> getMethodsCompatibleWithIdAndMessage(ID id, EventMessage eventMessage) {
         return creators.stream()
                        .filter(creator -> creator.supportsId(id))
                        .filter(creator -> creator.hasPayload(eventMessage.type().qualifiedName()))
@@ -254,7 +254,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
     }
 
     private ScannedEntityCreator findMostSpecificMethod(ID id,
-                                                        EventMessage<?> eventMessage,
+                                                        EventMessage eventMessage,
                                                         ProcessingContext context) {
         Set<ScannedEntityCreator> compatibleCreators;
 
@@ -304,7 +304,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
 
     @Nullable
     @Override
-    public E create(@Nonnull ID id, @Nullable EventMessage<?> firstEventMessage, @Nonnull ProcessingContext context) {
+    public E create(@Nonnull ID id, @Nullable EventMessage firstEventMessage, @Nonnull ProcessingContext context) {
         ProcessingContext preparedContext = context.withResource(ID_KEY, id);
         if (firstEventMessage != null) {
             preparedContext = Message.addToContext(preparedContext, firstEventMessage);
@@ -403,7 +403,7 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
         }
 
         public ProcessingContext mapContextWithMessageIfNecessary(ProcessingContext context) {
-            Message<?> eventMessage = Message.fromContext(context);
+            Message eventMessage = Message.fromContext(context);
             if (eventMessage != null && expectedPayloadRepresentation != null) {
                 var convertedEvent = eventMessage.withConvertedPayload(expectedPayloadRepresentation, converter);
                 return Message.addToContext(context, convertedEvent);

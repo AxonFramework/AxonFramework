@@ -68,7 +68,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(EnrollStudentToCourseCommand.class),
                 c -> (command, context) -> {
-                    EventAppender eventAppender = EventAppender.forContext(context, c);
+                    EventAppender eventAppender = EventAppender.forContext(context);
                     EnrollStudentToCourseCommand payload =
                             command.payloadAs(EnrollStudentToCourseCommand.class, c.getComponent(Converter.class));
                     StateManager state = context.component(StateManager.class);
@@ -183,7 +183,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
             @Override
             @Nonnull
-            public String resolve(@Nonnull Message<?> command, @Nonnull ProcessingContext context) {
+            public String resolve(@Nonnull Message command, @Nonnull ProcessingContext context) {
                 //noinspection unused
                 if (command.payload() instanceof AssignMentorCommand(String studentId, String mentorId)) {
                     return studentId;

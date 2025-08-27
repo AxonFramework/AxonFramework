@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Allard Buijze
  * @since 5.0.0
  */
-public class QueueMessageStream<M extends Message<?>> implements MessageStream<M> {
+public class QueueMessageStream<M extends Message> implements MessageStream<M> {
 
     private static final Runnable NO_OP_CALLBACK = () -> {
     };

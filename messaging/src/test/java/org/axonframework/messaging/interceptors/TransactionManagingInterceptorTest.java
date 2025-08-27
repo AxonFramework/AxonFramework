@@ -39,10 +39,10 @@ import static org.mockito.Mockito.*;
 class TransactionManagingInterceptorTest {
 
     private InterceptorChain interceptorChain;
-    private LegacyUnitOfWork<Message<?>> unitOfWork;
+    private LegacyUnitOfWork<Message> unitOfWork;
     private TransactionManager transactionManager;
     private Transaction transaction;
-    private TransactionManagingInterceptor<Message<?>> subject;
+    private TransactionManagingInterceptor<Message> subject;
     private ProcessingContext context;
 
     @BeforeEach
@@ -51,7 +51,7 @@ class TransactionManagingInterceptorTest {
             CurrentUnitOfWork.get().rollback();
         }
         interceptorChain = mock(InterceptorChain.class);
-        Message<?> message = new GenericMessage<>(new MessageType("message"), new Object());
+        Message message = new GenericMessage(new MessageType("message"), new Object());
         context = StubProcessingContext.forMessage(message);
         unitOfWork = LegacyDefaultUnitOfWork.startAndGet(message);
         transactionManager = mock(TransactionManager.class);
@@ -62,7 +62,7 @@ class TransactionManagingInterceptorTest {
 
     @Test
     void startTransaction() throws Exception {
-        LegacyUnitOfWork<Message<?>> unitOfWork = spy(this.unitOfWork);
+        LegacyUnitOfWork<Message> unitOfWork = spy(this.unitOfWork);
 
         subject.handle(unitOfWork, context, interceptorChain);
         verify(transactionManager).startTransaction();

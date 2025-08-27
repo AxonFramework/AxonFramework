@@ -57,5 +57,5 @@ public interface SequencingPolicy {
      * @return A sequence identifier for the given event, or {@code Optional#empty()} if this policy cannot determine a
      * sequence identifier for the given event.
      */
-    Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage<?> event);
+    Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event);
 }

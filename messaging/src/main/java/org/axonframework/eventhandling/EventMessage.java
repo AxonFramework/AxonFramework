@@ -32,12 +32,11 @@ import java.util.Map;
  * any other component) in the application. It contains the data relevant for components that need to act based on that
  * event.
  *
- * @param <P> The type of {@link #payload() payload} contained in this {@link EventMessage}.
  * @author Allard Buijze
  * @see DomainEventMessage
  * @since 2.0.0
  */
-public interface EventMessage<P> extends Message<P> {
+public interface EventMessage extends Message {
 
     /**
      * Returns the identifier of this {@link EventMessage event}.
@@ -72,25 +71,25 @@ public interface EventMessage<P> extends Message<P> {
 
     @Override
     @Nonnull
-    EventMessage<P> withMetaData(@Nonnull Map<String, String> metaData);
+    EventMessage withMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     @Nonnull
-    EventMessage<P> andMetaData(@Nonnull Map<String, String> metaData);
+    EventMessage andMetaData(@Nonnull Map<String, String> metaData);
 
     @Override
     @Nonnull
-    default <T> EventMessage<T> withConvertedPayload(@Nonnull Class<T> type, @Nonnull Converter converter) {
+    default EventMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
     @Nonnull
-    default <T> EventMessage<T> withConvertedPayload(@Nonnull TypeReference<T> type, @Nonnull Converter converter) {
+    default EventMessage withConvertedPayload(@Nonnull TypeReference<?> type, @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @Nonnull
-    <T> EventMessage<T> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    EventMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }

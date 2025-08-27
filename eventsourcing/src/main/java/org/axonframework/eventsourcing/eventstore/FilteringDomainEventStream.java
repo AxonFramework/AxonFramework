@@ -29,7 +29,7 @@ import java.util.function.Predicate;
 public class FilteringDomainEventStream implements DomainEventStream {
 
     private final DomainEventStream delegate;
-    private final Predicate<? super DomainEventMessage<?>> filter;
+    private final Predicate<? super DomainEventMessage> filter;
     private Long lastSequenceNumber;
 
     /**
@@ -39,13 +39,13 @@ public class FilteringDomainEventStream implements DomainEventStream {
      * @param delegate The stream providing the elements
      * @param filter   The filter to apply to the delegate stream
      */
-    public FilteringDomainEventStream(DomainEventStream delegate, Predicate<? super DomainEventMessage<?>> filter) {
+    public FilteringDomainEventStream(DomainEventStream delegate, Predicate<? super DomainEventMessage> filter) {
         this.delegate = delegate;
         this.filter = filter;
     }
 
     @Override
-    public DomainEventMessage<?> peek() {
+    public DomainEventMessage peek() {
         if (!hasNext()) {
             return null;
         }
@@ -59,7 +59,7 @@ public class FilteringDomainEventStream implements DomainEventStream {
             return false;
         }
 
-        DomainEventMessage<?> peeked = delegate.peek();
+        DomainEventMessage peeked = delegate.peek();
         while (!filter.test(peeked)) {
             // consume
             delegate.next();
@@ -73,11 +73,11 @@ public class FilteringDomainEventStream implements DomainEventStream {
     }
 
     @Override
-    public DomainEventMessage<?> next() {
+    public DomainEventMessage next() {
         if (!hasNext()) {
             return null;
         }
-        DomainEventMessage<?> next = delegate.next();
+        DomainEventMessage next = delegate.next();
         lastSequenceNumber = next.getSequenceNumber();
         return next;
     }

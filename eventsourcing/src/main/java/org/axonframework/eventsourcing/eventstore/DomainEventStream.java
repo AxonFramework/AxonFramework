@@ -35,7 +35,7 @@ import java.util.stream.Stream;
  *
  * @author Rene de Waele
  */
-public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
+public interface DomainEventStream extends Iterator<DomainEventMessage> {
 
     /**
      * Create a new DomainEventStream with events obtained from the given {@code stream}.
@@ -44,7 +44,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
      * @param sequenceNumberSupplier supplier of the sequence number of the last used upstream event entry
      * @return A DomainEventStream containing all events contained in the stream
      */
-    static DomainEventStream of(Stream<? extends DomainEventMessage<?>> stream, Supplier<Long> sequenceNumberSupplier) {
+    static DomainEventStream of(Stream<? extends DomainEventMessage> stream, Supplier<Long> sequenceNumberSupplier) {
         Objects.requireNonNull(stream);
         return new IteratorBackedDomainEventStream(stream.iterator()) {
             @Override
@@ -60,7 +60,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
      * @param stream Stream that serves as a source of events in the resulting DomainEventStream
      * @return A DomainEventStream containing all events contained in the stream
      */
-    static DomainEventStream of(Stream<? extends DomainEventMessage<?>> stream) {
+    static DomainEventStream of(Stream<? extends DomainEventMessage> stream) {
         return new IteratorBackedDomainEventStream(stream.iterator());
     }
 
@@ -79,13 +79,13 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
      * @param event The event to add to the resulting DomainEventStream
      * @return A DomainEventStream consisting of only the given event
      */
-    static DomainEventStream of(DomainEventMessage<?> event) {
+    static DomainEventStream of(DomainEventMessage event) {
         Objects.requireNonNull(event);
         return new DomainEventStream() {
             private boolean hasNext = true;
 
             @Override
-            public DomainEventMessage<?> peek() {
+            public DomainEventMessage peek() {
                 if (hasNext) {
                     return event;
                 }
@@ -98,7 +98,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
             }
 
             @Override
-            public DomainEventMessage<?> next() {
+            public DomainEventMessage next() {
                 if (hasNext) {
                     hasNext = false;
                     return event;
@@ -119,7 +119,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
      * @param events Events to add to the resulting DomainEventStream
      * @return A DomainEventStream consisting of all given events
      */
-    static DomainEventStream of(DomainEventMessage<?>... events) {
+    static DomainEventStream of(DomainEventMessage... events) {
         return DomainEventStream.of(Arrays.asList(events));
     }
 
@@ -129,7 +129,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
      * @param list list that serves as a source of events in the resulting DomainEventStream
      * @return A DomainEventStream containing all events returned by the list
      */
-    static DomainEventStream of(List<? extends DomainEventMessage<?>> list) {
+    static DomainEventStream of(List<? extends DomainEventMessage> list) {
         return list.isEmpty() ? of(Stream.empty(), () -> null) :
                 of(list.stream(), () -> list.isEmpty() ? null : list.get(list.size() - 1).getSequenceNumber());
     }
@@ -154,7 +154,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
      * @param filter The filter to apply to the stream
      * @return A filtered version of this stream 
      */
-    default DomainEventStream filter(Predicate<? super DomainEventMessage<?>> filter) {
+    default DomainEventStream filter(Predicate<? super DomainEventMessage> filter) {
         Objects.requireNonNull(filter);
         return new FilteringDomainEventStream(this, filter);
     }
@@ -181,7 +181,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
      * @return the next event in the stream.
      */
     @Override
-    DomainEventMessage<?> next();
+    DomainEventMessage next();
 
     /**
      * Returns the next events in the stream, if available, without moving the pointer forward. Hence, a call to {@link
@@ -194,7 +194,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
      *
      * @return the next event in the stream.
      */
-    DomainEventMessage<?> peek();
+    DomainEventMessage peek();
 
     /**
      * Get the highest known sequence number in the upstream event entry stream. Note that, as result of upcasting it is
@@ -223,7 +223,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
      *
      * @return This DomainEventStream as a Stream of event messages
      */
-    default Stream<? extends DomainEventMessage<?>> asStream() {
+    default Stream<? extends DomainEventMessage> asStream() {
         return EventStreamUtils.asStream(this);
     }
 

@@ -33,7 +33,7 @@ class DefaultEventBusSpanFactoryTest extends IntermediateSpanFactoryTest<Default
 
     @Test
     void createsQuerySpanNonDistributed() {
-        EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
+        EventMessage eventMessage = Mockito.mock(EventMessage.class);
         test(factory -> factory.createPublishEventSpan(eventMessage),
              expectedSpan("EventBus.publishEvent", TestSpanFactory.TestSpanType.DISPATCH)
                      .withMessage(eventMessage)
@@ -42,7 +42,7 @@ class DefaultEventBusSpanFactoryTest extends IntermediateSpanFactoryTest<Default
 
     @Test
     void propagateContext() {
-        EventMessage<?> eventMessage = Mockito.mock(EventMessage.class);
+        EventMessage eventMessage = Mockito.mock(EventMessage.class);
         testContextPropagation(eventMessage, DefaultEventBusSpanFactory::propagateContext);
     }
 

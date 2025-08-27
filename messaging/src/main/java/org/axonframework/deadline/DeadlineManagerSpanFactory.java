@@ -16,8 +16,6 @@
 
 package org.axonframework.deadline;
 
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.tracing.Span;
 
@@ -38,7 +36,7 @@ public interface DeadlineManagerSpanFactory {
      * @param deadlineMessage The message of the deadline.
      * @return The created span.
      */
-    Span createScheduleSpan(String deadlineName, String deadlineId, DeadlineMessage<?> deadlineMessage);
+    Span createScheduleSpan(String deadlineName, String deadlineId, DeadlineMessage deadlineMessage);
 
     /**
      * Creates a span that represents the cancellation of a specific deadline.
@@ -74,14 +72,13 @@ public interface DeadlineManagerSpanFactory {
      * @param deadlineMessage The message of the deadline.
      * @return The created span.
      */
-    Span createExecuteSpan(String deadlineName, String deadlineId, DeadlineMessage<?> deadlineMessage);
+    Span createExecuteSpan(String deadlineName, String deadlineId, DeadlineMessage deadlineMessage);
 
     /**
      * Propagates the context of the current span to the given deadline message.
      *
      * @param deadlineMessage The deadline message to propagate the context to.
-     * @param <T>             The type of the payload of the deadline message.
      * @return The deadline message with the propagated context.
      */
-    <T> DeadlineMessage<T> propagateContext(DeadlineMessage<T> deadlineMessage);
+    DeadlineMessage propagateContext(DeadlineMessage deadlineMessage);
 }

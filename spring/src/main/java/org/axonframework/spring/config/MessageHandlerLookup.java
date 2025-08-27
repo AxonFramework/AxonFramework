@@ -64,7 +64,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
      * @param registry    The registry to find these handlers in.
      * @return A list of bean names with message handlers.
      */
-    public static List<String> messageHandlerBeans(Class<? extends Message<?>> messageType,
+    public static List<String> messageHandlerBeans(Class<? extends Message> messageType,
                                                    ConfigurableListableBeanFactory registry) {
         return messageHandlerBeans(messageType, registry, false);
     }
@@ -78,7 +78,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
      * @param registry    The registry to find these handlers in.
      * @return A list of bean names with message handlers.
      */
-    public static List<String> messageHandlerBeans(Class<? extends Message<?>> messageType,
+    public static List<String> messageHandlerBeans(Class<? extends Message> messageType,
                                                    ConfigurableListableBeanFactory registry,
                                                    boolean includePrototypeBeans) {
         List<String> found = new ArrayList<>();
@@ -94,7 +94,7 @@ public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor
         return found;
     }
 
-    private static boolean hasMessageHandler(Class<? extends Message<?>> messageType, Class<?> beanType) {
+    private static boolean hasMessageHandler(Class<? extends Message> messageType, Class<?> beanType) {
         for (Method m : ReflectionUtils.methodsOf(beanType)) {
             Optional<Map<String, Object>> attr = AnnotationUtils.findAnnotationAttributes(m, MessageHandler.class);
             if (attr.isPresent() && messageType.isAssignableFrom((Class<?>) attr.get().get("messageType"))) {
