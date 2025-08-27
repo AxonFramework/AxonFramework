@@ -66,6 +66,15 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
     private ApplicationContext applicationContext;
     private ClassLoader classLoader;
 
+    /**
+     * Bean creation method constructing the "general" {@link Converter} to be used by Axon Framework.
+     * <p>
+     * The type of {@code Converter} constructed depends on the given {@code converterProperties}.
+     *
+     * @param converterProperties The properties dictating the type of {@link Converter} this bean creation method will
+     *                            construct.
+     * @return The "general" {@link Converter} to be used by Axon Framework.
+     */
     @Bean
     @Primary
     @ConditionalOnMissingBean
@@ -81,7 +90,16 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
         return buildConverter(generalConverterType, null);
     }
 
-    // todo javadoc
+    /**
+     * Bean creation method constructing the {@link MessageConverter} to be used by Axon Framework.
+     *
+     * @param generalConverter    The "general" {@link Converter}, used to construct the {@link MessageConverter}
+     *                            whenever the {@link ConverterProperties#getMessages()} type equals the
+     *                            {@link ConverterProperties#getGeneral()} type.
+     * @param converterProperties The properties dictating the type of {@link MessageConverter} this bean creation
+     *                            method will construct.
+     * @return The {@link MessageConverter} to be used by Axon Framework.
+     */
     @Bean
     @ConditionalOnMissingBean
     public MessageConverter messageConverter(Converter generalConverter, ConverterProperties converterProperties) {
@@ -94,6 +112,19 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
         }
     }
 
+    /**
+     * Bean creation method constructing the {@link EventConverter} to be used by Axon Framework.
+     *
+     * @param generalConverter    The "general" {@link Converter}, used to construct the {@link EventConverter} whenever
+     *                            the {@link ConverterProperties#getEvents()} type equals the
+     *                            {@link ConverterProperties#getGeneral()} type.
+     * @param messageConverter    The {@link MessageConverter}, used to construct the {@link EventConverter} whenever
+     *                            the {@link ConverterProperties#getEvents()} type equals the
+     *                            {@link ConverterProperties#getMessages()} type.
+     * @param converterProperties The properties dictating the type of {@link Converter} this bean creation method will
+     *                            construct.
+     * @return The {@link EventConverter} to be used by Axon Framework.
+     */
     @Bean
     @ConditionalOnMissingBean
     public EventConverter eventConverter(Converter generalConverter,
