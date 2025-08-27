@@ -165,7 +165,7 @@ class AnnotationMessageTypeResolverTest {
         }
 
         @Retention(RetentionPolicy.RUNTIME)
-        @Message(name = "meta-annotated", version = "-1")
+        @Message(name = "meta-annotated", version = "-1", messageType = org.axonframework.messaging.Message.class)
         private @interface MyMessageSpecificAnnotation {
 
         }
