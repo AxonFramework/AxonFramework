@@ -69,6 +69,13 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
 
     private ApplicationContext applicationContext;
 
+    /**
+     * Bean creation method constructing a {@link ConfigurationEnhancer} that disables Axon Server that is only
+     * constructed when {@code axon.axonserver.enabled} is set to {@code false}.
+     *
+     * @return A {@link ConfigurationEnhancer} disabling Axon Server that is only constructed when
+     * {@code axon.axonserver.enabled} is set to {@code false}.
+     */
     @Bean
     @ConditionalOnProperty(name = "axon.axonserver.enabled", havingValue = "false")
     public ConfigurationEnhancer disableAxonServerConfigurationEnhancer() {
@@ -85,6 +92,20 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         };
     }
 
+    /**
+     * Bean creation method constructing a {@link ConfigurationEnhancer} that decorates the
+     * {@link AxonServerConfiguration} and {@link DistributedCommandBusConfiguration}.
+     * <p>
+     * This enhancer will set the {@link AxonServerConfiguration#getComponentName() component name} to the
+     * {@link ApplicationContext#getId()}. Furthermore, it will set the
+     * {@link DistributedCommandBusConfiguration#numberOfThreads(int)} to align with the
+     * {@link AxonServerConfiguration#getCommandThreads()} property.
+     * <p>
+     * This enhancer is only constructed when {@code axon.axonserver.enabled} is set to {@code true}.
+     *
+     * @return A {@link ConfigurationEnhancer} that decorates the {@link AxonServerConfiguration} and
+     * {@link DistributedCommandBusConfiguration}.
+     */
     @Bean
     @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
     public ConfigurationEnhancer axonServerConfigurationEnhancer() {
@@ -117,6 +138,15 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         return id;
     }
 
+    /**
+     * Bean creation method constructing a {@link ConfigurationEnhancer} that uses the available
+     * {@link AxonServerConnectionDetails} to specify the {@link AxonServerConfiguration#getServers()}.
+     *
+     * @param connectionDetails The connection details, if present, to define the
+     *                          {@link AxonServerConfiguration#getServers()} with.
+     * @return A {@link ConfigurationEnhancer} that uses the available {@link AxonServerConnectionDetails} to specify
+     * the {@link AxonServerConfiguration#getServers()}.
+     */
     @Bean
     @ConditionalOnBean(AxonServerConnectionDetails.class)
     @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
@@ -133,6 +163,17 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         );
     }
 
+    /**
+     * Bean creation method constructing a {@link ConfigurationEnhancer} that uses the available
+     * {@link TopologyChangeListener TopologyChangeListeners} and registers them with the
+     * {@link AxonServerConnectionManager}.
+     *
+     * @param changeListeners The topology change listeners, if present, to register with this application's
+     *                        {@link AxonServerConnectionManager}.
+     * @return A {@link ConfigurationEnhancer} that uses the available
+     * {@link TopologyChangeListener TopologyChangeListeners} and registers them with the
+     * {@link AxonServerConnectionManager}.
+     */
     @Bean
     @ConditionalOnProperty(name = "axon.axonserver.enabled", matchIfMissing = true)
     public ConfigurationEnhancer topologyChangeListenerConfigurerModule(List<TopologyChangeListener> changeListeners) {
