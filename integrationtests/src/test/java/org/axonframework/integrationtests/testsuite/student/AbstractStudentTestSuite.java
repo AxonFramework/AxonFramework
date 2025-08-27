@@ -21,11 +21,11 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.AbstractAxonServerIntegrationTest;
@@ -174,8 +174,7 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
                 new MessageType(clazz),
                 payload
         );
-        uow.runOnInvocation(context -> context.component(EventStore.class).transaction(context)
-                                              .appendEvent(eventMessage));
+        uow.runOnInvocation(context -> context.component(EventGateway.class).publish(context, eventMessage));
         uow.execute().join();
     }
 }
