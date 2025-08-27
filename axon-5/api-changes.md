@@ -1354,6 +1354,59 @@ We acknowledge that this shift is a massive breaking changes between Axon Framew
 test suites, we will provide a legacy installment of the old fixtures, albeit deprecated. This way, users are able to
 migrate the tests on their own pass.
 
+## Message Handler Interceptors and Dispatch Interceptors
+
+Axon Framework's message interceptor supports is split in two main parts:
+
+1. Dispatch interceptors
+2. Handler interceptors
+
+Support for these are covered by the `MessageDispatchInterceptor` and `MessageHandlerInterceptor`.
+
+As many parts of Axon Framework, these too are inclined to align with the [async native API](#async-native-apis) switch.
+
+### Interceptor Interfaces
+
+This means that interceptors as of Axon Framework 5 take in a `ProcessingContext` as the second parameter. This replaces
+the old [Unit of Work](#unit-of-work), most clearly on the `MessageHandlerInterceptor` as the old implementation had a
+`UnitOfWork` parameter. For `MessageDispatchInterceptors`, implementations that validated if there was an active
+`UnitOfWork` through the old thread local support should now validate the **nullable** `ProcessingContext` parameter
+that is passed on intercepting.
+
+Next to the `ProcessingContext`, both interceptor interface now have an interceptor chain parameter. For the
+`MessageDispatchInterceptors` this is the `MessageDispatchInterceptorChain`, while for the `MessageHandlerInterceptor`
+this is the `MessageHandlerInterceptorChain`. Providing the chain of interceptors allows implementers of handler and
+dispatch interceptor to execute tasks before **and** after intercepting.
+
+Additionally, the interceptor chain provides a means to deal with the **result** of invoking the next step in the chain.
+This is a new feature for the `MessageDispatchInterceptor`, as it allows dispatch interceptor to deal with the result of
+dispatching as well. This paradigm shift becomes further apparent with the expected return type of the handler and
+dispatch interceptor, which is a `MessageStream` (as described [here](#message-stream) in detail).
+
+For those that interacted with the `InterceptorChain`, note this chain is now specific for `MessageHandlerInterceptors`.
+As such, it has been renamed to the `MessageHandlerInterceptorChain`. Furthermore, it now expects the `Message` and
+`ProcessingContext` to be passed, just as any other message handling task.
+
+Lastly, the `MessageDispatchInterceptorSupport` and `MessageHandlerInterceptorSupport` have been removed. This will
+change the configuration of interceptors somewhat, as is explained in
+the [Interceptor Configuration](#interceptor-configuration) section.
+
+### Interceptor Implementations
+
+Most of the default interceptor implementation that came with Axon Framework still exist in Axon Framework 5. The only
+exceptions to this are the `EventLoggingInterceptor` and `TransactionManagingInterceptor`. Whenever the
+`EventLoggingInterceptor` we recommend to use the `LoggingInterceptor`. The `TransactionManagingInterceptor` is replaced
+entirely with the (new) `TransactionalUnitOfWorkFactory`, which constructs a transaction-aware `UnitOfWork` for all
+message handling components in Axon Framework 5.
+
+If you have custom implementations of the `MessageDispatchInterceptor` and/or `MessageHandlerInterceptor`, you will be
+required to rewrite these to align with the new API. If you encounter any issues during such a rewrite, be sure to reach
+out for guidance.
+
+### Interceptor Configuration
+
+TODO
+
 Minor API Changes
 =================
 
@@ -1383,9 +1436,12 @@ Minor API Changes
   allows component construction to be lazy instead of eager, since we do not require an active instance anymore (as was
   the case with the `Lifecycle` interface). Please read
   the [Component Lifecycle Management](#component-lifecycle-management) section for more details on this.
-* The `Sequencing`Policy interface no longer uses generics and now operates directly on `EventMessage<?>`. This
+* The `SequencingPolicy` interface no longer uses generics and now operates directly on `EventMessage<?>`. This
   simplifies its usage and implementation, as many implementations do not depend on the payload type and can ignore it
   entirely.
+* The `MessageHandlerInterceptor` and `MessageDispatchInterceptor` have undergone some minor changes to align with
+  the [Async Native API](#async-native-apis) of Axon Framework 5. For more details, please check
+  the [interceptors section](#message-handler-interceptors-and-dispatch-interceptors).
 * The annotation logic of all modules is moved to a separate `annotation` package.
 * All reflection logic is moved to a dedicated "reflection" package per module.
 
@@ -1541,10 +1597,10 @@ This section contains five tables:
 | org.axonframework.eventhandling.EventData                                                | Removed in favor of the `EventMessage` carrying all required data to map from stored to read formats.                                          |
 | org.axonframework.eventhandling.AbstractEventEntry                                       | Replaced by `...`                                                                                                                              |
 | org.axonframework.eventhandling.DomainEventData                                          | Removed in favor of the `EventMessage` carrying all required data to map from stored to read formats.                                          |
-| org.axonframework.eventhandling.AbstractDomainEventEntry                                 | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry                                                            |
-| org.axonframework.eventhandling.GenericDomainEventEntry                                  | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry                                                            |
-| org.axonframework.eventhandling.AbstractSequencedDomainEventEntry                        | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry                                                            |
-| org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry                          | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry                                                            |
+| org.axonframework.eventhandling.AbstractDomainEventEntry                                 | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry                                                                 |
+| org.axonframework.eventhandling.GenericDomainEventEntry                                  | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry                                                                 |
+| org.axonframework.eventhandling.AbstractSequencedDomainEventEntry                        | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry                                                                 |
+| org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry                          | Replaced by org.axonframework.eventsourcing.eventstore.jpa.AggregateEventEntry                                                                 |
 | org.axonframework.eventhandling.TrackedEventData                                         | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 | org.axonframework.eventhandling.TrackedDomainEventData                                   | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 | org.axonframework.messaging.Headers                                                      | Removed due to lack of use and foreseen use.                                                                                                   |
@@ -1593,6 +1649,9 @@ This section contains five tables:
 | org.axonframework.commandhandling.gateway.AbstractCommandGateway                         | See [here](#command-dispatching-and-handling).                                                                                                 |
 | org.axonframework.commandhandling.gateway.CommandGatewayFactory                          | See [here](#command-dispatching-and-handling).                                                                                                 |
 | org.axonframework.commandhandling.gateway.Timeout                                        | See [here](#command-dispatching-and-handling).                                                                                                 |
+| org.axonframework.messaging.interceptors.TransactionManagingInterceptor                  | Replaced by the `UnitOfWorkFactory` constructing transaction-aware UoWs.                                                                       |
+| org.axonframework.messaging.MessageDispatchInterceptorSupport                            | See [here](#message-handler-interceptors-and-dispatch-interceptors)                                                                            |
+| org.axonframework.messaging.MessageHandlerInterceptorSupport                             | See [here](#message-handler-interceptors-and-dispatch-interceptors)                                                                            |
 
 ### Marked for removal Classes
 
@@ -1696,51 +1755,54 @@ This section contains four subsections, called:
 | `CommandBus#subscribe(String, MessageHandler<? super CommandMessage<?>>)`                                                       | `CommandBus#subscribe(QualifiedName, CommandHandler)`                                                                  | 
 | `CommandGateway#sendAndWait(Object)`                                                                                            | `CommandGateway#sendAndWait(Object, Class<R>)`                                                                         | 
 | `CommandGateway#send(Object)`                                                                                                   | `CommandGateway#send(Object, ProcessingContext, Class<R>)`                                                             | 
+| `MessageDispatchInterceptor#handle(T)`                                                                                          | `MessageDispatchInterceptor#interceptOnDispatch(M, ProcessingContext, MessageDispatchInterceptorChain<M>)`             | 
+| `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`                                                             | `MessageHandlerInterceptor#interceptOnHandle(M, ProcessingContext, MessageHandlerInterceptorChain<M>)`                 | 
+| `InterceptorChain#proceed()`                                                                                                    | `MessageHandlerInterceptorChain#proceed(M, ProcessingContext)`                                                         | 
 
 ### Removed Methods and Constructors
 
-| Constructor / Method                                                                                    | Why                                                                                                                                              | 
-|---------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`                                | Initialize is now replace fully by start and shutdown handlers.                                                                                  |
-| `org.axonframework.config.ModuleConfiguration#unwrap()`                                                 | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.                                                                  |
-| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                                         | Only use by `unwrap()` that's also removed.                                                                                                      |
-| `org.axonframework.config.Configuration#lifecycleRegistry()`                                            | A round about way to support life cycle handler registration.                                                                                    |
-| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`                             | Fully replaced by start and shutdown handler registration.                                                                                       |
-| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`                         | Each Configurer now has get optional operation replacing this functionality.                                                                     |
-| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)`                        | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation.                                                         |
-| `org.axonframework.modelling.command.Repository#load(String, Long)`                                     | Leftover behavior to support aggregate validation on subsequent invocations.                                                                     |
-| `org.axonframework.modelling.command.Repository#newInstance(Callable<T>, Consumer<Aggregate<T>>)`       | No longer necessary with replacement `Repository#persist(ID, T, ProcessingContext)`.                                                             |
-| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String)`                              | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).                                                             | 
-| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String, long)`                        | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).                                                             | 
-| `org.axonframework.eventsourcing.eventstore.EventStore#storeSnapshot(DomainEventMessage<?>)`            | Replaced for a dedicated `SnapshotStore`.                                                                                                        |
-| `org.axonframework.eventsourcing.eventstore.EventStore#lastSequenceNumberFor(String)`                   | No longer necessary to support through the introduction of DCB.                                                                                  |
-| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#storeSnapshot(DomainEventMessage<?>)`    | Replaced for a dedicated `SnapshotStore`.                                                                                                        |
-| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#readSnapshot(String)`                    | Replaced for a dedicated `SnapshotStore`.                                                                                                        |
-| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#lastSequenceNumberFor(String)`           | No longer necessary to support through the introduction of DCB.                                                                                  |
-| `org.axonframework.eventsourcing.CachingEventSourcingRepository#validateOnLoad(Aggregate<T>, Long)`     | Version-based loading is no longer supported due to limited use by the community.                                                                |
-| `org.axonframework.eventsourcing.CachingEventSourcingRepository#doLoadWithLock(String, Long)`           | Version-based loading is no longer supported due to limited use by the community.                                                                |
-| `org.axonframework.eventsourcing.EventSourcingRepository#doLoadWithLock(String, Long)`                  | Version-based loading is no longer supported due to limited use by the community.                                                                |
-| `org.axonframework.modelling.command.AbstractRepository#load(String, Long)`                             | Version-based loading is no longer supported due to limited use by the community.                                                                |
-| `org.axonframework.modelling.command.GenericJpaRepository#doLoadWithLock(String, Long)`                 | Version-based loading is no longer supported due to limited use by the community.                                                                |
-| `org.axonframework.modelling.command.LockingRepository#doLoad(String, Long)`                            | Version-based loading is no longer supported due to limited use by the community.                                                                |
-| `org.axonframework.modelling.command.LockingRepository#doLoadWithLock(String, Long)`                    | Version-based loading is no longer supported due to limited use by the community.                                                                |
-| `org.axonframework.modelling.command.Repository#load(String, Long)`                                     | Version-based loading is no longer supported due to limited use by the community.                                                                |
-| `org.axonframework.modelling.command.Aggregate#version()`                                               | Version-based loading is no longer supported due to limited use by the community.                                                                |
-| `org.axonframework.modelling.command.LockAwareAggregate#version()`                                      | Version-based loading is no longer supported due to limited use by the community.                                                                |
-| `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#startScheduler(boolean)`     | [Lifecycle management](#component-lifecycle-management) has become a configuration concern.                                                      |
-| `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#stopScheduler(boolean)`      | [Lifecycle management](#component-lifecycle-management) has become a configuration concern.                                                      |
-| `org.axonframework.config.EventProcessingConfigurer#registerTrackingEventProcessor`                     | Removed along with `TrackingEventProcessor`. Use `registerPooledStreamingEventProcessor` instead.                                                |
-| `org.axonframework.config.EventProcessingConfigurer#registerTrackingEventProcessorConfiguration`        | Removed along with `TrackingEventProcessorConfiguration`. Use `registerPooledStreamingEventProcessorConfiguration` instead.                      |
-| `org.axonframework.eventhandling.EventProcessor#getHandlerInterceptors()`                               | Interceptors will be configured on the `EventHandlingComponent` level instead of the `EventProcessor`.                                           |
-| `org.axonframework.eventhandling.EventProcessor#registerHandlerInterceptor(MessageHandlerInterceptor)`  | Interceptors will be configured on the `EventHandlingComponent` level instead of the `EventProcessor`.                                           |
-| `PooledStreamingEventProcessor.Builder#coordinatorExecutor(Function<String, ScheduledExecutorService>)` | Removed due to changes in the Configuration API (see [Event Processors](#event-processors))                                                      |
-| `PooledStreamingEventProcessor.Builder#workerExecutor(Function<String, ScheduledExecutorService>)`      | Removed due to changes in the Configuration API (see [Event Processors](#event-processors))                                                      |
-| `CommandBus#dispatch(CommandMessage<C>, CommandCallback<?,?>)`                                          | See [here](#command-dispatching-and-handling).                                                                                                   |
-| `CommandGateway#send(C, CommandCallback<?,?>)`                                                          | See [here](#command-dispatching-and-handling).                                                                                                   |
-| `CommandGateway#sendAndWait(Object, MetaData)`                                                          | See [here](#command-dispatching-and-handling).                                                                                                   |
-| `CommandGateway#sendAndWait(Object, long, TimeUnit)`                                                    | See [here](#command-dispatching-and-handling).                                                                                                   |
-| `CommandGateway#sendAndWait(Object, MetaData, long, TimeUnit)`                                          | See [here](#command-dispatching-and-handling).                                                                                                   |
-| `CommandGateway#send(Object, MetaData)`                                                                 | See [here](#command-dispatching-and-handling).                                                                                                   |
+| Constructor / Method                                                                                         | Why                                                                                                                         | 
+|--------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`                                     | Initialize is now replace fully by start and shutdown handlers.                                                             |
+| `org.axonframework.config.ModuleConfiguration#unwrap()`                                                      | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.                                             |
+| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                                              | Only use by `unwrap()` that's also removed.                                                                                 |
+| `org.axonframework.config.Configuration#lifecycleRegistry()`                                                 | A round about way to support life cycle handler registration.                                                               |
+| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`                                  | Fully replaced by start and shutdown handler registration.                                                                  |
+| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`                              | Each Configurer now has get optional operation replacing this functionality.                                                |
+| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)`                             | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation.                                    |
+| `org.axonframework.modelling.command.Repository#load(String, Long)`                                          | Leftover behavior to support aggregate validation on subsequent invocations.                                                |
+| `org.axonframework.modelling.command.Repository#newInstance(Callable<T>, Consumer<Aggregate<T>>)`            | No longer necessary with replacement `Repository#persist(ID, T, ProcessingContext)`.                                        |
+| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String)`                                   | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).                                        | 
+| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String, long)`                             | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).                                        | 
+| `org.axonframework.eventsourcing.eventstore.EventStore#storeSnapshot(DomainEventMessage<?>)`                 | Replaced for a dedicated `SnapshotStore`.                                                                                   |
+| `org.axonframework.eventsourcing.eventstore.EventStore#lastSequenceNumberFor(String)`                        | No longer necessary to support through the introduction of DCB.                                                             |
+| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#storeSnapshot(DomainEventMessage<?>)`         | Replaced for a dedicated `SnapshotStore`.                                                                                   |
+| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#readSnapshot(String)`                         | Replaced for a dedicated `SnapshotStore`.                                                                                   |
+| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#lastSequenceNumberFor(String)`                | No longer necessary to support through the introduction of DCB.                                                             |
+| `org.axonframework.eventsourcing.CachingEventSourcingRepository#validateOnLoad(Aggregate<T>, Long)`          | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.eventsourcing.CachingEventSourcingRepository#doLoadWithLock(String, Long)`                | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.eventsourcing.EventSourcingRepository#doLoadWithLock(String, Long)`                       | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.AbstractRepository#load(String, Long)`                                  | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.GenericJpaRepository#doLoadWithLock(String, Long)`                      | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.LockingRepository#doLoad(String, Long)`                                 | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.LockingRepository#doLoadWithLock(String, Long)`                         | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.Repository#load(String, Long)`                                          | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.Aggregate#version()`                                                    | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.modelling.command.LockAwareAggregate#version()`                                           | Version-based loading is no longer supported due to limited use by the community.                                           |
+| `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#startScheduler(boolean)`          | [Lifecycle management](#component-lifecycle-management) has become a configuration concern.                                 |
+| `org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager.Builder#stopScheduler(boolean)`           | [Lifecycle management](#component-lifecycle-management) has become a configuration concern.                                 |
+| `org.axonframework.config.EventProcessingConfigurer#registerTrackingEventProcessor`                          | Removed along with `TrackingEventProcessor`. Use `registerPooledStreamingEventProcessor` instead.                           |
+| `org.axonframework.config.EventProcessingConfigurer#registerTrackingEventProcessorConfiguration`             | Removed along with `TrackingEventProcessorConfiguration`. Use `registerPooledStreamingEventProcessorConfiguration` instead. |
+| `org.axonframework.eventhandling.EventProcessor#getHandlerInterceptors()`                                    | Interceptors will be configured on the `EventHandlingComponent` level instead of the `EventProcessor`.                      |
+| `org.axonframework.eventhandling.EventProcessor#registerHandlerInterceptor(MessageHandlerInterceptor)`       | Interceptors will be configured on the `EventHandlingComponent` level instead of the `EventProcessor`.                      |
+| `PooledStreamingEventProcessor.Builder#coordinatorExecutor(Function<String, ScheduledExecutorService>)`      | Removed due to changes in the Configuration API (see [Event Processors](#event-processors))                                 |
+| `PooledStreamingEventProcessor.Builder#workerExecutor(Function<String, ScheduledExecutorService>)`           | Removed due to changes in the Configuration API (see [Event Processors](#event-processors))                                 |
+| `CommandBus#dispatch(CommandMessage<C>, CommandCallback<?,?>)`                                               | See [here](#command-dispatching-and-handling).                                                                              |
+| `CommandGateway#send(C, CommandCallback<?,?>)`                                                               | See [here](#command-dispatching-and-handling).                                                                              |
+| `CommandGateway#sendAndWait(Object, MetaData)`                                                               | See [here](#command-dispatching-and-handling).                                                                              |
+| `CommandGateway#sendAndWait(Object, long, TimeUnit)`                                                         | See [here](#command-dispatching-and-handling).                                                                              |
+| `CommandGateway#sendAndWait(Object, MetaData, long, TimeUnit)`                                               | See [here](#command-dispatching-and-handling).                                                                              |
+| `MessageDispatchInterceptor#handle(List<? extends T>)`                                                       | Removed due to limited usage.                                                                                               |
 
 ### Changed Method return types
 
@@ -1754,3 +1816,6 @@ This section contains four subsections, called:
 | `CommandBus#dispatch(CommandMessage<C>)`                                  | `void`                         | `CompletableFuture<CommandResultMessage<?>>` |
 | `CommandBus#subscribe(String, MessageHandler<? super CommandMessage<?>>)` | `Registration`                 | `<? extends CommandHandlerRegistry>`         |
 | `CommandGateway#sendAndWait(Object)`                                      | `R`                            | `void`                                       |
+| `MessageDispatchInterceptor#handle(T)`                                    | `T`                            | `MessageStream<?>`                           |
+| `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`       | `Object`                       | `MessageStream<?>`                           |
+| `InterceptorChain#proceed()`                                              | `Object`                       | `MessageStream<?>`                           |
