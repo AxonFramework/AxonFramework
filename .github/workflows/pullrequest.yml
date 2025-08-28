@@ -40,6 +40,14 @@ jobs:
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
 
+      - name: Cache Maven Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/build-cache
+          key: ${{ runner.os }}-maven-build-cache-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-build-cache-
+
       - name: Compile Sources and Tests
         run: |
           ./mvnw -B -U -T 1C -Dstyle.color=always clean test-compile
