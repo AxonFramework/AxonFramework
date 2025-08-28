@@ -44,13 +44,13 @@ class PayloadConvertingCommandBusConnectorTest {
 
     private CommandBusConnector mockDelegate;
     private Converter mockConverter;
-    private PayloadConvertingCommandBusConnector<byte[]> testSubject;
+    private PayloadConvertingCommandBusConnector testSubject;
 
     @BeforeEach
     void setUp() {
         mockDelegate = mock(CommandBusConnector.class);
         mockConverter = mock(Converter.class);
-        testSubject = new PayloadConvertingCommandBusConnector<>(
+        testSubject = new PayloadConvertingCommandBusConnector(
                 mockDelegate, new DelegatingMessageConverter(mockConverter), byte[].class
         );
     }
@@ -58,7 +58,7 @@ class PayloadConvertingCommandBusConnectorTest {
     @Test
     void constructorRequiresNonNullDelegate() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new PayloadConvertingCommandBusConnector<>(
+        assertThrows(NullPointerException.class, () -> new PayloadConvertingCommandBusConnector(
                 null, new DelegatingMessageConverter(mockConverter), byte[].class
         ));
     }
@@ -67,13 +67,13 @@ class PayloadConvertingCommandBusConnectorTest {
     void constructorRequiresNonNullConverter() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
-                     () -> new PayloadConvertingCommandBusConnector<>(mockDelegate, null, byte[].class));
+                     () -> new PayloadConvertingCommandBusConnector(mockDelegate, null, byte[].class));
     }
 
     @Test
     void constructorRequiresNonNullTargetType() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new PayloadConvertingCommandBusConnector<>(
+        assertThrows(NullPointerException.class, () -> new PayloadConvertingCommandBusConnector(
                 mockDelegate, new DelegatingMessageConverter(mockConverter), null
         ));
     }

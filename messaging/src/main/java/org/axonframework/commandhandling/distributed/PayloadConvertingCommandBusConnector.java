@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.conversion.MessageConverter;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
@@ -30,11 +31,10 @@ import java.util.concurrent.CompletableFuture;
  * Connector implementation that converts the payload of outgoing messages into the expected format. This is generally a
  * {@code byte[]} or another serialized form.
  *
- * @param <T> The type to convert the message's payload into.
  * @author Allard Buijze
  * @since 5.0.0
  */
-public class PayloadConvertingCommandBusConnector<T> extends DelegatingCommandBusConnector {
+public class PayloadConvertingCommandBusConnector extends DelegatingCommandBusConnector {
 
     private final CommandBusConnector delegate;
     private final MessageConverter converter;
@@ -70,6 +70,13 @@ public class PayloadConvertingCommandBusConnector<T> extends DelegatingCommandBu
                 commandMessage,
                 new ConvertingResultMessageCallback(callback)
         ));
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
+        descriptor.describeProperty("converter", converter);
+        descriptor.describeProperty("targetType", targetType);
     }
 
     /**
