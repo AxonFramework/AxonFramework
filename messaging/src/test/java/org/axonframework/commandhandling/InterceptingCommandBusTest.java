@@ -37,9 +37,11 @@ import org.mockito.*;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.MessagingTestUtils.commandResult;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -98,6 +100,30 @@ class InterceptingCommandBusTest {
         assertEquals(Map.of("dispatch1", "value-1", "dispatch2", "value-0"),
                      result.get().metaData(),
                      "Expected result interceptors to be invoked in reverse order");
+    }
+
+    @Test
+    void dispatchInterceptorsAreInvokedForEveryMessage() throws Exception {
+        AtomicInteger counter = new AtomicInteger(0);
+        MessageDispatchInterceptor<Message> countingInterceptor = (message, context, chain) -> {
+            counter.incrementAndGet();
+            return chain.proceed(message, context);
+        };
+        InterceptingCommandBus countingTestSubject =
+                new InterceptingCommandBus(mockCommandBus, List.of(), List.of(countingInterceptor));
+
+        when(mockCommandBus.dispatch(any(), any()))
+                .thenAnswer(invocation -> completedFuture(commandResult("ok")));
+
+        CommandMessage firstCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "first");
+        CommandMessage secondCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "second");
+
+        countingTestSubject.dispatch(firstCommand, StubProcessingContext.forMessage(firstCommand))
+                           .get();
+        countingTestSubject.dispatch(secondCommand, StubProcessingContext.forMessage(firstCommand))
+                           .get();
+
+        assertThat(counter.get()).isEqualTo(2);
     }
 
     @Test
@@ -167,6 +193,32 @@ class InterceptingCommandBusTest {
                      ),
                      result.first().asCompletableFuture().get().message().metaData(),
                      "Expected result interceptors to be invoked in reverse order");
+    }
+
+    @Test
+    void handlerInterceptorsAreInvokedForEveryMessage() {
+        AtomicInteger counter = new AtomicInteger(0);
+        MessageHandlerInterceptor<CommandMessage> countingInterceptor = (message, context, chain) -> {
+            counter.incrementAndGet();
+            return chain.proceed(message, context);
+        };
+        InterceptingCommandBus countingTestSubject =
+                new InterceptingCommandBus(mockCommandBus, List.of(countingInterceptor), List.of());
+
+        QualifiedName testHandlerName = new QualifiedName("handler");
+        countingTestSubject.subscribe(testHandlerName, (command, context) -> MessageStream.just(commandResult("ok")));
+
+        ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
+        verify(mockCommandBus).subscribe(eq(testHandlerName), handlerCaptor.capture());
+
+        CommandHandler actualHandler = handlerCaptor.getValue();
+
+        CommandMessage firstCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "first");
+        actualHandler.handle(firstCommand, StubProcessingContext.forMessage(firstCommand)).first();
+        CommandMessage secondCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "second");
+        actualHandler.handle(secondCommand, StubProcessingContext.forMessage(secondCommand)).first();
+
+        assertThat(counter.get()).isEqualTo(2);
     }
 
     @Test

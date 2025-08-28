@@ -25,6 +25,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,6 +69,42 @@ class QueryMessageHandlerInterceptorChainTest {
         assertNotNull(result);
         assertSame("response", result.payload());
         verify(mockHandler).handle(argThat(x -> (x != null) && "testing".equals(x.payload())), any());
+    }
+
+    @Test
+    void secondChainInvocationProceedsThroughChainFromBeginning() {
+        AtomicInteger invocationCount = new AtomicInteger(0);
+        QueryMessage firstCommand = query("first", String.class);
+        QueryMessage secondCommand = query("second", String.class);
+
+        MessageHandlerInterceptor<QueryMessage> interceptorOne = (message, context, chain) -> {
+            invocationCount.incrementAndGet();
+            return chain.proceed(message, context);
+        };
+        MessageHandlerInterceptor<QueryMessage> interceptorTwo = (message, context, chain) -> {
+            invocationCount.incrementAndGet();
+            return chain.proceed(message, context);
+        };
+        MessageHandlerInterceptorChain<QueryMessage> testSubject =
+                new QueryMessageHandlerInterceptorChain(asList(interceptorOne, interceptorTwo), mockHandler);
+
+        Message firstResult = testSubject.proceed(firstCommand, StubProcessingContext.forMessage(firstCommand))
+                                         .first()
+                                         .asMono()
+                                         .map(MessageStream.Entry::message)
+                                         .block();
+        assertNotNull(firstResult);
+        assertSame("response", firstResult.payload());
+        assertThat(invocationCount.get()).isEqualTo(2);
+
+        Message secondResult = testSubject.proceed(secondCommand, StubProcessingContext.forMessage(secondCommand))
+                                          .first()
+                                          .asMono()
+                                          .map(MessageStream.Entry::message)
+                                          .block();
+        assertNotNull(secondResult);
+        assertSame("response", firstResult.payload());
+        assertThat(invocationCount.get()).isEqualTo(4);
     }
 
     @Test

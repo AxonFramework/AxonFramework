@@ -23,6 +23,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
@@ -30,15 +31,16 @@ import java.util.function.BiFunction;
  * Default implementation for a {@link MessageDispatchInterceptorChain}.
  *
  * @param <M> The type of {@link Message} intercepted by this chain.
+ * @author Allard Buijze
  * @author Simon Zambrovski
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 @Internal
 public class DefaultMessageDispatchInterceptorChain<M extends Message>
         implements MessageDispatchInterceptorChain<M> {
 
-    private final Iterator<MessageDispatchInterceptor<M>> chain;
-    private final BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal;
+    private final BiFunction<? super M, ProcessingContext, MessageStream<?>> interceptingDispatcher;
 
     /**
      * Constructs a {@code DefaultMessageDispatchInterceptorChain} from the given {@code interceptors} without a
@@ -63,23 +65,51 @@ public class DefaultMessageDispatchInterceptorChain<M extends Message>
             @Nonnull Collection<MessageDispatchInterceptor<? super M>> interceptors,
             @Nonnull BiFunction<? super M, ProcessingContext, MessageStream<?>> terminal
     ) {
-        // Safe cast: each interceptor in the list can handle M,
-        // because they accept "M or a supertype of M".
-        //noinspection unchecked
-        this.chain = (Iterator<MessageDispatchInterceptor<M>>) (Iterator<?>) interceptors.iterator();
-        this.terminal = Objects.requireNonNull(terminal, "The terminal operation may not be null.");
+        Iterator<MessageDispatchInterceptor<? super M>> interceptorIterator =
+                new LinkedList<>(interceptors).descendingIterator();
+        BiFunction<? super M, ProcessingContext, MessageStream<?>> interceptingDispatcher =
+                Objects.requireNonNull(terminal, "The terminal operation may not be null.");
+        while (interceptorIterator.hasNext()) {
+            interceptingDispatcher = new InterceptingDispatcher(interceptorIterator.next(), interceptingDispatcher);
+        }
+        this.interceptingDispatcher = interceptingDispatcher;
     }
 
     @Override
-    public @Nonnull MessageStream<?> proceed(@Nonnull M message, @Nullable ProcessingContext context) {
-        try {
-            if (chain.hasNext()) {
-                return chain.next().interceptOnDispatch(message, context, this);
-            } else {
-                return terminal.apply(message, context);
+    @Nonnull
+    public MessageStream<?> proceed(@Nonnull M message, @Nullable ProcessingContext context) {
+        return interceptingDispatcher.apply(message, context);
+    }
+
+    private class InterceptingDispatcher implements
+            MessageDispatchInterceptorChain<M>,
+            BiFunction<M, ProcessingContext, MessageStream<?>> {
+
+        private final MessageDispatchInterceptor<? super M> interceptor;
+        private final BiFunction<? super M, ProcessingContext, MessageStream<?>> next;
+
+        private InterceptingDispatcher(MessageDispatchInterceptor<? super M> interceptor,
+                                       BiFunction<? super M, ProcessingContext, MessageStream<?>> next) {
+            this.interceptor = interceptor;
+            this.next = next;
+        }
+
+        @Nonnull
+        @Override
+        public MessageStream<?> proceed(@Nonnull M message, @Nullable ProcessingContext context) {
+            return next.apply(message, context);
+        }
+
+        @Override
+        public MessageStream<?> apply(M message, ProcessingContext context) {
+            try {
+                // Safe cast: each interceptor in the list can handle M,
+                // because they accept "M or a supertype of M".
+                //noinspection rawtypes,unchecked
+                return interceptor.interceptOnDispatch(message, context, (MessageDispatchInterceptorChain) this);
+            } catch (RuntimeException e) {
+                return MessageStream.failed(e);
             }
-        } catch (Exception e) {
-            return MessageStream.failed(e);
         }
     }
 }

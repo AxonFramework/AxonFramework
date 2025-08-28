@@ -21,7 +21,9 @@ import org.junit.jupiter.api.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.MessagingTestUtils.message;
 
@@ -50,6 +52,36 @@ class DefaultMessageDispatchInterceptorChainTest {
         assertThat(resultMetadata.size()).isEqualTo(2);
         assertThat(resultMetadata.get("interceptorOne")).isEqualTo("valueOne");
         assertThat(resultMetadata.get("interceptorTwo")).isEqualTo("valueTwo");
+    }
+
+    @Test
+    void eachChainInvocationStartsFromTheBeginning() {
+        AtomicInteger invocationCount = new AtomicInteger(0);
+        Message firstMessage = message("message", "payload");
+        Message secondMessage = message("message", "second");
+
+        MessageDispatchInterceptor<Message> interceptorOne = (message, context, chain) -> {
+            invocationCount.incrementAndGet();
+            return chain.proceed(message, context);
+        };
+        MessageDispatchInterceptor<Message> interceptorTwo = (message, context, chain) -> {
+            invocationCount.incrementAndGet();
+            return chain.proceed(message, context);
+        };
+        MessageDispatchInterceptorChain<Message> testSubject =
+                new DefaultMessageDispatchInterceptorChain<>(asList(interceptorOne, interceptorTwo));
+
+        MessageStream<?> firstResult = testSubject.proceed(firstMessage, null);
+        assertThat(firstResult.error()).isNotPresent();
+        Optional<? extends MessageStream.Entry<?>> firstEntry = firstResult.next();
+        assertThat(firstEntry).isPresent();
+        assertThat(invocationCount.get()).isEqualTo(2);
+
+        MessageStream<?> secondResult = testSubject.proceed(secondMessage, null);
+        assertThat(secondResult.error()).isNotPresent();
+        Optional<? extends MessageStream.Entry<?>> secondEntry = secondResult.next();
+        assertThat(secondEntry).isPresent();
+        assertThat(invocationCount.get()).isEqualTo(4);
     }
 
     @Test

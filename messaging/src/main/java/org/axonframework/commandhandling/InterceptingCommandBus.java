@@ -49,7 +49,6 @@ public class InterceptingCommandBus implements CommandBus {
     private final CommandBus delegate;
     private final List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors;
     private final List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors;
-
     private final InterceptingDispatcher interceptingDispatcher;
 
     /**
@@ -81,7 +80,7 @@ public class InterceptingCommandBus implements CommandBus {
     @Override
     public InterceptingCommandBus subscribe(@Nonnull QualifiedName name,
                                             @Nonnull CommandHandler commandHandler) {
-        delegate.subscribe(name, new InterceptingCommandHandler(commandHandler, handlerInterceptors));
+        delegate.subscribe(name, new InterceptingHandler(commandHandler, handlerInterceptors));
         return this;
     }
 
@@ -103,12 +102,12 @@ public class InterceptingCommandBus implements CommandBus {
         descriptor.describeProperty("dispatchInterceptors", dispatchInterceptors);
     }
 
-    private static class InterceptingCommandHandler implements CommandHandler {
+    private static class InterceptingHandler implements CommandHandler {
 
         private final CommandMessageHandlerInterceptorChain interceptorChain;
 
-        private InterceptingCommandHandler(CommandHandler handler,
-                                           List<MessageHandlerInterceptor<CommandMessage>> interceptors) {
+        private InterceptingHandler(CommandHandler handler,
+                                    List<MessageHandlerInterceptor<CommandMessage>> interceptors) {
             this.interceptorChain = new CommandMessageHandlerInterceptorChain(interceptors, handler);
         }
 

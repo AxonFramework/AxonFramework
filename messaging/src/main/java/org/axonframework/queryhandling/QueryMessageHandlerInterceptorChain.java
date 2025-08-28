@@ -24,6 +24,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -31,14 +32,15 @@ import java.util.Objects;
  * A {@link MessageHandlerInterceptorChain} that intercepts {@link QueryMessage QueryMessages} for
  * {@link QueryHandler QueryHandlers}.
  *
+ * @author Allard Buijze
  * @author Simon Zambrovski
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 @Internal
 public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterceptorChain<QueryMessage> {
 
-    private final QueryHandler queryHandler;
-    private final Iterator<MessageHandlerInterceptor<QueryMessage>> chain;
+    private final QueryHandler interceptingHandler;
 
     /**
      * Constructs a new {@code QueryMessageHandlerInterceptorChain} with a list of {@code interceptors} and an
@@ -47,26 +49,44 @@ public class QueryMessageHandlerInterceptorChain implements MessageHandlerInterc
      * @param interceptors The list of handler interceptors that are part of this chain.
      * @param queryHandler The query handler to be invoked at the end of the interceptor chain.
      */
-    public QueryMessageHandlerInterceptorChain(
-            @Nonnull List<MessageHandlerInterceptor<QueryMessage>> interceptors,
-            @Nonnull QueryHandler queryHandler
-    ) {
-        this.chain = interceptors.iterator();
-        this.queryHandler = Objects.requireNonNull(queryHandler, "The Query Handler may not be null.");
+    public QueryMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<QueryMessage>> interceptors,
+                                               @Nonnull QueryHandler queryHandler) {
+        Iterator<MessageHandlerInterceptor<QueryMessage>> interceptorIterator =
+                new LinkedList<>(interceptors).descendingIterator();
+        QueryHandler handler = Objects.requireNonNull(queryHandler, "The Query Handler may not be null.");
+        while (interceptorIterator.hasNext()) {
+            handler = new InterceptingHandler(interceptorIterator.next(), handler);
+        }
+        this.interceptingHandler = handler;
     }
 
     @Nonnull
     @Override
-    public MessageStream<?> proceed(@Nonnull QueryMessage query,
-                                    @Nonnull ProcessingContext context) {
+    public MessageStream<?> proceed(@Nonnull QueryMessage query, @Nonnull ProcessingContext context) {
         try {
-            if (chain.hasNext()) {
-                return chain.next().interceptOnHandle(query, context, this);
-            } else {
-                return queryHandler.handle(query, context);
-            }
+            return interceptingHandler.handle(query, context);
         } catch (Exception e) {
             return MessageStream.failed(e);
+        }
+    }
+
+    private record InterceptingHandler(
+            MessageHandlerInterceptor<? super QueryMessage> interceptor,
+            QueryHandler next
+    ) implements QueryHandler, MessageHandlerInterceptorChain<QueryMessage> {
+
+        @Nonnull
+        @Override
+        public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
+                                                          @Nonnull ProcessingContext context) {
+            // noinspection unchecked,rawtypes
+            return interceptor.interceptOnHandle(query, context, (MessageHandlerInterceptorChain) this);
+        }
+
+        @Nonnull
+        @Override
+        public MessageStream<?> proceed(@Nonnull QueryMessage query, @Nonnull ProcessingContext context) {
+            return next.handle(query, context);
         }
     }
 }

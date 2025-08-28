@@ -24,6 +24,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -31,14 +32,15 @@ import java.util.Objects;
  * A {@link MessageHandlerInterceptorChain} that intercepts {@link CommandMessage CommandMessages} for
  * {@link CommandHandler CommandHandlers}.
  *
+ * @author Allard Buijze
  * @author Simon Zambrovski
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 @Internal
 public class CommandMessageHandlerInterceptorChain implements MessageHandlerInterceptorChain<CommandMessage> {
 
-    private final Iterator<MessageHandlerInterceptor<CommandMessage>> chain;
-    private final CommandHandler commandHandler;
+    private final CommandHandler interceptingHandler;
 
     /**
      * Constructs a new {@code CommandMessageHandlerInterceptorChain} with a list of {@code interceptors} and an
@@ -47,29 +49,46 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
      * @param interceptors   The list of handler interceptors that are part of this chain.
      * @param commandHandler The command handler to be invoked at the end of the interceptor chain.
      */
-    public CommandMessageHandlerInterceptorChain(
-            @Nonnull List<MessageHandlerInterceptor<CommandMessage>> interceptors,
-            @Nonnull CommandHandler commandHandler
-    ) {
-        this.chain = interceptors.iterator();
-        this.commandHandler = Objects.requireNonNull(commandHandler, "The Command Handler may not be null.");
+    public CommandMessageHandlerInterceptorChain(@Nonnull List<MessageHandlerInterceptor<CommandMessage>> interceptors,
+                                                 @Nonnull CommandHandler commandHandler) {
+        Iterator<MessageHandlerInterceptor<CommandMessage>> interceptorIterator =
+                new LinkedList<>(interceptors).descendingIterator();
+        CommandHandler handler = Objects.requireNonNull(commandHandler, "The Command Handler may not be null.");
+        while (interceptorIterator.hasNext()) {
+            handler = new InterceptingHandler(interceptorIterator.next(), handler);
+        }
+        this.interceptingHandler = handler;
     }
 
     @Nonnull
     @Override
-    public MessageStream<?> proceed(@Nonnull CommandMessage command,
-                                    @Nonnull ProcessingContext context) {
+    public MessageStream<?> proceed(@Nonnull CommandMessage command, @Nonnull ProcessingContext context) {
         try {
-            if (chain.hasNext()) {
-                return this.chain.next()
-                                 .interceptOnHandle(command, context, this)
-                                 .first()
-                                 .<CommandMessage>cast();
-            } else {
-                return this.commandHandler.handle(command, context);
-            }
+            return interceptingHandler.handle(command, context);
         } catch (Exception e) {
             return MessageStream.failed(e);
+        }
+    }
+
+    private record InterceptingHandler(
+            MessageHandlerInterceptor<? super CommandMessage> interceptor,
+            CommandHandler next
+    ) implements CommandHandler, MessageHandlerInterceptorChain<CommandMessage> {
+
+        @Override
+        @Nonnull
+        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
+                                                                    @Nonnull ProcessingContext context) {
+            //noinspection unchecked,rawtypes
+            return interceptor.interceptOnHandle(command, context, (MessageHandlerInterceptorChain) this)
+                              .first();
+        }
+
+        @Override
+        @Nonnull
+        public MessageStream<?> proceed(@Nonnull CommandMessage command,
+                                        @Nonnull ProcessingContext context) {
+            return next.handle(command, context);
         }
     }
 }
