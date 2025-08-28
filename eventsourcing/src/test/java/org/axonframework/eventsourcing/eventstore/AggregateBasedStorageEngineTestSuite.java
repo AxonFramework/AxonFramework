@@ -21,6 +21,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
@@ -29,7 +31,6 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
@@ -72,7 +73,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     protected Set<Tag> OTHER_AGGREGATE_TAGS;
     protected EventCriteria OTHER_AGGREGATE_CRITERIA;
 
-    protected Converter converter;
+    protected EventConverter converter;
 
     protected ESE testSubject;
 
@@ -86,7 +87,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         OTHER_AGGREGATE_TAGS = Set.of(new Tag("OTHER_AGGREGATE", OTHER_AGGREGATE_ID));
         OTHER_AGGREGATE_CRITERIA = EventCriteria.havingTags("OTHER_AGGREGATE", OTHER_AGGREGATE_ID);
 
-        converter = new JacksonConverter();
+        converter = new DelegatingEventConverter(new JacksonConverter());
 
         testSubject = buildStorageEngine();
     }

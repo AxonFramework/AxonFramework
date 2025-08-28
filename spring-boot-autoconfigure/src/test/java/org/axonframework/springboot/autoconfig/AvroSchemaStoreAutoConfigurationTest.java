@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 4.11.0
  */
 @Disabled("TODO #3496")
-class AvroSerializerAutoConfigurationTest {
+class AvroSchemaStoreAutoConfigurationTest {
 
     private ApplicationContextRunner testApplicationContext;
 
@@ -68,9 +68,9 @@ class AvroSerializerAutoConfigurationTest {
         testApplicationContext
                 .withUserConfiguration(DefaultContext.class)
                 .withPropertyValues(
-                        "axon.serializer.general=jackson",
-                        "axon.serializer.messages=jackson",
-                        "axon.serializer.events=avro"
+                        "axon.converter.general=jackson",
+                        "axon.converter.messages=jackson",
+                        "axon.converter.events=avro"
                 )
                 .run(context -> {
                     assertThat(context).hasSingleBean(SchemaStore.class);
@@ -92,9 +92,9 @@ class AvroSerializerAutoConfigurationTest {
         testApplicationContext
                 .withUserConfiguration(ContextWithCustomSchemaStore.class)
                 .withPropertyValues(
-                        "axon.serializer.general=jackson",
-                        "axon.serializer.messages=jackson",
-                        "axon.serializer.events=avro"
+                        "axon.converter.general=jackson",
+                        "axon.converter.messages=jackson",
+                        "axon.converter.events=avro"
                 )
                 .run(context -> {
                     assertThat(context).hasSingleBean(SchemaStore.class);
@@ -117,9 +117,9 @@ class AvroSerializerAutoConfigurationTest {
         testApplicationContext
                 .withUserConfiguration(DefaultContext.class)
                 .withPropertyValues(
-                        "axon.serializer.general=jackson",
-                        "axon.serializer.messages=jackson",
-                        "axon.serializer.events=avro")
+                        "axon.converter.general=jackson",
+                        "axon.converter.messages=jackson",
+                        "axon.converter.events=avro")
                 .run(context -> {
                     Serializer serializer = context.getBean("eventSerializer", Serializer.class);
                     assertInstanceOf(AvroSerializer.class, serializer);
@@ -158,9 +158,9 @@ class AvroSerializerAutoConfigurationTest {
         testApplicationContext
                 .withUserConfiguration(ContextWithoutSchemaScan.class)
                 .withPropertyValues(
-                        "axon.serializer.general=jackson",
-                        "axon.serializer.messages=jackson",
-                        "axon.serializer.events=avro")
+                        "axon.converter.general=jackson",
+                        "axon.converter.messages=jackson",
+                        "axon.converter.events=avro")
                 .run(context -> {
                     Serializer serializer = context.getBean("eventSerializer", Serializer.class);
                     assertInstanceOf(AvroSerializer.class, serializer);
@@ -188,9 +188,9 @@ class AvroSerializerAutoConfigurationTest {
         testApplicationContext
                 .withUserConfiguration(DefaultContext.class)
                 .withPropertyValues(
-                        "axon.serializer.general=jackson",
-                        "axon.serializer.messages=jackson",
-                        "axon.serializer.events=jackson"
+                        "axon.converter.general=jackson",
+                        "axon.converter.messages=jackson",
+                        "axon.converter.events=jackson"
                 )
                 .run(context -> {
                     assertThat(context).getBean(SchemaStore.class).isNull();
@@ -203,9 +203,9 @@ class AvroSerializerAutoConfigurationTest {
         testApplicationContext
                 .withUserConfiguration(DefaultContext.class)
                 .withPropertyValues(
-                        "axon.serializer.general=avro",
-                        "axon.serializer.messages=jackson",
-                        "axon.serializer.events=jackson"
+                        "axon.converter.general=avro",
+                        "axon.converter.messages=jackson",
+                        "axon.converter.events=jackson"
                 )
                 .run(context -> {
                     assertThat(context.getStartupFailure()).isNotNull().isInstanceOf(BeanCreationException.class);
@@ -228,8 +228,8 @@ class AvroSerializerAutoConfigurationTest {
         testApplicationContext
                 .withUserConfiguration(DefaultContext.class)
                 .withPropertyValues(
-                        "axon.serializer.general=jackson",
-                        "axon.serializer.messages=avro"
+                        "axon.converter.general=jackson",
+                        "axon.converter.messages=avro"
                 )
                 .run(context -> {
 
@@ -245,9 +245,9 @@ class AvroSerializerAutoConfigurationTest {
         testApplicationContext
                 .withUserConfiguration(DefaultContext.class)
                 .withPropertyValues(
-                        "axon.serializer.general=jackson",
-                        "axon.serializer.messages=avro",
-                        "axon.serializer.event=avro"
+                        "axon.converter.general=jackson",
+                        "axon.converter.messages=avro",
+                        "axon.converter.event=avro"
                 )
                 .run(context -> {
 

@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
@@ -151,9 +152,11 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
      * {@link AnnotationBasedEntityEvolvingComponent} to use the annotations placed.
      */
     protected EntityEvolver<Student> studentEvolver(Configuration config) {
-        return new AnnotationBasedEntityEvolvingComponent<>(Student.class,
-                                                            config.getComponent(Converter.class),
-                                                            config.getComponent(MessageTypeResolver.class));
+        return new AnnotationBasedEntityEvolvingComponent<>(
+                Student.class,
+                config.getComponent(EventConverter.class),
+                config.getComponent(MessageTypeResolver.class)
+        );
     }
 
     protected <T> void sendCommand(T payload) {

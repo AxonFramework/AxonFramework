@@ -23,9 +23,11 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
@@ -36,6 +38,8 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -62,8 +66,14 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
         testContext.run(context -> {
             assertThat(context).hasSingleBean(MessageTypeResolver.class);
             assertThat(context).hasBean(MessageTypeResolver.class.getName());
-            assertThat(context).hasSingleBean(Converter.class);
+            // The Converter, MessageConverter, and EventConverter all are Converter implementations, hence three.
+            Map<String, Converter> beansOfType = context.getBeansOfType(Converter.class);
+            assertThat(beansOfType.size()).isEqualTo(3);
             assertThat(context).hasBean(Converter.class.getName());
+            assertThat(context).hasSingleBean(MessageConverter.class);
+            assertThat(context).hasBean(MessageConverter.class.getName());
+            assertThat(context).hasSingleBean(EventConverter.class);
+            assertThat(context).hasBean(EventConverter.class.getName());
             assertThat(context).hasSingleBean(CommandGateway.class);
             assertThat(context).hasBean(CommandGateway.class.getName());
             assertThat(context).hasSingleBean(CommandBus.class);
@@ -90,8 +100,13 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
         testContext.withUserConfiguration(CustomContext.class).run(context -> {
             assertThat(context).hasSingleBean(MessageTypeResolver.class);
             assertThat(context).hasBean("customMessageTypeResolver");
-            assertThat(context).hasSingleBean(Converter.class);
+            // The Converter, MessageConverter, and EventConverter all are Converter implementations, hence three.
+            assertThat(context.getBeansOfType(Converter.class).size()).isEqualTo(3);
             assertThat(context).hasBean("customConverter");
+            assertThat(context).hasSingleBean(MessageConverter.class);
+            assertThat(context).hasBean("customMessageConverter");
+            assertThat(context).hasSingleBean(EventConverter.class);
+            assertThat(context).hasBean("customEventConverter");
             assertThat(context).hasSingleBean(CommandGateway.class);
             assertThat(context).hasBean("customCommandGateway");
             assertThat(context).hasSingleBean(CommandBus.class);
@@ -113,8 +128,11 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
         });
     }
 
+    // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
     @Configuration
-    @EnableAutoConfiguration
+    @EnableAutoConfiguration(
+            exclude = ConverterAutoConfiguration.class
+    )
     public static class TestContext {
 
         @Bean
@@ -134,8 +152,11 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
         }
     }
 
+    // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
     @Configuration
-    @EnableAutoConfiguration
+    @EnableAutoConfiguration(
+            exclude = ConverterAutoConfiguration.class
+    )
     public static class CustomContext {
 
         @Bean
@@ -146,6 +167,16 @@ class MessagingConfigurationDefaultsAutoConfigurationTest {
         @Bean
         public Converter customConverter() {
             return mock(Converter.class);
+        }
+
+        @Bean
+        public MessageConverter customMessageConverter() {
+            return mock(MessageConverter.class);
+        }
+
+        @Bean
+        public EventConverter customEventConverter() {
+            return mock(EventConverter.class);
         }
 
         @Bean

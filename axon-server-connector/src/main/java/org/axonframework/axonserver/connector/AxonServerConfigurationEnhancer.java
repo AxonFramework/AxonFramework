@@ -31,7 +31,7 @@ import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.configuration.SearchScope;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.serialization.Converter;
+import org.axonframework.messaging.conversion.MessageConverter;
 
 import java.util.Optional;
 import javax.annotation.Nonnull;
@@ -117,7 +117,7 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
     private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector> payloadConvertingConnectorComponentDecorator() {
         return (config, name, delegate) -> new PayloadConvertingCommandBusConnector(
                 delegate,
-                config.getComponent(Converter.class),
+                config.getComponent(MessageConverter.class),
                 byte[].class
         );
     }

@@ -19,6 +19,7 @@ package org.axonframework.test.fixture;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
 import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
@@ -35,7 +36,6 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.serialization.Converter;
 import org.axonframework.test.fixture.sampledomain.ChangeStudentNameCommand;
 import org.axonframework.test.fixture.sampledomain.Student;
 import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
-
 
 class AxonTestFixtureStatefulCommandHandlerTest {
 
@@ -253,8 +252,9 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                                     (id, context) -> EventCriteria.havingTags("Student", id),
                                     new AnnotationBasedEntityEvolvingComponent<>(
                                             Student.class,
-                                            c.getComponent(Converter.class),
-                                            c.getComponent(MessageTypeResolver.class))
+                                            c.getComponent(EventConverter.class),
+                                            c.getComponent(MessageTypeResolver.class)
+                                    )
                             );
                             return SimpleStateManager.named("testfixture")
                                                      .register(repository);

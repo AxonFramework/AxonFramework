@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.annotation.reflection;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -27,7 +28,6 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -51,7 +51,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
     @Mock
     private EventMessage eventMessage;
 
-    private final Converter converter = PassThroughConverter.INSTANCE;
+    private final EventConverter converter = PassThroughConverter.EVENT_INSTANCE;
 
 
     @BeforeEach

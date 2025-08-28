@@ -17,6 +17,7 @@
 package org.axonframework.modelling.entity.annotation;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -42,9 +43,10 @@ class AnnotatedEntityIdResolverTest {
 
     @BeforeEach
     void setUp() {
-        resolver = new AnnotatedEntityIdResolver<>(
-                metamodel, String.class, new JacksonConverter(), new AnnotationBasedEntityIdResolver<>()
-        );
+        resolver = new AnnotatedEntityIdResolver<>(metamodel,
+                                                   String.class,
+                                                   new DelegatingMessageConverter(new JacksonConverter()),
+                                                   new AnnotationBasedEntityIdResolver<>());
     }
 
     @Test
