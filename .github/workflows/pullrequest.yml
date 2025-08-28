@@ -39,11 +39,15 @@ jobs:
         if: ${{ !matrix.sonar-enabled }}
         run: |
           ./mvnw -B -U -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 clean verify
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
 
       - name: Build with Coverage reports
         if: matrix.sonar-enabled
         run: |
           ./mvnw -B -U -Dstyle.color=always -Possrh -Dcoverage -Dsurefire.rerunFailingTestsCount=5 clean verify
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
 
       - name: Sonar Analysis
         if: ${{ success() && matrix.sonar-enabled && github.event.pull_request.head.repo.full_name == github.repository }}
