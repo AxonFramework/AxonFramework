@@ -17,8 +17,8 @@ concurrency:
 jobs:
   build:
     name: Test and Build on JDK ${{ matrix.java-version }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+    runs-on: ubuntu-latest-4-cores
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -43,14 +43,14 @@ jobs:
       - name: Regular Build
         if: ${{ !matrix.sonar-enabled }}
         run: |
-          ./mvnw -B -U -T 2 -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 clean verify
+          ./mvnw -B -U -T 4 -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 clean verify
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
 
       - name: Build with Coverage reports
         if: matrix.sonar-enabled
         run: |
-          ./mvnw -B -U -T 2 -Dstyle.color=always -Possrh -Dcoverage -Dsurefire.rerunFailingTestsCount=5 clean verify
+          ./mvnw -B -U -T 4 -Dstyle.color=always -Possrh -Dcoverage -Dsurefire.rerunFailingTestsCount=5 clean verify
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
 
