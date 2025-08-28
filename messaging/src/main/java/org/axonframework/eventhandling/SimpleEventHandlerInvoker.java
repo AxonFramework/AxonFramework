@@ -114,18 +114,18 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     @Override
     public void handle(@Nonnull EventMessage message, @Nonnull ProcessingContext context, @Nonnull Segment segment)
             throws Exception {
-        if (!sequencingPolicyMatchesSegment(message, segment)) {
+        if (!sequencingPolicyMatchesSegment(message, segment, context)) {
             return;
         }
         invokeHandlers(message, context);
     }
 
-    protected boolean sequencingPolicyMatchesSegment(@Nonnull EventMessage message, @Nonnull Segment segment) {
-        return segmentMatcher.matches(segment, message);
+    protected boolean sequencingPolicyMatchesSegment(@Nonnull EventMessage message, @Nonnull Segment segment, @Nonnull ProcessingContext context) {
+        return segmentMatcher.matches(segment, message, context);
     }
 
-    protected Object sequenceIdentifier(EventMessage event) {
-        return segmentMatcher.sequenceIdentifier(event);
+    protected Object sequenceIdentifier(EventMessage event, ProcessingContext context) {
+        return segmentMatcher.sequenceIdentifier(event, context);
     }
 
     protected void invokeHandlers(EventMessage message, ProcessingContext context) throws Exception {
@@ -142,7 +142,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     public boolean canHandle(@Nonnull EventMessage eventMessage,
                              @Nonnull ProcessingContext context,
                              @Nonnull Segment segment) {
-        return hasHandler(eventMessage, context) && segmentMatcher.matches(segment, eventMessage);
+        return hasHandler(eventMessage, context) && segmentMatcher.matches(segment, eventMessage, context);
     }
 
     @Override

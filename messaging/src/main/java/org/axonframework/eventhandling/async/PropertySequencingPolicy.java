@@ -21,6 +21,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -61,13 +62,14 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage,
+                                                     @Nonnull ProcessingContext context) {
         if (payloadClass.isAssignableFrom(eventMessage.payloadType())) {
             @SuppressWarnings("unchecked") final T castedPayload = (T) eventMessage.payload();
             return Optional.ofNullable(propertyExtractor.apply(castedPayload));
         }
 
-        return fallbackSequencingPolicy.getSequenceIdentifierFor(eventMessage);
+        return fallbackSequencingPolicy.getSequenceIdentifierFor(eventMessage, context);
     }
 
     /**
@@ -192,7 +194,8 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy {
             }
 
             @Override
-            public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage) {
+            public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage,
+                                                             @Nonnull ProcessingContext context) {
                 throw new IllegalArgumentException(
                         "The event message payload is not of a supported type. "
                                 + "Either make sure that the processor only consumes supported events "

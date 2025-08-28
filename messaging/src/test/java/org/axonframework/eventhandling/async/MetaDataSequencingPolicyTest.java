@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -47,7 +48,7 @@ public class MetaDataSequencingPolicyTest {
         DomainEventMessage testEvent =
                 newStubDomainEvent("42", Collections.singletonMap("metaDataKey", "metaDataValue"));
 
-        assertThat(metaDataPolicy.getSequenceIdentifierFor(testEvent)).contains("metaDataValue");
+        assertThat(metaDataPolicy.getSequenceIdentifierFor(testEvent, new StubProcessingContext())).contains("metaDataValue");
     }
 
     @Test
@@ -57,7 +58,7 @@ public class MetaDataSequencingPolicyTest {
                 .metaDataKey("metaDataKey")
                 .build();
 
-        assertThat(metaDataPolicy.getSequenceIdentifierFor(newStubDomainEvent("42"))).isPresent();
+        assertThat(metaDataPolicy.getSequenceIdentifierFor(newStubDomainEvent("42"), new StubProcessingContext())).isPresent();
     }
 
     @Test

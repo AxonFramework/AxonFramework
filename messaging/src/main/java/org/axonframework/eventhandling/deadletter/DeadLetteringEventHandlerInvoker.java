@@ -126,12 +126,12 @@ public class DeadLetteringEventHandlerInvoker
 
     @Override
     public void handle(@Nonnull EventMessage message, @Nonnull ProcessingContext context, @Nonnull Segment segment) throws Exception {
-        if (!super.sequencingPolicyMatchesSegment(message, segment)) {
+        if (!super.sequencingPolicyMatchesSegment(message, segment, context)) {
             logger.trace("Ignoring event with id [{}] as it is not assigned to segment [{}].",
                          message.identifier(), segment);
             return;
         }
-        Object sequenceIdentifier = super.sequenceIdentifier(message);
+        Object sequenceIdentifier = super.sequenceIdentifier(message, context);
         boolean mightBePresent = mightBePresent(sequenceIdentifier, segment);
         if (isPresent(mightBePresent, sequenceIdentifier, message)) {
             if (logger.isInfoEnabled()) {

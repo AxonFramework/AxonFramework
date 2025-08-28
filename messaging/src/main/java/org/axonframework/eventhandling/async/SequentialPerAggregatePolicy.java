@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.async;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Optional;
 
@@ -43,7 +44,7 @@ public class SequentialPerAggregatePolicy implements SequencingPolicy {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         if (event instanceof DomainEventMessage) {
             var aggregateId = ((DomainEventMessage) event).getAggregateIdentifier();
             return Optional.ofNullable(aggregateId);

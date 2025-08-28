@@ -54,7 +54,7 @@ class DefaultEventHandlingComponentBuilderTest {
         void shouldApplySequencingPolicyAndReturnRequiredEventHandlerPhase() {
             // given
             var expectedIdentifier = "sequenceId";
-            SequencingPolicy sequencingPolicy = event -> Optional.of(expectedIdentifier);
+            SequencingPolicy sequencingPolicy = (event, context) -> Optional.of(expectedIdentifier);
 
             // when
             var component = builder.sequencingPolicy(sequencingPolicy)

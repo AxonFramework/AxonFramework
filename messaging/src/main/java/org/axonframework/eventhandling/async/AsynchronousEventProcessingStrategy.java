@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessingStrategy;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,7 +90,7 @@ public class AsynchronousEventProcessingStrategy implements EventProcessingStrat
         Map<Object, List<EventMessage>> groupedEvents = new HashMap<>();
         for (EventMessage event : events) {
             groupedEvents.computeIfAbsent(
-                    sequencingPolicy.getSequenceIdentifierFor(event).orElse(null),
+                    sequencingPolicy.getSequenceIdentifierFor(event, new LegacyMessageSupportingContext(event)).orElse(null),
                     key -> new ArrayList<>()
             ).add(event);
         }

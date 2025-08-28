@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.async;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Optional;
 
@@ -53,9 +54,10 @@ public interface SequencingPolicy {
      * {@code Optional#empty()} is returned, it is up to the component using this policy to provide a default behavior,
      * use another policy, or throw an exception / react in any other way - as appropriate.
      *
-     * @param event The event for which to get the sequencing identifier.
+     * @param event   The event for which to get the sequencing identifier.
+     * @param context The processing context in which the event is being handled.
      * @return A sequence identifier for the given event, or {@code Optional#empty()} if this policy cannot determine a
      * sequence identifier for the given event.
      */
-    Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event);
+    Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context);
 }

@@ -19,6 +19,8 @@ package org.axonframework.eventhandling.async;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
@@ -36,9 +38,10 @@ class FullConcurrencyPolicyTest {
     @Test
     void sequencingIdentifier() {
         FullConcurrencyPolicy testSubject = new FullConcurrencyPolicy();
-        assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()))).isPresent();
-        assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()))).isPresent();
-        assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()))).isPresent();
+        ProcessingContext processingContext = new StubProcessingContext();
+        assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), processingContext)).isPresent();
+        assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), processingContext)).isPresent();
+        assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), processingContext)).isPresent();
     }
 
     private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {

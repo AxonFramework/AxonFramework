@@ -96,7 +96,7 @@ public class PersistentStreamSequencingPolicyProvider
 
     @Override
     public SequencingPolicy apply(Configuration configuration) {
-        return event -> Optional.ofNullable(sequencingIdentifier(event));
+        return (event, context) -> Optional.ofNullable(sequencingIdentifier(event));
     }
 
     private Object sequencingIdentifier(EventMessage event) {
