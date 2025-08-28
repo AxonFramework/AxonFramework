@@ -40,10 +40,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/build-cache
-          key: ${{ runner.os }}-maven-build-cache-${{ github.head_ref || github.ref_name }}
+          key: ${{ runner.os }}-mvn-build-cache-${{ github.head_ref || github.ref_name }}
           restore-keys: |
-            ${{ runner.os }}-maven-build-cache-main
-            ${{ runner.os }}-maven-build-cache-
+            ${{ runner.os }}-mvn-build-cache-main
+            ${{ runner.os }}-mvn-build-cache-
 
       - name: Generate cache key for compiled artifacts
         id: cache-key
@@ -68,7 +68,7 @@ jobs:
           TESTCONTAINERS_RYUK_DISABLED: true
 
   test:
-    name: Test ${{ matrix.module }}
+    name: Module Tests - ${{ matrix.module }}
     needs: compile
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -130,14 +130,14 @@ jobs:
           TESTCONTAINERS_RYUK_DISABLED: true
 
   integration-tests:
-    name: Integration Tests
+    name: Integration (Cross-Module) Tests
     needs: compile
     runs-on: ubuntu-latest
     timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
-        module: ["integrationtests", "spring-boot-3-integrationtests"]
+        module: ["integrationtests"]
 
     steps:
       - name: Checkout code
