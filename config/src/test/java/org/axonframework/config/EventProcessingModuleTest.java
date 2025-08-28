@@ -320,7 +320,7 @@ class EventProcessingModuleTest {
     void assignSequencingPolicy() throws NoSuchFieldException, IllegalAccessException {
         Object mockHandler = new Object();
         Object specialHandler = new Object();
-        SequentialPolicy sequentialPolicy = new SequentialPolicy();
+        SequentialPolicy sequentialPolicy = SequentialPolicy.INSTANCE;
         FullConcurrencyPolicy fullConcurrencyPolicy = new FullConcurrencyPolicy();
         configurer.eventProcessing()
                   .registerEventHandler(c -> mockHandler)

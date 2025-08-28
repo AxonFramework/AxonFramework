@@ -29,7 +29,14 @@ import java.util.Optional;
  */
 public class SequentialPolicy implements SequencingPolicy {
 
+    /**
+     * Singleton instance of the {@code SequentialPolicy}.
+     */
+    public static final SequentialPolicy INSTANCE = new SequentialPolicy();
     private static final Object FULL_SEQUENTIAL_POLICY = new Object();
+
+    private SequentialPolicy() {
+    }
 
     @Override
     public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage task) {

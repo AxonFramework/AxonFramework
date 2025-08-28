@@ -35,7 +35,7 @@ class SequentialPolicyTest {
     @Test
     void sequencingIdentifier() {
         // ok, pretty useless, but everything should be tested
-        SequentialPolicy testSubject = new SequentialPolicy();
+        SequentialPolicy testSubject = SequentialPolicy.INSTANCE;
         Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())).orElse(null);
         Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())).orElse(null);
         Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())).orElse(null);
