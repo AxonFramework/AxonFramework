@@ -18,10 +18,9 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandMessageHandlerInterceptorChain;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.commandhandling.CommandMessageHandlerInterceptorChain;
-import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -74,7 +73,7 @@ class AnnotatedCommandHandlingComponentTest {
     @Test
     void handlerDispatchingVoidReturnType() {
         CommandMessage testCommand = new GenericCommandMessage(new MessageType(String.class),
-                                                                         "myStringPayload");
+                                                               "myStringPayload");
 
         Object result = testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
                                    .first()
@@ -126,7 +125,7 @@ class AnnotatedCommandHandlingComponentTest {
     void handlerDispatchingThrowingException() {
         try {
             GenericCommandMessage command = new GenericCommandMessage(new MessageType(HashSet.class),
-                                                                                         new HashSet<>());
+                                                                      new HashSet<>());
             testSubject.handle(command, StubProcessingContext.forMessage(command))
                        .first()
                        .asCompletableFuture()
@@ -261,7 +260,8 @@ class AnnotatedCommandHandlingComponentTest {
         }
 
         @MessageHandlerInterceptor
-        public Object interceptAny(CommandMessage command, ProcessingContext context, CommandMessageHandlerInterceptorChain chain) {
+        public Object interceptAny(CommandMessage command, ProcessingContext context,
+                                   CommandMessageHandlerInterceptorChain chain) {
             interceptedWithInterceptorChain.add(command);
             return chain.proceed(command, context);
         }
