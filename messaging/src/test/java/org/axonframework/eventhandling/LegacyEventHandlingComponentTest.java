@@ -169,7 +169,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(simpleInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event, new StubProcessingContext());
+            var result = component.sequenceIdentifierFor(event, processingContext);
 
             //then
             assertThat(result).isEqualTo(expectedSequenceId);
