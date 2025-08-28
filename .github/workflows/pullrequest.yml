@@ -36,15 +36,6 @@ jobs:
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
 
-      - name: Cache Maven Build Cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/build-cache
-          key: ${{ runner.os }}-mvn-build-cache-${{ github.head_ref || github.ref_name }}
-          restore-keys: |
-            ${{ runner.os }}-mvn-build-cache-main
-            ${{ runner.os }}-mvn-build-cache-
-
       - name: Generate cache key for compiled artifacts
         id: cache-key
         run: echo "key=${{ runner.os }}-compiled-${{ github.sha }}" >> $GITHUB_OUTPUT
