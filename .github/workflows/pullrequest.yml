@@ -44,7 +44,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            **/.m2/repository
+            ~/.m2/repository
             **/target/classes
             **/target/test-classes
             **/target/generated-sources
@@ -98,7 +98,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            **/.m2/repository
+            ~/.m2/repository
             **/target/classes
             **/target/test-classes
             **/target/generated-sources
@@ -107,7 +107,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          ./mvnw -B -T 1C -Dstyle.color=always install -DskipTests -pl ${{ matrix.module }} -am && ./mvnw -B -T 1C -Dstyle.color=always test -pl ${{ matrix.module }} -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5
+          ./mvnw -B -T 1C -Dstyle.color=always test -pl ${{ matrix.module }} -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
           TESTCONTAINERS_CHECKS_DISABLE: true
@@ -138,7 +138,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            **/.m2/repository
+            ~/.m2/repository
             **/target/classes
             **/target/test-classes
             **/target/generated-sources
@@ -204,7 +204,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            **/.m2/repository
+            ~/.m2/repository
             **/target/classes
             **/target/test-classes
             **/target/generated-sources
