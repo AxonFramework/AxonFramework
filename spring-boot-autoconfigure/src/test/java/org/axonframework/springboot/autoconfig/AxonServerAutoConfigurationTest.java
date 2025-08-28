@@ -21,7 +21,12 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
+import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
+import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.DistributedCommandBusConfiguration;
+import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.springboot.utils.GrpcServerStub;
 import org.axonframework.springboot.utils.TcpUtils;
 import org.junit.jupiter.api.*;
@@ -35,12 +40,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating that the {@link AxonServerConfigurationEnhancer}
- * are registered and customizable when using Spring Boot.
+ * Test class validating that the {@link AxonServerConfigurationEnhancer} are registered and customizable when using
+ * Spring Boot.
  *
  * @author Steven van Beelen
  */
-class AxonServerConfigurationDefaultsAutoconfigTest {
+class AxonServerAutoConfigurationTest {
 
     private ApplicationContextRunner testContext;
 
@@ -62,30 +67,70 @@ class AxonServerConfigurationDefaultsAutoconfigTest {
     }
 
     @Test
+    void disablingAxonServerDisabledAllAxonServerComponents() {
+        testContext.withPropertyValues("axon.axonserver.enabled=false").run(context -> {
+            assertThat(context).doesNotHaveBean(AxonServerConnectionManager.class);
+            assertThat(context).doesNotHaveBean(ManagedChannelCustomizer.class);
+            assertThat(context).doesNotHaveBean(AxonServerEventStorageEngine.class);
+            assertThat(context).doesNotHaveBean(PayloadConvertingCommandBusConnector.class);
+        });
+    }
+
+    @Test
+    void axonServerConfigurationContainsApplicationIdAsComponentName() {
+        String expectedComponentName = "my-awesome-app";
+        testContext.withInitializer(context -> context.setId(expectedComponentName)).run(context -> {
+            assertThat(context).hasSingleBean(AxonServerConfiguration.class);
+            // Default name for beans from an @EnableConfigurationProperties contain their prefix.
+            assertThat(context).hasBean("axon.axonserver-" + AxonServerConfiguration.class.getName());
+
+            assertThat(context.getBean(AxonServerConfiguration.class).getComponentName())
+                    .isEqualTo(expectedComponentName);
+        });
+    }
+
+    @Test
+    void distributedCommandBusThreadCountIsAdjustableThroughAxonServerConfiguration() {
+        testContext.withPropertyValues("axon.server.command-threads=42").run(context -> {
+            assertThat(context).hasSingleBean(AxonServerConfiguration.class);
+            assertThat(context).hasSingleBean(DistributedCommandBusConfiguration.class);
+
+            int numberOfThreads = context.getBean(DistributedCommandBusConfiguration.class).numberOfThreads();
+            int commandThreads = context.getBean(AxonServerConfiguration.class).getCommandThreads();
+            assertThat(numberOfThreads).isEqualTo(commandThreads);
+        });
+    }
+
+    @Test
     void defaultAxonServerComponentsArePresent() {
         testContext.run(context -> {
             assertThat(context).hasSingleBean(AxonServerConfiguration.class);
-            assertThat(context).hasBean(AxonServerConfiguration.class.getName());
+            // Default name for beans from an @EnableConfigurationProperties contain their prefix.
+            assertThat(context).hasBean("axon.axonserver-" + AxonServerConfiguration.class.getName());
             assertThat(context).hasSingleBean(AxonServerConnectionManager.class);
             assertThat(context).hasBean(AxonServerConnectionManager.class.getName());
             assertThat(context).hasSingleBean(ManagedChannelCustomizer.class);
             assertThat(context).hasBean(ManagedChannelCustomizer.class.getName());
             assertThat(context).hasSingleBean(AxonServerEventStorageEngine.class);
-            assertThat(context).hasBean(AxonServerEventStorageEngine.class.getName());
+            assertThat(context).hasBean(EventStorageEngine.class.getName());
+            assertThat(context).hasSingleBean(PayloadConvertingCommandBusConnector.class);
+            assertThat(context).hasBean(CommandBusConnector.class.getName());
         });
     }
 
     @Test
     void overrideDefaultAxonServerComponents() {
         testContext.withUserConfiguration(CustomContext.class).run(context -> {
-            assertThat(context).hasSingleBean(AxonServerConfiguration.class);
-            assertThat(context).hasBean("customAxonServerConfiguration");
             assertThat(context).hasSingleBean(AxonServerConnectionManager.class);
             assertThat(context).hasBean("customAxonServerConnectionManager");
             assertThat(context).hasSingleBean(ManagedChannelCustomizer.class);
             assertThat(context).hasBean("customManagedChannelCustomizer");
+            assertThat(context).hasSingleBean(EventStorageEngine.class);
             assertThat(context).hasSingleBean(AxonServerEventStorageEngine.class);
             assertThat(context).hasBean("customAxonServerEventStorageEngine");
+            assertThat(context).hasSingleBean(CommandBusConnector.class);
+            assertThat(context).hasSingleBean(PayloadConvertingCommandBusConnector.class);
+            assertThat(context).hasBean("customAxonServerCommandBusConnector");
         });
     }
 
@@ -104,11 +149,6 @@ class AxonServerConfigurationDefaultsAutoconfigTest {
     public static class CustomContext {
 
         @Bean
-        public AxonServerConfiguration customAxonServerConfiguration() {
-            return mock(AxonServerConfiguration.class);
-        }
-
-        @Bean
         public AxonServerConnectionManager customAxonServerConnectionManager() {
             AxonServerConnectionManager mock = mock(AxonServerConnectionManager.class);
             AxonServerConnection connectionMock = mock();
@@ -122,8 +162,13 @@ class AxonServerConfigurationDefaultsAutoconfigTest {
         }
 
         @Bean
-        public AxonServerEventStorageEngine customAxonServerEventStorageEngine() {
+        public EventStorageEngine customAxonServerEventStorageEngine() {
             return mock(AxonServerEventStorageEngine.class);
+        }
+
+        @Bean
+        public CommandBusConnector customAxonServerCommandBusConnector() {
+            return mock(AxonServerCommandBusConnector.class);
         }
     }
 }

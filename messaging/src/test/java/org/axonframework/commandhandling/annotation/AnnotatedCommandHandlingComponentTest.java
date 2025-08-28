@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.CommandMessageHandlerInterceptorChain;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -64,7 +65,7 @@ class AnnotatedCommandHandlingComponentTest {
 
         testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
                                                               parameterResolverFactory,
-                                                              PassThroughConverter.INSTANCE);
+                                                              PassThroughConverter.MESSAGE_INSTANCE);
 
         when(commandBus.subscribe(any(QualifiedName.class), any())).thenReturn(commandBus);
         when(commandBus.subscribe(anySet(), any())).thenReturn(commandBus);
@@ -158,7 +159,8 @@ class AnnotatedCommandHandlingComponentTest {
         annotatedCommandHandler = new MyInterceptingCommandHandler(withoutInterceptor,
                                                                    withInterceptor,
                                                                    new ArrayList<>());
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, PassThroughConverter.INSTANCE);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
+                                                              PassThroughConverter.MESSAGE_INSTANCE);
 
         Object result = testSubject.handle(testCommandMessage, mock(ProcessingContext.class))
                                    .first()
@@ -183,7 +185,8 @@ class AnnotatedCommandHandlingComponentTest {
         annotatedCommandHandler = new MyInterceptingCommandHandler(new ArrayList<>(),
                                                                    new ArrayList<>(),
                                                                    interceptedExceptions);
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, PassThroughConverter.INSTANCE);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
+                                                              PassThroughConverter.MESSAGE_INSTANCE);
 
         try {
             testSubject.handle(testCommandMessage, mock(ProcessingContext.class));

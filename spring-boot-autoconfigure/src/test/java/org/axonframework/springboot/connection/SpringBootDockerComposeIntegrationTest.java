@@ -28,7 +28,6 @@ import java.time.Duration;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled("TODO #3496")
 class SpringBootDockerComposeIntegrationTest {
 
     private ConfigurableApplicationContext application;
@@ -49,7 +48,7 @@ class SpringBootDockerComposeIntegrationTest {
     void verifyApplicationRunsAndConnectsToAxonServerDefinedInDockerComposeFile() {
         assertTrue(application.isRunning());
 
-        Assertions.assertNotNull(application.getBean(AxonServerConnectionDetails.class),
+        assertNotNull(application.getBean(AxonServerConnectionDetails.class),
                                  "Expected an AxonServerConnectionDetails bean pointing to Axon Server in Docker");
 
         AxonServerConnectionManager connectionFactory = application.getBean(AxonServerConnectionManager.class);

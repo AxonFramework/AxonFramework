@@ -23,13 +23,13 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
+import static java.util.Objects.requireNonNullElse;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -48,7 +48,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     private final EventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
-    private final TagResolver tagResolver;
+    private final Function<EventMessage, TaggedEventMessage<?>> eventTagger;
+
     private final List<Consumer<EventMessage>> callbacks;
 
     private final ResourceKey<AppendCondition> appendConditionKey;
@@ -63,15 +64,16 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      *                           with.
      * @param processingContext  The {@link ProcessingContext} from which to
      *                           {@link #appendEvent(EventMessage) append events} and attach resources to.
-     * @param tagResolver        The {@link TagResolver} used to resolve tags while
-     *                           {@link #appendEvent(EventMessage) appending events}.
+     * @param eventTagger        A function that will process each {@link EventMessage} to attach
+     *                           {@link org.axonframework.eventstreaming.Tag Tags}, before it is added to the
+     *                           transaction.
      */
     public DefaultEventStoreTransaction(@Nonnull EventStorageEngine eventStorageEngine,
                                         @Nonnull ProcessingContext processingContext,
-                                        @Nonnull TagResolver tagResolver) {
+                                        @Nonnull Function<EventMessage, TaggedEventMessage<?>> eventTagger) {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
-        this.tagResolver = tagResolver;
+        this.eventTagger = eventTagger;
         this.callbacks = new CopyOnWriteArrayList<>();
 
         this.appendConditionKey = ResourceKey.withLabel("appendCondition");
@@ -123,17 +125,14 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     @Override
     public void appendEvent(@Nonnull EventMessage eventMessage) {
-        var eventQueue = processingContext.computeResourceIfAbsent(
+        List<TaggedEventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
                     attachAppendEventsStep();
                     return new CopyOnWriteArrayList<>();
                 }
         );
-
-        var tags = tagResolver.resolve(eventMessage);
-        eventQueue.add(new GenericTaggedEventMessage<>(eventMessage, tags));
-
+        eventQueue.add(eventTagger.apply(eventMessage));
         callbacks.forEach(callback -> callback.accept(eventMessage));
     }
 
@@ -165,10 +164,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         return tx.commit()
                  .whenComplete((position, exception) -> {
                      if (position != null) {
-                         commitContext.updateResource(appendPositionKey,
-                                                      other -> position.upperBound(Objects.requireNonNullElse(
-                                                              other,
-                                                              ConsistencyMarker.ORIGIN)));
+                         commitContext.updateResource(
+                                 appendPositionKey,
+                                 other -> position.upperBound(requireNonNullElse(other, ConsistencyMarker.ORIGIN)));
                      }
                  });
     }

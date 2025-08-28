@@ -17,19 +17,23 @@
 package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
-import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngine;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentDefinition;
+import org.axonframework.configuration.ComponentLifecycleHandler;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.configuration.SearchScope;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.serialization.Converter;
+import org.axonframework.messaging.conversion.MessageConverter;
 
+import java.util.Optional;
 import javax.annotation.Nonnull;
 
 /**
@@ -53,18 +57,14 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                       c -> new AxonServerConfiguration(),
                                       SearchScope.ALL)
                 .registerIfNotPresent(connectionManagerDefinition(), SearchScope.ALL)
-                .registerIfNotPresent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity(), SearchScope.ALL)
+                .registerIfNotPresent(ManagedChannelCustomizer.class,
+                                      c -> ManagedChannelCustomizer.identity(),
+                                      SearchScope.ALL)
                 .registerIfNotPresent(eventStorageEngineDefinition(), SearchScope.ALL)
                 .registerIfNotPresent(commandBusConnectorDefinition(), SearchScope.ALL)
                 .registerDecorator(CommandBusConnector.class, 0, payloadConvertingConnectorComponentDecorator())
+                .registerDecorator(topologyChangeListenerRegistration())
                 .registerFactory(new AxonServerEventStorageEngineFactory());
-    }
-
-    private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector<Object>> payloadConvertingConnectorComponentDecorator() {
-        return (config, name, delegate) -> new PayloadConvertingCommandBusConnector<>(
-                delegate,
-                config.getComponent(Converter.class),
-                byte[].class);
     }
 
     private ComponentDefinition<AxonServerConnectionManager> connectionManagerDefinition() {
@@ -86,8 +86,8 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                           .build();
     }
 
-    private ComponentDefinition<AxonServerEventStorageEngine> eventStorageEngineDefinition() {
-        return ComponentDefinition.ofType(AxonServerEventStorageEngine.class)
+    private ComponentDefinition<EventStorageEngine> eventStorageEngineDefinition() {
+        return ComponentDefinition.ofType(EventStorageEngine.class)
                                   .withBuilder(config -> {
                                       String defaultContext = config.getComponent(AxonServerConfiguration.class)
                                                                     .getContext();
@@ -101,8 +101,41 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
     private ComponentDefinition<CommandBusConnector> commandBusConnectorDefinition() {
         return ComponentDefinition.ofType(CommandBusConnector.class)
                                   .withBuilder(config -> new AxonServerCommandBusConnector(
-                                          config.getComponent(AxonServerConnectionManager.class).getConnection()
-                                  ));
+                                          config.getComponent(AxonServerConnectionManager.class).getConnection(),
+                                          config.getComponent(AxonServerConfiguration.class)
+                                  ))
+                                  .onStart(Phase.INBOUND_COMMAND_CONNECTOR,
+                                           connector -> ((AxonServerCommandBusConnector) connector).start())
+                                  .onShutdown(Phase.INBOUND_COMMAND_CONNECTOR,
+                                              (ComponentLifecycleHandler<CommandBusConnector>) (config, connector) ->
+                                                      ((AxonServerCommandBusConnector) connector).disconnect())
+                                  .onShutdown(Phase.OUTBOUND_COMMAND_CONNECTORS,
+                                              (ComponentLifecycleHandler<CommandBusConnector>) (config, connector) ->
+                                                      ((AxonServerCommandBusConnector) connector).shutdownDispatching());
+    }
+
+    private ComponentDecorator<CommandBusConnector, PayloadConvertingCommandBusConnector> payloadConvertingConnectorComponentDecorator() {
+        return (config, name, delegate) -> new PayloadConvertingCommandBusConnector(
+                delegate,
+                config.getComponent(MessageConverter.class),
+                byte[].class
+        );
+    }
+
+    private DecoratorDefinition<AxonServerConnectionManager, AxonServerConnectionManager> topologyChangeListenerRegistration() {
+        return DecoratorDefinition.forType(AxonServerConnectionManager.class)
+                                  .with((config, name, delegate) -> delegate)
+                                  .onStart(Phase.INSTRUCTION_COMPONENTS, (config, connectionManager) -> {
+                                      Optional<TopologyChangeListener> topologyChangeListener =
+                                              config.getOptionalComponent(TopologyChangeListener.class);
+                                      topologyChangeListener.ifPresent(
+                                              changeListener -> connectionManager.getConnection()
+                                                                                 .controlChannel()
+                                                                                 .registerTopologyChangeHandler(
+                                                                                         changeListener)
+                                      );
+                                      return FutureUtils.emptyCompletedFuture();
+                                  });
     }
 
     @Override

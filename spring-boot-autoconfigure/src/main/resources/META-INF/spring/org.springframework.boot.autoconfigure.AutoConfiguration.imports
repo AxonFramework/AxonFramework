@@ -14,4 +14,9 @@
 # limitations under the License.
 #
 
+org.axonframework.springboot.autoconfig.AvroSchemaStoreAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonAutoConfiguration
+org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration
+org.axonframework.springboot.autoconfig.ConverterAutoConfiguration
+org.axonframework.springboot.autoconfig.CBORMapperAutoConfiguration
+org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration

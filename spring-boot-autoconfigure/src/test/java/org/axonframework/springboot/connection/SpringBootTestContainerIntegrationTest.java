@@ -18,8 +18,8 @@ package org.axonframework.springboot.connection;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.springboot.service.connection.AxonServerConnectionDetails;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.springboot.service.connection.AxonServerConnectionDetails;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Testcontainers
-@Disabled("TODO #3496")
 class SpringBootTestContainerIntegrationTest {
 
     @Container

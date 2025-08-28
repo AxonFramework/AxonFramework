@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TerminalEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
@@ -133,7 +134,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
     private final EntityManagerProvider entityManagerProvider;
     private final TransactionManager transactionManager;
-    private final Converter converter;
+    private final EventConverter converter;
 
     private final PersistenceExceptionResolver persistenceExceptionResolver;
     private final Predicate<List<? extends AggregateEventEntry>> finalBatchPredicate;
@@ -157,7 +158,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
      */
     public AggregateBasedJpaEventStorageEngine(@Nonnull EntityManagerProvider entityManagerProvider,
                                                @Nonnull TransactionManager transactionManager,
-                                               @Nonnull Converter converter,
+                                               @Nonnull EventConverter converter,
                                                @Nonnull UnaryOperator<AggregateBasedJpaEventStorageEngineConfiguration> configurer) {
         this.entityManagerProvider =
                 requireNonNull(entityManagerProvider, "The entityManagerProvider may not be null.");

@@ -71,7 +71,7 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
     public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext) {
         return processingContext.computeResourceIfAbsent(
                 eventStoreTransactionKey,
-                () -> new DefaultEventStoreTransaction(eventStorageEngine, processingContext, tagResolver)
+                () -> new DefaultEventStoreTransaction(eventStorageEngine, processingContext, this::tagEvents)
         );
     }
 
@@ -82,7 +82,7 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
             AppendCondition none = AppendCondition.none();
             List<TaggedEventMessage<?>> taggedEvents = new ArrayList<>();
             for (EventMessage event : events) {
-                taggedEvents.add(new GenericTaggedEventMessage<>(event, tagResolver.resolve(event)));
+                taggedEvents.add(tagEvents(event));
             }
             return eventStorageEngine.appendEvents(none, taggedEvents)
                                      .thenApply(EventStorageEngine.AppendTransaction::commit)
@@ -93,6 +93,10 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
             appendToTransaction(context, events);
             return FutureUtils.emptyCompletedFuture();
         }
+    }
+
+    private TaggedEventMessage<EventMessage> tagEvents(EventMessage event) {
+        return new GenericTaggedEventMessage<>(event, tagResolver.resolve(event));
     }
 
     private void appendToTransaction(ProcessingContext context,
@@ -126,5 +130,6 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStorageEngine", eventStorageEngine);
+        descriptor.describeProperty("tagResolver", tagResolver);
     }
 }
