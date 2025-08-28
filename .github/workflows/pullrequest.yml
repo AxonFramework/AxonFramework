@@ -53,6 +53,8 @@ jobs:
           ./mvnw -B -U -T 1C -Dstyle.color=always clean test-compile
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
 
       - name: Regular Build - Run Tests and Verify
         if: ${{ !matrix.sonar-enabled }}
@@ -60,6 +62,8 @@ jobs:
           ./mvnw -B -U -T 1C -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 verify
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
 
       - name: Build with Coverage reports - Run Tests and Verify
         if: matrix.sonar-enabled
@@ -67,6 +71,8 @@ jobs:
           ./mvnw -B -U -T 1C -Dstyle.color=always -Possrh -Dcoverage -Dsurefire.rerunFailingTestsCount=5 verify
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
 
       - name: Sonar Analysis
         if: ${{ success() && matrix.sonar-enabled && github.event.pull_request.head.repo.full_name == github.repository }}
