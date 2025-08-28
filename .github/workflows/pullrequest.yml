@@ -40,17 +40,23 @@ jobs:
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
 
-      - name: Regular Build
-        if: ${{ !matrix.sonar-enabled }}
+      - name: Compile Sources and Tests
         run: |
-          ./mvnw -B -U -T 1C -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 clean verify
+          ./mvnw -B -U -T 1C -Dstyle.color=always clean test-compile
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
 
-      - name: Build with Coverage reports
+      - name: Regular Build - Run Tests and Verify
+        if: ${{ !matrix.sonar-enabled }}
+        run: |
+          ./mvnw -B -U -T 1C -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 verify
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+
+      - name: Build with Coverage reports - Run Tests and Verify
         if: matrix.sonar-enabled
         run: |
-          ./mvnw -B -U -T 1C -Dstyle.color=always -Possrh -Dcoverage -Dsurefire.rerunFailingTestsCount=5 clean verify
+          ./mvnw -B -U -T 1C -Dstyle.color=always -Possrh -Dcoverage -Dsurefire.rerunFailingTestsCount=5 verify
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
 
