@@ -93,10 +93,10 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
                                               .entityEvolver(readModelEvolver())
                                               .build())
                                       .entityIdResolver(cfg -> (message, context) -> {
-                                          var payload = (StudentEnrolledEvent) message.withConvertedPayload(
+                                          var payload = message.payloadAs(
                                                   StudentEnrolledEvent.class,
                                                   context.component(Converter.class)
-                                          ).payload();
+                                          );
                                           return payload.studentId();
                                       });
         configurer.componentRegistry(cr -> cr.registerModule(studentCoursesEntity));
@@ -154,11 +154,12 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
 
     private static EntityEvolver<StudentCoursesReadModel> readModelEvolver() {
         return (entity, event, context) -> {
+            var converter = context.component(Converter.class);
             if (event.type().qualifiedName().equals(new QualifiedName(StudentEnrolledEvent.class))) {
-                var payload = (StudentEnrolledEvent) event.withConvertedPayload(
+                var payload = event.payloadAs(
                         StudentEnrolledEvent.class,
-                        context.component(Converter.class)
-                ).payload();
+                        converter
+                );
                 return entity.evolve(payload);
             }
             return entity;

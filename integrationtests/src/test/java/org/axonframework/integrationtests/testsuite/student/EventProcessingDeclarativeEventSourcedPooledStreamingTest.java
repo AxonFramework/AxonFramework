@@ -184,18 +184,13 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
 
     private static EntityEvolver<StudentCoursesAutomationState> automationStateEvolver() {
         return (entity, event, context) -> {
+            var converter = context.component(Converter.class);
             if (event.type().qualifiedName().equals(new QualifiedName(StudentEnrolledEvent.class))) {
-                var payload = (StudentEnrolledEvent) event.withConvertedPayload(
-                        StudentEnrolledEvent.class,
-                        context.component(Converter.class)
-                ).payload();
+                var payload = event.payloadAs(StudentEnrolledEvent.class, converter);
                 return entity.evolve(payload);
             }
             if (event.type().qualifiedName().equals(new QualifiedName(MaxCoursesNotificationSentEvent.class))) {
-                var payload = (MaxCoursesNotificationSentEvent) event.withConvertedPayload(
-                        MaxCoursesNotificationSentEvent.class,
-                        context.component(Converter.class)
-                ).payload();
+                var payload = event.payloadAs(MaxCoursesNotificationSentEvent.class, converter);
                 return entity.evolve(payload);
             }
             return entity;
