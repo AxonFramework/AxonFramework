@@ -53,6 +53,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
+            **/.m2/repository
             **/target/classes
             **/target/test-classes
             **/target/generated-sources
@@ -102,19 +103,11 @@ jobs:
           java-version: 21
           cache: "maven"
 
-      - name: Restore Maven Build Cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/build-cache
-          key: ${{ runner.os }}-maven-build-cache-${{ github.head_ref || github.ref_name }}
-          restore-keys: |
-            ${{ runner.os }}-maven-build-cache-main
-            ${{ runner.os }}-maven-build-cache-
-
       - name: Restore compiled artifacts
         uses: actions/cache@v4
         with:
           path: |
+            **/.m2/repository
             **/target/classes
             **/target/test-classes
             **/target/generated-sources
@@ -150,19 +143,11 @@ jobs:
           java-version: 21
           cache: "maven"
 
-      - name: Restore Maven Build Cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/build-cache
-          key: ${{ runner.os }}-maven-build-cache-${{ github.head_ref || github.ref_name }}
-          restore-keys: |
-            ${{ runner.os }}-maven-build-cache-main
-            ${{ runner.os }}-maven-build-cache-
-
       - name: Restore compiled artifacts
         uses: actions/cache@v4
         with:
           path: |
+            **/.m2/repository
             **/target/classes
             **/target/test-classes
             **/target/generated-sources
@@ -228,6 +213,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
+            **/.m2/repository
             **/target/classes
             **/target/test-classes
             **/target/generated-sources
