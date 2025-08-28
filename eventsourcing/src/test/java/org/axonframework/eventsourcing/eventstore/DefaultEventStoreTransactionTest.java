@@ -171,8 +171,9 @@ class DefaultEventStoreTransactionTest {
         private ConsistencyMarker appendEventForTag(Tag tag) {
             return eventStorageEngine.appendEvents(AppendCondition.none(),
                                                    new GenericTaggedEventMessage<>(
-                                                           new GenericEventMessage(new MessageType(String.class),
-                                                                                     "my payload"),
+                                                           new GenericEventMessage(
+                                                                   new MessageType(String.class), "my payload"
+                                                           ),
                                                            Set.of(tag)
                                                    )).join().commit().join();
         }
@@ -365,12 +366,13 @@ class DefaultEventStoreTransactionTest {
 
     private EventStoreTransaction defaultEventStoreTransactionFor(ProcessingContext processingContext,
                                                                   TagResolver tagResolver) {
-        return processingContext.computeResourceIfAbsent(testEventStoreTransactionKey,
-                                                         () -> new DefaultEventStoreTransaction(
-                                                                 eventStorageEngine,
-                                                                 processingContext,
-                                                                 tagResolver
-                                                         )
+        return processingContext.computeResourceIfAbsent(
+                testEventStoreTransactionKey,
+                () -> new DefaultEventStoreTransaction(
+                        eventStorageEngine,
+                        processingContext,
+                        event -> new GenericTaggedEventMessage<>(event, tagResolver.resolve(event))
+                )
         );
     }
 
