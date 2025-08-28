@@ -48,7 +48,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     private final EventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
-    private final Function<EventMessage, TaggedEventMessage<?>> eventPreProcessors;
+    private final Function<EventMessage, TaggedEventMessage<?>> eventPreProcessor;
 
     private final List<Consumer<EventMessage>> callbacks;
 
