@@ -129,7 +129,7 @@ class DeadLetteringEventHandlerInvokerTest {
         ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT, any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler).handleSync(TEST_EVENT, context);
 
         //noinspection unchecked
@@ -153,7 +153,7 @@ class DeadLetteringEventHandlerInvokerTest {
         ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT, any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler).handleSync(TEST_EVENT, context);
 
         verify(queue, never()).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
@@ -172,7 +172,7 @@ class DeadLetteringEventHandlerInvokerTest {
         ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT, any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler).handleSync(TEST_EVENT, context);
 
         verify(queue, times(1)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
@@ -258,9 +258,9 @@ class DeadLetteringEventHandlerInvokerTest {
         Segment testSegment = mock(Segment.class);
         when(testSegment.matches(any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, null, testSegment);
+        testSubject.handle(TEST_EVENT, new StubProcessingContext(), testSegment);
 
-        verify(sequencingPolicy).getSequenceIdentifierFor(TEST_EVENT, any(ProcessingContext.class));
+        verify(sequencingPolicy).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verifyNoInteractions(handler);
         verifyNoInteractions(queue);
         verifyNoInteractions(transactionManager);
@@ -281,7 +281,7 @@ class DeadLetteringEventHandlerInvokerTest {
 
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT, any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler).handleSync(TEST_EVENT, context);
 
         //noinspection unchecked
@@ -317,7 +317,7 @@ class DeadLetteringEventHandlerInvokerTest {
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
         testSubject.handle(nextMessage(TEST_EVENT), context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT, any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler).handleSync(TEST_EVENT, context);
 
         verify(queue, times(1)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
@@ -341,7 +341,7 @@ class DeadLetteringEventHandlerInvokerTest {
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT, any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler).handleSync(TEST_EVENT, context);
 
         //noinspection unchecked
@@ -365,7 +365,7 @@ class DeadLetteringEventHandlerInvokerTest {
         ProcessingContext context = StubProcessingContext.forMessage(TEST_EVENT);
         testSubject.handle(TEST_EVENT, context, Segment.ROOT_SEGMENT);
 
-        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(TEST_EVENT, any(ProcessingContext.class));
+        verify(sequencingPolicy, times(2)).getSequenceIdentifierFor(eq(TEST_EVENT), any(ProcessingContext.class));
         verify(handler, never()).handleSync(TEST_EVENT, context);
         verify(queue, never()).enqueue(TEST_SEQUENCE_ID, TEST_DEAD_LETTER);
         verifyNoInteractions(transactionManager);
