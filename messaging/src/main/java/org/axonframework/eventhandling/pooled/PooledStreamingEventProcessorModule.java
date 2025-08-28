@@ -253,7 +253,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
      * @since 5.0.0
      */
     @FunctionalInterface
-    interface Customization extends
+    public interface Customization extends
             BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> {
 
         /**
