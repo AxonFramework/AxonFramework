@@ -66,19 +66,11 @@ jobs:
           TESTCONTAINERS_CHECKS_DISABLE: true
           TESTCONTAINERS_RYUK_DISABLED: true
 
-  test-core:
-    name: Test Core Modules
+  test-layer-0:
+    name: Test Layer 0 - messaging
     needs: compile
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        module-group:
-          - "messaging"
-          - "modelling" 
-          - "eventsourcing"
-          - "config"
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -111,15 +103,148 @@ jobs:
 
       - name: Run Tests
         run: |
-          ./mvnw -B -T 1C -Dstyle.color=always test -pl ${{ matrix.module-group }} -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5
+          ./mvnw -B -T 1C -Dstyle.color=always test -pl messaging -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
           TESTCONTAINERS_CHECKS_DISABLE: true
           TESTCONTAINERS_RYUK_DISABLED: true
 
-  test-extensions:
-    name: Test Extension Modules
-    needs: compile
+  test-layer-1:
+    name: Test Layer 1 - modelling
+    needs: [compile, test-layer-0]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: "maven"
+
+      - name: Restore Maven Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/build-cache
+          key: ${{ runner.os }}-maven-build-cache-${{ github.head_ref || github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-maven-build-cache-main
+            ${{ runner.os }}-maven-build-cache-
+
+      - name: Restore compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/target/classes
+            **/target/test-classes
+            **/target/generated-sources
+          key: ${{ needs.compile.outputs.cache-key }}
+
+      - name: Run Tests
+        run: |
+          ./mvnw -B -T 1C -Dstyle.color=always test -pl modelling -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+  test-layer-2:
+    name: Test Layer 2 - eventsourcing
+    needs: [compile, test-layer-1]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: "maven"
+
+      - name: Restore Maven Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/build-cache
+          key: ${{ runner.os }}-maven-build-cache-${{ github.head_ref || github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-maven-build-cache-main
+            ${{ runner.os }}-maven-build-cache-
+
+      - name: Restore compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/target/classes
+            **/target/test-classes
+            **/target/generated-sources
+          key: ${{ needs.compile.outputs.cache-key }}
+
+      - name: Run Tests
+        run: |
+          ./mvnw -B -T 1C -Dstyle.color=always test -pl eventsourcing -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+  test-layer-3:
+    name: Test Layer 3 - config and test
+    needs: [compile, test-layer-2]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ["config", "test"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: "maven"
+
+      - name: Restore Maven Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/build-cache
+          key: ${{ runner.os }}-maven-build-cache-${{ github.head_ref || github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-maven-build-cache-main
+            ${{ runner.os }}-maven-build-cache-
+
+      - name: Restore compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/target/classes
+            **/target/test-classes
+            **/target/generated-sources
+          key: ${{ needs.compile.outputs.cache-key }}
+
+      - name: Run Tests
+        run: |
+          ./mvnw -B -T 1C -Dstyle.color=always test -pl ${{ matrix.module }} -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+  test-layer-4:
+    name: Test Layer 4 - Extensions
+    needs: [compile, test-layer-3]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -128,8 +253,7 @@ jobs:
         module-group:
           - "spring"
           - "axon-server-connector"
-          - "test,metrics,metrics-micrometer"
-          - "spring-boot-autoconfigure,spring-boot-starter"
+          - "metrics,metrics-micrometer"
           - "tracing-opentelemetry,migration,legacy"
 
     steps:
@@ -169,11 +293,63 @@ jobs:
           TESTCONTAINERS_CHECKS_DISABLE: true
           TESTCONTAINERS_RYUK_DISABLED: true
 
-  integration-tests:
-    name: Integration Tests
-    needs: [test-core, test-extensions]
+  test-layer-5:
+    name: Test Layer 5 - Spring Boot
+    needs: [compile, test-layer-4]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ["spring-boot-autoconfigure", "spring-boot-starter"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: "maven"
+
+      - name: Restore Maven Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/build-cache
+          key: ${{ runner.os }}-maven-build-cache-${{ github.head_ref || github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-maven-build-cache-main
+            ${{ runner.os }}-maven-build-cache-
+
+      - name: Restore compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/target/classes
+            **/target/test-classes
+            **/target/generated-sources
+          key: ${{ needs.compile.outputs.cache-key }}
+
+      - name: Run Tests
+        run: |
+          ./mvnw -B -T 1C -Dstyle.color=always test -pl ${{ matrix.module }} -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+
+  test-layer-6:
+    name: Test Layer 6 - Integration Tests
+    needs: [test-layer-0, test-layer-1, test-layer-2, test-layer-3, test-layer-4, test-layer-5]
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ["integrationtests", "spring-boot-3-integrationtests"]
 
     steps:
       - name: Checkout code
@@ -206,7 +382,7 @@ jobs:
 
       - name: Run Integration Tests
         run: |
-          ./mvnw -B -T 1C -Dstyle.color=always verify -Pintegration-test -pl integrationtests -Dsurefire.rerunFailingTestsCount=5
+          ./mvnw -B -T 1C -Dstyle.color=always verify -Pintegration-test -pl ${{ matrix.module }} -Dsurefire.rerunFailingTestsCount=5
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
           TESTCONTAINERS_CHECKS_DISABLE: true
@@ -214,7 +390,7 @@ jobs:
 
   sonar:
     name: Sonar Analysis
-    needs: [test-core, test-extensions, integration-tests]
+    needs: [test-layer-0, test-layer-1, test-layer-2, test-layer-3, test-layer-4, test-layer-5, test-layer-6]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     if: github.event.pull_request.head.repo.full_name == github.repository
@@ -260,7 +436,7 @@ jobs:
 
   test-summary:
     name: Test Summary
-    needs: [test-core, test-extensions, integration-tests]
+    needs: [test-layer-0, test-layer-1, test-layer-2, test-layer-3, test-layer-4, test-layer-5, test-layer-6]
     runs-on: ubuntu-latest
     if: always()
 
