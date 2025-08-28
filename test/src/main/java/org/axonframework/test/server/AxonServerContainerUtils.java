@@ -125,6 +125,37 @@ public class AxonServerContainerUtils {
         }
     }
 
+    /**
+     * Retrieves all the internal contexts (registered in the RAFT protocol) of the Axon Server instance located at the
+     * given {@code hostname} and {@code port} combination.
+     *
+     * @param hostname The hostname of the Axon Server instance to create the given {@code context} of.
+     * @param port     The port of the Axon Server instance to create the given {@code context} of.
+     * @return All the contexts of the Axon Server instances located at the given {@code hostname} and {@code port}
+     * combination.
+     * @throws IOException When there are issues with the HTTP connection to the Axon Server instance at the given
+     *                     {@code hostname} and {@code port}.
+     */
+    public static List<String> internalContexts(String hostname, int port) throws IOException {
+        final URL url = new URL(String.format("http://%s:%d/internal/raft/contexts", hostname, port));
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setDoOutput(true);
+            connection.setRequestMethod("GET");
+
+            int responseCode = connection.getResponseCode();
+            Assert.isTrue(200 == responseCode, () -> "The response code [" + responseCode + "] did not match 200.");
+
+            return contexts(connection);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
     private static List<String> contexts(HttpURLConnection connection) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
         StringBuilder output = new StringBuilder();
@@ -165,7 +196,7 @@ public class AxonServerContainerUtils {
                                                Predicate<List<String>> condition,
                                                CountDownLatch latch, ScheduledExecutorService scheduler) {
         try {
-            if (condition.test(contexts(hostname, port))) {
+            if (condition.test(internalContexts(hostname, port))) {
                 latch.countDown();
             } else {
                 scheduler.schedule(
@@ -180,7 +211,7 @@ public class AxonServerContainerUtils {
 
     private static boolean initialized(String hostname, int port) throws IOException {
         try {
-            List<String> cont = contexts(hostname, port);
+            List<String> cont = internalContexts(hostname, port);
             return cont.contains("_admin") && cont.contains("default");
         } catch (IllegalArgumentException e) {
             return false;
