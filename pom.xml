@@ -130,6 +130,7 @@
         <hibernate-validator.version>9.0.1.Final</hibernate-validator.version>
         <!-- Build / Plugin -->
         <central-publishing-maven-plugin.version>0.8.0</central-publishing-maven-plugin.version>
+        <maven-build-cache.version>1.2.0</maven-build-cache.version>
         <eclipse.transformer-maven-plugin.version>1.0.0</eclipse.transformer-maven-plugin.version>
         <felix.maven-bundle-plugin.version>6.0.0</felix.maven-bundle-plugin.version>
         <jacoco-maven.version>0.8.13</jacoco-maven.version>
@@ -490,6 +491,14 @@
 
     <build>
         <defaultGoal>clean package</defaultGoal>
+
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.extensions</groupId>
+                <artifactId>maven-build-cache-extension</artifactId>
+                <version>${maven-build-cache.version}</version>
+            </extension>
+        </extensions>
 
         <pluginManagement>
             <plugins>
