@@ -97,7 +97,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
     private static EventHandlingComponent whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation() {
         return SimpleEventHandlingComponent
                 .builder()
-                .sequencingPolicy(new SequentialPolicy())
+                .sequencingPolicy(SequentialPolicy.INSTANCE)
                 .handles(
                         new QualifiedName(StudentEnrolledEvent.class),
                         (event, context) -> {

@@ -118,7 +118,7 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
     private static EventHandlingComponent studentCoursesProjector() {
         return SimpleEventHandlingComponent
                 .builder()
-                .sequencingPolicy(new SequentialPolicy())
+                .sequencingPolicy(SequentialPolicy.INSTANCE)
                 .handles(
                         new QualifiedName(StudentEnrolledEvent.class),
                         (event, context) -> {

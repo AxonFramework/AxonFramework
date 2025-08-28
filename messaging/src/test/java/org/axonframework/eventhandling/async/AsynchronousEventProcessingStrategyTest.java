@@ -68,7 +68,7 @@ class AsynchronousEventProcessingStrategyTest {
     @Test
     void orderingOfEvents() throws Exception {
         testSubject =
-                new AsynchronousEventProcessingStrategy(Executors.newSingleThreadExecutor(), new SequentialPolicy());
+                new AsynchronousEventProcessingStrategy(Executors.newSingleThreadExecutor(), SequentialPolicy.INSTANCE);
 
         final List<EventMessage> ackedMessages = Collections.synchronizedList(new ArrayList<>());
 
