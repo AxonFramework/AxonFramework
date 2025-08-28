@@ -17,23 +17,29 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurationDefaults;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.serialization.Converter;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -44,7 +50,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
-class MessagingConfigurationDefaultsAutoconfigTest {
+class MessagingConfigurationDefaultsAutoConfigurationTest {
 
     private ApplicationContextRunner testContext;
 
@@ -60,10 +66,20 @@ class MessagingConfigurationDefaultsAutoconfigTest {
         testContext.run(context -> {
             assertThat(context).hasSingleBean(MessageTypeResolver.class);
             assertThat(context).hasBean(MessageTypeResolver.class.getName());
+            // The Converter, MessageConverter, and EventConverter all are Converter implementations, hence three.
+            Map<String, Converter> beansOfType = context.getBeansOfType(Converter.class);
+            assertThat(beansOfType.size()).isEqualTo(3);
+            assertThat(context).hasBean(Converter.class.getName());
+            assertThat(context).hasSingleBean(MessageConverter.class);
+            assertThat(context).hasBean(MessageConverter.class.getName());
+            assertThat(context).hasSingleBean(EventConverter.class);
+            assertThat(context).hasBean(EventConverter.class.getName());
             assertThat(context).hasSingleBean(CommandGateway.class);
             assertThat(context).hasBean(CommandGateway.class.getName());
             assertThat(context).hasSingleBean(CommandBus.class);
             assertThat(context).hasBean(CommandBus.class.getName());
+            assertThat(context).hasSingleBean(RoutingStrategy.class);
+            assertThat(context).hasBean(RoutingStrategy.class.getName());
             assertThat(context).hasSingleBean(EventGateway.class);
             assertThat(context).hasBean(EventGateway.class.getName());
             assertThat(context).hasSingleBean(EventSink.class);
@@ -84,10 +100,19 @@ class MessagingConfigurationDefaultsAutoconfigTest {
         testContext.withUserConfiguration(CustomContext.class).run(context -> {
             assertThat(context).hasSingleBean(MessageTypeResolver.class);
             assertThat(context).hasBean("customMessageTypeResolver");
+            // The Converter, MessageConverter, and EventConverter all are Converter implementations, hence three.
+            assertThat(context.getBeansOfType(Converter.class).size()).isEqualTo(3);
+            assertThat(context).hasBean("customConverter");
+            assertThat(context).hasSingleBean(MessageConverter.class);
+            assertThat(context).hasBean("customMessageConverter");
+            assertThat(context).hasSingleBean(EventConverter.class);
+            assertThat(context).hasBean("customEventConverter");
             assertThat(context).hasSingleBean(CommandGateway.class);
             assertThat(context).hasBean("customCommandGateway");
             assertThat(context).hasSingleBean(CommandBus.class);
             assertThat(context).hasBean("customCommandBus");
+            assertThat(context).hasSingleBean(RoutingStrategy.class);
+            assertThat(context).hasBean("customRoutingStrategy");
             assertThat(context).hasSingleBean(EventGateway.class);
             assertThat(context).hasBean("customEventGateway");
             assertThat(context).hasSingleBean(EventSink.class);
@@ -103,8 +128,11 @@ class MessagingConfigurationDefaultsAutoconfigTest {
         });
     }
 
+    // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
     @Configuration
-    @EnableAutoConfiguration
+    @EnableAutoConfiguration(
+            exclude = ConverterAutoConfiguration.class
+    )
     public static class TestContext {
 
         @Bean
@@ -124,13 +152,31 @@ class MessagingConfigurationDefaultsAutoconfigTest {
         }
     }
 
+    // Excludes the ConverterAutoConfiguration to validate the MessagingConfigurationDefaults on its own.
     @Configuration
-    @EnableAutoConfiguration
+    @EnableAutoConfiguration(
+            exclude = ConverterAutoConfiguration.class
+    )
     public static class CustomContext {
 
         @Bean
         public MessageTypeResolver customMessageTypeResolver() {
             return mock(MessageTypeResolver.class);
+        }
+
+        @Bean
+        public Converter customConverter() {
+            return mock(Converter.class);
+        }
+
+        @Bean
+        public MessageConverter customMessageConverter() {
+            return mock(MessageConverter.class);
+        }
+
+        @Bean
+        public EventConverter customEventConverter() {
+            return mock(EventConverter.class);
         }
 
         @Bean
@@ -141,6 +187,11 @@ class MessagingConfigurationDefaultsAutoconfigTest {
         @Bean
         public CommandBus customCommandBus() {
             return mock(CommandBus.class);
+        }
+
+        @Bean
+        public RoutingStrategy customRoutingStrategy() {
+            return mock(RoutingStrategy.class);
         }
 
         @Bean

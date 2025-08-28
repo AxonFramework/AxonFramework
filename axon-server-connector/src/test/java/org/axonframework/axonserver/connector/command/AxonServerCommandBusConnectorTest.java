@@ -27,10 +27,12 @@ import io.axoniq.axonserver.grpc.ProcessingKey;
 import io.axoniq.axonserver.grpc.SerializedObject;
 import io.axoniq.axonserver.grpc.command.Command;
 import io.axoniq.axonserver.grpc.command.CommandResponse;
+import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -38,14 +40,17 @@ import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -56,40 +61,53 @@ import static org.mockito.Mockito.*;
  */
 class AxonServerCommandBusConnectorTest {
 
+    private static final String TEST_CLIENT_ID = "my-client-id";
+    private static final String TEST_COMPONENT_NAME = "my-component-name";
     private static final QualifiedName ANY_TEST_COMMAND_NAME = new QualifiedName("TestCommand");
     private static final String ANY_TEST_MESSAGE_ID = "test-message-id";
     private static final String ANY_TEST_COMMAND_TYPE = "TestCommandType";
     private static final String ANY_TEST_REVISION = "1.0";
+    private static final MessageType ANY_TEST_TYPE = new MessageType(ANY_TEST_COMMAND_TYPE, ANY_TEST_REVISION);
     private static final byte[] ANY_TEST_PAYLOAD = "test-payload".getBytes();
     private static final int ANY_TEST_LOAD_FACTOR = 100;
     private static final int ANY_TEST_PRIORITY = 5;
     private static final String ANY_TEST_ROUTING_KEY = "test-routing-key";
 
+    private AxonServerConnection connection;
     private CommandChannel commandChannel;
+
     private AxonServerCommandBusConnector testSubject;
 
     @BeforeEach
     void setUp() {
-        var serverConnection = mock(AxonServerConnection.class);
+        connection = mock(AxonServerConnection.class);
         commandChannel = mock(CommandChannel.class);
-        testSubject = new AxonServerCommandBusConnector(serverConnection);
+        when(connection.commandChannel()).thenReturn(commandChannel);
 
-        when(serverConnection.commandChannel()).thenReturn(commandChannel);
+        AxonServerConfiguration serverConfig = new AxonServerConfiguration();
+        serverConfig.setClientId(TEST_CLIENT_ID);
+        serverConfig.setComponentName(TEST_COMPONENT_NAME);
+        testSubject = new AxonServerCommandBusConnector(connection, serverConfig);
     }
 
     @Test
     void constructionWithConnectionNullRefFails() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new AxonServerCommandBusConnector(null));
+        assertThrows(NullPointerException.class,
+                     () -> new AxonServerCommandBusConnector(null, new AxonServerConfiguration()));
+    }
+
+    @Test
+    void constructionWithAxonServerConfigurationNullRefFails() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class,
+                     () -> new AxonServerCommandBusConnector(connection, null));
     }
 
     @Test
     void dispatchingCommandMessageWithInvalidPayloadTypeFails() {
         CommandMessage command = new GenericCommandMessage(
-                new GenericMessage(ANY_TEST_MESSAGE_ID,
-                                     new MessageType(ANY_TEST_COMMAND_TYPE, ANY_TEST_REVISION),
-                                     "invalid-payload",
-                                     new HashMap<>())
+                new GenericMessage(ANY_TEST_MESSAGE_ID, ANY_TEST_TYPE, "invalid-payload", new HashMap<>())
         );
         assertThrows(IllegalArgumentException.class, () -> testSubject.dispatch(command, null));
     }
@@ -99,14 +117,17 @@ class AxonServerCommandBusConnectorTest {
         // Arrange
         CommandMessage command = createTestCommandMessage();
         CommandResponse response = createSuccessfulCommandResponse();
-
-        when(commandChannel.sendCommand(any(Command.class)))
+        ArgumentCaptor<Command> commandCaptor = ArgumentCaptor.forClass(Command.class);
+        when(commandChannel.sendCommand(commandCaptor.capture()))
                 .thenReturn(CompletableFuture.completedFuture(response));
 
         // Act
         CompletableFuture<CommandResultMessage<?>> result = testSubject.dispatch(command, null);
 
         // Assert
+        Command dispatchedCommand = commandCaptor.getValue();
+        assertThat(dispatchedCommand.getClientId()).isEqualTo(TEST_CLIENT_ID);
+        assertThat(dispatchedCommand.getComponentName()).isEqualTo(TEST_COMPONENT_NAME);
         assertDoesNotThrow(() -> result.get());
         verify(commandChannel).sendCommand(any(Command.class));
     }
@@ -116,10 +137,7 @@ class AxonServerCommandBusConnectorTest {
         // Arrange
         Map<String, String> metadata = Map.of("key1", "value1", "key2", "value2");
         CommandMessage command = new GenericCommandMessage(
-                new GenericMessage(ANY_TEST_MESSAGE_ID,
-                                     new MessageType(ANY_TEST_COMMAND_TYPE, ANY_TEST_REVISION),
-                                     ANY_TEST_PAYLOAD,
-                                     metadata),
+                new GenericMessage(ANY_TEST_MESSAGE_ID, ANY_TEST_TYPE, ANY_TEST_PAYLOAD, metadata),
                 ANY_TEST_ROUTING_KEY,
                 ANY_TEST_PRIORITY
         );
@@ -319,14 +337,69 @@ class AxonServerCommandBusConnectorTest {
         assertThat(getIncomingHandler(testSubject)).isSameAs(handler);
     }
 
+    @Test
+    void disconnectInvokesPrepareDisconnectOnCommandChannel() {
+        when(connection.isConnected()).thenReturn(true);
+
+        testSubject.disconnect();
+
+        verify(commandChannel).prepareDisconnect();
+    }
+
+    @Test
+    void afterShutdownDispatchingAnShutdownInProgressExceptionIsThrownOnDispatchInvocation() {
+        CommandMessage testCommand = new GenericCommandMessage(ANY_TEST_TYPE, ANY_TEST_PAYLOAD);
+
+        // when...
+        testSubject.shutdownDispatching();
+        // then...
+        assertThrows(
+                ShutdownInProgressException.class,
+                () -> testSubject.dispatch(testCommand, null)
+        );
+    }
+
+    @Test
+    void shutdownDispatchingWaitsForCommandsInTransitToComplete() {
+        CommandMessage testCommand = new GenericCommandMessage(ANY_TEST_TYPE, ANY_TEST_PAYLOAD);
+        CompletableFuture<CommandResponse> testResponseFuture = new CompletableFuture<>();
+        AtomicBoolean handled = new AtomicBoolean(false);
+        when(commandChannel.sendCommand(any())).thenReturn(testResponseFuture);
+
+        // given ...
+        testSubject.dispatch(testCommand, null)
+                   .whenComplete((result, exception) -> handled.set(true));
+        Thread.ofVirtual()
+              .name("Return Command Response")
+              .start(() -> {
+                  try {
+                      Thread.sleep(200);
+                      testResponseFuture.complete(mock(CommandResponse.class));
+                  } catch (InterruptedException e) {
+                      fail(e.getMessage());
+                      throw new RuntimeException(e);
+                  }
+              });
+
+        // when ...
+        CompletableFuture<Void> dispatchingHasShutdown = testSubject.shutdownDispatching();
+
+        // then ... Wait on the shutdownDispatching-thread, after which the command should have been handled
+        dispatchingHasShutdown.join();
+        await("Dispatch completion").atMost(Duration.ofMillis(500))
+                                    .pollDelay(Duration.ofMillis(25))
+                                    .untilAsserted(() -> {
+                                        assertTrue(handled.get());
+                                        assertTrue(dispatchingHasShutdown.isDone());
+                                    });
+    }
+
     // Helpers
     private CommandMessage createTestCommandMessage() {
-        return new GenericCommandMessage(
-                new GenericMessage(ANY_TEST_MESSAGE_ID,
-                                     new MessageType(ANY_TEST_COMMAND_TYPE, ANY_TEST_REVISION),
-                                     ANY_TEST_PAYLOAD,
-                                     new HashMap<>())
-        );
+        return new GenericCommandMessage(new GenericMessage(ANY_TEST_MESSAGE_ID,
+                                                            ANY_TEST_TYPE,
+                                                            ANY_TEST_PAYLOAD,
+                                                            new HashMap<>()));
     }
 
     private CommandResponse createSuccessfulCommandResponse() {

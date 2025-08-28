@@ -144,5 +144,10 @@ class DistributedCommandBusTest {
         public Map<CommandMessage, CompletableFuture<?>> getDispatchedCommands() {
             return dispatchedCommands;
         }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            throw new UnsupportedOperationException("Not required for testing");
+        }
     }
 }

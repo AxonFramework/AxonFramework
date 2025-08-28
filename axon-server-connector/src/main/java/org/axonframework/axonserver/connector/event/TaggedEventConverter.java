@@ -40,7 +40,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Wrapper around standard Axon Framework {@link EventConverter} that can convert
+ * Wrapper around the Axon Framework {@link EventConverter} that can convert
  * {@link TaggedEventMessage TaggedEventMessages} (Axon Framework representation) to {@link TaggedEvent TaggedEvents}
  * (Axon Server representation).
  *
@@ -53,7 +53,7 @@ public class TaggedEventConverter implements DescribableComponent {
     private final EventConverter converter;
 
     /**
-     * Constructs an {@code TaggedEventConverter} using the given {@code converter} to convert the
+     * Constructs a {@code TaggedEventConverter} using the given {@code converter} to convert the
      * {@link EventMessage#payload() event payload}.
      *
      * @param converter The converter used to {@link EventConverter#convert(Object, Class)} the

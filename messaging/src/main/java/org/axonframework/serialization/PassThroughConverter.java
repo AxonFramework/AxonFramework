@@ -54,7 +54,7 @@ public final class PassThroughConverter implements Converter {
     /**
      * An {@link EventConverter} using the {@link #INSTANCE}.
      */
-    public static final EventConverter EVENT_INSTANCE = new DelegatingEventConverter(INSTANCE);
+    public static final EventConverter EVENT_INSTANCE = new DelegatingEventConverter(MESSAGE_INSTANCE);
 
     private PassThroughConverter() {
         // Private constructor to enforce use of constant.

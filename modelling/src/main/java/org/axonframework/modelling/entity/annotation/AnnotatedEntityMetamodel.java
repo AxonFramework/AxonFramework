@@ -27,15 +27,16 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.conversion.MessageConverter;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
@@ -43,6 +44,7 @@ import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 import org.axonframework.modelling.entity.PolymorphicEntityMetamodel;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
+import org.axonframework.serialization.ConversionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -314,7 +316,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
      * @return The {@link Class} of the expected representation for handlers of the given {@code qualifiedName}, or
      * {@code null} if no such representation is found.
      */
-    @Nullable // TODO make non-nullable
+    @Nullable
     public Class<?> getExpectedRepresentation(@Nonnull QualifiedName qualifiedName) {
         if (payloadTypes.containsKey(qualifiedName)) {
             return payloadTypes.get(qualifiedName);
@@ -335,7 +337,6 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     }
 
     private void initializeChildren(EntityMetamodelBuilder<E> builder) {
-        //noinspection Java9UndeclaredServiceUsage
         ServiceLoader<EntityChildModelDefinition> childEntityDefinitions =
                 ServiceLoader.load(EntityChildModelDefinition.class, entityType.getClassLoader());
         List<Method> methods = stream(ReflectionUtils.methodsOf(entityType).spliterator(), false).toList();
@@ -438,8 +439,18 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     @Nonnull
     public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage message,
                                                                       @Nonnull ProcessingContext context) {
-        logger.debug("Handling creation command: {} for type: {}", message.type(), entityType());
-        Class<?> expectedRepresentation = getExpectedRepresentation(message.type().qualifiedName());
+        MessageType type = message.type();
+        if (logger.isDebugEnabled()) {
+            logger.debug("Handling creation command: {} for type: {}", type, entityType());
+        }
+        Class<?> expectedRepresentation = getExpectedRepresentation(type.qualifiedName());
+        if (expectedRepresentation == null) {
+            // Should not happen, since how does a command reach the model without a handler for it.
+            throw new ConversionException(String.format(
+                    "Cannot convert command [%s] for handling since entity [%s] has no handler for this command type.",
+                    type, entityType()
+            ));
+        }
         CommandMessage convertedMessage = message.withConvertedPayload(expectedRepresentation, messageConverter);
         return delegateMetamodel.handleCreate(convertedMessage, context);
     }
@@ -449,8 +460,19 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
     public MessageStream.Single<CommandResultMessage<?>> handleInstance(@Nonnull CommandMessage message,
                                                                         @Nonnull E entity,
                                                                         @Nonnull ProcessingContext context) {
-        logger.debug("Handling instance command: {} for entity: {} of type: {}", message.type(), entity, entityType());
-        Class<?> expectedRepresentation = getExpectedRepresentation(message.type().qualifiedName());
+        MessageType type = message.type();
+        if (logger.isDebugEnabled()) {
+            logger.debug("Handling instance command: {} for entity: {} of type: {}",
+                         type, entity, entityType());
+        }
+        Class<?> expectedRepresentation = getExpectedRepresentation(type.qualifiedName());
+        if (expectedRepresentation == null) {
+            // Should not happen, since how does a command reach the model without a handler for it.
+            throw new ConversionException(String.format(
+                    "Cannot convert command [%s] for handling since entity [%s] has no handler for this command type.",
+                    type, entityType()
+            ));
+        }
         CommandMessage convertedMessage = message.withConvertedPayload(expectedRepresentation, messageConverter);
         return delegateMetamodel.handleInstance(convertedMessage, entity, context);
     }
