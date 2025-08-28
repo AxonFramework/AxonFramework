@@ -15,23 +15,24 @@
  */
 package org.axonframework.serialization.avro;
 
+import jakarta.annotation.Nonnull;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaCompatibility;
 import org.apache.commons.lang3.tuple.Pair;
 
-import jakarta.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Provides functionality for incompatibility checks and saves the results in a memory cache.
+ * Provides functionality for incompatibility checks and saves the results in a in memory cache.
  * @author Simon Zambrovski
  * @author Jan Galinski
  * @since 4.11.0
  */
-public class DefaultSchemaIncompatibilityChecker implements SchemaIncompatibilityChecker {
+@Deprecated(forRemoval = true, since = "5.0.0")
+public class DefaultSchemaIncompatibilityCheckerLegacy implements SchemaIncompatibilityCheckerLegacy {
 
     private final ConcurrentHashMap<Pair<Long, Long>, List<SchemaCompatibility.Incompatibility>> cache
             = new ConcurrentHashMap<>();
@@ -44,7 +45,7 @@ public class DefaultSchemaIncompatibilityChecker implements SchemaIncompatibilit
     ) {
         return cache.computeIfAbsent(
                 Pair.of(AvroUtil.fingerprint(readerSchema), AvroUtil.fingerprint(writerSchema)),
-                (key) -> SchemaIncompatibilityChecker.super
+                (key) -> SchemaIncompatibilityCheckerLegacy.super
                         .checkCompatibility(readerSchema, writerSchema)
         );
     }

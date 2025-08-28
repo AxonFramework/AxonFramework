@@ -16,11 +16,11 @@
 
 package org.axonframework.serialization.avro;
 
+import jakarta.annotation.Nonnull;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaCompatibility;
-import org.axonframework.serialization.ConversionException;
+import org.axonframework.serialization.SerializationException;
 
-import jakarta.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,7 +30,8 @@ import java.util.stream.Collectors;
  * @author Jan Galinski
  * @since 4.11.0
  */
-public interface SchemaIncompatibilityChecker {
+@Deprecated(forRemoval = true, since = "5.0.0")
+public interface SchemaIncompatibilityCheckerLegacy {
 
     /**
      * Checks schema compatibilities and throws exception if schemas are not compatible.
@@ -38,7 +39,7 @@ public interface SchemaIncompatibilityChecker {
      * @param readerType   intended reader type.
      * @param readerSchema schema available on the reader side.
      * @param writerSchema schema that was used to write the data.
-     * @throws ConversionException if the schema check has not passed.
+     * @throws SerializationException if the schema check has not passed.
      */
     default void assertSchemaCompatibility(
             @Nonnull Class<?> readerType,
@@ -55,7 +56,7 @@ public interface SchemaIncompatibilityChecker {
                     .stream()
                     .map(AvroUtil::incompatibilityPrinter)
                     .collect(Collectors.joining(", "));
-            throw AvroUtil.createExceptionFailedToDeserialize(
+            throw AvroUtil.createExceptionFailedToDeserializeLegacy(
                     readerType,
                     readerSchema,
                     writerSchema,

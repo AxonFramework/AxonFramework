@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.serialization.avro;
+
+
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.message.SchemaStore;
+import org.axonframework.serialization.ConversionException;
+import org.axonframework.serialization.avro.test.ComplexObject;
+import org.junit.jupiter.api.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+class SpecificRecordBaseConverterStrategyTest {
+
+    private final SchemaStore.Cache cache = new SchemaStore.Cache();
+    private final SpecificRecordBaseConverterStrategy testSubject = new SpecificRecordBaseConverterStrategy(
+            cache,
+            new DefaultSchemaIncompatibilityChecker()
+    );
+    private final ComplexObject testComplexObject = ComplexObject
+            .newBuilder()
+            .setValue1("value1")
+            .setValue2("value2")
+            .setValue3(42)
+            .build();
+
+    @BeforeEach
+    public void clean() {
+        cache.addSchema(ComplexObject.getClassSchema());
+    }
+
+    @Test
+    public void should_reject_unsupported_types() {
+        assertThat(testSubject.test(Integer.class)).isFalse();
+
+        final byte[] encodedBytes = testSubject.serializeToSingleObjectEncoded(testComplexObject);
+        assertEquals("Expected reader type to be assignable from SpecificRecordBase but it was java.lang.Integer",
+                     assertThrows(ConversionException.class,
+                                  () -> testSubject.deserializeFromSingleObjectEncoded(encodedBytes, Integer.class)
+                     ).getMessage()
+        );
+
+        final GenericRecord record = testComplexObject;
+        assertEquals("Expected reader type to be assignable from SpecificRecordBase but it was java.lang.Integer",
+                     assertThrows(ConversionException.class,
+                                  () -> testSubject.deserializeFromGenericRecord(record, Integer.class)
+                     ).getMessage()
+        );
+
+
+        assertEquals("Expected object to be instance of SpecificRecordBase but it was java.lang.Integer",
+                     assertThrows(ConversionException.class,
+                                  () -> testSubject.serializeToSingleObjectEncoded(42)
+                     ).getMessage()
+        );
+    }
+}

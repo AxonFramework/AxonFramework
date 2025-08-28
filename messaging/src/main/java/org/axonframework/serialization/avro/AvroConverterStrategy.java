@@ -16,27 +16,29 @@
 
 package org.axonframework.serialization.avro;
 
+import jakarta.annotation.Nonnull;
 import org.apache.avro.generic.GenericRecord;
-import org.axonframework.serialization.SerializedObject;
+import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.function.Predicate;
-import jakarta.annotation.Nonnull;
 
 /**
- * Serialization strategy for Avro Serializer.
+ * Strategy for Avro Converter. A strategy is selected upon the representation of the object in your runtime, assuming
+ * that the binary representation is always a binary byte array.
  *
  * @author Simon Zambrovski
  * @author Jan Galinski
  * @since 4.11.0
  */
-@Deprecated(forRemoval = true, since = "5.0.0")
-public interface AvroSerializerStrategy extends Predicate<Class<?>> {
+public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableComponent {
 
     /**
-     * Determines if this strategy supports given <code>payloadType</code>. This means that we have either a {@link org.apache.avro.specific.SpecificRecordBase} generated
-     * from a schema using apache-avro-maven-plugin or a kotlinx serializable class, written using avro4k.
+     * Determines if this strategy supports given <code>payloadType</code>. This means that we have either a
+     * {@link org.apache.avro.specific.SpecificRecordBase} generated from a schema using apache-avro-maven-plugin or a
+     * kotlinx serializable class, written using avro4k.
      *
-     * @param payloadType The payload type of object to de-/serialize, for example <code>BankAccountCreated.class</code>.
+     * @param payloadType The payload type of object to de-/serialize, for example
+     *                    <code>BankAccountCreated.class</code>.
      * @return <code>true</code> if type is supported by this strategy, <code>false</code> otherwise.
      */
     @Override
@@ -49,7 +51,7 @@ public interface AvroSerializerStrategy extends Predicate<Class<?>> {
      * @return byte array.
      */
     @Nonnull
-    SerializedObject<byte[]> serializeToSingleObjectEncoded(@Nonnull Object object);
+    byte[] serializeToSingleObjectEncoded(@Nonnull Object object);
 
     /**
      * Deserializes from single object encoded byte array.
@@ -60,7 +62,7 @@ public interface AvroSerializerStrategy extends Predicate<Class<?>> {
      * @return deserialized object.
      */
     @Nonnull
-    <T> T deserializeFromSingleObjectEncoded(@Nonnull SerializedObject<byte[]> serializedObject,
+    <T> T deserializeFromSingleObjectEncoded(@Nonnull byte[] serializedObject,
                                              @Nonnull Class<T> type);
 
     /**
@@ -71,20 +73,20 @@ public interface AvroSerializerStrategy extends Predicate<Class<?>> {
      * @param <T>              payload type to deserialize to.
      * @return deserialized object.
      */
-    <T> T deserializeFromGenericRecord(SerializedObject<GenericRecord> serializedObject, Class<T> type);
+    <T> T deserializeFromGenericRecord(GenericRecord serializedObject, Class<T> type);
 
     /**
      * Sets the configuration for the strategy.
-     * <p>This method is called by the {@link AvroSerializer.Builder} during instantiation of {@link AvroSerializer},
-     * passing the builder configuration to the strategy. The default implementation does nothing, but a strategy might
-     * use this method to set up internals.
+     * <p>This method is called during the construction of {@link AvroConverter},
+     * passing the configuration to the strategy. The default implementation does nothing, but a strategy might use this
+     * method to set up internals.
      * </p>
-     * <p>This method is intended to be implemented by the strategy, if it supports configuration options set by the
-     * {@link AvroSerializer.Builder}, passed via {@link AvroSerializerStrategyConfig}</p>
+     * <p>This method is intended to be implemented by the strategy, if it supports configuration options
+     * passed via {@link AvroConverterStrategyConfiguration}</p>
      *
-     * @param avroSerializerStrategyConfig configuration passed by the builder.
+     * @param avroConverterStrategyConfiguration configuration passed after construction.
      */
-    default void applyConfig(AvroSerializerStrategyConfig avroSerializerStrategyConfig) {
+    default void applyStrategyConfiguration(@Nonnull AvroConverterStrategyConfiguration avroConverterStrategyConfiguration) {
 
     }
 }

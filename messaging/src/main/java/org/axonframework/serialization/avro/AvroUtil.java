@@ -26,6 +26,7 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.message.BadHeaderException;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.SerializationException;
 
 import java.io.ByteArrayInputStream;
@@ -229,11 +230,12 @@ public class AvroUtil {
      * @return serialization exception.
      */
     @Nonnull
-    public static SerializationException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
-                                                                            @Nonnull Schema readerSchema,
-                                                                            @Nonnull Schema writerSchema,
-                                                                            Exception cause,
-                                                                            boolean includeSchemasInStackTraces
+    @Deprecated(forRemoval = true, since = "5.0.0")
+    public static SerializationException createExceptionFailedToDeserializeLegacy(@Nonnull Class<?> readerType,
+                                                                                  @Nonnull Schema readerSchema,
+                                                                                  @Nonnull Schema writerSchema,
+                                                                                  Exception cause,
+                                                                                  boolean includeSchemasInStackTraces
     ) {
         return new SerializationException(
                 "Failed to deserialize single-object-encoded bytes to instance of "
@@ -245,11 +247,65 @@ public class AvroUtil {
                 cause);
     }
 
-    public static SerializationException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
-                                                                            @Nonnull Schema readerSchema,
-                                                                            @Nonnull Schema writerSchema,
-                                                                            String message,
-                                                                            boolean includeSchemasInStackTraces
+    /**
+     * Creates a conversion exception for reader type.
+     *
+     * @param readerType   object type to deserialize.
+     * @param readerSchema reader schema.
+     * @param writerSchema writer schema.
+     * @param cause        the cause of exception.
+     * @return conversion exception.
+     */
+    @Nonnull
+    public static ConversionException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
+                                                                                  @Nonnull Schema readerSchema,
+                                                                                  @Nonnull Schema writerSchema,
+                                                                                  Exception cause,
+                                                                                  boolean includeSchemasInStackTraces
+    ) {
+        return new ConversionException(
+                "Failed to deserialize single-object-encoded bytes to instance of "
+                        + readerType.getCanonicalName()
+                        + ", writer schema fingerprint is " + fingerprint(writerSchema)
+                        + (includeSchemasInStackTraces ? ", writer schema is " + writerSchema : "")
+                        + " reader schema fingerprint is " + fingerprint(readerSchema)
+                        + (includeSchemasInStackTraces ? ", reader schema is " + readerSchema : ""),
+                cause);
+    }
+
+    /**
+     * Creates a conversion exception for reader type.
+     *
+     * @param readerType   object type to deserialize.
+     * @param readerSchema reader schema.
+     * @param writerSchema writer schema.
+     * @param message      the message.
+     * @return conversion exception.
+     */
+    public static ConversionException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
+                                                                                  @Nonnull Schema readerSchema,
+                                                                                  @Nonnull Schema writerSchema,
+                                                                                  String message,
+                                                                                  boolean includeSchemasInStackTraces
+    ) {
+        return new ConversionException(
+                "Failed to deserialize single-object-encoded bytes to instance of "
+                        + readerType.getCanonicalName()
+                        + ", writer schema fingerprint is " + fingerprint(writerSchema)
+                        + (includeSchemasInStackTraces ? ", writer schema is " + writerSchema : "")
+                        + ", reader schema fingerprint is " + fingerprint(readerSchema)
+                        + (includeSchemasInStackTraces ? ", reader schema is " + readerSchema : "")
+                        + ", detected incompatibilities are: " + message
+                        + ". Consider to define an upcaster to fix this problem."
+        );
+    }
+
+    @Deprecated(forRemoval = true, since = "5.0.0")
+    public static SerializationException createExceptionFailedToDeserializeLegacy(@Nonnull Class<?> readerType,
+                                                                                  @Nonnull Schema readerSchema,
+                                                                                  @Nonnull Schema writerSchema,
+                                                                                  String message,
+                                                                                  boolean includeSchemasInStackTraces
     ) {
         return new SerializationException(
                 "Failed to deserialize single-object-encoded bytes to instance of "
@@ -283,7 +339,8 @@ public class AvroUtil {
      * @param fingerprint fingerprint of writer schema.
      * @return exception to throw.
      */
-    public static SerializationException createExceptionNoSchemaFound(
+    @Deprecated(forRemoval = true, since = "5.0.0")
+    public static SerializationException createExceptionNoSchemaFoundLegacy(
             @Nonnull Class<?> readerType,
             long fingerprint
     ) {
@@ -292,4 +349,22 @@ public class AvroUtil {
                         + " with fingerprint:" + fingerprint
         );
     }
+
+    /**
+     * Creates exception if the schema for a given fingerprint could not be found.
+     *
+     * @param readerType  type of object to deserialize.
+     * @param fingerprint fingerprint of writer schema.
+     * @return exception to throw.
+     */
+    public static ConversionException createExceptionNoSchemaFound(
+            @Nonnull Class<?> readerType,
+            long fingerprint
+    ) {
+        return new ConversionException(
+                "Schema store could didn't contain schema deserializing " + readerType
+                        + " with fingerprint:" + fingerprint
+        );
+    }
+
 }

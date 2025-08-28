@@ -16,13 +16,14 @@
 package org.axonframework.serialization.avro;
 
 /**
- * Configuration class used by the strategy to receive configuration from the {@link AvroSerializer.Builder} during
- * instantiation of {@link AvroSerializer}.
+ * Configuration class used by the strategy to receive configuration from the {@link AvroConverter.Builder} during
+ * instantiation of {@link AvroConverter}.
  *
  * @author Simon Zambrovski
  * @author Jan Galinski
  * @since 4.11.0
  */
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class AvroSerializerStrategyConfig {
 
     private final boolean performAvroCompatibilityCheck;

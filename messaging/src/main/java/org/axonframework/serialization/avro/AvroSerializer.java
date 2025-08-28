@@ -254,7 +254,7 @@ public class AvroSerializer implements Serializer {
                 .builder();
         private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private SchemaStore schemaStore;
-        private SchemaIncompatibilityChecker schemaIncompatibilityChecker = new DefaultSchemaIncompatibilityChecker();
+        private SchemaIncompatibilityCheckerLegacy schemaIncompatibilityChecker = new DefaultSchemaIncompatibilityCheckerLegacy();
         private Serializer serializerDelegate;
         private Converter converter = new ChainingContentTypeConverter();
         private boolean includeDefaultStrategies = true;
@@ -286,7 +286,7 @@ public class AvroSerializer implements Serializer {
         /**
          * Sets schema compatibility checker.
          */
-        public Builder schemaIncompatibilityChecker(@Nonnull SchemaIncompatibilityChecker incompatibilityChecker) {
+        public Builder schemaIncompatibilityChecker(@Nonnull SchemaIncompatibilityCheckerLegacy incompatibilityChecker) {
             assertNonNull(incompatibilityChecker, "SchemaIncompatibilityChecker may not be null");
             this.schemaIncompatibilityChecker = incompatibilityChecker;
             return this;

@@ -1314,7 +1314,7 @@ future, but for now, we recommend using a `List` or a simple type.
 
 ### Exception mapping
 
-With the change from Aggregate to Entity, we've also changed some exceptions. If you depends on these
+With the change from Aggregate to Entity, we've also changed some exceptions. If you depend on these
 exceptions, you will need to change your code. The following table shows the changes:
 
 | Old Exception                                                          | New Exception                                                     |
@@ -1502,7 +1502,11 @@ This section contains five tables:
 | org.axonframework.commandhandling.distribute.RoutingStrategy                                           | org.axonframework.commandhandling.RoutingStrategy                                | Yes. Moved to `axon-messaging`   |
 | org.axonframework.commandhandling.distribute.UnresolvedRoutingKeyPolicy                                | org.axonframework.commandhandling.UnresolvedRoutingKeyPolicy                     | Yes. Moved to `axon-messaging`   |
 | org.axonframework.commandhandling.distribute.AnnotationRoutingStrategy                                 | org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy           | Yes. Moved to `axon-messaging`   |
-| org.axonframework.serialization.json.JacksonSerializer                                                 | org.axonframework.serialization.json.JacksonConverter                            | No                               |
+| org.axonframework.serialization.SerializationException                                                 | org.axonframework.serialization.ConversionException                              | No                               |
+| org.axonframework.serialization.avro.AvroSerializer                                                    | org.axonframework.serialization.avro.AvroConverter                               | No                               |
+| org.axonframework.serialization.avro.AvroSerializerStrategy                                            | org.axonframework.serialization.avro.AvroConverterStrategy                       | No                               |
+| org.axonframework.serialization.avro.AvroSerializerStrategyConfig                                      | org.axonframework.serialization.avro.AvroSerializerStrategyConfig                 | No                               |
+| org.axonframework.serialization.avro.SpecificRecordBaseSerializerStrategy                              | org.axonframework.serialization.avro.SpecificRecordBaseConverterStrategy         | No                               |
 
 ### Removed Classes
 
