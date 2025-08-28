@@ -15,26 +15,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Test and Build on JDK ${{ matrix.java-version }}
+  compile:
+    name: Compile Sources and Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - java-version: 21
-            sonar-enabled: true
-
+    timeout-minutes: 15
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Set up JDK ${{ matrix.java-version }}
+      - name: Set up JDK 21
         uses: actions/setup-java@v5.0.0
         with:
           distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
+          java-version: 21
           cache: "maven"
           server-id: central
           server-username: MAVEN_USERNAME
@@ -44,9 +40,23 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.m2/build-cache
-          key: ${{ runner.os }}-maven-build-cache-${{ hashFiles('**/pom.xml') }}
+          key: ${{ runner.os }}-maven-build-cache-${{ github.head_ref || github.ref_name }}
           restore-keys: |
+            ${{ runner.os }}-maven-build-cache-main
             ${{ runner.os }}-maven-build-cache-
+
+      - name: Generate cache key for compiled artifacts
+        id: cache-key
+        run: echo "key=${{ runner.os }}-compiled-${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Cache compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/target/classes
+            **/target/test-classes
+            **/target/generated-sources
+          key: ${{ steps.cache-key.outputs.key }}
 
       - name: Compile Sources and Tests
         run: |
@@ -56,17 +66,180 @@ jobs:
           TESTCONTAINERS_CHECKS_DISABLE: true
           TESTCONTAINERS_RYUK_DISABLED: true
 
-      - name: Regular Build - Run Tests and Verify
-        if: ${{ !matrix.sonar-enabled }}
+  test-core:
+    name: Test Core Modules
+    needs: compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        module-group:
+          - "messaging"
+          - "modelling" 
+          - "eventsourcing"
+          - "config"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: "maven"
+
+      - name: Restore Maven Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/build-cache
+          key: ${{ runner.os }}-maven-build-cache-${{ github.head_ref || github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-maven-build-cache-main
+            ${{ runner.os }}-maven-build-cache-
+
+      - name: Restore compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/target/classes
+            **/target/test-classes
+            **/target/generated-sources
+          key: ${{ needs.compile.outputs.cache-key }}
+
+      - name: Run Tests
         run: |
-          ./mvnw -B -U -T 1C -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 verify
+          ./mvnw -B -T 1C -Dstyle.color=always test -pl ${{ matrix.module-group }} -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
           TESTCONTAINERS_CHECKS_DISABLE: true
           TESTCONTAINERS_RYUK_DISABLED: true
 
-      - name: Build with Coverage reports - Run Tests and Verify
-        if: matrix.sonar-enabled
+  test-extensions:
+    name: Test Extension Modules
+    needs: compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        module-group:
+          - "spring"
+          - "axon-server-connector"
+          - "test,metrics,metrics-micrometer"
+          - "spring-boot-autoconfigure,spring-boot-starter"
+          - "tracing-opentelemetry,migration,legacy"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: "maven"
+
+      - name: Restore Maven Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/build-cache
+          key: ${{ runner.os }}-maven-build-cache-${{ github.head_ref || github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-maven-build-cache-main
+            ${{ runner.os }}-maven-build-cache-
+
+      - name: Restore compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/target/classes
+            **/target/test-classes
+            **/target/generated-sources
+          key: ${{ needs.compile.outputs.cache-key }}
+
+      - name: Run Tests
+        run: |
+          ./mvnw -B -T 1C -Dstyle.color=always test -pl ${{ matrix.module-group }} -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+  integration-tests:
+    name: Integration Tests
+    needs: [test-core, test-extensions]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: "maven"
+
+      - name: Restore Maven Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/build-cache
+          key: ${{ runner.os }}-maven-build-cache-${{ github.head_ref || github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-maven-build-cache-main
+            ${{ runner.os }}-maven-build-cache-
+
+      - name: Restore compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/target/classes
+            **/target/test-classes
+            **/target/generated-sources
+          key: ${{ needs.compile.outputs.cache-key }}
+
+      - name: Run Integration Tests
+        run: |
+          ./mvnw -B -T 1C -Dstyle.color=always verify -Pintegration-test -pl integrationtests -Dsurefire.rerunFailingTestsCount=5
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+  sonar:
+    name: Sonar Analysis
+    needs: [test-core, test-extensions, integration-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: "maven"
+
+      - name: Restore Maven Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/build-cache
+          key: ${{ runner.os }}-maven-build-cache-${{ github.head_ref || github.ref_name }}
+          restore-keys: |
+            ${{ runner.os }}-maven-build-cache-main
+            ${{ runner.os }}-maven-build-cache-
+
+      - name: Build with Coverage reports
         run: |
           ./mvnw -B -U -T 1C -Dstyle.color=always -Possrh -Dcoverage -Dsurefire.rerunFailingTestsCount=5 verify
         env:
@@ -75,7 +248,7 @@ jobs:
           TESTCONTAINERS_RYUK_DISABLED: true
 
       - name: Sonar Analysis
-        if: ${{ success() && matrix.sonar-enabled && github.event.pull_request.head.repo.full_name == github.repository }}
+        if: success()
         run: |
           ./mvnw -B -Dstyle.color=always sonar:sonar \
           -Dsonar.projectKey=AxonFramework_AxonFramework \
@@ -85,9 +258,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  test-summary:
+    name: Test Summary
+    needs: [test-core, test-extensions, integration-tests]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Restore compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/target/classes
+            **/target/test-classes
+            **/target/generated-sources
+          key: ${{ needs.compile.outputs.cache-key }}
+
       - name: Create test summary
         uses: test-summary/action@v2
         with:
           paths: "**/target/surefire-reports/TEST-*.xml"
           show: "fail, skip"
-        if: always() # This allows the build step to fail -- due to failing tests -- but still produce a test summary.
+        if: always()
