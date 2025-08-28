@@ -56,11 +56,12 @@ jobs:
             **/target/classes
             **/target/test-classes
             **/target/generated-sources
+            **/target/*.jar
           key: ${{ steps.cache-key.outputs.key }}
 
       - name: Compile Sources and Tests
         run: |
-          ./mvnw -B -U -T 1C -Dstyle.color=always clean test-compile
+          ./mvnw -B -U -T 1C -Dstyle.color=always clean compile test-compile
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
           TESTCONTAINERS_CHECKS_DISABLE: true
@@ -117,11 +118,12 @@ jobs:
             **/target/classes
             **/target/test-classes
             **/target/generated-sources
+            **/target/*.jar
           key: ${{ needs.compile.outputs.cache-key }}
 
       - name: Run Tests
         run: |
-          ./mvnw -B -T 1C -Dstyle.color=always test -pl ${{ matrix.module }} -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5
+          ./mvnw -B -T 1C -Dstyle.color=always test -pl ${{ matrix.module }} -am -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
           TESTCONTAINERS_CHECKS_DISABLE: true
@@ -164,11 +166,12 @@ jobs:
             **/target/classes
             **/target/test-classes
             **/target/generated-sources
+            **/target/*.jar
           key: ${{ needs.compile.outputs.cache-key }}
 
       - name: Run Integration Tests
         run: |
-          ./mvnw -B -T 1C -Dstyle.color=always verify -Pintegration-test -pl ${{ matrix.module }} -Dsurefire.rerunFailingTestsCount=5
+          ./mvnw -B -T 1C -Dstyle.color=always verify -Pintegration-test -pl ${{ matrix.module }} -am -Dsurefire.rerunFailingTestsCount=5
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
           TESTCONTAINERS_CHECKS_DISABLE: true
@@ -237,6 +240,7 @@ jobs:
             **/target/classes
             **/target/test-classes
             **/target/generated-sources
+            **/target/*.jar
           key: ${{ needs.compile.outputs.cache-key }}
 
       - name: Create test summary
