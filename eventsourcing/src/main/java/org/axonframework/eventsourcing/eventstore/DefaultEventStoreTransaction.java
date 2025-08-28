@@ -48,7 +48,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     private final EventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
-    private final Function<EventMessage, TaggedEventMessage<?>> eventPreProcessor;
+    private final Function<EventMessage, TaggedEventMessage<?>> eventTagger;
 
     private final List<Consumer<EventMessage>> callbacks;
 
@@ -64,16 +64,16 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      *                           with.
      * @param processingContext  The {@link ProcessingContext} from which to
      *                           {@link #appendEvent(EventMessage) append events} and attach resources to.
-     * @param eventPreProcessors A function that will pre-process each {@link EventMessage}, typically to attachs
+     * @param eventTagger        A function that will process each {@link EventMessage} to attach
      *                           {@link org.axonframework.eventstreaming.Tag Tags}, before it is added to the
      *                           transaction.
      */
     public DefaultEventStoreTransaction(@Nonnull EventStorageEngine eventStorageEngine,
                                         @Nonnull ProcessingContext processingContext,
-                                        @Nonnull Function<EventMessage, TaggedEventMessage<?>> eventPreProcessors) {
+                                        @Nonnull Function<EventMessage, TaggedEventMessage<?>> eventTagger) {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
-        this.eventPreProcessors = eventPreProcessors;
+        this.eventTagger = eventTagger;
         this.callbacks = new CopyOnWriteArrayList<>();
 
         this.appendConditionKey = ResourceKey.withLabel("appendCondition");
@@ -132,7 +132,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                     return new CopyOnWriteArrayList<>();
                 }
         );
-        eventQueue.add(eventPreProcessors.apply(eventMessage));
+        eventQueue.add(eventTagger.apply(eventMessage));
         callbacks.forEach(callback -> callback.accept(eventMessage));
     }
 
