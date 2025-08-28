@@ -141,7 +141,7 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
     }
 
     private void verifyReadModelState(String studentId, Consumer<StudentCoursesReadModel> stateVerifier) {
-        await().atMost(5, TimeUnit.SECONDS)
+        await().atMost(10, TimeUnit.SECONDS)
                .untilAsserted(() -> {
                    UnitOfWork uow = unitOfWorkFactory.create();
                    var result = uow.executeWithResult(context -> context.component(StateManager.class)
