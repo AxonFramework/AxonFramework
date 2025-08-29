@@ -110,10 +110,10 @@ jobs:
       - name: Upload test results and coverage
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.module }}
+          name: ${{ matrix.module }}
           path: |
-            **/target/surefire-reports/TEST-*.xml
-            **/target/jacoco-ut.exec
+            ${{ matrix.module }}/target/surefire-reports/TEST-*.xml
+            ${{ matrix.module }}/target/jacoco-ut.exec
         if: always()
 
   integration-tests:
@@ -156,10 +156,10 @@ jobs:
       - name: Upload integration test results and coverage
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.module }}
+          name: ${{ matrix.module }}
           path: |
-            **/target/surefire-reports/TEST-*.xml
-            **/target/jacoco-ut.exec
+            ${{ matrix.module }}/target/surefire-reports/TEST-*.xml
+            ${{ matrix.module }}/target/jacoco-ut.exec
         if: always()
 
   test-summary:
@@ -173,14 +173,14 @@ jobs:
       - name: Download all test results
         uses: actions/download-artifact@v4
         with:
-          pattern: test-results-*
-          path: test-results
+          pattern: "*"
+          path: .
           merge-multiple: true
 
       - name: Create test summary
         uses: test-summary/action@v2
         with:
-          paths: "test-results/**/TEST-*.xml"
+          paths: "**/target/**/TEST-*.xml"
           show: "fail, skip"
         if: always()
 
@@ -213,20 +213,9 @@ jobs:
       - name: Download test results and coverage data
         uses: actions/download-artifact@v4
         with:
-          pattern: test-results-*
-          path: test-results
-          merge-multiple: true
-
-      - name: Copy coverage data to module target directories
-        run: |
-          find test-results -name "jacoco-ut.exec" -type f | while read file; do
-            # Extract module name from the path and copy to the correct target directory
-            module_path=$(dirname "$file" | sed 's|test-results/||' | sed 's|/target.*||')
-            if [ -d "$module_path/target" ]; then
-              cp "$file" "$module_path/target/"
-              echo "Copied $file to $module_path/target/"
-            fi
-          done
+          pattern: "*"
+          path: .
+          merge-multiple: false
 
       - name: Generate aggregated coverage report
         run: |
