@@ -16,16 +16,17 @@
 
 package org.axonframework.messaging.interceptors;
 
-import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
+import java.util.Map;
 
+import static org.axonframework.messaging.interceptors.CorrelationDataInterceptor.CORRELATION_DATA;
 import static org.mockito.Mockito.*;
 
 /**
@@ -34,27 +35,30 @@ import static org.mockito.Mockito.*;
 class CorrelationDataInterceptorTest {
 
     private CorrelationDataInterceptor<Message> subject;
-    private LegacyUnitOfWork<Message> mockUnitOfWork;
-    private InterceptorChain mockInterceptorChain;
+    private MessageHandlerInterceptorChain<Message> mockInterceptorChain;
     private CorrelationDataProvider mockProvider1;
     private CorrelationDataProvider mockProvider2;
 
     @BeforeEach
-    @SuppressWarnings("unchecked")
     void setUp() {
         mockProvider1 = mock(CorrelationDataProvider.class);
         mockProvider2 = mock(CorrelationDataProvider.class);
         subject = new CorrelationDataInterceptor<>(Arrays.asList(mockProvider1, mockProvider2));
-        mockUnitOfWork = mock(LegacyUnitOfWork.class);
-        mockInterceptorChain = mock(InterceptorChain.class);
+        mockInterceptorChain = mock();
     }
 
     @Test
-    void attachesCorrelationDataProvidersToUnitOfWork() throws Exception {
+    void attachesCorrelationDataProvidersToProcessingContext() {
         ProcessingContext context = new StubProcessingContext();
-        subject.handle(mockUnitOfWork, context, mockInterceptorChain);
-        verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider1);
-        verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider2);
-        verify(mockInterceptorChain).proceedSync(context);
+        Message message = mock(Message.class);
+
+        when(mockProvider1.correlationDataFor(any())).thenReturn(Map.of("key1", "value"));
+        when(mockProvider2.correlationDataFor(any())).thenReturn(Map.of("key1", "value2", "key2", "value2"));
+        Map<String, Object> expected = Map.of("key1", "value2", "key2", "value2");
+
+        subject.interceptOnHandle(message, context, mockInterceptorChain);
+        verify(mockProvider1).correlationDataFor(message);
+        verify(mockProvider2).correlationDataFor(message);
+        verify(mockInterceptorChain).proceed(message, context.withResource(CORRELATION_DATA, expected));
     }
 }

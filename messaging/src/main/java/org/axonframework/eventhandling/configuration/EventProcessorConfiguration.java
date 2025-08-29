@@ -59,7 +59,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
                                                                                       .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                       .build();
-    private List<MessageHandlerInterceptor<? super EventMessage>> interceptors = new ArrayList<>();
+    private List<MessageHandlerInterceptor<EventMessage>> interceptors = new ArrayList<>();
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
 
     /**
@@ -129,7 +129,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
 
     @Deprecated(since = "5.0.0", forRemoval = true)
     public EventProcessorConfiguration interceptors(
-            @Nonnull List<MessageHandlerInterceptor<? super EventMessage>> interceptors) {
+            @Nonnull List<MessageHandlerInterceptor<EventMessage>> interceptors) {
         assertNonNull(spanFactory, "interceptors may not be null");
         this.interceptors = interceptors;
         return this;
@@ -191,7 +191,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      *
      * @return The list of interceptors for this {@link EventProcessor} implementation.
      */
-    public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
+    public List<MessageHandlerInterceptor<EventMessage>> interceptors() {
         return interceptors;
     }
 

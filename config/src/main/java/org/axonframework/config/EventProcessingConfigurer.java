@@ -409,7 +409,7 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerHandlerInterceptor(String processorName,
-                                                         Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder);
+                                                         Function<LegacyConfiguration, MessageHandlerInterceptor<EventMessage>> interceptorBuilder);
 
     /**
      * Register the given {@code interceptorBuilder} as a default to build a {@link MessageHandlerInterceptor} for
@@ -423,7 +423,7 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerDefaultHandlerInterceptor(
-            BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
+            BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<EventMessage>> interceptorBuilder
     );
 
     /**

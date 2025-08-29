@@ -26,13 +26,10 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateInvocationException;
@@ -427,12 +424,27 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         if (interceptors.isEmpty()) {
             result = findHandlerAndHandleCommand(potentialHandlers, commandMessage, context);
         } else {
-            //noinspection unchecked
-            result = new DefaultInterceptorChain<>(
-                    (LegacyUnitOfWork<CommandMessage>) CurrentUnitOfWork.get(),
-                    interceptors,
-                    (m, ctx) -> findHandlerAndHandleCommand(potentialHandlers, commandMessage, context)
-            ).proceedSync(context);
+            result = findHandlerAndHandleCommand(potentialHandlers, commandMessage, context);
+            // TODO: reintegrate as part of #3485
+            /*
+            result = new CommandMessageHandlerInterceptorChain(
+                    (m, ctx) -> {
+                        try {
+                            return MessageStream.just(
+                                    new GenericCommandResultMessage<>(
+                                            MessageType(commandMessage.type().qualifiedName() + "result")
+                                            findHandlerAndHandleCommand(potentialHandlers, commandMessage, context)
+                                    )
+
+                            );
+                        } catch (Exception e) {
+                            return MessageStream.failed(e);
+                        }
+                    },
+                    interceptors
+            ).proceed(commandMessage, context);
+
+             */
         }
         return result;
     }

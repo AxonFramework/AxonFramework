@@ -23,7 +23,6 @@ import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
@@ -92,7 +91,7 @@ class QueryThreadingIntegrationTest {
 
 
         // The application having a query that depends on another one
-        QueryBus localQueryBus = SimpleQueryBus.builder().build();
+        SimpleQueryBus localQueryBus = SimpleQueryBus.builder().build();
         queryBus = AxonServerQueryBus.builder()
                                      .axonServerConnectionManager(connectionManager)
                                      .configuration(configuration)
@@ -104,7 +103,7 @@ class QueryThreadingIntegrationTest {
         queryBus.start();
 
         // The secondary application
-        QueryBus localQueryBus2 = SimpleQueryBus.builder().build();
+        SimpleQueryBus localQueryBus2 = SimpleQueryBus.builder().build();
         queryBus2 = AxonServerQueryBus.builder()
                                       .axonServerConnectionManager(connectionManager)
                                       .configuration(configuration)

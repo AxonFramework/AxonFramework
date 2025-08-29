@@ -16,22 +16,27 @@
 
 package org.axonframework.test.deadline;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.test.FixtureExecutionException;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -39,14 +44,13 @@ import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 /**
  * Stub implementation of {@link DeadlineManager}. Records all scheduled, canceled and met deadlines.
@@ -62,7 +66,7 @@ public class StubDeadlineManager implements DeadlineManager {
     private final AtomicInteger deadlineCounter = new AtomicInteger(0);
     private final List<MessageDispatchInterceptor<? super DeadlineMessage>> dispatchInterceptors =
             new CopyOnWriteArrayList<>();
-    private final List<MessageHandlerInterceptor<? super DeadlineMessage>> handlerInterceptors =
+    private final List<MessageHandlerInterceptor<DeadlineMessage>> handlerInterceptors =
             new CopyOnWriteArrayList<>();
     private Instant currentDateTime;
 
@@ -233,7 +237,6 @@ public class StubDeadlineManager implements DeadlineManager {
         advanceTimeTo(currentDateTime.plus(duration), deadlineConsumer);
     }
 
-    @Override
     public @Nonnull
     Registration registerDispatchInterceptor(
             @Nonnull MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
@@ -242,35 +245,65 @@ public class StubDeadlineManager implements DeadlineManager {
     }
 
     @Nonnull
-    @Override
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super DeadlineMessage> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
     }
 
     @SuppressWarnings("unchecked")
-    private <T> DeadlineMessage processDispatchInterceptors(DeadlineMessage message) {
-        DeadlineMessage intercepted = message;
-        for (MessageDispatchInterceptor<? super DeadlineMessage> interceptor : dispatchInterceptors) {
-            intercepted = (DeadlineMessage) interceptor.handle(intercepted);
-        }
-        return intercepted;
+    private DeadlineMessage processDispatchInterceptors(DeadlineMessage message) {
+        return new DefaultMessageDispatchInterceptorChain<>(
+                dispatchInterceptors
+        ).proceed(message, null)
+         .first()
+         .<DeadlineMessage>cast()
+         .peek()
+         .map(MessageStream.Entry::message)
+         .get(); // TODO reintegrate as part of #3065
     }
 
     private DeadlineMessage consumeDeadline(DeadlineConsumer deadlineConsumer,
                                             ScheduledDeadlineInfo scheduledDeadlineInfo) {
         LegacyDefaultUnitOfWork<? extends DeadlineMessage> uow =
                 LegacyDefaultUnitOfWork.startAndGet(scheduledDeadlineInfo.deadlineMessage());
-        InterceptorChain chain = new DefaultInterceptorChain<>(uow, handlerInterceptors, (deadlineMessage, ctx) -> {
-            deadlineConsumer.consume(scheduledDeadlineInfo.getDeadlineScope(), deadlineMessage);
-            return deadlineMessage;
+
+        Iterator<MessageHandlerInterceptor<DeadlineMessage>> iterator = handlerInterceptors.iterator();
+
+        MessageHandlerInterceptorChain<DeadlineMessage> chain = new MessageHandlerInterceptorChain<>() {
+            @Override
+            public @NotNull MessageStream<?> proceed(@NotNull DeadlineMessage message,
+                                                     @NotNull ProcessingContext context) {
+                try {
+                    if (iterator.hasNext()) {
+                        return iterator.next().interceptOnHandle(message, context, this);
+                    } else {
+
+                        deadlineConsumer.consume(scheduledDeadlineInfo.getDeadlineScope(), message);
+                        return MessageStream.empty();
+                    }
+                } catch (Exception e) {
+                    return MessageStream.failed(e);
+                }
+            }
+        };
+
+        // TODO reintegrate as part of #3065
+        ResultMessage resultMessage = uow.executeWithResult((ctx) -> {
+            var processingResult = chain.proceed(uow.getMessage(), ctx);
+            if (!processingResult.hasNextAvailable()) {
+                return uow.getExecutionResult() != null ? uow.getExecutionResult() : uow.getMessage();
+            }
+            return processingResult;
         });
-        ResultMessage resultMessage = uow.executeWithResult(chain::proceedSync);
-        if (resultMessage.isExceptional()) {
-            Throwable e = resultMessage.exceptionResult();
-            throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
+        if (resultMessage != null) {
+            if (resultMessage.isExceptional()) {
+                Throwable e = resultMessage.exceptionResult();
+                throw new FixtureExecutionException("Exception occurred while handling the deadline", e);
+            }
+            return (DeadlineMessage) resultMessage.payload();
+        } else {
+            return null;
         }
-        return (DeadlineMessage) resultMessage.payload();
     }
 }

@@ -16,12 +16,11 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.MessageDispatchInterceptorSupport;
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.Arrays;
 import java.util.List;
-import jakarta.annotation.Nonnull;
 
 /**
  * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can publish
@@ -35,8 +34,7 @@ import jakarta.annotation.Nonnull;
  * @since 0.1
  */
 @Deprecated // TODO #3392 - Replace for actual EventSink implementation.
-public interface EventBus extends SubscribableMessageSource<EventMessage>,
-                                  MessageDispatchInterceptorSupport<EventMessage> {
+public interface EventBus extends SubscribableMessageSource<EventMessage> {
 
     /**
      * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed

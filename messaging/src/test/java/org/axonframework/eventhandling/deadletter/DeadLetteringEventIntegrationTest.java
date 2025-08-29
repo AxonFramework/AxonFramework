@@ -33,6 +33,7 @@ import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageIdentifier;
 import org.axonframework.messaging.deadletter.Cause;
@@ -890,15 +891,14 @@ public abstract class DeadLetteringEventIntegrationTest {
         }
     }
 
-    private MessageHandlerInterceptor<? super EventMessage> errorCatchingInterceptor(AtomicBoolean invoked) {
-        return (unitOfWork, context, chain) -> {
+    private MessageHandlerInterceptor<EventMessage> errorCatchingInterceptor(AtomicBoolean invoked) {
+        return (message, context, chain) -> {
             invoked.set(true);
             try {
-                chain.proceedSync(context);
+                return chain.proceed(message, context);
             } catch (RuntimeException e) {
-                return unitOfWork;
+                return MessageStream.failed(e);
             }
-            return unitOfWork;
         };
     }
 

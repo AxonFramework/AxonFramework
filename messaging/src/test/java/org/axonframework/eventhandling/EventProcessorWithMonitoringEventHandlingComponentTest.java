@@ -16,16 +16,10 @@
 
 package org.axonframework.eventhandling;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
@@ -37,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.axonframework.messaging.MessagingTestUtils.event;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EventProcessorWithMonitoringEventHandlingComponentTest {
@@ -49,7 +44,7 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
             @Override
             public void reportSuccess() {
                 if (!pending.contains(message)) {
-                    throw new RuntimeException("Message was presented to monitor twice: " + message);
+                    fail("Message was presented to monitor twice: " + message + " or message was unknown.");
                 }
                 pending.remove(message);
             }
@@ -66,45 +61,21 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         };
 
         EventHandlingComponent eventHandlingComponent = new SimpleEventHandlingComponent();
-        eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (e, c) -> MessageStream.empty());
+        eventHandlingComponent.subscribe(new QualifiedName(Integer.class), (e, c)
+                -> MessageStream.empty());
 
         // Also test that the mechanism used to call the monitor can deal with the message in the unit of work being
         // modified during processing
-        MessageHandlerInterceptor<EventMessage> interceptor = new MessageHandlerInterceptor<>() {
-            @Override
-            public Object handle(
-                    @Nonnull LegacyUnitOfWork<? extends EventMessage> unitOfWork,
-                    @Nonnull ProcessingContext context,
-                    @Nonnull InterceptorChain interceptorChain)
-                    throws Exception {
-                unitOfWork.transformMessage(m -> new GenericEventMessage(
-                        new MessageType(new QualifiedName(Integer.class)),
-                        123
-                ));
-                return interceptorChain.proceedSync(
-                        context);
-            }
+        MessageHandlerInterceptor<EventMessage> interceptor = (message, context, interceptorChain)
+                -> interceptorChain.proceed(event(123), context);
 
-            @Override
-            public <M extends EventMessage, R extends Message> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message,
-                    @Nonnull ProcessingContext context,
-                    @Nonnull InterceptorChain<M, R> interceptorChain) {
-                var event = new GenericEventMessage(
-                        new MessageType(new QualifiedName(Integer.class)),
-                        123
-                );
-                //noinspection unchecked
-                return interceptorChain.proceed((M) event,
-                                                context);
-            }
-        };
+        var interceptingEventHandlingComponent = new InterceptingEventHandlingComponent(
+                List.of(interceptor),
+                eventHandlingComponent
+        );
         var decoratedEventHandlingComponent = new MonitoringEventHandlingComponent(
                 messageMonitor,
-                new InterceptingEventHandlingComponent(
-                        List.of(interceptor),
-                        eventHandlingComponent
-                )
+                interceptingEventHandlingComponent
         );
         TestEventProcessor testSubject = new TestEventProcessor(decoratedEventHandlingComponent);
 
@@ -149,8 +120,9 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         void processInBatchingUnitOfWork(List<? extends EventMessage> eventMessages)
                 throws ExecutionException, InterruptedException, TimeoutException {
             var unitOfWork = UnitOfWorkTestUtils.aUnitOfWork();
-            unitOfWork.executeWithResult(ctx -> processorEventHandlingComponents.handle(eventMessages, ctx)
-                                                                                .asCompletableFuture()
+            unitOfWork.executeWithResult(ctx -> processorEventHandlingComponents
+                    .handle(eventMessages, ctx)
+                    .asCompletableFuture()
             ).get(2, TimeUnit.SECONDS);
         }
     }

@@ -32,12 +32,12 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.eventhandling.EventMessageHandlerInterceptorChain;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeDescriptor;
@@ -99,7 +99,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private final LinkedList<ParameterResolverFactory> registeredParameterResolverFactories = new LinkedList<>();
     private final LinkedList<HandlerDefinition> registeredHandlerDefinitions = new LinkedList<>();
     private final LinkedList<HandlerEnhancerDefinition> registeredHandlerEnhancerDefinitions = new LinkedList<>();
-    private final LinkedList<MessageHandlerInterceptor<? super EventMessage>> eventHandlerInterceptors = new LinkedList<>();
+    private final LinkedList<MessageHandlerInterceptor<EventMessage>> eventHandlerInterceptors = new LinkedList<>();
     private final RecordingListenerInvocationErrorHandler recordingListenerInvocationErrorHandler;
 
     private final Class<T> sagaType;
@@ -163,13 +163,28 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         TrackedEventMessage trackedEventMessage = asTrackedEventMessage(event);
         LegacyDefaultUnitOfWork<? extends EventMessage> unitOfWork =
                 LegacyDefaultUnitOfWork.startAndGet(trackedEventMessage);
-        ResultMessage resultMessage = unitOfWork.executeWithResult((context) -> new DefaultInterceptorChain<>(
-                unitOfWork,
-                eventHandlerInterceptors,
-                (MessageHandler<EventMessage, Message>) (message, ctx) -> {
-                    sagaManager.handle(message, ctx, Segment.ROOT_SEGMENT);
-                    return GenericMessage.emptyMessage();
-                }).proceedSync(context)
+
+        /*
+        ResultMessage<?> resultMessage = unitOfWork.executeWithResult(
+                (context) -> {
+                    sagaManager.handle(unitOfWork.getMessage(), context, Segment.ROOT_SEGMENT);
+                    return unitOfWork.getExecutionResult();
+                }
+        );
+         */
+        // TODO reintegrate with #3097
+        ResultMessage resultMessage = unitOfWork.executeWithResult(
+                (context) -> new EventMessageHandlerInterceptorChain(
+                        eventHandlerInterceptors,
+                        (m, ctx) -> {
+                            try {
+                                sagaManager.handle(m, ctx, Segment.ROOT_SEGMENT);
+                                return MessageStream.empty();
+                            } catch (Throwable t) {
+                                return MessageStream.failed(t);
+                            }
+                        }
+                ).proceed(unitOfWork.getMessage(), context)
         );
 
         if (resultMessage.isExceptional()) {
@@ -188,8 +203,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     /**
      * Handles the given {@code deadlineMessage} in the saga described by the given {@code sagaDescriptor}. Deadline
-     * message is handled in the scope of a {@link LegacyUnitOfWork}. If handling the
-     * deadline results in an exception, the exception will be wrapped in a {@link FixtureExecutionException}.
+     * message is handled in the scope of a {@link LegacyUnitOfWork}. If handling the deadline results in an exception,
+     * the exception will be wrapped in a {@link FixtureExecutionException}.
      *
      * @param sagaDescriptor  A {@link ScopeDescriptor} describing the saga under test
      * @param deadlineMessage The {@link DeadlineMessage} to be handled
@@ -434,7 +449,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureConfiguration registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<? super DeadlineMessage> deadlineHandlerInterceptor
+            MessageHandlerInterceptor<DeadlineMessage> deadlineHandlerInterceptor
     ) {
         this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
         return this;
@@ -442,7 +457,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     @Override
     public FixtureConfiguration registerEventHandlerInterceptor(
-            MessageHandlerInterceptor<? super EventMessage> eventHandlerInterceptor
+            MessageHandlerInterceptor<EventMessage> eventHandlerInterceptor
     ) {
         this.eventHandlerInterceptors.add(eventHandlerInterceptor);
         return this;

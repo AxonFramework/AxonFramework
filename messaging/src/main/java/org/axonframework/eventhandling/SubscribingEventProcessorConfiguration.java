@@ -123,7 +123,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
 
     @Override
     public SubscribingEventProcessorConfiguration interceptors(
-            @Nonnull List<MessageHandlerInterceptor<? super EventMessage>> interceptors) {
+            @Nonnull List<MessageHandlerInterceptor<EventMessage>> interceptors) {
         super.interceptors(interceptors);
         return this;
     }

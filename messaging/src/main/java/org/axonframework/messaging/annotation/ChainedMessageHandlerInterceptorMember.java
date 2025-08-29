@@ -23,6 +23,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Iterator;
 
+
 /**
  * A {@link MessageHandlerInterceptorMemberChain} implementation that constructs a chain of instances of itself based on
  * a given {@code iterator} of {@link MessageHandlingMember MessageHandlingMembers}.
@@ -59,11 +60,20 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
                                    @Nonnull ProcessingContext context,
                                    @Nonnull T target,
                                    @Nonnull MessageHandlingMember<? super T> handler) {
+
+        // TODO #3485 - Implement this accordingly for annotated interceptors.
+        //  Or, fully replace this for MessageHandlingComponent decoration instead.
+        return doHandle(message, context, target, handler);
+        /*
+        Why is this called using an interceptor chain? Do handle effectively does the same!
+        Rewrite this code...
+
         return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
                 context,
                 (ctx) -> next.handle(message, ctx, target, handler),
                 (ctx) -> doHandle(message, ctx, target, handler)
         );
+         */
     }
 
     private MessageStream<?> doHandle(Message message,
@@ -80,10 +90,15 @@ public class ChainedMessageHandlerInterceptorMember<T> implements MessageHandler
                              @Nonnull ProcessingContext context,
                              @Nonnull T target,
                              @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
+        // TODO #3485 - Implement this accordingly for annotated interceptors.
+        //  Or, fully replace this for MessageHandlingComponent decoration instead.
+        return doHandleSync(message, context, target, handler);
+        /*
         return InterceptorChainParameterResolverFactory.callWithInterceptorChainSync(
                 (ctx) -> next.handleSync(message, ctx, target, handler),
                 () -> doHandleSync(message, context, target, handler)
         );
+         */
     }
 
     private Object doHandleSync(Message message,

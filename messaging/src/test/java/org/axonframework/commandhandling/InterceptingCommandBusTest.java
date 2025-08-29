@@ -19,27 +19,30 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.axonframework.messaging.MessagingTestUtils.commandResult;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -47,6 +50,7 @@ import static org.mockito.Mockito.*;
  * Test class validating the {@link InterceptingCommandBus}.
  *
  * @author Allard Buijze
+ * @author Simon Zambrovski
  */
 class InterceptingCommandBusTest {
 
@@ -54,9 +58,9 @@ class InterceptingCommandBusTest {
 
     private InterceptingCommandBus testSubject;
     private CommandBus mockCommandBus;
-    private MessageHandlerInterceptor<Message> handlerInterceptor1;
+    private MessageHandlerInterceptor<CommandMessage> handlerInterceptor1;
     private MessageHandlerInterceptor<CommandMessage> handlerInterceptor2;
-    private MessageDispatchInterceptor<CommandMessage> dispatchInterceptor1;
+    private MessageDispatchInterceptor<Message> dispatchInterceptor1;
     private MessageDispatchInterceptor<Message> dispatchInterceptor2;
 
     @BeforeEach
@@ -74,17 +78,21 @@ class InterceptingCommandBusTest {
 
     @Test
     void dispatchInterceptorsInvokedOnDispatch() throws Exception {
-        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "test");
-        when(mockCommandBus.dispatch(any(), any())).thenAnswer(invocation -> CompletableFuture.completedFuture(
-                asCommandResultMessage("ok")));
+        when(mockCommandBus.dispatch(any(), any()))
+                .thenAnswer(invocation -> completedFuture(commandResult("ok")));
 
-        CompletableFuture<? extends Message> result = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
+        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "test");
+        CompletableFuture<CommandResultMessage<?>> result = testSubject
+                .dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
 
         ArgumentCaptor<CommandMessage> dispatchedMessage = ArgumentCaptor.forClass(CommandMessage.class);
         verify(mockCommandBus).dispatch(dispatchedMessage.capture(), any());
 
         CommandMessage actualDispatched = dispatchedMessage.getValue();
-        assertEquals(Map.of("dispatch1", "value-0", "dispatch2", "value-1"),
+        assertEquals(MetaData.from(
+                             Map.of("dispatch1", "value-0",
+                                    "dispatch2", "value-1")
+                     ),
                      actualDispatched.metaData(),
                      "Expected command interceptors to be invoked in registered order");
 
@@ -95,6 +103,30 @@ class InterceptingCommandBusTest {
     }
 
     @Test
+    void dispatchInterceptorsAreInvokedForEveryMessage() throws Exception {
+        AtomicInteger counter = new AtomicInteger(0);
+        MessageDispatchInterceptor<Message> countingInterceptor = (message, context, chain) -> {
+            counter.incrementAndGet();
+            return chain.proceed(message, context);
+        };
+        InterceptingCommandBus countingTestSubject =
+                new InterceptingCommandBus(mockCommandBus, List.of(), List.of(countingInterceptor));
+
+        when(mockCommandBus.dispatch(any(), any()))
+                .thenAnswer(invocation -> completedFuture(commandResult("ok")));
+
+        CommandMessage firstCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "first");
+        CommandMessage secondCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "second");
+
+        countingTestSubject.dispatch(firstCommand, StubProcessingContext.forMessage(firstCommand))
+                           .get();
+        countingTestSubject.dispatch(secondCommand, StubProcessingContext.forMessage(firstCommand))
+                           .get();
+
+        assertThat(counter.get()).isEqualTo(2);
+    }
+
+    @Test
     void earlyReturnAvoidsMessageDispatch() {
         CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "test");
         doReturn(MessageStream.failed(new MockException("Simulating early return"))).when(dispatchInterceptor2)
@@ -102,7 +134,8 @@ class InterceptingCommandBusTest {
                                                                                                          any(),
                                                                                                          any());
 
-        CompletableFuture<? extends Message> result = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
+        CompletableFuture<? extends Message> result =
+                testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
 
         assertTrue(result.isCompletedExceptionally());
         assertInstanceOf(MockException.class, result.exceptionNow());
@@ -112,34 +145,13 @@ class InterceptingCommandBusTest {
     }
 
     @Test
-    void dualProceedCausesDuplicateMessageDispatch() throws Exception {
-        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "test");
-        when(mockCommandBus.dispatch(any(), any())).thenAnswer(invocation -> CompletableFuture.completedFuture(
-                asCommandResultMessage("ok")));
-
-        doAnswer(i -> {
-            i.callRealMethod();
-            return i.callRealMethod();
-        }).when(dispatchInterceptor1).interceptOnDispatch(any(), any(), any());
-
-        CompletableFuture<? extends Message> result = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
-
-        assertTrue(result.isDone());
-        verify(dispatchInterceptor1).interceptOnDispatch(any(), any(), any());
-        verify(dispatchInterceptor2, times(2)).interceptOnDispatch(any(), any(), any());
-        verify(mockCommandBus, times(2)).dispatch(any(), any());
-
-        assertEquals(Map.of("dispatch1", "value-1", "dispatch2", "value-0"),
-                     result.get().metaData());
-    }
-
-    @Test
     void exceptionsInDispatchInterceptorReturnFailedStream() {
         CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "test");
         doThrow(new MockException("Simulating failure in interceptor"))
                 .when(dispatchInterceptor2).interceptOnDispatch(any(), any(), any());
 
-        CompletableFuture<? extends Message> result = testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
+        CompletableFuture<? extends Message> result =
+                testSubject.dispatch(testCommand, StubProcessingContext.forMessage(testCommand));
 
         assertTrue(result.isCompletedExceptionally());
         assertInstanceOf(MockException.class, result.exceptionNow());
@@ -156,7 +168,7 @@ class InterceptingCommandBusTest {
         testSubject.subscribe(testHandlerName,
                               (command, context) -> {
                                   handledMessage.set(command);
-                                  return MessageStream.just(asCommandResultMessage("ok"));
+                                  return MessageStream.just(commandResult("ok"));
                               }
         );
 
@@ -173,9 +185,40 @@ class InterceptingCommandBusTest {
                      actualHandled.metaData(),
                      "Expected command interceptors to be invoked in registered order");
 
-        assertEquals(Map.of("handler1", "value-1", "handler2", "value-0"),
+        assertEquals(MetaData.from(
+                             Map.of(
+                                     "handler1", "value-1",
+                                     "handler2", "value-0"
+                             )
+                     ),
                      result.first().asCompletableFuture().get().message().metaData(),
                      "Expected result interceptors to be invoked in reverse order");
+    }
+
+    @Test
+    void handlerInterceptorsAreInvokedForEveryMessage() {
+        AtomicInteger counter = new AtomicInteger(0);
+        MessageHandlerInterceptor<CommandMessage> countingInterceptor = (message, context, chain) -> {
+            counter.incrementAndGet();
+            return chain.proceed(message, context);
+        };
+        InterceptingCommandBus countingTestSubject =
+                new InterceptingCommandBus(mockCommandBus, List.of(countingInterceptor), List.of());
+
+        QualifiedName testHandlerName = new QualifiedName("handler");
+        countingTestSubject.subscribe(testHandlerName, (command, context) -> MessageStream.just(commandResult("ok")));
+
+        ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
+        verify(mockCommandBus).subscribe(eq(testHandlerName), handlerCaptor.capture());
+
+        CommandHandler actualHandler = handlerCaptor.getValue();
+
+        CommandMessage firstCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "first");
+        actualHandler.handle(firstCommand, StubProcessingContext.forMessage(firstCommand)).first();
+        CommandMessage secondCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "second");
+        actualHandler.handle(secondCommand, StubProcessingContext.forMessage(secondCommand)).first();
+
+        assertThat(counter.get()).isEqualTo(2);
     }
 
     @Test
@@ -185,7 +228,7 @@ class InterceptingCommandBusTest {
                 .when(handlerInterceptor2).interceptOnHandle(any(), any(), any());
 
         CommandHandler actualHandler = subscribeHandler(
-                (command, context) -> MessageStream.just(asCommandResultMessage("ok"))
+                (command, context) -> MessageStream.just(commandResult("ok"))
         );
 
         ProcessingContext context = mock(ProcessingContext.class);
@@ -195,38 +238,6 @@ class InterceptingCommandBusTest {
 
         verify(handlerInterceptor1).interceptOnHandle(any(), eq(context), any());
         verify(handlerInterceptor2).interceptOnHandle(any(), eq(context), any());
-    }
-
-    @Test
-    void dualProceedCausesDuplicateMessageHandling() {
-        CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "test");
-        doAnswer(i -> {
-            i.callRealMethod();
-            return i.callRealMethod();
-        }).when(handlerInterceptor1).interceptOnHandle(any(), any(), any());
-
-        List<CommandMessage> handledMessages = new ArrayList<>();
-
-        CommandHandler actualHandler = subscribeHandler(
-                (command, context) -> {
-                    handledMessages.add(command);
-                    return MessageStream.just(asCommandResultMessage("ok"));
-                });
-
-        ProcessingContext processingContext = mock(ProcessingContext.class);
-        var result = actualHandler.handle(testCommand, processingContext);
-
-        assertTrue(result.first().asCompletableFuture().isDone());
-        verify(handlerInterceptor1).interceptOnHandle(any(), any(), any());
-        verify(handlerInterceptor2, times(2)).interceptOnHandle(any(), any(), any());
-        assertEquals(2, handledMessages.size());
-
-        assertEquals(Map.of("handler1", "value-0", "handler2", "value-1"),
-                     handledMessages.get(0).metaData());
-        assertEquals(Map.of("handler1", "value-0", "handler2", "value-1"),
-                     handledMessages.get(1).metaData());
-        assertEquals(Map.of("handler1", "value-1", "handler2", "value-0"),
-                     result.first().asCompletableFuture().join().message().metaData());
     }
 
     @Test
@@ -256,10 +267,8 @@ class InterceptingCommandBusTest {
         return handlerCaptor.getValue();
     }
 
-    private static GenericCommandResultMessage<String> asCommandResultMessage(String payload) {
-        return new GenericCommandResultMessage<>(new MessageType(payload.getClass()), payload);
-    }
 
+    @SuppressWarnings("unchecked")
     private static class AddMetaDataCountInterceptor<M extends Message>
             implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
 
@@ -272,38 +281,29 @@ class InterceptingCommandBusTest {
         }
 
         @Override
-        public Object handle(@Nonnull LegacyUnitOfWork<? extends M> unitOfWork,
-                             @Nonnull ProcessingContext context,
-                             @Nonnull InterceptorChain interceptorChain) {
-            throw new UnsupportedOperationException();
+        @Nonnull
+        public MessageStream<?> interceptOnDispatch(@Nonnull M message,
+                                                    @Nullable ProcessingContext context,
+                                                    @Nonnull MessageDispatchInterceptorChain<M> interceptorChain) {
+            var intercepted = (M) message.andMetaData(Map.of(key, buildValue(message)));
+            return interceptorChain
+                    .proceed(intercepted, context)
+                    .mapMessage(m -> m.andMetaData(Map.of(key, buildValue(m))));
         }
 
-        @SuppressWarnings("unchecked")
         @Override
-        public <M1 extends M, R extends Message> MessageStream<R> interceptOnDispatch(@Nonnull M1 message,
-                                                                                      @Nullable ProcessingContext context,
-                                                                                      @Nonnull InterceptorChain<M1, R> interceptorChain) {
-            return interceptorChain.proceed((M1) message.andMetaData(Map.of(key, buildValue(message))), context)
-                                   .mapMessage(m -> (R) m.andMetaData(Map.of(key, buildValue(m))));
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public <M1 extends M, R extends Message> MessageStream<R> interceptOnHandle(@Nonnull M1 message,
-                                                                                    @Nonnull ProcessingContext context,
-                                                                                    @Nonnull InterceptorChain<M1, R> interceptorChain) {
-            return interceptorChain.proceed((M1) message.andMetaData(Map.of(key, buildValue(message))), context)
-                                   .mapMessage(m -> (R) m.andMetaData(Map.of(key, buildValue(m))));
+        @Nonnull
+        public MessageStream<?> interceptOnHandle(@Nonnull M message,
+                                                  @Nonnull ProcessingContext context,
+                                                  @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
+            var intercepted = (M) message.andMetaData(Map.of(key, buildValue(message)));
+            return interceptorChain
+                    .proceed(intercepted, context)
+                    .mapMessage(m -> m.andMetaData(Map.of(key, buildValue(m))));
         }
 
         private String buildValue(Message message) {
             return value + "-" + message.metaData().size();
-        }
-
-        @Nonnull
-        @Override
-        public BiFunction<Integer, M, M> handle(@Nonnull List<? extends M> messages) {
-            throw new UnsupportedOperationException();
         }
     }
 }

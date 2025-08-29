@@ -15,12 +15,15 @@
  */
 package org.axonframework.queryhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
@@ -33,7 +36,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -152,14 +154,11 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     private <R, Q> QueryMessage asQueryMessage(Q query,
-                                                            ResponseType<R> responseType) {
+                                               ResponseType<R> responseType) {
         //noinspection unchecked
         return query instanceof Message
-                ? new GenericQueryMessage((Message) query,
-                                            responseType)
-                : new GenericQueryMessage(messageTypeResolver.resolveOrThrow(query),
-                                            query,
-                                            responseType);
+                ? new GenericQueryMessage((Message) query, responseType)
+                : new GenericQueryMessage(messageTypeResolver.resolveOrThrow(query), query, responseType);
     }
 
     @Override
@@ -207,7 +206,6 @@ public class DefaultQueryGateway implements QueryGateway {
         );
     }
 
-    @Override
     public Registration registerDispatchInterceptor(
             @Nonnull MessageDispatchInterceptor<? super QueryMessage> interceptor) {
         dispatchInterceptors.add(interceptor);
@@ -216,11 +214,14 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @SuppressWarnings("unchecked")
     private <T extends QueryMessage> T processInterceptors(T query) {
-        T intercepted = query;
-        for (MessageDispatchInterceptor<? super QueryMessage> interceptor : dispatchInterceptors) {
-            intercepted = (T) interceptor.handle(intercepted);
-        }
-        return intercepted;
+        // TODO #3488 - Reintegrate, and construct chain only once!
+        return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
+                .proceed(query, null)
+                .first()
+                .<T>cast()
+                .asMono()
+                .map(MessageStream.Entry::message)
+                .block();
     }
 
     /**
@@ -278,10 +279,11 @@ public class DefaultQueryGateway implements QueryGateway {
         }
 
         /**
-         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when publishing {@link QueryMessage QueryMessages}.
-         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when publishing
+         * {@link QueryMessage QueryMessages}. If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
-         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for {@link QueryMessage QueryMessages}.
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for
+         *                            {@link QueryMessage QueryMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {

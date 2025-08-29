@@ -23,13 +23,11 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.MetaDataValue;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -92,21 +90,15 @@ class EventProcessingModuleWithInterceptorsTest {
         static class MyInterceptor implements MessageHandlerInterceptor<EventMessage> {
 
             @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage> unitOfWork,
-                                 @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain)
-                    throws Exception {
-                unitOfWork.transformMessage(event -> event
-                        .andMetaData(Collections.singletonMap("myMetaDataKey", "myMetaDataValue")));
-                return interceptorChain.proceedSync(context);
-            }
-
-            @Override
-            public <M extends EventMessage, R extends Message> MessageStream<R> interceptOnHandle(
-                    @Nonnull M message, @Nonnull ProcessingContext context,
-                    @Nonnull InterceptorChain<M, R> interceptorChain) {
-                //noinspection unchecked
-                var eventWithMetaData = (M) message.andMetaData(Collections.singletonMap("myMetaDataKey", "myMetaDataValue"));
-                return interceptorChain.proceed(eventWithMetaData, context);
+            @Nonnull
+            public MessageStream<?> interceptOnHandle(
+                    @Nonnull EventMessage message,
+                    @Nonnull ProcessingContext context,
+                    @Nonnull MessageHandlerInterceptorChain<EventMessage> interceptorChain
+            ) {
+                return interceptorChain.proceed(
+                        message.andMetaData(Collections.singletonMap("myMetaDataKey", "myMetaDataValue")),
+                        context);
             }
         }
 

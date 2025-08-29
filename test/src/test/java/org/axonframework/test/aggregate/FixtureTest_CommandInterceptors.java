@@ -17,17 +17,16 @@
 package org.axonframework.test.aggregate;
 
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -36,25 +35,21 @@ import org.axonframework.modelling.command.CommandHandlerInterceptor;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
-import org.mockito.invocation.*;
 import org.mockito.junit.jupiter.*;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the registration of {@link MessageDispatchInterceptor} and {@link MessageHandlerInterceptor}
@@ -90,6 +85,7 @@ class FixtureTest_CommandInterceptors {
     @Test
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredCommandDispatchInterceptorsAreInvoked() {
+        /*
         when(firstMockCommandDispatchInterceptor.handle(any(CommandMessage.class)))
                 .thenAnswer(it -> it.getArguments()[0]);
         fixture.registerCommandDispatchInterceptor(firstMockCommandDispatchInterceptor);
@@ -114,6 +110,8 @@ class FixtureTest_CommandInterceptors {
         verify(secondMockCommandDispatchInterceptor).handle(secondCommandMessageCaptor.capture());
         GenericCommandMessage secondResult = secondCommandMessageCaptor.getValue();
         assertEquals(expectedCommand, secondResult.payload());
+
+         */
     }
 
     @Test
@@ -149,9 +147,10 @@ class FixtureTest_CommandInterceptors {
     @Test
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredCommandHandlerInterceptorsAreInvoked() throws Exception {
+        /*
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
         //noinspection unchecked
-        when(mockCommandHandlerInterceptor.handle(any(LegacyUnitOfWork.class), any(), any(InterceptorChain.class)))
+        when(mockCommandHandlerInterceptor.handle(any(LegacyUnitOfWork.class), any(), any(MessageHandlerInterceptorChain.class)))
                 .thenAnswer(InvocationOnMock::getArguments);
         fixture.registerCommandHandlerInterceptor(mockCommandHandlerInterceptor);
 
@@ -165,12 +164,14 @@ class FixtureTest_CommandInterceptors {
         //noinspection unchecked
         ArgumentCaptor<LegacyUnitOfWork<? extends CommandMessage>> unitOfWorkCaptor =
                 ArgumentCaptor.forClass(LegacyUnitOfWork.class);
-        ArgumentCaptor<InterceptorChain> interceptorChainCaptor = ArgumentCaptor.forClass(InterceptorChain.class);
+        ArgumentCaptor<MessageHandlerInterceptorChain> interceptorChainCaptor = ArgumentCaptor.forClass(MessageHandlerInterceptorChain.class);
         verify(mockCommandHandlerInterceptor).handle(unitOfWorkCaptor.capture(), any(), interceptorChainCaptor.capture());
         LegacyUnitOfWork<? extends CommandMessage> unitOfWorkResult = unitOfWorkCaptor.getValue();
         Message messageResult = unitOfWorkResult.getMessage();
         assertEquals(expectedCommand, messageResult.payload());
         assertEquals(expectedMetaDataMap, messageResult.metaData());
+
+         */
     }
 
     @Test
@@ -227,12 +228,16 @@ class FixtureTest_CommandInterceptors {
     @Test
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredHandlerInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
+
         AtomicInteger invocations = new AtomicInteger(0);
+        /*
         fixture.registerCommandHandlerInterceptor((unitOfWork, context, interceptorChain) -> {
             invocations.incrementAndGet();
             interceptorChain.proceedSync(context);
             return null;
         });
+
+         */
 
         fixture.givenCommands(new CreateStandardAggregateCommand(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
@@ -246,10 +251,13 @@ class FixtureTest_CommandInterceptors {
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void registeredDispatchInterceptorIsInvokedOnceOnGivenCommandsTestExecution() {
         AtomicInteger invocations = new AtomicInteger(0);
+        /*
         fixture.registerCommandDispatchInterceptor(messages -> (i, command) -> {
             invocations.incrementAndGet();
             return command;
         });
+
+         */
 
         fixture.givenCommands(new CreateStandardAggregateCommand(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
@@ -320,13 +328,17 @@ class FixtureTest_CommandInterceptors {
             apply(new StandardAggregateCreatedEvent(cmd.getAggregateIdentifier()));
         }
 
+        /*
+        TODO #3103 - Revised Interceptor Support
         @CommandHandlerInterceptor
-        public String intercept(DoWithEntityCommand command, InterceptorChain interceptorChain, ProcessingContext context) throws Exception {
+        public String intercept(DoWithEntityCommand command, MessageHandlerInterceptorChain interceptorChain, ProcessingContext context) throws Exception {
             if (this.entity == null) {
                 return "invoked-without-entity";
             }
             return (String) interceptorChain.proceedSync(context);
         }
+
+         */
 
         @CommandHandlerInterceptor
         public void intercept(DoWithEntityWithoutInterceptorCommand command) {
@@ -361,14 +373,18 @@ class FixtureTest_CommandInterceptors {
     @SuppressWarnings("unused")
     private static class InterceptorEntity {
 
+        /*
+        TODO #3103 - Revised Interceptor Support
         @CommandHandlerInterceptor
         public void intercept(CommandMessage command,
-                              InterceptorChain interceptorChain,
+                              MessageHandlerInterceptorChain interceptorChain,
                               ProcessingContext context
         ) throws Exception {
             intercepted.set(true);
             interceptorChain.proceedSync(context);
         }
+
+         */
 
         @CommandHandler
         public void handle(DoWithEntityCommand command) {
@@ -439,27 +455,39 @@ class FixtureTest_CommandInterceptors {
 
     private static class TestCommandDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage> {
 
-        @Nonnull
         @Override
-        public BiFunction<Integer, CommandMessage, CommandMessage> handle(
-                @Nonnull List<? extends CommandMessage> messages
-        ) {
-            return (index, message) -> {
-                Map<String, String> testMetaDataMap = new HashMap<>();
-                testMetaDataMap.put(DISPATCH_META_DATA_KEY, DISPATCH_META_DATA_VALUE);
-                message = message.andMetaData(testMetaDataMap);
-                return message;
-            };
+        public @NotNull MessageStream<?> interceptOnDispatch(@NotNull CommandMessage message,
+                                                             @Nullable ProcessingContext context,
+                                                             @NotNull MessageDispatchInterceptorChain<CommandMessage> interceptorChain) {
+            Map<String, String> testMetaDataMap = new HashMap<>();
+            testMetaDataMap.put(DISPATCH_META_DATA_KEY, DISPATCH_META_DATA_VALUE);
+            CommandMessage newMessage = message.andMetaData(testMetaDataMap);
+            return interceptorChain.proceed(newMessage, context);
         }
     }
 
     private static class TestCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage> {
 
+        /*
+         TODO #3103 - Revised Interceptor Support
         @Override
         public Object handle(@Nonnull LegacyUnitOfWork<? extends CommandMessage> unitOfWork,
-                             @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain) throws Exception {
+                             @Nonnull ProcessingContext context, @Nonnull MessageHandlerInterceptorChain interceptorChain) throws Exception {
             unitOfWork.registerCorrelationDataProvider(new SimpleCorrelationDataProvider(HANDLER_META_DATA_KEY));
             return interceptorChain.proceedSync(context);
+        }
+
+         */
+
+        @Nonnull
+        @Override
+        public MessageStream<?> interceptOnHandle(
+                @NotNull CommandMessage message,
+                @NotNull ProcessingContext context,
+                @NotNull MessageHandlerInterceptorChain<CommandMessage> interceptorChain
+        ) {
+
+            return interceptorChain.proceed(message, context);
         }
     }
 

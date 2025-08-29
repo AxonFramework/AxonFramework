@@ -16,9 +16,11 @@
 
 package org.axonframework.deadline;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -32,7 +34,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import jakarta.annotation.Nonnull;
 
 /**
  * Abstract implementation of the {@link DeadlineManager} to be implemented by concrete solutions for the
@@ -66,16 +67,14 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
         }
     }
 
-    @Override
     public Registration registerDispatchInterceptor(
             @Nonnull MessageDispatchInterceptor<? super DeadlineMessage> dispatchInterceptor) {
         dispatchInterceptors.add(dispatchInterceptor);
         return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
-    @Override
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super DeadlineMessage> handlerInterceptor) {
+            @Nonnull MessageHandlerInterceptor<DeadlineMessage> handlerInterceptor) {
         handlerInterceptors.add(handlerInterceptor);
         return () -> handlerInterceptors.remove(handlerInterceptor);
     }
@@ -106,12 +105,20 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
      * @param message the deadline message to be intercepted
      * @return intercepted message
      */
+    @SuppressWarnings("unchecked")
     protected DeadlineMessage processDispatchInterceptors(DeadlineMessage message) {
-        DeadlineMessage intercepted = message;
-        for (MessageDispatchInterceptor<? super DeadlineMessage> interceptor : dispatchInterceptors()) {
-            intercepted = (DeadlineMessage) interceptor.handle(intercepted);
+        // FIXME: reintegrate #3065
+        try {
+            return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors())
+                    .proceed(message, null)
+                    .first()
+                    .<DeadlineMessage>cast()
+                    .asCompletableFuture()
+                    .get()
+                    .message();
+        } catch (Exception e) {
+            return null;
         }
-        return intercepted;
     }
 
     /**

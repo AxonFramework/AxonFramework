@@ -77,14 +77,14 @@ public class InterceptorAutoConfiguration {
 //        return () -> interceptors.ifPresent(it -> it.forEach(eventGateway::registerDispatchInterceptor));
 //    }
 
-    @Bean
-    @ConditionalOnBean(MessageDispatchInterceptor.class)
-    public InitializingBean queryDispatchInterceptorConfigurer(
-            QueryGateway queryGateway,
-            Optional<List<MessageDispatchInterceptor<? super QueryMessage>>> interceptors
-    ) {
-        return () -> interceptors.ifPresent(it -> it.forEach(queryGateway::registerDispatchInterceptor));
-    }
+//    @Bean
+//    @ConditionalOnBean(MessageDispatchInterceptor.class)
+//    public InitializingBean queryDispatchInterceptorConfigurer(
+//            QueryGateway queryGateway,
+//            Optional<List<MessageDispatchInterceptor<? super QueryMessage>>> interceptors
+//    ) {
+//        return () -> interceptors.ifPresent(it -> it.forEach(queryGateway::registerDispatchInterceptor));
+//    }
 
     // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
 //    @Bean
@@ -96,18 +96,18 @@ public class InterceptorAutoConfiguration {
 //        return () -> interceptors.ifPresent(it -> it.forEach(commandBus::registerHandlerInterceptor));
 //    }
 
-    @Bean
-    @ConditionalOnBean(MessageHandlerInterceptor.class)
-    public InitializingBean queryHandlerInterceptorConfigurer(
-            QueryBus queryBus,
-            Optional<List<MessageHandlerInterceptor<? super QueryMessage>>> interceptors) {
-        return () -> interceptors.ifPresent(it -> it.forEach(queryBus::registerHandlerInterceptor));
-    }
+//    @Bean
+//    @ConditionalOnBean(MessageHandlerInterceptor.class)
+//    public InitializingBean queryHandlerInterceptorConfigurer(
+//            QueryBus queryBus,
+//            Optional<List<MessageHandlerInterceptor<QueryMessage>>> interceptors) {
+//        return () -> interceptors.ifPresent(it -> it.forEach(queryBus::registerHandlerInterceptor));
+//    }
 
     @Bean
     public InitializingBean messageHandlerInterceptorConfigurer(
             EventProcessingConfigurer eventProcessingConfigurer,
-            Optional<List<MessageHandlerInterceptor<? super EventMessage>>> interceptors
+            Optional<List<MessageHandlerInterceptor<EventMessage>>> interceptors
     ) {
         return () -> interceptors
                 .ifPresent(it -> it.forEach(i -> eventProcessingConfigurer.registerDefaultHandlerInterceptor((c, n) -> i)));

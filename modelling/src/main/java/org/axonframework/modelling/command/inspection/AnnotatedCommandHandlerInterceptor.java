@@ -17,13 +17,12 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.InterceptorChainParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import jakarta.annotation.Nonnull;
@@ -52,27 +51,19 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
         this.target = target;
     }
 
+    @Nonnull
     @Override
-    public Object handle(@Nonnull LegacyUnitOfWork<? extends CommandMessage> unitOfWork,
-                         @Nonnull ProcessingContext context,
-                         @Nonnull InterceptorChain interceptorChain) throws Exception {
-        return InterceptorChainParameterResolverFactory.callWithInterceptorChainSync(
-                interceptorChain,
-                () -> delegate.canHandle(unitOfWork.getMessage(), context)
-                        ? delegate.handleSync(unitOfWork.getMessage(), context, target)
-                        : interceptorChain.proceedSync(context));
-    }
-
-    @Override
-    public <M extends CommandMessage, R extends Message> MessageStream<R> interceptOnHandle(
-            @Nonnull M message,
+    public MessageStream<?> interceptOnHandle(
+            @Nonnull CommandMessage message,
             @Nonnull ProcessingContext context,
-            @Nonnull InterceptorChain<M, R> interceptorChain
+            @Nonnull MessageHandlerInterceptorChain<CommandMessage> interceptorChain
     ) {
         return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
                 context,
                 interceptorChain,
-                ct -> interceptorChain.proceed(message, ct)
+                (ct) -> delegate.canHandle(message, ct)
+                    ? delegate.handle(message, ct, target).cast()
+                    : interceptorChain.proceed(message, ct)
         );
     }
 }

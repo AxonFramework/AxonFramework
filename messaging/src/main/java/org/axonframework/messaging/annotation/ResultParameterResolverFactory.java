@@ -47,9 +47,9 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
     private static final Object IGNORE_RESULT_PARAMETER_MARKER = new Object();
     public static final ResourceKey<Object> RESOURCE_KEY = ResourceKey.withLabel("Invocation result for interceptors");
 
-
-    public static <R> R callWithResult(Object result, ProcessingContext processingContext,
-                                                      Function<ProcessingContext, R> action) {
+    public static <R> R callWithResult(Object result,
+                                       ProcessingContext processingContext,
+                                       Function<ProcessingContext, R> action) {
         ProcessingContext wrapped = new ResourceOverridingProcessingContext<>(processingContext, RESOURCE_KEY, result);
         return action.apply(wrapped);
     }
@@ -85,16 +85,17 @@ public class ResultParameterResolverFactory implements ParameterResolverFactory 
      * @param <T>    The type of result expected from the action
      * @return the result returned by the given action
      */
-    public static <T> T ignoringResultParameters(ProcessingContext processingContext, Function<ProcessingContext, T> action) {
+    public static <T> T ignoringResultParameters(ProcessingContext processingContext,
+                                                 Function<ProcessingContext, T> action) {
         ProcessingContext wrapped = new ResourceOverridingProcessingContext<>(processingContext, RESOURCE_KEY,
                                                                               IGNORE_RESULT_PARAMETER_MARKER);
         return action.apply(wrapped);
-
     }
 
     @Nullable
     @Override
-    public ParameterResolver<Object> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<Object> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters,
+                                                    int parameterIndex) {
         if (Exception.class.isAssignableFrom(parameters[parameterIndex].getType())
                 && AnnotationUtils.isAnnotationPresent(executable, ResultHandler.class)) {
             return new ExceptionResultParameterResolver(parameters[parameterIndex].getType());

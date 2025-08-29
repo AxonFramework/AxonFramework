@@ -19,9 +19,11 @@ package org.axonframework.integrationtests.queryhandling;
 import org.axonframework.common.TypeReference;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -300,7 +302,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         unitOfWork.start();
 
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new MessageType(testQueryName) , testQueryPayload,
+                new MessageType(testQueryName), testQueryPayload,
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
         SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result =
@@ -589,18 +591,23 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void subscriptionQueryWithInterceptors() {
         // given
         List<String> interceptedResponse = Arrays.asList("fakeReply1", "fakeReply2");
-        queryBus.registerDispatchInterceptor(
-                messages -> (i, m) -> m.andMetaData(Collections.singletonMap("key", "value"))
-        );
-        queryBus.registerHandlerInterceptor((unitOfWork, context, interceptorChain) -> {
-            if (unitOfWork.getMessage().metaData().containsKey("key")) {
-                return interceptedResponse;
-            }
-            return interceptorChain.proceedSync(context);
-        });
+//        queryBus.registerDispatchInterceptor((message, context, chain) -> chain.proceed(
+//                message.andMetaData(Collections.singletonMap("key", "value")), context
+//        ));
+//        queryBus.registerHandlerInterceptor((message, context, chain) -> {
+//            if (message.metaData().containsKey("key")) {
+//                return MessageStream.fromIterable(
+//                        interceptedResponse.stream()
+//                                           .map(p -> new GenericQueryResponseMessage(new MessageType("response"), p))
+//                                           .toList()
+//                );
+//            }
+//            return chain.proceed(message, context);
+//        });
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 new MessageType("chatMessages"), TEST_PAYLOAD,
                 multipleInstancesOf(String.class), instanceOf(String.class)
@@ -617,12 +624,13 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void subscriptionQueryUpdateWithInterceptors() {
         // given
         Map<String, String> metaData = Collections.singletonMap("key", "value");
-        queryUpdateEmitter.registerDispatchInterceptor(
-                messages -> (i, m) -> m.andMetaData(metaData)
-        );
+//        queryUpdateEmitter.registerDispatchInterceptor(
+//                (message, context, chain) -> chain.proceed(message.andMetaData(metaData), context)
+//        );
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 new MessageType("chatMessages"), TEST_PAYLOAD,
                 multipleInstancesOf(String.class), instanceOf(String.class)

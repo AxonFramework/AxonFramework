@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.DelegatingEventHandlingComponent;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.eventhandling.EventMessageHandlerInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -41,7 +41,7 @@ import java.util.List;
  */
 public class InterceptingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
-    private final List<MessageHandlerInterceptor<? super EventMessage>> messageHandlerInterceptors;
+    private final EventMessageHandlerInterceptorChain interceptorChain;
 
     /**
      * Constructs the component with the given delegate and interceptors.
@@ -50,23 +50,19 @@ public class InterceptingEventHandlingComponent extends DelegatingEventHandlingC
      * @param messageHandlerInterceptors The list of interceptors to initialize with.
      */
     public InterceptingEventHandlingComponent(
-            @Nonnull List<MessageHandlerInterceptor<? super EventMessage>> messageHandlerInterceptors,
+            @Nonnull List<MessageHandlerInterceptor<EventMessage>> messageHandlerInterceptors,
             @Nonnull EventHandlingComponent delegate
     ) {
         super(delegate);
-        this.messageHandlerInterceptors = List.copyOf(messageHandlerInterceptors);
+        this.interceptorChain = new EventMessageHandlerInterceptorChain(messageHandlerInterceptors, delegate);
     }
 
     @Nonnull
     @Override
     public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
                                                @Nonnull ProcessingContext context) {
-        DefaultInterceptorChain<EventMessage, ?> chain =
-                new DefaultInterceptorChain<>(
-                        null,
-                        messageHandlerInterceptors,
-                        delegate::handle
-                );
-        return chain.proceed(event, context).ignoreEntries().cast();
+        return interceptorChain.proceed(event, context)
+                               .ignoreEntries()
+                               .cast();
     }
 }

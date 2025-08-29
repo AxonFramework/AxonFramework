@@ -299,7 +299,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<? super DeadlineMessage> deadlineHandlerInterceptor) {
+            MessageHandlerInterceptor<DeadlineMessage> deadlineHandlerInterceptor) {
         this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
         return this;
     }
@@ -1069,7 +1069,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             return () -> true;
         }
 
-        @Override
         public @Nonnull
         Registration registerDispatchInterceptor(
                 @Nonnull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
