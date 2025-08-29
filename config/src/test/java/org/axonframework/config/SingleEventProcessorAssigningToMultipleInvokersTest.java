@@ -16,7 +16,7 @@
 
 package org.axonframework.config;
 
-import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;

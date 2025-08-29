@@ -22,7 +22,7 @@ import io.axoniq.axonserver.connector.control.ControlChannel;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.junit.jupiter.api.*;
 

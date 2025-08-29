@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+
 import java.util.Optional;
 
 /**

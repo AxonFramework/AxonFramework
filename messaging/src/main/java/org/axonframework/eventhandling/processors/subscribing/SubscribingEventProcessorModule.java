@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
 import org.axonframework.eventhandling.SequenceCachingEventHandlingComponent;
-import org.axonframework.eventhandling.TracingEventHandlingComponent;
+import org.axonframework.eventhandling.processors.tracing.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;

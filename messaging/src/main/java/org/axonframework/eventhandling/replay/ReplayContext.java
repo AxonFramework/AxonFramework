@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.replay;
 
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -23,7 +25,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation indication that a parameter on a Message Handler method should be injected with the {@code resetContext}
- * present in a {@link org.axonframework.eventhandling.ReplayToken}.
+ * present in a {@link ReplayToken}.
  * <p>
  * Will inject null when there is no replay currently happening, or when the context is null.
  *

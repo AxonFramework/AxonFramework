@@ -15,6 +15,8 @@
  */
 package org.axonframework.modelling.saga.repository.jdbc;
 
+import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -92,7 +94,7 @@ public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
      * <p>
      * If {@code true}, only one instance of the application may load a saga at a time. This may be used to serialize
      * event handling in sagas in multi-node configurations where <b>no</b>
-     * {@link org.axonframework.eventhandling.StreamingEventProcessor} is used. The given processor type caveat is
+     * {@link StreamingEventProcessor} is used. The given processor type caveat is
      * explained through the fact that a {@code StreamingEventProcessor} requires claimed segments to be able to perform
      * any event handling work. Furthermore, this segments originate from a shared resources in a distributed
      * environment.

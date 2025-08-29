@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;

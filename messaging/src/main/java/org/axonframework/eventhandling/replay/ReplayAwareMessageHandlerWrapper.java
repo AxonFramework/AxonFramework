@@ -17,8 +17,7 @@
 package org.axonframework.eventhandling.replay;
 
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.eventhandling.AllowReplay;
-import org.axonframework.eventhandling.ReplayToken;
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
@@ -35,7 +34,7 @@ import static java.util.Collections.singletonMap;
 
 /**
  * An implementation of the {@link org.axonframework.messaging.annotation.HandlerEnhancerDefinition} that is used for
- * {@link org.axonframework.eventhandling.AllowReplay} annotated message handling methods.
+ * {@link AllowReplay} annotated message handling methods.
  *
  * @author Allard Buijze
  * @since 3.2

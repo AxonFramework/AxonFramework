@@ -19,7 +19,7 @@ package org.axonframework.eventhandling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.SequenceOverridingEventHandlingComponent;
+import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceOverridingEventHandlingComponent;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.messaging.QualifiedName;
 

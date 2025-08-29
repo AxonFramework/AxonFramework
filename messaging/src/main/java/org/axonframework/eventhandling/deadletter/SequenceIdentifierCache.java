@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ class SequenceIdentifierCache {
 
     /**
      * The constructor of the {@link SequenceIdentifierCache}, which typically will be called if either the
-     * {@link DeadLetteringEventHandlerInvoker} has not processed the {@link org.axonframework.eventhandling.Segment}
+     * {@link DeadLetteringEventHandlerInvoker} has not processed the {@link Segment}
      * before, or the segment was released in the meantime.
      *
      * @param segmentId the id of the segment, used only for logging purposes.

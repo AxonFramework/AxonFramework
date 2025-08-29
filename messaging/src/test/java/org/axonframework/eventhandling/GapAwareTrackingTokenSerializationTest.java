@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
 import org.axonframework.serialization.TestSerializer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;

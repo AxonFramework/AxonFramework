@@ -17,6 +17,8 @@
 package org.axonframework.springboot;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -61,7 +63,7 @@ public class TracingProperties {
     private RepositoryProperties repository = new RepositoryProperties();
 
     /**
-     * Properties describing the tracing settings for the {@link org.axonframework.eventhandling.EventProcessor}.
+     * Properties describing the tracing settings for the {@link EventProcessor}.
      */
     private EventProcessorProperties eventProcessor = new EventProcessorProperties();
 
@@ -196,10 +198,10 @@ public class TracingProperties {
 
     /**
      * Returns the properties describing the tracing settings for the
-     * {@link org.axonframework.eventhandling.EventProcessor}.
+     * {@link EventProcessor}.
      *
      * @return The properties describing the tracing settings for the
-     * {@link org.axonframework.eventhandling.EventProcessor}.
+     * {@link EventProcessor}.
      */
     public EventProcessorProperties getEventProcessor() {
         return eventProcessor;
@@ -207,10 +209,10 @@ public class TracingProperties {
 
     /**
      * Sets the properties describing the tracing settings for the
-     * {@link org.axonframework.eventhandling.EventProcessor}.
+     * {@link EventProcessor}.
      *
      * @param eventProcessor The properties describing the tracing settings for the
-     *                       {@link org.axonframework.eventhandling.EventProcessor}.
+     *                       {@link EventProcessor}.
      */
     public void setEventProcessor(EventProcessorProperties eventProcessor) {
         this.eventProcessor = eventProcessor;
@@ -631,7 +633,7 @@ public class TracingProperties {
 
     /**
      * Configuration properties for the behavior of creating tracing spans for the
-     * {@link org.axonframework.eventhandling.EventProcessor} implementations.
+     * {@link EventProcessor} implementations.
      *
      * @since 4.9.0
      */
@@ -645,14 +647,14 @@ public class TracingProperties {
 
         /**
          * Whether distributed events should be part of the same trace. Defaults to {@code false}. When set to
-         * {@code true}, the {@link org.axonframework.eventhandling.EventProcessor} will create a new trace each batch
+         * {@code true}, the {@link EventProcessor} will create a new trace each batch
          * event, as long as the batch is handled within the time limit set by
          * {@link #distributedInSameTraceTimeLimit}.
          */
         private boolean distributedInSameTrace = false;
 
         /**
-         * The time limit for events handled by a {@link org.axonframework.eventhandling.StreamingEventProcessor} to be
+         * The time limit for events handled by a {@link StreamingEventProcessor} to be
          * traced in the same trace as the trace that published it. Defaults to 2 minutes. Only used when
          * {@link #distributedInSameTrace} is {@code true}.
          */
@@ -679,7 +681,7 @@ public class TracingProperties {
 
         /**
          * Whether distributed events should be part of the same trace. Defaults to {@code false}. When set to
-         * {@code true}, the {@link org.axonframework.eventhandling.EventProcessor} will create a new trace each batch
+         * {@code true}, the {@link EventProcessor} will create a new trace each batch
          * event, as long as the batch is handled within the time limit set by
          * {@link #distributedInSameTraceTimeLimit}.
          *
@@ -691,7 +693,7 @@ public class TracingProperties {
 
         /**
          * Whether distributed events should be part of the same trace. Defaults to {@code false}. When set to
-         * {@code true}, the {@link org.axonframework.eventhandling.EventProcessor} will create a new trace each batch
+         * {@code true}, the {@link EventProcessor} will create a new trace each batch
          * event, as long as the batch is handled within the time limit set by
          * {@link #distributedInSameTraceTimeLimit}.
          *
@@ -702,12 +704,12 @@ public class TracingProperties {
         }
 
         /**
-         * The time limit for events handled by a {@link org.axonframework.eventhandling.StreamingEventProcessor} to be
+         * The time limit for events handled by a {@link StreamingEventProcessor} to be
          * traced in the same trace as the trace that published it. Defaults to 2 minutes. Only used when
          * {@link #distributedInSameTrace} is {@code true}.
          *
          * @return The time limit for events handled by a
-         * {@link org.axonframework.eventhandling.StreamingEventProcessor} to be traced in the same trace as the trace
+         * {@link StreamingEventProcessor} to be traced in the same trace as the trace
          * that published it.
          */
         public Duration getDistributedInSameTraceTimeLimit() {
@@ -715,12 +717,12 @@ public class TracingProperties {
         }
 
         /**
-         * The time limit for events handled by a {@link org.axonframework.eventhandling.StreamingEventProcessor} to be
+         * The time limit for events handled by a {@link StreamingEventProcessor} to be
          * traced in the same trace as the trace that published it. Defaults to 2 minutes. Only used when
          * {@link #distributedInSameTrace} is {@code true}.
          *
          * @param distributedInSameTraceTimeLimit The time limit for events handled by a
-         *                                        {@link org.axonframework.eventhandling.StreamingEventProcessor} to be
+         *                                        {@link StreamingEventProcessor} to be
          *                                        traced in the same trace as the trace that published it.
          */
         public void setDistributedInSameTraceTimeLimit(Duration distributedInSameTraceTimeLimit) {

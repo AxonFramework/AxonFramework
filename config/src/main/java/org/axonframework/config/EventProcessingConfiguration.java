@@ -18,9 +18,9 @@ package org.axonframework.config;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;

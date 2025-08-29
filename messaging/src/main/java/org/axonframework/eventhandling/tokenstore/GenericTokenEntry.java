@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.tokenstore;
 
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.serialization.Serializer;
 
 /**

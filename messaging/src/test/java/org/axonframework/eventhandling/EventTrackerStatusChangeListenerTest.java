@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.processors.streaming.segmenting.EventTrackerStatusChangeListener;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

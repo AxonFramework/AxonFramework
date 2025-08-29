@@ -22,6 +22,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventIntegrationTest;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -52,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the
- * {@link JdbcSequencedDeadLetterQueue} with an {@link org.axonframework.eventhandling.EventProcessor} and
+ * {@link JdbcSequencedDeadLetterQueue} with an {@link EventProcessor} and
  * {@link DeadLetteringEventHandlerInvoker}.
  *
  * @author Steven van Beelen

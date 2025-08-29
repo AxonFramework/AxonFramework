@@ -17,6 +17,10 @@
 package org.axonframework.eventhandling;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;

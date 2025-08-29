@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.tokenstore.jpa;
 
 import jakarta.persistence.*;
 import org.axonframework.common.DateTimeUtils;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.serialization.*;
 
 import java.time.Clock;

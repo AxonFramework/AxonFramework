@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.tokenstore;
 
-import org.axonframework.eventhandling.Segment;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.junit.jupiter.api.*;
 
 import java.util.List;

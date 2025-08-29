@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.ResetNotSupportedException;
-import org.axonframework.eventhandling.Segment;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeDescriptor;

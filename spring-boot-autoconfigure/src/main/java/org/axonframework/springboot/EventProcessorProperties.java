@@ -16,7 +16,9 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.eventhandling.processors.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -50,7 +52,7 @@ public class EventProcessorProperties {
     }
 
     /**
-     * The processing modes of an {@link org.axonframework.eventhandling.EventProcessor}.
+     * The processing modes of an {@link EventProcessor}.
      */
     public enum Mode {
         /**
@@ -88,7 +90,7 @@ public class EventProcessorProperties {
 
         /**
          * The interval between attempts to claim tokens by a
-         * {@link org.axonframework.eventhandling.StreamingEventProcessor}.
+         * {@link StreamingEventProcessor}.
          * <p>
          * Defaults to 5000 milliseconds.
          */
@@ -190,10 +192,10 @@ public class EventProcessorProperties {
 
         /**
          * Returns the interval between attempts to claim tokens by a
-         * {@link org.axonframework.eventhandling.StreamingEventProcessor}. Defaults to 5000 milliseconds.
+         * {@link StreamingEventProcessor}. Defaults to 5000 milliseconds.
          *
          * @return the interval between attempts to claim tokens by a
-         * {@link org.axonframework.eventhandling.StreamingEventProcessor}.
+         * {@link StreamingEventProcessor}.
          */
         public long getTokenClaimInterval() {
             return tokenClaimInterval;
@@ -204,7 +206,7 @@ public class EventProcessorProperties {
          * 5000 milliseconds.
          *
          * @param tokenClaimInterval the interval between attempts to claim tokens by a
-         *                           {@link org.axonframework.eventhandling.StreamingEventProcessor}.
+         *                           {@link StreamingEventProcessor}.
          */
         public void setTokenClaimInterval(long tokenClaimInterval) {
             this.tokenClaimInterval = tokenClaimInterval;
@@ -231,7 +233,7 @@ public class EventProcessorProperties {
 
         /**
          * Returns the number of threads to use to process Events, when using a
-         * {@link org.axonframework.eventhandling.StreamingEventProcessor} implementation. Defaults to the configured
+         * {@link StreamingEventProcessor} implementation. Defaults to the configured
          * number of initial segments. If this field is not configured, the thread count defaults to 4 for a
          * {@link PooledStreamingEventProcessor}.
          *
@@ -247,7 +249,7 @@ public class EventProcessorProperties {
 
         /**
          * Sets the number of threads to use to process Events, when using a
-         * {@link org.axonframework.eventhandling.StreamingEventProcessor} implementation. Defaults to the configured
+         * {@link StreamingEventProcessor} implementation. Defaults to the configured
          * number of initial segments. If this field is not configured, the thread count defaults to 4 for a
          * {@link PooledStreamingEventProcessor}.
          * <p>

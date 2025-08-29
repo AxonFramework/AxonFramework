@@ -19,8 +19,7 @@ package org.axonframework.eventhandling.replay;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.ReplayStatus;
-import org.axonframework.eventhandling.ReplayToken;
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -31,9 +30,9 @@ import java.lang.reflect.Parameter;
 
 /**
  * An implementation of the {@link org.axonframework.messaging.annotation.ParameterResolverFactory} which resolves the
- * {@link org.axonframework.eventhandling.ReplayStatus} parameter. Will resolve a {@link ReplayStatus#REPLAY} parameter
+ * {@link ReplayStatus} parameter. Will resolve a {@link ReplayStatus#REPLAY} parameter
  * if the {@link org.axonframework.messaging.Message} is a {@link org.axonframework.eventhandling.TrackedEventMessage},
- * containing a {@link org.axonframework.eventhandling.ReplayToken}. Otherwise, it will resolve a
+ * containing a {@link ReplayToken}. Otherwise, it will resolve a
  * {@link ReplayStatus#REGULAR} parameter.
  *
  * @author Allard Buijze

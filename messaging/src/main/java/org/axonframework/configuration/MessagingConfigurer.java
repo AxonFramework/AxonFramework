@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -259,7 +260,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     /**
      * Delegates given {@code configurerTask} to the {@link EventProcessingConfigurer}.
      * <p>
-     * Use this operation to configure defaults and register {@link org.axonframework.eventhandling.EventProcessor}s.
+     * Use this operation to configure defaults and register {@link EventProcessor}s.
      *
      * @param configurerTask Lambda consuming the {@link EventProcessingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.

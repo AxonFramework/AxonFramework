@@ -16,6 +16,9 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.MultiSourceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;

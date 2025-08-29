@@ -17,13 +17,14 @@
 package org.axonframework.eventhandling.deadletter;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.messaging.deadletter.InMemorySequencedDeadLetterQueue;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.junit.jupiter.api.*;
 
 /**
  * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the
- * {@link InMemorySequencedDeadLetterQueue} with an {@link org.axonframework.eventhandling.EventProcessor} and
+ * {@link InMemorySequencedDeadLetterQueue} with an {@link EventProcessor} and
  * {@link DeadLetteringEventHandlerInvoker}. It also overwrites {@link #identifierCacheEnabled()} to enable the sequence
  * identifier cache.
  *

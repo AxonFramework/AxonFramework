@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.processors.EventProcessingException;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 
 /**
  * Singleton ErrorHandler implementation that does not do anything.
