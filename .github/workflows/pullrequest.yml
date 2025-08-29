@@ -107,6 +107,13 @@ jobs:
           TESTCONTAINERS_CHECKS_DISABLE: true
           TESTCONTAINERS_RYUK_DISABLED: true
 
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.module }}
+          path: "**/target/surefire-reports/TEST-*.xml"
+        if: always()
+
   integration-tests:
     name: Integration (Cross-Module) Tests
     needs: compile
@@ -144,6 +151,13 @@ jobs:
           TESTCONTAINERS_CHECKS_DISABLE: true
           TESTCONTAINERS_RYUK_DISABLED: true
 
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.module }}
+          path: "**/target/surefire-reports/TEST-*.xml"
+        if: always()
+
   sonar:
     name: Sonar Analysis
     needs: [compile, test, integration-tests]
@@ -170,6 +184,13 @@ jobs:
             **/target
           key: ${{ needs.compile.outputs.cache-key }}
 
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-results-*
+          path: test-results
+          merge-multiple: true
+
       - name: Sonar Analysis
         if: success()
         run: |
@@ -184,6 +205,6 @@ jobs:
       - name: Create test summary
         uses: test-summary/action@v2
         with:
-          paths: "**/target/surefire-reports/TEST-*.xml"
+          paths: "test-results/TEST-*.xml"
           show: "fail, skip"
         if: always()
