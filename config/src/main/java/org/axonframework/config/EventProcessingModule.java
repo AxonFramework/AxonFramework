@@ -35,8 +35,8 @@ import org.axonframework.eventhandling.processors.errorhandling.PropagatingError
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorConfiguration;

@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;

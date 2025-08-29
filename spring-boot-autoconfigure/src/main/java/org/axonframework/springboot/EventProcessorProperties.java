@@ -117,7 +117,7 @@ public class EventProcessorProperties {
 
         /**
          * The name of the bean that represents the sequencing policy for processing events. If no name is specified,
-         * the processor defaults to a {@link org.axonframework.eventhandling.async.SequentialPerAggregatePolicy}, which
+         * the processor defaults to a {@link org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy}, which
          * guarantees to process events originating from the same Aggregate instance sequentially, while events from
          * different Aggregate instances may be processed concurrently.
          */
@@ -283,10 +283,10 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Returns the name of the bean that defines the {@link org.axonframework.eventhandling.async.SequencingPolicy}
+         * Returns the name of the bean that defines the {@link org.axonframework.eventhandling.sequencing.SequencingPolicy}
          * for this processor.
          *
-         * @return the name of the bean that defines the {@link org.axonframework.eventhandling.async.SequencingPolicy}
+         * @return the name of the bean that defines the {@link org.axonframework.eventhandling.sequencing.SequencingPolicy}
          * for this processor.
          */
         public String getSequencingPolicy() {
@@ -294,13 +294,13 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Sets the name of the bean that defines the {@link org.axonframework.eventhandling.async.SequencingPolicy} for
+         * Sets the name of the bean that defines the {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} for
          * this processor. The {@code SequencingPolicy} describes which Events must be handled sequentially, and which
          * can be handled concurrently. Defaults to a
-         * {@link org.axonframework.eventhandling.async.SequentialPerAggregatePolicy}.
+         * {@link org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy}.
          *
          * @param sequencingPolicy the name of the bean that defines the
-         *                         {@link org.axonframework.eventhandling.async.SequencingPolicy} for this processor.
+         *                         {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} for this processor.
          */
         public void setSequencingPolicy(String sequencingPolicy) {
             this.sequencingPolicy = sequencingPolicy;

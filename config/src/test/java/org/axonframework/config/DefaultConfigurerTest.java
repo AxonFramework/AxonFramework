@@ -36,7 +36,7 @@ import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
+import org.axonframework.eventhandling.sequencing.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventsourcing.AggregateSnapshotter;

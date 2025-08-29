@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;

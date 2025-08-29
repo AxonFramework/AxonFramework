@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.async.SequentialPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;

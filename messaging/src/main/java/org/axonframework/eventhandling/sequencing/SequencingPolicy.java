@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.async;
+package org.axonframework.eventhandling.sequencing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;

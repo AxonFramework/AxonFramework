@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;

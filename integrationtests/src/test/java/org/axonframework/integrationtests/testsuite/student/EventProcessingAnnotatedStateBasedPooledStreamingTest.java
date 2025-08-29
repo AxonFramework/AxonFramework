@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.testsuite.student;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.async.SequentialPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
