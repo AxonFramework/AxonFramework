@@ -45,10 +45,7 @@ jobs:
         with:
           path: |
             ~/.m2/repository
-            **/target/classes
-            **/target/test-classes
-            **/target/generated-sources
-            **/target/*.jar
+            **/target
           key: ${{ steps.cache-key.outputs.key }}
 
       - name: Compile and Install All Modules
@@ -99,10 +96,7 @@ jobs:
         with:
           path: |
             ~/.m2/repository
-            **/target/classes
-            **/target/test-classes
-            **/target/generated-sources
-            **/target/*.jar
+            **/target
           key: ${{ needs.compile.outputs.cache-key }}
 
       - name: Run Tests
@@ -139,10 +133,7 @@ jobs:
         with:
           path: |
             ~/.m2/repository
-            **/target/classes
-            **/target/test-classes
-            **/target/generated-sources
-            **/target/*.jar
+            **/target
           key: ${{ needs.compile.outputs.cache-key }}
 
       - name: Run Integration Tests
@@ -205,10 +196,7 @@ jobs:
         with:
           path: |
             ~/.m2/repository
-            **/target/classes
-            **/target/test-classes
-            **/target/generated-sources
-            **/target/*.jar
+            **/target
           key: ${{ needs.compile.outputs.cache-key }}
 
       - name: Create test summary
