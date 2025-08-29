@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.pooled;
+package org.axonframework.eventhandling.processors.pooled;
 
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.TrackingToken;

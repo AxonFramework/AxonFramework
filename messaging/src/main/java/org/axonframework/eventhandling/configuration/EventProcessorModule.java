@@ -19,12 +19,12 @@ package org.axonframework.eventhandling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.Module;
-import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorConfiguration;
-import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorsConfigurer;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
-import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorConfiguration;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorsConfigurer;
+import org.axonframework.eventhandling.processors.pooled.PooledStreamingEventProcessorConfiguration;
+import org.axonframework.eventhandling.processors.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.eventhandling.processors.pooled.PooledStreamingEventProcessorsConfigurer;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorModule;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;

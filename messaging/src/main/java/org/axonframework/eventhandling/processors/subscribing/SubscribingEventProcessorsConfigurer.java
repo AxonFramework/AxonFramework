@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.pooled;
+package org.axonframework.eventhandling.processors.subscribing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
@@ -24,9 +24,7 @@ import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,24 +35,20 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
- * A configurer for managing multiple {@link PooledStreamingEventProcessor} instances within an
- * application.
+ * A configurer for managing multiple {@link SubscribingEventProcessor} instances within an application.
  * <p>
- * The {@code PooledStreamingEventProcessorsModule} provides a centralized way to configure and register multiple pooled
- * streaming event processors. It acts as a container that manages individual
- * {@link PooledStreamingEventProcessorModule} instances, allowing you to set shared defaults that apply to all
- * processors while enabling processor-specific customizations.
+ * The {@code SubscribingEventProcessorsConfigurer} provides a centralized way to configure and register multiple
+ * subscribing event processors. It acts as a container that manages individual {@link SubscribingEventProcessorModule}
+ * instances, allowing you to set shared defaults that apply to all processors while enabling processor-specific
+ * customizations.
  * <p>
  * The main purpose is to simplify the configuration of multiple event processors by providing shared configuration
- * capabilities such as default {@link org.axonframework.eventhandling.tokenstore.TokenStore},
- * {@link org.axonframework.eventstreaming.StreamableEventSource}, and processor settings that apply to all processors
+ * capabilities such as default {@link SubscribableMessageSource}, and processor settings that apply to all processors
  * unless explicitly overridden.
  * <p>
  * The configurer automatically configures default components:
  * <ul>
- * <li>Registers an {@link org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore} if no
- * {@link TokenStore} is present</li>
- * <li>Automatically wires available {@link TokenStore} and {@link StreamableEventSource} components to all processors</li>
+ * <li>Automatically wires available {@link SubscribableMessageSource} components to all processors</li>
  * <li>Applies shared customizations through the {@link #defaults(BiFunction)} and {@link #defaults(UnaryOperator)} methods</li>
  * </ul>
  * <p>
@@ -64,46 +58,42 @@ import java.util.function.UnaryOperator;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class PooledStreamingEventProcessorsConfigurer {
+public class SubscribingEventProcessorsConfigurer {
 
     private final EventProcessingConfigurer parent;
-
-    private PooledStreamingEventProcessorModule.Customization processorsDefaultCustomization = PooledStreamingEventProcessorModule.Customization.noOp();
-    private final List<ModuleBuilder<PooledStreamingEventProcessorModule>> moduleBuilders = new ArrayList<>();
+    private SubscribingEventProcessorModule.Customization processorsDefaultCustomization = SubscribingEventProcessorModule.Customization.noOp();
+    private final List<ModuleBuilder<SubscribingEventProcessorModule>> moduleBuilders = new ArrayList<>();
 
     /**
-     * Constructs a new pooled streaming event processors configurer.
+     * Constructs a new subscribing event processors configurer.
      * <p>
      * This constructor is marked as {@link Internal} because the configurer is typically created and managed by the
      * {@link EventProcessingConfigurer}. Users should not instantiate this class directly but instead access it through
-     * {@link EventProcessingConfigurer#pooledStreaming(UnaryOperator)}.
+     * {@link EventProcessingConfigurer#subscribing(UnaryOperator)}.
      *
      * @param parent The parent {@link EventProcessingConfigurer} that manages this configurer.
      */
     @Internal
-    public PooledStreamingEventProcessorsConfigurer(@Nonnull EventProcessingConfigurer parent) {
+    public SubscribingEventProcessorsConfigurer(@Nonnull EventProcessingConfigurer parent) {
         this.parent = parent;
     }
 
     /**
-     * Builds and registers all configured pooled streaming event processors.
+     * Builds and registers all configured subscribing event processors.
      * <p>
      * This method is typically called automatically by the framework during configuration building. It registers
      * default components and all configured processor modules.
      */
     @Internal
     public void build() {
-        componentRegistry(cr -> cr.registerIfNotPresent(TokenStore.class, cfg -> new InMemoryTokenStore()));
         componentRegistry(
                 cr -> cr.registerComponent(
-                        PooledStreamingEventProcessorModule.Customization.class,
+                        SubscribingEventProcessorModule.Customization.class,
                         cfg ->
-                                PooledStreamingEventProcessorModule.Customization.noOp().andThen(
+                                SubscribingEventProcessorModule.Customization.noOp().andThen(
                                         (axonConfig, processorConfig) -> {
-                                            cfg.getOptionalComponent(TokenStore.class)
-                                               .ifPresent(processorConfig::tokenStore);
-                                            cfg.getOptionalComponent(StreamableEventSource.class)
-                                               .ifPresent(processorConfig::eventSource);
+                                            cfg.getOptionalComponent(SubscribableMessageSource.class)
+                                               .ifPresent(processorConfig::messageSource);
                                             return processorConfig;
                                         }).andThen(processorsDefaultCustomization)
                 )
@@ -116,47 +106,47 @@ public class PooledStreamingEventProcessorsConfigurer {
     }
 
     /**
-     * Configures default settings that will be applied to all {@link PooledStreamingEventProcessor} instances managed
-     * by this configurer.
+     * Configures default settings that will be applied to all
+     * {@link SubscribingEventProcessor} instances managed by this configurer.
      * <p>
-     * This method allows you to specify configurations that should be shared across all pooled streaming event
-     * processors. The provided function receives both the Axon {@link Configuration} and the processor configuration,
-     * allowing access to application-wide components when setting defaults.
+     * This method allows you to specify configurations that should be shared across all subscribing event processors.
+     * The provided function receives both the Axon {@link Configuration} and the processor configuration, allowing
+     * access to application-wide components when setting defaults.
      * <p>
-     * Common use cases include setting default buffer sizes, segment counts, thread pool configurations, or error
-     * handling policies that should apply to all processors unless explicitly overridden.
+     * Common use cases include setting default error handling policies, message interceptors, or processing
+     * configurations that should apply to all processors unless explicitly overridden.
      *
      * @param configureDefaults A function that receives the Axon configuration and processor configuration, returning a
-     *                          modified {@link PooledStreamingEventProcessorConfiguration} with the desired defaults
+     *                          modified {@link SubscribingEventProcessorConfiguration} with the desired defaults
      *                          applied.
      * @return This configurer instance for method chaining.
      */
     @Nonnull
-    public PooledStreamingEventProcessorsConfigurer defaults(
-            @Nonnull BiFunction<Configuration, PooledStreamingEventProcessorConfiguration, PooledStreamingEventProcessorConfiguration> configureDefaults
+    public SubscribingEventProcessorsConfigurer defaults(
+            @Nonnull BiFunction<Configuration, SubscribingEventProcessorConfiguration, SubscribingEventProcessorConfiguration> configureDefaults
     ) {
-        Objects.requireNonNull(configureDefaults, "configureDefaults must not be null");
+        Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(configureDefaults::apply);
         return this;
     }
 
     /**
-     * Configures default settings that will be applied to all {@link PooledStreamingEventProcessor} instances managed
-     * by this configurer.
+     * Configures default settings that will be applied to all
+     * {@link SubscribingEventProcessor} instances managed by this configurer.
      * <p>
      * This is a simplified version of {@link #defaults(BiFunction)} that provides only the processor configuration for
      * modification, without access to the Axon {@link Configuration}. Use this when your default configurations don't
      * require components from the application configuration.
      *
-     * @param configureDefaults A function that modifies the {@link PooledStreamingEventProcessorConfiguration} with
-     *                          desired defaults.
+     * @param configureDefaults A function that modifies the {@link SubscribingEventProcessorConfiguration} with desired
+     *                          defaults.
      * @return This configurer instance for method chaining.
      */
     @Nonnull
-    public PooledStreamingEventProcessorsConfigurer defaults(
-            @Nonnull UnaryOperator<PooledStreamingEventProcessorConfiguration> configureDefaults
+    public SubscribingEventProcessorsConfigurer defaults(
+            @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> configureDefaults
     ) {
-        Objects.requireNonNull(configureDefaults, "configureDefaults must not be null");
+        Objects.requireNonNull(configureDefaults, "configureDefaults may not be null");
         this.processorsDefaultCustomization = this.processorsDefaultCustomization.andThen(
                 (axonConfig, pConfig) -> configureDefaults.apply(pConfig)
         );
@@ -164,20 +154,20 @@ public class PooledStreamingEventProcessorsConfigurer {
     }
 
     /**
-     * Registers a pooled streaming event processor with the specified name and event handling components. The processor
-     * will use the default pooled streaming event processor configuration.
+     * Registers a subscribing event processor with the specified name and event handling components. The processor will
+     * use the default subscribing event processor configuration.
      *
      * @param name                           The unique name for the processor.
      * @param eventHandlingComponentsBuilder Function to configure the event handling components.
      * @return This configurer instance for method chaining.
      */
     @Nonnull
-    public PooledStreamingEventProcessorsConfigurer defaultProcessor(
+    public SubscribingEventProcessorsConfigurer defaultProcessor(
             @Nonnull String name,
             @Nonnull Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> eventHandlingComponentsBuilder
     ) {
         processor(
-                () -> EventProcessorModule.pooledStreaming(name)
+                () -> EventProcessorModule.subscribing(name)
                                           .eventHandlingComponents(eventHandlingComponentsBuilder)
                                           .notCustomized()
                                           .build()
@@ -186,32 +176,32 @@ public class PooledStreamingEventProcessorsConfigurer {
     }
 
     /**
-     * Registers a pooled streaming event processor with custom module configuration.
+     * Registers a subscribing event processor with a custom module configuration.
      *
      * @param name             The unique name for the processor.
      * @param moduleCustomizer Function to customize the processor module configuration.
      * @return This configurer instance for method chaining.
      */
     @Nonnull
-    public PooledStreamingEventProcessorsConfigurer processor(
+    public SubscribingEventProcessorsConfigurer processor(
             @Nonnull String name,
-            @Nonnull Function<EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>, PooledStreamingEventProcessorModule> moduleCustomizer
+            @Nonnull Function<EventProcessorModule.EventHandlingPhase<SubscribingEventProcessorModule, SubscribingEventProcessorConfiguration>, SubscribingEventProcessorModule> moduleCustomizer
     ) {
         processor(
-                () -> moduleCustomizer.apply(EventProcessorModule.pooledStreaming(name)).build()
+                () -> moduleCustomizer.apply(EventProcessorModule.subscribing(name)).build()
         );
         return this;
     }
 
     /**
-     * Registers a {@link PooledStreamingEventProcessorModule} using a {@link ModuleBuilder}.
+     * Registers a {@link SubscribingEventProcessorModule} using a {@link ModuleBuilder}.
      *
-     * @param moduleBuilder A builder that creates a {@link PooledStreamingEventProcessorModule} instance.
-     * @return This module instance for method chaining.
+     * @param moduleBuilder A builder that creates a {@link SubscribingEventProcessorModule} instance.
+     * @return This configurer instance for method chaining.
      */
     @Nonnull
-    public PooledStreamingEventProcessorsConfigurer processor(
-            @Nonnull ModuleBuilder<PooledStreamingEventProcessorModule> moduleBuilder
+    public SubscribingEventProcessorsConfigurer processor(
+            @Nonnull ModuleBuilder<SubscribingEventProcessorModule> moduleBuilder
     ) {
         Objects.requireNonNull(moduleBuilder, "moduleBuilder may not be null");
         moduleBuilders.add(moduleBuilder);
@@ -225,9 +215,7 @@ public class PooledStreamingEventProcessorsConfigurer {
      * @return This configurer instance for method chaining.
      */
     @Nonnull
-    public PooledStreamingEventProcessorsConfigurer componentRegistry(
-            @Nonnull Consumer<ComponentRegistry> registryAction
-    ) {
+    public SubscribingEventProcessorsConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
         Objects.requireNonNull(registryAction, "registryAction may not be null");
         parent.componentRegistry(registryAction);
         return this;

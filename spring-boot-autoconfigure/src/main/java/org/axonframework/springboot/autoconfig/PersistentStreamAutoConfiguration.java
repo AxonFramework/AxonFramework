@@ -26,7 +26,7 @@ import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessage
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfigurer;
-import org.axonframework.eventhandling.subscribing.SubscribingEventProcessor;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.axonframework.springboot.util.ConditionalOnQualifiedBean;

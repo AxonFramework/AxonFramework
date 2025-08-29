@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
@@ -46,7 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * An in-memory implementation of {@link StreamableEventSource} designed for testing purposes, particularly with the
- * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+ * {@link PooledStreamingEventProcessor}.
  * <p>
  * This implementation provides similar functionality to {@link InMemoryStreamableEventSource} but is adapted to work
  * with the {@link MessageStream} API used by the pooled processor. It supports event publishing, ignored event

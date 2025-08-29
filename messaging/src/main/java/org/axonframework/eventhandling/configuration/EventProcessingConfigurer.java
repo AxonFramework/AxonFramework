@@ -22,9 +22,10 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorsConfigurer;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
-import org.axonframework.eventhandling.subscribing.SubscribingEventProcessor;
+import org.axonframework.eventhandling.processors.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorsConfigurer;
+import org.axonframework.eventhandling.processors.pooled.PooledStreamingEventProcessorsConfigurer;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
@@ -37,13 +38,13 @@ import java.util.function.UnaryOperator;
  * A configuration module for event processing that provides a unified way to configure and manage both
  * {@link org.axonframework.eventhandling.EventProcessor} types:
  * <ul>
- * <li>{@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}</li>
+ * <li>{@link PooledStreamingEventProcessor}</li>
  * <li>{@link SubscribingEventProcessor}</li>
  * </ul>
  * <p>
  * The {@code EventProcessingConfigurer} acts as a composite module that delegates event {@link EventProcessorConfiguration} to
  * specialized sub-modules: {@link PooledStreamingEventProcessorsConfigurer} for
- * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor PooledStreamingEventProcessor}
+ * {@link PooledStreamingEventProcessor PooledStreamingEventProcessor}
  * instances and {@link SubscribingEventProcessorsConfigurer} for
  * {@link SubscribingEventProcessor SubscribingEventProcessor} instances.
  * <p>
@@ -159,12 +160,12 @@ public class EventProcessingConfigurer {
     }
 
     /**
-     * Provides access to configure {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}
+     * Provides access to configure {@link PooledStreamingEventProcessor}
      * instances through the {@link PooledStreamingEventProcessorsConfigurer}.
      * <p>
      * Use this method to define specific pooled streaming event processors, set their configurations, and register
      * event handling components. The provided function receives the module for
-     * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}s and can register individual
+     * {@link PooledStreamingEventProcessor}s and can register individual
      * processors or configure module-wide settings.
      *
      * @param processorsModuleTask A function that configures the {@link PooledStreamingEventProcessorsConfigurer}.

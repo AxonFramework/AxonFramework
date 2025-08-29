@@ -16,7 +16,8 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.eventhandling.subscribing.SubscribingEventProcessor;
+import org.axonframework.eventhandling.processors.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -57,7 +58,7 @@ public class EventProcessorProperties {
          */
         SUBSCRIBING,
         /**
-         * Indicates a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor} should be used.
+         * Indicates a {@link PooledStreamingEventProcessor} should be used.
          */
         POOLED
     }
@@ -81,7 +82,7 @@ public class EventProcessorProperties {
 
         /**
          * Indicates the number of segments that should be created when the processor starts for the first time.
-         * Defaults to 16 for a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * Defaults to 16 for a {@link PooledStreamingEventProcessor}.
          */
         private Integer initialSegmentCount = null;
 
@@ -103,7 +104,7 @@ public class EventProcessorProperties {
         /**
          * The maximum number of threads the processor should process events with. Defaults to the number of initial
          * segments if this is not further specified. Defaults to 4 for a
-         * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * {@link PooledStreamingEventProcessor}.
          */
         private int threadCount = -1;
 
@@ -165,7 +166,7 @@ public class EventProcessorProperties {
 
         /**
          * Returns the number of initial segments that should be created, if no segments are already present. Defaults
-         * to 16 for a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * to 16 for a {@link PooledStreamingEventProcessor}.
          * <p>
          * If the {@link #threadCount} is not further specified, the initial segment count will be used for this too.
          *
@@ -177,7 +178,7 @@ public class EventProcessorProperties {
 
         /**
          * Sets the number of initial segments that should be created, if no segments are already present. Defaults to 16
-         * for a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * for a {@link PooledStreamingEventProcessor}.
          * <p>
          * If the {@link #threadCount} is not further specified, the initial segment count will be used for this too.
          *
@@ -232,7 +233,7 @@ public class EventProcessorProperties {
          * Returns the number of threads to use to process Events, when using a
          * {@link org.axonframework.eventhandling.StreamingEventProcessor} implementation. Defaults to the configured
          * number of initial segments. If this field is not configured, the thread count defaults to 4 for a
-         * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * {@link PooledStreamingEventProcessor}.
          *
          * @return the number of threads to use to process Events.
          */
@@ -248,7 +249,7 @@ public class EventProcessorProperties {
          * Sets the number of threads to use to process Events, when using a
          * {@link org.axonframework.eventhandling.StreamingEventProcessor} implementation. Defaults to the configured
          * number of initial segments. If this field is not configured, the thread count defaults to 4 for a
-         * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * {@link PooledStreamingEventProcessor}.
          * <p>
          * A provided {@code threadCount} < 0 will result in a number of threads equal to the configured number of
          * {@link #setInitialSegmentCount(Integer)}  initial segments.

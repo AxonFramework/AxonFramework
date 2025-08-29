@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.processors.pooled.PooledStreamingEventProcessor;
 
 /**
  * Interface of the error handler that will be invoked if event processing fails. The error handler is generally invoked
@@ -32,7 +33,7 @@ public interface ErrorHandler {
      * a serious error, for instance when the database transaction connected to the UnitOfWork can not be committed.
      * <p>
      * The error handler has the option to simply log or ignore the error. Depending on the type of EventProcessor this
-     * will put an end to the processing of any further events (in case of a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}) or simply
+     * will put an end to the processing of any further events (in case of a {@link PooledStreamingEventProcessor}) or simply
      * skip over the list of given {@code failedEvents}.
      * <p>
      * Note that although the UnitOfWork and hence any related database transactions have been rolled back when the

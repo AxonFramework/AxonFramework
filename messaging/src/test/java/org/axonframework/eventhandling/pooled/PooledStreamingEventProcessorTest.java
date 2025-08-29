@@ -28,6 +28,8 @@ import org.axonframework.eventhandling.RecordingEventHandlingComponent;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.EmptyApplicationContext;

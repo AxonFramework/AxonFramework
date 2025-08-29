@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.subscribing;
+package org.axonframework.eventhandling.processors.subscribing;
 
 import java.util.List;
 import java.util.function.Consumer;
