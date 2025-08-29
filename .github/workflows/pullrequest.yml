@@ -181,24 +181,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  test-summary:
-    name: Test Summary
-    needs: [compile, test, integration-tests]
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Restore compiled artifacts
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.m2/repository
-            **/target
-          key: ${{ needs.compile.outputs.cache-key }}
-
       - name: Create test summary
         uses: test-summary/action@v2
         with:
