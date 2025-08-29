@@ -205,6 +205,6 @@ jobs:
       - name: Create test summary
         uses: test-summary/action@v2
         with:
-          paths: "test-results/TEST-*.xml"
+          paths: "test-results/**/TEST-*.xml"
           show: "fail, skip"
         if: always()
