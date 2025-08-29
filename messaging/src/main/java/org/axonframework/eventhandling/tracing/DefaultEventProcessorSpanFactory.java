@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-    package org.axonframework.eventhandling.processors.tracing;
+    package org.axonframework.eventhandling.tracing;
 
     import org.axonframework.common.BuilderUtils;
     import org.axonframework.eventhandling.EventMessage;

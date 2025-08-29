@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.processors.errorhandling;
 
 import java.util.List;
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.EventMessage;
 
 /**
  * Describes the context of an error.

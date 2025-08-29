@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.tracing;
 
-import org.axonframework.eventhandling.processors.tracing.DefaultEventProcessorSpanFactory;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.tracing.IntermediateSpanFactoryTest;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.TestSpanFactory;

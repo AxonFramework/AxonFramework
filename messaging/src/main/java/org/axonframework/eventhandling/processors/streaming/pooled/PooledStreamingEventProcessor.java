@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.eventhandling.ErrorContext;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.EventProcessingException;

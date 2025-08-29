@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
+import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;

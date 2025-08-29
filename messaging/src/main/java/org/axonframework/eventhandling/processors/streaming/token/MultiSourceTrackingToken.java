@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.common.Assert;
-import org.axonframework.eventhandling.MultiStreamableMessageSource;
+import org.axonframework.eventhandling.processors.streaming.MultiStreamableMessageSource;
 
 import java.beans.ConstructorProperties;
 import java.util.HashMap;

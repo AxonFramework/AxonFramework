@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.monitoring;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.DelegatingEventHandlingComponent;
+import org.axonframework.eventhandling.EventHandlingComponent;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;

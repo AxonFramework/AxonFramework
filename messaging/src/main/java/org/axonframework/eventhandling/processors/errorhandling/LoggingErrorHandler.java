@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.processors.errorhandling;
 
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +34,7 @@ public class LoggingErrorHandler implements ListenerInvocationErrorHandler {
     private final Logger logger;
 
     /**
-     * Initialize the LoggingErrorHandler using the logger for "org.axonframework.eventhandling.LoggingErrorHandler".
+     * Initialize the LoggingErrorHandler using the logger for "org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler".
      */
     public LoggingErrorHandler() {
         this(LoggerFactory.getLogger(LoggingErrorHandler.class));

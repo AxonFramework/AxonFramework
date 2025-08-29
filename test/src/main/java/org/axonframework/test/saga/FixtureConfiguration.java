@@ -21,7 +21,8 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -189,7 +190,7 @@ public interface FixtureConfiguration {
     /**
      * Registers a {@link ListenerInvocationErrorHandler} to be set for the Saga to deal with exceptions being thrown from within Saga Event Handlers. Will be
      * given to the {@link org.axonframework.modelling.saga.AnnotatedSagaManager} for the defined Saga type. Defaults to a {@link
-     * org.axonframework.eventhandling.LoggingErrorHandler} wrapped inside a {@link RecordingListenerInvocationErrorHandler}.
+     * LoggingErrorHandler} wrapped inside a {@link RecordingListenerInvocationErrorHandler}.
      *
      * @param listenerInvocationErrorHandler to be set for the Saga to deal with exceptions being thrown from within Saga Event Handlers
      * @return the current FixtureConfiguration, for fluent interfacing

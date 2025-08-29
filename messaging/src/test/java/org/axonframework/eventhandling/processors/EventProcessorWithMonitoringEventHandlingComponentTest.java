@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.processors;
 
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
+import org.axonframework.eventhandling.monitoring.MonitoringEventHandlingComponent;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;

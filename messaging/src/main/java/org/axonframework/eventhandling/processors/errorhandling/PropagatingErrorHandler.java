@@ -17,10 +17,8 @@
 package org.axonframework.eventhandling.processors.errorhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.processors.EventProcessingException;
 
 /**

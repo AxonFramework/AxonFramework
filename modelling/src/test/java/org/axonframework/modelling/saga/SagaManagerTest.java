@@ -18,7 +18,7 @@ package org.axonframework.modelling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ResultMessage;

@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
 import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageStream;

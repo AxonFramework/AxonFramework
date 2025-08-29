@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.processors.errorhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 
 /**

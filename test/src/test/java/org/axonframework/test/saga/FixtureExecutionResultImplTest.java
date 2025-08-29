@@ -22,7 +22,7 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
