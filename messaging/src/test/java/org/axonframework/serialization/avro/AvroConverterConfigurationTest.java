@@ -48,7 +48,7 @@ public class AvroConverterConfigurationTest {
 
     @Test
     void testConfigurationMandatoryValues() {
-        assertEquals("Schema store is mandatory",
+        assertEquals("Schema store cannot be null",
                      assertThrows(NullPointerException.class,
                                   () -> new AvroConverterConfiguration(null)
                      )
