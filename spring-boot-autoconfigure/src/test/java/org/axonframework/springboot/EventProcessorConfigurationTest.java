@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.sequencing.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;

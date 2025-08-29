@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.eventhandling;
 
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 
 import java.util.List;

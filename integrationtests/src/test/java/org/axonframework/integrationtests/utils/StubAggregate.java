@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.utils;
 
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;

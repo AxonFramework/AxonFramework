@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
-
-import org.axonframework.eventhandling.annotation.EventHandler;
+package org.axonframework.eventhandling.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

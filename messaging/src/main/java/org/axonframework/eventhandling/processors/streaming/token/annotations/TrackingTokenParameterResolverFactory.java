@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.processors.streaming.token;
+package org.axonframework.eventhandling.processors.streaming.token.annotations;
 
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.WrappedToken;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;

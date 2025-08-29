@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.testsuite.student;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.annotation;
+package org.axonframework.eventhandling.annotations;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandler;
@@ -41,7 +41,7 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Adapter that turns any {@link org.axonframework.eventhandling.annotation.EventHandler} annotated bean into a
+ * Adapter that turns any {@link org.axonframework.eventhandling.annotations.EventHandler} annotated bean into a
  * {@link MessageHandler} implementation. Each annotated method is subscribed as Event Handler at the
  * {@link org.axonframework.eventhandling.EventSink} for the event type specified by the parameter of that method.
  *
@@ -60,7 +60,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler    The object containing the
-     *                                 {@link org.axonframework.eventhandling.annotation.EventHandler} annotated
+     *                                 {@link org.axonframework.eventhandling.annotations.EventHandler} annotated
      *                                 methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      */
@@ -80,7 +80,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler    The object containing the
-     *                                 {@link org.axonframework.eventhandling.annotation.EventHandler} annotated
+     *                                 {@link org.axonframework.eventhandling.annotations.EventHandler} annotated
      *                                 methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      * @param delegate                 The delegate event handling component to which the handlers will be subscribed.
@@ -101,7 +101,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler    The object containing the
-     *                                 {@link org.axonframework.eventhandling.annotation.EventHandler} annotated
+     *                                 {@link org.axonframework.eventhandling.annotations.EventHandler} annotated
      *                                 methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      * @param handlerDefinition        The handler definition used to create concrete handlers.
@@ -126,7 +126,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler The object containing the
-     *                              {@link org.axonframework.eventhandling.annotation.EventHandler} annotated methods.
+     *                              {@link org.axonframework.eventhandling.annotations.EventHandler} annotated methods.
      * @param delegate              The delegate event handling component to which the handlers will be subscribed.
      * @param model                 The inspector to use to find the annotated handlers on the annotatedEventHandler.
      */

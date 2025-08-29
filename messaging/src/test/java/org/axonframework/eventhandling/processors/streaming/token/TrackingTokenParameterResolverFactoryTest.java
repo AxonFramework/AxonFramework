@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.processors.streaming.token;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
+import org.axonframework.eventhandling.processors.streaming.token.annotations.TrackingTokenParameterResolverFactory;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.ParameterResolver;
