@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.tokenstore.inmemory;
 
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.junit.jupiter.api.*;

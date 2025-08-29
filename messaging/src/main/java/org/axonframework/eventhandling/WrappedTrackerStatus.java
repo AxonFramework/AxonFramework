@@ -18,7 +18,7 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.processors.streaming.segmenting.EventTrackerStatus;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
 
 import java.util.Objects;
 import java.util.OptionalLong;

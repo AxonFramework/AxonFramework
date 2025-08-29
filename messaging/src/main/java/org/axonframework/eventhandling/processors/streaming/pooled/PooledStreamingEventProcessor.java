@@ -32,7 +32,7 @@ import org.axonframework.eventhandling.ResetNotSupportedException;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;

@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.tokenstore;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
 
 import java.beans.ConstructorProperties;
 import java.util.Map;

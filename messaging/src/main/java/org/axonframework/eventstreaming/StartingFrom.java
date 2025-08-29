@@ -18,7 +18,7 @@ package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
 
 /**
  * An implementation of the {@link StreamingCondition} that will start

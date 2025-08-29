@@ -18,9 +18,9 @@ package org.axonframework.utils;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.MessageStream;
 import org.junit.jupiter.api.*;

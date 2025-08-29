@@ -17,7 +17,7 @@
 package org.axonframework.springboot;
 
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;

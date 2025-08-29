@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.stream.BlockingStream;
-import org.axonframework.eventhandling.processors.streaming.token.MultiSourceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.MultiSourceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

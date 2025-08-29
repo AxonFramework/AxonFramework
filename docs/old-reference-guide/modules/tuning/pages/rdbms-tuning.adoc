@@ -143,9 +143,9 @@ Axon Framework uses the `@Lob` in several columns and tables for its JPA-based s
 
 * The `payload` and `meta_data` columns in the `domain_event_entry` table.
 * The `payload` and `meta_data` columns in the `snapshot_event_entry` table.
-* The `token` column in the `token_entry` table.
+* The `tokens` column in the `token_entry` table.
 * The `serialized_saga` column in the `saga_entry` table.
-* The `diagnostics`, `payload`, `metadata`, and `token` column in the `dead_letter_entry` table.
+* The `diagnostics`, `payload`, `metadata`, and `tokens` column in the `dead_letter_entry` table.
 
 Furthermore, Hibernate will by default use the aforementioned `OID` type whenever an `@Lob` annotation is found.
 Thus, the dedicate large object storage solution will be used if you are using PostgreSQL to store events, snapshots, tokens, sagas, and dead letters.
@@ -214,7 +214,7 @@ jpa.database-platform=fully.qualified.classname.ByteaEnforcedPostgresSQLDialect
 We use the Hibernate metadata override mechanism to tell which columns need to be of the BYTEA type instead of OID.
 To that end, add a file named `orm.xml` (ORM stands for object-relational mapping) under `src/main/java/resources/META-INF` directory containing the overrides.
 
-Below is an example of overriding the `serializedSaga` and `token` columns from the `SagaEntry` and `TokenEntry` respectively:
+Below is an example of overriding the `serializedSaga` and `tokens` columns from the `SagaEntry` and `TokenEntry` respectively:
 
 [source,xml]
 ----

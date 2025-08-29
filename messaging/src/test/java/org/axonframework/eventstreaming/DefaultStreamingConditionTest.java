@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstreaming;
 
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.GlobalSequenceTrackingToken;
 import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
