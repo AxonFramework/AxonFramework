@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.annotations;
 
-import org.axonframework.eventhandling.annotations.SequenceNumber;
-import org.axonframework.eventhandling.annotations.SequenceNumberParameterResolverFactory;
-import org.axonframework.eventhandling.annotations.Timestamp;
-import org.axonframework.eventhandling.annotations.TimestampParameterResolverFactory;
 import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.junit.jupiter.api.Test;

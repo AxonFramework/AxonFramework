@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.annotations;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.eventhandling.annotations.ConcludesBatch;
-import org.axonframework.eventhandling.annotations.ConcludesBatchParameterResolverFactory;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;

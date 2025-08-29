@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.annotations;
 
 import org.axonframework.common.AxonException;
-import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
-import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.replay.annotations.ResetHandler;
 import org.axonframework.eventhandling.replay.annotations.AllowReplay;
 import org.axonframework.eventhandling.replay.annotations.DisallowReplay;
