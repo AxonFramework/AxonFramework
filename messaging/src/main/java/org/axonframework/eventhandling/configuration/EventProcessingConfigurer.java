@@ -22,8 +22,9 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
+import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
+import org.axonframework.eventhandling.subscribing.SubscribingEventProcessor;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
@@ -37,14 +38,14 @@ import java.util.function.UnaryOperator;
  * {@link org.axonframework.eventhandling.EventProcessor} types:
  * <ul>
  * <li>{@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}</li>
- * <li>{@link org.axonframework.eventhandling.SubscribingEventProcessor}</li>
+ * <li>{@link SubscribingEventProcessor}</li>
  * </ul>
  * <p>
  * The {@code EventProcessingConfigurer} acts as a composite module that delegates event {@link EventProcessorConfiguration} to
  * specialized sub-modules: {@link PooledStreamingEventProcessorsConfigurer} for
  * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor PooledStreamingEventProcessor}
  * instances and {@link SubscribingEventProcessorsConfigurer} for
- * {@link org.axonframework.eventhandling.SubscribingEventProcessor SubscribingEventProcessor} instances.
+ * {@link SubscribingEventProcessor SubscribingEventProcessor} instances.
  * <p>
  * The main purpose is to provide shared configuration capabilities for all event processor types, allowing you to set
  * default configurations like {@link org.axonframework.messaging.unitofwork.UnitOfWorkFactory} that apply to
@@ -178,12 +179,12 @@ public class EventProcessingConfigurer {
     }
 
     /**
-     * Provides access to configure {@link org.axonframework.eventhandling.SubscribingEventProcessor} instances through
+     * Provides access to configure {@link SubscribingEventProcessor} instances through
      * the {@link SubscribingEventProcessorsConfigurer}.
      * <p>
      * Use this method to define specific subscribing event processors, set their configurations, and register event
      * handling components. The provided function receives the module for
-     * {@link org.axonframework.eventhandling.SubscribingEventProcessor}s and can register individual processors or
+     * {@link SubscribingEventProcessor}s and can register individual processors or
      * configure module-wide settings.
      *
      * @param processorsModuleTask A function that configures the {@link SubscribingEventProcessorsConfigurer}.

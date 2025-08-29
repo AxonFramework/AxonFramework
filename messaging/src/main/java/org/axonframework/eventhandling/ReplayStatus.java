@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.subscribing.SubscribingEventProcessor;
+
 /**
  * Type that can be used as parameter of Event Handler methods that indicates whether a message is delivered as part of
  * a replay, or in regular operations. Messages delivered as part of a replay may have been handled by this handler

@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.async;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessingStrategy;
+import org.axonframework.eventhandling.subscribing.EventProcessingStrategy;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;

@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.subscribing.SubscribingEventProcessor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.subscribing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
@@ -24,7 +24,6 @@ import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.ArrayList;
@@ -108,7 +107,7 @@ public class SubscribingEventProcessorsConfigurer {
 
     /**
      * Configures default settings that will be applied to all
-     * {@link org.axonframework.eventhandling.SubscribingEventProcessor} instances managed by this configurer.
+     * {@link SubscribingEventProcessor} instances managed by this configurer.
      * <p>
      * This method allows you to specify configurations that should be shared across all subscribing event processors.
      * The provided function receives both the Axon {@link Configuration} and the processor configuration, allowing
@@ -133,7 +132,7 @@ public class SubscribingEventProcessorsConfigurer {
 
     /**
      * Configures default settings that will be applied to all
-     * {@link org.axonframework.eventhandling.SubscribingEventProcessor} instances managed by this configurer.
+     * {@link SubscribingEventProcessor} instances managed by this configurer.
      * <p>
      * This is a simplified version of {@link #defaults(BiFunction)} that provides only the processor configuration for
      * modification, without access to the Axon {@link Configuration}. Use this when your default configurations don't

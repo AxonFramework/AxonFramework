@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.eventhandling.subscribing.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -52,7 +53,7 @@ public class EventProcessorProperties {
      */
     public enum Mode {
         /**
-         * Indicates a {@link org.axonframework.eventhandling.SubscribingEventProcessor} should be used.
+         * Indicates a {@link SubscribingEventProcessor} should be used.
          */
         SUBSCRIBING,
         /**

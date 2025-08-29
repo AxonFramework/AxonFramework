@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.subscribing.DirectEventProcessingStrategy;
 import org.junit.jupiter.api.*;
 
 import java.util.List;

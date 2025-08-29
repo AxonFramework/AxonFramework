@@ -23,14 +23,12 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.SubscribingEventProcessorConfiguration;
+import org.axonframework.eventhandling.subscribing.SubscribingEventProcessor;
+import org.axonframework.eventhandling.subscribing.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 
