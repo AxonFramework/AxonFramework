@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.processors.streaming.segmenting;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.Context;
 
 import java.util.ArrayList;
@@ -167,7 +168,8 @@ public class Segment implements Comparable<Segment> {
      * @param segmentId The id of the segment
      * @param mask      The mask of the segment
      */
-    protected Segment(int segmentId, int mask) {
+    @Internal
+    public Segment(int segmentId, int mask) {
         Assert.isTrue(mask == 0 || mask + 1 == Integer.highestOneBit(mask + 1),
                       () -> "Invalid mask. It must end on a consecutive series of 1s");
         this.segmentId = segmentId;
