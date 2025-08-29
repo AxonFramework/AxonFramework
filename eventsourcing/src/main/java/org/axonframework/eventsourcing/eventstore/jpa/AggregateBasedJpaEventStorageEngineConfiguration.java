@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.eventhandling.processors.streaming.tokens.GapAwareTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 
 import java.util.List;

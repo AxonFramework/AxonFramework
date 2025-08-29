@@ -27,10 +27,10 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.processors.streaming.tokens.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.tokens.ReplayToken;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -24,8 +24,8 @@ import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 
 import java.util.ArrayList;
@@ -46,13 +46,13 @@ import java.util.function.UnaryOperator;
  * processors while enabling processor-specific customizations.
  * <p>
  * The main purpose is to simplify the configuration of multiple event processors by providing shared configuration
- * capabilities such as default {@link org.axonframework.eventhandling.tokenstore.TokenStore},
+ * capabilities such as default {@link TokenStore},
  * {@link org.axonframework.eventstreaming.StreamableEventSource}, and processor settings that apply to all processors
  * unless explicitly overridden.
  * <p>
  * The configurer automatically configures default components:
  * <ul>
- * <li>Registers an {@link org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore} if no
+ * <li>Registers an {@link InMemoryTokenStore} if no
  * {@link TokenStore} is present</li>
  * <li>Automatically wires available {@link TokenStore} and {@link StreamableEventSource} components to all processors</li>
  * <li>Applies shared customizations through the {@link #defaults(BiFunction)} and {@link #defaults(UnaryOperator)} methods</li>

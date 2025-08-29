@@ -30,7 +30,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.lifecycle.Phase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

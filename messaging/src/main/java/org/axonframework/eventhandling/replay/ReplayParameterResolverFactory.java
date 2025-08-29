@@ -19,7 +19,7 @@ package org.axonframework.eventhandling.replay;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.processors.streaming.tokens.ReplayToken;
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;

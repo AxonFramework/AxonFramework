@@ -35,7 +35,7 @@ import org.axonframework.eventhandling.processors.errorhandling.PropagatingError
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;

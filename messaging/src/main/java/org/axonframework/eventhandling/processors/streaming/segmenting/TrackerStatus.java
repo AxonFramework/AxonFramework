@@ -16,10 +16,10 @@
 
 package org.axonframework.eventhandling.processors.streaming.segmenting;
 
-import org.axonframework.eventhandling.processors.streaming.tokens.MergedTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.tokens.ReplayToken;
-import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
-import org.axonframework.eventhandling.processors.streaming.tokens.WrappedToken;
+import org.axonframework.eventhandling.processors.streaming.token.MergedTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.WrappedToken;
 
 import java.util.Objects;
 import java.util.OptionalLong;

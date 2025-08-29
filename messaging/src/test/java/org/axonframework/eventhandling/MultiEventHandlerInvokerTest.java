@@ -17,9 +17,9 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
-import org.axonframework.eventhandling.processors.streaming.tokens.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.tokens.ReplayToken;
-import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;

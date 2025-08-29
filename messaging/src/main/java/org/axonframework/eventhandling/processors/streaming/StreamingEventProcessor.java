@@ -20,8 +20,9 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.streaming.segmenting.EventTrackerStatus;
-import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.UnableToRetrieveIdentifierException;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 
 import java.util.Map;
@@ -54,7 +55,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * Returns the unique identifier of the {@link TokenStore} used by this {@link StreamingEventProcessor}.
      *
      * @return the unique identifier of the {@link TokenStore} used by this {@link StreamingEventProcessor}
-     * @throws org.axonframework.eventhandling.tokenstore.UnableToRetrieveIdentifierException if the {@link TokenStore}
+     * @throws UnableToRetrieveIdentifierException if the {@link TokenStore}
      *                                                                                        was unable to retrieve it
      */
     String getTokenStoreIdentifier();

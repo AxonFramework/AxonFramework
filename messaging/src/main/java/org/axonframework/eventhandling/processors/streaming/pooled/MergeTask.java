@@ -16,10 +16,10 @@
 
 package org.axonframework.eventhandling.processors.streaming.pooled;
 
-import org.axonframework.eventhandling.processors.streaming.tokens.MergedTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.MergedTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
-import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;

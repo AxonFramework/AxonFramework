@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.processors.streaming.segmenting;
 
-import org.axonframework.eventhandling.processors.streaming.tokens.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.junit.jupiter.api.*;
 
 import java.util.OptionalLong;

@@ -21,7 +21,7 @@ import io.axoniq.axonserver.grpc.control.EventProcessorInfo.SegmentStatus;
 import io.axoniq.axonserver.grpc.control.PlatformInboundInstruction;
 import org.axonframework.eventhandling.processors.streaming.segmenting.EventTrackerStatus;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 
 import java.util.List;

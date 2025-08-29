@@ -27,11 +27,11 @@ import org.axonframework.eventhandling.configuration.EventProcessorConfiguration
 import org.axonframework.eventhandling.processors.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
-import org.axonframework.eventhandling.processors.streaming.tokens.ReplayToken;
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
