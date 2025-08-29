@@ -70,11 +70,25 @@ class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> {
             return existingInstance;
         }
         synchronized (this) {
-            return instanceReference.updateAndGet(instance -> instance != null ? instance :
-                    decorator.decorate(configuration,
-                                       identifier().name(),
-                                       delegate.resolve(configuration))
-
+            return instanceReference.updateAndGet(
+                    instance -> {
+                        if (instance != null) {
+                            return instance;
+                        }
+                        Class<C> originalType = delegate.identifier().typeAsClass();
+                        D decorated = decorator.decorate(configuration,
+                                                         identifier().name(),
+                                                         delegate.resolve(configuration));
+                        if (originalType.isAssignableFrom(decorated.getClass())) {
+                            return decorated;
+                        }
+                        throw new ClassCastException(String.format(
+                                "Original component type [%s] is not assignable to decorated component type [%s]. "
+                                        + "Make sure decorators return matching components, as component retrieval otherwise fails!",
+                                originalType,
+                                decorated.getClass()
+                        ));
+                    }
             );
         }
     }
