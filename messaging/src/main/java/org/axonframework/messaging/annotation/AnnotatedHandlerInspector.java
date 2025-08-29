@@ -20,6 +20,8 @@ import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.util.ClasspathResolver;
+import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -213,6 +215,9 @@ public class AnnotatedHandlerInspector<T> {
         }
         if (result instanceof MessageStream<?> stream) {
             return stream;
+        }
+        if (ClasspathResolver.projectReactorOnClasspath() && result instanceof Mono<?> mono) {
+            return MessageStream.fromMono(mono.map(r -> new GenericMessage(new MessageType(r.getClass()), r)));
         }
         return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }

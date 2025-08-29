@@ -180,6 +180,41 @@ public interface MessageStream<M extends Message> {
 
     /**
      * Create a stream that returns a single {@link Entry entry} wrapping the {@link Message} from the given
+     * {@code mono}, once the given {@code mono} completes.
+     * <p>
+     * The stream will contain at most a single entry. It may also contain no entries if the mono completes empty. The
+     * stream will complete with an exception when the given {@code mono} completes exceptionally.
+     *
+     * @param mono The {@link Mono} providing the {@link Message} to contain in the stream.
+     * @param <M>  The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A stream containing at most one {@link Entry entry} from the given {@code mono}.
+     */
+    static <M extends Message> Single<M> fromMono(@Nonnull Mono<M> mono) {
+        return fromFuture(mono.toFuture());
+    }
+
+    /**
+     * Create a stream that returns a single {@link Entry entry} wrapping the {@link Message} from the given
+     * {@code mono}, once the given {@code mono} completes.
+     * <p>
+     * The automatically generated {@code Entry} will have the {@link Context} as given by the {@code contextSupplier}.
+     * <p>
+     * The stream will contain at most a single entry. It may also contain no entries if the mono completes empty. The
+     * stream will complete with an exception when the given {@code mono} completes exceptionally.
+     *
+     * @param mono            The {@link Mono} providing the {@link Message} to contain in the stream.
+     * @param contextSupplier A {@link Function} ingesting the {@link Message} from the given {@code mono} returning the
+     *                        {@link Context} to set for the {@link Entry} the {@code Message} is wrapped in.
+     * @param <M>             The type of {@link Message} contained in the {@link Entry entries} of this stream.
+     * @return A stream containing at most one {@link Entry entry} from the given {@code mono}.
+     */
+    static <M extends Message> Single<M> fromMono(@Nonnull Mono<M> mono,
+                                                  @Nonnull Function<M, Context> contextSupplier) {
+        return fromFuture(mono.toFuture(), contextSupplier);
+    }
+
+    /**
+     * Create a stream that returns a single {@link Entry entry} wrapping the {@link Message} from the given
      * {@code future}, once the given {@code future} completes.
      * <p>
      * The stream will contain at most a single entry. It may also contain no entries if the future returns
