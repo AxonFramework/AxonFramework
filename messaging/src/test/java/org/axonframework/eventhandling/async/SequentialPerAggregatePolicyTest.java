@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
@@ -38,12 +39,12 @@ class SequentialPerAggregatePolicyTest {
         // ok, pretty useless, but everything should be tested
         SequentialPerAggregatePolicy testSubject = new SequentialPerAggregatePolicy();
         String aggregateIdentifier = UUID.randomUUID().toString();
-        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier)).orElse(null);
-        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier)).orElse(null);
-        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID().toString())).orElse(null);
+        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier), new StubProcessingContext()).orElse(null);
+        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier), new StubProcessingContext()).orElse(null);
+        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID().toString()), new StubProcessingContext()).orElse(null);
         Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage(
                 new MessageType("event"), "bla"
-        )).orElse(null);
+        ), new StubProcessingContext()).orElse(null);
 
         assertEquals(id1, id2);
         assertNotEquals(id1, id3);

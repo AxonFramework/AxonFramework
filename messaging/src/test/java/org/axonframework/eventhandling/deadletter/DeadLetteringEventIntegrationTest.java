@@ -183,7 +183,7 @@ public abstract class DeadLetteringEventIntegrationTest {
         DeadLetteringEventHandlerInvoker.Builder invokerBuilder = DeadLetteringEventHandlerInvoker
                 .builder()
                 .eventHandlers(eventHandlingComponent)
-                .sequencingPolicy(event -> Optional.of(((DeadLetterableEvent) event.payload()).getAggregateIdentifier()))
+                .sequencingPolicy((event, context) -> Optional.of(((DeadLetterableEvent) event.payload()).getAggregateIdentifier()))
                 .enqueuePolicy(enqueuePolicy)
                 .queue(deadLetterQueue)
                 .transactionManager(transactionManager);

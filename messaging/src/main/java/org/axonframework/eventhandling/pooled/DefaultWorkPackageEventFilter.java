@@ -86,7 +86,7 @@ class DefaultWorkPackageEventFilter implements WorkPackage.EventFilter {
             }
             var sequenceIdentifiers = eventHandlingComponents.sequenceIdentifiersFor(eventMessage, context);
             return sequenceIdentifiers.stream()
-                                      .anyMatch(identifier -> new SegmentMatcher(e -> Optional.of(identifier)).matches(segment, eventMessage));
+                                      .anyMatch(identifier -> new SegmentMatcher((e, ctx) -> Optional.of(identifier)).matches(segment, eventMessage, context));
         } catch (Exception e) {
             errorHandler.handleError(new ErrorContext(eventProcessor, e, Collections.singletonList(eventMessage)));
             return false;

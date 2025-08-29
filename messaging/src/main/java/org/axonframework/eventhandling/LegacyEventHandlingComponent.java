@@ -86,10 +86,10 @@ public class LegacyEventHandlingComponent implements EventHandlingComponent {
                     Optional.ofNullable(multiInvoker.delegates().getFirst())
                             .filter(SimpleEventHandlerInvoker.class::isInstance)
                             .map(SimpleEventHandlerInvoker.class::cast)
-                            .flatMap(invoker -> invoker.getSequencingPolicy().getSequenceIdentifierFor(event))
+                            .flatMap(invoker -> invoker.getSequencingPolicy().getSequenceIdentifierFor(event, context))
                             .orElseGet(event::identifier);
             case SimpleEventHandlerInvoker simpleInvoker ->
-                    simpleInvoker.getSequencingPolicy().getSequenceIdentifierFor(event).orElseGet(event::identifier);
+                    simpleInvoker.getSequencingPolicy().getSequenceIdentifierFor(event, context).orElseGet(event::identifier);
             default -> event.identifier();
         };
     }

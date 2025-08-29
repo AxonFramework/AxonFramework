@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.async;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
@@ -36,9 +37,9 @@ class SequentialPolicyTest {
     void sequencingIdentifier() {
         // ok, pretty useless, but everything should be tested
         SequentialPolicy testSubject = SequentialPolicy.INSTANCE;
-        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())).orElse(null);
-        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())).orElse(null);
-        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID())).orElse(null);
+        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), new StubProcessingContext()).orElse(null);
+        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), new StubProcessingContext()).orElse(null);
+        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), new StubProcessingContext()).orElse(null);
 
         assertEquals(id1, id2);
         assertEquals(id2, id3);

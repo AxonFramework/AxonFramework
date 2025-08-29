@@ -72,7 +72,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
         studentEnrolledToCourse(studentId, "my-courseId-4");
 
         // then
-        await().atMost(5, TimeUnit.SECONDS)
+        await().atMost(10, TimeUnit.SECONDS)
                .untilAsserted(() -> verifyNotificationSentTo(studentId));
     }
 

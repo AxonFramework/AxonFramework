@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.async;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Optional;
 
@@ -67,7 +68,7 @@ public class MetaDataSequencingPolicy implements SequencingPolicy {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event) {
+    public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return Optional.ofNullable(
                 event.metaData()
                      .getOrDefault(metaDataKey, event.identifier())

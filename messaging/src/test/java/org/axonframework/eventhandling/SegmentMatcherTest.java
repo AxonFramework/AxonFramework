@@ -19,6 +19,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -37,12 +38,12 @@ class SegmentMatcherTest {
     @Test
     void matchesReturnsTrueWhenSegmentMatchesEventBasedOnSequenceIdentifier() {
         //given
-        SegmentMatcher testSubject = new SegmentMatcher(message -> Optional.of("sample-identifier"));
+        SegmentMatcher testSubject = new SegmentMatcher((message, context) -> Optional.of("sample-identifier"));
         EventMessage testMessage = EventTestUtils.asEventMessage("test-payload");
         Segment segment = new Segment(0, 0); // Root segment matches everything
 
         //when
-        boolean result = testSubject.matches(segment, testMessage);
+        boolean result = testSubject.matches(segment, testMessage, new StubProcessingContext());
 
         //then
         assertThat(result).isTrue();
@@ -51,7 +52,7 @@ class SegmentMatcherTest {
     @Test
     void usesEventMessageIdentifierAsSequenceIdentifierWhenPolicyReturnsNull() {
         //given
-        SegmentMatcher testSubject = new SegmentMatcher(message -> Optional.empty());
+        SegmentMatcher testSubject = new SegmentMatcher((message, context) -> Optional.empty());
         String messageId = UUID.randomUUID().toString();
         MessageType messageType = new MessageType(new QualifiedName(String.class));
         EventMessage testMessage = EventTestUtils.asEventMessage(
@@ -63,7 +64,7 @@ class SegmentMatcherTest {
         Segment segment = Segment.ROOT_SEGMENT; // Matches everything
 
         //when
-        boolean result = testSubject.matches(segment, testMessage);
+        boolean result = testSubject.matches(segment, testMessage, new StubProcessingContext());
 
         //then
         assertThat(result).isTrue();
@@ -74,11 +75,11 @@ class SegmentMatcherTest {
         //given
         Segment segmentEven = new Segment(1, 1); // Will match events with odd hash
         String sequenceId = "even"; // "even" has a hash code of 3021508, which is even
-        SegmentMatcher testSubject = new SegmentMatcher(message -> Optional.of(sequenceId));
+        SegmentMatcher testSubject = new SegmentMatcher((message, context) -> Optional.of(sequenceId));
         EventMessage oddMessage = EventTestUtils.asEventMessage("test-payload");
 
         //when
-        boolean result = testSubject.matches(segmentEven, oddMessage);
+        boolean result = testSubject.matches(segmentEven, oddMessage, new StubProcessingContext());
 
         //then
         assertThat(result).isFalse();
