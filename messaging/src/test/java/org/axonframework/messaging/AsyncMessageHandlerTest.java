@@ -31,17 +31,20 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.annotation.DefaultParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.PassThroughConverter;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -49,25 +52,36 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class AsyncMessageHandlerTest {
+class AsyncMessageHandlerTest {
+
     private static final ParameterResolverFactory PARAMETER_RESOLVER_FACTORY = new DefaultParameterResolverFactory();
 
     private final CommandBus commandBus = CommandBusTestUtils.aCommandBus();
-    private final CommandGateway commandGateway = new DefaultCommandGateway(commandBus, new ClassBasedMessageTypeResolver());
+    private final CommandGateway commandGateway =
+            new DefaultCommandGateway(commandBus, new ClassBasedMessageTypeResolver());
     private final QueryBus queryBus = SimpleQueryBus.builder().build();
-    private final QueryGateway queryGateway = DefaultQueryGateway.builder().queryBus(queryBus).messageNameResolver(new ClassBasedMessageTypeResolver()).build();
-    private final EventBus eventBus = SimpleEventBus.builder().build();  // TODO #3392 - Replace for actual EventSink implementation.
+    private final QueryGateway queryGateway = DefaultQueryGateway.builder()
+                                                                 .queryBus(queryBus)
+                                                                 .messageNameResolver(new ClassBasedMessageTypeResolver())
+                                                                 .build();
+    private final EventBus eventBus = SimpleEventBus.builder()
+                                                    .build();  // TODO #3392 - Replace for actual EventSink implementation.
     private final AtomicBoolean eventHandlerCalled = new AtomicBoolean();
 
-    record CheckIfPrime(int value) {}  // command
-    record GetKnownPrimes() {}         // query
-    record PrimeChecked(int value) {}  // event
+    record CheckIfPrime(int value) {
+        // command
+    }
+
+    record GetKnownPrimes() {
+        // query
+    }
+
+    record PrimeChecked(int value) {
+        // event
+    }
 
     @Nested
     class AnnotationBased {
@@ -78,8 +92,10 @@ public class AsyncMessageHandlerTest {
             @Test
             void withVoidReturnTypeShouldBeCalled() {
                 var ehc = new AnnotatedEventHandlingComponent<>(new VoidEventHandler(), PARAMETER_RESOLVER_FACTORY);
+                ProcessingContext testContext =
+                        StubProcessingContext.withComponent(EventConverter.class, PassThroughConverter.EVENT_INSTANCE);
 
-                eventBus.subscribe(messages -> messages.forEach(m -> ehc.handle(m, new StubProcessingContext())));
+                eventBus.subscribe(messages -> messages.forEach(m -> ehc.handle(m, testContext)));
 
                 assertEvents();
             }
@@ -87,17 +103,22 @@ public class AsyncMessageHandlerTest {
             @Test
             void returningMonoShouldExecuteIt() {
                 var ehc = new AnnotatedEventHandlingComponent<>(new MonoEventHandler(), PARAMETER_RESOLVER_FACTORY);
+                ProcessingContext testContext =
+                        StubProcessingContext.withComponent(EventConverter.class, PassThroughConverter.EVENT_INSTANCE);
 
-                eventBus.subscribe(messages -> messages.forEach(m -> ehc.handle(m, new StubProcessingContext())));
+                eventBus.subscribe(messages -> messages.forEach(m -> ehc.handle(m, testContext)));
 
                 assertEvents();
             }
 
             @Test
             void returningCompletableFutureShouldExecuteIt() {
-                var ehc = new AnnotatedEventHandlingComponent<>(new CompletableFutureEventHandler(), PARAMETER_RESOLVER_FACTORY);
+                var ehc = new AnnotatedEventHandlingComponent<>(new CompletableFutureEventHandler(),
+                                                                PARAMETER_RESOLVER_FACTORY);
+                ProcessingContext testContext =
+                        StubProcessingContext.withComponent(EventConverter.class, PassThroughConverter.EVENT_INSTANCE);
 
-                eventBus.subscribe(messages -> messages.forEach(m -> ehc.handle(m, new StubProcessingContext())));
+                eventBus.subscribe(messages -> messages.forEach(m -> ehc.handle(m, testContext)));
 
                 assertEvents();
             }
@@ -108,21 +129,24 @@ public class AsyncMessageHandlerTest {
 
             @Test
             void returningCompletableFutureShouldUseItsResult() {
-                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new CompletableFutureCommandHandler(), PassThroughConverter.MESSAGE_INSTANCE));
+                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new CompletableFutureCommandHandler(),
+                                                                             PassThroughConverter.MESSAGE_INSTANCE));
 
                 assertCommands();
             }
 
             @Test
             void returningMonoShouldUseItsResult() {
-                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new MonoCommandHandler(), PassThroughConverter.MESSAGE_INSTANCE));
+                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new MonoCommandHandler(),
+                                                                             PassThroughConverter.MESSAGE_INSTANCE));
 
                 assertCommands();
             }
 
             @Test
             void returningBooleanShouldUseResult() {
-                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new BooleanCommandHandler(), PassThroughConverter.MESSAGE_INSTANCE));
+                commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(new BooleanCommandHandler(),
+                                                                             PassThroughConverter.MESSAGE_INSTANCE));
 
                 assertCommands();
             }
@@ -148,12 +172,14 @@ public class AsyncMessageHandlerTest {
             @Test
             void returningCompletableFutureShouldUseItsResult() {
                 commandBus.subscribe(
-                    new QualifiedName(CheckIfPrime.class.getName()),
-                    (command, context) -> {
-                        CommandResultMessage<Boolean> value = new GenericCommandResultMessage<>(null, isPrime(((CheckIfPrime)command.payload()).value()));
+                        new QualifiedName(CheckIfPrime.class.getName()),
+                        (command, context) -> {
+                            CommandResultMessage<Boolean> value = new GenericCommandResultMessage<>(
+                                    null, isPrime(((CheckIfPrime) command.payload()).value())
+                            );
 
-                        return MessageStream.fromFuture(CompletableFuture.completedFuture(value));
-                    }
+                            return MessageStream.fromFuture(CompletableFuture.completedFuture(value));
+                        }
                 );
 
                 assertCommands();
@@ -162,12 +188,14 @@ public class AsyncMessageHandlerTest {
             @Test
             void returningMonoShouldUseItsResult() {
                 commandBus.subscribe(
-                    new QualifiedName(CheckIfPrime.class.getName()),
-                    (command, context) -> {
-                        CommandResultMessage<Boolean> data = new GenericCommandResultMessage<>(null, isPrime(((CheckIfPrime)command.payload()).value()));
+                        new QualifiedName(CheckIfPrime.class.getName()),
+                        (command, context) -> {
+                            CommandResultMessage<Boolean> data = new GenericCommandResultMessage<>(
+                                    null, isPrime(((CheckIfPrime) command.payload()).value())
+                            );
 
-                        return MessageStream.fromMono(Mono.just(data));
-                    }
+                            return MessageStream.fromMono(Mono.just(data));
+                        }
                 );
 
                 assertCommands();
@@ -176,8 +204,10 @@ public class AsyncMessageHandlerTest {
             @Test
             void returningBooleanShouldUseResult() {
                 commandBus.subscribe(
-                    new QualifiedName(CheckIfPrime.class.getName()),
-                    (command, context) -> MessageStream.just(new GenericCommandResultMessage<>(null, isPrime(((CheckIfPrime)command.payload()).value())))
+                        new QualifiedName(CheckIfPrime.class.getName()),
+                        (command, context) -> MessageStream.just(new GenericCommandResultMessage<>(
+                                null, isPrime(((CheckIfPrime) command.payload()).value())
+                        ))
                 );
 
                 assertCommands();
@@ -186,12 +216,13 @@ public class AsyncMessageHandlerTest {
 
         @Nested
         class QueryHandlers {
+
             @Test
             void declarativeQueryHandlerShouldUseFluxReturnType() throws Exception {
                 queryBus.subscribe(
-                    GetKnownPrimes.class.getName(),
-                    Integer.class,
-                    (query, context) -> Flux.just(2, 3, 5, 7)
+                        GetKnownPrimes.class.getName(),
+                        Integer.class,
+                        (query, context) -> Flux.just(2, 3, 5, 7)
                 );
 
                 assertQuery();
@@ -200,9 +231,9 @@ public class AsyncMessageHandlerTest {
             @Test
             void declarativeQueryHandlerShouldUseIterableReturnType() throws Exception {
                 queryBus.subscribe(
-                    GetKnownPrimes.class.getName(),
-                    Integer.class,
-                    (query, context) -> List.of(2, 3, 5, 7)
+                        GetKnownPrimes.class.getName(),
+                        Integer.class,
+                        (query, context) -> List.of(2, 3, 5, 7)
                 );
 
                 assertQuery();
@@ -220,21 +251,23 @@ public class AsyncMessageHandlerTest {
         assertThat(commandGateway.sendAndWait(new CheckIfPrime(2), Boolean.class)).isTrue();
         assertThat(commandGateway.sendAndWait(new CheckIfPrime(4), Boolean.class)).isFalse();
         assertThatThrownBy(() -> commandGateway.sendAndWait(new CheckIfPrime(10), Boolean.class))
-            .isInstanceOf(CommandExecutionException.class)
-            .cause()
-            .isInstanceOf(ExecutionException.class)
-            .cause()
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("unsupported value: 10");
+                .isInstanceOf(CommandExecutionException.class)
+                .cause()
+                .isInstanceOf(ExecutionException.class)
+                .cause()
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("unsupported value: 10");
     }
 
     private void assertQuery() throws Exception {
-        List<Integer> primes = queryGateway.query(new GetKnownPrimes(), ResponseTypes.multipleInstancesOf(Integer.class)).get();
+        List<Integer> primes = queryGateway.query(new GetKnownPrimes(),
+                                                  ResponseTypes.multipleInstancesOf(Integer.class)).get();
 
         assertThat(primes).isEqualTo(List.of(2, 3, 5, 7));
     }
 
     private class VoidEventHandler {
+
         @EventHandler
         public void handle(PrimeChecked event) {
             eventHandlerCalled.set(true);
@@ -242,6 +275,7 @@ public class AsyncMessageHandlerTest {
     }
 
     private class MonoEventHandler {
+
         @EventHandler
         public Mono<Void> handle(PrimeChecked event) {
             return Mono.fromRunnable(() -> eventHandlerCalled.set(true));
@@ -249,6 +283,7 @@ public class AsyncMessageHandlerTest {
     }
 
     private class CompletableFutureEventHandler {
+
         @EventHandler
         public CompletableFuture<Void> handle(PrimeChecked event) {
             return CompletableFuture.runAsync(() -> eventHandlerCalled.set(true));
@@ -256,6 +291,7 @@ public class AsyncMessageHandlerTest {
     }
 
     private class CompletableFutureCommandHandler {
+
         @CommandHandler
         public Future<Boolean> handle(CheckIfPrime cmd) {
             return CompletableFuture.completedFuture(isPrime(cmd.value));
@@ -263,6 +299,7 @@ public class AsyncMessageHandlerTest {
     }
 
     private class MonoCommandHandler {
+
         @CommandHandler
         public Mono<Boolean> handle(CheckIfPrime cmd) {
             return Mono.just(isPrime(cmd.value));
@@ -270,6 +307,7 @@ public class AsyncMessageHandlerTest {
     }
 
     private class BooleanCommandHandler {
+
         @CommandHandler
         public boolean handle(CheckIfPrime cmd) {
             return isPrime(cmd.value);
@@ -277,7 +315,7 @@ public class AsyncMessageHandlerTest {
     }
 
     private static boolean isPrime(int n) {
-        return switch(n) {
+        return switch (n) {
             case 0, 1, 4 -> false;
             case 2, 3, 5 -> true;
             default -> throw new IllegalArgumentException("unsupported value: " + n);
