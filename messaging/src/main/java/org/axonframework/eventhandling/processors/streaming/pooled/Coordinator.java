@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.processors.streaming.StreamingEventProces
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;
 import org.axonframework.eventhandling.processors.streaming.tokens.ReplayToken;
 import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
-import org.axonframework.eventhandling.WrappedToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventstreaming.EventCriteria;

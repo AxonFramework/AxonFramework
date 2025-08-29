@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;

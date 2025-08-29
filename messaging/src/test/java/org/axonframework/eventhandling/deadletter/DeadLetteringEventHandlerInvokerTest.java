@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;

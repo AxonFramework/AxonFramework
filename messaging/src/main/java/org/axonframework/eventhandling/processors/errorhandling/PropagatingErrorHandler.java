@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.processors.errorhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.ErrorContext;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.processors.EventProcessingException;
-import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 
 /**
  * Singleton ErrorHandler implementation that does not do anything.

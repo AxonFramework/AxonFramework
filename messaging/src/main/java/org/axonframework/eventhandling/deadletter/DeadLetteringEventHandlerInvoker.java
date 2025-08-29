@@ -23,7 +23,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.async.SequencingPolicy;

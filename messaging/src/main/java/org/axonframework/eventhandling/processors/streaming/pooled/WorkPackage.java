@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;
 import org.axonframework.eventhandling.processors.streaming.tokens.TrackingToken;
-import org.axonframework.eventhandling.WrappedToken;
+import org.axonframework.eventhandling.processors.streaming.tokens.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;

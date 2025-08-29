@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.messaging.Message;
 
 import jakarta.annotation.Nonnull;

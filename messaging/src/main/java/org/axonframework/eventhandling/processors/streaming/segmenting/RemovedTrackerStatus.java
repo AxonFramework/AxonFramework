@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling.processors.streaming.segmenting;
 
-import org.axonframework.eventhandling.WrappedTrackerStatus;
-
 /**
  * References an {@link EventTrackerStatus} which no active work is occurring on. Can be used as a marker to react on in
  * the {@link EventTrackerStatusChangeListener}.

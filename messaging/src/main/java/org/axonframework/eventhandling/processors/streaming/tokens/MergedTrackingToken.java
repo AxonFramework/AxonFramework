@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.axonframework.eventhandling.WrappedToken;
 
 import java.beans.ConstructorProperties;
 import java.util.Objects;

@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;

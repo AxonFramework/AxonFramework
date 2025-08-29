@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.processors.streaming.tokens;
 
-import org.axonframework.eventhandling.WrappedToken;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

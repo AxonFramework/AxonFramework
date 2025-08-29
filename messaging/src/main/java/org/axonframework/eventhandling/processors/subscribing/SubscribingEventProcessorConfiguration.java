@@ -22,6 +22,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.processors.tracing.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.tracing.EventProcessorSpanFactory;

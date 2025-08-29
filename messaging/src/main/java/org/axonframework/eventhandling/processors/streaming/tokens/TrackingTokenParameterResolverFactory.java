@@ -20,7 +20,6 @@ package org.axonframework.eventhandling.processors.streaming.tokens;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
