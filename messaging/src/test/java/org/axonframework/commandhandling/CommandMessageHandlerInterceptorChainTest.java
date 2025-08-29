@@ -16,12 +16,15 @@
 
 package org.axonframework.commandhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -72,39 +75,67 @@ class CommandMessageHandlerInterceptorChainTest {
     }
 
     @Test
-    void secondChainInvocationProceedsThroughChainFromBeginning() {
+    void subsequentChainInvocationsSTartFromBeginningAndInvokeInOrder() {
+        // given...
         AtomicInteger invocationCount = new AtomicInteger(0);
         CommandMessage firstCommand = command("message", "first");
+        ProcessingContext firstContext = StubProcessingContext.forMessage(firstCommand);
         CommandMessage secondCommand = command("message", "second");
+        ProcessingContext secondContext = StubProcessingContext.forMessage(secondCommand);
 
-        MessageHandlerInterceptor<CommandMessage> interceptorOne = (message, context, chain) -> {
-            invocationCount.incrementAndGet();
-            return chain.proceed(message, context);
-        };
-        MessageHandlerInterceptor<CommandMessage> interceptorTwo = (message, context, chain) -> {
-            invocationCount.incrementAndGet();
-            return chain.proceed(message, context);
-        };
+        //noinspection Convert2Lambda | Required as anonymous class for spying
+        MessageHandlerInterceptor<CommandMessage> interceptorOne = spy(new MessageHandlerInterceptor<CommandMessage>() {
+            @Nonnull
+            @Override
+            public MessageStream<?> interceptOnHandle(@Nonnull CommandMessage message,
+                                                      @Nonnull ProcessingContext context,
+                                                      @Nonnull MessageHandlerInterceptorChain<CommandMessage> chain) {
+                invocationCount.incrementAndGet();
+                return chain.proceed(message, context);
+            }
+        });
+        //noinspection Convert2Lambda | Required as anonymous class for spying
+        MessageHandlerInterceptor<CommandMessage> interceptorTwo = spy(new MessageHandlerInterceptor<CommandMessage>() {
+            @Nonnull
+            @Override
+            public MessageStream<?> interceptOnHandle(@Nonnull CommandMessage message,
+                                                      @Nonnull ProcessingContext context,
+                                                      @Nonnull MessageHandlerInterceptorChain<CommandMessage> chain) {
+                invocationCount.incrementAndGet();
+                return chain.proceed(message, context);
+            }
+        });
         MessageHandlerInterceptorChain<CommandMessage> testSubject =
                 new CommandMessageHandlerInterceptorChain(asList(interceptorOne, interceptorTwo), mockHandler);
 
-        Message firstResult = testSubject.proceed(firstCommand, StubProcessingContext.forMessage(firstCommand))
+        // when first invocation...
+        Message firstResult = testSubject.proceed(firstCommand, firstContext)
                                          .first()
                                          .asMono()
                                          .map(MessageStream.Entry::message)
                                          .block();
+        // then response is...
         assertNotNull(firstResult);
         assertSame("Result", firstResult.payload());
         assertThat(invocationCount.get()).isEqualTo(2);
-
-        Message secondResult = testSubject.proceed(secondCommand, StubProcessingContext.forMessage(secondCommand))
+        // and ordering is...
+        InOrder firstInterceptorOrder = inOrder(interceptorOne, interceptorTwo);
+        firstInterceptorOrder.verify(interceptorOne).interceptOnHandle(eq(firstCommand), eq(firstContext), any());
+        firstInterceptorOrder.verify(interceptorTwo).interceptOnHandle(eq(firstCommand), eq(firstContext), any());
+        // when second invocation...
+        Message secondResult = testSubject.proceed(secondCommand, secondContext)
                                           .first()
                                           .asMono()
                                           .map(MessageStream.Entry::message)
                                           .block();
+        // then response is...
         assertNotNull(secondResult);
         assertSame("Result", firstResult.payload());
         assertThat(invocationCount.get()).isEqualTo(4);
+        // and ordering is...
+        InOrder secondInterceptorOrder = inOrder(interceptorOne, interceptorTwo);
+        secondInterceptorOrder.verify(interceptorOne).interceptOnHandle(eq(secondCommand), eq(secondContext), any());
+        secondInterceptorOrder.verify(interceptorTwo).interceptOnHandle(eq(secondCommand), eq(secondContext), any());
     }
 
     @Test

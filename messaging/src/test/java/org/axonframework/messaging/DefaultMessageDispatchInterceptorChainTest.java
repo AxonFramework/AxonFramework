@@ -16,7 +16,11 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.List;
 import java.util.Map;
@@ -26,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.MessagingTestUtils.message;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link DefaultMessageDispatchInterceptorChain}.
@@ -55,33 +60,58 @@ class DefaultMessageDispatchInterceptorChainTest {
     }
 
     @Test
-    void eachChainInvocationStartsFromTheBeginning() {
+    void eachChainInvocationStartsFromTheBeginningAndInvokesInOrder() {
+        // given...
         AtomicInteger invocationCount = new AtomicInteger(0);
         Message firstMessage = message("message", "payload");
         Message secondMessage = message("message", "second");
 
-        MessageDispatchInterceptor<Message> interceptorOne = (message, context, chain) -> {
-            invocationCount.incrementAndGet();
-            return chain.proceed(message, context);
-        };
-        MessageDispatchInterceptor<Message> interceptorTwo = (message, context, chain) -> {
-            invocationCount.incrementAndGet();
-            return chain.proceed(message, context);
-        };
+        //noinspection Convert2Lambda | Required as anonymous class for spying
+        MessageDispatchInterceptor<Message> interceptorOne = spy(new MessageDispatchInterceptor<Message>() {
+            @Nonnull
+            @Override
+            public MessageStream<?> interceptOnDispatch(@Nonnull Message message,
+                                                        @Nullable ProcessingContext context,
+                                                        @Nonnull MessageDispatchInterceptorChain<Message> chain) {
+                invocationCount.incrementAndGet();
+                return chain.proceed(message, context);
+            }
+        });
+        //noinspection Convert2Lambda | Required as anonymous class for spying
+        MessageDispatchInterceptor<Message> interceptorTwo = spy(new MessageDispatchInterceptor<Message>() {
+            @Nonnull
+            @Override
+            public MessageStream<?> interceptOnDispatch(@Nonnull Message message, @Nullable ProcessingContext context,
+                                                        @Nonnull MessageDispatchInterceptorChain<Message> chain) {
+                invocationCount.incrementAndGet();
+                return chain.proceed(message, context);
+            }
+        });
         MessageDispatchInterceptorChain<Message> testSubject =
                 new DefaultMessageDispatchInterceptorChain<>(asList(interceptorOne, interceptorTwo));
 
+        // when first invocation...
         MessageStream<?> firstResult = testSubject.proceed(firstMessage, null);
+        // then response is...
         assertThat(firstResult.error()).isNotPresent();
         Optional<? extends MessageStream.Entry<?>> firstEntry = firstResult.next();
         assertThat(firstEntry).isPresent();
         assertThat(invocationCount.get()).isEqualTo(2);
-
+        // and ordering is...
+        InOrder firstInterceptorOrder = inOrder(interceptorOne, interceptorTwo);
+        firstInterceptorOrder.verify(interceptorOne).interceptOnDispatch(eq(firstMessage), eq(null), any());
+        firstInterceptorOrder.verify(interceptorTwo).interceptOnDispatch(eq(firstMessage), eq(null), any());
+        // when second invocation...
         MessageStream<?> secondResult = testSubject.proceed(secondMessage, null);
+        // then response is...
         assertThat(secondResult.error()).isNotPresent();
         Optional<? extends MessageStream.Entry<?>> secondEntry = secondResult.next();
         assertThat(secondEntry).isPresent();
         assertThat(invocationCount.get()).isEqualTo(4);
+        // and ordering is...
+        InOrder secondInterceptorOrder = inOrder(interceptorOne, interceptorTwo);
+        secondInterceptorOrder.verify(interceptorOne).interceptOnDispatch(eq(secondMessage), eq(null), any());
+        secondInterceptorOrder.verify(interceptorTwo).interceptOnDispatch(eq(secondMessage), eq(null), any());
     }
 
     @Test

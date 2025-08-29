@@ -16,12 +16,15 @@
 
 package org.axonframework.eventhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -69,37 +72,64 @@ class EventMessageHandlerInterceptorChainTest {
     }
 
     @Test
-    void secondChainInvocationProceedsThroughChainFromBeginning() {
+    void subsequentChainInvocationsSTartFromBeginningAndInvokeInOrder() {
+        // given...
         AtomicInteger invocationCount = new AtomicInteger(0);
         EventMessage firstEvent = event("first");
+        ProcessingContext firstContext = StubProcessingContext.forMessage(firstEvent);
         EventMessage secondEvent = event("second");
+        ProcessingContext secondContext = StubProcessingContext.forMessage(secondEvent);
 
-        MessageHandlerInterceptor<EventMessage> interceptorOne = (message, context, chain) -> {
-            invocationCount.incrementAndGet();
-            return chain.proceed(message, context);
-        };
-        MessageHandlerInterceptor<EventMessage> interceptorTwo = (message, context, chain) -> {
-            invocationCount.incrementAndGet();
-            return chain.proceed(message, context);
-        };
+        //noinspection Convert2Lambda | Required as anonymous class for spying
+        MessageHandlerInterceptor<EventMessage> interceptorOne = spy(new MessageHandlerInterceptor<EventMessage>() {
+            @Nonnull
+            @Override
+            public MessageStream<?> interceptOnHandle(@Nonnull EventMessage message, @Nonnull ProcessingContext context,
+                                                      @Nonnull MessageHandlerInterceptorChain<EventMessage> chain) {
+                invocationCount.incrementAndGet();
+                return chain.proceed(message, context);
+            }
+        });
+        //noinspection Convert2Lambda | Required as anonymous class for spying
+        MessageHandlerInterceptor<EventMessage> interceptorTwo = spy(new MessageHandlerInterceptor<EventMessage>() {
+            @Nonnull
+            @Override
+            public MessageStream<?> interceptOnHandle(@Nonnull EventMessage message, @Nonnull ProcessingContext context,
+                                                      @Nonnull MessageHandlerInterceptorChain<EventMessage> chain) {
+                invocationCount.incrementAndGet();
+                return chain.proceed(message, context);
+            }
+        });
         MessageHandlerInterceptorChain<EventMessage> testSubject =
                 new EventMessageHandlerInterceptorChain(asList(interceptorOne, interceptorTwo), mockHandler);
 
-        Message firstResult = testSubject.proceed(firstEvent, StubProcessingContext.forMessage(firstEvent))
+        // when first invocation...
+        Message firstResult = testSubject.proceed(firstEvent, firstContext)
                                          .first()
                                          .asMono()
                                          .map(MessageStream.Entry::message)
                                          .block();
+        // then response is...
         assertNull(firstResult);
         assertThat(invocationCount.get()).isEqualTo(2);
+        // and ordering is...
+        InOrder firstInterceptorOrder = inOrder(interceptorOne, interceptorTwo);
+        firstInterceptorOrder.verify(interceptorOne).interceptOnHandle(eq(firstEvent), eq(firstContext), any());
+        firstInterceptorOrder.verify(interceptorTwo).interceptOnHandle(eq(firstEvent), eq(firstContext), any());
 
-        Message secondResult = testSubject.proceed(secondEvent, StubProcessingContext.forMessage(secondEvent))
+        // when second invocation...
+        Message secondResult = testSubject.proceed(secondEvent, secondContext)
                                           .first()
                                           .asMono()
                                           .map(MessageStream.Entry::message)
                                           .block();
+        // then response is...
         assertNull(secondResult);
         assertThat(invocationCount.get()).isEqualTo(4);
+        // and ordering is...
+        InOrder secondInterceptorOrder = inOrder(interceptorOne, interceptorTwo);
+        secondInterceptorOrder.verify(interceptorOne).interceptOnHandle(eq(secondEvent), eq(secondContext), any());
+        secondInterceptorOrder.verify(interceptorTwo).interceptOnHandle(eq(secondEvent), eq(secondContext), any());
     }
 
     @Test
