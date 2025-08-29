@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventHandlerRegistry;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
@@ -156,7 +157,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                 qualifiedName,
                 (event, ctx) ->
                         interceptorChain.handle(
-                                event.withConvertedPayload(handler.payloadType(), ctx.component(Converter.class)),
+                                event.withConvertedPayload(handler.payloadType(), ctx.component(EventConverter.class)),
                                 ctx,
                                 target,
                                 handler
