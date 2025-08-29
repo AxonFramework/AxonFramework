@@ -67,6 +67,7 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      */
     @Nonnull
     default Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
-        return SequentialPolicy.INSTANCE.getSequenceIdentifierFor(event);
+        //noinspection OptionalGetWithoutIsPresent - it's safe because SequentialPolicy always returns a value.
+        return SequentialPolicy.INSTANCE.getSequenceIdentifierFor(event).get();
     }
 }
