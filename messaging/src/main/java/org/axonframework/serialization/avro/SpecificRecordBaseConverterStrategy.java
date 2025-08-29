@@ -65,7 +65,7 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
     @Override
     @Nonnull
     public byte[] serializeToSingleObjectEncoded(@Nonnull Object object) {
-        if (!(object instanceof SpecificRecordBase record)) { // TODO -> better delegate to the test(class<T>) method?
+        if (!(object instanceof SpecificRecordBase record)) {
             throw new ConversionException(
                     "Expected object to be instance of SpecificRecordBase but it was " + object.getClass()
                                                                                                .getCanonicalName());

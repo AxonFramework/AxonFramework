@@ -26,12 +26,12 @@ import java.util.Objects;
 /**
  * Configuration for the AvroConverter.
  *
- * @param strategies                         converter strategies to support different representation of objects
- *                                           (SpecificRecordBase, Avro4K).
- * @param includeDefaultStrategies           flag to include the default strategies.
- * @param schemaStore                        schema store to resolve Avro schemas.
- * @param schemaIncompatibilityChecker       schema incompatibility checker.
- * @param avroConverterStrategyConfiguration configuration for Avro converter strategy.
+ * @param strategies                                converter strategies to support different representation of objects
+ *                                                  (SpecificRecordBase, Avro4K).
+ * @param includeDefaultAvroSerializationStrategies flag to include the default strategies.
+ * @param schemaStore                               schema store to resolve Avro schemas.
+ * @param schemaIncompatibilityChecker              schema incompatibility checker.
+ * @param avroConverterStrategyConfiguration        configuration for Avro converter strategy.
  */
 public record AvroConverterConfiguration(
         @Nonnull List<AvroConverterStrategy> strategies,
@@ -73,9 +73,9 @@ public record AvroConverterConfiguration(
         this(
                 new ArrayList<>(),
                 true,
-                Objects.requireNonNull(schemaStore, "Schema store is mandatory"),
+                schemaStore,
                 new DefaultSchemaIncompatibilityChecker(),
-                new AvroConverterStrategyConfiguration(true, false)
+                AvroConverterStrategyConfiguration.DEFAULT
         );
     }
 

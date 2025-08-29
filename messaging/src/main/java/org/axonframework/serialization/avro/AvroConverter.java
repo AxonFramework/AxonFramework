@@ -31,7 +31,6 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 /**
@@ -57,7 +56,7 @@ public class AvroConverter implements Converter {
     private static final Logger logger = LoggerFactory.getLogger(AvroConverter.class);
 
     private final ChainingContentTypeConverter converter;
-    private final List<AvroConverterStrategy> serializerStrategies = new ArrayList<>();
+    private final List<AvroConverterStrategy> converterStrategies = new ArrayList<>();
 
     /**
      * Creates the converter instance.
@@ -86,7 +85,10 @@ public class AvroConverter implements Converter {
         AvroConverterStrategyConfiguration strategyConfiguration = config.avroConverterStrategyConfiguration();
         config.strategies().forEach(strategy -> strategy.applyStrategyConfiguration(strategyConfiguration));
 
-        this.serializerStrategies.addAll(config.strategies());
+        this.converterStrategies.addAll(config.strategies());
+        if (this.converterStrategies.isEmpty()) {
+            throw new IllegalStateException("At least one converter strategy is required, but none were configured.");
+        }
         this.converter = new ChainingContentTypeConverter();
         this.converter.registerConverter(new ByteArrayToGenericRecordConverter(schemaStore));
     }
@@ -112,7 +114,7 @@ public class AvroConverter implements Converter {
 
     private boolean strategyForType(Type type) {
         if (type instanceof Class) {
-            return serializerStrategies.stream().anyMatch(it -> it.test((Class<?>) type));
+            return converterStrategies.stream().anyMatch(it -> it.test((Class<?>) type));
         } else {
             return false; // currently only support types which are classes
         }
@@ -192,51 +194,47 @@ public class AvroConverter implements Converter {
     }
 
     private <T> T serializeByStrategy(@Nonnull Object input, @Nonnull Class<?> sourceType) {
-        Optional<AvroConverterStrategy> serializerStrategy = serializerStrategies
+        return (T) converterStrategies
                 .stream()
                 .filter(it -> it.test(sourceType))
-                .findFirst();
-        if (serializerStrategy.isPresent()) {
-            return (T) serializerStrategy.get().serializeToSingleObjectEncoded(input);
-        } else {
-            throw new ConversionException(
-                    "Could not find converter strategy to serialize from source type [" + sourceType + "]"
-            );
-        }
+                .findFirst()
+                .orElseThrow(() -> new ConversionException(
+                        "Could not find converter strategy to serialize from source type ["
+                                + sourceType
+                                + "]"
+                ))
+                .serializeToSingleObjectEncoded(input);
     }
 
     private <T> T deserializeByStrategy(@Nonnull byte[] input, @Nonnull Class<?> targetType) {
-        Optional<AvroConverterStrategy> serializerStrategy = serializerStrategies
+        //noinspection unchecked
+        return (T) converterStrategies
                 .stream()
                 .filter(it -> it.test(targetType))
-                .findFirst();
-        if (serializerStrategy.isPresent()) {
-            //noinspection unchecked
-            return (T) serializerStrategy.get().deserializeFromSingleObjectEncoded(input, targetType);
-        } else {
-            throw new ConversionException(
-                    "Could not find converter strategy to deserialize from bytes to target type [" + targetType + "]");
-        }
+                .findFirst()
+                .orElseThrow(() -> new ConversionException(
+                        "Could not find converter strategy to deserialize from bytes to target type ["
+                                + targetType
+                                + "]"))
+                .deserializeFromSingleObjectEncoded(input, targetType);
     }
 
     private <T> T deserializeByStrategy(@Nonnull GenericRecord input, @Nonnull Class<?> targetType) {
-        Optional<AvroConverterStrategy> serializerStrategy = serializerStrategies
+        //noinspection unchecked
+        return (T) converterStrategies
                 .stream()
                 .filter(it -> it.test(targetType))
-                .findFirst();
-        if (serializerStrategy.isPresent()) {
-            //noinspection unchecked
-            return (T) serializerStrategy.get().deserializeFromGenericRecord(input, targetType);
-        } else {
-            throw new ConversionException(
-                    "Could not find converter strategy to deserialize from GenericRecord to target type [" + targetType
-                            + "]");
-        }
+                .findFirst()
+                .orElseThrow(() -> new ConversionException(
+                        "Could not find converter strategy to deserialize from GenericRecord to target type ["
+                                + targetType
+                                + "]"))
+                .deserializeFromGenericRecord(input, targetType);
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        for (AvroConverterStrategy strategy : this.serializerStrategies) {
+        for (AvroConverterStrategy strategy : this.converterStrategies) {
             strategy.describeTo(descriptor);
         }
     }
