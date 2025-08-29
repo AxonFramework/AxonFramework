@@ -32,7 +32,7 @@ import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.eventhandling.EventMessageHandlerInterceptorChain;
+import org.axonframework.eventhandling.interceptors.EventMessageHandlerInterceptorChain;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;

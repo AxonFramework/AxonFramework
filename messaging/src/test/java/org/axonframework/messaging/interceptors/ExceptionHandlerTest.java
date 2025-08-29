@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -147,7 +148,7 @@ class ExceptionHandlerTest {
 
     /**
      * This method is a similar approach as followed by the
-     * {@link org.axonframework.eventhandling.AnnotationEventHandlerAdapter#handleSync(EventMessage,org.axonframework.messaging.unitofwork.ProcessingContext)}. Thus, mirroring
+     * {@link AnnotationEventHandlerAdapter#handleSync(EventMessage,org.axonframework.messaging.unitofwork.ProcessingContext)}. Thus, mirroring
      * regular message handling components.
      */
     private Object handle(Message message) throws Exception {

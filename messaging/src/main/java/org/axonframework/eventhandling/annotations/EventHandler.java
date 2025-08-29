@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.annotations;
 
-import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;

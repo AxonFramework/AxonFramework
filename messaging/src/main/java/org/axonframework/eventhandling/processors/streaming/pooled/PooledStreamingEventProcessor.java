@@ -28,7 +28,7 @@ import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.streaming.segmenting.EventTrackerStatus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.processors.ProcessorEventHandlingComponents;
-import org.axonframework.eventhandling.ResetNotSupportedException;
+import org.axonframework.eventhandling.replay.ResetNotSupportedException;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;

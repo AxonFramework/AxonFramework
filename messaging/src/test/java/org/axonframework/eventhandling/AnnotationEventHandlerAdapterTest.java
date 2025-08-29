@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonException;
+import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.replay.annotations.ResetHandler;
 import org.axonframework.eventhandling.replay.annotations.AllowReplay;
