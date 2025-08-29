@@ -101,7 +101,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          ./mvnw -B -T 1C -Dstyle.color=always test -pl ${{ matrix.module }} -Possrh -Dcoverage -Dsurefire.rerunFailingTestsCount=5
+          ./mvnw -B -T 1C -Possrh -Dcoverage -Dsurefire.rerunFailingTestsCount=5 -Dstyle.color=always test -pl ${{ matrix.module }}
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
           TESTCONTAINERS_CHECKS_DISABLE: true
@@ -158,6 +158,28 @@ jobs:
           path: "**/target/surefire-reports/TEST-*.xml"
         if: always()
 
+  test-summary:
+    name: Test Summary
+    needs: [compile, test, integration-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: always()
+
+    steps:
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-results-*
+          path: test-results
+          merge-multiple: true
+
+      - name: Create test summary
+        uses: test-summary/action@v2
+        with:
+          paths: "test-results/**/TEST-*.xml"
+          show: "fail, skip"
+        if: always()
+
   sonar:
     name: Sonar Analysis
     needs: [compile, test, integration-tests]
@@ -184,15 +206,7 @@ jobs:
             **/target
           key: ${{ needs.compile.outputs.cache-key }}
 
-      - name: Download all test results
-        uses: actions/download-artifact@v4
-        with:
-          pattern: test-results-*
-          path: test-results
-          merge-multiple: true
-
       - name: Sonar Analysis
-        if: success()
         run: |
           ./mvnw -B -Dstyle.color=always sonar:sonar \
           -Dsonar.projectKey=AxonFramework_AxonFramework \
@@ -201,10 +215,3 @@ jobs:
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create test summary
-        uses: test-summary/action@v2
-        with:
-          paths: "test-results/**/TEST-*.xml"
-          show: "fail, skip"
-        if: always()
