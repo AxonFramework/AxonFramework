@@ -20,7 +20,9 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -186,8 +188,8 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
      * Abstract Builder class to instantiate an {@link AbstractLegacyEventStore}.
      * <p>
      * The {@link MessageMonitor} is defaulted to an {@link NoOpMessageMonitor} and the
-     * {@link org.axonframework.eventhandling.EventBusSpanFactory} defaults to a
-     * {@link org.axonframework.eventhandling.DefaultEventBusSpanFactory} backed by a {@link NoOpSpanFactory}. The
+     * {@link EventBusSpanFactory} defaults to a
+     * {@link DefaultEventBusSpanFactory} backed by a {@link NoOpSpanFactory}. The
      * {@link LegacyEventStorageEngine} is a
      * <b>hard requirement</b> and as such should be provided.
      */

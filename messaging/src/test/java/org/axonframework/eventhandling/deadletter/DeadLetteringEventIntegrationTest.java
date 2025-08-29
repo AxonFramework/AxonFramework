@@ -24,14 +24,15 @@ import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
-import org.axonframework.eventhandling.MonitoringEventHandlingComponent;
-import org.axonframework.eventhandling.StreamingEventProcessor;
-import org.axonframework.eventhandling.TracingEventHandlingComponent;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.monitoring.MonitoringEventHandlingComponent;
+import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.eventhandling.tracing.TracingEventHandlingComponent;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorConfiguration;
+import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MetaData;
@@ -76,7 +77,7 @@ import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the combination of an {@link org.axonframework.eventhandling.EventProcessor} containing a
+ * Test class validating the combination of an {@link EventProcessor} containing a
  * {@link DeadLetteringEventHandlerInvoker} (a specific type of Processing Group). This test validates that:
  *
  * <ul>

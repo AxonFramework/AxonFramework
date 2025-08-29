@@ -18,7 +18,7 @@ package org.axonframework.modelling.saga.repository;
 
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;

@@ -17,7 +17,7 @@ package org.axonframework.messaging.timeout;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.EventMessageHandlerInterceptorChain;
+import org.axonframework.eventhandling.interceptors.EventMessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.junit.jupiter.api.*;

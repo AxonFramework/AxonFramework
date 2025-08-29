@@ -36,7 +36,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Implementation of the {@link EntityEvolvingComponent} that applies state changes through
- * {@link org.axonframework.eventhandling.annotation.EventHandler}(-meta)-annotated methods using the
+ * {@link org.axonframework.eventhandling.annotations.EventHandler}(-meta)-annotated methods using the
  * {@link AnnotatedHandlerInspector}.
  *
  * @param <E> The entity type to evolve.

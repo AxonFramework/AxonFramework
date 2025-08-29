@@ -19,8 +19,9 @@ package org.axonframework.integrationtests.testsuite.student;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.async.SequentialPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.messaging.MessageStream;
@@ -44,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
- * Test class validating the declarative {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}
+ * Test class validating the declarative {@link PooledStreamingEventProcessor}
  * used as a projector for a read model based on {@link StateBasedEntityModule}.
  *
  * @author Mateusz Nowak

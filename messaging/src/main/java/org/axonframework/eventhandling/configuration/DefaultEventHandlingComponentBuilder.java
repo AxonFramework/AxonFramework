@@ -19,8 +19,8 @@ package org.axonframework.eventhandling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.SequenceOverridingEventHandlingComponent;
-import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceOverridingEventHandlingComponent;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.QualifiedName;
 
 import java.util.Objects;
@@ -41,7 +41,7 @@ import java.util.function.UnaryOperator;
  * </ol>
  * <p>
  * The builder requires an existing {@link EventHandlingComponent} as its base component.
- * When a {@link org.axonframework.eventhandling.async.SequencingPolicy} is applied, the component is wrapped 
+ * When a {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} is applied, the component is wrapped
  * in a {@link SequenceOverridingEventHandlingComponent} to provide custom event sequencing behavior.
  * <p>
  * This builder is typically used internally by the framework's configuration system. Users should access

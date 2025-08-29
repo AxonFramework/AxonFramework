@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.annotation.EventAppenderParameterResolverFactory;
+import org.axonframework.eventhandling.annotations.EventAppenderParameterResolverFactory;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;

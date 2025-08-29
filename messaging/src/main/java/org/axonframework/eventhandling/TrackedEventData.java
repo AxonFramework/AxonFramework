@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+
 /**
  * Interface describing the properties of serialized Event Messages containing a {@link TrackingToken}. Event Storage
  * Engine implementations should have their storage entries implement this interface.

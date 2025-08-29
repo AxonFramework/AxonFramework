@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.SpanFactory;

@@ -17,9 +17,9 @@
 package org.axonframework.eventsourcing.eventstore.jpa;
 
 import org.axonframework.common.DateTimeUtils;
-import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.slf4j.Logger;
 
 import java.time.Instant;

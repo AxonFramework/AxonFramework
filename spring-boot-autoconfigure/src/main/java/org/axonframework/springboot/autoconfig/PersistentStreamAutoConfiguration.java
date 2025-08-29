@@ -26,6 +26,7 @@ import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessage
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.axonframework.springboot.util.ConditionalOnQualifiedBean;
@@ -168,15 +169,15 @@ public class PersistentStreamAutoConfiguration {
 
     /**
      * Creates a {@link ConfigurerModule} to configure
-     * {@link org.axonframework.eventhandling.async.SequencingPolicy sequencing policies} for persistent streams
-     * connected to {@link org.axonframework.eventhandling.SubscribingEventProcessor subscribing event processors} with
+     * {@link org.axonframework.eventhandling.sequencing.SequencingPolicy sequencing policies} for persistent streams
+     * connected to {@link SubscribingEventProcessor subscribing event processors} with
      * a dead letter queue.
      *
      * @param processorProperties     Contains the configured event processors.
      * @param axonServerConfiguration Contains the persistent stream definitions.
      * @return A {@link ConfigurerModule} to configure
-     * {@link org.axonframework.eventhandling.async.SequencingPolicy sequencing policies} for persistent streams
-     * connected to {@link org.axonframework.eventhandling.SubscribingEventProcessor subscribing event processors} with
+     * {@link org.axonframework.eventhandling.sequencing.SequencingPolicy sequencing policies} for persistent streams
+     * connected to {@link SubscribingEventProcessor subscribing event processors} with
      * a dead letter queue.
      */
     @Bean

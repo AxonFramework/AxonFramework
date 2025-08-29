@@ -19,9 +19,10 @@ package org.axonframework.integrationtests.testsuite.student;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
@@ -48,7 +49,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the annotated {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}
+ * Test class validating the annotated {@link PooledStreamingEventProcessor}
  * used as an automation (a kind of Saga) that keeps the process state using {@link EventSourcedEntityModule} and sends
  * a {@link org.axonframework.commandhandling.CommandMessage} if certain business rules are met.
  *

@@ -19,7 +19,7 @@ package org.axonframework.modelling.saga;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.ResetNotSupportedException;
+import org.axonframework.eventhandling.replay.ResetNotSupportedException;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;

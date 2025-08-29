@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.deadletter.jpa.DeadLetterJpaConverter;
 import org.axonframework.eventhandling.deadletter.jpa.EventMessageDeadLetterJpaConverter;
 import org.axonframework.eventhandling.deadletter.jpa.JpaDeadLetter;
 import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -67,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * An implementation of the {@link DeadLetteringEventIntegrationTest} validating the {@link JpaSequencedDeadLetterQueue}
- * with an {@link org.axonframework.eventhandling.EventProcessor} and {@link DeadLetteringEventHandlerInvoker}.
+ * with an {@link EventProcessor} and {@link DeadLetteringEventHandlerInvoker}.
  *
  * @author Mitchell Herrijgers
  */

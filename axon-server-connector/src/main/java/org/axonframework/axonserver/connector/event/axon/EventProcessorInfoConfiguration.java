@@ -23,7 +23,7 @@ import org.axonframework.axonserver.connector.processor.EventProcessorControlSer
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.Module;
-import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.processors.EventProcessor;
 
 import java.util.function.Function;
 

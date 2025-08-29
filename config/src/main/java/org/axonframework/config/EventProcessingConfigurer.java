@@ -20,20 +20,22 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.SubscribableMessageSourceDefinition;
-import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorConfiguration;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -192,7 +194,7 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer registerTokenStore(Function<LegacyConfiguration, TokenStore> tokenStore);
 
     /**
-     * Defaults Event Processors builders to use {@link org.axonframework.eventhandling.SubscribingEventProcessor}.
+     * Defaults Event Processors builders to use {@link SubscribingEventProcessor}.
      * <p>
      * The default behavior depends on the EventBus available in the Configuration. If the Event Bus is a
      * {@link StreamableMessageSource}, processors are Tracking by default. This method must be used to force the use of
@@ -233,11 +235,11 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Registers a {@link org.axonframework.eventhandling.SubscribingEventProcessor} with given {@code name} within this
+     * Registers a {@link SubscribingEventProcessor} with given {@code name} within this
      * Configurer.
      *
      * @param name a {@link String} specyfing the name of the
-     *             {@link org.axonframework.eventhandling.SubscribingEventProcessor} being registered
+     *             {@link SubscribingEventProcessor} being registered
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     default EventProcessingConfigurer registerSubscribingEventProcessor(String name) {
@@ -245,11 +247,11 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Registers a {@link org.axonframework.eventhandling.SubscribingEventProcessor} with given {@code name} and
+     * Registers a {@link SubscribingEventProcessor} with given {@code name} and
      * {@code messageSource} within this Configuration.
      *
      * @param name          a {@link String} specyfing the name of the
-     *                      {@link org.axonframework.eventhandling.SubscribingEventProcessor} being registered
+     *                      {@link SubscribingEventProcessor} being registered
      * @param messageSource a {@link Function} that builds a {@link SubscribableMessageSource}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
@@ -258,7 +260,7 @@ public interface EventProcessingConfigurer {
 
     /**
      * Registers a {@link Function} that builds the default {@link ErrorHandler}. Defaults to a
-     * {@link org.axonframework.eventhandling.PropagatingErrorHandler}.
+     * {@link PropagatingErrorHandler}.
      *
      * @param errorHandlerBuilder a {@link Function} that builds an {@link ErrorHandler}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing

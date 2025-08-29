@@ -21,9 +21,10 @@ import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.async.SequentialPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.gateway.EventAppender;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
@@ -50,7 +51,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test class validating the declarative {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}
+ * Test class validating the declarative {@link PooledStreamingEventProcessor}
  * used as an automation (a kind of Saga) that keeps the process state using {@link EventSourcedEntityModule} and sends
  * a {@link org.axonframework.commandhandling.CommandMessage} if certain business rules are met.
  *
