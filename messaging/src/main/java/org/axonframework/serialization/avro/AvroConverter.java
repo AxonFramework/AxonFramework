@@ -165,8 +165,7 @@ public class AvroConverter implements Converter {
 
                 //noinspection DataFlowIssue
                 return deserializeByStrategy(converter.convert(input, byte[].class), targetClass);
-                // TODO: why?
-            } else if (GenericRecord.class.equals(sourceClass) || GenericRecord.class.isAssignableFrom(sourceClass)) {
+            } else if (GenericRecord.class.isAssignableFrom(sourceClass)) {
                 //   through upcaster / intermediate representation:
                 //     2. after upcaster
                 //      input is GenericRecord (upcasted)
@@ -234,7 +233,7 @@ public class AvroConverter implements Converter {
                             + "]");
         }
     }
-    
+
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         for (AvroConverterStrategy strategy : this.serializerStrategies) {

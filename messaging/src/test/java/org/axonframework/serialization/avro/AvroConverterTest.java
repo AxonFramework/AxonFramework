@@ -21,6 +21,7 @@ import org.apache.avro.SchemaCompatibility;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.SchemaStore;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.ConverterTestSuite;
 import org.axonframework.serialization.avro.test.ComplexObject;
@@ -28,13 +29,16 @@ import org.axonframework.serialization.avro.test.ComplexObjectSchemas;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
+import org.mockito.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AvroConverter}.
@@ -140,6 +144,35 @@ class AvroConverterTest extends ConverterTestSuite<AvroConverter> {
         ComplexObject deserialized = testSubject.convert(encodedBytes, ComplexObject.class);
         assertEquals(complexObject, deserialized);
     }
+
+    @Test
+    void deserializeFromCompatibleObjectBytesToGenericRecord() {
+        byte[] encodedBytes = toByteArrayConverter.convert(record);
+        GenericRecord deserializedRecord = testSubject.convert(encodedBytes, GenericRecord.class);
+        assertThat(deserializedRecord.get("value1").toString()).isEqualTo(complexObject.getValue1());
+        assertThat(deserializedRecord.get("value2").toString()).isEqualTo(complexObject.getValue2());
+        assertThat(deserializedRecord.get("value3")).isEqualTo(complexObject.getValue3());
+    }
+
+    @Test
+    void deserializeFromCompatibleObjectBytesAsInputStreamToGenericRecord() {
+        byte[] encodedBytes = toByteArrayConverter.convert(record);
+        assertThat(encodedBytes).isNotNull();
+        InputStream bais = new ByteArrayInputStream(encodedBytes);
+        GenericRecord deserializedRecord = testSubject.convert(bais, GenericRecord.class);
+        assertThat(deserializedRecord.get("value1").toString()).isEqualTo(complexObject.getValue1());
+        assertThat(deserializedRecord.get("value2").toString()).isEqualTo(complexObject.getValue2());
+        assertThat(deserializedRecord.get("value3")).isEqualTo(complexObject.getValue3());
+    }
+
+    @Test
+    void deserializeFromGenericRecordToComplexObject() {
+        ComplexObject deserialized = testSubject.convert(record, ComplexObject.class);
+        assertThat(deserialized.getValue1()).isEqualTo(record.get("value1").toString());
+        assertThat(deserialized.getValue2()).isEqualTo(record.get("value2").toString());
+        assertThat(deserialized.getValue3()).isEqualTo(record.get("value3"));
+    }
+
 
     @Test
     void serializeFromCompatibleWithAdditionalIgnoredFieldObjectAndDeserialize() {
@@ -282,5 +315,25 @@ class AvroConverterTest extends ConverterTestSuite<AvroConverter> {
                         ).getMessage()
                 )
         );
+    }
+
+    @Test
+    void describesItself() {
+        ComponentDescriptor descriptor = mock();
+        testSubject.describeTo(descriptor);
+        ArgumentCaptor<Object> propertyCaptor = ArgumentCaptor.forClass(Object.class);
+
+        verify(descriptor).describeProperty(eq("avroConverterStrategyConfiguration"), propertyCaptor.capture());
+        var strategyConfiguration = (AvroConverterStrategyConfiguration)propertyCaptor.getValue();
+        assertThat(strategyConfiguration.includeSchemasInStackTraces()).isEqualTo(false);
+        assertThat(strategyConfiguration.performAvroCompatibilityCheck()).isEqualTo(true);
+
+        verify(descriptor).describeProperty(eq("schemaIncompatibilityChecker"), propertyCaptor.capture());
+        var checker = (SchemaIncompatibilityChecker)propertyCaptor.getValue();
+        assertThat(checker).isInstanceOf(DefaultSchemaIncompatibilityChecker.class);
+
+        verify(descriptor).describeProperty(eq("schemaStore"), propertyCaptor.capture());
+        var capturedStore = (SchemaStore)propertyCaptor.getValue();
+        assertThat(capturedStore).isEqualTo(this.store);
     }
 }
