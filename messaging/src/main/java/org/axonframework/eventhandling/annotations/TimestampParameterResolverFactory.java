@@ -14,64 +14,64 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.time.Instant;
 
 /**
- * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link Long} type
- * annotated with the {@link SequenceNumber} annotation and assigns the sequenceNumber of the DomainEventMessage.
- * <p/>
- * Primitive long parameters are also supported.
+ * AbstractAnnotatedParameterResolverFactory that accepts parameters with type {@link Instant} that are annotated
+ * with the {@link Timestamp} annotation and assigns the timestamp of the EventMessage.
  *
- * @author Mark Ingram
- * @since 2.1
+ * @author Allard Buijze
+ * @since 2.0
  */
 @Priority(Priority.HIGH)
-public final class SequenceNumberParameterResolverFactory extends
-        AbstractAnnotatedParameterResolverFactory<SequenceNumber, Long> {
+public final class TimestampParameterResolverFactory
+        extends AbstractAnnotatedParameterResolverFactory<Timestamp, Instant> {
 
-    private final ParameterResolver<Long> resolver;
+    private final ParameterResolver<Instant> resolver;
 
     /**
-     * Initializes a {@link ParameterResolverFactory} for {@link SequenceNumber}
+     * Initializes a {@link ParameterResolverFactory} for {@link Timestamp}
      * annotated parameters
      */
-    public SequenceNumberParameterResolverFactory() {
-        super(SequenceNumber.class, Long.class);
-        resolver = new SequenceNumberParameterResolver();
+    public TimestampParameterResolverFactory() {
+        super(Timestamp.class, Instant.class);
+        resolver = new TimestampParameterResolver();
     }
 
     @Override
-    protected ParameterResolver<Long> getResolver() {
+    protected ParameterResolver<Instant> getResolver() {
         return resolver;
     }
 
     /**
-     * ParameterResolver that resolves SequenceNumber parameters
+     * ParameterResolver that resolved Timestamp parameters
      */
-    public static class SequenceNumberParameterResolver implements ParameterResolver<Long> {
+    static class TimestampParameterResolver implements ParameterResolver<Instant> {
 
         @Nullable
         @Override
-        public Long resolveParameterValue(@Nonnull ProcessingContext context) {
-            if (Message.fromContext(context) instanceof DomainEventMessage domainEventMessage) {
-                return domainEventMessage.getSequenceNumber();
+        public Instant resolveParameterValue(@Nonnull ProcessingContext context) {
+            if (Message.fromContext(context) instanceof EventMessage eventMessage) {
+                return eventMessage.timestamp();
             }
             return null;
         }
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return Message.fromContext(context) instanceof DomainEventMessage;
+            return Message.fromContext(context) instanceof EventMessage;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,29 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.replay.annotations;
 
-import org.axonframework.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.annotation.MessageHandler;
-
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation that can be placed on a method that is to be invoked when a reset is being prepared. Handlers may throw an
- * exception to veto against a reset.
+ * Annotation marking a Handler (or class) as not being able to handle replays
+ * <p>
+ * When placed on the type (class) level, the setting applies to all handlers that don't explicitly override it
+ * on the method level.
+ * <p>
+ * Marking methods as not allowing replay will not change the routing of a message (i.e. will not invoke another
+ * handler method). Messages that would otherwise be handled by such handler are simply ignored.
  *
- * @author Allard Buijze
- * @since 3.2
+ * @author Tom Briers
+ * @since 4.2
  */
+@Documented
+@Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@MessageHandler(messageType = ResetContext.class)
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
-public @interface ResetHandler {
-
+@AllowReplay(false)
+public @interface DisallowReplay {
 }

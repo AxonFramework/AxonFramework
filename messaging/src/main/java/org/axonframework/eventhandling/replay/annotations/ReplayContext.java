@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.replay.annotations;
+
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -22,14 +24,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation indicating that a parameter on an Event Handler method should be injected with the SequenceNumber of
- * a DomainEventMessage. The parameter type must be assignable from {@link java.lang.Long}.
+ * Annotation indication that a parameter on a Message Handler method should be injected with the {@code resetContext}
+ * present in a {@link ReplayToken}.
+ * <p>
+ * Will inject null when there is no replay currently happening, or when the context is null.
  *
- * @author Mark Ingram
- * @since 2.1
+ * @author Mitchell Herrijgers
+ * @since 4.6.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
-public @interface SequenceNumber {
+public @interface ReplayContext {
 
 }

@@ -17,7 +17,7 @@
 package org.axonframework.test.saga;
 
 import jakarta.inject.Inject;
-import org.axonframework.eventhandling.Timestamp;
+import org.axonframework.eventhandling.annotations.Timestamp;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.modelling.saga.SagaEventHandler;

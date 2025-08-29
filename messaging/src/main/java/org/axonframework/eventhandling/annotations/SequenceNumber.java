@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventhandling.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -22,14 +22,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation indication that a parameter on an Event Handler method should be injected with the Timestamp of an Event
- * Message. The parameter type must be assignable from {@link java.time.Instant}.
+ * Annotation indicating that a parameter on an Event Handler method should be injected with the SequenceNumber of
+ * a DomainEventMessage. The parameter type must be assignable from {@link java.lang.Long}.
  *
- * @author Allard Buijze
- * @since 2.0
+ * @author Mark Ingram
+ * @since 2.1
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
-public @interface Timestamp {
+public @interface SequenceNumber {
 
 }

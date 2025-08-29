@@ -16,6 +16,10 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.annotations.SequenceNumber;
+import org.axonframework.eventhandling.annotations.SequenceNumberParameterResolverFactory;
+import org.axonframework.eventhandling.annotations.Timestamp;
+import org.axonframework.eventhandling.annotations.TimestampParameterResolverFactory;
 import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.junit.jupiter.api.Test;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.replay;
+package org.axonframework.eventhandling.replay.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;

@@ -19,7 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.eventhandling.replay.AllowReplay;
+import org.axonframework.eventhandling.replay.annotations.AllowReplay;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.HandlerAttributes;

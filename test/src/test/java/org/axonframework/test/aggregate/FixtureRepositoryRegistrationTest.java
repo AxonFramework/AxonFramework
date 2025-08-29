@@ -20,7 +20,7 @@ import jakarta.persistence.EntityManager;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.TimestampParameterResolverFactory;
+import org.axonframework.eventhandling.annotations.TimestampParameterResolverFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;

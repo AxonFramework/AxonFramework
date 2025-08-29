@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.replay;
+package org.axonframework.eventhandling.replay.annotations;
 
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;

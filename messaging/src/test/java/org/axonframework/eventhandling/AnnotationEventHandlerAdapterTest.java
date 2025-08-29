@@ -18,8 +18,9 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonException;
 import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.replay.AllowReplay;
-import org.axonframework.eventhandling.replay.DisallowReplay;
+import org.axonframework.eventhandling.replay.annotations.ResetHandler;
+import org.axonframework.eventhandling.replay.annotations.AllowReplay;
+import org.axonframework.eventhandling.replay.annotations.DisallowReplay;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
