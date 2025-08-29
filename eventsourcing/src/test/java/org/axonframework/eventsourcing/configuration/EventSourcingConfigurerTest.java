@@ -166,7 +166,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                 testSubject.registerEntity(testEntityBuilder)
                            .build();
 
-        assertThat(configuration.getModuleConfiguration("SimpleStateBasedEntityModule<String, Object>")).isPresent();
+        assertThat(configuration.getModuleConfiguration("SimpleStateBasedEntityModule<java.lang.String, java.lang.Object>")).isPresent();
     }
 
     @Test
