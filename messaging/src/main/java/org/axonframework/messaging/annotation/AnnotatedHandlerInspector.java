@@ -21,6 +21,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.util.ClasspathResolver;
+import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -39,8 +40,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import reactor.core.publisher.Mono;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.emptySortedSet;
