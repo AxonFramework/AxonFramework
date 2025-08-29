@@ -64,8 +64,7 @@ class AnnotatedEventSourcedEntityModule<I, E>
     private final Set<Class<? extends E>> concreteTypes;
 
     AnnotatedEventSourcedEntityModule(@Nonnull Class<I> idType, @Nonnull Class<E> entityType) {
-        super("AnnotatedEventSourcedEntityModule<%s, %s>".formatted(idType.getSimpleName(),
-                                                                    entityType.getSimpleName()));
+        super("AnnotatedEventSourcedEntityModule<%s, %s>".formatted(idType.getName(), entityType.getName()));
 
         this.idType = requireNonNull(idType, "The idType may not be null.");
         this.entityType = requireNonNull(entityType, "The entityType may not be null.");
