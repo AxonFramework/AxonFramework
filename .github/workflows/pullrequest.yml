@@ -183,7 +183,7 @@ jobs:
 
   test-summary:
     name: Test Summary
-    needs: [test, integration-tests]
+    needs: [compile, test, integration-tests]
     runs-on: ubuntu-latest
     if: always()
 
