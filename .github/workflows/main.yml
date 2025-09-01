@@ -44,14 +44,14 @@ jobs:
       - name: Regular Build
         if: ${{ !matrix.sonar-enabled }}
         run: |
-          ./mvnw -B -U -T 1C -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 clean verify
+          ./mvnw -B -U -T 1C -Dstyle.color=always -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 clean verify
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
 
       - name: Build with Coverage reports
         if: matrix.sonar-enabled
         run: |
-          ./mvnw -B -U -T 1C -Dstyle.color=always -Possrh -Dcoverage -Dsurefire.rerunFailingTestsCount=5 clean verify
+          ./mvnw -B -U -T 1C -Dstyle.color=always -Dcoverage -Dsurefire.rerunFailingTestsCount=5 clean verify
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
 

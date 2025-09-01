@@ -223,3 +223,14 @@ jobs:
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  result:
+    name: Test and Build on JDK 21
+    needs: [compile, test, integration-tests, test-summary, sonar]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always() && !cancelled() && needs.compile.result == 'success' && needs.test.result == 'success' && needs.integration-tests.result == 'success' && needs.test-summary.result == 'success' && (needs.sonar.result == 'success' || needs.sonar.result == 'skipped')
+
+    steps:
+      - name: Success
+        run: echo "🎉 All jobs completed successfully!"
