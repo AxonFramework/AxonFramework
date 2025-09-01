@@ -73,7 +73,7 @@
         <!-- Axon Server -->
         <axonserver-connector-java.version>2025.2.0-EAP</axonserver-connector-java.version>
         <!-- Caching -->
-        <ehcache.version>3.11.0</ehcache.version>
+        <ehcache.version>3.11.1</ehcache.version>
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
         <!-- Database -->
         <c3p0.version>0.9.1.2</c3p0.version>
@@ -93,7 +93,7 @@
         <log4j.version>2.25.1</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
-        <dropwizard.metrics.version>4.2.33</dropwizard.metrics.version>
+        <dropwizard.metrics.version>4.2.35</dropwizard.metrics.version>
         <micrometer.version>1.15.3</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.17.7</byte-buddy.version>
@@ -109,7 +109,7 @@
         <avro.version>1.12.0</avro.version>
         <dom4j.version>2.2.0</dom4j.version>
         <gson.version>2.13.1</gson.version>
-        <jackson.version>2.19.2</jackson.version>
+        <jackson.version>2.20.0</jackson.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version>
         <jobrunr.version>8.0.2</jobrunr.version>
