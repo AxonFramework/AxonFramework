@@ -107,7 +107,7 @@ public interface Component<C> extends DescribableComponent {
          */
         public Identifier(@Nonnull Class<C> type,
                           @Nullable String name) {
-            this(TypeReference.fromType(type), name);
+            this(TypeReference.fromClass(type), name);
         }
 
         /**
