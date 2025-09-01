@@ -107,13 +107,11 @@ jobs:
           TESTCONTAINERS_CHECKS_DISABLE: true
           TESTCONTAINERS_RYUK_DISABLED: true
 
-      - name: Upload test results and coverage
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.module }}
-          path: |
-            **/target/surefire-reports/TEST-*.xml
-            **/target/jacoco-ut.exec
+          path: "**/target/surefire-reports/TEST-*.xml"
         if: always()
 
   integration-tests:
@@ -153,13 +151,11 @@ jobs:
           TESTCONTAINERS_CHECKS_DISABLE: true
           TESTCONTAINERS_RYUK_DISABLED: true
 
-      - name: Upload integration test results and coverage
+      - name: Upload integration test results
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.module }}
-          path: |
-            **/target/surefire-reports/TEST-*.xml
-            **/target/jacoco-ut.exec
+          path: "**/target/surefire-reports/TEST-*.xml"
         if: always()
 
   test-summary:
@@ -210,31 +206,9 @@ jobs:
             **/target
           key: ${{ needs.compile.outputs.cache-key }}
 
-      - name: Download test results and coverage data
-        uses: actions/download-artifact@v4
-        with:
-          pattern: test-results-*
-          path: test-results
-          merge-multiple: true
-
-      - name: Copy coverage data to module target directories
-        run: |
-          find test-results -name "jacoco-ut.exec" -type f | while read file; do
-            # Extract module name from the path and copy to the correct target directory
-            module_path=$(dirname "$file" | sed 's|test-results/||' | sed 's|/target.*||')
-            if [ -d "$module_path/target" ]; then
-              cp "$file" "$module_path/target/"
-              echo "Copied $file to $module_path/target/"
-            fi
-          done
-
-      - name: Generate aggregated coverage report
-        run: |
-          ./mvnw -B -Dstyle.color=always -Dcoverage jacoco:report-aggregate -pl coverage-report
-
       - name: Sonar Analysis
         run: |
-          ./mvnw -B -Dstyle.color=always -Dcoverage sonar:sonar \
+          ./mvnw -B -Dstyle.color=always sonar:sonar \
           -Dsonar.projectKey=AxonFramework_AxonFramework \
           -Dsonar.organization=axonframework \
           -Dsonar.host.url=https://sonarcloud.io \
