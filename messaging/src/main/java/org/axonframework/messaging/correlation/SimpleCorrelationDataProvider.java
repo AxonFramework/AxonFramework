@@ -26,8 +26,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * {@code CorrelationDataProvider} implementation defines correlation headers by the header names. The headers from
- * messages with these keys are returned as correlation data.
+ * A {@code CorrelationDataProvider} implementation that defines correlation data by the {@link Message#metaData()} key
+ * names.
+ * <p>
+ * The metadata entries from {@link Message messages} matching these keys are returned as correlation data.
  *
  * @author Allard Buijze
  * @since 2.3.0
@@ -37,10 +39,11 @@ public class SimpleCorrelationDataProvider implements CorrelationDataProvider {
     private final String[] headerNames;
 
     /**
-     * Initializes the CorrelationDataProvider to return the metadata of messages with given {@code metaDataKeys} as
-     * correlation data.
+     * Initializes a {@code SimpleCorrelationDataProvider} that returns the {@link Message#metaData()} entries of given
+     * {@link Message messages} that match the given {@code metaDataKeys} as correlation data.
      *
-     * @param metaDataKeys The keys of the metadata entries from messages to return as correlation data.
+     * @param metaDataKeys The keys of the {@link Message#metaData()} entries from {@link Message messages} to return as
+     *                     correlation data.
      */
     public SimpleCorrelationDataProvider(String... metaDataKeys) {
         this.headerNames = Arrays.copyOf(metaDataKeys, metaDataKeys.length);
