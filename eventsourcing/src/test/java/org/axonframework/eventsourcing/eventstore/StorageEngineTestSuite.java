@@ -18,9 +18,9 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TerminalEventMessage;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
@@ -28,7 +28,6 @@ import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
 import org.axonframework.utils.AssertUtils;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
@@ -182,12 +181,27 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
+    void sourcingEmptyStreamReturnsOnlyConsistencyMarker() {
+        // given
+        // no events appended to the store
+
+        // when
+        SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
+        MessageStream<EventMessage> sourcingStream = testSubject.source(testCondition);
+
+        // then
+        StepVerifier.create(sourcingStream.asFlux())
+                    .assertNext(StorageEngineTestSuite::assertMarkerEntry)
+                    .verifyComplete();
+    }
+
+    @Test
     void sourcingEventsReturnsConsistencyMarkerAsSoleMessageAndCompletesWhenNoEventsInTheStore() {
         AtomicBoolean completed = new AtomicBoolean(false);
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
         MessageStream<EventMessage> sourcingStream = testSubject.source(testCondition)
-                                                                   .whenComplete(() -> completed.set(true));
+                                                                .whenComplete(() -> completed.set(true));
         await("Await first entry availability")
                 .pollDelay(Duration.ofMillis(50))
                 .atMost(Duration.ofMillis(500))
@@ -408,9 +422,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .get(5, TimeUnit.SECONDS);
 
         MessageStream<EventMessage> stream = testSubject.firstToken()
-                                                           .thenApply(StreamingCondition::startingFrom)
-                                                           .thenApply(testSubject::stream)
-                                                           .get(5, TimeUnit.SECONDS);
+                                                        .thenApply(StreamingCondition::startingFrom)
+                                                        .thenApply(testSubject::stream)
+                                                        .get(5, TimeUnit.SECONDS);
 
         AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(stream.next().isPresent()));
         AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(stream.next().isPresent()));
@@ -444,6 +458,36 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
+    void streamReceivesEventsAppendedAfterStreamOpened() throws Exception {
+        // given
+        MessageStream<EventMessage> stream = testSubject.firstToken()
+                                                        .thenApply(StreamingCondition::startingFrom)
+                                                        .thenApply(testSubject::stream)
+                                                        .get(5, TimeUnit.SECONDS);
+
+        // when
+        TaggedEventMessage<EventMessage> expectedEvent1 = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
+        TaggedEventMessage<EventMessage> expectedEvent2 = taggedEventMessage("event-2", TEST_CRITERIA_TAGS);
+
+        testSubject.appendEvents(AppendCondition.none(), expectedEvent1, expectedEvent2)
+                   .thenCompose(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
+
+        // then
+        waitUntilHasNextAvailable(stream);
+
+        Optional<Entry<EventMessage>> firstEvent = stream.next();
+        assertTrue(firstEvent.isPresent());
+        assertEvent(firstEvent.get().message(), expectedEvent1.event());
+
+        waitUntilHasNextAvailable(stream);
+
+        Optional<Entry<EventMessage>> secondEvent = stream.next();
+        assertTrue(secondEvent.isPresent());
+        assertEvent(secondEvent.get().message(), expectedEvent2.event());
+    }
+
+    @Test
     void tailTokenReturnsHeadTokenForEmptyStore() throws Exception {
         TrackingToken actualTailToken = testSubject.firstToken().get(5, TimeUnit.SECONDS);
         TrackingToken actualHeadToken = testSubject.latestToken().get(5, TimeUnit.SECONDS);
@@ -462,13 +506,13 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .get(5, TimeUnit.SECONDS);
 
         MessageStream<EventMessage> stream = testSubject.firstToken()
-                                                           .thenApply(StreamingCondition::startingFrom)
-                                                           .thenApply(testSubject::stream)
-                                                           .get(5, TimeUnit.SECONDS);
+                                                        .thenApply(StreamingCondition::startingFrom)
+                                                        .thenApply(testSubject::stream)
+                                                        .get(5, TimeUnit.SECONDS);
 
         Entry<EventMessage> actualEntry = stream.first()
-                                                   .asCompletableFuture()
-                                                   .get(5, TimeUnit.SECONDS);
+                                                .asCompletableFuture()
+                                                .get(5, TimeUnit.SECONDS);
         assertEvent(actualEntry.message(), firstEvent.event());
     }
 
@@ -481,9 +525,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .get(5, TimeUnit.SECONDS);
 
         MessageStream<EventMessage> stream = testSubject.latestToken()
-                                                           .thenApply(StreamingCondition::startingFrom)
-                                                           .thenApply(testSubject::stream)
-                                                           .get(5, TimeUnit.SECONDS);
+                                                        .thenApply(StreamingCondition::startingFrom)
+                                                        .thenApply(testSubject::stream)
+                                                        .get(5, TimeUnit.SECONDS);
 
         await(
                 "Await until the store has caught up"
@@ -620,8 +664,8 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     private static TaggedEventMessage<EventMessage> taggedEventMessageAt(String payload,
-                                                                                 Set<Tag> tags,
-                                                                                 Instant timestamp) {
+                                                                         Set<Tag> tags,
+                                                                         Instant timestamp) {
         return new GenericTaggedEventMessage<>(
                 new GenericEventMessage(
                         UUID.randomUUID().toString(),

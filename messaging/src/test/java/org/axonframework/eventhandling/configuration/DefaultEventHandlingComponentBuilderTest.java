@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -54,7 +54,7 @@ class DefaultEventHandlingComponentBuilderTest {
         void shouldApplySequencingPolicyAndReturnRequiredEventHandlerPhase() {
             // given
             var expectedIdentifier = "sequenceId";
-            SequencingPolicy sequencingPolicy = event -> Optional.of(expectedIdentifier);
+            SequencingPolicy sequencingPolicy = (event, context) -> Optional.of(expectedIdentifier);
 
             // when
             var component = builder.sequencingPolicy(sequencingPolicy)

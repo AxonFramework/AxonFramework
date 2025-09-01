@@ -22,37 +22,38 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.SubscribableMessageSourceDefinition;
-import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
-import org.axonframework.eventhandling.ErrorContext;
-import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
-import org.axonframework.eventhandling.async.SequentialPolicy;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.eventhandling.sequencing.FullConcurrencyPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorConfiguration;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.deadletter.Decisions;
@@ -320,7 +321,7 @@ class EventProcessingModuleTest {
     void assignSequencingPolicy() throws NoSuchFieldException, IllegalAccessException {
         Object mockHandler = new Object();
         Object specialHandler = new Object();
-        SequentialPolicy sequentialPolicy = new SequentialPolicy();
+        SequentialPolicy sequentialPolicy = SequentialPolicy.INSTANCE;
         FullConcurrencyPolicy fullConcurrencyPolicy = new FullConcurrencyPolicy();
         configurer.eventProcessing()
                   .registerEventHandler(c -> mockHandler)
@@ -1431,7 +1432,7 @@ class EventProcessingModuleTest {
 
         private final String name;
         private final EventHandlerInvoker eventHandlerInvoker;
-        private final List<MessageHandlerInterceptor<? super EventMessage>> interceptors = new ArrayList<>();
+        private final List<MessageHandlerInterceptor<EventMessage>> interceptors = new ArrayList<>();
 
         public StubEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker) {
             this.name = name;
@@ -1498,12 +1499,13 @@ class EventProcessingModuleTest {
 
     private static class StubInterceptor implements MessageHandlerInterceptor<EventMessage> {
 
+
+        @Nonnull
         @Override
-        public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage> unitOfWork,
-                             @Nonnull ProcessingContext context,
-                             @Nonnull InterceptorChain interceptorChain)
-                throws Exception {
-            return interceptorChain.proceedSync(context);
+        public MessageStream<?> interceptOnHandle(@Nonnull EventMessage message,
+                                                  @Nonnull ProcessingContext context,
+                                                  @Nonnull MessageHandlerInterceptorChain<EventMessage> interceptorChain) {
+            return interceptorChain.proceed(message, context);
         }
     }
 

@@ -25,9 +25,10 @@ import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsResponse;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
@@ -38,7 +39,6 @@ import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final AxonServerConnection connection;
-    private final EventConverter converter;
+    private final TaggedEventConverter converter;
 
     /**
      * Constructs an {@code AxonServerEventStorageEngine} with the given {@code connection} and {@code converter}.
@@ -70,9 +70,9 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
      *                   {@link org.axonframework.messaging.MetaData} values into bytes.
      */
     public AxonServerEventStorageEngine(@Nonnull AxonServerConnection connection,
-                                        @Nonnull Converter converter) {
+                                        @Nonnull EventConverter converter) {
         this.connection = Objects.requireNonNull(connection, "The Axon Server connection cannot be null.");
-        this.converter = new EventConverter(converter);
+        this.converter = new TaggedEventConverter(converter);
     }
 
     @Override

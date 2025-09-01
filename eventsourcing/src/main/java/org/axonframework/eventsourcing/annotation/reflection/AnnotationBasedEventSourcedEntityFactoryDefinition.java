@@ -18,12 +18,12 @@ package org.axonframework.eventsourcing.annotation.reflection;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.serialization.Converter;
 
 import java.util.Set;
 
@@ -55,7 +55,7 @@ public class AnnotationBasedEventSourcedEntityFactoryDefinition
                 entitySubTypes,
                 configuration.getComponent(ParameterResolverFactory.class),
                 configuration.getComponent(MessageTypeResolver.class),
-                configuration.getComponent(Converter.class)
+                configuration.getComponent(EventConverter.class)
         );
     }
 }

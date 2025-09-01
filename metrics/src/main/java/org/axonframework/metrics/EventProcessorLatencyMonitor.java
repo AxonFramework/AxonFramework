@@ -20,7 +20,8 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.StreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitorCallback;
 
@@ -36,7 +37,7 @@ import jakarta.annotation.Nonnull;
  * <p>
  * This monitor defines the latency between the {@link EventMessage#timestamp()} and the {@link Clock#instant()}.
  * Doing so, it depicts the latency from when an event was published compared to when an
- * {@link org.axonframework.eventhandling.EventProcessor} processes the event to clarify how far behind an
+ * {@link EventProcessor} processes the event to clarify how far behind an
  * {@code EventProcessor} is.
  * <p>
  * Do note that a replay (as triggered through {@link StreamingEventProcessor#resetTokens()}, for example) will cause

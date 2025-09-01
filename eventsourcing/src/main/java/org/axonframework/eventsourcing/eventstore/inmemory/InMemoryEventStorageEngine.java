@@ -19,9 +19,9 @@ package org.axonframework.eventsourcing.eventstore.inmemory;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TerminalEventMessage;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -273,23 +273,25 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         @Override
         public Optional<Entry<EventMessage>> next() {
             long currentPosition = this.position.get();
-            while (currentPosition <= this.end
-                    && eventStorage.containsKey(currentPosition)
-                    && this.position.compareAndSet(currentPosition, currentPosition + 1)) {
-                TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
+            long lookupPosition = Math.max(0, currentPosition);
+            while (lookupPosition <= this.end
+                    && eventStorage.containsKey(lookupPosition)
+                    && this.position.compareAndSet(currentPosition, lookupPosition + 1)) {
+                TaggedEventMessage<?> nextEvent = eventStorage.get(lookupPosition);
                 if (match(nextEvent, this.condition)) {
                     Context context = Context.empty();
-                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition + 1));
+                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(lookupPosition + 1));
                     return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
                 }
                 currentPosition = this.position.get();
+                lookupPosition = Math.max(0, currentPosition);
             }
             return lastEntry();
         }
 
         @Override
         public Optional<Entry<EventMessage>> peek() {
-            long currentPosition = this.position.get();
+            long currentPosition = Math.max(0, this.position.get());
             while (currentPosition <= this.end && eventStorage.containsKey(currentPosition)) {
                 TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
                 if (match(nextEvent, this.condition)) {
@@ -307,7 +309,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         @Override
         public void onAvailable(@Nonnull Runnable callback) {
             this.callback.set(callback);
-            if (eventStorage.isEmpty() || eventStorage.containsKey(this.position.get())) {
+            if (eventStorage.isEmpty() || eventStorage.containsKey(Math.max(0, this.position.get()))) {
                 callback.run();
             }
         }
@@ -325,7 +327,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
         @Override
         public boolean hasNextAvailable() {
-            long currentPosition = this.position.get();
+            long currentPosition = Math.max(0, this.position.get());
             return currentPosition <= this.end && eventStorage.containsKey(currentPosition);
         }
 

@@ -31,7 +31,7 @@ import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -372,9 +372,12 @@ class CommandHandlerInterceptorTest {
         }
 
         @CommandHandlerInterceptor(commandNamePattern = ".*Nested.*")
-        public void interceptAllMatchingPattern(Object command, InterceptorChain interceptorChain, ProcessingContext context) throws Exception {
+        public void interceptAllMatchingPattern(Object command,
+                                                MessageHandlerInterceptorChain<CommandMessage> interceptorChain,
+                                                ProcessingContext context) {
             apply(new AnyCommandMatchingPatternInterceptedEvent(command.getClass().getName()));
-            interceptorChain.proceedSync(context);
+            // TODO integrate as part of #3485
+            // interceptorChain.proceed(context, command);
         }
 
         @EventSourcingHandler
@@ -400,10 +403,12 @@ class CommandHandlerInterceptorTest {
         }
 
         @CommandHandlerInterceptor
-        public void intercept(ClearMyAggregateStateCommand command, InterceptorChain interceptorChain, ProcessingContext context)
+        public void intercept(ClearMyAggregateStateCommand command, MessageHandlerInterceptorChain interceptorChain,
+                              ProcessingContext context)
                 throws Exception {
             if (command.proceed()) {
-                interceptorChain.proceedSync(context);
+                // TODO reintegrate as part of #3485
+                // interceptorChain.proceedSync(context);
             } else {
                 apply(new MyAggregateStateNotClearedEvent(command.id()));
             }
@@ -483,9 +488,11 @@ class CommandHandlerInterceptorTest {
         private String state;
 
         @CommandHandlerInterceptor
-        public static void interceptAll(Object command, InterceptorChain chain, ProcessingContext context) throws Exception {
+        public static void interceptAll(Object command, MessageHandlerInterceptorChain chain, ProcessingContext context)
+                throws Exception {
             apply(new AnyCommandInterceptedEvent("StaticNestedNested" + command.getClass().getName()));
-            chain.proceedSync(context);
+            // TODO reintegrate as part of #3485
+            // chain.proceedSync(context);
         }
 
         private MyNestedNestedEntity(String id) {
@@ -526,7 +533,7 @@ class CommandHandlerInterceptorTest {
     private static class MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid {
 
         @CommandHandlerInterceptor
-        public Object intercept(InterceptorChain chain) {
+        public Object intercept(MessageHandlerInterceptorChain chain) {
             return new Object();
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,13 @@
 
 package org.axonframework.deadline;
 
-import org.axonframework.messaging.MessageDispatchInterceptorSupport;
-import org.axonframework.messaging.MessageHandlerInterceptorSupport;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
 
 import java.time.Duration;
 import java.time.Instant;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 /**
  * Contract for deadline managers. Contains methods for scheduling a deadline and for cancelling a deadline.
@@ -33,8 +31,7 @@ import jakarta.annotation.Nullable;
  * @author Steven van Beelen
  * @since 3.3
  */
-public interface DeadlineManager extends MessageDispatchInterceptorSupport<DeadlineMessage>,
-        MessageHandlerInterceptorSupport<DeadlineMessage> {
+public interface DeadlineManager {
 
     /**
      * Schedules a deadline at given {@code triggerDateTime} with given {@code deadlineName}. The payload of this

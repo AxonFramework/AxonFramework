@@ -21,7 +21,7 @@ import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 

@@ -16,9 +16,10 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.eventhandling.annotation.EventHandler;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ResultMessage;
@@ -27,8 +28,6 @@ import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.Predicate;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 /**
  * Component which informs subscription queries about updates, errors and when there are no more updates.
@@ -46,7 +45,7 @@ import jakarta.annotation.Nullable;
  * @author Milan Savic
  * @since 3.3
  */
-public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<SubscriptionQueryUpdateMessage> {
+public interface QueryUpdateEmitter {
 
     /**
      * Emits incremental update (as return value of provided update function) to subscription queries matching given

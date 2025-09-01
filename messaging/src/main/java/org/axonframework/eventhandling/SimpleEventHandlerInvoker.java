@@ -19,8 +19,13 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
+import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
+import org.axonframework.eventhandling.processors.streaming.segmenting.SegmentMatcher;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
@@ -114,18 +119,18 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     @Override
     public void handle(@Nonnull EventMessage message, @Nonnull ProcessingContext context, @Nonnull Segment segment)
             throws Exception {
-        if (!sequencingPolicyMatchesSegment(message, segment)) {
+        if (!sequencingPolicyMatchesSegment(message, segment, context)) {
             return;
         }
         invokeHandlers(message, context);
     }
 
-    protected boolean sequencingPolicyMatchesSegment(@Nonnull EventMessage message, @Nonnull Segment segment) {
-        return segmentMatcher.matches(segment, message);
+    protected boolean sequencingPolicyMatchesSegment(@Nonnull EventMessage message, @Nonnull Segment segment, @Nonnull ProcessingContext context) {
+        return segmentMatcher.matches(segment, message, context);
     }
 
-    protected Object sequenceIdentifier(EventMessage event) {
-        return segmentMatcher.sequenceIdentifier(event);
+    protected Object sequenceIdentifier(EventMessage event, ProcessingContext context) {
+        return segmentMatcher.sequenceIdentifier(event, context);
     }
 
     protected void invokeHandlers(EventMessage message, ProcessingContext context) throws Exception {
@@ -142,7 +147,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     public boolean canHandle(@Nonnull EventMessage eventMessage,
                              @Nonnull ProcessingContext context,
                              @Nonnull Segment segment) {
-        return hasHandler(eventMessage, context) && segmentMatcher.matches(segment, eventMessage);
+        return hasHandler(eventMessage, context) && segmentMatcher.matches(segment, eventMessage, context);
     }
 
     @Override

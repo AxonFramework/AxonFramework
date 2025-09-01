@@ -16,19 +16,19 @@
 
 package org.axonframework.eventhandling.deadletter;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
-import org.axonframework.eventhandling.Segment;
+import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
@@ -37,8 +37,8 @@ import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +49,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
@@ -73,7 +72,7 @@ import static org.axonframework.messaging.deadletter.ThrowableCause.truncated;
  */
 public class DeadLetteringEventHandlerInvoker
         extends SimpleEventHandlerInvoker
-        implements SequencedDeadLetterProcessor<EventMessage>, MessageHandlerInterceptorSupport<EventMessage> {
+        implements SequencedDeadLetterProcessor<EventMessage> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -84,7 +83,7 @@ public class DeadLetteringEventHandlerInvoker
     private final boolean sequenceIdentifierCacheEnabled;
     private final int sequenceIdentifierCacheSize;
     private final Map<Segment, SequenceIdentifierCache> sequenceIdentifierCache;
-    private final List<MessageHandlerInterceptor<? super EventMessage>> interceptors = new CopyOnWriteArrayList<>();
+    private final List<MessageHandlerInterceptor<EventMessage>> interceptors = new CopyOnWriteArrayList<>();
 
     /**
      * Instantiate a dead-lettering {@link EventHandlerInvoker} based on the given {@link Builder builder}. Uses a
@@ -126,12 +125,12 @@ public class DeadLetteringEventHandlerInvoker
 
     @Override
     public void handle(@Nonnull EventMessage message, @Nonnull ProcessingContext context, @Nonnull Segment segment) throws Exception {
-        if (!super.sequencingPolicyMatchesSegment(message, segment)) {
+        if (!super.sequencingPolicyMatchesSegment(message, segment, context)) {
             logger.trace("Ignoring event with id [{}] as it is not assigned to segment [{}].",
                          message.identifier(), segment);
             return;
         }
-        Object sequenceIdentifier = super.sequenceIdentifier(message);
+        Object sequenceIdentifier = super.sequenceIdentifier(message, context);
         boolean mightBePresent = mightBePresent(sequenceIdentifier, segment);
         if (isPresent(mightBePresent, sequenceIdentifier, message)) {
             if (logger.isInfoEnabled()) {
@@ -240,9 +239,8 @@ public class DeadLetteringEventHandlerInvoker
         return (boolean)uow.executeWithResult((ctx) -> queue.process(sequenceFilter, processingTask::process)).payload();
     }
 
-    @Override
     public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<? super EventMessage> interceptor) {
+            @Nonnull MessageHandlerInterceptor<EventMessage> interceptor) {
         interceptors.add(interceptor);
         return () -> interceptors.remove(interceptor);
     }

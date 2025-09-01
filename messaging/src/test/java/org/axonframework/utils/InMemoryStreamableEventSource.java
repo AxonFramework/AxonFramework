@@ -20,9 +20,9 @@ import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.messaging.StreamableMessageSource;
 
 import java.time.Duration;

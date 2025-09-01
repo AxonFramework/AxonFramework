@@ -64,7 +64,7 @@ class SimpleStateBasedEntityModule<ID, E>
 
     SimpleStateBasedEntityModule(@Nonnull Class<ID> idType,
                                  @Nonnull Class<E> entityType) {
-        super("SimpleStateBasedEntityModule<%s, %s>".formatted(idType.getSimpleName(), entityType.getSimpleName()));
+        super("SimpleStateBasedEntityModule<%s, %s>".formatted(idType.getName(), entityType.getName()));
         this.idType = requireNonNull(idType, "The identifier type cannot be null.");
         this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
     }

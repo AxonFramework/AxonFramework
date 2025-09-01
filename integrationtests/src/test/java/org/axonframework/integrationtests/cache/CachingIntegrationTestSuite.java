@@ -24,7 +24,7 @@ import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.config.SagaConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.StreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.modelling.saga.repository.CachingSagaStore;
 import org.axonframework.modelling.saga.repository.SagaStore;

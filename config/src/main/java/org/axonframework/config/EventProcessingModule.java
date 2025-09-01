@@ -21,33 +21,32 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.DirectEventProcessingStrategy;
-import org.axonframework.eventhandling.ErrorHandler;
+import org.axonframework.eventhandling.processors.subscribing.DirectEventProcessingStrategy;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.EventProcessorSpanFactory;
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
-import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
-import org.axonframework.eventhandling.LoggingErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.MultiEventHandlerInvoker;
-import org.axonframework.eventhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.async.SequencingPolicy;
-import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorConfiguration;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorConfiguration;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.LegacyStreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageHandlerInterceptorSupport;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -120,8 +119,8 @@ public class EventProcessingModule
     protected final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
     protected final Map<String, DeadLetteringEventHandlerInvoker> deadLetteringEventHandlerInvokers = new HashMap<>();
 
-    protected final List<BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<? super EventMessage>>> defaultHandlerInterceptors = new ArrayList<>();
-    protected final Map<String, List<Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage>>>> handlerInterceptorsBuilders = new HashMap<>();
+    protected final List<BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<EventMessage>>> defaultHandlerInterceptors = new ArrayList<>();
+    protected final Map<String, List<Function<LegacyConfiguration, MessageHandlerInterceptor<EventMessage>>>> handlerInterceptorsBuilders = new HashMap<>();
     protected final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
     protected final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
     protected final Map<String, Component<SequencingPolicy>> sequencingPolicies = new HashMap<>();
@@ -402,7 +401,7 @@ public class EventProcessingModule
         return eventProcessor;
     }
 
-    private void addInterceptors(String processorName, MessageHandlerInterceptorSupport<EventMessage> processor) {
+    private void addInterceptors(String processorName, DeadLetteringEventHandlerInvoker processor) {
         handlerInterceptorsBuilders.getOrDefault(processorName, new ArrayList<>())
                                    .stream()
                                    .map(hi -> hi.apply(configuration))
@@ -718,7 +717,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerHandlerInterceptor(String processorName,
-                                                                Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder) {
+                                                                Function<LegacyConfiguration, MessageHandlerInterceptor<EventMessage>> interceptorBuilder) {
         Component<EventProcessor> eps = eventProcessors.get(processorName);
         if (eps != null && eps.isInitialized()) {
             // TODO #3103 - implement differently
@@ -731,7 +730,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDefaultHandlerInterceptor(
-            BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
+            BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<EventMessage>> interceptorBuilder
     ) {
         this.defaultHandlerInterceptors.add(interceptorBuilder);
         return this;

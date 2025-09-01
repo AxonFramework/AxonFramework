@@ -66,7 +66,7 @@ class SimpleEventSourcedEntityModule<ID, E> extends BaseModule<SimpleEventSource
 
     SimpleEventSourcedEntityModule(@Nonnull Class<ID> idType,
                                    @Nonnull Class<E> entityType) {
-        super("SimpleEventSourcedEntityModule<%s, %s>".formatted(idType.getSimpleName(), entityType.getSimpleName()));
+        super("SimpleEventSourcedEntityModule<%s, %s>".formatted(idType.getName(), entityType.getName()));
         this.idType = requireNonNull(idType, "The identifier type cannot be null.");
         this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
     }

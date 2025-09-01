@@ -16,10 +16,9 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
@@ -27,8 +26,6 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
@@ -171,8 +168,9 @@ class DefaultEventStoreTransactionTest {
         private ConsistencyMarker appendEventForTag(Tag tag) {
             return eventStorageEngine.appendEvents(AppendCondition.none(),
                                                    new GenericTaggedEventMessage<>(
-                                                           new GenericEventMessage(new MessageType(String.class),
-                                                                                     "my payload"),
+                                                           new GenericEventMessage(
+                                                                   new MessageType(String.class), "my payload"
+                                                           ),
                                                            Set.of(tag)
                                                    )).join().commit().join();
         }
@@ -365,12 +363,13 @@ class DefaultEventStoreTransactionTest {
 
     private EventStoreTransaction defaultEventStoreTransactionFor(ProcessingContext processingContext,
                                                                   TagResolver tagResolver) {
-        return processingContext.computeResourceIfAbsent(testEventStoreTransactionKey,
-                                                         () -> new DefaultEventStoreTransaction(
-                                                                 eventStorageEngine,
-                                                                 processingContext,
-                                                                 tagResolver
-                                                         )
+        return processingContext.computeResourceIfAbsent(
+                testEventStoreTransactionKey,
+                () -> new DefaultEventStoreTransaction(
+                        eventStorageEngine,
+                        processingContext,
+                        event -> new GenericTaggedEventMessage<>(event, tagResolver.resolve(event))
+                )
         );
     }
 

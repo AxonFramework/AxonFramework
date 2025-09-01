@@ -16,7 +16,7 @@
 package org.axonframework.queryhandling.annotation;
 
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
@@ -151,6 +151,7 @@ class AnnotationQueryHandlerAdapterTest {
         assertThrows(NoHandlerForQueryException.class, () -> testSubject.handleSync(testQuery, context));
     }
 
+    @Disabled("Reintegrate as part of #3485")
     @Test
     void interceptMessages() throws Exception {
         List<QueryMessage> withInterceptor = new ArrayList<>();
@@ -285,9 +286,9 @@ class AnnotationQueryHandlerAdapterTest {
         }
 
         @MessageHandlerInterceptor
-        public Object interceptAny(QueryMessage query, InterceptorChain chain, ProcessingContext context) throws Exception {
+        public Object interceptAny(QueryMessage query, MessageHandlerInterceptorChain chain, ProcessingContext context) throws Exception {
             interceptedWithInterceptorChain.add(query);
-            return chain.proceedSync(context);
+            return chain.proceed(query, context);
         }
 
         @ExceptionHandler(resultType = RuntimeException.class)

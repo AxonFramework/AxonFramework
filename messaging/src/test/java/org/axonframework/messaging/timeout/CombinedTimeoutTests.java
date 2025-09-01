@@ -19,9 +19,11 @@ import org.junit.jupiter.api.*;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
+
 /**
  * The different timeout components, {@link TimeoutWrappedMessageHandlingMember} and
- * {@link UnitOfWorkTimeoutInterceptor} are tested in isolation, but this test class combines them to ensure that the
+ * {@link UnitOfWorkTimeoutInterceptorBuilder} are tested in isolation, but this test class combines them to ensure that the
  * timeout behavior works as expected when both are used together.
  */
 @Disabled("TODO #3559")
@@ -189,8 +191,8 @@ class CombinedTimeoutTests {
 //        );
 //    }
 
-    private UnitOfWorkTimeoutInterceptor createTimeoutInterceptor(int timeout) {
-        return new UnitOfWorkTimeoutInterceptor(
+    private UnitOfWorkTimeoutInterceptorBuilder createTimeoutInterceptor(int timeout) {
+        return new UnitOfWorkTimeoutInterceptorBuilder(
                 "TestComponent",
                 timeout,
                 500,

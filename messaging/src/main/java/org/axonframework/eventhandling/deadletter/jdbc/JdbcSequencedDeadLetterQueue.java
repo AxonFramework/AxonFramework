@@ -22,6 +22,7 @@ import org.axonframework.common.jdbc.JdbcException;
 import org.axonframework.common.jdbc.PagingJdbcIterable;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
@@ -756,7 +757,7 @@ public class JdbcSequencedDeadLetterQueue<E extends EventMessage> implements Seq
         }
 
         /**
-         * Sets the {@link Serializer} to (de)serialize the {@link org.axonframework.eventhandling.TrackingToken} (if
+         * Sets the {@link Serializer} to (de)serialize the {@link TrackingToken} (if
          * present) of the event in the {@link DeadLetter} when storing it to the database.
          * <p>
          * The {@code genericSerializer} will be used to construct the {@link DeadLetterStatementFactory} and/or

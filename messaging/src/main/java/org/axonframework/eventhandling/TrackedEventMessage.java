@@ -16,6 +16,9 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+
 /**
  * Represents an {@link EventMessage} containing a {@link TrackingToken}. The tracking token can be used be
  * {@link EventProcessor event processors} to keep track of which events it has processed.

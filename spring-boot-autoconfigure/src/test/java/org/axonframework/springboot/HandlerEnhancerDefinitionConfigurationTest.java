@@ -17,7 +17,7 @@
 package org.axonframework.springboot;
 
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.junit.jupiter.api.*;

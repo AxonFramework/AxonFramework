@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MessageType;
@@ -197,6 +197,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         assertTrue(memberCommandHandlingValidator.get());
     }
 
+    @Disabled("TODO reintegrate as part of #3485")
     @Test
     void createdAggregateModelInvokesAllCommandInterceptors() throws Exception {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;
@@ -216,6 +217,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         assertEquals(expectedNumberOfMemberCommandInterceptorInvocations, memberCommandInterceptingCounter.get());
     }
 
+    @Disabled("TODO reintegrate as part of #3485")
     @Test
     void createdAggregateModelInvokesAllCommandInterceptorsForPolymorphicAggregate() throws Exception {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;

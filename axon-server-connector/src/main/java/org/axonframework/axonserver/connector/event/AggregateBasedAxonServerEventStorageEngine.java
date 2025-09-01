@@ -30,9 +30,10 @@ import org.axonframework.axonserver.connector.MetaDataConverter;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TerminalEventMessage;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
@@ -48,7 +49,6 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.Converter;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -72,7 +72,7 @@ import static org.axonframework.eventsourcing.eventstore.AggregateBasedEventStor
 public class AggregateBasedAxonServerEventStorageEngine implements EventStorageEngine {
 
     private final AxonServerConnection connection;
-    private final Converter converter;
+    private final EventConverter converter;
 
     /**
      * Initialize the {@code LegacyAxonServerEventStorageEngine} with given {@code connection} to Axon Server and given
@@ -82,7 +82,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
      * @param converter The converter to use to serialize payloads to bytes
      */
     public AggregateBasedAxonServerEventStorageEngine(@Nonnull AxonServerConnection connection,
-                                                      @Nonnull Converter converter) {
+                                                      @Nonnull EventConverter converter) {
         this.connection = Objects.requireNonNull(connection, "The connection must not be null.");
         this.converter = Objects.requireNonNull(converter, "The converter must not be null.");
     }

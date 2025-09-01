@@ -25,8 +25,6 @@ import jakarta.persistence.Persistence;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.InterceptingCommandBus;
-import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.caching.WeakReferenceCache;
@@ -38,9 +36,9 @@ import org.axonframework.deadline.SimpleDeadlineManager;
 import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.EventMessageHandler;
-import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.sequencing.FullConcurrencyPolicy;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -53,7 +51,6 @@ import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -73,8 +70,6 @@ import org.quartz.SchedulerContext;
 import org.quartz.SchedulerException;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -279,16 +274,7 @@ class DefaultConfigurerTest {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
-                                       .configureCommandBus(c -> {
-                                           SimpleCommandBus commandBus = aCommandBus();
-                                           return new InterceptingCommandBus(
-                                                   commandBus,
-                                                   List.of(new TransactionManagingInterceptor<>(c.getComponent(
-                                                           TransactionManager.class
-                                                   ))),
-                                                   Collections.emptyList()
-                                           );
-                                       })
+                                       .configureCommandBus(c -> aCommandBus())
                                        .configureAggregate(
                                                defaultConfiguration(StubAggregate.class)
                                                        .configureRepository(
@@ -322,12 +308,7 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager, transactionManager)
                                        .configureSerializer(c -> JacksonSerializer.defaultSerializer())
-                                       .configureCommandBus(c -> new InterceptingCommandBus(
-                                               aCommandBus(),
-                                               List.of(new TransactionManagingInterceptor<>(c.getComponent(
-                                                       TransactionManager.class
-                                               ))),
-                                               Collections.emptyList()))
+                                       .configureCommandBus(c -> aCommandBus())
                                        .configureAggregate(jpaMappedConfiguration(StubAggregate.class))
                                        .buildConfiguration();
 
@@ -344,13 +325,7 @@ class DefaultConfigurerTest {
     void missingEntityManagerProviderIsReported() {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.defaultConfiguration()
-                                       .configureCommandBus(c -> new InterceptingCommandBus(
-                                               aCommandBus(),
-                                               List.of(new TransactionManagingInterceptor<>(c.getComponent(
-                                                       TransactionManager.class
-                                               ))),
-                                               Collections.emptyList()
-                                       ))
+                                       .configureCommandBus(c -> aCommandBus())
                                        .configureAggregate(jpaMappedConfiguration(StubAggregate.class))
                                        .buildConfiguration();
 
@@ -364,13 +339,7 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.jpaConfiguration(() -> entityManager)
                                        .registerComponent(TransactionManager.class, c -> transactionManager)
-                                       .configureCommandBus(c -> new InterceptingCommandBus(
-                                               aCommandBus(),
-                                               List.of(new TransactionManagingInterceptor<>(c.getComponent(
-                                                       TransactionManager.class
-                                               ))),
-                                               Collections.emptyList())
-                                       )
+                                       .configureCommandBus(c -> aCommandBus())
                                        .configureAggregate(defaultConfiguration(StubAggregate.class).configureRepository(
                                                c -> LegacyGenericJpaRepository.builder(StubAggregate.class)
                                                                               .entityManagerProvider(new SimpleEntityManagerProvider(

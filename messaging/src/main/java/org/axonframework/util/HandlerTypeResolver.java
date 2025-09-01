@@ -17,7 +17,7 @@
 package org.axonframework.util;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.queryhandling.annotation.QueryHandler;
 
 import java.lang.annotation.Annotation;

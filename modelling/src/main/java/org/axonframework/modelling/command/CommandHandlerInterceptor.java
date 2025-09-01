@@ -17,7 +17,7 @@
 package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 
 import java.lang.annotation.Documented;
@@ -34,22 +34,22 @@ import java.lang.annotation.Target;
  * that matches the signature of the annotated method and the {@link #commandNamePattern()} will be intercepted by
  * the annotated method.
  * <p>
- * It is possible to specify {@link org.axonframework.messaging.InterceptorChain} parameter as part of command handler
+ * It is possible to specify {@link MessageHandlerInterceptorChain} parameter as part of command handler
  * interceptor signature. If this parameter is not specified, command handler will be executed automatically, as if
- * the {@link InterceptorChain#proceedSync(org.axonframework.messaging.unitofwork.ProcessingContext)} was invoked as the last instruction.
+ * the {@link MessageHandlerInterceptorChain#proceedSync(org.axonframework.messaging.unitofwork.ProcessingContext)} was invoked as the last instruction.
  * <p>
- * If a parameter of type {@link InterceptorChain} is defined, it must be called to have the command handler invoked.
- * It may choose to return the result of the {@link InterceptorChain#proceedSync(org.axonframework.messaging.unitofwork.ProcessingContext)} call directly, change it, or even
+ * If a parameter of type {@link MessageHandlerInterceptorChain} is defined, it must be called to have the command handler invoked.
+ * It may choose to return the result of the {@link MessageHandlerInterceptorChain#proceedSync(org.axonframework.messaging.unitofwork.ProcessingContext)} call directly, change it, or even
  * discard it.
  * <p>
- * Annotated methods that do not declare an {@link InterceptorChain} parameter must declare a {@code void} return type,
+ * Annotated methods that do not declare an {@link MessageHandlerInterceptorChain} parameter must declare a {@code void} return type,
  * as they cannot alter the result of an invocation, other than by throwing an exception.
  * <p>
  * There are two ways to prevent command handler of specified command to be executed:
  * <ul>
  * <li>Throwing an exception</li>
- * <li>Specifying {@link org.axonframework.messaging.InterceptorChain} parameter and not calling {@link
- * InterceptorChain#proceedSync(org.axonframework.messaging.unitofwork.ProcessingContext)} method on it</li>
+ * <li>Specifying {@link MessageHandlerInterceptorChain} parameter and not calling {@link
+ * MessageHandlerInterceptorChain#proceedSync(org.axonframework.messaging.unitofwork.ProcessingContext)} method on it</li>
  * </ul>
  * <p>
  * It is possible to have multiple interceptors for the same command. In that case, if there are interceptors in both

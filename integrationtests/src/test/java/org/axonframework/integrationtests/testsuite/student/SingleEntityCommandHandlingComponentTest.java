@@ -24,6 +24,7 @@ import org.axonframework.integrationtests.testsuite.student.events.StudentNameCh
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.serialization.Converter;
@@ -36,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
+class SingleEntityCommandHandlingComponentTest extends AbstractCommandHandlingStudentTestSuite {
 
     @Test
     void canHandleCommandThatTargetsOneEntityUsingStateManager() {
@@ -95,5 +96,15 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
             // Entity through magic of repository automatically updated
             assertEquals(student.getName(), command.name());
         }
+    }
+
+    private void verifyStudentName(String id, String name) {
+        UnitOfWork uow = unitOfWorkFactory.create();
+        uow.executeWithResult(context -> context.component(StateManager.class)
+                                                .repository(Student.class, String.class)
+                                                .load(id, context)
+                                                .thenAccept(student -> assertEquals(name,
+                                                                                    student.entity().getName())))
+           .join();
     }
 }

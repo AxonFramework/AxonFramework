@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Mitchell Herrijgers
  */
-class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStudentTestSuite {
+class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractCommandHandlingStudentTestSuite {
 
     @Override
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
@@ -79,7 +79,8 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                                              .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
                         ))
                         .build();
-        return configurer.componentRegistry(cr -> cr.registerModule(mentorAssignmentSlice));
+        return super.testSuiteConfigurer(configurer)
+                    .componentRegistry(cr -> cr.registerModule(mentorAssignmentSlice));
     }
 
     @Test

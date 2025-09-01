@@ -54,6 +54,7 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
@@ -108,7 +109,7 @@ class AxonServerQueryBusTest {
     private static final String CONTEXT = "default-test";
     private static final String INSTANCE_RESPONSE_TYPE_XML = "<org.axonframework.messaging.responsetypes.InstanceResponseType><expectedResponseType>java.lang.String</expectedResponseType></org.axonframework.messaging.responsetypes.InstanceResponseType>";
 
-    private final QueryBus localSegment = mock(QueryBus.class);
+    private final SimpleQueryBus localSegment = mock(SimpleQueryBus.class);
     private final Serializer serializer = JacksonSerializer.defaultSerializer();
     private final TargetContextResolver<QueryMessage> targetContextResolver = spy(new TestTargetContextResolver<>());
 
@@ -536,9 +537,9 @@ class AxonServerQueryBusTest {
     @Test
     void dispatchInterceptor() {
         List<Object> results = new LinkedList<>();
-        testSubject.registerDispatchInterceptor(messages -> (a, b) -> {
-            results.add(b.payload());
-            return b;
+        testSubject.registerDispatchInterceptor((message, context, chain) -> {
+            results.add(message.payload());
+            return chain.proceed(message, context);
         });
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "payload", new InstanceResponseType<>(String.class)
@@ -552,7 +553,7 @@ class AxonServerQueryBusTest {
     @Test
     void handlerInterceptorRegisteredWithLocalSegment() {
         MessageHandlerInterceptor<QueryMessage> interceptor =
-                (unitOfWork, ctx, interceptorChain) -> interceptorChain.proceedSync(ctx);
+                (message, context, chain) -> chain.proceed(message, context);
 
         testSubject.registerHandlerInterceptor(interceptor);
 

@@ -23,18 +23,20 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -46,11 +48,9 @@ import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -575,18 +575,10 @@ class InterceptorConfigurationTest {
             }
 
             @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
-                                 @Nonnull ProcessingContext context,
-                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
-                var message = unitOfWork.getMessage();
-                interceptMessage(message);
-                return interceptorChain.proceedSync(context);
-            }
-
-            @Override
-            public <M extends T, R extends Message> MessageStream<R> interceptOnHandle(@Nonnull M message,
-                                                                                          @Nonnull ProcessingContext context,
-                                                                                          @Nonnull InterceptorChain<M, R> interceptorChain) {
+            @Nonnull
+            public MessageStream<?> interceptOnHandle(@Nonnull T message,
+                                                      @Nonnull ProcessingContext context,
+                                                      @Nonnull MessageHandlerInterceptorChain<T> interceptorChain) {
                 interceptMessage(message);
                 return interceptorChain.proceed(message, context);
             }
@@ -616,14 +608,13 @@ class InterceptorConfigurationTest {
                 this.axonConfiguration = axonConfiguration;
             }
 
-            @Nonnull
             @Override
-            public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
-                return (index, message) -> {
-                    invocation.countDown();
-                    handlingOutcome.add(name + ": " + message);
-                    return message;
-                };
+            public @NotNull MessageStream<?> interceptOnDispatch(@NotNull T message,
+                                                                 @Nullable ProcessingContext context,
+                                                                 @NotNull MessageDispatchInterceptorChain<T> interceptorChain) {
+                invocation.countDown();
+                handlingOutcome.add(name + ": " + message);
+                return interceptorChain.proceed(message, context);
             }
         }
 
@@ -654,22 +645,21 @@ class InterceptorConfigurationTest {
                 this.eventHandlingOutcome = eventHandlingOutcome;
             }
 
-            @Nonnull
             @Override
-            public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
-                return (index, message) -> {
-                    if (message instanceof CommandMessage) {
-                        commandInvocation.countDown();
-                        commandHandlingOutcome.add(name);
-                    } else if (message instanceof QueryMessage) {
-                        queryInvocation.countDown();
-                        queryHandlingOutcome.add(name);
-                    } else {
-                        eventInvocation.countDown();
-                        eventHandlingOutcome.add(name);
-                    }
-                    return message;
-                };
+            public @NotNull MessageStream<?> interceptOnDispatch(@NotNull T message,
+                                                                 @Nullable ProcessingContext context,
+                                                                 @NotNull MessageDispatchInterceptorChain<T> interceptorChain) {
+                if (message instanceof CommandMessage) {
+                    commandInvocation.countDown();
+                    commandHandlingOutcome.add(name);
+                } else if (message instanceof QueryMessage) {
+                    queryInvocation.countDown();
+                    queryHandlingOutcome.add(name);
+                } else {
+                    eventInvocation.countDown();
+                    eventHandlingOutcome.add(name);
+                }
+                return interceptorChain.proceed(message, context);
             }
         }
 
@@ -699,25 +689,11 @@ class InterceptorConfigurationTest {
                 this.eventHandlingOutcome = eventHandlingOutcome;
             }
 
+            @Override
             @Nonnull
-            @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<?> unitOfWork,
-                                 @Nonnull ProcessingContext context,
-                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
-                var message = unitOfWork.getMessage();
-                interceptMessage(message);
-                return interceptorChain.proceedSync(context);
-            }
-
-            @Override
-            public <M extends Message, R extends Message> MessageStream<R> interceptOnHandle(@Nonnull M message,
-                                                                                                   @Nonnull ProcessingContext context,
-                                                                                                   @Nonnull InterceptorChain<M, R> interceptorChain) {
-                interceptMessage(message);
-                return interceptorChain.proceed(message, context);
-            }
-
-            private void interceptMessage(Message message) {
+            public MessageStream<?> interceptOnHandle(@Nonnull Message message,
+                                                      @Nonnull ProcessingContext context,
+                                                      @Nonnull MessageHandlerInterceptorChain<Message> interceptorChain) {
                 if (message instanceof CommandMessage) {
                     commandInvocation.countDown();
                     commandHandlingOutcome.add(name);
@@ -728,7 +704,9 @@ class InterceptorConfigurationTest {
                     eventInvocation.countDown();
                     eventHandlingOutcome.add(name);
                 }
+                return interceptorChain.proceed(message, context);
             }
+
         }
 
 
@@ -768,11 +746,12 @@ class InterceptorConfigurationTest {
 
         public static class MyCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage> {
 
+            @Nonnull
             @Override
-            public Object handle(@Nonnull LegacyUnitOfWork<? extends CommandMessage> unitOfWork,
-                                 @Nonnull ProcessingContext context,
-                                 @Nonnull InterceptorChain interceptorChain) throws Exception {
-                return interceptorChain.proceedSync(context);
+            public @NotNull MessageStream<?> interceptOnHandle(@NotNull CommandMessage message,
+                                                               @NotNull ProcessingContext context,
+                                                               @NotNull MessageHandlerInterceptorChain<CommandMessage> interceptorChain) {
+                return interceptorChain.proceed(message, context);
             }
         }
     }

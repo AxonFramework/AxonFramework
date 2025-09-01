@@ -16,19 +16,20 @@
 
 package org.axonframework.modelling;
 
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.SequenceNumber;
-import org.axonframework.eventhandling.Timestamp;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.SequenceNumber;
+import org.axonframework.eventhandling.annotations.Timestamp;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
@@ -46,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotationBasedEntityEvolvingComponentTest {
 
-    private static final Converter converter = new JacksonConverter();
+    private static final EventConverter converter = new DelegatingEventConverter(new JacksonConverter());
     private static final ClassBasedMessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
     private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolvingComponent<>(
             TestState.class,

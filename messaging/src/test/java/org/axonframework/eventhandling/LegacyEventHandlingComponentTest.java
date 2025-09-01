@@ -16,10 +16,12 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.eventhandling.async.SequencingPolicy;
+import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -159,18 +161,19 @@ class LegacyEventHandlingComponentTest {
             SequencingPolicy sequencingPolicy = mock(SequencingPolicy.class);
             EventMessage event = mock(EventMessage.class);
             Object expectedSequenceId = "test-sequence-id";
+            ProcessingContext processingContext = processingContextWith(event);
 
             when(simpleInvoker.getSequencingPolicy()).thenReturn(sequencingPolicy);
-            when(sequencingPolicy.getSequenceIdentifierFor(event)).thenReturn(Optional.of(expectedSequenceId));
+            when(sequencingPolicy.getSequenceIdentifierFor(event, processingContext)).thenReturn(Optional.of(expectedSequenceId));
 
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(simpleInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event, new StubProcessingContext());
+            var result = component.sequenceIdentifierFor(event, processingContext);
 
             //then
             assertThat(result).isEqualTo(expectedSequenceId);
-            verify(sequencingPolicy).getSequenceIdentifierFor(event);
+            verify(sequencingPolicy).getSequenceIdentifierFor(event, processingContext);
         }
 
         @Test
@@ -179,18 +182,19 @@ class LegacyEventHandlingComponentTest {
             SimpleEventHandlerInvoker simpleInvoker = mock(SimpleEventHandlerInvoker.class);
             SequencingPolicy sequencingPolicy = mock(SequencingPolicy.class);
             EventMessage event = mock(EventMessage.class);
+            ProcessingContext processingContext = processingContextWith(event);
 
             when(simpleInvoker.getSequencingPolicy()).thenReturn(sequencingPolicy);
-            when(sequencingPolicy.getSequenceIdentifierFor(event)).thenReturn(Optional.empty());
+            when(sequencingPolicy.getSequenceIdentifierFor(event, processingContext)).thenReturn(Optional.empty());
 
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(simpleInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event, new StubProcessingContext());
+            var result = component.sequenceIdentifierFor(event, processingContext);
 
             //then
             assertThat(result).isEqualTo(event.identifier());
-            verify(sequencingPolicy).getSequenceIdentifierFor(event);
+            verify(sequencingPolicy).getSequenceIdentifierFor(event, processingContext);
         }
 
         @Test
@@ -201,19 +205,20 @@ class LegacyEventHandlingComponentTest {
             SequencingPolicy sequencingPolicy = mock(SequencingPolicy.class);
             EventMessage event = mock(EventMessage.class);
             Object expectedSequenceId = "multi-sequence-id";
+            ProcessingContext processingContext = processingContextWith(event);
 
             when(multiInvoker.delegates()).thenReturn(List.of(simpleInvoker));
             when(simpleInvoker.getSequencingPolicy()).thenReturn(sequencingPolicy);
-            when(sequencingPolicy.getSequenceIdentifierFor(event)).thenReturn(Optional.of(expectedSequenceId));
+            when(sequencingPolicy.getSequenceIdentifierFor(event, processingContext)).thenReturn(Optional.of(expectedSequenceId));
 
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event, new StubProcessingContext());
+            var result = component.sequenceIdentifierFor(event, processingContext);
 
             //then
             assertThat(result).isEqualTo(expectedSequenceId);
-            verify(sequencingPolicy).getSequenceIdentifierFor(event);
+            verify(sequencingPolicy).getSequenceIdentifierFor(event, processingContext);
         }
 
         @Test
@@ -228,7 +233,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event, new StubProcessingContext());
+            var result = component.sequenceIdentifierFor(event, processingContextWith(event));
 
             //then
             assertThat(result).isEqualTo(event.identifier());
@@ -245,7 +250,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event, new StubProcessingContext());
+            var result = component.sequenceIdentifierFor(event, processingContextWith(event));
 
             //then
             assertThat(result).isEqualTo(event.identifier());
@@ -260,7 +265,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(unsupportedInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event, new StubProcessingContext());
+            var result = component.sequenceIdentifierFor(event, processingContextWith(event));
 
             //then
             assertThat(result).isEqualTo(event.identifier());
@@ -279,7 +284,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event, new StubProcessingContext());
+            var result = component.sequenceIdentifierFor(event, processingContextWith(event));
 
             //then
             assertThat(result).isEqualTo(event.identifier());
@@ -298,7 +303,7 @@ class LegacyEventHandlingComponentTest {
             LegacyEventHandlingComponent component = new LegacyEventHandlingComponent(multiInvoker);
 
             //when
-            var result = component.sequenceIdentifierFor(event, new StubProcessingContext());
+            var result = component.sequenceIdentifierFor(event, processingContextWith(event));
 
             //then
             assertThat(result).isEqualTo(event.identifier());
@@ -307,4 +312,8 @@ class LegacyEventHandlingComponentTest {
         }
     }
 
+    @Nonnull
+    private static LegacyMessageSupportingContext processingContextWith(EventMessage event) {
+        return new LegacyMessageSupportingContext(event);
+    }
 }

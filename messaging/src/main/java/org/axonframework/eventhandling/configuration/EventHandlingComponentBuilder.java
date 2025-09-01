@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.async.SequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.QualifiedName;
 
 import java.util.Optional;
@@ -63,7 +63,7 @@ public interface EventHandlingComponentBuilder {
         default RequiredEventHandlerPhase sequenceIdentifier(
                 @Nonnull Function<EventMessage, Object> sequencingPolicy
         ) {
-            return sequencingPolicy(event -> Optional.of(sequencingPolicy.apply(event)));
+            return sequencingPolicy((event, context) -> Optional.of(sequencingPolicy.apply(event)));
         }
     }
 

@@ -41,6 +41,7 @@ public class NoMoreInterceptors<T> implements MessageHandlerInterceptorMemberCha
         return new NoMoreInterceptors<>();
     }
 
+    @Deprecated
     @Override
     public Object handleSync(@Nonnull Message message,
                              @Nonnull ProcessingContext context,

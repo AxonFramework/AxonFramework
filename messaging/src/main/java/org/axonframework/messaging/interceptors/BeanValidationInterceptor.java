@@ -16,35 +16,35 @@
 
 package org.axonframework.messaging.interceptors;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import java.util.function.Function;
 
 /**
  * Interceptor that applies JSR303 bean validation on incoming {@link Message}s. When validation on a message fails, a
  * {@link JSR303ViolationException} is thrown, holding the constraint violations. This interceptor can either be used as
  * a {@link MessageHandlerInterceptor} or as a {@link MessageDispatchInterceptor}.
  *
+ * @param <M> The message type this interceptor can process.
  * @author Allard Buijze
- * @since 1.1
+ * @since 1.1.0
  */
-public class BeanValidationInterceptor<T extends Message>
-        implements MessageHandlerInterceptor<T>, MessageDispatchInterceptor<T> {
+public class BeanValidationInterceptor<M extends Message>
+        implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
 
     private final ValidatorFactory validatorFactory;
 
@@ -66,55 +66,36 @@ public class BeanValidationInterceptor<T extends Message>
         this.validatorFactory = validatorFactory;
     }
 
+    @Nonnull
     @Override
-    public <M extends T, R extends Message> MessageStream<R> interceptOnDispatch(@Nonnull M message,
-                                                                                    @Nullable ProcessingContext context,
-                                                                                    @Nonnull InterceptorChain<M, R> interceptorChain) {
-        return intercept(message, context, interceptorChain);
+    public MessageStream<?> interceptOnDispatch(@Nonnull M message,
+                                                @Nullable ProcessingContext context,
+                                                @Nonnull MessageDispatchInterceptorChain<M> dispatchInterceptorChain) {
+        return interceptOrContinue(message, (m) -> dispatchInterceptorChain.proceed(m, context));
     }
 
+    @Nonnull
     @Override
-    public <M extends T, R extends Message> MessageStream<R> interceptOnHandle(@Nonnull M message,
-                                                                                  @Nonnull ProcessingContext context,
-                                                                                  @Nonnull InterceptorChain<M, R> interceptorChain) {
-        return intercept(message, context, interceptorChain);
+    public MessageStream<?> interceptOnHandle(@Nonnull M message,
+                                              @Nonnull ProcessingContext context,
+                                              @Nonnull MessageHandlerInterceptorChain<M> handlerInterceptorChain) {
+        return interceptOrContinue(message, (m) -> handlerInterceptorChain.proceed(m, context));
     }
 
-    private <M extends T, R extends Message> MessageStream<R> intercept(M message,
-                                                                           @Nullable ProcessingContext context,
-                                                                           InterceptorChain<M, R> interceptorChain) {
+    @Nonnull
+    private MessageStream<?> interceptOrContinue(@Nonnull M message,
+                                                 @Nonnull Function<M, MessageStream<?>> continuation) {
         Set<ConstraintViolation<Object>> violations = validate(message);
         if (!violations.isEmpty()) {
             return MessageStream.fromFuture(CompletableFuture.failedFuture(new JSR303ViolationException(violations)));
         }
-        return interceptorChain.proceed(message, context);
+        return continuation.apply(message);
     }
+
 
     private Set<ConstraintViolation<Object>> validate(Message message) {
         Validator validator = validatorFactory.getValidator();
         return validateMessage(message.payload(), validator);
-    }
-
-    @Deprecated
-    @Override
-    public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork, @Nonnull ProcessingContext context, @Nonnull InterceptorChain interceptorChain)
-            throws Exception {
-        handle(unitOfWork.getMessage());
-        return interceptorChain.proceedSync(context);
-    }
-
-    @Deprecated
-    @Override
-    @Nonnull
-    public BiFunction<Integer, T, T> handle(@Nonnull List<? extends T> messages) {
-        return (index, message) -> {
-            Validator validator = validatorFactory.getValidator();
-            Set<ConstraintViolation<Object>> violations = validateMessage(message.payload(), validator);
-            if (violations != null && !violations.isEmpty()) {
-                throw new JSR303ViolationException(violations);
-            }
-            return message;
-        };
     }
 
     /**

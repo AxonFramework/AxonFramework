@@ -17,7 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
-import org.axonframework.springboot.SerializerProperties;
+import org.axonframework.springboot.ConverterProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -26,15 +26,31 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * Autoconfiguration that constructs a default {@link CBORMapper}, typically to be used by a
+ * {@link org.axonframework.serialization.json.JacksonConverter}.
+ *
+ * @author Mitchell Herrijgers
+ * @since 4.9.0
+ */
 @AutoConfiguration
-@AutoConfigureBefore(LegacyAxonAutoConfiguration.class)
+@AutoConfigureBefore(ConverterAutoConfiguration.class)
 @ConditionalOnClass(name = {"com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper"})
-@EnableConfigurationProperties(value = SerializerProperties.class)
+@EnableConfigurationProperties(value = ConverterProperties.class)
 public class CBORMapperAutoConfiguration {
 
+    /**
+     * Returns the default Axon Framework {@link CBORMapper}, if required.
+     * <p>
+     * This {@code CBORMapper} bean is only created when there is no other {@code CBORMapper} bean present
+     * <b>and</b> whenever the user specified the
+     * {@link org.axonframework.springboot.ConverterProperties.ConverterType#CBOR} {@code ConverterType}.
+     *
+     * @return The default Axon Framework {@link CBORMapper}, if required.
+     */
     @Bean("defaultAxonCborMapper")
     @ConditionalOnMissingBean(CBORMapper.class)
-    @ConditionalOnExpression("'${axon.serializer.general}' == 'cbor' || '${axon.serializer.events}' == 'cbor' || '${axon.serializer.messages}' == 'cbor'")
+    @ConditionalOnExpression("'${axon.converter.general}' == 'cbor' || '${axon.converter.events}' == 'cbor' || '${axon.converter.messages}' == 'cbor'")
     public CBORMapper defaultAxonCborMapper() {
         return (CBORMapper) new CBORMapper().findAndRegisterModules();
     }

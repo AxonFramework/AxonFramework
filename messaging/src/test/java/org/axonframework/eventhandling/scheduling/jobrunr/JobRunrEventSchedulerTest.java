@@ -225,7 +225,6 @@ class JobRunrEventSchedulerTest {
             throw new UnsupportedOperationException();
         }
 
-        @Override
         public Registration registerDispatchInterceptor(
                 @Nonnull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {
             throw new UnsupportedOperationException();

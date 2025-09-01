@@ -16,10 +16,9 @@
 
 package org.axonframework.config;
 
-import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.jupiter.api.*;

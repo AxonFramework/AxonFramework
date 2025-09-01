@@ -22,8 +22,11 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.eventhandling.SubscribingEventProcessorsConfigurer;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorsConfigurer;
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorsConfigurer;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
@@ -34,17 +37,17 @@ import java.util.function.UnaryOperator;
 
 /**
  * A configuration module for event processing that provides a unified way to configure and manage both
- * {@link org.axonframework.eventhandling.EventProcessor} types:
+ * {@link EventProcessor} types:
  * <ul>
- * <li>{@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}</li>
- * <li>{@link org.axonframework.eventhandling.SubscribingEventProcessor}</li>
+ * <li>{@link PooledStreamingEventProcessor}</li>
+ * <li>{@link SubscribingEventProcessor}</li>
  * </ul>
  * <p>
  * The {@code EventProcessingConfigurer} acts as a composite module that delegates event {@link EventProcessorConfiguration} to
  * specialized sub-modules: {@link PooledStreamingEventProcessorsConfigurer} for
- * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor PooledStreamingEventProcessor}
+ * {@link PooledStreamingEventProcessor PooledStreamingEventProcessor}
  * instances and {@link SubscribingEventProcessorsConfigurer} for
- * {@link org.axonframework.eventhandling.SubscribingEventProcessor SubscribingEventProcessor} instances.
+ * {@link SubscribingEventProcessor SubscribingEventProcessor} instances.
  * <p>
  * The main purpose is to provide shared configuration capabilities for all event processor types, allowing you to set
  * default configurations like {@link org.axonframework.messaging.unitofwork.UnitOfWorkFactory} that apply to
@@ -158,12 +161,12 @@ public class EventProcessingConfigurer {
     }
 
     /**
-     * Provides access to configure {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}
+     * Provides access to configure {@link PooledStreamingEventProcessor}
      * instances through the {@link PooledStreamingEventProcessorsConfigurer}.
      * <p>
      * Use this method to define specific pooled streaming event processors, set their configurations, and register
      * event handling components. The provided function receives the module for
-     * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}s and can register individual
+     * {@link PooledStreamingEventProcessor}s and can register individual
      * processors or configure module-wide settings.
      *
      * @param processorsModuleTask A function that configures the {@link PooledStreamingEventProcessorsConfigurer}.
@@ -178,12 +181,12 @@ public class EventProcessingConfigurer {
     }
 
     /**
-     * Provides access to configure {@link org.axonframework.eventhandling.SubscribingEventProcessor} instances through
+     * Provides access to configure {@link SubscribingEventProcessor} instances through
      * the {@link SubscribingEventProcessorsConfigurer}.
      * <p>
      * Use this method to define specific subscribing event processors, set their configurations, and register event
      * handling components. The provided function receives the module for
-     * {@link org.axonframework.eventhandling.SubscribingEventProcessor}s and can register individual processors or
+     * {@link SubscribingEventProcessor}s and can register individual processors or
      * configure module-wide settings.
      *
      * @param processorsModuleTask A function that configures the {@link SubscribingEventProcessorsConfigurer}.

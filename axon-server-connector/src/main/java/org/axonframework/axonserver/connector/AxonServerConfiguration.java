@@ -18,9 +18,8 @@ package org.axonframework.axonserver.connector;
 
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.StreamingEventProcessor;
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;

@@ -22,18 +22,19 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
-import org.axonframework.serialization.Converter;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -63,8 +64,7 @@ class AnnotatedEventSourcedEntityModule<I, E>
     private final Set<Class<? extends E>> concreteTypes;
 
     AnnotatedEventSourcedEntityModule(@Nonnull Class<I> idType, @Nonnull Class<E> entityType) {
-        super("AnnotatedEventSourcedEntityModule<%s, %s>".formatted(idType.getSimpleName(),
-                                                                    entityType.getSimpleName()));
+        super("AnnotatedEventSourcedEntityModule<%s, %s>".formatted(idType.getName(), entityType.getName()));
 
         this.idType = requireNonNull(idType, "The idType may not be null.");
         this.entityType = requireNonNull(entityType, "The entityType may not be null.");
@@ -82,7 +82,6 @@ class AnnotatedEventSourcedEntityModule<I, E>
                         .criteriaResolver(criteriaResolver(annotationAttributes))
                         .entityIdResolver(entityIdResolver(annotationAttributes)))
         );
-
     }
 
     private AnnotatedEntityMetamodel<E> buildMetaModel(@Nonnull Configuration c) {
@@ -92,7 +91,8 @@ class AnnotatedEventSourcedEntityModule<I, E>
                     concreteTypes,
                     c.getComponent(ParameterResolverFactory.class),
                     c.getComponent(MessageTypeResolver.class),
-                    c.getComponent(Converter.class)
+                    c.getComponent(MessageConverter.class),
+                    c.getComponent(EventConverter.class)
             );
         }
 
@@ -100,7 +100,8 @@ class AnnotatedEventSourcedEntityModule<I, E>
                 entityType,
                 c.getComponent(ParameterResolverFactory.class),
                 c.getComponent(MessageTypeResolver.class),
-                c.getComponent(Converter.class)
+                c.getComponent(MessageConverter.class),
+                c.getComponent(EventConverter.class)
         );
     }
 

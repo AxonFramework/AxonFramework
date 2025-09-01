@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.HandlerAttributes;
-import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
@@ -72,7 +72,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                             + "Violating handler: " + original.signature())
             );
             boolean declaredInterceptorChain = Arrays.stream(method.getParameters())
-                                                     .anyMatch(p -> p.getType().equals(InterceptorChain.class));
+                                                     .anyMatch(p -> p.getType().equals(MessageHandlerInterceptorChain.class));
             if (declaredInterceptorChain) {
                 throw new AxonConfigurationException(
                         "A MessageHandlerInterceptor acting on the invocation result must not "
@@ -94,11 +94,15 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable T target)
+        public Object handleSync(@Nonnull Message message,
+                                 @Nonnull ProcessingContext context,
+                                 @Nullable T target)
                 throws Exception {
-            InterceptorChain chain = InterceptorChainParameterResolverFactory.currentInterceptorChain();
             try {
-                return chain.proceedSync(context);
+             // TODO reintegrate with #3485
+           //     return InterceptorChainParameterResolverFactory.currentInterceptorChain()
+           //       .proceed(message, context);
+                return null;
             } catch (Exception e) {
                 if (!expectedResultType.isInstance(e)) {
                     throw e;
@@ -116,28 +120,27 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
         public MessageStream<?> handle(@Nonnull Message message,
                                        @Nonnull ProcessingContext context,
                                        @Nullable T target) {
-            InterceptorChain<Message, Message> chain =
-                    InterceptorChainParameterResolverFactory.currentInterceptorChain(context);
             // TODO - Provide implementation that handles exceptions in streams with more than one item
-            return chain.proceed(message, context)
-                        .onErrorContinue(error -> {
-                            if (expectedResultType.isInstance(error)) {
-                                return MessageStream.failed(error);
-                            }
-                            return ResultParameterResolverFactory.callWithResult(
-                                    error,
-                                    context,
-                                    pc -> {
-                                        if (super.canHandle(message, pc)) {
-                                            //noinspection unchecked
-                                            return super.handle(message, pc, target)
-                                                        .map(r -> (Entry<Message>) r);
-                                        }
-                                        return MessageStream.failed(error);
-                                    }
-                            );
-                        });
-        }
+            return InterceptorChainParameterResolverFactory.currentInterceptorChain(context)
+              .proceed(message, context)
+                  .onErrorContinue(error -> {
+                      if (expectedResultType.isInstance(error)) {
+                          return MessageStream.failed(error);
+                      }
+                      return ResultParameterResolverFactory.callWithResult(
+                              error,
+                              context,
+                              pc -> {
+                                  if (super.canHandle(message, pc)) {
+                                      //noinspection unchecked
+                                      return super.handle(message, pc, target)
+                                                  .map(r -> (Entry<Message>) r);
+                                  }
+                                  return MessageStream.failed(error);
+                              }
+                      ).cast();
+                  });
+       }
     }
 
     private static class InterceptedMessageHandlingMember<T>
@@ -153,7 +156,7 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                             + "Violating handler: " + original.signature())
             );
             shouldInvokeInterceptorChain = Arrays.stream(method.getParameters())
-                                                 .noneMatch(p -> p.getType().equals(InterceptorChain.class));
+                                                 .noneMatch(p -> p.getType().equals(MessageHandlerInterceptorChain.class));
             if (shouldInvokeInterceptorChain && !Void.TYPE.equals(method.getReturnType())) {
                 throw new AxonConfigurationException(
                         "A MessageHandlerInterceptor must either return null or"
@@ -167,7 +170,10 @@ public class MessageHandlerInterceptorDefinition implements HandlerEnhancerDefin
                 throws Exception {
             Object result = super.handleSync(message, context, target);
             if (shouldInvokeInterceptorChain) {
-                return InterceptorChainParameterResolverFactory.currentInterceptorChain().proceedSync(context);
+                // TODO reintegrate as a pert of #3485
+               // return InterceptorChainParameterResolverFactory.currentInterceptorChain()
+               //   .proceed(message, context);
+                return null;
             }
             return result;
         }

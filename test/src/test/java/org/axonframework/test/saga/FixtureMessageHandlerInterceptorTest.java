@@ -18,8 +18,9 @@ package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -27,6 +28,7 @@ import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import jakarta.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 
 import java.util.Objects;
@@ -67,12 +69,12 @@ class FixtureMessageHandlerInterceptorTest {
             this.value = value;
         }
 
+        @Nonnull
         @Override
-        public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage> unitOfWork,
-                             @Nonnull ProcessingContext context,
-                             @Nonnull InterceptorChain interceptorChain) throws Exception {
-            unitOfWork.transformMessage(event -> event.withMetaData(MetaData.with(META_DATA_KEY, value)));
-            return interceptorChain.proceedSync(context);
+        public @NotNull MessageStream<?> interceptOnHandle(@NotNull EventMessage message,
+                                                           @NotNull ProcessingContext context,
+                                                           @NotNull MessageHandlerInterceptorChain<EventMessage> interceptorChain) {
+            return interceptorChain.proceed(message.withMetaData(MetaData.with(META_DATA_KEY, value)), context);
         }
     }
 

@@ -34,7 +34,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
@@ -79,9 +79,7 @@ import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
-import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.PassThroughConverter;
-import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.deadline.StubDeadlineManager;
@@ -230,7 +228,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 getParameterResolverFactory(),
                 getHandlerDefinition(),
                 new ClassBasedMessageTypeResolver(),
-                PassThroughConverter.INSTANCE
+                PassThroughConverter.MESSAGE_INSTANCE
         ));
         return this;
     }
@@ -301,7 +299,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<? super DeadlineMessage> deadlineHandlerInterceptor) {
+            MessageHandlerInterceptor<DeadlineMessage> deadlineHandlerInterceptor) {
         this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
         return this;
     }
@@ -1071,7 +1069,6 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             return () -> true;
         }
 
-        @Override
         public @Nonnull
         Registration registerDispatchInterceptor(
                 @Nonnull MessageDispatchInterceptor<? super EventMessage> dispatchInterceptor) {

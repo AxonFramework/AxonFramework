@@ -16,6 +16,10 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -48,15 +52,15 @@ public class EventProcessorProperties {
     }
 
     /**
-     * The processing modes of an {@link org.axonframework.eventhandling.EventProcessor}.
+     * The processing modes of an {@link EventProcessor}.
      */
     public enum Mode {
         /**
-         * Indicates a {@link org.axonframework.eventhandling.SubscribingEventProcessor} should be used.
+         * Indicates a {@link SubscribingEventProcessor} should be used.
          */
         SUBSCRIBING,
         /**
-         * Indicates a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor} should be used.
+         * Indicates a {@link PooledStreamingEventProcessor} should be used.
          */
         POOLED
     }
@@ -80,13 +84,13 @@ public class EventProcessorProperties {
 
         /**
          * Indicates the number of segments that should be created when the processor starts for the first time.
-         * Defaults to 16 for a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * Defaults to 16 for a {@link PooledStreamingEventProcessor}.
          */
         private Integer initialSegmentCount = null;
 
         /**
          * The interval between attempts to claim tokens by a
-         * {@link org.axonframework.eventhandling.StreamingEventProcessor}.
+         * {@link StreamingEventProcessor}.
          * <p>
          * Defaults to 5000 milliseconds.
          */
@@ -102,7 +106,7 @@ public class EventProcessorProperties {
         /**
          * The maximum number of threads the processor should process events with. Defaults to the number of initial
          * segments if this is not further specified. Defaults to 4 for a
-         * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * {@link PooledStreamingEventProcessor}.
          */
         private int threadCount = -1;
 
@@ -113,7 +117,7 @@ public class EventProcessorProperties {
 
         /**
          * The name of the bean that represents the sequencing policy for processing events. If no name is specified,
-         * the processor defaults to a {@link org.axonframework.eventhandling.async.SequentialPerAggregatePolicy}, which
+         * the processor defaults to a {@link org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy}, which
          * guarantees to process events originating from the same Aggregate instance sequentially, while events from
          * different Aggregate instances may be processed concurrently.
          */
@@ -164,7 +168,7 @@ public class EventProcessorProperties {
 
         /**
          * Returns the number of initial segments that should be created, if no segments are already present. Defaults
-         * to 16 for a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * to 16 for a {@link PooledStreamingEventProcessor}.
          * <p>
          * If the {@link #threadCount} is not further specified, the initial segment count will be used for this too.
          *
@@ -176,7 +180,7 @@ public class EventProcessorProperties {
 
         /**
          * Sets the number of initial segments that should be created, if no segments are already present. Defaults to 16
-         * for a {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * for a {@link PooledStreamingEventProcessor}.
          * <p>
          * If the {@link #threadCount} is not further specified, the initial segment count will be used for this too.
          *
@@ -188,10 +192,10 @@ public class EventProcessorProperties {
 
         /**
          * Returns the interval between attempts to claim tokens by a
-         * {@link org.axonframework.eventhandling.StreamingEventProcessor}. Defaults to 5000 milliseconds.
+         * {@link StreamingEventProcessor}. Defaults to 5000 milliseconds.
          *
          * @return the interval between attempts to claim tokens by a
-         * {@link org.axonframework.eventhandling.StreamingEventProcessor}.
+         * {@link StreamingEventProcessor}.
          */
         public long getTokenClaimInterval() {
             return tokenClaimInterval;
@@ -202,7 +206,7 @@ public class EventProcessorProperties {
          * 5000 milliseconds.
          *
          * @param tokenClaimInterval the interval between attempts to claim tokens by a
-         *                           {@link org.axonframework.eventhandling.StreamingEventProcessor}.
+         *                           {@link StreamingEventProcessor}.
          */
         public void setTokenClaimInterval(long tokenClaimInterval) {
             this.tokenClaimInterval = tokenClaimInterval;
@@ -229,9 +233,9 @@ public class EventProcessorProperties {
 
         /**
          * Returns the number of threads to use to process Events, when using a
-         * {@link org.axonframework.eventhandling.StreamingEventProcessor} implementation. Defaults to the configured
+         * {@link StreamingEventProcessor} implementation. Defaults to the configured
          * number of initial segments. If this field is not configured, the thread count defaults to 4 for a
-         * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * {@link PooledStreamingEventProcessor}.
          *
          * @return the number of threads to use to process Events.
          */
@@ -245,9 +249,9 @@ public class EventProcessorProperties {
 
         /**
          * Sets the number of threads to use to process Events, when using a
-         * {@link org.axonframework.eventhandling.StreamingEventProcessor} implementation. Defaults to the configured
+         * {@link StreamingEventProcessor} implementation. Defaults to the configured
          * number of initial segments. If this field is not configured, the thread count defaults to 4 for a
-         * {@link org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor}.
+         * {@link PooledStreamingEventProcessor}.
          * <p>
          * A provided {@code threadCount} < 0 will result in a number of threads equal to the configured number of
          * {@link #setInitialSegmentCount(Integer)}  initial segments.
@@ -279,10 +283,10 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Returns the name of the bean that defines the {@link org.axonframework.eventhandling.async.SequencingPolicy}
+         * Returns the name of the bean that defines the {@link org.axonframework.eventhandling.sequencing.SequencingPolicy}
          * for this processor.
          *
-         * @return the name of the bean that defines the {@link org.axonframework.eventhandling.async.SequencingPolicy}
+         * @return the name of the bean that defines the {@link org.axonframework.eventhandling.sequencing.SequencingPolicy}
          * for this processor.
          */
         public String getSequencingPolicy() {
@@ -290,13 +294,13 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Sets the name of the bean that defines the {@link org.axonframework.eventhandling.async.SequencingPolicy} for
+         * Sets the name of the bean that defines the {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} for
          * this processor. The {@code SequencingPolicy} describes which Events must be handled sequentially, and which
          * can be handled concurrently. Defaults to a
-         * {@link org.axonframework.eventhandling.async.SequentialPerAggregatePolicy}.
+         * {@link org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy}.
          *
          * @param sequencingPolicy the name of the bean that defines the
-         *                         {@link org.axonframework.eventhandling.async.SequencingPolicy} for this processor.
+         *                         {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} for this processor.
          */
         public void setSequencingPolicy(String sequencingPolicy) {
             this.sequencingPolicy = sequencingPolicy;

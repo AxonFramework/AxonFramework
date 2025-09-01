@@ -16,14 +16,14 @@
 
 package org.axonframework.eventhandling.replay;
 
-import org.axonframework.eventhandling.AllowReplay;
-import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
-import org.axonframework.eventhandling.DisallowReplay;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.ReplayToken;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventhandling.replay.annotations.AllowReplay;
+import org.axonframework.eventhandling.replay.annotations.DisallowReplay;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;

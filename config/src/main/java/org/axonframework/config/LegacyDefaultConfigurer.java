@@ -18,9 +18,9 @@ package org.axonframework.config;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
@@ -35,17 +35,17 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.SimpleDeadlineManager;
-import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
-import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
+import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventBusSpanFactory;
-import org.axonframework.eventhandling.EventProcessorSpanFactory;
+import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
+import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
@@ -72,7 +72,6 @@ import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
 import org.axonframework.modelling.command.RepositorySpanFactory;
@@ -96,9 +95,6 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
-import org.axonframework.serialization.AnnotationRevisionResolver;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
@@ -370,19 +366,21 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     protected QueryBus defaultQueryBus(LegacyConfiguration config) {
         return defaultComponent(QueryBus.class, config)
                 .orElseGet(() -> {
-                    QueryBus queryBus = SimpleQueryBus.builder()
-                                                      .messageMonitor(config.messageMonitor(SimpleQueryBus.class,
-                                                                                            "queryBus"))
-                                                      .transactionManager(config.getComponent(
-                                                              TransactionManager.class, NoTransactionManager::instance
-                                                      ))
-                                                      .errorHandler(config.getComponent(
-                                                              QueryInvocationErrorHandler.class,
-                                                              () -> LoggingQueryInvocationErrorHandler.builder().build()
-                                                      ))
-                                                      .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                                                      .spanFactory(config.getComponent(QueryBusSpanFactory.class))
-                                                      .build();
+                    SimpleQueryBus queryBus = SimpleQueryBus.builder()
+                                                            .messageMonitor(config.messageMonitor(SimpleQueryBus.class,
+                                                                                                  "queryBus"))
+                                                            .transactionManager(config.getComponent(
+                                                                    TransactionManager.class,
+                                                                    NoTransactionManager::instance
+                                                            ))
+                                                            .errorHandler(config.getComponent(
+                                                                    QueryInvocationErrorHandler.class,
+                                                                    () -> LoggingQueryInvocationErrorHandler.builder()
+                                                                                                            .build()
+                                                            ))
+                                                            .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
+                                                            .spanFactory(config.getComponent(QueryBusSpanFactory.class))
+                                                            .build();
                     queryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
                     return queryBus;
                 });
@@ -459,7 +457,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                             : simpleUnitOfWorkFactory;
                     SimpleCommandBus commandBus = new SimpleCommandBus(unitOfWorkFactory, Collections.emptyList());
                     if (!config.correlationDataProviders().isEmpty()) {
-                        CorrelationDataInterceptor<Message> interceptor =
+                        CorrelationDataInterceptor<CommandMessage> interceptor =
                                 new CorrelationDataInterceptor<>(config.correlationDataProviders());
                         return new InterceptingCommandBus(commandBus, List.of(interceptor), List.of());
                     }
@@ -845,20 +843,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                 configuration -> new MessageHandlerRegistrar(
                         () -> configuration,
                         commandHandlerBuilder,
-                        (config, commandHandler) -> {
-                            config.commandBus()
-                                  .subscribe(new AnnotatedCommandHandlingComponent<>(
-                                          commandHandler,
-                                          config.parameterResolverFactory(),
-                                          config.handlerDefinition(commandHandler.getClass()),
-                                          messageTypeResolver,
-                                          config.getComponent(Converter.class)
-                                  ));
-                            // TODO AnnotationCommandHandlerAdapter#subscribe does not use a Registration anymore
-                            // If we support automated unsubscribe, we need to figure out another way.
-                            // Enforced to a no-op Registration object for now.
-                            return () -> true;
-                        }
+                        (config, commandHandler) -> () -> true
                 )
         ));
         return this;

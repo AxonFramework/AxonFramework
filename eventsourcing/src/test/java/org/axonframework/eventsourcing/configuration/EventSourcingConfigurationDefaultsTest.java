@@ -29,6 +29,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.Tag;
 import org.junit.jupiter.api.*;
 
@@ -64,12 +65,16 @@ class EventSourcingConfigurationDefaultsTest {
         assertInstanceOf(AnnotationBasedTagResolver.class, resultConfig.getComponent(TagResolver.class));
         assertInstanceOf(InMemoryEventStorageEngine.class,
                          resultConfig.getComponent(EventStorageEngine.class));
+
         EventStore eventStore = resultConfig.getComponent(EventStore.class);
         assertInstanceOf(SimpleEventStore.class, eventStore);
+
         EventSink eventSink = resultConfig.getComponent(EventSink.class);
         assertInstanceOf(SimpleEventStore.class, eventSink);
         // By default, the Event Store and the Event Sink should be the same instance.
         assertEquals(eventStore, eventSink);
+        assertInstanceOf(SimpleEventStore.class, eventSink);
+
         assertInstanceOf(Snapshotter.class, resultConfig.getComponent(Snapshotter.class));
     }
 

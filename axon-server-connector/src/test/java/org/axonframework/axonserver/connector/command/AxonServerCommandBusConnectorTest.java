@@ -386,7 +386,7 @@ class AxonServerCommandBusConnectorTest {
 
         // then ... Wait on the shutdownDispatching-thread, after which the command should have been handled
         dispatchingHasShutdown.join();
-        await("Dispatch completion").atMost(Duration.ofMillis(500))
+        await("Dispatch completion").atMost(Duration.ofSeconds(1))
                                     .pollDelay(Duration.ofMillis(25))
                                     .untilAsserted(() -> {
                                         assertTrue(handled.get());

@@ -21,6 +21,11 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
+import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
+import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -59,7 +64,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
                                                                                       .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                       .build();
-    private List<MessageHandlerInterceptor<? super EventMessage>> interceptors = new ArrayList<>();
+    private List<MessageHandlerInterceptor<EventMessage>> interceptors = new ArrayList<>();
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
 
     /**
@@ -129,7 +134,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
 
     @Deprecated(since = "5.0.0", forRemoval = true)
     public EventProcessorConfiguration interceptors(
-            @Nonnull List<MessageHandlerInterceptor<? super EventMessage>> interceptors) {
+            @Nonnull List<MessageHandlerInterceptor<EventMessage>> interceptors) {
         assertNonNull(spanFactory, "interceptors may not be null");
         this.interceptors = interceptors;
         return this;
@@ -191,7 +196,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      *
      * @return The list of interceptors for this {@link EventProcessor} implementation.
      */
-    public List<MessageHandlerInterceptor<? super EventMessage>> interceptors() {
+    public List<MessageHandlerInterceptor<EventMessage>> interceptors() {
         return interceptors;
     }
 

@@ -18,11 +18,11 @@ package org.axonframework.modelling.entity.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
 import org.axonframework.modelling.command.EntityIdResolver;
-import org.axonframework.serialization.Converter;
 
 /**
  * {@link EntityIdResolverDefinition} that converts the payload of incoming messages based on the
@@ -30,8 +30,8 @@ import org.axonframework.serialization.Converter;
  * handler in the model, and then looks for a {@link org.axonframework.modelling.annotation.TargetEntityId}-annotated
  * member in the payload, through the {@link AnnotationBasedEntityIdResolver}.
  *
- * @since 5.0.0
  * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
 public class AnnotatedEntityIdResolverDefinition implements EntityIdResolverDefinition {
 
@@ -43,7 +43,7 @@ public class AnnotatedEntityIdResolverDefinition implements EntityIdResolverDefi
         return new AnnotatedEntityIdResolver<>(
                 entityMetamodel,
                 idType,
-                configuration.getComponent(Converter.class),
+                configuration.getComponent(MessageConverter.class),
                 new AnnotationBasedEntityIdResolver<>()
         );
     }

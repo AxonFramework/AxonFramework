@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.queryhandling;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.LegacyDefaultConfigurer;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;

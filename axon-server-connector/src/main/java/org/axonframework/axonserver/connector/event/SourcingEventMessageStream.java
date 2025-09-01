@@ -22,9 +22,9 @@ import io.axoniq.axonserver.grpc.event.dcb.SourceEventsResponse;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TerminalEventMessage;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
 import org.axonframework.messaging.Context;
@@ -56,7 +56,7 @@ public class SourcingEventMessageStream implements MessageStream<EventMessage> {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final ResultStream<SourceEventsResponse> stream;
-    private final EventConverter converter;
+    private final TaggedEventConverter converter;
 
     /**
      * Constructs a {@code SourcingMessageStream} with the given {@code stream} and {@code converter}.
@@ -67,7 +67,7 @@ public class SourcingEventMessageStream implements MessageStream<EventMessage> {
      *                  {@link EventMessage EventMessages} for this {@link MessageStream} implementation.
      */
     public SourcingEventMessageStream(@Nonnull ResultStream<SourceEventsResponse> stream,
-                                      @Nonnull EventConverter converter) {
+                                      @Nonnull TaggedEventConverter converter) {
         this.stream = Objects.requireNonNull(stream, "The source result stream cannot be null.");
         this.converter = Objects.requireNonNull(converter, "The converter cannot be null.");
     }

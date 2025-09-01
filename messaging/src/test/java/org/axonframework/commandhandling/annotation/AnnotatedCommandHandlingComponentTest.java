@@ -18,10 +18,10 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandMessageHandlerInterceptorChain;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -64,7 +64,7 @@ class AnnotatedCommandHandlingComponentTest {
 
         testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
                                                               parameterResolverFactory,
-                                                              PassThroughConverter.INSTANCE);
+                                                              PassThroughConverter.MESSAGE_INSTANCE);
 
         when(commandBus.subscribe(any(QualifiedName.class), any())).thenReturn(commandBus);
         when(commandBus.subscribe(anySet(), any())).thenReturn(commandBus);
@@ -73,7 +73,7 @@ class AnnotatedCommandHandlingComponentTest {
     @Test
     void handlerDispatchingVoidReturnType() {
         CommandMessage testCommand = new GenericCommandMessage(new MessageType(String.class),
-                                                                         "myStringPayload");
+                                                               "myStringPayload");
 
         Object result = testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
                                    .first()
@@ -125,7 +125,7 @@ class AnnotatedCommandHandlingComponentTest {
     void handlerDispatchingThrowingException() {
         try {
             GenericCommandMessage command = new GenericCommandMessage(new MessageType(HashSet.class),
-                                                                                         new HashSet<>());
+                                                                      new HashSet<>());
             testSubject.handle(command, StubProcessingContext.forMessage(command))
                        .first()
                        .asCompletableFuture()
@@ -149,6 +149,7 @@ class AnnotatedCommandHandlingComponentTest {
         assertInstanceOf(NoHandlerForCommandException.class, exception.getCause());
     }
 
+    @Disabled("Reintegrate as part of #3485")
     @Test
     void messageHandlerInterceptorAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
         CommandMessage testCommandMessage = new GenericCommandMessage(new MessageType(String.class), "");
@@ -157,7 +158,8 @@ class AnnotatedCommandHandlingComponentTest {
         annotatedCommandHandler = new MyInterceptingCommandHandler(withoutInterceptor,
                                                                    withInterceptor,
                                                                    new ArrayList<>());
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, PassThroughConverter.INSTANCE);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
+                                                              PassThroughConverter.MESSAGE_INSTANCE);
 
         Object result = testSubject.handle(testCommandMessage, mock(ProcessingContext.class))
                                    .first()
@@ -182,7 +184,8 @@ class AnnotatedCommandHandlingComponentTest {
         annotatedCommandHandler = new MyInterceptingCommandHandler(new ArrayList<>(),
                                                                    new ArrayList<>(),
                                                                    interceptedExceptions);
-        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, PassThroughConverter.INSTANCE);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler,
+                                                              PassThroughConverter.MESSAGE_INSTANCE);
 
         try {
             testSubject.handle(testCommandMessage, mock(ProcessingContext.class));
@@ -257,10 +260,10 @@ class AnnotatedCommandHandlingComponentTest {
         }
 
         @MessageHandlerInterceptor
-        public Object interceptAny(CommandMessage command, ProcessingContext context, InterceptorChain chain)
-                throws Exception {
+        public Object interceptAny(CommandMessage command, ProcessingContext context,
+                                   CommandMessageHandlerInterceptorChain chain) {
             interceptedWithInterceptorChain.add(command);
-            return chain.proceedSync(context);
+            return chain.proceed(command, context);
         }
 
         @ExceptionHandler

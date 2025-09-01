@@ -25,7 +25,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation marking an handler method as an interceptor handler. Unlike regular handlers, interceptor handlers are
+ * Annotation marking a handler method as an interceptor handler. Unlike regular handlers, interceptor handlers are
  * chained and do not block processing by other handlers. They can be used to add processing behavior either before,
  * after or both before and after processing of other handlers.
  * <p>
