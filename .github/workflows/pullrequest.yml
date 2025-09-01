@@ -101,7 +101,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          ./mvnw -B -T 1C -Possrh -Dcoverage -Dsurefire.rerunFailingTestsCount=5 -Dstyle.color=always test -pl ${{ matrix.module }}
+          ./mvnw -B -T 1C -Dcoverage -Dsurefire.rerunFailingTestsCount=5 -Dstyle.color=always test -pl ${{ matrix.module }}
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
           TESTCONTAINERS_CHECKS_DISABLE: true
@@ -145,7 +145,7 @@ jobs:
 #
 #      - name: Run Integration Tests
 #        run: |
-#          ./mvnw -B -T 1C -Dstyle.color=always install -DskipTests -pl ${{ matrix.module }} -am && ./mvnw -B -T 1C -Dstyle.color=always test -Possrh -Dcoverage -pl ${{ matrix.module }} -Dsurefire.rerunFailingTestsCount=5
+#          ./mvnw -B -T 1C -Dstyle.color=always install -DskipTests -pl ${{ matrix.module }} -am && ./mvnw -B -T 1C -Dstyle.color=always test -Dcoverage -pl ${{ matrix.module }} -Dsurefire.rerunFailingTestsCount=5
 #        env:
 #          TESTCONTAINERS_REUSE_ENABLE: true
 #          TESTCONTAINERS_CHECKS_DISABLE: true
