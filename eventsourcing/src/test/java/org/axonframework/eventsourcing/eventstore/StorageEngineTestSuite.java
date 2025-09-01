@@ -181,6 +181,21 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
+    void sourcingEmptyStreamReturnsOnlyConsistencyMarker() {
+        // given
+        // no events appended to the store
+
+        // when
+        SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
+        MessageStream<EventMessage> sourcingStream = testSubject.source(testCondition);
+
+        // then
+        StepVerifier.create(sourcingStream.asFlux())
+                    .assertNext(StorageEngineTestSuite::assertMarkerEntry)
+                    .verifyComplete();
+    }
+
+    @Test
     void sourcingEventsReturnsConsistencyMarkerAsSoleMessageAndCompletesWhenNoEventsInTheStore() {
         AtomicBoolean completed = new AtomicBoolean(false);
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
