@@ -30,6 +30,7 @@ import org.axonframework.serialization.ConversionException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Objects;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -55,16 +56,20 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
      * @param schemaIncompatibilityChecker stateful utility to perform compatibility checks.
      */
     public SpecificRecordBaseConverterStrategy(
-            SchemaStore schemaStore,
-            SchemaIncompatibilityChecker schemaIncompatibilityChecker
+            @Nonnull SchemaStore schemaStore,
+            @Nonnull SchemaIncompatibilityChecker schemaIncompatibilityChecker
     ) {
-        this.schemaStore = schemaStore;
-        this.schemaIncompatibilityChecker = schemaIncompatibilityChecker;
+        this.schemaStore = Objects.requireNonNull(
+                schemaStore,
+                "Schema store must not be null.");
+        this.schemaIncompatibilityChecker = Objects.requireNonNull(
+                schemaIncompatibilityChecker,
+                "SchemaIncompatibilityChecker must not be null.");
     }
 
     @Override
     @Nonnull
-    public byte[] serializeToSingleObjectEncoded(@Nonnull Object object) {
+    public byte[] convertToSingleObjectEncoded(@Nonnull Object object) {
         if (!(object instanceof SpecificRecordBase record)) {
             throw new ConversionException(
                     "Expected object to be instance of SpecificRecordBase but it was " + object.getClass()
@@ -85,8 +90,8 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
 
     @Override
     @Nonnull
-    public <T> T deserializeFromSingleObjectEncoded(@Nonnull byte[] serializedObject,
-                                                    @Nonnull Class<T> readerType) {
+    public <T> T convertFromSingleObjectEncoded(@Nonnull byte[] bytes,
+                                                @Nonnull Class<T> readerType) {
         if (!test(readerType)) {
             throw new ConversionException("Expected reader type to be assignable from SpecificRecordBase but it was "
                                                   + readerType.getCanonicalName());
@@ -94,7 +99,7 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
         @SuppressWarnings("unchecked")
         Class<SpecificRecordBase> specificRecordBaseClass = (Class<SpecificRecordBase>) readerType;
 
-        long fingerprint = AvroUtil.fingerprint(serializedObject);
+        long fingerprint = AvroUtil.fingerprint(bytes);
         Schema writerSchema = schemaStore.findByFingerprint(fingerprint);
         if (writerSchema == null) {
             throw AvroUtil.createExceptionNoSchemaFound(readerType, fingerprint);
@@ -119,7 +124,7 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
 
         try {
             //noinspection unchecked
-            return (T) decoder.decode(serializedObject);
+            return (T) decoder.decode(bytes);
         } catch (IOException | AvroRuntimeException e) {
             throw AvroUtil.createExceptionFailedToDeserialize(
                     readerType,
@@ -133,14 +138,14 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
 
     @Override
     @Nonnull
-    public <T> T deserializeFromGenericRecord(@Nonnull GenericRecord serializedObject,
-                                              @Nonnull Class<T> readerType) {
+    public <T> T convertFromGenericRecord(@Nonnull GenericRecord genericRecord,
+                                          @Nonnull Class<T> readerType) {
         if (!test(readerType)) {
             throw new ConversionException("Expected reader type to be assignable from SpecificRecordBase but it was "
                                                   + readerType.getCanonicalName());
         }
 
-        Schema writerSchema = serializedObject.getSchema();
+        Schema writerSchema = genericRecord.getSchema();
         SpecificData readerSpecificData = SpecificData.getForClass(readerType);
         Schema readerSchema = readerSpecificData.getSchema(readerType);
 
@@ -154,7 +159,7 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
         }
 
         SpecificRecordBase decoded = (SpecificRecordBase) readerSpecificData.deepCopy(writerSchema,
-                                                                                      serializedObject);
+                                                                                      genericRecord);
         //noinspection unchecked
         return (T) decoded;
     }

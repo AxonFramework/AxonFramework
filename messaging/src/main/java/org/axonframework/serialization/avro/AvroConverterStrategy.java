@@ -47,33 +47,34 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
     /**
      * Serializes object to byte array using Avro single-object-encoding.
      *
-     * @param object object to serialize.
-     * @return byte array.
+     * @param object The object to serialize.
+     * @return The byte array containing Avro Single Object Encoded bytes.
      */
     @Nonnull
-    byte[] serializeToSingleObjectEncoded(@Nonnull Object object);
+    byte[] convertToSingleObjectEncoded(@Nonnull Object object);
 
     /**
-     * Deserializes from single object encoded byte array.
+     * Converts from single object encoded byte array.
      *
-     * @param serializedObject serialized object containing single-object-encoded bytes.
-     * @param type             class of resulting object.
-     * @param <T>              payload type to deserialize to.
-     * @return deserialized object.
+     * @param bytes An array containing single-object-encoded bytes.
+     * @param type  The class of resulting object.
+     * @param <T>   The payload type to convert to.
+     * @return The deserialized object.
      */
     @Nonnull
-    <T> T deserializeFromSingleObjectEncoded(@Nonnull byte[] serializedObject,
-                                             @Nonnull Class<T> type);
+    <T> T convertFromSingleObjectEncoded(@Nonnull byte[] bytes,
+                                         @Nonnull Class<T> type);
 
     /**
-     * Deserializes from Apache Avro generic record (intermediate representation).
+     * Converts from Apache Avro generic record (intermediate representation).
      *
-     * @param serializedObject serialized object containing the generic record.
-     * @param type             class of resulting object.
-     * @param <T>              payload type to deserialize to.
+     * @param genericRecord The input object containing the generic record.
+     * @param type          The class of resulting object.
+     * @param <T>           The payload type to convert to.
      * @return deserialized object.
      */
-    <T> T deserializeFromGenericRecord(GenericRecord serializedObject, Class<T> type);
+    <T> T convertFromGenericRecord(@Nonnull GenericRecord genericRecord,
+                                   @Nonnull Class<T> type);
 
     /**
      * Sets the configuration for the strategy.
@@ -86,7 +87,7 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
      *
      * @param avroConverterStrategyConfiguration configuration passed after construction.
      */
-    default void applyStrategyConfiguration(@Nonnull AvroConverterStrategyConfiguration avroConverterStrategyConfiguration) {
-
+    default void applyStrategyConfiguration(
+            @Nonnull AvroConverterStrategyConfiguration avroConverterStrategyConfiguration) {
     }
 }

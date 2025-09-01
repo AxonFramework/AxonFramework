@@ -24,8 +24,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test for the avro converter configuration.
+ *
+ * @author Simon Zambrovski
+ * @since 5.0.0
  */
-public class AvroConverterConfigurationTest {
+class AvroConverterConfigurationTest {
 
     @Test
     void buildsConverterFromConfigOverrideFlippingAllValues() {
@@ -34,10 +37,10 @@ public class AvroConverterConfigurationTest {
         var converter = new AvroConverter(
                 store,
                 (c) -> c
-                        .converterStrategy(
+                        .addConverterStrategy(
                                 new SpecificRecordBaseConverterStrategy(store, schemaIncompatibilitiesChecker)
                         )
-                        .includeDefaultAvroSerializationStrategies(false)
+                        .includeDefaultAvroConverterStrategies(false)
                         .includeSchemasInStackTraces(true)
                         .performAvroCompatibilityCheck(false)
                         .includeSchemasInStackTraces(true)
@@ -47,7 +50,7 @@ public class AvroConverterConfigurationTest {
     }
 
     @Test
-    void testConfigurationMandatoryValues() {
+    void configurationMandatoryValues() {
         assertEquals("Schema store cannot be null",
                      assertThrows(NullPointerException.class,
                                   () -> new AvroConverterConfiguration(null)
@@ -58,29 +61,29 @@ public class AvroConverterConfigurationTest {
         // that should work fine
         assertNotNull(
                 new AvroConverterConfiguration(new SchemaStore.Cache())
-                        .converterStrategy(new SpecificRecordBaseConverterStrategy(
+                        .addConverterStrategy(new SpecificRecordBaseConverterStrategy(
                                 new SchemaStore.Cache(),
                                 new DefaultSchemaIncompatibilityChecker()
                         ))
-                        .includeDefaultAvroSerializationStrategies(false)
+                        .includeDefaultAvroConverterStrategies(false)
         );
     }
 
     @SuppressWarnings("DataFlowIssue")
     @Test
-    void testBuilderSetterContracts() {
+    void builderSetterContracts() {
 
         assertEquals("At least one Avro converter strategy is required and no default strategies will be used",
                      assertThrows(IllegalArgumentException.class,
                                   () -> new AvroConverterConfiguration(new SchemaStore.Cache())
-                                          .includeDefaultAvroSerializationStrategies(false)
+                                          .includeDefaultAvroConverterStrategies(false)
                      ).getMessage()
         );
 
         assertEquals("Avro converter strategy cannot be null",
                      assertThrows(NullPointerException.class,
                                   () -> new AvroConverterConfiguration(new SchemaStore.Cache())
-                                          .converterStrategy(
+                                          .addConverterStrategy(
                                                   null))
                              .getMessage()
         );

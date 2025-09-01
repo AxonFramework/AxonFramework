@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.SchemaStore;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.ConversionException;
@@ -39,6 +40,8 @@ import java.util.function.UnaryOperator;
  * encoding</a>.
  * <p>
  * This converter is intended to work for classes, representing messages specified by Avro Schema.
+ * It is limited to conversions specifying `Class` as a target type (and can not work on pure `Type`)
+ * definitions.
  * </p>
  * <p>
  * The serialization/deserialization is delegated to the {@link AvroConverterStrategy} implementations. By default, the
@@ -68,17 +71,33 @@ public class AvroConverter implements Converter {
             @Nonnull SchemaStore schemaStore,
             @Nonnull UnaryOperator<AvroConverterConfiguration> configurationOverride
     ) {
+        this(schemaStore, configurationOverride, new ChainingContentTypeConverter());
+    }
+
+    /**
+     * Creates the converter instance.
+     *
+     * @param schemaStore           schema store to use.
+     * @param configurationOverride configuration customizer.
+     * @param chainingTypeConverter chaining type converter.
+     */
+    @Internal
+    public AvroConverter(
+            @Nonnull SchemaStore schemaStore,
+            @Nonnull UnaryOperator<AvroConverterConfiguration> configurationOverride,
+            @Nonnull ChainingContentTypeConverter chainingTypeConverter
+    ) {
         var config = Objects.requireNonNull(configurationOverride, "the configurationOverride may not be null.")
                             .apply(
                                     new AvroConverterConfiguration(schemaStore)
                             );
         // include default strategy
-        if (config.includeDefaultAvroSerializationStrategies()) {
+        if (config.includeDefaultAvroConverterStrategies()) {
             AvroConverterStrategy defaultStrategy = new SpecificRecordBaseConverterStrategy(
                     config.schemaStore(),
                     config.schemaIncompatibilityChecker()
             );
-            config = config.converterStrategy(defaultStrategy);
+            config = config.addConverterStrategy(defaultStrategy);
         }
 
         // apply configuration to the strategies
@@ -89,7 +108,7 @@ public class AvroConverter implements Converter {
         if (this.converterStrategies.isEmpty()) {
             throw new IllegalStateException("At least one converter strategy is required, but none were configured.");
         }
-        this.converter = new ChainingContentTypeConverter();
+        this.converter = chainingTypeConverter;
         this.converter.registerConverter(new ByteArrayToGenericRecordConverter(schemaStore));
     }
 
@@ -151,7 +170,7 @@ public class AvroConverter implements Converter {
             } else if (converter.canConvert(byte[].class, targetType)) {
                 return converter.convert(serializeByStrategy(input, sourceClass), targetType);
             } else {
-                throw new ConversionException("Cannot serialize given input to target type [" + targetType + "]");
+                throw new ConversionException("Cannot convert given input to target type [" + targetType + "]");
             }
         } else if (strategyForType(targetClass)) { // for de-serialization
 
@@ -174,7 +193,7 @@ public class AvroConverter implements Converter {
                 //      target type must be supported by the strategy
                 return deserializeByStrategy((GenericRecord) input, targetClass);
             } else {
-                throw new ConversionException("Cannot deserialize given input to target type [" + targetType + "]");
+                throw new ConversionException("Cannot convert given input to target type [" + targetType + "]");
             }
         } else if (GenericRecord.class.equals(targetType)) {
             //   through upcaster / intermediate representation:
@@ -186,7 +205,7 @@ public class AvroConverter implements Converter {
                 //noinspection unchecked
                 return (T) converter.convert(input, GenericRecord.class);
             } else {
-                throw new ConversionException("Cannot deserialize given input to target type [" + targetType + "]");
+                throw new ConversionException("Cannot convert given input to target type [" + targetType + "]");
             }
         } else {
             throw new ConversionException("Cannot convert given input to target type [" + targetType + "]");
@@ -199,11 +218,11 @@ public class AvroConverter implements Converter {
                 .filter(it -> it.test(sourceType))
                 .findFirst()
                 .orElseThrow(() -> new ConversionException(
-                        "Could not find converter strategy to serialize from source type ["
+                        "Could not find converter strategy to convert from source type ["
                                 + sourceType
                                 + "]"
                 ))
-                .serializeToSingleObjectEncoded(input);
+                .convertToSingleObjectEncoded(input);
     }
 
     private <T> T deserializeByStrategy(@Nonnull byte[] input, @Nonnull Class<?> targetType) {
@@ -213,10 +232,10 @@ public class AvroConverter implements Converter {
                 .filter(it -> it.test(targetType))
                 .findFirst()
                 .orElseThrow(() -> new ConversionException(
-                        "Could not find converter strategy to deserialize from bytes to target type ["
+                        "Could not find converter strategy to convert from bytes to target type ["
                                 + targetType
                                 + "]"))
-                .deserializeFromSingleObjectEncoded(input, targetType);
+                .convertFromSingleObjectEncoded(input, targetType);
     }
 
     private <T> T deserializeByStrategy(@Nonnull GenericRecord input, @Nonnull Class<?> targetType) {
@@ -226,10 +245,10 @@ public class AvroConverter implements Converter {
                 .filter(it -> it.test(targetType))
                 .findFirst()
                 .orElseThrow(() -> new ConversionException(
-                        "Could not find converter strategy to deserialize from GenericRecord to target type ["
+                        "Could not find converter strategy to convert from GenericRecord to target type ["
                                 + targetType
                                 + "]"))
-                .deserializeFromGenericRecord(input, targetType);
+                .convertFromGenericRecord(input, targetType);
     }
 
     @Override

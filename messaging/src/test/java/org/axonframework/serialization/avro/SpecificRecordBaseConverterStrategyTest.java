@@ -26,6 +26,12 @@ import org.junit.jupiter.api.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Strategy test.
+ *
+ * @author Simon Zambrovski
+ * @since 5.0.0
+ */
 class SpecificRecordBaseConverterStrategyTest {
 
     private final SchemaStore.Cache cache = new SchemaStore.Cache();
@@ -46,27 +52,27 @@ class SpecificRecordBaseConverterStrategyTest {
     }
 
     @Test
-    public void should_reject_unsupported_types() {
+    public void rejectsUnsupportedTypes() {
         assertThat(testSubject.test(Integer.class)).isFalse();
 
-        final byte[] encodedBytes = testSubject.serializeToSingleObjectEncoded(testComplexObject);
+        final byte[] encodedBytes = testSubject.convertToSingleObjectEncoded(testComplexObject);
         assertEquals("Expected reader type to be assignable from SpecificRecordBase but it was java.lang.Integer",
                      assertThrows(ConversionException.class,
-                                  () -> testSubject.deserializeFromSingleObjectEncoded(encodedBytes, Integer.class)
+                                  () -> testSubject.convertFromSingleObjectEncoded(encodedBytes, Integer.class)
                      ).getMessage()
         );
 
         final GenericRecord record = testComplexObject;
         assertEquals("Expected reader type to be assignable from SpecificRecordBase but it was java.lang.Integer",
                      assertThrows(ConversionException.class,
-                                  () -> testSubject.deserializeFromGenericRecord(record, Integer.class)
+                                  () -> testSubject.convertFromGenericRecord(record, Integer.class)
                      ).getMessage()
         );
 
 
         assertEquals("Expected object to be instance of SpecificRecordBase but it was java.lang.Integer",
                      assertThrows(ConversionException.class,
-                                  () -> testSubject.serializeToSingleObjectEncoded(42)
+                                  () -> testSubject.convertToSingleObjectEncoded(42)
                      ).getMessage()
         );
     }

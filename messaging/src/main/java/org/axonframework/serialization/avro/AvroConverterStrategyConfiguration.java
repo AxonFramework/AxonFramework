@@ -18,8 +18,11 @@ package org.axonframework.serialization.avro;
 
 /**
  * Configuration for the Avro converter strategy.
- * @param performAvroCompatibilityCheck should schema compatibility check be performed prio conversion.
- * @param includeSchemasInStackTraces should Avro schemas be included into stack traces on errors.
+ * @param performAvroCompatibilityCheck Should schema compatibility check be performed prio conversion.
+ * @param includeSchemasInStackTraces Should Avro schemas be included into stack traces on errors.
+ * @author Simon Zambrovski
+ * @author Jan Galinski
+ * @since 4.11.0
  */
 public record AvroConverterStrategyConfiguration(
         boolean performAvroCompatibilityCheck,
@@ -29,6 +32,6 @@ public record AvroConverterStrategyConfiguration(
     /**
      * Default configuration.
      */
-    static AvroConverterStrategyConfiguration DEFAULT
+    public static final AvroConverterStrategyConfiguration DEFAULT
             = new AvroConverterStrategyConfiguration(true, false);
 }

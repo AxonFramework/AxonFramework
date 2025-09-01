@@ -16,16 +16,17 @@
 
 package org.axonframework.serialization.avro;
 
+import jakarta.annotation.Nonnull;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaCompatibility;
 import org.axonframework.serialization.ConversionException;
 
-import jakarta.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * Provides functionality for incompatibility checks.
+ *
  * @author Simon Zambrovski
  * @author Jan Galinski
  * @since 4.11.0
@@ -35,9 +36,10 @@ public interface SchemaIncompatibilityChecker {
     /**
      * Checks schema compatibilities and throws exception if schemas are not compatible.
      *
-     * @param readerType   intended reader type.
-     * @param readerSchema schema available on the reader side.
-     * @param writerSchema schema that was used to write the data.
+     * @param readerType                  The intended reader type.
+     * @param readerSchema                The schema available on the reader side.
+     * @param writerSchema                The schema that was used to write the data.
+     * @param includeSchemasInStackTraces A flag if schemas should be included in stack traces.
      * @throws ConversionException if the schema check has not passed.
      */
     default void assertSchemaCompatibility(
@@ -67,6 +69,7 @@ public interface SchemaIncompatibilityChecker {
 
     /**
      * Performs compatibility check.
+     *
      * @param readerSchema reader schema to check.
      * @param writerSchema writer schema to check.
      * @return list of compatibilities if any, or empty list

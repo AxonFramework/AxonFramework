@@ -193,12 +193,6 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
             return null;
         }
 
-        class X {}
-
-        class Y extends X {
-
-        }
-
         private Route buildInitialRoutes(Class<?> sourceType, Class<?> targetType) {
             for (ContentTypeConverter<?, ?> converter : new HashSet<>(candidates)) {
                 if (converter.expectedSourceType().isAssignableFrom(sourceType)) {

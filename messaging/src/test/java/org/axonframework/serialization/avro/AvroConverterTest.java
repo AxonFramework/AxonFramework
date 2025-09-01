@@ -44,6 +44,7 @@ import static org.mockito.Mockito.*;
  * Test class validating the {@link AvroConverter}.
  *
  * @author Simon Zambrovski
+ * @since 5.0.0
  */
 class AvroConverterTest extends ConverterTestSuite<AvroConverter> {
 
@@ -75,6 +76,19 @@ class AvroConverterTest extends ConverterTestSuite<AvroConverter> {
         );
     }
 
+    /**
+     * Overriding this method because the super implementation tries to
+     * use objects of type {@link SomeInput} as input
+     * for serialization. In Avro, every object for serialization
+     * needs to follow a schema and depending on the implementation
+     * framework follow specific style. For example if you use default, by Apache
+     * Avro Maven plugin generated classes representing Avro Schemas, those will be subclassing
+     * {@link org.apache.avro.specific.SpecificRecordBase}. In Avro4K, the classes
+     * must be marked with Kotlin Serializable.
+     * <p />
+     * Long story short: an ordinary class is not Avro Serializable.
+     * @return list of arguments carrying input type and target type pairs.
+     */
     @Override
     protected Stream<Arguments> commonSupportedConversions() {
         return Stream.of(
@@ -149,6 +163,7 @@ class AvroConverterTest extends ConverterTestSuite<AvroConverter> {
     void deserializeFromCompatibleObjectBytesToGenericRecord() {
         byte[] encodedBytes = toByteArrayConverter.convert(record);
         GenericRecord deserializedRecord = testSubject.convert(encodedBytes, GenericRecord.class);
+        assertThat(deserializedRecord).isNotNull();
         assertThat(deserializedRecord.get("value1").toString()).isEqualTo(complexObject.getValue1());
         assertThat(deserializedRecord.get("value2").toString()).isEqualTo(complexObject.getValue2());
         assertThat(deserializedRecord.get("value3")).isEqualTo(complexObject.getValue3());
@@ -160,6 +175,7 @@ class AvroConverterTest extends ConverterTestSuite<AvroConverter> {
         assertThat(encodedBytes).isNotNull();
         InputStream bais = new ByteArrayInputStream(encodedBytes);
         GenericRecord deserializedRecord = testSubject.convert(bais, GenericRecord.class);
+        assertThat(deserializedRecord).isNotNull();
         assertThat(deserializedRecord.get("value1").toString()).isEqualTo(complexObject.getValue1());
         assertThat(deserializedRecord.get("value2").toString()).isEqualTo(complexObject.getValue2());
         assertThat(deserializedRecord.get("value3")).isEqualTo(complexObject.getValue3());
@@ -168,6 +184,7 @@ class AvroConverterTest extends ConverterTestSuite<AvroConverter> {
     @Test
     void deserializeFromGenericRecordToComplexObject() {
         ComplexObject deserialized = testSubject.convert(record, ComplexObject.class);
+        assertThat(deserialized).isNotNull();
         assertThat(deserialized.getValue1()).isEqualTo(record.get("value1").toString());
         assertThat(deserialized.getValue2()).isEqualTo(record.get("value2").toString());
         assertThat(deserialized.getValue3()).isEqualTo(record.get("value3"));

@@ -28,14 +28,18 @@ import java.util.Objects;
  *
  * @param strategies                                converter strategies to support different representation of objects
  *                                                  (SpecificRecordBase, Avro4K).
- * @param includeDefaultAvroSerializationStrategies flag to include the default strategies.
+ * @param includeDefaultAvroConverterStrategies     flag to include the default strategies.
  * @param schemaStore                               schema store to resolve Avro schemas.
  * @param schemaIncompatibilityChecker              schema incompatibility checker.
- * @param avroConverterStrategyConfiguration        configuration for Avro converter strategy.
+ * @param avroConverterStrategyConfiguration         configuration for Avro converter strategy.
+ *
+ * @author Simon Zambrovski
+ * @author Jan Galinski
+ * @since 5.0.0
  */
 public record AvroConverterConfiguration(
         @Nonnull List<AvroConverterStrategy> strategies,
-        boolean includeDefaultAvroSerializationStrategies,
+        boolean includeDefaultAvroConverterStrategies,
         @Nonnull SchemaStore schemaStore,
         @Nonnull SchemaIncompatibilityChecker schemaIncompatibilityChecker,
         @Nonnull AvroConverterStrategyConfiguration avroConverterStrategyConfiguration
@@ -45,7 +49,7 @@ public record AvroConverterConfiguration(
      * Constructor validating that required values are provided.
      *
      * @param strategies                                list of avro converter strategies, must not be null.
-     * @param includeDefaultAvroSerializationStrategies flag to include the default strategies.
+     * @param includeDefaultAvroConverterStrategies flag to include the default strategies.
      * @param schemaStore                               schema store to resolve Avro schemas.
      * @param schemaIncompatibilityChecker              schema incompatibility checker.
      * @param avroConverterStrategyConfiguration        configuration for Avro converter strategy.
@@ -57,7 +61,7 @@ public record AvroConverterConfiguration(
                                "Schema incompatibility checker cannot be null");
         Objects.requireNonNull(avroConverterStrategyConfiguration,
                                "Avro converter strategy configuration cannot be null");
-        if (!includeDefaultAvroSerializationStrategies && strategies.isEmpty()) {
+        if (!includeDefaultAvroConverterStrategies && strategies.isEmpty()) {
             throw new IllegalArgumentException(
                     "At least one Avro converter strategy is required and no default strategies will be used");
         }
@@ -85,11 +89,11 @@ public record AvroConverterConfiguration(
      * @param strategy provided strategy to use, for example the one compatible with Avro4K data classes.
      * @return configuration instance.
      */
-    public AvroConverterConfiguration converterStrategy(@Nonnull AvroConverterStrategy strategy) {
+    public AvroConverterConfiguration addConverterStrategy(@Nonnull AvroConverterStrategy strategy) {
         List<AvroConverterStrategy> strategies = new ArrayList<>(this.strategies);
         strategies.add(Objects.requireNonNull(strategy, "Avro converter strategy cannot be null"));
         return new AvroConverterConfiguration(strategies,
-                                              this.includeDefaultAvroSerializationStrategies,
+                                              this.includeDefaultAvroConverterStrategies,
                                               this.schemaStore,
                                               this.schemaIncompatibilityChecker,
                                               this.avroConverterStrategyConfiguration
@@ -101,16 +105,16 @@ public record AvroConverterConfiguration(
      * <p>
      * Please note, that at least one Avro Strategy is required for the converter. If you intend not to use default
      * strategies, add your customer strategy using
-     * {@link AvroConverterConfiguration#converterStrategy(AvroConverterStrategy)} first.
+     * {@link AvroConverterConfiguration#addConverterStrategy(AvroConverterStrategy)} first.
      * </p>
      *
-     * @param includeDefaultAvroSerializationStrategies flag to use default strategy (`true`) or not to use it.
+     * @param includeDefaultAvroConverterStrategies flag to use default strategy (`true`) or not to use it.
      * @return new configuration.
      */
-    public AvroConverterConfiguration includeDefaultAvroSerializationStrategies(
-            boolean includeDefaultAvroSerializationStrategies) {
+    public AvroConverterConfiguration includeDefaultAvroConverterStrategies(
+            boolean includeDefaultAvroConverterStrategies) {
         return new AvroConverterConfiguration(this.strategies,
-                                              includeDefaultAvroSerializationStrategies,
+                                              includeDefaultAvroConverterStrategies,
                                               this.schemaStore,
                                               this.schemaIncompatibilityChecker,
                                               this.avroConverterStrategyConfiguration
@@ -124,9 +128,9 @@ public record AvroConverterConfiguration(
      * @return new configuration.
      */
     public AvroConverterConfiguration schemaIncompatibilityChecker(
-            SchemaIncompatibilityChecker schemaIncompatibilityChecker) {
+            @Nonnull SchemaIncompatibilityChecker schemaIncompatibilityChecker) {
         return new AvroConverterConfiguration(this.strategies,
-                                              this.includeDefaultAvroSerializationStrategies,
+                                              this.includeDefaultAvroConverterStrategies,
                                               this.schemaStore,
                                               Objects.requireNonNull(schemaIncompatibilityChecker,
                                                                      "Schema incompatibility checker cannot be null"),
@@ -143,7 +147,7 @@ public record AvroConverterConfiguration(
      */
     public AvroConverterConfiguration includeSchemasInStackTraces(boolean includeSchemasInStackTraces) {
         return new AvroConverterConfiguration(this.strategies,
-                                              this.includeDefaultAvroSerializationStrategies,
+                                              this.includeDefaultAvroConverterStrategies,
                                               this.schemaStore,
                                               this.schemaIncompatibilityChecker,
                                               new AvroConverterStrategyConfiguration(
@@ -162,7 +166,7 @@ public record AvroConverterConfiguration(
      */
     public AvroConverterConfiguration performAvroCompatibilityCheck(boolean performAvroCompatibilityCheck) {
         return new AvroConverterConfiguration(this.strategies,
-                                              this.includeDefaultAvroSerializationStrategies,
+                                              this.includeDefaultAvroConverterStrategies,
                                               this.schemaStore,
                                               this.schemaIncompatibilityChecker,
                                               new AvroConverterStrategyConfiguration(
@@ -172,4 +176,3 @@ public record AvroConverterConfiguration(
         );
     }
 }
-
