@@ -111,8 +111,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.module }}
-          path: target/
-          working-directory: ${{ matrix.module }}
+          path: |
+            ${{ matrix.module }}/target/surefire-reports/TEST-*.xml
+            ${{ matrix.module }}/target/jacoco-ut.exec
         if: always()
 
   integration-tests:
@@ -156,8 +157,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.module }}
-          path: target/
-          working-directory: ${{ matrix.module }}
+          path: |
+            ${{ matrix.module }}/target/surefire-reports/TEST-*.xml
+            ${{ matrix.module }}/target/jacoco-ut.exec
         if: always()
 
   test-summary:
