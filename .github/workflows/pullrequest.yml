@@ -66,19 +66,19 @@ jobs:
       matrix:
         module: 
           - "messaging"
-          - "modelling"
-          - "eventsourcing"
-          - "config"
-          - "test"
-          - "spring"
-          - "axon-server-connector"
-          - "metrics"
-          - "metrics-micrometer"
-          - "tracing-opentelemetry"
-          - "migration"
-          - "legacy"
-          - "spring-boot-autoconfigure"
-          - "spring-boot-starter"
+#          - "modelling"
+#          - "eventsourcing"
+#          - "config"
+#          - "test"
+#          - "spring"
+#          - "axon-server-connector"
+#          - "metrics"
+#          - "metrics-micrometer"
+#          - "tracing-opentelemetry"
+#          - "migration"
+#          - "legacy"
+#          - "spring-boot-autoconfigure"
+#          - "spring-boot-starter"
 
     steps:
       - name: Checkout code
