@@ -66,19 +66,19 @@ jobs:
       matrix:
         module: 
           - "messaging"
-#          - "modelling"
-#          - "eventsourcing"
-#          - "config"
-#          - "test"
-#          - "spring"
-#          - "axon-server-connector"
-#          - "metrics"
-#          - "metrics-micrometer"
-#          - "tracing-opentelemetry"
-#          - "migration"
-#          - "legacy"
-#          - "spring-boot-autoconfigure"
-#          - "spring-boot-starter"
+          - "modelling"
+          - "eventsourcing"
+          - "config"
+          - "test"
+          - "spring"
+          - "axon-server-connector"
+          - "metrics"
+          - "metrics-micrometer"
+          - "tracing-opentelemetry"
+          - "migration"
+          - "legacy"
+          - "spring-boot-autoconfigure"
+          - "spring-boot-starter"
 
     steps:
       - name: Checkout code
@@ -114,54 +114,53 @@ jobs:
           path: "**/target/surefire-reports/TEST-*.xml"
         if: always()
 
-#  integration-tests:
-#    name: Integration (Cross-Module) Tests
-#    needs: compile
-#    runs-on: ubuntu-latest
-#    timeout-minutes: 25
-#    strategy:
-#      fail-fast: true
-#      matrix:
-#        module: ["integrationtests"]
-#
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v5
-#
-#      - name: Set up JDK 21
-#        uses: actions/setup-java@v5.0.0
-#        with:
-#          distribution: 'zulu'
-#          java-version: 21
-#          cache: "maven"
-#
-#      - name: Restore compiled artifacts
-#        uses: actions/cache@v4
-#        with:
-#          path: |
-#            ~/.m2/repository
-#            **/target
-#          key: ${{ needs.compile.outputs.cache-key }}
-#
-#      - name: Run Integration Tests
-#        run: |
-#          ./mvnw -B -T 1C -Dstyle.color=always install -DskipTests -pl ${{ matrix.module }} -am && ./mvnw -B -T 1C -Dstyle.color=always test -Dcoverage -pl ${{ matrix.module }} -Dsurefire.rerunFailingTestsCount=5
-#        env:
-#          TESTCONTAINERS_REUSE_ENABLE: true
-#          TESTCONTAINERS_CHECKS_DISABLE: true
-#          TESTCONTAINERS_RYUK_DISABLED: true
-#
-#      - name: Upload integration test results
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: test-results-${{ matrix.module }}
-#          path: "**/target/surefire-reports/TEST-*.xml"
-#        if: always()
+  integration-tests:
+    name: Integration (Cross-Module) Tests
+    needs: compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: true
+      matrix:
+        module: ["integrationtests"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: "maven"
+
+      - name: Restore compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            **/target
+          key: ${{ needs.compile.outputs.cache-key }}
+
+      - name: Run Integration Tests
+        run: |
+          ./mvnw -B -T 1C -Dstyle.color=always install -DskipTests -pl ${{ matrix.module }} -am && ./mvnw -B -T 1C -Dstyle.color=always test -Dcoverage -pl ${{ matrix.module }} -Dsurefire.rerunFailingTestsCount=5
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.module }}
+          path: "**/target/surefire-reports/TEST-*.xml"
+        if: always()
 
   test-summary:
     name: Test Summary
-#    needs: [compile, test, integration-tests]
-    needs: [compile, test]
+    needs: [compile, test, integration-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: always()
@@ -183,8 +182,7 @@ jobs:
 
   sonar:
     name: Sonar Analysis
-#    needs: [compile, test, integration-tests]
-    needs: [compile, test]
+    needs: [compile, test, integration-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     if: github.event.pull_request.head.repo.full_name == github.repository
