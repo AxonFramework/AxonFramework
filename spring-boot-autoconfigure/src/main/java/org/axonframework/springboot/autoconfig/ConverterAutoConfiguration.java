@@ -28,8 +28,9 @@ import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.avro.AvroSerializer;
-import org.axonframework.serialization.avro.AvroSerializerStrategy;
+import org.axonframework.serialization.avro.AvroConverter;
+import org.axonframework.serialization.avro.AvroConverterConfiguration;
+import org.axonframework.serialization.avro.AvroConverterStrategy;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.springboot.ConverterProperties;
 import org.springframework.beans.BeansException;
@@ -83,11 +84,11 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
         if (ConverterProperties.ConverterType.AVRO == generalConverterType) {
             throw new AxonConfigurationException(format(
                     "Invalid converter type [%s] configured as general converter. "
-                            + "The Avro Converter can be used as message or event serializer only.",
+                            + "The Avro Converter can be used as message or event converter only.",
                     generalConverterType.name()
             ));
         }
-        return buildConverter(generalConverterType, null);
+        return buildConverter(generalConverterType);
     }
 
     /**
@@ -108,7 +109,8 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
                 || converterProperties.getGeneral() == messagesConverterType) {
             return new DelegatingMessageConverter(generalConverter);
         } else {
-            return new DelegatingMessageConverter(buildConverter(messagesConverterType, generalConverter));
+            // TODO @smcvb -> why a delegating here?
+            return new DelegatingMessageConverter(buildConverter(messagesConverterType));
         }
     }
 
@@ -133,23 +135,18 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
         ConverterProperties.ConverterType eventsConverterType = converterProperties.getEvents();
         if (ConverterProperties.ConverterType.DEFAULT == eventsConverterType
                 || converterProperties.getMessages() == eventsConverterType) {
-            return new DelegatingEventConverter(messageConverter);
+            return new DelegatingEventConverter(messageConverter); // TODO @smcvb -> why a delegating here? it is double-delegating...
         } else if (converterProperties.getGeneral() == eventsConverterType) {
             return new DelegatingEventConverter(generalConverter);
         }
-        return new DelegatingEventConverter(buildConverter(eventsConverterType, generalConverter));
+        // TODO @smcvb -> why a delegating here?
+        return new DelegatingEventConverter(buildConverter(eventsConverterType));
     }
 
     @Nonnull
-    private Converter buildConverter(@Nonnull ConverterProperties.ConverterType converterType,
-                                     @Nullable Converter generalConverter) {
+    private Converter buildConverter(@Nonnull ConverterProperties.ConverterType converterType) {
         switch (converterType) {
             case AVRO:
-                if (generalConverter == null) {
-                    throw new AxonConfigurationException(
-                            "General serializer is mandatory as a fallback Avro Converter, but none was provided."
-                    );
-                }
                 Map<String, SchemaStore> schemaStoreBeans =
                         beansOfTypeIncludingAncestors(applicationContext, SchemaStore.class);
                 SchemaStore schemaStore = schemaStoreBeans.containsKey("defaultAxonSchemaStore")
@@ -159,16 +156,21 @@ public class ConverterAutoConfiguration implements ApplicationContextAware, Bean
                                           .findFirst()
                                           .orElseThrow(() -> new NoSuchBeanDefinitionException(SchemaStore.class));
 
-                Map<String, AvroSerializerStrategy> serializationStrategies = beansOfTypeIncludingAncestors(
-                        applicationContext,
-                        AvroSerializerStrategy.class);
-                AvroSerializer.Builder builder = AvroSerializer.builder()
-                                                               .schemaStore(schemaStore);
-                //.serializerDelegate(generalConverter);
-                serializationStrategies.values().forEach(builder::addSerializerStrategy);
-                // TODO #3609 - Rewrite to use the AvroConverter once that's in place.
-                //return builder.build();
-                return null;
+                Map<String, AvroConverterStrategy> converterStrategies = beansOfTypeIncludingAncestors(
+                        applicationContext, AvroConverterStrategy.class);
+
+                return new AvroConverter(
+                        schemaStore,
+                        (c) -> {
+                            AvroConverterConfiguration result = c;
+                            for (AvroConverterStrategy strategy : converterStrategies.values()) {
+                                result = result.addConverterStrategy(strategy);
+                            }
+                            return result;
+                        },
+                        new ChainingContentTypeConverter(classLoader)
+                );
+
             case CBOR:
                 Map<String, CBORMapper> cborMapperBeans =
                         beansOfTypeIncludingAncestors(applicationContext, CBORMapper.class);

@@ -19,13 +19,12 @@ package org.axonframework.springboot.autoconfig;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.serialization.SerializationException;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.avro.AvroSerializer;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.serialization.ConversionException;
+import org.axonframework.serialization.Converter;
+import org.axonframework.serialization.avro.AvroConverter;
 import org.axonframework.serialization.avro.AvroUtil;
-import org.axonframework.serialization.json.JacksonSerializer;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.spring.serialization.avro.AvroSchemaScan;
 import org.axonframework.spring.serialization.avro.ClasspathAvroSchemaLoader;
 import org.axonframework.springboot.fixture.avro.test2.ComplexObject;
@@ -45,13 +44,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * AvroSerializer Spring integration test, verifying classpath scan and serialize/deserialize.
+ * AvroConverter Spring integration test, verifying classpath scan and conversion use casess.
  *
  * @author Simon Zambrovski
  * @author Jan Galinski
  * @since 4.11.0
  */
-@Disabled("TODO #3496")
 class AvroSchemaStoreAutoConfigurationTest {
 
     private ApplicationContextRunner testApplicationContext;
@@ -64,7 +62,7 @@ class AvroSchemaStoreAutoConfigurationTest {
     }
 
     @Test
-    void avroSerializerAutoConfigurationConstructsSchemaStore() {
+    void avroConverterAutoConfigurationConstructsSchemaStore() {
         testApplicationContext
                 .withUserConfiguration(DefaultContext.class)
                 .withPropertyValues(
@@ -88,7 +86,7 @@ class AvroSchemaStoreAutoConfigurationTest {
     }
 
     @Test
-    void avroSerializerAutoConfigurationSkipsToConstructSchemaStoreIfAlreadyPresent() {
+    void avroConverterAutoConfigurationSkipsToConstructSchemaStoreIfAlreadyPresent() {
         testApplicationContext
                 .withUserConfiguration(ContextWithCustomSchemaStore.class)
                 .withPropertyValues(
@@ -108,12 +106,12 @@ class AvroSchemaStoreAutoConfigurationTest {
                     ).isEqualTo(ComplexObject.getClassSchema());
                     assertThat(context).hasSingleBean(ClasspathAvroSchemaLoader.class);
                     assertThat(context).getBean("specificRecordBaseClasspathAvroSchemaLoader")
-                            .isInstanceOf(ClasspathAvroSchemaLoader.class);
+                                       .isInstanceOf(ClasspathAvroSchemaLoader.class);
                 });
     }
 
     @Test
-    void axonAutoConfigurationConstructsAvroSerializerThatIsAbleToSerializeBecauseOfAnnotationScanRegisteredSchema() {
+    void axonAutoConfigurationConstructsAvroConverterThatIsAbleToSerializeBecauseOfAnnotationScanRegisteredSchema() {
         testApplicationContext
                 .withUserConfiguration(DefaultContext.class)
                 .withPropertyValues(
@@ -121,40 +119,37 @@ class AvroSchemaStoreAutoConfigurationTest {
                         "axon.converter.messages=jackson",
                         "axon.converter.events=avro")
                 .run(context -> {
-                    Serializer serializer = context.getBean("eventSerializer", Serializer.class);
-                    assertInstanceOf(AvroSerializer.class, serializer);
-                    AvroSerializer avroSerializer = (AvroSerializer) serializer;
+                    Converter converter = context.getBean("eventConverter", Converter.class);
                     ComplexObject complexObject = ComplexObject.newBuilder()
                                                                .setValue1("foo")
                                                                .setValue2("bar")
                                                                .setValue3(42)
                                                                .build();
-                    SerializedObject<byte[]> serialized = avroSerializer.serialize(complexObject,
-                                                                                   byte[].class);
+                    byte[] serialized = converter.convert(complexObject, byte[].class);
 
                     // back to original type
-                    ComplexObject deserialized = avroSerializer.deserialize(serialized);
+                    ComplexObject deserialized = converter.convert(serialized, ComplexObject.class);
                     assertEquals(complexObject, deserialized);
 
                     // back to generic type (aka intermediate)
-                    GenericRecord genericRecord = avroSerializer.deserialize(serialized);
+                    GenericRecord genericRecord = converter.convert(serialized, GenericRecord.class);
 
                     // modify intermediate
                     genericRecord.put("value2", "newValue");
 
-                    ComplexObject deserializedAfterUpcasting = avroSerializer.deserialize(
-                            new SimpleSerializedObject<>(genericRecord,
-                                                         GenericRecord.class,
-                                                         serialized.getType())
+                    ComplexObject deserializedAfterUpcasting = converter.convert(
+                            genericRecord,
+                            ComplexObject.class
                     );
 
+                    assertThat(deserializedAfterUpcasting).isNotNull();
                     assertEquals("newValue", deserializedAfterUpcasting.getValue2());
                 });
     }
 
 
     @Test
-    void axonAutoConfigurationConstructsAvroSerializerThatIsNotAbleToSerializeBecauseNoSchemasAreFound() {
+    void axonAutoConfigurationConstructsAvroConverterThatIsNotAbleToSerializeBecauseNoSchemasAreFound() {
         testApplicationContext
                 .withUserConfiguration(ContextWithoutSchemaScan.class)
                 .withPropertyValues(
@@ -162,19 +157,16 @@ class AvroSchemaStoreAutoConfigurationTest {
                         "axon.converter.messages=jackson",
                         "axon.converter.events=avro")
                 .run(context -> {
-                    Serializer serializer = context.getBean("eventSerializer", Serializer.class);
-                    assertInstanceOf(AvroSerializer.class, serializer);
-                    AvroSerializer avroSerializer = (AvroSerializer) serializer;
+                    Converter converter = context.getBean("eventConverter", Converter.class);
                     ComplexObject complexObject = ComplexObject.newBuilder()
                                                                .setValue1("foo")
                                                                .setValue2("bar")
                                                                .setValue3(42)
                                                                .build();
-                    SerializedObject<byte[]> serialized = avroSerializer.serialize(complexObject,
-                                                                                   byte[].class);
-                    SerializationException serializationException = assertThrows(SerializationException.class,
-                                                                                 () -> avroSerializer.deserialize(
-                                                                                         serialized));
+                    byte[] serialized = converter.convert(complexObject, byte[].class);
+                    ConversionException serializationException = assertThrows(ConversionException.class,
+                                                                              () -> converter.convert(serialized,
+                                                                                                          ComplexObject.class));
                     assertEquals(AvroUtil.createExceptionNoSchemaFound(
                             ComplexObject.class,
                             AvroUtil.fingerprint(ComplexObject.getClassSchema())
@@ -199,7 +191,7 @@ class AvroSchemaStoreAutoConfigurationTest {
     }
 
     @Test
-    void axonAutoConfigurationFailsToConfigureGeneralAvroSerializer() {
+    void axonAutoConfigurationFailsToConfigureGeneralAvroConverter() {
         testApplicationContext
                 .withUserConfiguration(DefaultContext.class)
                 .withPropertyValues(
@@ -208,23 +200,25 @@ class AvroSchemaStoreAutoConfigurationTest {
                         "axon.converter.events=jackson"
                 )
                 .run(context -> {
-                    assertThat(context.getStartupFailure()).isNotNull().isInstanceOf(BeanCreationException.class);
-                    assertThat((BeanCreationException) context.getStartupFailure().getCause())
-                            .extracting("beanName").isEqualTo("serializer");
-                    assertThat((BeanCreationException) context.getStartupFailure().getCause())
-                            .extracting("cause")
-                            .extracting("cause")
+                    var startupFailure = context.getStartupFailure();
+                    assertThat(startupFailure).isNotNull().isInstanceOf(BeanCreationException.class);
+                    assertThat((BeanCreationException) startupFailure)
+                            .extracting("beanName").isEqualTo("converter");
+                    assertThat((BeanCreationException) startupFailure)
+                            .extracting("cause") // BeanInstantiationException
+                            .extracting("cause") // AxonConfigurationException
                             .isInstanceOf(AxonConfigurationException.class)
                             .extracting("message").isEqualTo(
-                                    "Invalid serializer type [AVRO] configured as general serializer. "
-                                            + "The Avro Serializer can be used as message or event serializer only.")
+                                    "Invalid converter type [AVRO] configured as general converter. "
+                                            + "The Avro Converter can be used as message or event converter only.")
 
                     ;
                 });
     }
 
+    @Disabled("TODO #3496") // re-enable as soon the delegation of converter is clear
     @Test
-    void axonAutoConfigurationReturnsSameSerializerIfOfTheSameType() {
+    void axonAutoConfigurationReturnsSameConverterIfOfTheSameType() {
         testApplicationContext
                 .withUserConfiguration(DefaultContext.class)
                 .withPropertyValues(
@@ -233,13 +227,13 @@ class AvroSchemaStoreAutoConfigurationTest {
                 )
                 .run(context -> {
 
-                    Map<String, Serializer> serializers = context.getBeansOfType(Serializer.class);
-                    assertThat(serializers).hasSize(3);
-                    assertThat(serializers.get("serializer")).isInstanceOf(JacksonSerializer.class);
-                    assertThat(serializers.get("messageSerializer")).isInstanceOf(AvroSerializer.class);
-                    assertThat(serializers.get("eventSerializer")).isInstanceOf(AvroSerializer.class);
+                    Map<String, Converter> converters = context.getBeansOfType(Converter.class);
+                    assertThat(converters).hasSize(3);
+                    assertThat(converters.get("converter")).isInstanceOf(JacksonConverter.class);
+                    assertThat(converters.get("messageConverter")).isInstanceOf(AvroConverter.class);
+                    assertThat(converters.get("eventConverter")).isInstanceOf(AvroConverter.class);
                     // check that this is the same object
-                    assertThat(serializers.get("eventSerializer") == serializers.get("messageSerializer")).isTrue();
+                    assertThat(converters.get("eventConverter") == converters.get("messageConverter")).isTrue();
                 });
 
         testApplicationContext
@@ -251,13 +245,13 @@ class AvroSchemaStoreAutoConfigurationTest {
                 )
                 .run(context -> {
 
-                    Map<String, Serializer> serializers = context.getBeansOfType(Serializer.class);
-                    assertThat(serializers).hasSize(3);
-                    assertThat(serializers.get("serializer")).isInstanceOf(JacksonSerializer.class);
-                    assertThat(serializers.get("messageSerializer")).isInstanceOf(AvroSerializer.class);
-                    assertThat(serializers.get("eventSerializer")).isInstanceOf(AvroSerializer.class);
+                    Map<String, Converter> converters = context.getBeansOfType(Converter.class);
+                    assertThat(converters).hasSize(3);
+                    assertThat(converters.get("converter")).isInstanceOf(JacksonConverter.class);
+                    assertThat(converters.get("messageConverter")).isInstanceOf(AvroConverter.class);
+                    assertThat(converters.get("eventConverter")).isInstanceOf(AvroConverter.class);
                     // check that this is the same object
-                    assertThat(serializers.get("eventSerializer") == serializers.get("messageSerializer")).isTrue();
+                    assertThat(converters.get("eventConverter") == converters.get("messageConverter")).isTrue();
                 });
     }
 
@@ -281,12 +275,14 @@ class AvroSchemaStoreAutoConfigurationTest {
 
         }
     }
+
     @ContextConfiguration
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     private static class ContextWithCustomSchemaStore {
 
         public static SchemaStore.Cache store = new SchemaStore.Cache();
+
         static {
             store.addSchema(org.axonframework.springboot.fixture.avro.test1.ComplexObject.SCHEMA$);
             store.addSchema(org.axonframework.springboot.fixture.avro.test2.ComplexObject.SCHEMA$);
