@@ -208,13 +208,13 @@ jobs:
             **/target
           key: ${{ needs.compile.outputs.cache-key }}
 
-      - name: Print directory structure
+      - name: Generate coverage report
         run: |
-          echo "=== Project Directory Structure ==="
-          find . -type d -name "target" -prune -o -type d -print | sort
-          echo ""
-          echo "=== Target directories (one level deep) ==="
-          find . -type d -name "target" -exec sh -c 'echo "{}:" && ls -1 "{}" 2>/dev/null || echo "  (empty or inaccessible)"' \;
+          ./mvnw -B -Dcoverage -Dstyle.color=always install -pl coverage-report
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
 
       - name: Sonar Analysis
         run: |
