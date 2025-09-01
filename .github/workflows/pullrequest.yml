@@ -161,7 +161,7 @@ jobs:
   test-summary:
     name: Test Summary
 #    needs: [compile, test, integration-tests]
-    needs: [compile, test, integration-tests]
+    needs: [compile, test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: always()
