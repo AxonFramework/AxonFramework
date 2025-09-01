@@ -259,6 +259,11 @@ public class SpringComponentRegistry implements
      * through {@link ConfigurationEnhancer ConfigurationEnhancers} are invoked for Spring beans that match Axon's
      * type-and-name criteria for decoration.
      * <p>
+     * Will retrieve a {@link ResolvableType} from the given {@code beanName} from the
+     * {@link ConfigurableListableBeanFactory} set through
+     * {@link #postProcessBeanFactory(ConfigurableListableBeanFactory)} (if contained in said bean factory). Doing so
+     * ensures we match decorators with the bean's registered type instead of the bean's concrete type.
+     * <p>
      * Generic type checks on the {@link DecoratorDefinition} and it's invocations are suppressed as we're dealing with
      * wildcards. Furthermore, the
      * {@link DecoratorDefinition.CompletedDecoratorDefinition#matches(Component.Identifier)} invocation ensures we
@@ -268,11 +273,23 @@ public class SpringComponentRegistry implements
     @Override
     public Object postProcessAfterInitialization(@Nonnull Object bean,
                                                  @Nonnull String beanName) throws BeansException {
+        // Ensure this ComponentRegistry is fully initialized, as this may set additional components and decorators.
         initialize();
+        if (!beanFactory.containsBeanDefinition(beanName)) {
+            logger.debug("Will not post process bean with name [{}] since we cannot define a Component Identifier.",
+                         beanName);
+            return bean;
+        }
 
-        Component<?> springComponent = new SpringComponent<>(bean, beanName);
-        Component.Identifier<?> componentId = new Component.Identifier<>(bean.getClass(), beanName);
+        ResolvableType beanType = beanFactory.getBeanDefinition(beanName).getResolvableType();
+        if (beanType == ResolvableType.NONE) {
+            logger.debug("Will not post process bean with name [{}] since we cannot define a Component Identifier.",
+                         beanName);
+            return bean;
+        }
 
+        Component.Identifier<Object> componentId = new Component.Identifier<>(beanType.getType(), beanName);
+        Component<?> springComponent = new SpringComponent<>(componentId, bean);
         //noinspection rawtypes
         for (DecoratorDefinition.CompletedDecoratorDefinition decorator : decorators) {
             //noinspection unchecked
@@ -559,9 +576,8 @@ public class SpringComponentRegistry implements
         private final Identifier<T> identifier;
         private final T bean;
 
-        private SpringComponent(@Nonnull T bean, @Nonnull String beanName) {
-            //noinspection unchecked
-            this.identifier = new Identifier<>((Class<T>) bean.getClass(), beanName);
+        private SpringComponent(@Nonnull Identifier<T> identifier, @Nonnull T bean) {
+            this.identifier = identifier;
             this.bean = bean;
         }
 
