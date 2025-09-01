@@ -273,14 +273,16 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         @Override
         public Optional<Entry<EventMessage>> next() {
             long currentPosition = this.position.get();
-            while (currentPosition <= this.end
-                    && eventStorage.containsKey(currentPosition)
-                    && this.position.compareAndSet(currentPosition, currentPosition + 1)) {
-                TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
-                if (match(nextEvent, this.condition)) {
-                    Context context = Context.empty();
-                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition + 1));
-                    return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
+            while (currentPosition <= this.end) {
+                if (eventStorage.containsKey(currentPosition) && this.position.compareAndSet(currentPosition, currentPosition + 1)) {
+                    TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
+                    if (match(nextEvent, this.condition)) {
+                        Context context = Context.empty();
+                        context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition + 1));
+                        return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
+                    }
+                } else {
+                    this.position.compareAndSet(currentPosition, currentPosition + 1);
                 }
                 currentPosition = this.position.get();
             }
@@ -290,12 +292,14 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         @Override
         public Optional<Entry<EventMessage>> peek() {
             long currentPosition = this.position.get();
-            while (currentPosition <= this.end && eventStorage.containsKey(currentPosition)) {
-                TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
-                if (match(nextEvent, this.condition)) {
-                    Context context = Context.empty();
-                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition + 1));
-                    return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
+            while (currentPosition <= this.end) {
+                if (eventStorage.containsKey(currentPosition)) {
+                    TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
+                    if (match(nextEvent, this.condition)) {
+                        Context context = Context.empty();
+                        context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition + 1));
+                        return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
+                    }
                 }
                 currentPosition++;
             }
@@ -326,7 +330,13 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         @Override
         public boolean hasNextAvailable() {
             long currentPosition = this.position.get();
-            return currentPosition <= this.end && eventStorage.containsKey(currentPosition);
+            while (currentPosition <= this.end) {
+                if (eventStorage.containsKey(currentPosition)) {
+                    return true;
+                }
+                currentPosition++;
+            }
+            return false;
         }
 
         @Override
