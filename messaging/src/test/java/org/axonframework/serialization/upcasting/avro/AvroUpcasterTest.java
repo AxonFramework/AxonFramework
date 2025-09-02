@@ -49,7 +49,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * TODO: Left this test in the codebase to be able to re-create is as soon upcasting is redesigned.
+ * TODO #3597 - Left this test in the codebase to be able to re-create is as soon upcasting is redesigned.
  * Demonstrates and verifies behavior of avro based upcasters.
  *
  * @author Simon Zambrovski
