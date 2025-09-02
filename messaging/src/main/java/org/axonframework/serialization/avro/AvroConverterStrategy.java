@@ -47,7 +47,7 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
     /**
      * Converts the given {@code object} to byte array using Avro single-object-encoding.
      *
-     * @param object The object to serialize.
+     * @param object The object to convert.
      * @return The byte array containing Avro Single Object Encoded bytes.
      */
     @Nonnull
