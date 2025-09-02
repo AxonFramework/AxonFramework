@@ -83,7 +83,7 @@ public class SpecificRecordBaseConverterStrategy implements AvroConverterStrateg
             encoder.encode(record, outputStream);
             bytes = outputStream.toByteArray();
         } catch (IOException e) {
-            throw new ConversionException("Failed to serialize specific record", e);
+            throw new ConversionException("Failed to convert specific record", e);
         }
         return bytes;
     }
