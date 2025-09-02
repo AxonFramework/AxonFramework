@@ -22,7 +22,6 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
@@ -34,14 +33,14 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Simple implementation of the {@link EventStore} and {@link StreamableEventSource}.
+ * Simple implementation of the {@link EventStore}.
  *
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public class SimpleEventStore implements EventStore, StreamableEventSource<EventMessage> {
+public class SimpleEventStore implements EventStore {
 
     private final EventStorageEngine eventStorageEngine;
     private final TagResolver tagResolver;
@@ -108,11 +107,6 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition) {
-        return eventStorageEngine.stream(condition);
-    }
-
-    @Override
     public CompletableFuture<TrackingToken> firstToken() {
         return eventStorageEngine.firstToken();
     }
@@ -125,6 +119,11 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
         return eventStorageEngine.tokenAt(at);
+    }
+
+    @Override
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition) {
+        return eventStorageEngine.stream(condition);
     }
 
     @Override

@@ -75,6 +75,12 @@ class EventSourcingConfigurationDefaultsTest {
         assertEquals(eventStore, eventSink);
         assertInstanceOf(SimpleEventStore.class, eventSink);
 
+        StreamableEventSource<EventMessage> eventSource = resultConfig.getComponent(StreamableEventSource.class);
+        assertInstanceOf(SimpleEventStore.class, eventSource);
+        // By default, the Event Store and the Event Sink should be the same instance.
+        assertEquals(eventStore, eventSource);
+        assertInstanceOf(SimpleEventStore.class, eventSource);
+
         assertInstanceOf(Snapshotter.class, resultConfig.getComponent(Snapshotter.class));
     }
 
