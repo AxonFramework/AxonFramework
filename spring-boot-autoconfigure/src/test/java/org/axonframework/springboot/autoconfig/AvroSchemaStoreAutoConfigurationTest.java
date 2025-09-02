@@ -20,6 +20,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.avro.AvroConverter;
@@ -44,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * AvroConverter Spring integration test, verifying classpath scan and conversion use casess.
+ * AvroConverter Spring integration test, verifying classpath scan and conversion use cases.
  *
  * @author Simon Zambrovski
  * @author Jan Galinski
@@ -133,6 +134,7 @@ class AvroSchemaStoreAutoConfigurationTest {
 
                     // back to generic type (aka intermediate)
                     GenericRecord genericRecord = converter.convert(serialized, GenericRecord.class);
+                    assertThat(genericRecord).isNotNull();
 
                     // modify intermediate
                     genericRecord.put("value2", "newValue");
@@ -216,7 +218,6 @@ class AvroSchemaStoreAutoConfigurationTest {
                 });
     }
 
-    @Disabled("TODO #3496") // re-enable as soon the delegation of converter is clear
     @Test
     void axonAutoConfigurationReturnsSameConverterIfOfTheSameType() {
         testApplicationContext
@@ -230,10 +231,19 @@ class AvroSchemaStoreAutoConfigurationTest {
                     Map<String, Converter> converters = context.getBeansOfType(Converter.class);
                     assertThat(converters).hasSize(3);
                     assertThat(converters.get("converter")).isInstanceOf(JacksonConverter.class);
-                    assertThat(converters.get("messageConverter")).isInstanceOf(AvroConverter.class);
-                    assertThat(converters.get("eventConverter")).isInstanceOf(AvroConverter.class);
+
+                    assertThat(converters.get("messageConverter")).isInstanceOf(DelegatingMessageConverter.class);
+                    DelegatingMessageConverter messageConverter = (DelegatingMessageConverter) converters.get("messageConverter");
+                    assertThat(messageConverter.delegate()).isInstanceOf(AvroConverter.class);
+
+                    assertThat(converters.get("eventConverter")).isInstanceOf(DelegatingEventConverter.class);
+                    DelegatingEventConverter eventConverter = (DelegatingEventConverter) converters.get("eventConverter");
+                    assertThat(eventConverter.delegate()).isInstanceOf(DelegatingMessageConverter.class);
+                    DelegatingMessageConverter delegatingEventConverter = (DelegatingMessageConverter)eventConverter.delegate();
+                    assertThat(delegatingEventConverter.delegate()).isInstanceOf(AvroConverter.class);
+
                     // check that this is the same object
-                    assertThat(converters.get("eventConverter") == converters.get("messageConverter")).isTrue();
+                    assertThat(messageConverter.delegate() == delegatingEventConverter.delegate()).isTrue();
                 });
 
         testApplicationContext
@@ -248,10 +258,19 @@ class AvroSchemaStoreAutoConfigurationTest {
                     Map<String, Converter> converters = context.getBeansOfType(Converter.class);
                     assertThat(converters).hasSize(3);
                     assertThat(converters.get("converter")).isInstanceOf(JacksonConverter.class);
-                    assertThat(converters.get("messageConverter")).isInstanceOf(AvroConverter.class);
-                    assertThat(converters.get("eventConverter")).isInstanceOf(AvroConverter.class);
+
+                    assertThat(converters.get("messageConverter")).isInstanceOf(DelegatingMessageConverter.class);
+                    DelegatingMessageConverter messageConverter = (DelegatingMessageConverter) converters.get("messageConverter");
+                    assertThat(messageConverter.delegate()).isInstanceOf(AvroConverter.class);
+
+                    assertThat(converters.get("eventConverter")).isInstanceOf(DelegatingEventConverter.class);
+                    DelegatingEventConverter eventConverter = (DelegatingEventConverter) converters.get("eventConverter");
+                    assertThat(eventConverter.delegate()).isInstanceOf(DelegatingMessageConverter.class);
+                    DelegatingMessageConverter delegatingEventConverter = (DelegatingMessageConverter)eventConverter.delegate();
+                    assertThat(delegatingEventConverter.delegate()).isInstanceOf(AvroConverter.class);
+
                     // check that this is the same object
-                    assertThat(converters.get("eventConverter") == converters.get("messageConverter")).isTrue();
+                    assertThat(messageConverter.delegate() == delegatingEventConverter.delegate()).isTrue();
                 });
     }
 
