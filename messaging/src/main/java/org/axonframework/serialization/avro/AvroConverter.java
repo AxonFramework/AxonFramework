@@ -40,7 +40,7 @@ import java.util.function.UnaryOperator;
  * encoding</a>.
  * <p>
  * This converter is intended to work for classes, representing messages specified by Avro Schema.
- * It is limited to conversions specifying `Class` as a target type (and can not work on pure `Type`)
+ * It is limited to conversions specifying {@code Class} as a target type (and can not work on pure {@code Type})
  * definitions.
  * </p>
  * <p>
