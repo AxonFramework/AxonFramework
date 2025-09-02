@@ -16,6 +16,7 @@
 
 package org.axonframework.serialization.avro;
 
+import jakarta.annotation.Nonnull;
 import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.InvalidAvroMagicException;
 import org.apache.avro.InvalidNumberEncodingException;
@@ -26,7 +27,7 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.message.BadHeaderException;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
-import org.axonframework.serialization.SerializationException;
+import org.axonframework.serialization.ConversionException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -35,7 +36,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
-import jakarta.annotation.Nonnull;
 
 import static org.apache.avro.SchemaCompatibility.checkReaderWriterCompatibility;
 
@@ -219,23 +219,25 @@ public class AvroUtil {
         }
     }
 
+
     /**
-     * Creates a serialization exception for reader type.
+     * Creates a conversion exception for reader type.
      *
-     * @param readerType   object type to deserialize.
-     * @param readerSchema reader schema.
-     * @param writerSchema writer schema.
-     * @param cause        the cause of exception.
-     * @return serialization exception.
+     * @param readerType                  object type to deserialize.
+     * @param readerSchema                reader schema.
+     * @param writerSchema                writer schema.
+     * @param cause                       the cause of exception.
+     * @param includeSchemasInStackTraces A flag controlling if the stacktrace should include reader and writer schema.
+     * @return conversion exception.
      */
     @Nonnull
-    public static SerializationException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
-                                                                            @Nonnull Schema readerSchema,
-                                                                            @Nonnull Schema writerSchema,
-                                                                            Exception cause,
-                                                                            boolean includeSchemasInStackTraces
+    public static ConversionException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
+                                                                         @Nonnull Schema readerSchema,
+                                                                         @Nonnull Schema writerSchema,
+                                                                         Exception cause,
+                                                                         boolean includeSchemasInStackTraces
     ) {
-        return new SerializationException(
+        return new ConversionException(
                 "Failed to deserialize single-object-encoded bytes to instance of "
                         + readerType.getCanonicalName()
                         + ", writer schema fingerprint is " + fingerprint(writerSchema)
@@ -245,13 +247,23 @@ public class AvroUtil {
                 cause);
     }
 
-    public static SerializationException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
-                                                                            @Nonnull Schema readerSchema,
-                                                                            @Nonnull Schema writerSchema,
-                                                                            String message,
-                                                                            boolean includeSchemasInStackTraces
+    /**
+     * Creates a conversion exception for reader type.
+     *
+     * @param readerType                  The object type to deserialize.
+     * @param readerSchema                The reader schema.
+     * @param writerSchema                The writer schema.
+     * @param message                     The message to report.
+     * @param includeSchemasInStackTraces A flag controlling if the stacktrace should contain reader and writer schema.
+     * @return conversion exception.
+     */
+    public static ConversionException createExceptionFailedToDeserialize(@Nonnull Class<?> readerType,
+                                                                         @Nonnull Schema readerSchema,
+                                                                         @Nonnull Schema writerSchema,
+                                                                         String message,
+                                                                         boolean includeSchemasInStackTraces
     ) {
-        return new SerializationException(
+        return new ConversionException(
                 "Failed to deserialize single-object-encoded bytes to instance of "
                         + readerType.getCanonicalName()
                         + ", writer schema fingerprint is " + fingerprint(writerSchema)
@@ -283,11 +295,11 @@ public class AvroUtil {
      * @param fingerprint fingerprint of writer schema.
      * @return exception to throw.
      */
-    public static SerializationException createExceptionNoSchemaFound(
+    public static ConversionException createExceptionNoSchemaFound(
             @Nonnull Class<?> readerType,
             long fingerprint
     ) {
-        return new SerializationException(
+        return new ConversionException(
                 "Schema store could didn't contain schema deserializing " + readerType
                         + " with fingerprint:" + fingerprint
         );
