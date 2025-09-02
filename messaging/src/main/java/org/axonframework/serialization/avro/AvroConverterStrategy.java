@@ -45,7 +45,7 @@ public interface AvroConverterStrategy extends Predicate<Class<?>>, DescribableC
     boolean test(Class<?> payloadType);
 
     /**
-     * Serializes object to byte array using Avro single-object-encoding.
+     * Converts the given {@code object} to byte array using Avro single-object-encoding.
      *
      * @param object The object to serialize.
      * @return The byte array containing Avro Single Object Encoded bytes.
