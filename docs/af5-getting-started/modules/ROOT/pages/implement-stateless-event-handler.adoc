@@ -19,7 +19,19 @@ Common use cases for stateless event handlers include:
 
 == Understanding the Notification Feature
 
-Our goal is to send a notification to a student whenever they subscribe to a course. This serves two key business purposes:
+Our goal is to send a notification to a student whenever they subscribe to a course. Let's look at the Event Modeling diagram for this feature:
+
+image::EventModeling_WhenStudentSubscribedThenSendNotification.jpg[]
+
+The diagram shows the automation flow:
+- **Orange sticky (Event)**: `StudentSubscribedToCourse` - the trigger event containing student and course IDs
+- **Gear (Automation)**: The stateless event handler that processes the event
+- **Blue sticky (External System)**: `SendNotification` - the side effect that sends a notification
+- **Green sticky (TODO List)**: Tracks progress of processed events in Event Modeling methodology
+
+The green sticky represents a **TODO List** from Event Modeling - a way to track which tasks have been completed. In this case, it would track which student subscription notifications have already been sent. However, with Axon Framework, you don't need to manually implement this tracking because every `EventProcessor` automatically tracks its position and processed events using tracking tokens.
+
+This serves two key business purposes:
 
 **Self-Service Confirmation**: When students register themselves, they get immediate confirmation of successful enrollment.
 

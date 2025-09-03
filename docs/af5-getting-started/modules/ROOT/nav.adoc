@@ -4,3 +4,4 @@
 * xref:implement-command-create-course.adoc[]
 * xref:implement-command-subscribe-student.adoc[]
 * xref:configure-axon-server.adoc[]
+* xref:implement-stateless-event-handler.adoc

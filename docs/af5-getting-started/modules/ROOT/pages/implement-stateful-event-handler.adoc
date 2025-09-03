@@ -1,0 +1,2 @@
+= Feature: Send Notification To The Administrator When All Courses Are Fully Booked
+
