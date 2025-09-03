@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -222,6 +223,29 @@ public class MessagingConfigurer implements ApplicationConfigurer {
         delegate.componentRegistry(
                 cr -> cr.registerComponent(UnitOfWorkFactory.class, unitOfWorkFactoryBuilder)
         );
+        return this;
+    }
+
+    /**
+     * Registers the given {@link MessageDispatchInterceptor} factory in this {@code Configurer}.
+     * <p>
+     * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
+     * {@code MessageDispatchInterceptor} instance.
+     * <p>
+     * {@code MessageDispatchInterceptors} are typically automatically registered with all applicable infrastructure
+     * components through the {@link InterceptorRegistry}.
+     *
+     * @param interceptorBuilder The builder constructing the {@link MessageDispatchInterceptor}.
+     * @return A {@code ModellingConfigurer} instance for further configuring.
+     */
+    public MessagingConfigurer registerDispatchInterceptor(
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super Message>> interceptorBuilder
+    ) {
+        delegate.componentRegistry(cr -> cr.registerDecorator(
+                InterceptorRegistry.class,
+                0,
+                (config, name, delegate) -> delegate.registerDispatchInterceptor(interceptorBuilder)
+        ));
         return this;
     }
 

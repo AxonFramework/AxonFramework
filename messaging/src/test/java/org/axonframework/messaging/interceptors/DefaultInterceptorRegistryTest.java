@@ -17,10 +17,13 @@
 package org.axonframework.messaging.interceptors;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
@@ -49,6 +52,14 @@ class DefaultInterceptorRegistryTest {
         testSubject = new DefaultInterceptorRegistry();
 
         config = mock(Configuration.class);
+    }
+
+    @Test
+    void registeredDispatchInterceptorIsRetrievable() {
+        InterceptorRegistry result = testSubject.registerDispatchInterceptor(c -> new GenericMessageDispatchInterceptor());
+
+        List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors = result.dispatchInterceptors(config);
+        assertThat(dispatchInterceptors).size().isEqualTo(1);
     }
 
     @Test
@@ -97,6 +108,17 @@ class DefaultInterceptorRegistryTest {
         assertThat(eventInterceptors).size().isEqualTo(0);
         List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors = result.queryHandlerInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(1);
+    }
+
+    static class GenericMessageDispatchInterceptor implements MessageDispatchInterceptor<Message> {
+
+        @Nonnull
+        @Override
+        public MessageStream<?> interceptOnDispatch(@Nonnull Message message,
+                                                    @Nullable ProcessingContext context,
+                                                    @Nonnull MessageDispatchInterceptorChain<Message> chain) {
+            return chain.proceed(message, context);
+        }
     }
 
     static class GenericMessageHandlerInterceptor implements MessageHandlerInterceptor<Message> {

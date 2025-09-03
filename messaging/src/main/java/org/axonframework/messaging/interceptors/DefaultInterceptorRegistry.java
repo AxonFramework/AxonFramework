@@ -23,12 +23,12 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.queryhandling.QueryMessage;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Default implementation of the {@link InterceptorRegistry}, maintaining lists of {@link CommandMessage},
@@ -41,9 +41,19 @@ import java.util.Objects;
 @Internal
 public class DefaultInterceptorRegistry implements InterceptorRegistry {
 
+    private final List<ComponentBuilder<MessageDispatchInterceptor<? super Message>>> dispatchInterceptorBuilders = new ArrayList<>();
     private final List<ComponentBuilder<MessageHandlerInterceptor<CommandMessage>>> commandInterceptorBuilders = new ArrayList<>();
     private final List<ComponentBuilder<MessageHandlerInterceptor<EventMessage>>> eventInterceptorBuilders = new ArrayList<>();
     private final List<ComponentBuilder<MessageHandlerInterceptor<QueryMessage>>> queryInterceptorBuilders = new ArrayList<>();
+
+    @Nonnull
+    @Override
+    public InterceptorRegistry registerDispatchInterceptor(
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super Message>> interceptorBuilder
+    ) {
+        this.dispatchInterceptorBuilders.add(interceptorBuilder);
+        return this;
+    }
 
     @Nonnull
     @Override
@@ -82,7 +92,7 @@ public class DefaultInterceptorRegistry implements InterceptorRegistry {
     public InterceptorRegistry registerCommandHandlerInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<CommandMessage>> interceptorBuilder
     ) {
-        this.commandInterceptorBuilders.add(Objects.requireNonNull(interceptorBuilder));
+        this.commandInterceptorBuilders.add(interceptorBuilder);
         return this;
     }
 
@@ -91,7 +101,7 @@ public class DefaultInterceptorRegistry implements InterceptorRegistry {
     public InterceptorRegistry registerEventHandlerInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<EventMessage>> interceptorBuilder
     ) {
-        this.eventInterceptorBuilders.add(Objects.requireNonNull(interceptorBuilder));
+        this.eventInterceptorBuilders.add(interceptorBuilder);
         return this;
     }
 
@@ -100,8 +110,19 @@ public class DefaultInterceptorRegistry implements InterceptorRegistry {
     public InterceptorRegistry registerQueryHandlerInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<QueryMessage>> interceptorBuilder
     ) {
-        this.queryInterceptorBuilders.add(Objects.requireNonNull(interceptorBuilder));
+        this.queryInterceptorBuilders.add(interceptorBuilder);
         return this;
+    }
+
+    @Nonnull
+    @Override
+    public List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors(@Nonnull Configuration config) {
+        List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors = new ArrayList<>();
+        for (ComponentBuilder<MessageDispatchInterceptor<? super Message>> interceptorBuilder : dispatchInterceptorBuilders) {
+            MessageDispatchInterceptor<? super Message> dispatchInterceptor = interceptorBuilder.build(config);
+            dispatchInterceptors.add(dispatchInterceptor);
+        }
+        return dispatchInterceptors;
     }
 
     @Nonnull

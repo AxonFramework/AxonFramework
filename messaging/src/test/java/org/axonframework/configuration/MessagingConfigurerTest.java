@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -178,6 +179,19 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     }
 
     @Test
+    void registerDispatchInterceptorMakesInterceptorRetrievableThroughTheInterceptorRegistry() {
+        //noinspection unchecked
+        MessageDispatchInterceptor<Message> dispatchInterceptor = mock(MessageDispatchInterceptor.class);
+
+        Configuration result = testSubject.registerDispatchInterceptor(c -> dispatchInterceptor)
+                                          .build();
+
+        List<MessageDispatchInterceptor<? super Message>> interceptors = result.getComponent(InterceptorRegistry.class)
+                                                                               .dispatchInterceptors(result);
+        assertThat(interceptors).contains(dispatchInterceptor);
+    }
+
+    @Test
     void registerMessageHandlerInterceptorMakesInterceptorRetrievableThroughTheInterceptorRegistryForAllTypes() {
         AtomicInteger counter = new AtomicInteger();
         MessageHandlerInterceptor<Message> handlerInterceptor = (message, context, interceptorChain) -> {
@@ -210,7 +224,6 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         //noinspection DataFlowIssue | Input is not important to validate invocation
         queryInterceptors.getFirst().interceptOnHandle(null, null, null);
         assertThat(counter).hasValue(3);
-
     }
 
     @Test
