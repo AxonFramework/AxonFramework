@@ -19,6 +19,8 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -28,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,12 +44,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 5.0.0
  */
 @Internal
-public class RecordingEventSink implements EventSink {
+public class RecordingEventSink implements EventSink, DescribableComponent {
 
     protected static final Logger logger = LoggerFactory.getLogger(RecordingEventSink.class);
 
+    private static final UUID uuid = UUID.randomUUID();
     private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger(0);
-    public final int instanceId = INSTANCE_COUNTER.incrementAndGet();
+    public final String instanceId = INSTANCE_COUNTER.incrementAndGet() + "@" + uuid;
 
     private final List<EventMessage> recorded = new ArrayList<>();
 
@@ -89,5 +93,12 @@ public class RecordingEventSink implements EventSink {
             recorded.clear();
         }
         return this;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("type", this.getClass().getSimpleName());
+        descriptor.describeProperty("instanceId", instanceId);
+        descriptor.describeProperty("delegate", delegate);
     }
 }

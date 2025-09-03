@@ -65,6 +65,7 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
 
     @Override
     public void describeTo(@NotNull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("type", "RecordingEventStore");
         descriptor.describeWrapperOf(delegate);
     }
 

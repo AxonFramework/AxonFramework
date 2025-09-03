@@ -16,13 +16,17 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
@@ -32,6 +36,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.NamespaceMessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
@@ -40,7 +45,9 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.commandhandling.CommandBusTestUtils.*;
@@ -140,7 +147,18 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
     @Test
     void registerEventSinkOverridesDefault() {
-        EventSink expected = (context, events) -> FutureUtils.emptyCompletedFuture();
+        EventSink expected = new EventSink() {
+            @Override
+            public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                                   @Nonnull List<EventMessage> events) {
+                return FutureUtils.emptyCompletedFuture();
+            }
+
+//            @Override
+//            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+//
+//            }
+        };
 
         Configuration result = testSubject.registerEventSink(c -> expected)
                                           .build();

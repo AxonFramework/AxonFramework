@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.testsuite.course;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.common.infra.FilesystemStyleComponentDescriptor;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.course.module.CourseCreated;
@@ -102,6 +103,11 @@ public class StudentAxonTestFixtureAxonServerIntegrationTest {
         var configuration = testConfiguration();
         var fixture = new AxonTestFixture(configuration, c -> c);
 
+        var descriptor = new FilesystemStyleComponentDescriptor();
+        configuration.describeTo(descriptor);
+        var describe = descriptor.describe();
+        logger.info("describe: {}", describe);
+
         var courseId = UUID.randomUUID().toString();
 
         fixture.given()
@@ -111,6 +117,6 @@ public class StudentAxonTestFixtureAxonServerIntegrationTest {
                .success()
                .events(new CourseCreated(courseId));
 
-        configuration.shutdown(); // fixme: it solves the problem from test below, but we don't know WHY
+//        configuration.shutdown(); // fixme: it solves the problem from test below, but we don't know WHY
     }
 }

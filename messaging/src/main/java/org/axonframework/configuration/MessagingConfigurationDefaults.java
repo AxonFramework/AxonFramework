@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.RoutingStrategy;
@@ -26,8 +27,10 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.conversion.EventConverter;
@@ -40,6 +43,7 @@ import org.axonframework.messaging.ConfigurationApplicationContext;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
@@ -57,6 +61,7 @@ import org.axonframework.serialization.json.JacksonConverter;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link MessagingConfigurer}.
@@ -180,9 +185,18 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     // TODO #3392 - Replace for actual EventSink implementation.
     private static EventSink defaultEventSink(Configuration config) {
         EventBus eventBus = config.getComponent(EventBus.class);
-        return (context, events) -> {
-            eventBus.publish(events);
-            return FutureUtils.emptyCompletedFuture();
+        return new EventSink() {
+            @Override
+            public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                                   @Nonnull List<EventMessage> events) {
+                eventBus.publish(events);
+                return FutureUtils.emptyCompletedFuture();
+            }
+
+//            @Override
+//            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+//                descriptor.describeProperty("type", "DefaultEventSink");
+//            }
         };
     }
 
