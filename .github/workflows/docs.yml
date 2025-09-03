@@ -3,13 +3,13 @@ name: Trigger documentation build
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
       - 'axon-*'
     paths:
       - 'docs/**'
   pull_request:
     branches:
-      - 'master'
+      - 'main'
       - 'axon-*'
     paths:
       - 'docs/**'
