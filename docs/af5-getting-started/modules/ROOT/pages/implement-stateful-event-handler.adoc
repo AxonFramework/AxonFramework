@@ -19,8 +19,8 @@ Common use cases for stateful event handlers include:
 
 image::EventModeling_WhenAllCoursesFullyBookedThenSendNotification.jpg[]
 
-The diagram shows a Event Modeling flow. The stateful handler will monitor multiple events to determine when all courses are fully booked.
-Then if the condition is met, it will send a notification to the administrator.
+The diagram shows an Event Modeling flow with an **Automation pattern**. The gear symbol (⚙️) represents an automated process that monitors the system state and triggers actions when conditions are met. In Event Modeling terminology, this automation works like a "todo list that a process goes and does and marks items as done" - it continuously evaluates whether all courses are fully booked and sends notifications when needed.
+The stateful handler implements this automation pattern by monitoring multiple events to determine when all courses are fully booked, then triggering the notification to the administrator.
 
 This is a perfect example of a stateful operation because:
 
