@@ -287,31 +287,25 @@ public class WhenStudentSubscribedThenSendNotificationTest extends UniversityApp
 
     @Test
     void automationTest() {
-        // given // <3>
-        RecordingNotificationService notificationService = (RecordingNotificationService) sut.getComponent(NotificationService.class); // <4>
-
-        // when // <5>
+        // when
         var studentId = StudentId.random();
         var courseId = CourseId.random();
-        eventsOccurred(new StudentSubscribedToCourse(studentId, courseId)); // <6>
+        eventsOccurred(new StudentSubscribedToCourse(studentId, courseId)); // <3>
 
-        // then // <7>
+        // then
         var expectedNotification = new NotificationService.Notification(studentId.raw(), "You have subscribed to course " + courseId);
-        await().atMost(2, TimeUnit.SECONDS) // <8>
-                .untilAsserted(() -> assertThat(notificationService.sent()).contains(expectedNotification)); // <9>
+        var notificationService = (RecordingNotificationService) sut.getComponent(NotificationService.class);
+        await().atMost(2, TimeUnit.SECONDS) // <4>
+                .untilAsserted(() -> assertThat(notificationService.sent()).contains(expectedNotification)); // <5>
     }
 }
 ----
 
 <1> We extend `UniversityApplicationTest` which provides the test infrastructure
 <2> We configure both the notification service and our event handler for testing
-<3> **Given**: We set up the test dependencies
-<4> We get the recording notification service to verify sent notifications
-<5> **When**: We simulate the event that should trigger our handler
-<6> We use `eventsOccurred()` to publish the `StudentSubscribedToCourse` event
-<7> **Then**: We verify the expected behavior occurred
-<8> We use Awaitility to wait for asynchronous processing to complete
-<9> We assert that the expected notification was sent
+<3> We use `eventsOccurred()` to publish the `StudentSubscribedToCourse` event
+<4> We use Awaitility to wait for asynchronous processing to complete
+<5> We assert that the expected notification was sent
 
 == Key Concepts Review
 
