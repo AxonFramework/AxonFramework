@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
@@ -35,6 +36,8 @@ import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
@@ -58,6 +61,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link MessagingConfigurationDefaults}.
@@ -128,6 +132,42 @@ class MessagingConfigurationDefaultsTest {
         MessagingConfigurer configurer = MessagingConfigurer.create();
         Configuration resultConfig = configurer.build();
         assertInstanceOf(ConvertingCommandGateway.class, resultConfig.getComponent(CommandGateway.class));
+    }
+
+    @Test
+    void decoratorsCommandBusAsInterceptorCommandBusWhenGenericHandlerInterceptorIsPresent() {
+        //noinspection unchecked
+        MessagingConfigurer configurer =
+                MessagingConfigurer.create()
+                                   .registerMessageHandlerInterceptor(c -> mock(MessageHandlerInterceptor.class));
+
+        Configuration resultConfig = configurer.build();
+
+        assertThat(resultConfig.getComponent(CommandBus.class)).isInstanceOf(InterceptingCommandBus.class);
+    }
+
+    @Test
+    void decoratorsCommandBusAsInterceptorCommandBusWhenCommandHandlerInterceptorIsPresent() {
+        //noinspection unchecked
+        MessagingConfigurer configurer =
+                MessagingConfigurer.create()
+                                   .registerCommandHandlerInterceptor(c -> mock(MessageHandlerInterceptor.class));
+
+        Configuration resultConfig = configurer.build();
+
+        assertThat(resultConfig.getComponent(CommandBus.class)).isInstanceOf(InterceptingCommandBus.class);
+    }
+
+    @Test
+    void decoratorsCommandBusAsInterceptorCommandBusWhenDispatchInterceptorIsPresent() {
+        //noinspection unchecked
+        MessagingConfigurer configurer =
+                MessagingConfigurer.create()
+                                   .registerDispatchInterceptor(c -> mock(MessageDispatchInterceptor.class));
+
+        Configuration resultConfig = configurer.build();
+
+        assertThat(resultConfig.getComponent(CommandBus.class)).isInstanceOf(InterceptingCommandBus.class);
     }
 
     private static class TestCommandBus implements CommandBus {

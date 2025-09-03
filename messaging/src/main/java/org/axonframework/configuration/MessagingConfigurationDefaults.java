@@ -18,7 +18,9 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
+import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
@@ -37,6 +39,8 @@ import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.ConfigurationApplicationContext;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
@@ -70,6 +74,7 @@ import java.util.List;
  *     <li>Registers a {@link JacksonConverter} for class {@link Converter}</li>
  *     <li>Registers a {@link DelegatingMessageConverter} using the default {@link JacksonConverter}.</li>
  *     <li>Registers a {@link DelegatingEventConverter} using the default {@link JacksonConverter}.</li>
+ *     <li>Registers a {@link DefaultInterceptorRegistry} for class {@link InterceptorRegistry}.</li>
  *     <li>Registers a {@link TransactionalUnitOfWorkFactory} for class {@link UnitOfWorkFactory}</li>
  *     <li>Registers a {@link DefaultCommandGateway} for class {@link CommandGateway}</li>
  *     <li>Registers a {@link SimpleCommandBus} for class {@link CommandBus}</li>
@@ -79,6 +84,14 @@ import java.util.List;
  *     <li>Registers a {@link DefaultQueryGateway} for class {@link QueryGateway}</li>
  *     <li>Registers a {@link SimpleQueryBus} for class {@link QueryBus}</li>
  *     <li>Registers a {@link SimpleQueryUpdateEmitter} for class {@link QueryUpdateEmitter}</li>
+ * </ul>
+ * <p>
+ * Furthermore, this enhancer will decorate the:
+ * <ul>
+ *     <li>The {@link CommandGateway} in a {@link ConvertingCommandGateway} with the present {@link MessageConverter}.</li>
+ *     <li>The {@link CommandBus} in a {@link InterceptingCommandBus} <b>if</b> there are any
+ *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} or
+ *     {@link MessageHandlerInterceptor MessageHandlerInterceptors} present in the {@link InterceptorRegistry}.</li>
  * </ul>
  *
  * @author Steven van Beelen
@@ -112,7 +125,8 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(MessageConverter.class, MessagingConfigurationDefaults::defaultMessageConverter)
                 .registerIfNotPresent(EventConverter.class, MessagingConfigurationDefaults::defaultEventConverter)
                 .registerIfNotPresent(UnitOfWorkFactory.class, MessagingConfigurationDefaults::defaultUnitOfWorkFactory)
-                .registerIfNotPresent(InterceptorRegistry.class, MessagingConfigurationDefaults::defaultInterceptorRegistry)
+                .registerIfNotPresent(InterceptorRegistry.class,
+                                      MessagingConfigurationDefaults::defaultInterceptorRegistry)
                 .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(CommandBus.class, MessagingConfigurationDefaults::defaultCommandBus)
                 .registerIfNotPresent(RoutingStrategy.class, MessagingConfigurationDefaults::defaultRoutingStrategy)
@@ -130,6 +144,20 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                         delegate,
                         config.getComponent(MessageConverter.class)
                 )
+        );
+        registry.registerDecorator(
+                CommandBus.class,
+                InterceptingCommandBus.DECORATION_ORDER,
+                (config, name, delegate) -> {
+                    InterceptorRegistry interceptorRegistry = config.getComponent(InterceptorRegistry.class);
+                    List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors =
+                            interceptorRegistry.commandHandlerInterceptors(config);
+                    List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
+                            interceptorRegistry.dispatchInterceptors(config);
+                    return handlerInterceptors.isEmpty() && dispatchInterceptors.isEmpty()
+                            ? delegate
+                            : new InterceptingCommandBus(delegate, handlerInterceptors, dispatchInterceptors);
+                }
         );
     }
 
