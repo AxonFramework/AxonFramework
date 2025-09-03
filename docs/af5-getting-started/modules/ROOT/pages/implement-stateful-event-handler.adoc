@@ -17,7 +17,7 @@ Common use cases for stateful event handlers include:
 
 == Understanding the Administrator Notification Feature
 
-image::EventModeling_CreateCourse_Stickies.png[]
+image::EventModeling_WhenAllCoursesFullyBookedThenSendNotification.jpg[]
 
 The diagram shows a Event Modeling flow. The stateful handler will monitor multiple events to determine when all courses are fully booked.
 Then if the condition is met, it will send a notification to the administrator.
