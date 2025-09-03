@@ -5,3 +5,411 @@ Thanks to that, you can implement features that are decoupled from the core busi
 
 In this example, we will implement a stateless event handler that sends a notification when a student subscribes to a course.
 
+== What is a Stateless Event Handler?
+
+A stateless event handler is a component that reacts to events without maintaining any internal state between event processing.
+Unlike command handlers that need to validate business rules against current state, stateless event handlers simply perform actions in response to events.
+
+Common use cases for stateless event handlers include:
+- Sending notifications (email, SMS, push notifications)
+- Logging or auditing events
+- Triggering external system integrations
+- Updating search indices
+- Sending events to message queues
+
+== Understanding the Notification Feature
+
+Our goal is to send a notification to a student whenever they subscribe to a course.
+This is a perfect example of a stateless operation because:
+
+1. **No validation needed** - The subscription already happened successfully
+2. **No state tracking** - We don't need to remember previous notifications
+3. **Side effect only** - We're just performing an action (sending notification)
+4. **Decoupled** - This feature doesn't affect the core subscription logic
+
+== Setting Up the Notification Infrastructure
+
+Before we implement our event handler, we need to set up the notification service infrastructure.
+
+=== Step 1: Define the Notification Service Interface
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/shared/application/notifier/NotificationService.java
+----
+package io.axoniq.demo.university.shared.application.notifier;
+
+public interface NotificationService { // <1>
+
+    record Notification(String recipientId, String message) { // <2>
+    }
+
+    void sendNotification(Notification notification); // <3>
+}
+----
+
+<1> We define a simple interface for sending notifications
+<2> A record representing a notification with recipient ID and message
+<3> The main method for sending notifications
+
+=== Step 2: Create Infrastructure Implementations
+
+Let's create two implementations - one for logging and one for testing:
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/shared/infrastructure/notifier/LoggingNotificationService.java
+----
+package io.axoniq.demo.university.shared.infrastructure.notifier;
+
+import io.axoniq.demo.university.shared.application.notifier.NotificationService;
+import java.util.logging.Logger;
+
+public class LoggingNotificationService implements NotificationService { // <1>
+
+    private static final Logger logger = Logger.getLogger(LoggingNotificationService.class.getName());
+
+    @Override
+    public void sendNotification(Notification notification) { // <2>
+        logger.info("Sending notification to " + notification.recipientId() + ": " + notification.message());
+    }
+}
+----
+
+<1> A simple implementation that logs notifications
+<2> In a real system, this might send emails, SMS, or push notifications
+
+For testing purposes, we need a way to verify that notifications were sent:
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/shared/infrastructure/notifier/RecordingNotificationService.java
+----
+package io.axoniq.demo.university.shared.infrastructure.notifier;
+
+import io.axoniq.demo.university.shared.application.notifier.NotificationService;
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+public class RecordingNotificationService implements NotificationService { // <1>
+
+    private final NotificationService delegate; // <2>
+    private final ConcurrentLinkedQueue<Notification> recorded = new ConcurrentLinkedQueue<>(); // <3>
+
+    public RecordingNotificationService(NotificationService delegate) {
+        this.delegate = delegate;
+    }
+
+    @Override
+    public void sendNotification(Notification notification) {
+        delegate.sendNotification(notification); // <4>
+        recorded.add(notification); // <5>
+    }
+
+    public List<Notification> sent() { // <6>
+        return List.copyOf(recorded);
+    }
+}
+----
+
+<1> A decorator that records notifications for testing while still delegating to a real implementation
+<2> The actual notification service to delegate to
+<3> Thread-safe queue to store sent notifications
+<4> Send the notification using the delegate
+<5> Record the notification for test verification
+<6> Provide access to sent notifications for assertions
+
+=== Step 3: Configure the Notification Service
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/shared/configuration/NotificationServiceConfiguration.java
+----
+package io.axoniq.demo.university.shared.configuration;
+
+import io.axoniq.demo.university.shared.application.notifier.NotificationService;
+import io.axoniq.demo.university.shared.infrastructure.notifier.LoggingNotificationService;
+import io.axoniq.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+
+public class NotificationServiceConfiguration {
+
+    public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
+        return configurer.componentRegistry(cr -> cr.registerComponent( // <1>
+                NotificationService.class, // <2>
+                cfg -> new RecordingNotificationService(new LoggingNotificationService()) // <3>
+        ));
+    }
+
+    private NotificationServiceConfiguration() { // <4>
+        // Prevent instantiation
+    }
+}
+----
+
+<1> We register the service with Axon's component registry
+<2> Register it under the `NotificationService` interface type
+<3> Create a recording service that wraps the logging service - perfect for testing
+<4> Utility class pattern - prevent instantiation
+
+== Implementing the Event Handler
+
+Now that we have our notification infrastructure, let's implement our stateless event handler step by step.
+
+=== Step 4: Create the Event Handler
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/automation/studentsubscribednotifier/WhenStudentSubscribedThenSendNotification.java
+----
+package io.axoniq.demo.university.faculty.automation.studentsubscribednotifier;
+
+import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
+import io.axoniq.demo.university.shared.application.notifier.NotificationService;
+import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.MessageStream;
+
+public class WhenStudentSubscribedThenSendNotification { // <1>
+
+    private final NotificationService notificationService; // <2>
+
+    public WhenStudentSubscribedThenSendNotification(NotificationService notificationService) {
+        this.notificationService = notificationService;
+    }
+
+    @EventHandler // <3>
+    MessageStream.Empty<?> react(StudentSubscribedToCourse event) { // <4>
+        var notification = new NotificationService.Notification( // <5>
+                event.studentId().toString(),
+                "You have subscribed to course " + event.courseId()
+        );
+        notificationService.sendNotification(notification); // <6>
+        return MessageStream.empty(); // <7>
+    }
+}
+----
+
+<1> The class name clearly describes what happens: "When student subscribed, then send notification"
+<2> We inject the `NotificationService` dependency for sending notifications
+<3> The `@EventHandler` annotation marks this method to handle events
+<4> The method parameter defines which event type we want to handle
+<5> We create a notification with the student ID and a message about the subscription
+<6> We send the notification using the injected service
+<7> We return an empty stream since this is a side effect only operation
+
+=== Step 2: Understanding the Return Type
+
+You might notice the unusual return type `MessageStream.Empty<?>`. In Axon Framework 5:
+
+- **Reactive Design**: Event handlers can return streams of messages for further processing
+- **Empty Stream**: When we only perform side effects (like sending notifications), we return an empty stream
+- **Composability**: This allows the framework to chain multiple operations if needed
+
+=== Step 3: Create the Configuration
+
+Now we need to configure our event handler to be processed by an event processor.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/automation/studentsubscribednotifier/StudentSubscribedNotifierConfiguration.java
+----
+package io.axoniq.demo.university.faculty.automation.studentsubscribednotifier;
+
+import io.axoniq.demo.university.shared.application.notifier.NotificationService;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+
+import java.util.concurrent.CompletableFuture;
+
+public class StudentSubscribedNotifierConfiguration {
+
+    public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
+        PooledStreamingEventProcessorModule automationProcessor = EventProcessorModule // <1>
+                .pooledStreaming("Automation_WhenStudentSubscribedThenSendNotification_Processor") // <2>
+                .eventHandlingComponents( // <3>
+                        c -> c.annotated(cfg -> new WhenStudentSubscribedThenSendNotification(cfg.getComponent(NotificationService.class))) // <4>
+                )
+                // Due to the InMemoryEventStore bug the customization is needed if you want to use the implementation in the tests
+                .customized((c, cus) -> cus.initialToken(s -> CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(0)))); // <5>
+
+        return configurer
+                .modelling(modelling -> modelling.messaging(messaging -> messaging.eventProcessing(eventProcessing ->
+                        eventProcessing.pooledStreaming(ps -> ps.processor(automationProcessor)) // <6>
+                )));
+    }
+}
+----
+
+<1> We use `PooledStreamingEventProcessor` for efficient event processing
+<2> We give the processor a descriptive name that indicates its purpose
+<3> We configure which components should be registered as event handlers
+<4> We create our event handler instance with the required `NotificationService` dependency
+<5> Custom token initialization for testing with InMemoryEventStore (this is a workaround for testing)
+<6> We register the processor module with the event processing configuration
+
+=== Understanding Event Processor Types
+
+Axon Framework 5 offers different types of event processors:
+
+- **PooledStreamingEventProcessor**: Best for high-throughput scenarios, processes events in parallel
+- **TrackingEventProcessor**: Sequential processing, good for ordered processing requirements
+- **SubscribingEventProcessor**: Immediate processing, no tracking token (not persistent)
+
+For our notification feature, `PooledStreamingEventProcessor` is ideal because:
+- Notifications can be sent in parallel
+- High throughput is beneficial
+- Order doesn't matter for independent notifications
+
+== Testing the Event Handler
+
+Let's create a test to verify our event handler works correctly.
+
+[source,java]
+.src/test/java/io/axoniq/demo/university/faculty/automation/studentsubscribednotifier/WhenStudentSubscribedThenSendNotificationTest.java
+----
+package io.axoniq.demo.university.faculty.automation.studentsubscribednotifier;
+
+import io.axoniq.demo.university.UniversityApplicationTest;
+import io.axoniq.demo.university.shared.configuration.NotificationServiceConfiguration;
+import io.axoniq.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
+import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
+import io.axoniq.demo.university.shared.application.notifier.NotificationService;
+import io.axoniq.demo.university.shared.ids.CourseId;
+import io.axoniq.demo.university.shared.ids.StudentId;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.awaitility.Awaitility.*;
+
+public class WhenStudentSubscribedThenSendNotificationTest extends UniversityApplicationTest { // <1>
+
+    @Override
+    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) { // <2>
+        configurer = NotificationServiceConfiguration.configure(configurer);
+        configurer = StudentSubscribedNotifierConfiguration.configure(configurer);
+        return configurer;
+    }
+
+    @Test
+    void automationTest() {
+        // given // <3>
+        RecordingNotificationService notificationService = (RecordingNotificationService) sut.getComponent(NotificationService.class); // <4>
+
+        // when // <5>
+        var studentId = StudentId.random();
+        var courseId = CourseId.random();
+        eventsOccurred(new StudentSubscribedToCourse(studentId, courseId)); // <6>
+
+        // then // <7>
+        var expectedNotification = new NotificationService.Notification(studentId.raw(), "You have subscribed to course " + courseId);
+        await().atMost(2, TimeUnit.SECONDS) // <8>
+                .untilAsserted(() -> assertThat(notificationService.sent()).contains(expectedNotification)); // <9>
+    }
+}
+----
+
+<1> We extend `UniversityApplicationTest` which provides the test infrastructure
+<2> We configure both the notification service and our event handler for testing
+<3> **Given**: We set up the test dependencies
+<4> We get the recording notification service to verify sent notifications
+<5> **When**: We simulate the event that should trigger our handler
+<6> We use `eventsOccurred()` to publish the `StudentSubscribedToCourse` event
+<7> **Then**: We verify the expected behavior occurred
+<8> We use Awaitility to wait for asynchronous processing to complete
+<9> We assert that the expected notification was sent
+
+=== Understanding Asynchronous Testing
+
+Since event processing is asynchronous, we use **Awaitility** to:
+- Wait for the event processor to process the event
+- Handle timing issues in tests
+- Provide clear timeout behavior
+- Make tests more reliable
+
+== Key Concepts Review
+
+=== Stateless vs Stateful Event Handlers
+
+|===
+|Aspect |Stateless Event Handler |Stateful Event Handler (Projection)
+
+|**Purpose** |Side effects, notifications, integrations |Building read models, maintaining state
+|**State** |No internal state |Maintains internal state
+|**Complexity** |Simple, straightforward |More complex, needs state management
+|**Performance** |Fast, no state loading |Slower, needs to load/update state
+|**Use Cases** |Notifications, logging, external calls |Query models, dashboards, reports
+|===
+
+=== Event Processing Patterns
+
+**Fire-and-Forget Pattern**: Our notification handler exemplifies this pattern:
+- Event occurs → Handler executes → Side effect happens
+- No return values needed
+- No state to maintain
+- Perfect for integration scenarios
+
+**Reactive Streams**: Axon Framework 5 uses reactive patterns:
+- Handlers return `MessageStream` objects
+- Enables composable, non-blocking operations
+- Supports backpressure and flow control
+
+== Integration with the Main Application
+
+To use this feature in your main application, you need to register both the notification service and the event handler configurations:
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/UniversityAxonApplication.java
+----
+public class UniversityAxonApplication {
+
+    public static ApplicationConfigurer configurer() {
+        return configurer(c -> {
+            // Other configurations...
+            NotificationServiceConfiguration.configure(c); // <1>
+            StudentSubscribedNotifierConfiguration.configure(c); // <2>
+        });
+    }
+
+    // rest omitted for brevity
+}
+----
+
+<1> Register the notification service infrastructure - this must come first
+<2> Register the notification automation configuration that depends on the service
+
+IMPORTANT: The `NotificationServiceConfiguration` must be registered before the `StudentSubscribedNotifierConfiguration` because the event handler depends on the `NotificationService` being available in the component registry.
+
+== Benefits of This Approach
+
+1. **Decoupling**: The notification logic is completely separate from subscription logic
+2. **Testability**: Easy to test in isolation using the recording service
+3. **Maintainability**: Clear separation of concerns
+4. **Scalability**: Can process notifications in parallel
+5. **Extensibility**: Easy to add more notification types or channels
+
+== Common Pitfalls and Best Practices
+
+=== Pitfalls to Avoid
+
+1. **Making it Stateful**: Don't try to track notification history in the handler itself
+2. **Blocking Operations**: Avoid synchronous, slow external calls that could block processing
+3. **Exception Handling**: Unhandled exceptions can cause event processing to stop
+
+=== Best Practices
+
+1. **Idempotency**: Design notifications to be safe to send multiple times
+2. **Error Handling**: Implement proper error handling and retry logic
+3. **Monitoring**: Add logging and metrics to track notification success/failure
+4. **Configuration**: Make notification templates and settings configurable
+
+== Summary
+
+In this section, you learned how to implement a stateless event handler for sending notifications. Key takeaways:
+
+- **Stateless event handlers** are perfect for side effects like notifications
+- **PooledStreamingEventProcessor** provides efficient parallel processing
+- **Reactive patterns** with `MessageStream` enable composable operations
+- **Asynchronous testing** requires tools like Awaitility for reliable tests
+- **Decoupled architecture** makes the system more maintainable and scalable
+
+This pattern can be applied to many similar scenarios: audit logging, search index updates, webhook notifications, and external system integrations.
+
