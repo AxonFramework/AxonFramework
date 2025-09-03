@@ -416,4 +416,14 @@ In this section, you learned how to implement a stateful event handler for compl
 - **Event sourcing** provides reliable state management and complete auditability for the automation logic
 - **Event Modeling Automation pattern** provides a clear way to visualize and design automated processes that monitor system state and trigger actions
 
+=== Command-Based Reactions
+
+Notice that in this example, when the automation condition is met, we trigger a **Command** (`SendAllCoursesFullyBookedNotification`) rather than directly calling the notification service. This demonstrates a key principle: stateful event handlers can execute any business logic and interact with other parts of your application through the Event-Driven Architecture.
+
+This approach provides several benefits:
+- **Decoupling**: The automation logic is separated from the notification implementation
+- **Flexibility**: You can trigger complex business processes, not just simple notifications
+- **Consistency**: All business operations flow through the same command handling infrastructure
+- **Testability**: Each part can be tested independently
+
 This pattern enables sophisticated automation scenarios: building complex dashboards, and creating intelligent alerting systems.
