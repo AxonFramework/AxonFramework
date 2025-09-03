@@ -190,6 +190,8 @@ public class WhenStudentSubscribedThenSendNotification { // <1>
 <6> We send the notification using the injected service
 <7> We return an empty stream since this is a side effect only operation
 
+IMPORTANT: **No Exactly-Once Delivery Guarantee** - Event handlers may be executed more than once in case of failures or retries. This means your `NotificationService` should be idempotent to avoid sending duplicate notifications and being considered a spammer. Consider implementing deduplication mechanisms like tracking sent notification IDs or using external services that handle deduplication.
+
 === Step 5: Create the Configuration
 
 Now we need to configure our event handler to be processed by an event processor.
