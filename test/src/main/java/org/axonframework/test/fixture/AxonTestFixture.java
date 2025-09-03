@@ -82,8 +82,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             );
         }
         this.eventSink = (RecordingEventSink) eventSinkComponent;
-        this.unitOfWorkFactory = configuration.getOptionalComponent(UnitOfWorkFactory.class)
-                                              .orElse(new SimpleUnitOfWorkFactory(new ConfigurationApplicationContext(configuration)));
+        this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
     }
 
     /**
