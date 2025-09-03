@@ -48,13 +48,25 @@ public abstract class TypeReference<E> {
     }
 
     /**
+     * Constructs a {@code TypeReference} for the given {@code clazz}.
+     *
+     * @param clazz The clazz of the {@code TypeReference} under construction.
+     * @param <C>   The clazz this {@code TypeReference} reflects.
+     * @return A new {@code TypeReference} instance of the given {@code clazz}.
+     */
+    public static <C> TypeReference<C> fromClass(@Nonnull Class<C> clazz) {
+        return new TypeReference<>(clazz) {
+        };
+    }
+
+    /**
      * Constructs a {@code TypeReference} for the given {@code type}.
      *
      * @param type The type of the {@code TypeReference} under construction.
      * @param <C>  The type this {@code TypeReference} reflects.
      * @return A new {@code TypeReference} instance of the given {@code type}.
      */
-    public static <C> TypeReference<C> fromType(@Nonnull Class<C> type) {
+    public static <C> TypeReference<C> fromType(@Nonnull Type type) {
         return new TypeReference<>(type) {
         };
     }

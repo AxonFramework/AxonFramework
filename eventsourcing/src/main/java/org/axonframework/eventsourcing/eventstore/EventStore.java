@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
@@ -33,13 +35,17 @@ import java.util.List;
  * {@link #transaction(ProcessingContext)} when {@link #publish(ProcessingContext, List)} is triggered to append events.
  * When a {@code null ProcessingContext} is given on {@link #publish(ProcessingContext, List)}, the implementation
  * should decide to construct a context itself or fail outright.
+ * <p>
+ * As an implementation of the {@link StreamableEventSource}, this {@code EventStore} will allow for {@link #open} a
+ * stream of events and use it as a source for
+ * {@link org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor}.
  *
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 0.1.0
  */
-public interface EventStore extends EventSink, DescribableComponent {
+public interface EventStore extends StreamableEventSource<EventMessage>, EventSink, DescribableComponent {
 
     /**
      * Retrieves the {@link EventStoreTransaction transaction for appending events} for the given

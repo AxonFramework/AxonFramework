@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -56,9 +57,7 @@ class ChainedConverterTest {
         this.stringToByteConverter = mockConverter(String.class, byte[].class, "hello".getBytes());
         this.stringToReaderConverter = mockConverter(String.class, Reader.class, new StringReader("hello"));
         this.bytesToInputStreamConverter = mockConverter(
-                byte[].class,
-                InputStream.class,
-                new ByteArrayInputStream("hello".getBytes())
+                byte[].class, InputStream.class, new ByteArrayInputStream("hello".getBytes())
         );
         this.numberToStringConverter = mockConverter(Number.class, String.class, "hello");
 
@@ -136,6 +135,29 @@ class ChainedConverterTest {
     private <T> T convertSource() {
         //noinspection unchecked
         return (T) testSubject.convert(source);
+    }
+
+    @Test
+    void routeForAssignableSourceSubclass() {
+        source = new ByteArrayInputStream("hello".getBytes());
+        target = byte[].class;
+        testSubject = ChainedConverter.calculateChain(source.getClass(), target, candidates);
+        assertNotNull(testSubject);
+    }
+
+    static class TestGenericSuperType {
+    }
+
+    static class TestSpecificSubtype extends TestGenericSuperType {
+    }
+
+    @Test
+    void routeForAssignableTargetSuperclass() {
+        source = "test";
+        target = TestGenericSuperType.class;
+        candidates.add(mockConverter(String.class, TestSpecificSubtype.class, new TestSpecificSubtype()));
+        testSubject = ChainedConverter.calculateChain(source.getClass(), target, candidates);
+        assertNotNull(testSubject);
     }
 
     @Test

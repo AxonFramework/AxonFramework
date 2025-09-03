@@ -54,7 +54,9 @@ import org.springframework.core.ResolvableType;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -96,7 +98,7 @@ public class SpringComponentRegistry implements
 
     private final Components components = new Components();
     private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decorators = new CopyOnWriteArrayList<>();
-    private final List<ConfigurationEnhancer> enhancers = new CopyOnWriteArrayList<>();
+    private final Map<String, ConfigurationEnhancer> enhancers = new ConcurrentHashMap<>();
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final List<ComponentFactory<?>> factories = new ArrayList<>();
 
@@ -122,7 +124,7 @@ public class SpringComponentRegistry implements
     public SpringComponentRegistry(@Nonnull ListableBeanFactory listableBeanFactory,
                                    @Nonnull SpringLifecycleRegistry lifecycleRegistry) {
         Objects.requireNonNull(listableBeanFactory, "The ListableBeanFactory may not be null.");
-        this.enhancers.addAll(listableBeanFactory.getBeansOfType(ConfigurationEnhancer.class).values());
+        this.enhancers.putAll(listableBeanFactory.getBeansOfType(ConfigurationEnhancer.class));
         this.lifecycleRegistry =
                 Objects.requireNonNull(lifecycleRegistry, "The Lifecycle Registry may not be null.");
     }
@@ -185,7 +187,11 @@ public class SpringComponentRegistry implements
     @Override
     public ComponentRegistry registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
-        this.enhancers.add(enhancer);
+        ConfigurationEnhancer previous = this.enhancers.put(enhancer.getClass().getName(), enhancer);
+        if (previous != null) {
+            logger.warn("Duplicate Configuration Enhancer registration dedicated. Replaced enhancer of type [{}].",
+                        enhancer.getClass().getSimpleName());
+        }
         return this;
     }
 
@@ -259,6 +265,11 @@ public class SpringComponentRegistry implements
      * through {@link ConfigurationEnhancer ConfigurationEnhancers} are invoked for Spring beans that match Axon's
      * type-and-name criteria for decoration.
      * <p>
+     * Will retrieve a {@link ResolvableType} from the given {@code beanName} from the
+     * {@link ConfigurableListableBeanFactory} set through
+     * {@link #postProcessBeanFactory(ConfigurableListableBeanFactory)} (if contained in said bean factory). Doing so
+     * ensures we match decorators with the bean's registered type instead of the bean's concrete type.
+     * <p>
      * Generic type checks on the {@link DecoratorDefinition} and it's invocations are suppressed as we're dealing with
      * wildcards. Furthermore, the
      * {@link DecoratorDefinition.CompletedDecoratorDefinition#matches(Component.Identifier)} invocation ensures we
@@ -268,11 +279,23 @@ public class SpringComponentRegistry implements
     @Override
     public Object postProcessAfterInitialization(@Nonnull Object bean,
                                                  @Nonnull String beanName) throws BeansException {
+        // Ensure this ComponentRegistry is fully initialized, as this may set additional components and decorators.
         initialize();
+        if (!beanFactory.containsBeanDefinition(beanName)) {
+            logger.debug("Will not post process bean with name [{}] since we cannot define a Component Identifier.",
+                         beanName);
+            return bean;
+        }
 
-        Component<?> springComponent = new SpringComponent<>(bean, beanName);
-        Component.Identifier<?> componentId = new Component.Identifier<>(bean.getClass(), beanName);
+        ResolvableType beanType = beanFactory.getBeanDefinition(beanName).getResolvableType();
+        if (beanType == ResolvableType.NONE) {
+            logger.debug("Will not post process bean with name [{}] since we cannot define a Component Identifier.",
+                         beanName);
+            return bean;
+        }
 
+        Component.Identifier<Object> componentId = new Component.Identifier<>(beanType.getType(), beanName);
+        Component<?> springComponent = new SpringComponent<>(componentId, bean);
         //noinspection rawtypes
         for (DecoratorDefinition.CompletedDecoratorDefinition decorator : decorators) {
             //noinspection unchecked
@@ -354,7 +377,8 @@ public class SpringComponentRegistry implements
      */
     private void invokeEnhancers() {
         List<ConfigurationEnhancer>
-                distinctAndOrderedEnhancers = enhancers.stream()
+                distinctAndOrderedEnhancers = enhancers.values()
+                                                       .stream()
                                                        .distinct()
                                                        .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
                                                        .toList();
@@ -560,9 +584,8 @@ public class SpringComponentRegistry implements
         private final Identifier<T> identifier;
         private final T bean;
 
-        private SpringComponent(@Nonnull T bean, @Nonnull String beanName) {
-            //noinspection unchecked
-            this.identifier = new Identifier<>((Class<T>) bean.getClass(), beanName);
+        private SpringComponent(@Nonnull Identifier<T> identifier, @Nonnull T bean) {
+            this.identifier = identifier;
             this.bean = bean;
         }
 

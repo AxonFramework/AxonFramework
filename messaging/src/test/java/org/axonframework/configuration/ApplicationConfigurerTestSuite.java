@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
@@ -732,7 +733,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             testSubject.componentRegistry(
                     cr -> cr.registerComponent(SpecificTestComponent.class, config -> SPECIFIC_TEST_COMPONENT)
                             .registerDecorator(TestComponent.class, 0,
-                                               (c, name, delegate) -> new TestComponent(delegate.state + "1"))
+                                               (c, name, delegate) -> new SpecificTestComponent(delegate.state + "1"))
             );
 
             TestComponent result = buildConfiguration().getComponent(TestComponent.class);
@@ -748,12 +749,35 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             testSubject.componentRegistry(
                     cr -> cr.registerComponent(SpecificTestComponent.class, testName, config -> SPECIFIC_TEST_COMPONENT)
                             .registerDecorator(TestComponent.class, testName, 0,
-                                               (c, name, delegate) -> new TestComponent(delegate.state + "1"))
+                                               (c, name, delegate) -> new SpecificTestComponent(delegate.state + "1"))
             );
 
             TestComponent result = buildConfiguration().getComponent(TestComponent.class, testName);
 
             assertEquals(expectedState, result.state());
+        }
+
+        /**
+         * This test registers a SpecificTestComponent, making the Components identifier expect the type
+         * SpecificTestComponent. Decorators can act on subtype, but should ensure that the decoration result is
+         * assignable to the type used to register the original component. As when that's not done, a ClassCastException
+         * is thrown to the user in their code.
+         */
+        @Test
+        void registerDecoratorForTypeThrowsExceptionWithSpecificTraceWhenDecoratedTypeIsNotAssignableToRegisteredType() {
+            String testName = "some-name";
+
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(SpecificTestComponent.class, testName, config -> SPECIFIC_TEST_COMPONENT)
+                            .registerDecorator(TestComponent.class, testName, 0,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "1"))
+            );
+
+            Configuration config = buildConfiguration();
+
+            assertThatThrownBy(() -> config.getComponent(TestComponent.class, testName)).hasStackTraceContaining(
+                    "Make sure decorators return matching components, as component retrieval otherwise fails!"
+            );
         }
     }
 
@@ -975,6 +999,33 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             assertEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
             assertEquals(expected, config.getComponent(TestComponent.class, "conditional"));
+        }
+
+        @Test
+        void registeringSameEnhancerTypeSeveralTimesWillReplacePreviousRegistration() {
+            AtomicBoolean firstRegistration = new AtomicBoolean(false);
+            AtomicBoolean secondRegistration = new AtomicBoolean(false);
+            AtomicBoolean thirdRegistration = new AtomicBoolean(false);
+
+            testSubject.componentRegistry(
+                    cr -> cr.registerEnhancer(new TestConfigurationEnhancer(firstRegistration))
+                            .registerEnhancer(new TestConfigurationEnhancer(secondRegistration))
+                            .registerEnhancer(new TestConfigurationEnhancer(thirdRegistration))
+            );
+
+            buildConfiguration();
+
+            assertFalse(firstRegistration.get());
+            assertFalse(secondRegistration.get());
+            assertTrue(thirdRegistration.get());
+        }
+
+        record TestConfigurationEnhancer(AtomicBoolean invoked) implements ConfigurationEnhancer {
+
+            @Override
+            public void enhance(@Nonnull ComponentRegistry registry) {
+                invoked.set(true);
+            }
         }
     }
 

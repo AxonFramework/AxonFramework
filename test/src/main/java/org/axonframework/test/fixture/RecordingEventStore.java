@@ -19,13 +19,19 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
+import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * An {@link EventStore} implementation recording all the events that are
@@ -40,6 +46,8 @@ import java.util.Objects;
 @Internal
 public class RecordingEventStore extends RecordingEventSink implements EventStore {
 
+    private final EventStore eventStore;
+
     /**
      * Creates a new {@link RecordingEventStore} that will record all events published to the given {@code delegate}.
      *
@@ -47,15 +55,36 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
      */
     public RecordingEventStore(@Nonnull EventStore delegate) {
         super(Objects.requireNonNull(delegate, "The delegate EventStore may not be null"));
+        this.eventStore = delegate;
     }
 
     @Override
     public EventStoreTransaction transaction(@NotNull ProcessingContext processingContext) {
-        return ((EventStore) super.delegate).transaction(processingContext);
+        return eventStore.transaction(processingContext);
     }
 
     @Override
     public void describeTo(@NotNull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
+    }
+
+    @Override
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition) {
+        return eventStore.open(condition);
+    }
+
+    @Override
+    public CompletableFuture<TrackingToken> firstToken() {
+        return eventStore.firstToken();
+    }
+
+    @Override
+    public CompletableFuture<TrackingToken> latestToken() {
+        return eventStore.latestToken();
+    }
+
+    @Override
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+        return eventStore.tokenAt(at);
     }
 }
