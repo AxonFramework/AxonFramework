@@ -415,7 +415,8 @@ public class UniversityAxonApplication {
 
 In this section, you learned how to implement a stateful event handler for complex condition monitoring. Key takeaways:
 
-- **Stateful handlers** maintain state across multiple events to implement complex business logic
+- **Stateful handlers** maintain state across multiple events to implement complex business logic  
 - **Event sourcing** provides reliable state management and complete auditability for the automation logic
+- **Event Modeling Automation pattern** provides a clear way to visualize and design automated processes that monitor system state and trigger actions
 
 This pattern enables sophisticated automation scenarios: building complex dashboards, and creating intelligent alerting systems.
