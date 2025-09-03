@@ -71,8 +71,8 @@ public class RecordingEventSink implements EventSink {
             recorded.addAll(events);
             logger.info("RecordingEventSink[" + instanceId + "] RECORDED: size=" + recorded.size() + ", total events=" + recorded);
         }
-        CompletableFuture<Void> result = delegate.publish(context, events);
-        logger.info("RecordingEventSink[" + instanceId + "] DELEGATE_PUBLISHED: CompletableFuture=" + result);
+        CompletableFuture<Void> result = delegate.publish(context, events)
+                .thenRun(() -> logger.info("RecordingEventSink[" + instanceId + "] PUBLISHED: size=" + recorded.size() + ", total events=" + recorded));
         return result;
     }
 
