@@ -50,7 +50,7 @@ public abstract class AbstractCommandHandlingStudentTestSuite extends AbstractSt
     @Override
     protected void startApp() {
         super.startApp();
-        commandGateway = startedConfiguration.getComponent(CommandGateway.class);
+//        commandGateway = startedConfiguration.getComponent(CommandGateway.class);
     }
 
     /**

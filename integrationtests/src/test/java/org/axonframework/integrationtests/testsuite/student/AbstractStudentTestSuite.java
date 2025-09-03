@@ -99,7 +99,7 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
      */
     protected void startApp() {
         super.startApp();
-        unitOfWorkFactory = startedConfiguration.getComponent(UnitOfWorkFactory.class);
+//        unitOfWorkFactory = startedConfiguration.getComponent(UnitOfWorkFactory.class);
     }
 
     /**

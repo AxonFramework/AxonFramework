@@ -40,8 +40,12 @@ import java.util.concurrent.CompletableFuture;
 @Internal
 public class RecordingEventSink implements EventSink {
 
+    private static final java.util.concurrent.atomic.AtomicInteger INSTANCE_COUNTER = new java.util.concurrent.atomic.AtomicInteger(0);
+    private static final List<EventMessage> SHARED_RECORDED = new ArrayList<>();
+    
+    private final int instanceId = INSTANCE_COUNTER.incrementAndGet();
+
     protected final EventSink delegate;
-    private final List<EventMessage> recorded;
 
     /**
      * Creates a new {@link RecordingEventSink} that will record all events published to the given {@code delegate}.
@@ -49,29 +53,37 @@ public class RecordingEventSink implements EventSink {
      */
     public RecordingEventSink(@Nonnull EventSink delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The delegate EventSink may not be null");
-        this.recorded = new ArrayList<>();
+        System.out.println("RecordingEventSink CREATED: instance-" + instanceId);
     }
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                            @Nonnull List<EventMessage> events) {
         for (EventMessage event : events) {
-            System.out.println("RecordingEventSink EVENT: " + event.identifier());
-            System.out.println("RecordingEventSink RECORDED: " + event.identifier());
+            System.out.println("RecordingEventSink[" + instanceId + "] EVENT: " + event.identifier());
+            System.out.println("RecordingEventSink[" + instanceId + "] RECORDING: " + event.identifier());
         }
-        synchronized (recorded) {
-            recorded.addAll(events);
+        synchronized (SHARED_RECORDED) {
+            SHARED_RECORDED.addAll(events);
+            System.out.println("RecordingEventSink[" + instanceId + "] RECORDED: size=" + SHARED_RECORDED.size() + ", total events=" + SHARED_RECORDED);
         }
-        return delegate.publish(context, events);
+        CompletableFuture<Void> result = delegate.publish(context, events);
+        System.out.println("RecordingEventSink[" + instanceId + "] DELEGATE_PUBLISHED: CompletableFuture=" + result);
+        return result;
     }
 
-    public synchronized List<EventMessage> recorded() {
-        System.out.println("RecordingEventSink READ: " + recorded);
-        return List.copyOf(recorded);
+    public List<EventMessage> recorded() {
+        synchronized (SHARED_RECORDED) {
+            System.out.println("RecordingEventSink[" + instanceId + "] READ: size=" + SHARED_RECORDED.size() + ", events=" + SHARED_RECORDED);
+            return List.copyOf(SHARED_RECORDED);
+        }
     }
 
-    public synchronized RecordingEventSink reset() {
-        this.recorded.clear();
+    public RecordingEventSink reset() {
+        synchronized (SHARED_RECORDED) {
+            System.out.println("RecordingEventSink[" + instanceId + "] RESET: size=" + SHARED_RECORDED.size() + ", clearing events=" + SHARED_RECORDED);
+            SHARED_RECORDED.clear();
+        }
         return this;
     }
 }

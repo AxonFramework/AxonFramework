@@ -20,6 +20,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -46,6 +47,7 @@ public abstract class AbstractAxonServerIntegrationTest {
 
     protected CommandGateway commandGateway;
     protected AxonConfiguration startedConfiguration;
+    protected ApplicationConfigurer configurer;
 
     @BeforeAll
     static void beforeAll() {
@@ -77,11 +79,18 @@ public abstract class AbstractAxonServerIntegrationTest {
     protected void startApp() {
         AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
         axonServerConfiguration.setServers(container.getHost() + ":" + container.getGrpcPort());
-        startedConfiguration = createConfigurer().componentRegistry(cr -> cr.registerComponent(
-                                                         AxonServerConfiguration.class, c -> axonServerConfiguration
-                                                 ))
-                                                 .start();
-        commandGateway = startedConfiguration.getComponent(CommandGateway.class);
+        configurer = getApplicationConfigurer(axonServerConfiguration);
+//        startedConfiguration = configurer
+//                                                 .start();
+//        commandGateway = startedConfiguration.getComponent(CommandGateway.class);
+    }
+
+    private ApplicationConfigurer getApplicationConfigurer(AxonServerConfiguration axonServerConfiguration) {
+        return createConfigurer()
+                .componentRegistry(cr -> cr.registerEnhancer(c -> new MessagesRecordingConfigurationEnhancer()))
+                .componentRegistry(cr -> cr.registerComponent(
+                        AxonServerConfiguration.class, c -> axonServerConfiguration
+                ));
     }
 
     /**

@@ -28,6 +28,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.serialization.Converter;
+import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -70,6 +71,44 @@ class SingleEntityCommandHandlingComponentTest extends AbstractCommandHandlingSt
         verifyStudentName("my-studentId-1", "name-4");
         verifyStudentName("my-studentId-2", "name-5");
     }
+
+    @RepeatedTest(10)
+    void canHandleCommandThatTargetsOneEntityUsingStateManagerTestFixture() {
+        registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
+                new QualifiedName(ChangeStudentNameCommand.class),
+                c -> (command, context) -> {
+                    EventAppender eventAppender = EventAppender.forContext(context);
+                    ChangeStudentNameCommand payload =
+                            command.payloadAs(ChangeStudentNameCommand.class, c.getComponent(Converter.class));
+                    StateManager state = context.component(StateManager.class);
+                    Student student = state.loadEntity(Student.class, payload.id(), context).join();
+                    eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));
+                    // Entity through magic of repository automatically updated
+                    assertEquals(student.getName(), payload.name());
+                    return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
+                }
+        ));
+        startApp();
+        var fixture = AxonTestFixture.with(configurer)
+                                     .when()
+                                     .command((new ChangeStudentNameCommand("my-studentId-1", "name-1")))
+                                     .then()
+                                     .events(new StudentNameChangedEvent("my-studentId-1", "name-1"));
+
+//        changeStudentName("my-studentId-1", "name-1");
+//        verifyStudentName("my-studentId-1", "name-1");
+//        changeStudentName("my-studentId-1", "name-2");
+//        verifyStudentName("my-studentId-1", "name-2");
+//        changeStudentName("my-studentId-1", "name-3");
+//        verifyStudentName("my-studentId-1", "name-3");
+//        changeStudentName("my-studentId-1", "name-4");
+//        verifyStudentName("my-studentId-1", "name-4");
+//
+//        changeStudentName("my-studentId-2", "name-5");
+//        verifyStudentName("my-studentId-1", "name-4");
+//        verifyStudentName("my-studentId-2", "name-5");
+    }
+
 
     @Test
     void canHandleCommandThatTargetsOneModelViaStateManagerParameter() {
