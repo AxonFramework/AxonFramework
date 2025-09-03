@@ -54,7 +54,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
     private final RecordingEventSink eventSink;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
-    AxonTestFixture(@Nonnull Configuration configuration,
+    public AxonTestFixture(@Nonnull Configuration configuration,
                     @Nonnull UnaryOperator<Customization> customization) {
         this.customization = customization.apply(new Customization());
         this.configuration = configuration;

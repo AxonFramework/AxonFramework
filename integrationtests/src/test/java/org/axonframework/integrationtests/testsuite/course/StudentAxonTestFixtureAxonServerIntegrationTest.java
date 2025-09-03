@@ -17,11 +17,13 @@
 package org.axonframework.integrationtests.testsuite.course;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.course.module.CourseCreated;
 import org.axonframework.integrationtests.testsuite.course.module.CreateCourse;
 import org.axonframework.integrationtests.testsuite.course.module.CreateCourseConfiguration;
 import org.axonframework.test.fixture.AxonTestFixture;
+import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -53,12 +55,16 @@ public class StudentAxonTestFixtureAxonServerIntegrationTest {
     }
 
 
-    private static EventSourcingConfigurer testConfigurer() throws IOException {
+    private static EventSourcingConfigurer testConfigurer() {
         var configurer = EventSourcingConfigurer.create();
-        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
-                                                           container.getHttpPort(),
-                                                           "default",
-                                                           AxonServerContainerUtils.DCB_CONTEXT);
+        try {
+            AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
+                                                               container.getHttpPort(),
+                                                               "default",
+                                                               AxonServerContainerUtils.DCB_CONTEXT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         logger.info("Using Axon Server for integration test. UI is available at http://localhost:{}",
                     container.getHttpPort());
         AxonServerConfiguration axonServerConfiguration = new AxonServerConfiguration();
@@ -70,9 +76,15 @@ public class StudentAxonTestFixtureAxonServerIntegrationTest {
         return CreateCourseConfiguration.configure(configurer);
     }
 
+    private static AxonConfiguration testConfiguration() {
+        return testConfigurer()
+                .componentRegistry(cr -> cr.registerEnhancer(new MessagesRecordingConfigurationEnhancer()))
+                .start();
+    }
+
     @RepeatedTest(10)
-    void axonTestFixtureWorksWithAxonServer() throws IOException {
-        EventSourcingConfigurer configurer = testConfigurer();
+    void axonTestFixtureWorksWithAxonServer() {
+        var configurer = testConfigurer();
         var fixture = AxonTestFixture.with(configurer);
 
         var courseId = UUID.randomUUID().toString();
@@ -83,5 +95,22 @@ public class StudentAxonTestFixtureAxonServerIntegrationTest {
                .then()
                .success()
                .events(new CourseCreated(courseId));
+    }
+
+    @RepeatedTest(10)
+    void axonTestFixtureWorksWithAxonServerShutdown() {
+        var configuration = testConfiguration();
+        var fixture = new AxonTestFixture(configuration, c -> c);
+
+        var courseId = UUID.randomUUID().toString();
+
+        fixture.given()
+               .when()
+               .command(new CreateCourse(courseId))
+               .then()
+               .success()
+               .events(new CourseCreated(courseId));
+
+        configuration.shutdown(); // fixme: it solves the problem from test below, but we don't know WHY
     }
 }
