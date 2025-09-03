@@ -89,15 +89,9 @@ class AxonTestGiven implements AxonTestPhase.Given {
 
     @Override
     public AxonTestPhase.Given events(@Nonnull EventMessage... messages) {
-        inUnitOfWorkRunOnInvocation(processingContext -> eventSink.publish(processingContext,
+        inUnitOfWorkOnInvocation(processingContext -> eventSink.publish(processingContext,
                                                                            messages));
         return this;
-    }
-
-    private void inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
-        var unitOfWork = unitOfWorkFactory.create();
-        unitOfWork.runOnInvocation(action);
-        unitOfWork.execute().join();
     }
 
     private void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
