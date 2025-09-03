@@ -55,15 +55,22 @@ public class RecordingEventSink implements EventSink {
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                            @Nonnull List<EventMessage> events) {
-        return delegate.publish(context, events)
-                       .thenRun(() -> recorded.addAll(events));
+        for (EventMessage event : events) {
+            System.out.println("RecordingEventSink EVENT: " + event.identifier());
+            System.out.println("RecordingEventSink RECORDED: " + event.identifier());
+        }
+        synchronized (recorded) {
+            recorded.addAll(events);
+        }
+        return delegate.publish(context, events);
     }
 
-    public List<EventMessage> recorded() {
+    public synchronized List<EventMessage> recorded() {
+        System.out.println("RecordingEventSink READ: " + recorded);
         return List.copyOf(recorded);
     }
 
-    public RecordingEventSink reset() {
+    public synchronized RecordingEventSink reset() {
         this.recorded.clear();
         return this;
     }
