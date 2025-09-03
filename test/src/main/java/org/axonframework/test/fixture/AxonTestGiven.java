@@ -24,8 +24,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
