@@ -41,8 +41,8 @@ import java.util.concurrent.ScheduledExecutorService;
 // TODO revisit as part of #3559
 public class UnitOfWorkTimeoutInterceptorBuilder {
 
-    private static final String TRANSACTION_TIME_LIMIT_RESOURCE_KEY = "_transactionTimeLimit";
-    private static final Context.ResourceKey<AxonTimeLimitedTask> TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY =
+    private final String TRANSACTION_TIME_LIMIT_RESOURCE_KEY = "_transactionTimeLimit";
+    private final Context.ResourceKey<AxonTimeLimitedTask> TRANSACTION_TIME_LIMIT_CONTEXT_RESOURCE_KEY =
             Context.ResourceKey.withLabel(TRANSACTION_TIME_LIMIT_RESOURCE_KEY);
 
     private final String componentName;

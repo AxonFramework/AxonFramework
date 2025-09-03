@@ -41,9 +41,9 @@ import java.util.concurrent.CompletableFuture;
 public class RecordingEventSink implements EventSink {
 
     private static final java.util.concurrent.atomic.AtomicInteger INSTANCE_COUNTER = new java.util.concurrent.atomic.AtomicInteger(0);
-    private static final List<EventMessage> SHARED_RECORDED = new ArrayList<>();
+    private final List<EventMessage> recorded = new ArrayList<>();
     
-    private final int instanceId = INSTANCE_COUNTER.incrementAndGet();
+    public final int instanceId = INSTANCE_COUNTER.incrementAndGet();
 
     protected final EventSink delegate;
 
@@ -63,9 +63,9 @@ public class RecordingEventSink implements EventSink {
             System.out.println("RecordingEventSink[" + instanceId + "] EVENT: " + event.identifier());
             System.out.println("RecordingEventSink[" + instanceId + "] RECORDING: " + event.identifier());
         }
-        synchronized (SHARED_RECORDED) {
-            SHARED_RECORDED.addAll(events);
-            System.out.println("RecordingEventSink[" + instanceId + "] RECORDED: size=" + SHARED_RECORDED.size() + ", total events=" + SHARED_RECORDED);
+        synchronized (recorded) {
+            recorded.addAll(events);
+            System.out.println("RecordingEventSink[" + instanceId + "] RECORDED: size=" + recorded.size() + ", total events=" + recorded);
         }
         CompletableFuture<Void> result = delegate.publish(context, events);
         System.out.println("RecordingEventSink[" + instanceId + "] DELEGATE_PUBLISHED: CompletableFuture=" + result);
@@ -73,16 +73,16 @@ public class RecordingEventSink implements EventSink {
     }
 
     public List<EventMessage> recorded() {
-        synchronized (SHARED_RECORDED) {
-            System.out.println("RecordingEventSink[" + instanceId + "] READ: size=" + SHARED_RECORDED.size() + ", events=" + SHARED_RECORDED);
-            return List.copyOf(SHARED_RECORDED);
+        synchronized (recorded) {
+            System.out.println("RecordingEventSink[" + instanceId + "] READ: size=" + recorded.size() + ", events=" + recorded);
+            return List.copyOf(recorded);
         }
     }
 
     public RecordingEventSink reset() {
-        synchronized (SHARED_RECORDED) {
-            System.out.println("RecordingEventSink[" + instanceId + "] RESET: size=" + SHARED_RECORDED.size() + ", clearing events=" + SHARED_RECORDED);
-            SHARED_RECORDED.clear();
+        synchronized (recorded) {
+            System.out.println("RecordingEventSink[" + instanceId + "] RESET: size=" + recorded.size() + ", clearing events=" + recorded);
+            recorded.clear();
         }
         return this;
     }

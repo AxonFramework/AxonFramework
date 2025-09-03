@@ -19,6 +19,7 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.configuration.ApplicationConfigurer;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.ConfigurationApplicationContext;
@@ -47,14 +48,14 @@ import java.util.function.UnaryOperator;
  */
 public class AxonTestFixture implements AxonTestPhase.Setup {
 
-    private final Configuration configuration;
+    private final AxonConfiguration configuration;
     private final Customization customization;
     private final MessageTypeResolver messageTypeResolver;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
-    AxonTestFixture(@Nonnull Configuration configuration,
+    AxonTestFixture(@Nonnull AxonConfiguration configuration,
                     @Nonnull UnaryOperator<Customization> customization) {
         this.customization = customization.apply(new Customization());
         this.configuration = configuration;
@@ -82,8 +83,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             );
         }
         this.eventSink = (RecordingEventSink) eventSinkComponent;
-        this.unitOfWorkFactory = configuration.getOptionalComponent(UnitOfWorkFactory.class)
-                                              .orElse(new SimpleUnitOfWorkFactory(new ConfigurationApplicationContext(configuration)));
+        System.out.println("RecordingEventSink in AxonTestFixture: instance-" + this.eventSink.instanceId);
+        this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
     }
 
     /**
@@ -137,6 +138,12 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 eventSink,
                 unitOfWorkFactory
         );
+    }
+
+    @Override
+    public AxonTestPhase.Setup stop() {
+        configuration.shutdown();
+        return this;
     }
 
     /**

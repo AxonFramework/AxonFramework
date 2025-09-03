@@ -71,7 +71,8 @@ public class ProcessingContextEventAppender implements EventAppender {
                 .map(e -> EventPublishingUtils.asEventMessage(e, messageTypeResolver))
                 .collect(Collectors.toList());
 //        processingContext.onCommit(ctx -> eventSink.publish(processingContext, eventMessages));
-        eventSink.publish(processingContext, eventMessages).join();
+//        eventSink.publish(processingContext, eventMessages).join();
+        eventSink.publish(processingContext, eventMessages);
     }
 
     @Override

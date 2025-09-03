@@ -119,6 +119,8 @@ public interface AxonTestPhase {
          * @return A {@link When} instance that allows executing the test.
          */
         When when();
+
+        Setup stop();
     }
 
     /**

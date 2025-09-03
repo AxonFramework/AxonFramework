@@ -17,6 +17,7 @@
 package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.MessageStream;
 import org.hamcrest.StringDescription;
@@ -28,7 +29,7 @@ class AxonTestThenEvent
         implements AxonTestPhase.Then.Event {
 
     public AxonTestThenEvent(
-            Configuration configuration,
+            AxonConfiguration configuration,
             AxonTestFixture.Customization customization,
             RecordingCommandBus commandBus,
             RecordingEventSink eventSink,

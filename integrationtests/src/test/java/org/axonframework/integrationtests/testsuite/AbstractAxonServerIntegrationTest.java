@@ -87,7 +87,7 @@ public abstract class AbstractAxonServerIntegrationTest {
 
     private ApplicationConfigurer getApplicationConfigurer(AxonServerConfiguration axonServerConfiguration) {
         return createConfigurer()
-                .componentRegistry(cr -> cr.registerEnhancer(c -> new MessagesRecordingConfigurationEnhancer()))
+//                .componentRegistry(cr -> cr.registerEnhancer(c -> new MessagesRecordingConfigurationEnhancer()))
                 .componentRegistry(cr -> cr.registerComponent(
                         AxonServerConfiguration.class, c -> axonServerConfiguration
                 ));

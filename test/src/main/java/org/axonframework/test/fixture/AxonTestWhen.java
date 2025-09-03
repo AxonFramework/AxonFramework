@@ -18,6 +18,7 @@ package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -35,7 +36,7 @@ import java.util.function.Function;
 
 class AxonTestWhen implements AxonTestPhase.When {
 
-    private final Configuration configuration;
+    private final AxonConfiguration configuration;
     private final AxonTestFixture.Customization customization;
     private final MessageTypeResolver messageTypeResolver;
     private final RecordingCommandBus commandBus;
@@ -46,7 +47,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     private Throwable actualException;
 
     public AxonTestWhen(
-            Configuration configuration,
+            AxonConfiguration configuration,
             AxonTestFixture.Customization customization,
             MessageTypeResolver messageTypeResolver,
             RecordingCommandBus commandBus,

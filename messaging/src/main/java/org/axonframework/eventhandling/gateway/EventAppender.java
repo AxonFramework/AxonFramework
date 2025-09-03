@@ -62,7 +62,8 @@ public interface EventAppender extends DescribableComponent {
      * @return The created appender.
      */
     static EventAppender forContext(@Nonnull ProcessingContext context) {
-        return forContext(context, context.component(EventSink.class), context.component(MessageTypeResolver.class));
+        EventSink eventSink = context.component(EventSink.class);
+        return forContext(context, eventSink, context.component(MessageTypeResolver.class));
     }
 
     /**

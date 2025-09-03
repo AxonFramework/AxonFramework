@@ -89,6 +89,10 @@ class SingleEntityCommandHandlingComponentTest extends AbstractCommandHandlingSt
                 }
         ));
         startApp();
+        var fixture = AxonTestFixture.with(configurer).scenario(scenario -> {
+
+        });
+
         var fixture = AxonTestFixture.with(configurer)
                                      .when()
                                      .command((new ChangeStudentNameCommand("my-studentId-1", "name-1")))

@@ -39,11 +39,17 @@ public class MessagesRecordingConfigurationEnhancer implements ConfigurationEnha
         Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.")
                .registerDecorator(EventStore.class,
                                   Integer.MAX_VALUE,
-                                  (config, name, delegate) -> new RecordingEventStore(delegate))
+                                  (config, name, delegate) -> {
+                                      System.out.println("RecordingEventSink DECORATOR EventStore.class");
+                                      return new RecordingEventStore(delegate);
+                                  })
                .registerDecorator(EventSink.class,
                                   Integer.MAX_VALUE,
-                                  (config, name, delegate) -> EventStore.class.isAssignableFrom(delegate.getClass())
-                                          ? delegate : new RecordingEventSink(delegate))
+                                  (config, name, delegate) -> {
+                                      System.out.println("RecordingEventSink DECORATOR EventSink.class");
+                                      return EventStore.class.isAssignableFrom(delegate.getClass())
+                                              ? delegate : new RecordingEventSink(delegate);
+                                  })
                .registerDecorator(CommandBus.class,
                                   Integer.MAX_VALUE,
                                   (config, name, delegate) -> new RecordingCommandBus(delegate));

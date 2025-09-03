@@ -38,7 +38,7 @@ import java.util.function.UnaryOperator;
  */
 public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
 
-    private static final Context.ResourceKey<Transaction> TRANSACTION_RESOURCE_KEY =
+    private final Context.ResourceKey<Transaction> TRANSACTION_RESOURCE_KEY =
             Context.ResourceKey.withLabel("transaction");
     private final TransactionManager transactionManager;
     private final UnitOfWorkFactory delegate;
