@@ -9,11 +9,8 @@ A stateful event handler is a component that reacts to events while maintaining 
 Unlike stateless handlers that simply perform actions in response to single events, stateful handlers accumulate information from multiple events to make decisions.
 
 Common use cases for stateful event handlers include:
-- Building read models and projections
-- Implementing complex business rule validations
-- Monitoring system states across multiple events
-- Creating dashboards and reporting views
-- Triggering actions when conditions are met across time
+- Building read models and projections, like dashboards or reprorting views
+- Triggering actions when conditions are met across time, like in Saga or Process Manager
 
 == Understanding the Administrator Notification Feature
 
