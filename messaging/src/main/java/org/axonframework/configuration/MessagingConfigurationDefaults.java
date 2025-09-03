@@ -28,18 +28,21 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.ConfigurationApplicationContext;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.interceptors.DefaultInterceptorRegistry;
+import org.axonframework.messaging.interceptors.InterceptorRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
@@ -109,6 +112,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(MessageConverter.class, MessagingConfigurationDefaults::defaultMessageConverter)
                 .registerIfNotPresent(EventConverter.class, MessagingConfigurationDefaults::defaultEventConverter)
                 .registerIfNotPresent(UnitOfWorkFactory.class, MessagingConfigurationDefaults::defaultUnitOfWorkFactory)
+                .registerIfNotPresent(InterceptorRegistry.class, MessagingConfigurationDefaults::defaultInterceptorRegistry)
                 .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(CommandBus.class, MessagingConfigurationDefaults::defaultCommandBus)
                 .registerIfNotPresent(RoutingStrategy.class, MessagingConfigurationDefaults::defaultRoutingStrategy)
@@ -151,6 +155,10 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 ),
                 new SimpleUnitOfWorkFactory(new ConfigurationApplicationContext(config))
         );
+    }
+
+    private static InterceptorRegistry defaultInterceptorRegistry(Configuration config) {
+        return new DefaultInterceptorRegistry();
     }
 
     private static CommandBus defaultCommandBus(Configuration config) {
