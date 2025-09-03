@@ -234,6 +234,11 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * <p>
      * {@code MessageDispatchInterceptors} are typically automatically registered with all applicable infrastructure
      * components through the {@link InterceptorRegistry}.
+     * <p>
+     * Compared to {@link MessageHandlerInterceptor} registration, the {@link Message} type used by the
+     * {@code MessageDispatchInterceptor} does not matter for downstream components. As such, there is only a single
+     * {@code MessageDispatchInterceptor} registration method compared to the multiple {@code MesasgeHandlerInterceptor}
+     * registration methods.
      *
      * @param interceptorBuilder The builder constructing the {@link MessageDispatchInterceptor}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
