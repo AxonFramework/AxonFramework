@@ -22,11 +22,14 @@ import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * An {@link EventSink} implementation recording all the events that are
@@ -40,8 +43,14 @@ import java.util.concurrent.CompletableFuture;
 @Internal
 public class RecordingEventSink implements EventSink {
 
+    protected static final Logger logger = LoggerFactory.getLogger(RecordingEventSink.class);
+
+    private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger(0);
+    public final int instanceId = INSTANCE_COUNTER.incrementAndGet();
+
+    private final List<EventMessage> recorded = new ArrayList<>();
+
     protected final EventSink delegate;
-    private final List<EventMessage> recorded;
 
     /**
      * Creates a new {@link RecordingEventSink} that will record all events published to the given {@code delegate}.
@@ -49,22 +58,36 @@ public class RecordingEventSink implements EventSink {
      */
     public RecordingEventSink(@Nonnull EventSink delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The delegate EventSink may not be null");
-        this.recorded = new ArrayList<>();
+        logger.info("RecordingEventSink[" + instanceId + "] CREATED: delegate=" + delegate.getClass());
     }
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                            @Nonnull List<EventMessage> events) {
-        return delegate.publish(context, events)
-                       .thenRun(() -> recorded.addAll(events));
+        for (EventMessage event : events) {
+            logger.info("RecordingEventSink[" + instanceId + "] RECORDING: " + event.identifier());
+        }
+        synchronized (recorded) {
+            recorded.addAll(events);
+            logger.info("RecordingEventSink[" + instanceId + "] RECORDED: size=" + recorded.size() + ", total events=" + recorded);
+        }
+        CompletableFuture<Void> result = delegate.publish(context, events);
+        logger.info("RecordingEventSink[" + instanceId + "] DELEGATE_PUBLISHED: CompletableFuture=" + result);
+        return result;
     }
 
     public List<EventMessage> recorded() {
-        return List.copyOf(recorded);
+        synchronized (recorded) {
+            logger.info("RecordingEventSink[" + instanceId + "] READ: size=" + recorded.size() + ", events=" + recorded);
+            return List.copyOf(recorded);
+        }
     }
 
     public RecordingEventSink reset() {
-        this.recorded.clear();
+        synchronized (recorded) {
+            logger.info("RecordingEventSink[" + instanceId + "] RESET: size=" + recorded.size() + ", clearing events=" + recorded);
+            recorded.clear();
+        }
         return this;
     }
 }
