@@ -19,7 +19,12 @@ Common use cases for stateless event handlers include:
 
 == Understanding the Notification Feature
 
-Our goal is to send a notification to a student whenever they subscribe to a course.
+Our goal is to send a notification to a student whenever they subscribe to a course. This serves two key business purposes:
+
+**Self-Service Confirmation**: When students register themselves, they get immediate confirmation of successful enrollment.
+
+**Administrative Transparency**: When the dean's office enrolls students in mandatory courses or prerequisites, students are automatically informed of these actions.
+
 This is a perfect example of a stateless operation because:
 
 1. **No validation needed** - The subscription already happened successfully
