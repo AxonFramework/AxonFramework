@@ -1,0 +1,7 @@
+= Feature: Send Notification When Student Subscribed
+
+One of the greatest benefits of using an event-driven architecture is the ability to react to events that occur in your system.
+Thanks to that, you can implement features that are decoupled from the core business logic and add new behavior without changing existing parts of the system.
+
+In this example, we will implement a stateless event handler that sends a notification when a student subscribes to a course.
+
