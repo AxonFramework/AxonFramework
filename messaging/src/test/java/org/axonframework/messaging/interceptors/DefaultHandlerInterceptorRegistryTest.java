@@ -17,13 +17,10 @@
 package org.axonframework.messaging.interceptors;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
@@ -37,88 +34,69 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link DefaultInterceptorRegistry}.
+ * Test class validating the {@link DefaultHandlerInterceptorRegistry}.
  *
  * @author Steven van Beelen
  */
-class DefaultInterceptorRegistryTest {
+class DefaultHandlerInterceptorRegistryTest {
 
-    private InterceptorRegistry testSubject;
+    private HandlerInterceptorRegistry testSubject;
 
     private Configuration config;
 
     @BeforeEach
     void setUp() {
-        testSubject = new DefaultInterceptorRegistry();
+        testSubject = new DefaultHandlerInterceptorRegistry();
 
         config = mock(Configuration.class);
     }
 
     @Test
-    void registeredDispatchInterceptorIsRetrievable() {
-        InterceptorRegistry result = testSubject.registerDispatchInterceptor(c -> new GenericMessageDispatchInterceptor());
+    void registeredGenericInterceptorsIsReturnedForAllTypes() {
+        HandlerInterceptorRegistry result = testSubject.registerInterceptor(c -> new GenericMessageHandlerInterceptor());
 
-        List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors = result.dispatchInterceptors(config);
-        assertThat(dispatchInterceptors).size().isEqualTo(1);
-    }
-
-    @Test
-    void registeredGenericHandlerInterceptorsIsReturnedForAllTypes() {
-        InterceptorRegistry result = testSubject.registerHandlerInterceptor(c -> new GenericMessageHandlerInterceptor());
-
-        List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors = result.commandHandlerInterceptors(config);
+        List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors = result.commandInterceptors(config);
         assertThat(commandInterceptors).size().isEqualTo(1);
-        List<MessageHandlerInterceptor<EventMessage>> eventInterceptors = result.eventHandlerInterceptors(config);
+        List<MessageHandlerInterceptor<EventMessage>> eventInterceptors = result.eventInterceptors(config);
         assertThat(eventInterceptors).size().isEqualTo(1);
-        List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors = result.queryHandlerInterceptors(config);
+        List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(1);
     }
 
     @Test
-    void registeredCommandHandlerInterceptorsIsReturnedFromCommandHandlerInterceptorsOnly() {
-        InterceptorRegistry result = testSubject.registerCommandHandlerInterceptor(c -> new CommandHandlerInterceptor());
+    void registeredCommandInterceptorsIsReturnedFromCommandInterceptorsOnly() {
+        HandlerInterceptorRegistry result = testSubject.registerCommandInterceptor(c -> new CommandHandlerInterceptor());
 
-        List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors = result.commandHandlerInterceptors(config);
+        List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors = result.commandInterceptors(config);
         assertThat(commandInterceptors).size().isEqualTo(1);
-        List<MessageHandlerInterceptor<EventMessage>> eventInterceptors = result.eventHandlerInterceptors(config);
+        List<MessageHandlerInterceptor<EventMessage>> eventInterceptors = result.eventInterceptors(config);
         assertThat(eventInterceptors).size().isEqualTo(0);
-        List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors = result.queryHandlerInterceptors(config);
+        List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(0);
     }
 
     @Test
-    void registeredEventHandlerInterceptorsIsReturnedFromEventHandlerInterceptorsOnly() {
-        InterceptorRegistry result = testSubject.registerEventHandlerInterceptor(c -> new EventHandlerInterceptor());
+    void registeredEventInterceptorsIsReturnedFromEventInterceptorsOnly() {
+        HandlerInterceptorRegistry result = testSubject.registerEventInterceptor(c -> new EventHandlerInterceptor());
 
-        List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors = result.commandHandlerInterceptors(config);
+        List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors = result.commandInterceptors(config);
         assertThat(commandInterceptors).size().isEqualTo(0);
-        List<MessageHandlerInterceptor<EventMessage>> eventInterceptors = result.eventHandlerInterceptors(config);
+        List<MessageHandlerInterceptor<EventMessage>> eventInterceptors = result.eventInterceptors(config);
         assertThat(eventInterceptors).size().isEqualTo(1);
-        List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors = result.queryHandlerInterceptors(config);
+        List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(0);
     }
 
     @Test
-    void registeredQueryHandlerInterceptorsIsReturnedFromQueryHandlerInterceptorsOnly() {
-        InterceptorRegistry result = testSubject.registerQueryHandlerInterceptor(c -> new QueryHandlerInterceptor());
+    void registeredQueryInterceptorsIsReturnedFromQueryInterceptorsOnly() {
+        HandlerInterceptorRegistry result = testSubject.registerQueryInterceptor(c -> new QueryHandlerInterceptor());
 
-        List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors = result.commandHandlerInterceptors(config);
+        List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors = result.commandInterceptors(config);
         assertThat(commandInterceptors).size().isEqualTo(0);
-        List<MessageHandlerInterceptor<EventMessage>> eventInterceptors = result.eventHandlerInterceptors(config);
+        List<MessageHandlerInterceptor<EventMessage>> eventInterceptors = result.eventInterceptors(config);
         assertThat(eventInterceptors).size().isEqualTo(0);
-        List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors = result.queryHandlerInterceptors(config);
+        List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(1);
-    }
-
-    static class GenericMessageDispatchInterceptor implements MessageDispatchInterceptor<Message> {
-
-        @Nonnull
-        @Override
-        public MessageStream<?> interceptOnDispatch(@Nonnull Message message,
-                                                    @Nullable ProcessingContext context,
-                                                    @Nonnull MessageDispatchInterceptorChain<Message> chain) {
-            return chain.proceed(message, context);
-        }
     }
 
     static class GenericMessageHandlerInterceptor implements MessageHandlerInterceptor<Message> {

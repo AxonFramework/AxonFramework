@@ -23,7 +23,6 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.queryhandling.QueryMessage;
 
@@ -34,27 +33,15 @@ import java.util.List;
  * <p>
  * Provides operations to register generic {@link Message}, {@link CommandMessage}-specific,
  * {@link EventMessage}-specific, or {@link QueryMessage}-specific {@code MessageHandlerInterceptors}. Registered type
- * specific {@code MessageHandlerInterceptors} can be retrieved through
- * {@link #commandHandlerInterceptors(Configuration)}, {@link #eventHandlerInterceptors(Configuration)}, and
- * {@link #queryHandlerInterceptors(Configuration)}. These operations are expected to be invoked within a
- * {@link org.axonframework.configuration.DecoratorDefinition}.
+ * specific {@code MessageHandlerInterceptors} can be retrieved through {@link #commandInterceptors(Configuration)},
+ * {@link #eventInterceptors(Configuration)}, and {@link #queryInterceptors(Configuration)}. These operations are
+ * expected to be invoked within a {@link org.axonframework.configuration.DecoratorDefinition}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
 @Internal
-public interface InterceptorRegistry {
-
-    /**
-     * Registers the given {@code interceptorBuilder} for a generic {@link Message} {@link MessageDispatchInterceptor}.
-     *
-     * @param interceptorBuilder The generic {@link Message} {@link MessageDispatchInterceptor} builder to register.
-     * @return This {@code InterceptorRegistry}, for fluent interfacing.
-     */
-    @Nonnull
-    InterceptorRegistry registerDispatchInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super Message>> interceptorBuilder
-    );
+public interface HandlerInterceptorRegistry {
 
     /**
      * Registers the given {@code interceptorBuilder} for a generic {@link Message} {@link MessageHandlerInterceptor}.
@@ -63,7 +50,7 @@ public interface InterceptorRegistry {
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
     @Nonnull
-    InterceptorRegistry registerHandlerInterceptor(
+    HandlerInterceptorRegistry registerInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
     );
 
@@ -76,7 +63,7 @@ public interface InterceptorRegistry {
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
     @Nonnull
-    InterceptorRegistry registerCommandHandlerInterceptor(
+    HandlerInterceptorRegistry registerCommandInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<CommandMessage>> interceptorBuilder
     );
 
@@ -89,7 +76,7 @@ public interface InterceptorRegistry {
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
     @Nonnull
-    InterceptorRegistry registerEventHandlerInterceptor(
+    HandlerInterceptorRegistry registerEventInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<EventMessage>> interceptorBuilder
     );
 
@@ -102,59 +89,49 @@ public interface InterceptorRegistry {
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
      */
     @Nonnull
-    InterceptorRegistry registerQueryHandlerInterceptor(
+    HandlerInterceptorRegistry registerQueryInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<QueryMessage>> interceptorBuilder
     );
-
-    /**
-     * Returns the list of {@link MessageDispatchInterceptor MessageDispatchInterceptors} registered in this registry.
-     *
-     * @param config The configuration to build all {@link MessageDispatchInterceptor MessageDispatchInterceptors}
-     *               with.
-     * @return The list of {@link MessageDispatchInterceptor MessageDispatchInterceptors} registered in this registry.
-     */
-    @Nonnull
-    List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors(@Nonnull Configuration config);
 
     /**
      * Returns the list of {@link CommandMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}
      * registered in this registry.
      * <p>
      * This collection contains <b>all</b> generic {@link Message} {@code MessageHandlerInterceptors} that have been
-     * {@link #registerHandlerInterceptor(ComponentBuilder) registered} as well.
+     * {@link #registerInterceptor(ComponentBuilder) registered} as well.
      *
      * @param config The configuration to build all {@link CommandMessage}-specific
      *               {@link MessageHandlerInterceptor MessageHandlerInterceptors} with.
      * @return The list of {@link CommandMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
      */
     @Nonnull
-    List<MessageHandlerInterceptor<CommandMessage>> commandHandlerInterceptors(@Nonnull Configuration config);
+    List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors(@Nonnull Configuration config);
 
     /**
      * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}
      * registered in this registry.
      * <p>
      * This collection contains <b>all</b> generic {@link Message} {@code MessageHandlerInterceptors} that have been
-     * {@link #registerHandlerInterceptor(ComponentBuilder) registered} as well.
+     * {@link #registerInterceptor(ComponentBuilder) registered} as well.
      *
      * @param config The configuration to build all {@link EventMessage}-specific
      *               {@link MessageHandlerInterceptor MessageHandlerInterceptors} with.
      * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
      */
     @Nonnull
-    List<MessageHandlerInterceptor<EventMessage>> eventHandlerInterceptors(@Nonnull Configuration config);
+    List<MessageHandlerInterceptor<EventMessage>> eventInterceptors(@Nonnull Configuration config);
 
     /**
      * Returns the list of {@link QueryMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}
      * registered in this registry.
      * <p>
      * This collection contains <b>all</b> generic {@link Message} {@code MessageHandlerInterceptors} that have been
-     * {@link #registerHandlerInterceptor(ComponentBuilder) registered} as well.
+     * {@link #registerInterceptor(ComponentBuilder) registered} as well.
      *
      * @param config The configuration to build all {@link QueryMessage}-specific
      *               {@link MessageHandlerInterceptor MessageHandlerInterceptors} with.
      * @return The list of {@link QueryMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
      */
     @Nonnull
-    List<MessageHandlerInterceptor<QueryMessage>> queryHandlerInterceptors(@Nonnull Configuration config);
+    List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors(@Nonnull Configuration config);
 }

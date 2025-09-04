@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Default implementation of the {@link InterceptorRegistry}, maintaining lists of {@link CommandMessage},
+ * Default implementation of the {@link HandlerInterceptorRegistry}, maintaining lists of {@link CommandMessage},
  * {@link EventMessage}, and {@link QueryMessage}-specific
  * {@link MessageHandlerInterceptor MessageHandlerInterceptors}.
  *
@@ -39,28 +39,18 @@ import java.util.List;
  * @since 5.0.0
  */
 @Internal
-public class DefaultInterceptorRegistry implements InterceptorRegistry {
+public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegistry {
 
-    private final List<ComponentBuilder<MessageDispatchInterceptor<? super Message>>> dispatchInterceptorBuilders = new ArrayList<>();
     private final List<ComponentBuilder<MessageHandlerInterceptor<CommandMessage>>> commandInterceptorBuilders = new ArrayList<>();
     private final List<ComponentBuilder<MessageHandlerInterceptor<EventMessage>>> eventInterceptorBuilders = new ArrayList<>();
     private final List<ComponentBuilder<MessageHandlerInterceptor<QueryMessage>>> queryInterceptorBuilders = new ArrayList<>();
 
     @Nonnull
     @Override
-    public InterceptorRegistry registerDispatchInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super Message>> interceptorBuilder
-    ) {
-        this.dispatchInterceptorBuilders.add(interceptorBuilder);
-        return this;
-    }
-
-    @Nonnull
-    @Override
-    public InterceptorRegistry registerHandlerInterceptor(
+    public HandlerInterceptorRegistry registerInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<Message>> interceptorBuilder
     ) {
-        registerCommandHandlerInterceptor(config -> {
+        registerCommandInterceptor(config -> {
             MessageHandlerInterceptor<Message> genericInterceptor = interceptorBuilder.build(config);
             return (message, context, chain) -> genericInterceptor.interceptOnHandle(
                     message,
@@ -68,7 +58,7 @@ public class DefaultInterceptorRegistry implements InterceptorRegistry {
                     (m, c) -> chain.proceed((CommandMessage) m, c)
             );
         });
-        registerEventHandlerInterceptor(config -> {
+        registerEventInterceptor(config -> {
             MessageHandlerInterceptor<Message> genericInterceptor = interceptorBuilder.build(config);
             return (message, context, chain) -> genericInterceptor.interceptOnHandle(
                     message,
@@ -76,7 +66,7 @@ public class DefaultInterceptorRegistry implements InterceptorRegistry {
                     (m, c) -> chain.proceed((EventMessage) m, c)
             );
         });
-        registerQueryHandlerInterceptor(config -> {
+        registerQueryInterceptor(config -> {
             MessageHandlerInterceptor<Message> genericInterceptor = interceptorBuilder.build(config);
             return (message, context, chain) -> genericInterceptor.interceptOnHandle(
                     message,
@@ -89,7 +79,7 @@ public class DefaultInterceptorRegistry implements InterceptorRegistry {
 
     @Nonnull
     @Override
-    public InterceptorRegistry registerCommandHandlerInterceptor(
+    public HandlerInterceptorRegistry registerCommandInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<CommandMessage>> interceptorBuilder
     ) {
         this.commandInterceptorBuilders.add(interceptorBuilder);
@@ -98,7 +88,7 @@ public class DefaultInterceptorRegistry implements InterceptorRegistry {
 
     @Nonnull
     @Override
-    public InterceptorRegistry registerEventHandlerInterceptor(
+    public HandlerInterceptorRegistry registerEventInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<EventMessage>> interceptorBuilder
     ) {
         this.eventInterceptorBuilders.add(interceptorBuilder);
@@ -107,7 +97,7 @@ public class DefaultInterceptorRegistry implements InterceptorRegistry {
 
     @Nonnull
     @Override
-    public InterceptorRegistry registerQueryHandlerInterceptor(
+    public HandlerInterceptorRegistry registerQueryInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<QueryMessage>> interceptorBuilder
     ) {
         this.queryInterceptorBuilders.add(interceptorBuilder);
@@ -116,18 +106,7 @@ public class DefaultInterceptorRegistry implements InterceptorRegistry {
 
     @Nonnull
     @Override
-    public List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors(@Nonnull Configuration config) {
-        List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors = new ArrayList<>();
-        for (ComponentBuilder<MessageDispatchInterceptor<? super Message>> interceptorBuilder : dispatchInterceptorBuilders) {
-            MessageDispatchInterceptor<? super Message> dispatchInterceptor = interceptorBuilder.build(config);
-            dispatchInterceptors.add(dispatchInterceptor);
-        }
-        return dispatchInterceptors;
-    }
-
-    @Nonnull
-    @Override
-    public List<MessageHandlerInterceptor<CommandMessage>> commandHandlerInterceptors(@Nonnull Configuration config) {
+    public List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors(@Nonnull Configuration config) {
         List<MessageHandlerInterceptor<CommandMessage>> commandHandlerInterceptors = new ArrayList<>();
         for (ComponentBuilder<MessageHandlerInterceptor<CommandMessage>> interceptorBuilder : commandInterceptorBuilders) {
             MessageHandlerInterceptor<CommandMessage> handlerInterceptor = interceptorBuilder.build(config);
@@ -138,7 +117,7 @@ public class DefaultInterceptorRegistry implements InterceptorRegistry {
 
     @Nonnull
     @Override
-    public List<MessageHandlerInterceptor<EventMessage>> eventHandlerInterceptors(@Nonnull Configuration config) {
+    public List<MessageHandlerInterceptor<EventMessage>> eventInterceptors(@Nonnull Configuration config) {
         List<MessageHandlerInterceptor<EventMessage>> eventHandlerInterceptors = new ArrayList<>();
         for (ComponentBuilder<MessageHandlerInterceptor<EventMessage>> interceptorBuilder : eventInterceptorBuilders) {
             MessageHandlerInterceptor<EventMessage> handlerInterceptor = interceptorBuilder.build(config);
@@ -149,7 +128,7 @@ public class DefaultInterceptorRegistry implements InterceptorRegistry {
 
     @Nonnull
     @Override
-    public List<MessageHandlerInterceptor<QueryMessage>> queryHandlerInterceptors(@Nonnull Configuration config) {
+    public List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors(@Nonnull Configuration config) {
         List<MessageHandlerInterceptor<QueryMessage>> queryHandlerInterceptors = new ArrayList<>();
         for (ComponentBuilder<MessageHandlerInterceptor<QueryMessage>> interceptorBuilder : queryInterceptorBuilders) {
             MessageHandlerInterceptor<QueryMessage> handlerInterceptor = interceptorBuilder.build(config);

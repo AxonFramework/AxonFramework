@@ -42,8 +42,10 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.messaging.interceptors.DefaultInterceptorRegistry;
-import org.axonframework.messaging.interceptors.InterceptorRegistry;
+import org.axonframework.messaging.interceptors.DefaultDispatchInterceptorRegistry;
+import org.axonframework.messaging.interceptors.DefaultHandlerInterceptorRegistry;
+import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
+import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -99,7 +101,10 @@ class MessagingConfigurationDefaultsTest {
         assertThat(generalConverter).isEqualTo(messageConverterDelegate);
         MessageConverter eventConverterDelegate = ((DelegatingEventConverter) eventConverter).delegate();
         assertThat(messageConverter).isEqualTo(eventConverterDelegate);
-        assertThat(resultConfig.getComponent(InterceptorRegistry.class)).isInstanceOf(DefaultInterceptorRegistry.class);
+        assertThat(resultConfig.getComponent(DispatchInterceptorRegistry.class))
+                .isInstanceOf(DefaultDispatchInterceptorRegistry.class);
+        assertThat(resultConfig.getComponent(HandlerInterceptorRegistry.class))
+                .isInstanceOf(DefaultHandlerInterceptorRegistry.class);
         // The specific CommandGateway-implementation registered by default may be overridden by the serviceloader-mechanism.
         // So we just check if _any_ CommandGateway has been added to the configuration.
         assertTrue(resultConfig.hasComponent(CommandGateway.class));
