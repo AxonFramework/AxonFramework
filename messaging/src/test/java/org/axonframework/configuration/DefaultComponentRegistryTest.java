@@ -22,9 +22,9 @@ import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -189,17 +189,48 @@ class DefaultComponentRegistryTest {
 
     @Test
     void enhancersAreInvokedInOrder() {
-        List<ConfigurationEnhancer> invokedEnhancers = new ArrayList<>();
-        ConfigurationEnhancer enhancer1 = new RegisteringConfigurationEnhancer(invokedEnhancers, 0);
-        ConfigurationEnhancer enhancer2 = new RegisteringConfigurationEnhancer(invokedEnhancers, 10);
-        ConfigurationEnhancer enhancer3 = new RegisteringConfigurationEnhancer(invokedEnhancers, 100);
-        testSubject.registerEnhancer(enhancer2)
-                   .registerEnhancer(enhancer1)
-                   .registerEnhancer(enhancer3);
+        ConfigurationEnhancer enhancerWithLowOrder = spy(new ConfigurationEnhancer() {
+
+            @Override
+            public void enhance(@Nonnull ComponentRegistry registry) {
+                // Not important, so do nothing.
+            }
+
+            @Override
+            public int order() {
+                return -42;
+            }
+        });
+        //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
+        ConfigurationEnhancer enhancerWithDefaultOrder = spy(new ConfigurationEnhancer() {
+            @Override
+            public void enhance(@Nonnull ComponentRegistry registry) {
+                // Not important, so do nothing.
+            }
+        });
+        ConfigurationEnhancer enhancerWithHighOrder = spy(new ConfigurationEnhancer() {
+
+            @Override
+            public void enhance(@Nonnull ComponentRegistry registry) {
+                // Not important, so do nothing.
+            }
+
+            @Override
+            public int order() {
+                return 42;
+            }
+        });
+
+        testSubject.registerEnhancer(enhancerWithDefaultOrder)
+                   .registerEnhancer(enhancerWithLowOrder)
+                   .registerEnhancer(enhancerWithHighOrder);
 
         testSubject.build(mock());
 
-        assertEquals(List.of(enhancer1, enhancer2, enhancer3), invokedEnhancers);
+        InOrder enhancementOrder = inOrder(enhancerWithLowOrder, enhancerWithDefaultOrder, enhancerWithHighOrder);
+        enhancementOrder.verify(enhancerWithLowOrder).enhance(any());
+        enhancementOrder.verify(enhancerWithDefaultOrder).enhance(any());
+        enhancementOrder.verify(enhancerWithHighOrder).enhance(any());
     }
 
     @Test
@@ -259,9 +290,9 @@ class DefaultComponentRegistryTest {
             verify(testDescriptor).describeProperty(eq("decorators"), isA(List.class));
             verify(testDescriptor).describeProperty(eq("modules"), eqList(List.of(testModule)));
             //noinspection unchecked
-            ArgumentCaptor<List<ConfigurationEnhancer>> enhancerCaptor = ArgumentCaptor.forClass(List.class);
+            ArgumentCaptor<Map<String, ConfigurationEnhancer>> enhancerCaptor = ArgumentCaptor.forClass(Map.class);
             verify(testDescriptor).describeProperty(eq("configurerEnhancers"), enhancerCaptor.capture());
-            List<ConfigurationEnhancer> enhancers = enhancerCaptor.getValue();
+            Collection<ConfigurationEnhancer> enhancers = enhancerCaptor.getValue().values();
             assertTrue(enhancers.contains(testEnhancer));
             //noinspection unchecked
             ArgumentCaptor<List<ComponentFactory<?>>> factoryCaptor = ArgumentCaptor.forClass(List.class);
@@ -301,9 +332,9 @@ class DefaultComponentRegistryTest {
             verify(testDescriptor).describeProperty(eq("decorators"), isA(List.class));
             verify(testDescriptor).describeProperty(eq("modules"), eqList(testModule));
             //noinspection unchecked
-            ArgumentCaptor<List<ConfigurationEnhancer>> enhancerCaptor = ArgumentCaptor.forClass(List.class);
+            ArgumentCaptor<Map<String, ConfigurationEnhancer>> enhancerCaptor = ArgumentCaptor.forClass(Map.class);
             verify(testDescriptor).describeProperty(eq("configurerEnhancers"), enhancerCaptor.capture());
-            List<ConfigurationEnhancer> enhancers = enhancerCaptor.getValue();
+            Collection<ConfigurationEnhancer> enhancers = enhancerCaptor.getValue().values();
             assertTrue(enhancers.contains(testEnhancer));
             //noinspection unchecked
             ArgumentCaptor<List<ComponentFactory<?>>> factoryCaptor = ArgumentCaptor.forClass(List.class);

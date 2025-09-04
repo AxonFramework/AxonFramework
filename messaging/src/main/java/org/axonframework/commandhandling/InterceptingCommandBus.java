@@ -19,6 +19,8 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -39,12 +41,31 @@ import static java.util.Objects.requireNonNull;
  * A {@code CommandBus} wrapper that supports both {@link MessageHandlerInterceptor MessageHandlerInterceptors} and
  * {@link MessageDispatchInterceptor MessageDispatchInterceptors}. Actual dispatching and handling of commands is done
  * by a delegate.
+ * <p>
+ * This {@code InterceptingCommandBus} is typically registered as a
+ * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} and automatically kicks in whenever
+ * {@link CommandMessage} specific {@code MessageHandlerInterceptors} or any {@code MessageDispatchInterceptors} are
+ * present.
  *
  * @author Allad Buijze
  * @author Simon Zambrovski
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public class InterceptingCommandBus implements CommandBus {
+
+    /**
+     * The order in which the {@link InterceptingCommandBus} is applied as a
+     * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} to the {@link CommandBus}.
+     * <p>
+     * As such, any decorator with a lower value will be applied to the delegate, and any higher value will be applied
+     * to the {@code InterceptingCommandBus} itself. Using the same value can either lead to application of the
+     * decorator to the delegate or the {@code InterceptingCommandBus}, depending on the order of registration.
+     * <p>
+     * The order of the {@code InterceptingCommandBus} is set to {@code Integer.MIN_VALUE + 100} to ensure it is applied
+     * very early in the configuration process, but not the earliest to allow for other decorators to be applied.
+     */
+    public static final int DECORATION_ORDER = Integer.MIN_VALUE + 100;
 
     private final CommandBus delegate;
     private final List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors;

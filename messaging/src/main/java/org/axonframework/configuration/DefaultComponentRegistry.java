@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,7 +53,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     private final Components components = new Components();
     private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions = new ArrayList<>();
-    private final List<ConfigurationEnhancer> enhancers = new ArrayList<>();
+    private final Map<String, ConfigurationEnhancer> enhancers = new LinkedHashMap<>();
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final List<ComponentFactory<?>> factories = new ArrayList<>();
 
@@ -121,7 +122,11 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     @Override
     public ComponentRegistry registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
-        this.enhancers.add(enhancer);
+        ConfigurationEnhancer previous = this.enhancers.put(enhancer.getClass().getName(), enhancer);
+        if (previous != null) {
+            logger.warn("Duplicate Configuration Enhancer registration dedicated. Replaced enhancer of type [{}].",
+                        enhancer.getClass().getSimpleName());
+        }
         return this;
     }
 
@@ -218,7 +223,8 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      */
     private void invokeEnhancers() {
         List<ConfigurationEnhancer>
-                distinctAndOrderedEnhancers = enhancers.stream()
+                distinctAndOrderedEnhancers = enhancers.values()
+                                                       .stream()
                                                        .distinct()
                                                        .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
                                                        .toList();
@@ -302,7 +308,19 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         enhancerLoader.stream()
                       .map(ServiceLoader.Provider::get)
                       .filter(enhancer -> !disabledEnhancers.contains(enhancer.getClass()))
+                      .filter(this::isNotYetRegistered)
                       .forEach(this::registerEnhancer);
+    }
+
+    /**
+     * Filter ensuring the {@link ConfigurationEnhancer} ServiceLoader solution does not add an enhancer that was
+     * already set by a higher level Configurer.
+     *
+     * @param enhancer The enhancer to check if it is already present.
+     * @return {@code true} if the given {@code enhancer} has not been registered yet, {@code false} otherwise.
+     */
+    private boolean isNotYetRegistered(ConfigurationEnhancer enhancer) {
+        return !enhancers.containsKey(enhancer.getClass().getName());
     }
 
     @Override
