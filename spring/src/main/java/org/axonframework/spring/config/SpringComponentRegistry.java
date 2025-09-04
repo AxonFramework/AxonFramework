@@ -54,7 +54,9 @@ import org.springframework.core.ResolvableType;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -96,7 +98,7 @@ public class SpringComponentRegistry implements
 
     private final Components components = new Components();
     private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decorators = new CopyOnWriteArrayList<>();
-    private final List<ConfigurationEnhancer> enhancers = new CopyOnWriteArrayList<>();
+    private final Map<String, ConfigurationEnhancer> enhancers = new ConcurrentHashMap<>();
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final List<ComponentFactory<?>> factories = new ArrayList<>();
 
@@ -122,7 +124,7 @@ public class SpringComponentRegistry implements
     public SpringComponentRegistry(@Nonnull ListableBeanFactory listableBeanFactory,
                                    @Nonnull SpringLifecycleRegistry lifecycleRegistry) {
         Objects.requireNonNull(listableBeanFactory, "The ListableBeanFactory may not be null.");
-        this.enhancers.addAll(listableBeanFactory.getBeansOfType(ConfigurationEnhancer.class).values());
+        this.enhancers.putAll(listableBeanFactory.getBeansOfType(ConfigurationEnhancer.class));
         this.lifecycleRegistry =
                 Objects.requireNonNull(lifecycleRegistry, "The Lifecycle Registry may not be null.");
     }
@@ -185,7 +187,11 @@ public class SpringComponentRegistry implements
     @Override
     public ComponentRegistry registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
-        this.enhancers.add(enhancer);
+        ConfigurationEnhancer previous = this.enhancers.put(enhancer.getClass().getName(), enhancer);
+        if (previous != null) {
+            logger.warn("Duplicate Configuration Enhancer registration dedicated. Replaced enhancer of type [{}].",
+                        enhancer.getClass().getSimpleName());
+        }
         return this;
     }
 
@@ -371,7 +377,8 @@ public class SpringComponentRegistry implements
      */
     private void invokeEnhancers() {
         List<ConfigurationEnhancer>
-                distinctAndOrderedEnhancers = enhancers.stream()
+                distinctAndOrderedEnhancers = enhancers.values()
+                                                       .stream()
                                                        .distinct()
                                                        .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
                                                        .toList();

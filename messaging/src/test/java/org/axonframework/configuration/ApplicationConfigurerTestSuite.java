@@ -1000,6 +1000,33 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
             assertEquals(expected, config.getComponent(TestComponent.class, "conditional"));
         }
+
+        @Test
+        void registeringSameEnhancerTypeSeveralTimesWillReplacePreviousRegistration() {
+            AtomicBoolean firstRegistration = new AtomicBoolean(false);
+            AtomicBoolean secondRegistration = new AtomicBoolean(false);
+            AtomicBoolean thirdRegistration = new AtomicBoolean(false);
+
+            testSubject.componentRegistry(
+                    cr -> cr.registerEnhancer(new TestConfigurationEnhancer(firstRegistration))
+                            .registerEnhancer(new TestConfigurationEnhancer(secondRegistration))
+                            .registerEnhancer(new TestConfigurationEnhancer(thirdRegistration))
+            );
+
+            buildConfiguration();
+
+            assertFalse(firstRegistration.get());
+            assertFalse(secondRegistration.get());
+            assertTrue(thirdRegistration.get());
+        }
+
+        record TestConfigurationEnhancer(AtomicBoolean invoked) implements ConfigurationEnhancer {
+
+            @Override
+            public void enhance(@Nonnull ComponentRegistry registry) {
+                invoked.set(true);
+            }
+        }
     }
 
     @Nested
