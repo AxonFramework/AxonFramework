@@ -221,13 +221,13 @@ class SubscribeStudentToCourseCommandHandler {
     }
 
     private List<StudentSubscribedToCourse> decide(SubscribeStudentToCourse command, State state) {
-        // todo: check business rules
+        // Check business rules implementation will be added in the following sections
         return List.of(new StudentSubscribedToCourse(command.studentId(), command.courseId()));
     }
 
     @EventSourcedEntity // <5>
     static class State {
-        // todo: define state necessary to accept or reject `SubscribeStudentToCourse` command
+        // State definition will be built incrementally in the following sections
     }
 
 }
@@ -285,7 +285,7 @@ public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
 Based on the `SubscriptionId` we can load the events to build the `State` object. 
 We will use the value to define the `EventCriteria` later in this section.
 
-As you see there are two TODOs left in the `SubscribeStudentToCourseCommandHandler` code.
+As you can see, there are two parts left to implement in the `SubscribeStudentToCourseCommandHandler` code.
 Now we need to validate the business rules, and there are quite a few of them.
 The student can subscribe to a course only if they adhere to the domain invariants of the operation.
 We will list them along with the assertion function, as well as show what's needed in the State object to validate them.
