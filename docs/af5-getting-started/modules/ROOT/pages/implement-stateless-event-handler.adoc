@@ -5,19 +5,19 @@ Thanks to that, you can implement features that are decoupled from the core busi
 
 In this example, we will implement a stateless event handler that sends a notification when a student subscribes to a course.
 
-== What is a Stateless Event Handler?
+== What is a stateless event handler?
 
 A stateless event handler is a component that reacts to events without maintaining any internal state between event processing.
 Unlike command handlers that need to validate business rules against current state, stateless event handlers simply perform actions in response to events.
 
 Common use cases for stateless event handlers include:
-- Sending notifications (email, SMS, push notifications)
+- Sending notifications (email, text messages, push notifications)
 - Logging or auditing events
 - Triggering external system integrations
 - Updating search indices
 - Sending events to message queues
 
-== Understanding the Notification Feature
+== Understanding the notification feature
 
 Our goal is to send a notification to a student whenever they subscribe to a course. Let's look at the Event Modeling diagram for this feature:
 
@@ -27,9 +27,9 @@ The diagram shows the automation flow:
 - **Orange sticky (Event)**: `StudentSubscribedToCourse` - the trigger event containing student and course IDs
 - **Gear (Automation)**: The stateless event handler that processes the event
 - **Blue sticky (External System)**: `SendNotification` - the side effect that sends a notification
-- **Green sticky (TODO List)**: Tracks progress of processed events in Event Modeling methodology
+- **Green sticky (Event tracking)**: Tracks progress of processed events in Event Modeling methodology
 
-The green sticky represents a **TODO List** from Event Modeling - a way to track which tasks have been completed. In this case, it would track which student subscription notifications have already been sent. However, with Axon Framework, you don't need to manually implement this tracking because every `EventProcessor` automatically tracks its position and processed events using tracking tokens.
+The green sticky represents an **Event tracking** mechanism from Event Modeling - a way to track which tasks have been completed. In this case, it would track which student subscription notifications have already been sent. However, with Axon Framework, you don't need to manually implement this tracking because every `EventProcessor` automatically tracks its position and processed events using tracking tokens.
 
 This serves two key business purposes:
 
@@ -44,11 +44,11 @@ This is a perfect example of a stateless operation because:
 3. **Side effect only** - We're just performing an action (sending notification)
 4. **Decoupled** - This feature doesn't affect the core subscription logic
 
-== Setting Up the Notification Infrastructure
+== Setting up the notification infrastructure
 
 Before we implement our event handler, we need to set up the notification service infrastructure.
 
-=== Step 1: Define the Notification Service Interface
+=== Step 1: Define the notification service interface
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/shared/application/notifier/NotificationService.java
@@ -72,7 +72,7 @@ public interface NotificationService { // <1>
 
 Let's create two implementations - one for logging and one for testing.
 
-NOTE: These are simplified implementations for tutorial purposes. In a real application, the `LoggingNotificationService` would likely be replaced with implementations that send actual emails, SMS messages, push notifications etc.
+NOTE: These are simplified implementations for tutorial purposes. In a real application, the `LoggingNotificationService` would likely be replaced with implementations that send actual emails, text messages, push notifications etc.
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/shared/infrastructure/notifier/LoggingNotificationService.java
@@ -94,7 +94,7 @@ public class LoggingNotificationService implements NotificationService { // <1>
 ----
 
 <1> A simple implementation that logs notifications
-<2> In a real system, this might send emails, SMS, or push notifications
+<2> In a real system, this might send emails, text messages, or push notifications
 
 For testing purposes, we need a way to verify that notifications were sent:
 
@@ -135,7 +135,7 @@ public class RecordingNotificationService implements NotificationService { // <1
 <5> Record the notification for test verification
 <6> Provide access to sent notifications for assertions
 
-=== Step 3: Configure the Notification Service
+=== Step 3: Configure the notification service
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/shared/configuration/NotificationServiceConfiguration.java
@@ -163,11 +163,11 @@ public class NotificationServiceConfiguration {
 <2> Register it under the `NotificationService` interface type
 <3> Create a recording service that wraps the logging service - perfect for testing
 
-== Implementing the Event Handler
+== Implementing the event handler
 
 Now that we have our notification infrastructure, let's implement our stateless event handler step by step.
 
-=== Step 4: Create the Event Handler
+=== Step 4: Create the event handler
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/automation/studentsubscribednotifier/WhenStudentSubscribedThenSendNotification.java
@@ -207,7 +207,7 @@ public class WhenStudentSubscribedThenSendNotification { // <1>
 <6> We send the notification using the injected service
 <7> We return an empty stream since this is a side effect only operation
 
-IMPORTANT: **No Exactly-Once Delivery Guarantee** - Event handlers may be executed more than once in case of failures or retries. This means your `NotificationService` should be idempotent to avoid sending duplicate notifications and being considered a spammer. Consider implementing deduplication mechanisms like tracking sent notification IDs or using external services that handle deduplication.
+IMPORTANT: **No exactly once delivery guarantee** - Event handlers may be executed more than once in case of failures or retries. This means your `NotificationService` should be idempotent to avoid sending duplicate notifications and being considered a spammer. Consider implementing deduplication mechanisms like tracking sent notification IDs or using external services that handle deduplication.
 
 === Step 5: Create the Configuration
 
@@ -252,7 +252,7 @@ public class StudentSubscribedNotifierConfiguration {
 <5> Custom token initialization for testing with InMemoryEventStore (this is a workaround for testing) - will not be needed in further Axon Framework milestones.
 <6> We register the processor module with the event processing configuration
 
-== Testing the Event Handler
+== Testing the event handler
 
 Let's create a test to verify our event handler works correctly.
 
@@ -307,9 +307,9 @@ public class WhenStudentSubscribedThenSendNotificationTest extends UniversityApp
 <4> We use Awaitility to wait for asynchronous processing to complete
 <5> We assert that the expected notification was sent
 
-== Key Concepts Review
+== Key concepts review
 
-== Integration with the Main Application
+== Integration with the main application
 
 To use this feature in your main application, you need to register both the notification service and the event handler configurations:
 
