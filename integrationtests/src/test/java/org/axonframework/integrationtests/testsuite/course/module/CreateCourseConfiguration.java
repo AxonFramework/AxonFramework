@@ -37,10 +37,9 @@ public class CreateCourseConfiguration {
         var commandHandlingModule = CommandHandlingModule
                 .named("CreateCourse")
                 .commandHandlers()
-                .commandHandler(new QualifiedName(CreateCourse.class), c -> ((command, context) -> {
-                    var converter = c.getComponent(MessageConverter.class);
-                    var eventAppender = EventAppender.forContext(context, c.getComponent(EventSink.class), c.getComponent(
-                            MessageTypeResolver.class));
+                .commandHandler(new QualifiedName(CreateCourse.class), config -> ((command, context) -> {
+                    var converter = context.component(MessageConverter.class);
+                    var eventAppender = EventAppender.forContext(context);
                     var payload = command.payloadAs(CreateCourse.class, converter);
                     eventAppender.append(new CourseCreated(payload.courseId()));
                     return MessageStream.just(SUCCESSFUL_COMMAND_RESULT);

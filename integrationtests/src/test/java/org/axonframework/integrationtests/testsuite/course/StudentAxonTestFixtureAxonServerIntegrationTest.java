@@ -103,10 +103,10 @@ public class StudentAxonTestFixtureAxonServerIntegrationTest {
         var configuration = testConfiguration();
         var fixture = new AxonTestFixture(configuration, c -> c);
 
-        var descriptor = new FilesystemStyleComponentDescriptor();
-        configuration.describeTo(descriptor);
-        var describe = descriptor.describe();
-        logger.info("describe: {}", describe);
+//        var descriptor = new FilesystemStyleComponentDescriptor();
+//        configuration.describeTo(descriptor);
+//        var describe = descriptor.describe();
+//        logger.info("describe: {}", describe);
 
         var courseId = UUID.randomUUID().toString();
 
