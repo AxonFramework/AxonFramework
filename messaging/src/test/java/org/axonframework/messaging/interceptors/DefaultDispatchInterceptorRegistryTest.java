@@ -27,6 +27,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -55,6 +56,20 @@ class DefaultDispatchInterceptorRegistryTest {
 
         List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors = result.interceptors(config);
         assertThat(dispatchInterceptors).size().isEqualTo(1);
+    }
+
+    @Test
+    void registeredDispatchInterceptorsAreOnlyCreatedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        DispatchInterceptorRegistry result = testSubject.registerInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new GenericMessageDispatchInterceptor();
+        });
+
+        result.interceptors(config);
+        result.interceptors(config);
+        result.interceptors(config);
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
     }
 
     static class GenericMessageDispatchInterceptor implements MessageDispatchInterceptor<Message> {

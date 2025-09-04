@@ -17,8 +17,10 @@
 package org.axonframework.messaging.interceptors;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -29,6 +31,8 @@ import java.util.List;
 /**
  * Default implementation of the {@link DispatchInterceptorRegistry}, maintaining a list of generic {@link Message}
  * {@link MessageDispatchInterceptor MessageDispatchInterceptors}.
+ * <p>
+ * This implementation ensures give interceptor factory methods are only invoked once.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -36,14 +40,18 @@ import java.util.List;
 @Internal
 public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRegistry {
 
-    private final List<ComponentBuilder<MessageDispatchInterceptor<? super Message>>> dispatchInterceptorBuilders = new ArrayList<>();
+    private static final TypeReference<MessageDispatchInterceptor<? super Message>> INTERCEPTOR_TYPE_REF = new TypeReference<>() {
+    };
+
+    private final List<ComponentDefinition<MessageDispatchInterceptor<? super Message>>> dispatchInterceptorBuilders = new ArrayList<>();
 
     @Nonnull
     @Override
     public DispatchInterceptorRegistry registerInterceptor(
             @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super Message>> interceptorBuilder
     ) {
-        this.dispatchInterceptorBuilders.add(interceptorBuilder);
+        this.dispatchInterceptorBuilders.add(ComponentDefinition.ofType(INTERCEPTOR_TYPE_REF)
+                                                                .withBuilder(interceptorBuilder));
         return this;
     }
 
@@ -51,8 +59,12 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @Override
     public List<MessageDispatchInterceptor<? super Message>> interceptors(@Nonnull Configuration config) {
         List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors = new ArrayList<>();
-        for (ComponentBuilder<MessageDispatchInterceptor<? super Message>> interceptorBuilder : dispatchInterceptorBuilders) {
-            MessageDispatchInterceptor<? super Message> dispatchInterceptor = interceptorBuilder.build(config);
+        for (ComponentDefinition<MessageDispatchInterceptor<? super Message>> interceptorBuilder : dispatchInterceptorBuilders) {
+            if (!(interceptorBuilder instanceof ComponentDefinition.ComponentCreator<MessageDispatchInterceptor<? super Message>> creator)) {
+                // The compiler should avoid this from happening.
+                throw new IllegalArgumentException("Unsupported component definition type: " + interceptorBuilder);
+            }
+            MessageDispatchInterceptor<? super Message> dispatchInterceptor = creator.createComponent().resolve(config);
             dispatchInterceptors.add(dispatchInterceptor);
         }
         return dispatchInterceptors;
