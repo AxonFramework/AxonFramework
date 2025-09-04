@@ -29,6 +29,7 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -64,6 +65,24 @@ class DefaultHandlerInterceptorRegistryTest {
     }
 
     @Test
+    void registeredGenericInterceptorsAreOnlyConstructedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        HandlerInterceptorRegistry result = testSubject.registerInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new GenericMessageHandlerInterceptor();
+        });
+
+        result.commandInterceptors(config);
+        result.commandInterceptors(config);
+        result.eventInterceptors(config);
+        result.eventInterceptors(config);
+        result.queryInterceptors(config);
+        result.queryInterceptors(config);
+
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
+    }
+
+    @Test
     void registeredCommandInterceptorsIsReturnedFromCommandInterceptorsOnly() {
         HandlerInterceptorRegistry result = testSubject.registerCommandInterceptor(c -> new CommandHandlerInterceptor());
 
@@ -73,6 +92,23 @@ class DefaultHandlerInterceptorRegistryTest {
         assertThat(eventInterceptors).size().isEqualTo(0);
         List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(0);
+    }
+
+    @Test
+    void registeredCommandInterceptorsAreOnlyCreatedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        HandlerInterceptorRegistry result = testSubject.registerCommandInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new CommandHandlerInterceptor();
+        });
+
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        List<MessageHandlerInterceptor<CommandMessage>> commandInterceptors = result.commandInterceptors(config);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        commandInterceptors = result.commandInterceptors(config);
+        commandInterceptors = result.commandInterceptors(config);
+        assertThat(commandInterceptors).size().isEqualTo(1);
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
     }
 
     @Test
@@ -88,6 +124,23 @@ class DefaultHandlerInterceptorRegistryTest {
     }
 
     @Test
+    void registeredEventInterceptorsAreOnlyCreatedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        HandlerInterceptorRegistry result = testSubject.registerEventInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new EventHandlerInterceptor();
+        });
+
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        List<MessageHandlerInterceptor<EventMessage>> eventInterceptors = result.eventInterceptors(config);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        eventInterceptors = result.eventInterceptors(config);
+        eventInterceptors = result.eventInterceptors(config);
+        assertThat(eventInterceptors).size().isEqualTo(1);
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
+    }
+
+    @Test
     void registeredQueryInterceptorsIsReturnedFromQueryInterceptorsOnly() {
         HandlerInterceptorRegistry result = testSubject.registerQueryInterceptor(c -> new QueryHandlerInterceptor());
 
@@ -97,6 +150,23 @@ class DefaultHandlerInterceptorRegistryTest {
         assertThat(eventInterceptors).size().isEqualTo(0);
         List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(1);
+    }
+
+    @Test
+    void registeredQueryInterceptorsAreOnlyCreatedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        HandlerInterceptorRegistry result = testSubject.registerQueryInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new QueryHandlerInterceptor();
+        });
+
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        List<MessageHandlerInterceptor<QueryMessage>> queryInterceptors = result.queryInterceptors(config);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        queryInterceptors = result.queryInterceptors(config);
+        queryInterceptors = result.queryInterceptors(config);
+        assertThat(queryInterceptors).size().isEqualTo(1);
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
     }
 
     static class GenericMessageHandlerInterceptor implements MessageHandlerInterceptor<Message> {
