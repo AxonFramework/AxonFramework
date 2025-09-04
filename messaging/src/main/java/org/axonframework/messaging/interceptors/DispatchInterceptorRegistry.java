@@ -30,7 +30,12 @@ import java.util.List;
  * <p>
  * Provides an operation to register a generic {@link Message} {@code MessageHandlerInterceptor}. Registered
  * {@code MessageDispatchInterceptors} can be retrieved through {@link #interceptors(Configuration)} method.
- * These operations are expected to be invoked within a {@link org.axonframework.configuration.DecoratorDefinition}.
+ * <p>
+ * These operations are expected to be invoked within a {@link org.axonframework.configuration.DecoratorDefinition}. As
+ * such, <b>any</b> registered interceptors are <b>only</b> applied when the infrastructure component requiring them is
+ * constructed. When, for example, an {@link org.axonframework.commandhandling.InterceptingCommandBus} is constructed,
+ * this registry is invoked to retrieve interceptors. Interceptors that are registered once the
+ * {@code InterceptingCommandBus} has already been constructed are not taken into ac
  *
  * @author Steven van Beelen
  * @since 5.0.0

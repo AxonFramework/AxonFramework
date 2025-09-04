@@ -34,8 +34,13 @@ import java.util.List;
  * Provides operations to register generic {@link Message}, {@link CommandMessage}-specific,
  * {@link EventMessage}-specific, or {@link QueryMessage}-specific {@code MessageHandlerInterceptors}. Registered type
  * specific {@code MessageHandlerInterceptors} can be retrieved through {@link #commandInterceptors(Configuration)},
- * {@link #eventInterceptors(Configuration)}, and {@link #queryInterceptors(Configuration)}. These operations are
- * expected to be invoked within a {@link org.axonframework.configuration.DecoratorDefinition}.
+ * {@link #eventInterceptors(Configuration)}, and {@link #queryInterceptors(Configuration)}.
+ * <p>
+ * These operations are expected to be invoked within a {@link org.axonframework.configuration.DecoratorDefinition}. As
+ * such, <b>any</b> registered interceptors are <b>only</b> applied when the infrastructure component requiring them is
+ * constructed. When, for example, an {@link org.axonframework.commandhandling.InterceptingCommandBus} is constructed,
+ * this registry is invoked to retrieve interceptors. Interceptors that are registered once the
+ * {@code InterceptingCommandBus} has already been constructed are not taken into account.
  *
  * @author Steven van Beelen
  * @since 5.0.0
