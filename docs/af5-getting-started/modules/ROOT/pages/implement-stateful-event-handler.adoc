@@ -3,7 +3,7 @@
 In this example, we will implement a stateful event handler that monitors course availability and sends a notification to the administrator when all courses become fully booked.
 This enables administrators to take immediate action such as opening additional course sections, adjusting capacity, or coordinating with other faculties to meet student demand.
 
-== What is a Stateful Event Handler?
+== What is a stateful event handler?
 
 A stateful event handler is a component that reacts to events while maintaining internal state between event processing.
 Unlike stateless handlers that simply perform actions in response to single events, stateful handlers accumulate information from multiple events to make decisions.
@@ -12,7 +12,7 @@ Common use cases for stateful event handlers include:
 - Building read models and projections, like dashboards or reprorting views
 - Triggering actions when conditions are met across time, like in Saga or Process Manager
 
-== Understanding the Administrator Notification Feature
+== Understanding the administrator notification feature
 
 image::EventModeling_WhenAllCoursesFullyBookedThenSendNotification.jpg[]
 
@@ -23,13 +23,13 @@ This is a perfect example of a stateful operation because:
 
 1. **State tracking required** - We need to monitor capacity and enrollment across all courses
 2. **Multiple event types** - We react to course creation, capacity changes, and student subscriptions
-3. **Conditional logic** - Notification is sent only when ALL courses are fully booked
+3. **Conditional logic** - Notification is sent only when all courses are fully booked
 
-== Setting Up the Stateful Event Handler
+== Setting up the stateful event handler
 
 We'll build on the notification infrastructure from the previous tutorial, so make sure you have the `NotificationService` configured.
 
-=== Step 1: Define the Command and Event
+=== Step 1: Define the command and event
 
 First, let's define the command that will be sent internally and the event that tracks notification status:
 
@@ -62,7 +62,7 @@ public record AllCoursesFullyBookedNotificationSent( // <1>
 <1> Event indicating that the notification has been sent
 <2> Tagged with faculty ID for proper event stream organization
 
-=== Step 2: Implement the Stateful Event Handler
+=== Step 2: Implement the stateful event handler
 
 Now let's create the main stateful event handler with its internal state management:
 
@@ -164,7 +164,7 @@ public class WhenAllCoursesFullyBookedThenSendNotification {
 <6> Event sourcing handlers that evolve state based on different event types
 <7> Handler to track when notification has already been sent - thanks to that you can track it in your EventStore instead of external systems
 
-=== Step 3: Add Command Handler for Notification
+=== Step 3: Add command handler for notification
 
 Now let's add the command handler that actually sends the notification:
 
@@ -196,7 +196,7 @@ Now let's add the command handler that actually sends the notification:
 <4> Create and send the notification to admin
 <5> Record that we've sent the notification by emitting an event
 
-=== Step 4: Add Event Handlers for State Monitoring
+=== Step 4: Add event handlers for state monitoring
 
 Finally, let's add event handlers that monitor course state changes and trigger notifications:
 
@@ -226,7 +226,7 @@ Finally, let's add event handlers that monitor course state changes and trigger 
         private MessageStream.Empty<Message> sendNotificationIfAllCoursesFullyBooked(State state, ProcessingContext context) { // <5>
             var automationState = state != null ? state : new State();
             var allCoursesFullyBooked = automationState.courses.values().stream().allMatch(State.Course::isFullyBooked); // <6>
-            var shouldNotify = allCoursesFullyBooked && !automationState.notified(); // <7>
+            var shouldNotify = allCoursesFullyBooked &amp;&amp; !automationState.notified(); // <7>
             if (shouldNotify) {
                 var commandGateway = context.component(CommandGateway.class); // <8>
                 commandGateway.send(new SendAllCoursesFullyBookedNotification(FACULTY_ID), context);
@@ -302,7 +302,7 @@ public class AllCoursesFullyBookedNotifierConfiguration {
 <8> Register the command handling module
 <9> Register the event processor module
 
-== Testing the Stateful Event Handler
+== Testing the stateful event handler
 
 Let's create a comprehensive test that verifies the stateful behavior:
 
@@ -370,9 +370,9 @@ public class WhenAllCoursesFullyBookedThenSendNotificationTest extends Universit
 <4> Sequence of events that gradually fills all courses to capacity
 <5> **Then**: Verify the notification was sent when condition was met
 
-== Key Concepts Review
+== Key concepts review
 
-=== Stateless vs Stateful Event Handlers
+=== Stateless vs stateful event handlers
 
 |===
 |Aspect |Stateless Event Handler |Stateful Event Handler
@@ -384,7 +384,7 @@ public class WhenAllCoursesFullyBookedThenSendNotificationTest extends Universit
 |**Concurrency** |High parallelism possible |Limited by state consistency needs
 |===
 
-== Integration with the Main Application
+== Integration with the main application
 
 To use this feature in your main application, register the configuration:
 
@@ -416,7 +416,7 @@ In this section, you learned how to implement a stateful event handler for compl
 - **Event sourcing** provides reliable state management and complete auditability for the automation logic
 - **Event Modeling Automation pattern** provides a clear way to visualize and design automated processes that monitor system state and trigger actions
 
-=== Command-Based Reactions
+=== Command-based reactions
 
 Notice that in this example, when the automation condition is met, we trigger a **Command** (`SendAllCoursesFullyBookedNotification`) rather than directly calling the notification service. This demonstrates a key principle: stateful event handlers can execute any business logic and interact with other parts of your application through the Event-Driven Architecture.
 
