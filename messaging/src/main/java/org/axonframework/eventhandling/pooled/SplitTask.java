@@ -115,7 +115,7 @@ class SplitTask extends CoordinatorTask {
             TrackingToken tokenToSplit = tokenStore.fetchToken(name, segmentToSplit.getSegmentId());
             TrackerStatus[] splitStatuses = TrackerStatus.split(segmentToSplit, tokenToSplit);
             tokenStore.initializeSegment(
-                    splitStatuses[1].getTrackingToken(), name, splitStatuses[1].getSegment().getSegmentId()
+                    splitStatuses[1].getInternalTrackingToken(), name, splitStatuses[1].getSegment().getSegmentId()
             );
             tokenStore.releaseClaim(name, splitStatuses[0].getSegment().getSegmentId());
             logger.info("Processor [{}] successfully split {} into {} and {}.",

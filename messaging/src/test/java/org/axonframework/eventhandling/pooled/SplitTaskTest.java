@@ -17,10 +17,7 @@
 package org.axonframework.eventhandling.pooled;
 
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.Segment;
-import org.axonframework.eventhandling.TrackerStatus;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.junit.jupiter.api.*;
@@ -77,7 +74,7 @@ class SplitTaskTest {
         testSubject.run();
 
         verify(tokenStore).initializeSegment(
-                expectedSplit.getTrackingToken(), PROCESSOR_NAME, expectedSplit.getSegment().getSegmentId()
+                testTokenToSplit, PROCESSOR_NAME, expectedSplit.getSegment().getSegmentId()
         );
         verify(tokenStore).releaseClaim(PROCESSOR_NAME, expectedOriginal.getSegment().getSegmentId());
         assertTrue(result.isDone());
@@ -100,7 +97,30 @@ class SplitTaskTest {
         testSubject.run();
 
         verify(tokenStore).initializeSegment(
-                expectedSplit.getTrackingToken(), PROCESSOR_NAME, expectedSplit.getSegment().getSegmentId()
+                testTokenToSplit, PROCESSOR_NAME, expectedSplit.getSegment().getSegmentId()
+        );
+        verify(tokenStore).releaseClaim(PROCESSOR_NAME, expectedOriginal.getSegment().getSegmentId());
+        assertTrue(result.isDone());
+        assertTrue(result.get());
+    }
+
+    @Test
+    void runSplitsSegmentKeepsReplayStatusIntact() throws Exception {
+        int[] testSegmentIds = {SEGMENT_ID};
+        Segment testSegmentToSplit = Segment.computeSegment(SEGMENT_ID, testSegmentIds);
+        TrackingToken testTokenToSplit = ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(100), new GlobalSequenceTrackingToken(0));
+
+        TrackerStatus[] expectedTokens = TrackerStatus.split(testSegmentToSplit, testTokenToSplit);
+        TrackerStatus expectedOriginal = expectedTokens[0];
+        TrackerStatus expectedSplit = expectedTokens[1];
+
+        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(testSegmentIds);
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(testTokenToSplit);
+
+        testSubject.run();
+
+        verify(tokenStore).initializeSegment(
+                testTokenToSplit, PROCESSOR_NAME, expectedSplit.getSegment().getSegmentId()
         );
         verify(tokenStore).releaseClaim(PROCESSOR_NAME, expectedOriginal.getSegment().getSegmentId());
         assertTrue(result.isDone());
