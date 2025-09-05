@@ -41,6 +41,7 @@ import java.util.List;
  * @author Steven van Beelen
  * @since 5.0.0
  */
+@Internal
 public class InterceptingEventHandlingComponent extends DelegatingEventHandlingComponent {
 
     /**
