@@ -17,14 +17,11 @@
 package org.axonframework.eventhandling.sequencing;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
-import java.util.Collections;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,42 +37,23 @@ public class MetaDataSequencingPolicyTest {
 
     @Test
     void propertyShouldReadCorrectValue() {
-        final MetaDataSequencingPolicy metaDataPolicy = MetaDataSequencingPolicy
-                .builder()
-                .metaDataKey("metaDataKey")
-                .build();
+        final MetaDataSequencingPolicy metaDataPolicy = new MetaDataSequencingPolicy("metaDataKey");
 
-        DomainEventMessage testEvent =
-                newStubDomainEvent("42", Collections.singletonMap("metaDataKey", "metaDataValue"));
+        EventMessage testEvent = EventTestUtils.asEventMessage("42").withMetaData(Map.of("metaDataKey", "metaDataValue"));
 
         assertThat(metaDataPolicy.getSequenceIdentifierFor(testEvent, new StubProcessingContext())).contains("metaDataValue");
     }
 
     @Test
     void fallbackShouldBeAppliedWhenMetaDataDoesNotContainsTheKey() {
-        final MetaDataSequencingPolicy metaDataPolicy = MetaDataSequencingPolicy
-                .builder()
-                .metaDataKey("metaDataKey")
-                .build();
+        final MetaDataSequencingPolicy metaDataPolicy = new MetaDataSequencingPolicy("metaDataKey");
 
-        assertThat(metaDataPolicy.getSequenceIdentifierFor(newStubDomainEvent("42"), new StubProcessingContext())).isPresent();
+        assertThat(metaDataPolicy.getSequenceIdentifierFor(EventTestUtils.asEventMessage("42"), new StubProcessingContext())).isPresent();
     }
 
     @Test
     void missingHardRequirementShouldThrowException() {
         assertThrows(AxonConfigurationException.class,
-                     () -> MetaDataSequencingPolicy
-                             .builder()
-                             .build());
-    }
-
-    private DomainEventMessage newStubDomainEvent(final Object payload, Map<String, String> metaData) {
-        return new GenericDomainEventMessage(
-                "aggregateType", "A", 0L, new MessageType("event"), payload, MetaData.from(metaData)
-        );
-    }
-
-    private DomainEventMessage newStubDomainEvent(final Object payload) {
-        return newStubDomainEvent(payload, Collections.emptyMap());
+                     () -> new MetaDataSequencingPolicy(null));
     }
 }
