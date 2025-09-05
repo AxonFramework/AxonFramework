@@ -221,10 +221,11 @@ class WorkPackage {
      */
     public boolean scheduleEvent(MessageStream.Entry<? extends EventMessage> eventEntry) {
         TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
+        EventMessage message = eventEntry.message();
         if (shouldNotSchedule(eventEntry)) {
             logger.trace("Ignoring event [{}] with position [{}] for work package [{}]. "
                                  + "The last token [{}] covers event's token [{}].",
-                         eventEntry.message().identifier(),
+                         message.identifier(),
                          eventToken != null ? eventToken.position().orElse(-1) : -1,
                          segment.getSegmentId(),
                          lastDeliveredToken,
@@ -233,12 +234,16 @@ class WorkPackage {
         }
 
         logger.debug("Assigned event [{}] with position [{}] to work package [{}].",
-                     eventEntry.message().identifier(),
+                     message.identifier(),
                      eventToken != null ? eventToken.position().orElse(-1) : -1,
                      segment.getSegmentId());
 
-        var context = new LegacyMessageSupportingContext(eventEntry.message());
-        boolean canHandle = canHandle(eventEntry.message(), context);
+        // todo: I'm not sure about this solution, but it's better than LegacyMessageSupportingContext
+        // todo: event entry has context!!!
+        var unitOfWork = unitOfWorkFactory.create();
+        unitOfWork.runOnPreInvocation(ctx -> Message.addToContext(ctx, message));
+        var canHandle = unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(canHandle(message, context))).join();
+
         processingQueue.add(new DefaultProcessingEntry(eventEntry, canHandle));
         lastDeliveredToken = eventToken;
         // the worker must always be scheduled to ensure claims are extended
