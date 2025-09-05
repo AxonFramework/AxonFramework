@@ -24,16 +24,16 @@ import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
-import org.axonframework.eventhandling.monitoring.MonitoringEventHandlingComponent;
-import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceCachingEventHandlingComponent;
-import org.axonframework.eventhandling.tracing.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
+import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
+import org.axonframework.eventhandling.monitoring.MonitoringEventHandlingComponent;
+import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceCachingEventHandlingComponent;
+import org.axonframework.eventhandling.tracing.TracingEventHandlingComponent;
 import org.axonframework.lifecycle.Phase;
 
 import java.util.List;
@@ -123,15 +123,27 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
         for (int i = 0; i < eventHandlingComponentBuilders.size(); i++) {
             var componentBuilder = eventHandlingComponentBuilders.get(i);
             var componentName = processorEventHandlingComponentName(i);
-            componentRegistry(
-                    cr -> cr.registerComponent(
-                            EventHandlingComponent.class,
-                            componentName,
-                            cfg -> {
-                                var component = componentBuilder.build(cfg);
-                                var configuration = cfg.getComponent(SubscribingEventProcessorConfiguration.class);
-                                return withDefaultDecoration(component, configuration);
-                            }));
+            componentRegistry(cr -> {
+                cr.registerComponent(EventHandlingComponent.class, componentName,
+                                     cfg -> {
+                                         var component = componentBuilder.build(cfg);
+                                         var configuration = cfg.getComponent(
+                                                 SubscribingEventProcessorConfiguration.class
+                                         );
+                                         return withDefaultDecoration(component, configuration);
+                                     });
+                cr.registerDecorator(EventHandlingComponent.class, componentName,
+                                     InterceptingEventHandlingComponent.DECORATION_ORDER,
+                                     (config, name, delegate) -> {
+                                         var configuration = config.getComponent(
+                                                 SubscribingEventProcessorConfiguration.class
+                                         );
+                                         return new InterceptingEventHandlingComponent(
+                                                 configuration.addInterceptor(config),
+                                                 delegate
+                                         );
+                                     });
+            });
         }
     }
 
@@ -159,10 +171,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                 (event) -> configuration.spanFactory().createProcessEventSpan(false, event),
                 new MonitoringEventHandlingComponent(
                         configuration.messageMonitor(),
-                        new InterceptingEventHandlingComponent(
-                                configuration.interceptors(),
-                                new SequenceCachingEventHandlingComponent(c)
-                        )
+                        new SequenceCachingEventHandlingComponent(c)
                 )
         );
     }
