@@ -28,7 +28,6 @@ import org.axonframework.eventhandling.processors.streaming.token.WrappedToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -182,8 +181,7 @@ class WorkPackage {
         BatchProcessingEntry batchProcessingEntry = new BatchProcessingEntry();
         boolean canHandleAny = eventEntries.stream()
                                            .map(eventEntry -> {
-                                               var context = new LegacyMessageSupportingContext(eventEntry.message());
-                                               boolean canHandle = canHandle(eventEntry.message(), context);
+                                               boolean canHandle = canHandleMessage(eventEntry);
                                                batchProcessingEntry.add(new DefaultProcessingEntry(eventEntry,
                                                                                                    canHandle));
                                                return canHandle;
@@ -238,11 +236,7 @@ class WorkPackage {
                      eventToken != null ? eventToken.position().orElse(-1) : -1,
                      segment.getSegmentId());
 
-        // todo: I'm not sure about this solution, but it's better than LegacyMessageSupportingContext
-        // todo: event entry has context!!!
-        var unitOfWork = unitOfWorkFactory.create();
-        unitOfWork.runOnPreInvocation(ctx -> Message.addToContext(ctx, message));
-        var canHandle = unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(canHandle(message, context))).join();
+        var canHandle = canHandleMessage(eventEntry);
 
         processingQueue.add(new DefaultProcessingEntry(eventEntry, canHandle));
         lastDeliveredToken = eventToken;
@@ -250,6 +244,15 @@ class WorkPackage {
         scheduleWorker();
 
         return canHandle;
+    }
+
+    // todo: I'm not sure about this solution, but it's better than LegacyMessageSupportingContext
+    // todo: event entry has Context (not ProcessingContext)!!!
+    private boolean canHandleMessage(MessageStream.Entry<? extends EventMessage> eventEntry) {
+        var message = eventEntry.message();
+        var unitOfWork = unitOfWorkFactory.create();
+        unitOfWork.runOnPreInvocation(ctx -> Message.addToContext(ctx, message));
+        return unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(canHandle(message, context))).join();
     }
 
     /**
