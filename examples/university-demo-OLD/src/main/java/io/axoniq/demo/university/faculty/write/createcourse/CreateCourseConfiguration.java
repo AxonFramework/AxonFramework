@@ -1,9 +1,9 @@
 package io.axoniq.demo.university.faculty.write.createcourse;
 
 import io.axoniq.demo.university.shared.ids.CourseId;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 
 public class CreateCourseConfiguration {
 
@@ -11,14 +11,13 @@ public class CreateCourseConfiguration {
         var stateEntity = EventSourcedEntityModule
                 .annotated(CourseId.class, CreateCourseCommandHandler.State.class);
 
-        var commandHandlingModule = StatefulCommandHandlingModule
+        var commandHandlingModule = CommandHandlingModule
                 .named("CreateCourse")
-                .entities()
-                .entity(stateEntity)
                 .commandHandlers()
                 .annotatedCommandHandlingComponent(c -> new CreateCourseCommandHandler());
-
-        return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
+        return configurer
+                .registerEntity(stateEntity)
+                .registerCommandHandlingModule(commandHandlingModule);
     }
 
     private CreateCourseConfiguration() {

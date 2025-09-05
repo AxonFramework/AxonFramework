@@ -45,4 +45,13 @@ public class ConfigurationProperties {
         }
         return null;
     }
+
+    public boolean axonServerEnabled() {
+        return axonServerEnabled;
+    }
+
+    public ConfigurationProperties axonServerEnabled(boolean axonServerEnabled) {
+        this.axonServerEnabled = axonServerEnabled;
+        return this;
+    }
 }

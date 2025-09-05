@@ -1,9 +1,9 @@
 package io.axoniq.demo.university.faculty.write.changecoursecapacity;
 
 import io.axoniq.demo.university.shared.ids.CourseId;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 
 public class ChangeCourseCapacityConfiguration {
 
@@ -11,14 +11,14 @@ public class ChangeCourseCapacityConfiguration {
         var stateEntity = EventSourcedEntityModule
                 .annotated(CourseId.class, ChangeCourseCapacityCommandHandler.State.class);
 
-        var commandHandlingModule = StatefulCommandHandlingModule
+        var commandHandlingModule = CommandHandlingModule
                 .named("ChangeCourseCapacity")
-                .entities()
-                .entity(stateEntity)
                 .commandHandlers()
                 .annotatedCommandHandlingComponent(c -> new ChangeCourseCapacityCommandHandler());
 
-        return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
+        return configurer
+                .registerEntity(stateEntity)
+                .registerCommandHandlingModule(commandHandlingModule);
     }
 
     private ChangeCourseCapacityConfiguration() {

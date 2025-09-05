@@ -2,9 +2,9 @@ package io.axoniq.demo.university.faculty.write.subscribestudentmulti;
 
 import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.shared.ids.StudentId;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 
 public class SubscribeStudentMultiEntityConfiguration {
 
@@ -14,14 +14,15 @@ public class SubscribeStudentMultiEntityConfiguration {
         var studentEntity = EventSourcedEntityModule
                 .annotated(StudentId.class, Student.class);
 
-        var commandHandlingModule = StatefulCommandHandlingModule
+        var commandHandlingModule = CommandHandlingModule
                 .named("SubscribeStudentMulti")
-                .entities()
-                .entity(courseEntity)
-                .entity(studentEntity)
                 .commandHandlers()
                 .annotatedCommandHandlingComponent(c -> new SubscribeStudentToCourseCommandHandler());
-        return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
+
+        return configurer
+                .registerEntity(courseEntity)
+                .registerEntity(studentEntity)
+                .registerCommandHandlingModule(commandHandlingModule);
     }
 
     private SubscribeStudentMultiEntityConfiguration() {
