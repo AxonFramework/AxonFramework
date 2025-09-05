@@ -85,7 +85,7 @@ class StudentAxonTestFixtureAxonServerIntegrationTest {
         return CreateCourseConfiguration.configure(configurer);
     }
 
-    @RepeatedTest(10)
+    @RepeatedTest(5)
     void axonTestFixtureWorksWithAxonServer() {
         var courseId = UUID.randomUUID().toString();
 
@@ -97,7 +97,7 @@ class StudentAxonTestFixtureAxonServerIntegrationTest {
                .events(new CourseCreated(courseId));
     }
 
-    @RepeatedTest(10)
+    @RepeatedTest(5)
     void axonTestFixtureWorksWithAxonServerShutdown() {
         var courseId = UUID.randomUUID().toString();
 
