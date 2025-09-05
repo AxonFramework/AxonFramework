@@ -21,7 +21,9 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.ConversionException;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -48,8 +50,8 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy {
     /**
      * Instantiate a {@link PropertySequencingPolicy} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@code propertyExtractor} is not {@code null} and will throw an {@link
-     * AxonConfigurationException} if this is the case.
+     * Will assert that the {@code propertyExtractor} is not {@code null} and will throw an
+     * {@link AxonConfigurationException} if this is the case.
      *
      * @param builder the {@link Builder} used to instantiate a {@link PropertySequencingPolicy} instance
      */
@@ -62,14 +64,22 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy {
     }
 
     @Override
-    public Optional<Object> getSequenceIdentifierFor(@Nonnull final EventMessage eventMessage,
-                                                     @Nonnull ProcessingContext context) {
+    public Optional<Object> getSequenceIdentifierFor(
+            @Nonnull final EventMessage eventMessage,
+            @Nonnull ProcessingContext context
+    ) {
         if (payloadClass.isAssignableFrom(eventMessage.payloadType())) {
             @SuppressWarnings("unchecked") final T castedPayload = (T) eventMessage.payload();
             return Optional.ofNullable(propertyExtractor.apply(castedPayload));
         }
 
-        return fallbackSequencingPolicy.getSequenceIdentifierFor(eventMessage, context);
+        try {
+            var converter = context.component(EventConverter.class);
+            var converted = eventMessage.payloadAs(payloadClass, converter);
+            return Optional.ofNullable(propertyExtractor.apply(converted));
+        } catch (ConversionException e) {
+            return fallbackSequencingPolicy.getSequenceIdentifierFor(eventMessage, context);
+        }
     }
 
     /**
