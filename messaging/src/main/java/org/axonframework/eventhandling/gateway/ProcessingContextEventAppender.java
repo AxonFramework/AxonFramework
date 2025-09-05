@@ -70,7 +70,8 @@ public class ProcessingContextEventAppender implements EventAppender {
                 .stream()
                 .map(e -> EventPublishingUtils.asEventMessage(e, messageTypeResolver))
                 .collect(Collectors.toList());
-        eventSink.publish(processingContext, eventMessages).join();
+        eventSink.publish(processingContext, eventMessages)
+                 .join();
     }
 
     @Override

@@ -62,9 +62,7 @@ public interface EventAppender extends DescribableComponent {
      * @return The created appender.
      */
     static EventAppender forContext(@Nonnull ProcessingContext context) {
-        EventSink eventSink = context.component(EventSink.class);
-        System.out.println("||| Retrieved Event Sink [" + eventSink.hashCode() + "] |||");
-        return forContext(context, eventSink, context.component(MessageTypeResolver.class));
+        return forContext(context, context.component(EventSink.class), context.component(MessageTypeResolver.class));
     }
 
     /**
