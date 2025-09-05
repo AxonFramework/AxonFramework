@@ -17,8 +17,9 @@
 package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.messaging.Message;
 import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.PayloadMatcher;
@@ -36,12 +37,12 @@ class AxonTestThenCommand
     private final Message actualResult;
 
     public AxonTestThenCommand(
-            Configuration configuration,
-            AxonTestFixture.Customization customization,
-            RecordingCommandBus commandBus,
-            RecordingEventSink eventSink,
-            Message lastCommandResult,
-            Throwable lastCommandException
+            @Nonnull AxonConfiguration configuration,
+            @Nonnull AxonTestFixture.Customization customization,
+            @Nonnull RecordingCommandBus commandBus,
+            @Nonnull RecordingEventSink eventSink,
+            @Nonnull Message lastCommandResult,
+            @Nullable Throwable lastCommandException
     ) {
         super(configuration, customization, commandBus, eventSink, lastCommandException);
         this.actualResult = lastCommandResult;

@@ -19,7 +19,7 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -45,14 +45,14 @@ import java.util.function.UnaryOperator;
  */
 public class AxonTestFixture implements AxonTestPhase.Setup {
 
-    private final Configuration configuration;
+    private final AxonConfiguration configuration;
     private final Customization customization;
     private final MessageTypeResolver messageTypeResolver;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
-    public AxonTestFixture(@Nonnull Configuration configuration,
+    AxonTestFixture(@Nonnull AxonConfiguration configuration,
                     @Nonnull UnaryOperator<Customization> customization) {
         this.customization = customization.apply(new Customization());
         this.configuration = configuration;
@@ -134,6 +134,11 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 eventSink,
                 unitOfWorkFactory
         );
+    }
+
+    @Override
+    public void stop() {
+        configuration.shutdown();
     }
 
     /**

@@ -17,8 +17,9 @@
 package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.Reporter;
@@ -44,7 +45,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     protected final Reporter reporter = new Reporter();
 
-    private final Configuration configuration;
+    private final AxonConfiguration configuration;
     private final AxonTestFixture.Customization customization;
     private final RecordingEventSink eventSink;
     private final RecordingCommandBus commandBus;
@@ -53,11 +54,11 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     protected final Throwable actualException;
 
     public AxonTestThenMessage(
-            Configuration configuration,
-            AxonTestFixture.Customization customization,
-            RecordingCommandBus commandBus,
-            RecordingEventSink eventSink,
-            Throwable actualException
+            @Nonnull AxonConfiguration configuration,
+            @Nonnull AxonTestFixture.Customization customization,
+            @Nonnull RecordingCommandBus commandBus,
+            @Nonnull RecordingEventSink eventSink,
+            @Nullable Throwable actualException
     ) {
         this.configuration = configuration;
         this.customization = customization;

@@ -119,6 +119,12 @@ public interface AxonTestPhase {
          * @return A {@link When} instance that allows executing the test.
          */
         When when();
+
+        /**
+         * Stops the fixture, releasing any active resources, like registered handlers or pending event processing
+         * tasks.
+         */
+        void stop();
     }
 
     /**
@@ -632,6 +638,14 @@ public interface AxonTestPhase {
             T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer);
 
             Setup and();
+
+            /**
+             * Stops the fixture, releasing any active resources, like registered handlers or pending event processing
+             * tasks.
+             */
+            default void stop() {
+                and().stop();
+            }
         }
     }
 }
