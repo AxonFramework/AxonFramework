@@ -166,7 +166,7 @@ class DefaultConfigurerTest {
                                                   (config, builder) -> builder.workerExecutor(
                                                       Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
                   .byDefaultAssignTo(processorName)
-                  .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
+                  .registerDefaultSequencingPolicy(c -> FullConcurrencyPolicy.INSTANCE)
                   .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
         LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .start();
@@ -193,7 +193,7 @@ class DefaultConfigurerTest {
                                                   (config, builder) -> builder.workerExecutor(
                                                       Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
                   .byDefaultAssignTo(processorName)
-                  .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
+                  .registerDefaultSequencingPolicy(c -> FullConcurrencyPolicy.INSTANCE)
                   .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
         LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .start();
@@ -218,7 +218,7 @@ class DefaultConfigurerTest {
                                                   (config, builder) -> builder.workerExecutor(
                                                       Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
                   .byDefaultAssignTo(processorName)
-                  .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
+                  .registerDefaultSequencingPolicy(c -> FullConcurrencyPolicy.INSTANCE)
                   .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
         LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .start();

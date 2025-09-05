@@ -229,7 +229,7 @@ class EventProcessorConfigurationTest {
 
         @Bean
         public SequencingPolicy customPolicy() {
-            return new FullConcurrencyPolicy();
+            return FullConcurrencyPolicy.INSTANCE;
         }
 
         @Bean

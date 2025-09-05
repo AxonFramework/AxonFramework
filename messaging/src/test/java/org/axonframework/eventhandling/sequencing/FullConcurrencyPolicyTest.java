@@ -37,7 +37,7 @@ class FullConcurrencyPolicyTest {
 
     @Test
     void sequencingIdentifier() {
-        FullConcurrencyPolicy testSubject = new FullConcurrencyPolicy();
+        FullConcurrencyPolicy testSubject = FullConcurrencyPolicy.INSTANCE;
         ProcessingContext processingContext = new StubProcessingContext();
         assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), processingContext)).isPresent();
         assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), processingContext)).isPresent();

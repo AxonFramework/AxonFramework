@@ -31,6 +31,14 @@ import java.util.Optional;
  */
 public class FullConcurrencyPolicy implements SequencingPolicy {
 
+    /**
+     * Singleton instance of the {@code FullConcurrencyPolicy}.
+     */
+    public static final FullConcurrencyPolicy INSTANCE = new FullConcurrencyPolicy();
+
+    private FullConcurrencyPolicy() {
+    }
+
     @Override
     public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return Optional.of(event.identifier());
