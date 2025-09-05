@@ -274,7 +274,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.*;
 import static org.awaitility.Awaitility.*;
 
-public class WhenStudentSubscribedThenSendNotificationTest extends UniversityApplicationTest { // <1>
+class WhenStudentSubscribedThenSendNotificationTest extends UniversityApplicationTest { // <1>
 
     @Override
     protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) { // <2>

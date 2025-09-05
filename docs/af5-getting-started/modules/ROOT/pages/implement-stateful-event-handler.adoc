@@ -205,34 +205,38 @@ Finally, let's add event handlers that monitor course state changes and trigger 
 ----
     static class AutomationEventHandler { // <1>
 
-        @EventHandler
-        public MessageStream.Empty<?> react(
+        CompletableFuture<?> react(
                 StudentSubscribedToCourse event, // <2>
+                CommandDispatcher commandDispatcher,
                 ProcessingContext context
         ) {
             var state = context.component(StateManager.class).loadEntity(State.class, FACULTY_ID, context).join(); // <3>
-            return sendNotificationIfAllCoursesFullyBooked(state, context);
+            return sendNotificationIfAllCoursesFullyBooked(state, commandDispatcher);
         }
 
         @EventHandler
-        public MessageStream.Empty<?> react(
+        CompletableFuture<?> react(
                 CourseCapacityChanged event, // <4>
+                CommandDispatcher commandDispatcher,
                 ProcessingContext context
         ) {
             var state = context.component(StateManager.class).loadEntity(State.class, FACULTY_ID, context).join();
-            return sendNotificationIfAllCoursesFullyBooked(state, context);
+            return sendNotificationIfAllCoursesFullyBooked(state, commandDispatcher);
         }
 
-        private MessageStream.Empty<Message> sendNotificationIfAllCoursesFullyBooked(State state, ProcessingContext context) { // <5>
+        private CompletableFuture<?> sendNotificationIfAllCoursesFullyBooked( // <5>
+                State state,
+                CommandDispatcher commandDispatcher
+        ) {
             var automationState = state != null ? state : new State();
             var allCoursesFullyBooked = automationState.courses.values().stream().allMatch(State.Course::isFullyBooked); // <6>
-            var shouldNotify = allCoursesFullyBooked &amp;&amp; !automationState.notified(); // <7>
-            if (shouldNotify) {
-                var commandGateway = context.component(CommandGateway.class); // <8>
-                commandGateway.send(new SendAllCoursesFullyBookedNotification(FACULTY_ID), context);
+            var shouldNotify = allCoursesFullyBooked &amp;&amp; !automationState.notified();  // <7>
+            if (!shouldNotify) {
+                return CompletableFuture.completedFuture(null);
             }
-            return MessageStream.empty();
+            return commandDispatcher.send(new SendAllCoursesFullyBookedNotification(FACULTY_ID), Object.class); // <8>
         }
+
     }
 ----
 
@@ -243,7 +247,7 @@ Finally, let's add event handlers that monitor course state changes and trigger 
 <5> Common logic to check condition and send command if needed
 <6> Business rule: all courses must be fully booked
 <7> Only notify if condition is met AND we haven't notified before
-<8> Send command to trigger notification (which goes to command handler above)
+<8> Send command to trigger notification (which goes to command handler above). The `CommandDispatcher` allows to execute the command within the current `ProcessingContext`.
 
 === Step 5: Configuration
 
