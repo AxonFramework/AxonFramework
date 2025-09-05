@@ -40,6 +40,13 @@ import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.deepEquals;
 
+/**
+ * Abstract implementation of the {@link AxonTestPhase.Then then-phase} of the {@link AxonTestFixture}.
+ *
+ * @param <T> The type of {@link org.axonframework.messaging.Message} validated by this implementation.
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
         implements AxonTestPhase.Then.Message<T> {
 
@@ -53,6 +60,17 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     private final CommandValidator commandValidator;
     protected final Throwable actualException;
 
+    /**
+     * Constructs an {@code AxonTestThenMessage} for the given parameters.
+     *
+     * @param configuration   The configuration which this test fixture phase is based on.
+     * @param customization   Collection of customizations made for this test fixture.
+     * @param commandBus      The recording {@link org.axonframework.commandhandling.CommandBus}, used to capture and
+     *                        validate any commands that have been sent.
+     * @param eventSink       The recording {@link org.axonframework.eventhandling.EventSink}, used to capture and
+     *                        validate any events that have been sent.
+     * @param actualException The exception thrown during the when-phase, potentially {@code null}.
+     */
     public AxonTestThenMessage(
             @Nonnull AxonConfiguration configuration,
             @Nonnull AxonTestFixture.Customization customization,

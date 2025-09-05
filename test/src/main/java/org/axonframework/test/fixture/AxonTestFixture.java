@@ -47,16 +47,15 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
     private final AxonConfiguration configuration;
     private final Customization customization;
-    private final MessageTypeResolver messageTypeResolver;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
+    private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
     AxonTestFixture(@Nonnull AxonConfiguration configuration,
                     @Nonnull UnaryOperator<Customization> customization) {
         this.customization = customization.apply(new Customization());
         this.configuration = configuration;
-        this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
 
         CommandBus commandBusComponent = configuration.getComponent(CommandBus.class);
         if (!(commandBusComponent instanceof RecordingCommandBus)) {
@@ -80,6 +79,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             );
         }
         this.eventSink = (RecordingEventSink) eventSinkComponent;
+        this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
     }
 
@@ -129,9 +129,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         return new AxonTestWhen(
                 configuration,
                 customization,
-                messageTypeResolver,
                 commandBus,
                 eventSink,
+                messageTypeResolver,
                 unitOfWorkFactory
         );
     }
@@ -143,11 +143,14 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
     /**
      * Allow to customize the fixture setup.
+     *
+     * @param fieldFilters Collections of {@link FieldFilter FieldFilters} used to adjust the matchers for commands,
+     *                     events, and result messages.
      */
-    public record Customization(List<FieldFilter> fieldFilters) {
+    public record Customization(@Nonnull List<FieldFilter> fieldFilters) {
 
         /**
-         * Creates a new instance of {@link Customization}.
+         * Creates a new instance of {@code Customization}.
          */
         public Customization() {
             this(new ArrayList<>());

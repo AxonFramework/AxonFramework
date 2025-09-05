@@ -29,9 +29,14 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
+/**
+ * Implementation of the {@link AxonTestPhase.Given given-phase} of the {@link AxonTestFixture}.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 class AxonTestGiven implements AxonTestPhase.Given {
 
     private final AxonConfiguration configuration;
@@ -41,6 +46,21 @@ class AxonTestGiven implements AxonTestPhase.Given {
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
+    /**
+     * Constructs a {@code AxonTestGiven} for the given parameters.
+     *
+     * @param configuration       The configuration which this test fixture phase is based on.
+     * @param customization       Collection of customizations made for this test fixture.
+     * @param commandBus          The recording {@link org.axonframework.commandhandling.CommandBus}, used to capture
+     *                            and validate any commands that have been sent.
+     * @param eventSink           The recording {@link org.axonframework.eventhandling.EventSink}, used to capture and
+     *                            validate any events that have been sent.
+     * @param messageTypeResolver The message type resolver used to generate the
+     *                            {@link org.axonframework.messaging.MessageType} out of command, event, or query
+     *                            payloads provided to this phase.
+     * @param unitOfWorkFactory   The factory of the {@link org.axonframework.messaging.unitofwork.UnitOfWork}, used to
+     *                            execute every test in.
+     */
     AxonTestGiven(
             @Nonnull AxonConfiguration configuration,
             @Nonnull AxonTestFixture.Customization customization,
@@ -89,8 +109,9 @@ class AxonTestGiven implements AxonTestPhase.Given {
 
     @Override
     public AxonTestPhase.Given events(@Nonnull EventMessage... messages) {
-        inUnitOfWorkOnInvocation(processingContext -> eventSink.publish(processingContext,
-                                                                           messages));
+        inUnitOfWorkOnInvocation(
+                processingContext -> eventSink.publish(processingContext, messages)
+        );
         return this;
     }
 
@@ -117,8 +138,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     private GenericCommandMessage toGenericCommandMessage(@Nonnull Object payload,
-                                                                  @Nonnull MetaData metaData
-    ) {
+                                                          @Nonnull MetaData metaData) {
         var messageType = messageTypeResolver.resolveOrThrow(payload);
         return new GenericCommandMessage(
                 messageType,
@@ -137,6 +157,13 @@ class AxonTestGiven implements AxonTestPhase.Given {
 
     @Override
     public AxonTestPhase.When when() {
-        return new AxonTestWhen(configuration, customization, messageTypeResolver, commandBus, eventSink, unitOfWorkFactory);
+        return new AxonTestWhen(
+                configuration,
+                customization,
+                commandBus,
+                eventSink,
+                messageTypeResolver,
+                unitOfWorkFactory
+        );
     }
 }
