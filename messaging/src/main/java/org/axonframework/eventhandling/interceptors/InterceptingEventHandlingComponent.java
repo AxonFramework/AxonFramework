@@ -17,6 +17,9 @@
 package org.axonframework.eventhandling.interceptors;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.eventhandling.DelegatingEventHandlingComponent;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
@@ -39,6 +42,21 @@ import java.util.List;
  * @since 5.0.0
  */
 public class InterceptingEventHandlingComponent extends DelegatingEventHandlingComponent {
+
+    /**
+     * The order in which the {@link InterceptingEventHandlingComponent} is applied as a
+     * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} to an {@link EventHandlingComponent}.
+     * <p>
+     * As such, any decorator with a lower value will be applied to the delegate, and any higher value will be applied
+     * to the {@code InterceptingEventHandlingComponent} itself. Using the same value can either lead to application of
+     * the decorator to the delegate or the {@code InterceptingEventHandlingComponent}, depending on the order of
+     * registration.
+     * <p>
+     * The order of the {@code InterceptingEventHandlingComponent} is set to {@code Integer.MIN_VALUE + 100} to ensure
+     * it is applied very early in the configuration process, but not the earliest to allow for other decorators to be
+     * applied.
+     */
+    public static final int DECORATION_ORDER = Integer.MIN_VALUE + 100;
 
     private final EventMessageHandlerInterceptorChain interceptorChain;
 
