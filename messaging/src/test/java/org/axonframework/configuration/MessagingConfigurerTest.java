@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
@@ -162,10 +163,10 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                 return FutureUtils.emptyCompletedFuture();
             }
 
-//            @Override
-//            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-//
-//            }
+            @Override
+            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+                throw new UnsupportedOperationException("Unimportant for this test case");
+            }
         };
 
         Configuration result = testSubject.registerEventSink(c -> expected)

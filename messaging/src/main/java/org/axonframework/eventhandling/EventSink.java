@@ -38,7 +38,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface EventSink {
+public interface EventSink extends DescribableComponent {
 
     /**
      * Publishes the given {@code events} within the given {@code context}, when present.

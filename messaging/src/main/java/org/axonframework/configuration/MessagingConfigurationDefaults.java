@@ -29,6 +29,7 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
@@ -236,10 +237,10 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 return FutureUtils.emptyCompletedFuture();
             }
 
-//            @Override
-//            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-//                descriptor.describeProperty("type", "DefaultEventSink");
-//            }
+            @Override
+            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+                // Not important
+            }
         };
     }
 
