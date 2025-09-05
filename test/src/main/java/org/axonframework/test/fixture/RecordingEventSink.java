@@ -19,14 +19,15 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * An {@link EventSink} implementation recording all the events that are
@@ -40,16 +41,16 @@ import java.util.concurrent.CompletableFuture;
 @Internal
 public class RecordingEventSink implements EventSink {
 
+    private final List<EventMessage> recorded = new CopyOnWriteArrayList<>();
     protected final EventSink delegate;
-    private final List<EventMessage> recorded;
 
     /**
-     * Creates a new {@link RecordingEventSink} that will record all events published to the given {@code delegate}.
+     * Creates a new {@code RecordingEventSink} that will record all events published to the given {@code delegate}.
+     *
      * @param delegate The {@link EventSink} to which events will be published.
      */
     public RecordingEventSink(@Nonnull EventSink delegate) {
         this.delegate = Objects.requireNonNull(delegate, "The delegate EventSink may not be null");
-        this.recorded = new ArrayList<>();
     }
 
     @Override
@@ -59,12 +60,30 @@ public class RecordingEventSink implements EventSink {
                        .thenRun(() -> recorded.addAll(events));
     }
 
+    /**
+     * Returns a copied list of all the {@link EventMessage EventMessages}
+     * {@link #publish(ProcessingContext, List) published}.
+     *
+     * @return A copied list of all the {@link EventMessage EventMessages}
+     * {@link #publish(ProcessingContext, List) published}.
+     */
     public List<EventMessage> recorded() {
         return List.copyOf(recorded);
     }
 
+    /**
+     * Resets this recording {@link EventSink}, by removing all recorded {@link EventMessage EventMessages}.
+     *
+     * @return This recording {@link EventSink}, for fluent interfacing.
+     */
     public RecordingEventSink reset() {
         this.recorded.clear();
         return this;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeWrapperOf(delegate);
+        descriptor.describeProperty("recorded", recorded);
     }
 }

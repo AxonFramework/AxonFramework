@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Arrays;
@@ -37,7 +38,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface EventSink {
+public interface EventSink extends DescribableComponent {
 
     /**
      * Publishes the given {@code events} within the given {@code context}, when present.

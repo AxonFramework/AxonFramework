@@ -16,6 +16,9 @@
 
 package org.axonframework.eventhandling.gateway;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
@@ -26,13 +29,26 @@ import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class ProcessingContextEventAppenderTest {
 
-    private final EventSink mockEventSink = mock(EventSink.class);
+    private final EventSink mockEventSink = spy(new EventSink() {
+        @Override
+        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                               @Nonnull List<EventMessage> events) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            // not needed for tests
+        }
+    });
+
     private final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
     @Test
