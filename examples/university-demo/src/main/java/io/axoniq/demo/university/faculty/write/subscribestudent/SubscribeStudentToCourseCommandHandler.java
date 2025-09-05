@@ -1,11 +1,7 @@
 package io.axoniq.demo.university.faculty.write.subscribestudent;
 
 import io.axoniq.demo.university.faculty.FacultyTags;
-import io.axoniq.demo.university.faculty.events.CourseCapacityChanged;
-import io.axoniq.demo.university.faculty.events.CourseCreated;
-import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
-import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
-import io.axoniq.demo.university.faculty.events.StudentUnsubscribedFromCourse;
+import io.axoniq.demo.university.faculty.events.*;
 import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.shared.ids.StudentId;
 import org.axonframework.commandhandling.annotation.CommandHandler;

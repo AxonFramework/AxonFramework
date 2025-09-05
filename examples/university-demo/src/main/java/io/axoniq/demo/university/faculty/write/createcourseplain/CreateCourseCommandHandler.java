@@ -3,39 +3,39 @@ package io.axoniq.demo.university.faculty.write.createcourseplain;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.shared.slices.write.CommandResult;
 import jakarta.annotation.Nonnull;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.command.StatefulCommandHandler;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-class CreateCourseCommandHandler implements StatefulCommandHandler {
+class CreateCourseCommandHandler implements CommandHandler {
 
-    private final EventSink eventSink;
+    private final MessageConverter messageConverter;
     private final MessageTypeResolver messageTypeResolver;
 
-    CreateCourseCommandHandler(EventSink eventSink, MessageTypeResolver messageTypeResolver) {
-        this.eventSink = eventSink;
+    CreateCourseCommandHandler(MessageConverter messageConverter, MessageTypeResolver messageTypeResolver) {
+        this.messageConverter = messageConverter;
         this.messageTypeResolver = messageTypeResolver;
     }
 
     @Override
     @Nonnull
     public MessageStream.Single<CommandResultMessage<?>> handle(
-            @Nonnull CommandMessage<?> command,
-            @Nonnull StateManager state,
+            @Nonnull CommandMessage command,
             @Nonnull ProcessingContext context
     ) {
-        var eventAppender = EventAppender.forContext(context, eventSink, messageTypeResolver);
-        var payload = (CreateCourse) command.getPayload();
+        var eventAppender = EventAppender.forContext(context);
+        var payload = command.payloadAs(CreateCourse.class, messageConverter);
+        var state = context.component(StateManager.class);
         CompletableFuture<CommandResultMessage<?>> decideFuture = state
                 .loadEntity(State.class, payload.courseId(), context)
                 .thenApply(entity -> decide(payload, entity))

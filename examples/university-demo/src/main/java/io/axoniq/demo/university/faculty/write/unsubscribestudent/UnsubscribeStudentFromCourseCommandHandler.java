@@ -15,6 +15,7 @@ import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.EntityIdResolver;
@@ -75,11 +76,13 @@ class UnsubscribeStudentFromCourseCommandHandler {
 
         @Override
         @Nonnull
-        public SubscriptionId resolve(@Nonnull Message<?> command, @Nonnull ProcessingContext context) {
-            if (command.getPayload() instanceof UnsubscribeStudentFromCourse(StudentId studentId, CourseId courseId)) {
-                return new SubscriptionId(courseId, studentId);
+        public SubscriptionId resolve(@Nonnull Message command, @Nonnull ProcessingContext context) {
+            var converter = context.component(MessageConverter.class);
+            UnsubscribeStudentFromCourse payload = command.payloadAs(UnsubscribeStudentFromCourse.class, converter);
+            if (payload == null) {
+                throw new IllegalArgumentException("Can not resolve SubscriptionId from command");
             }
-            throw new IllegalArgumentException("Can not resolve SubscriptionId from command");
+            return new SubscriptionId(payload.courseId(), payload.studentId());
         }
     }
 }

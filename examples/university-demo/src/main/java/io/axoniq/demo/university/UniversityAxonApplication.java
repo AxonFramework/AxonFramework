@@ -5,13 +5,13 @@ import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.faculty.write.createcourseplain.CreateCourse;
 import io.axoniq.demo.university.faculty.write.renamecourse.RenameCourse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.ServerConnectorConfigurationEnhancer;
+import org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.infra.FilesystemStyleComponentDescriptor;
-import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,14 +23,19 @@ public class UniversityAxonApplication {
     public static void main(String[] args) {
         ConfigurationProperties configProps = ConfigurationProperties.load();
         var configuration = startApplication(configProps);
-        printApplicationConfiguration(configuration);
         executeSampleCommands(configuration);
         configuration.shutdown();
     }
 
-    private static AxonConfiguration startApplication(ConfigurationProperties configProps) {
-        var configurer = new UniversityAxonApplication().configurer(configProps);
-        return configurer.start();
+    public static AxonConfiguration startApplication() {
+        return startApplication(ConfigurationProperties.load());
+    }
+
+    public static AxonConfiguration startApplication(ConfigurationProperties configProps) {
+        var configurer = new UniversityAxonApplication().configurer(configProps, FacultyModuleConfiguration::configure);
+        var configuration = configurer.start();
+        printApplicationConfiguration(configuration);
+        return configuration;
     }
 
     private static void printApplicationConfiguration(AxonConfiguration configuration) {
@@ -39,11 +44,14 @@ public class UniversityAxonApplication {
         logger.info("Application started with following configuration: \n" + componentDescriptor.describe());
     }
 
-    public ApplicationConfigurer configurer() {
-        return configurer(ConfigurationProperties.load());
+    public EventSourcingConfigurer configurer() {
+        return configurer(ConfigurationProperties.load(), FacultyModuleConfiguration::configure);
     }
 
-    public ApplicationConfigurer configurer(ConfigurationProperties configProps) {
+    public EventSourcingConfigurer configurer(
+            ConfigurationProperties configProps,
+            UnaryOperator<EventSourcingConfigurer> customization
+    ) {
         var configurer = EventSourcingConfigurer.create();
         if (configProps.axonServerEnabled) {
             configurer.componentRegistry(r -> r.registerComponent(AxonServerConfiguration.class, c -> {
@@ -52,9 +60,9 @@ public class UniversityAxonApplication {
                 return axonServerConfig;
             }));
         } else {
-            configurer.componentRegistry(r -> r.disableEnhancer(ServerConnectorConfigurationEnhancer.class));
+            configurer.componentRegistry(r -> r.disableEnhancer(AxonServerConfigurationEnhancer.class));
         }
-        configurer = FacultyModuleConfiguration.configure(configurer);
+        configurer = customization.apply(configurer);
         return configurer;
     }
 
