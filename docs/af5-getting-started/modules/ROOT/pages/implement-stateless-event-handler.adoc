@@ -330,7 +330,7 @@ public class UniversityAxonApplication {
 }
 ----
 
-<1> Register the notification service infrastructure - this must come first
+<1> Register the notification service infrastructure
 <2> Register the notification automation configuration that depends on the service
 
 == Summary
