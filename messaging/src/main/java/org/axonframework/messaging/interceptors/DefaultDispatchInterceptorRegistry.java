@@ -19,6 +19,7 @@ package org.axonframework.messaging.interceptors;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
@@ -43,15 +44,15 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     private static final TypeReference<MessageDispatchInterceptor<? super Message>> INTERCEPTOR_TYPE_REF = new TypeReference<>() {
     };
 
-    private final List<ComponentDefinition<MessageDispatchInterceptor<? super Message>>> dispatchInterceptorBuilders = new ArrayList<>();
+    private final List<ComponentDefinition<MessageDispatchInterceptor<? super Message>>> interceptorDefinitions = new ArrayList<>();
 
     @Nonnull
     @Override
     public DispatchInterceptorRegistry registerInterceptor(
             @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super Message>> interceptorBuilder
     ) {
-        this.dispatchInterceptorBuilders.add(ComponentDefinition.ofType(INTERCEPTOR_TYPE_REF)
-                                                                .withBuilder(interceptorBuilder));
+        this.interceptorDefinitions.add(ComponentDefinition.ofType(INTERCEPTOR_TYPE_REF)
+                                                           .withBuilder(interceptorBuilder));
         return this;
     }
 
@@ -59,7 +60,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @Override
     public List<MessageDispatchInterceptor<? super Message>> interceptors(@Nonnull Configuration config) {
         List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors = new ArrayList<>();
-        for (ComponentDefinition<MessageDispatchInterceptor<? super Message>> interceptorBuilder : dispatchInterceptorBuilders) {
+        for (ComponentDefinition<MessageDispatchInterceptor<? super Message>> interceptorBuilder : interceptorDefinitions) {
             if (!(interceptorBuilder instanceof ComponentDefinition.ComponentCreator<MessageDispatchInterceptor<? super Message>> creator)) {
                 // The compiler should avoid this from happening.
                 throw new IllegalArgumentException("Unsupported component definition type: " + interceptorBuilder);
@@ -68,5 +69,10 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
             dispatchInterceptors.add(dispatchInterceptor);
         }
         return dispatchInterceptors;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("dispatchInterceptors", interceptorDefinitions);
     }
 }

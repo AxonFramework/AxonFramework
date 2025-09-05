@@ -21,7 +21,10 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.eventhandling.RecordingEventHandlingComponent;
+import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
@@ -31,6 +34,7 @@ import org.axonframework.eventhandling.processors.streaming.token.store.TokenSto
 import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.EmptyApplicationContext;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -44,6 +48,8 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -171,6 +177,106 @@ class PooledStreamingEventProcessorModuleTest {
                    });
 
             // cleanup
+            configuration.shutdown();
+        }
+    }
+
+    @Nested
+    class InterceptorTest {
+
+        @Test
+        void registeredInterceptorsShouldBeInvoked() {
+            // given...
+            MessagingConfigurer configurer = MessagingConfigurer.create();
+            AsyncInMemoryStreamableEventSource eventSource = new AsyncInMemoryStreamableEventSource();
+            // Build a global interceptor on the configurer, a default used by both modules, and a specific interceptor per module
+            AtomicInteger invokedGlobal = new AtomicInteger(0);
+            AtomicInteger invokedDefault = new AtomicInteger(0);
+            AtomicBoolean invokedSpecificOne = new AtomicBoolean(false);
+            AtomicBoolean invokedSpecificTwo = new AtomicBoolean(false);
+            MessageHandlerInterceptor<EventMessage> globalInterceptor = (event, context, chain) -> {
+                invokedGlobal.incrementAndGet();
+                return chain.proceed(event, context);
+            };
+            MessageHandlerInterceptor<EventMessage> defaultInterceptor = (event, context, chain) -> {
+                invokedDefault.incrementAndGet();
+                return chain.proceed(event, context);
+            };
+            MessageHandlerInterceptor<EventMessage> specificInterceptorOne = (event, context, chain) -> {
+                invokedSpecificOne.set(true);
+                return chain.proceed(event, context);
+            };
+            MessageHandlerInterceptor<EventMessage> specificInterceptorTwo = (event, context, chain) -> {
+                invokedSpecificTwo.set(true);
+                return chain.proceed(event, context);
+            };
+            // Construct two components, each within their own PSEP
+            RecordingEventHandlingComponent componentOne = simpleRecordingTestComponent(new QualifiedName(String.class));
+            PooledStreamingEventProcessorModule psepModuleOne =
+                    EventProcessorModule.pooledStreaming("processor-one")
+                                        .eventHandlingComponents(
+                                                components -> components.declarative(cfg -> componentOne)
+                                        )
+                                        .customized(
+                                                (config, psepConfig) -> psepConfig.addInterceptor(specificInterceptorOne)
+                                        );
+            RecordingEventHandlingComponent componentTwo = simpleRecordingTestComponent(new QualifiedName(Integer.class));
+            PooledStreamingEventProcessorModule psepModuleTwo =
+                    EventProcessorModule.pooledStreaming("processor-two")
+                                        .eventHandlingComponents(
+                                                components -> components.declarative(cfg -> componentTwo)
+                                        )
+                                        .customized(
+                                                (config, psepConfig) -> psepConfig.addInterceptor(specificInterceptorTwo)
+                                        );
+            // Register the global interceptor
+            configurer.registerEventHandlerInterceptor(c -> globalInterceptor);
+            // Register the default interceptor and attach both PSEP modules.
+            configurer.eventProcessing(processingConfigurer -> processingConfigurer.pooledStreaming(
+                    psepConfigurer -> psepConfigurer.defaults(
+                                                            defaults -> defaults.eventSource(eventSource)
+                                                                                .addInterceptor(defaultInterceptor)
+                                                    )
+                                                    .processor(psepModuleOne)
+                                                    .processor(psepModuleTwo)
+            ));
+
+            AxonConfiguration configuration = configurer.build();
+            configuration.start();
+
+            // When publishing a String event
+            EventMessage stringEvent = EventTestUtils.asEventMessage("test-event");
+            eventSource.publishMessage(stringEvent);
+
+            // Then only component one handles it
+            await().atMost(Duration.ofMillis(500))
+                   .untilAsserted(() -> {
+                       assertThat(componentOne.handled(stringEvent)).isTrue();
+                       assertThat(componentTwo.handled(stringEvent)).isFalse();
+                   });
+            assertThat(invokedGlobal.get()).isEqualTo(1);
+            assertThat(invokedDefault.get()).isEqualTo(1);
+            assertThat(invokedSpecificOne).isTrue();
+            assertThat(invokedSpecificTwo).isFalse();
+            // Reset invoked interceptor flag
+            invokedSpecificOne.set(false);
+
+            // When publishing an Integer event
+            EventMessage integerEvent = EventTestUtils.asEventMessage(42);
+            eventSource.publishMessage(integerEvent);
+
+            // Then only component two handles it
+            await().atMost(Duration.ofMillis(500))
+                   .untilAsserted(() -> {
+                       assertThat(componentOne.handled(integerEvent)).isFalse();
+                       assertThat(componentTwo.handled(integerEvent)).isTrue();
+                   });
+            assertThat(invokedGlobal.get()).isEqualTo(2);
+            assertThat(invokedDefault.get()).isEqualTo(2);
+            assertThat(invokedSpecificOne).isFalse();
+            assertThat(invokedSpecificTwo).isTrue();
+
+            // Clean-up
             configuration.shutdown();
         }
     }
@@ -496,10 +602,14 @@ class PooledStreamingEventProcessorModuleTest {
     }
 
     private static RecordingEventHandlingComponent simpleRecordingTestComponent() {
+        return simpleRecordingTestComponent(new QualifiedName(String.class));
+    }
+
+    private static RecordingEventHandlingComponent simpleRecordingTestComponent(@Nonnull QualifiedName handlerName) {
         return new RecordingEventHandlingComponent(
-                SimpleEventHandlingComponent
-                        .builder()
-                        .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty()).build()
+                SimpleEventHandlingComponent.builder()
+                                            .handles(handlerName, (e, c) -> MessageStream.empty())
+                                            .build()
         );
     }
 

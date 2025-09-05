@@ -19,15 +19,20 @@ package org.axonframework.eventhandling.processors.subscribing;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.*;
+import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
-import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.interceptors.DefaultHandlerInterceptorRegistry;
+import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -54,16 +59,17 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
 
     private SubscribableMessageSource<? extends EventMessage> messageSource;
     private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
+    private final HandlerInterceptorRegistry interceptorRegistry = new DefaultHandlerInterceptorRegistry();
 
     /**
-     * Constructs a new {@link SubscribingEventProcessorConfiguration} with default values.
+     * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values.
      */
     public SubscribingEventProcessorConfiguration() {
         super();
     }
 
     /**
-     * Constructs a new {@link SubscribingEventProcessorConfiguration} copying properties from the given configuration.
+     * Constructs a new {@code SubscribingEventProcessorConfiguration} copying properties from the given configuration.
      *
      * @param base The {@link EventProcessorConfiguration} to copy properties from.
      */
@@ -127,10 +133,34 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         return this;
     }
 
-    @Override
-    public SubscribingEventProcessorConfiguration interceptors(
-            @Nonnull List<MessageHandlerInterceptor<EventMessage>> interceptors) {
-        super.interceptors(interceptors);
+    /**
+     * Adds the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} for the
+     * {@link SubscribingEventProcessor} under construction.
+     *
+     * @param interceptor The {@link EventMessage}-specific {@link MessageHandlerInterceptor} to register for the
+     *                    {@link SubscribingEventProcessor} under construction.
+     * @return This {@code SubscribingEventProcessorConfiguration}, for fluent interfacing.
+     */
+    @Nonnull
+    public SubscribingEventProcessorConfiguration addInterceptor(
+            @Nonnull MessageHandlerInterceptor<EventMessage> interceptor
+    ) {
+        return addInterceptor(c -> interceptor);
+    }
+
+    /**
+     * Adds the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} factory for the
+     * {@link SubscribingEventProcessor} under construction.
+     *
+     * @param interceptorBuilder The builder constructing the {@link EventMessage}-specific
+     *                           {@link MessageHandlerInterceptor}.
+     * @return This {@code SubscribingEventProcessorConfiguration}, for fluent interfacing.
+     */
+    @Nonnull
+    public SubscribingEventProcessorConfiguration addInterceptor(
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<EventMessage>> interceptorBuilder
+    ) {
+        interceptorRegistry.registerEventInterceptor(interceptorBuilder);
         return this;
     }
 
@@ -164,10 +194,32 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         return processingStrategy;
     }
 
+    /**
+     * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link SubscribingEventProcessor} under construction.
+     *
+     * @param config The configuration to construct all {@link EventMessage}-specific
+     *               {@link MessageHandlerInterceptor MessageHandlerInterceptors}
+     * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link SubscribingEventProcessor} under construction.
+     */
+    @Nonnull
+    public List<MessageHandlerInterceptor<EventMessage>> addInterceptor(Configuration config) {
+        // First retrieve the default interceptors
+        List<MessageHandlerInterceptor<EventMessage>> interceptors =
+                config.getComponent(HandlerInterceptorRegistry.class)
+                      .eventInterceptors(config);
+        // Then add the SEP-specific interceptors
+        interceptors.addAll(interceptorRegistry.eventInterceptors(config));
+        // And return
+        return interceptors;
+    }
+
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         descriptor.describeProperty("messageSource", messageSource);
         descriptor.describeProperty("processingStrategy", processingStrategy);
+        descriptor.describeProperty("interceptors", interceptorRegistry);
     }
 }

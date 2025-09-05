@@ -18,6 +18,7 @@ package org.axonframework.messaging.interceptors;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
@@ -41,7 +42,7 @@ import java.util.List;
  * @since 5.0.0
  */
 @Internal
-public interface DispatchInterceptorRegistry {
+public interface DispatchInterceptorRegistry extends DescribableComponent {
 
     /**
      * Registers the given {@code interceptorBuilder} for a generic {@link Message} {@link MessageDispatchInterceptor}.
