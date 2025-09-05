@@ -18,13 +18,11 @@ package org.axonframework.integrationtests.testsuite.course.module;
 
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.conversion.MessageConverter;
 
@@ -44,7 +42,6 @@ public class CreateCourseConfiguration {
                     eventAppender.append(new CourseCreated(payload.courseId()));
                     return MessageStream.just(SUCCESSFUL_COMMAND_RESULT);
                 }));
-//                .annotatedCommandHandlingComponent(c -> new CreateCourseCommandHandler());
         return configurer
                 .registerEntity(stateEntity)
                 .registerCommandHandlingModule(commandHandlingModule);
