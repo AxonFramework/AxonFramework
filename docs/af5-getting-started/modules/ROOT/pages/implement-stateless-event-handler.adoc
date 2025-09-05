@@ -188,13 +188,12 @@ public class WhenStudentSubscribedThenSendNotification { // <1>
     }
 
     @EventHandler // <3>
-    MessageStream.Empty<?> react(StudentSubscribedToCourse event) { // <4>
+    void react(StudentSubscribedToCourse event) { // <4>
         var notification = new NotificationService.Notification( // <5>
                 event.studentId().toString(),
                 "You have subscribed to course " + event.courseId()
         );
         notificationService.sendNotification(notification); // <6>
-        return MessageStream.empty(); // <7>
     }
 }
 ----
@@ -205,7 +204,6 @@ public class WhenStudentSubscribedThenSendNotification { // <1>
 <4> The method parameter defines which event type we want to handle
 <5> We create a notification with the student ID and a message about the subscription
 <6> We send the notification using the injected service
-<7> We return an empty stream since this is a side effect only operation
 
 IMPORTANT: **No exactly once delivery guarantee** - Event handlers may be executed more than once in case of failures or retries. This means your `NotificationService` should be idempotent to avoid sending duplicate notifications and being considered a spammer. Consider implementing deduplication mechanisms like tracking sent notification IDs or using external services that handle deduplication.
 
