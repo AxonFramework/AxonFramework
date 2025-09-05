@@ -27,7 +27,7 @@ This is a perfect example of a stateful operation because:
 
 == Setting up the stateful event handler
 
-We'll build on the notification infrastructure from the previous tutorial, so make sure you have the `NotificationService` configured.
+We'll build upon the notification infrastructure from the previous tutorial, so make sure you have the `NotificationService` configured.
 
 === Step 1: Define the command and event
 
@@ -299,7 +299,7 @@ public class AllCoursesFullyBookedNotifierConfiguration {
 <1> Configure the event-sourced entity module for state management
 <2> Configure the event processor for handling incoming events
 <3> Register the event handler component
-<4> Token initialization workaround for testing with InMemoryEventStore
+<4> Custom token initialization for testing with `InMemoryEventStorageEngine` (this is a workaround for testing) - will not be needed in further Axon Framework milestones.
 <5> Configure command handling module with descriptive name
 <6> Register the command handler component
 <7> Register the entity module for state persistence

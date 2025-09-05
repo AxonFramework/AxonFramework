@@ -232,7 +232,7 @@ public class StudentSubscribedNotifierConfiguration {
                 .eventHandlingComponents( // <3>
                         c -> c.annotated(cfg -> new WhenStudentSubscribedThenSendNotification(cfg.getComponent(NotificationService.class))) // <4>
                 )
-                // Due to the InMemoryEventStore bug the customization is needed if you want to use the implementation in the tests
+                // Due to a minor bug in the InMemoryEventStorageEngine this customization is needed if you want to use the implementation in the tests
                 .customized((c, cus) -> cus.initialToken(s -> CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(0)))); // <5>
 
         return configurer
@@ -247,7 +247,7 @@ public class StudentSubscribedNotifierConfiguration {
 <2> We give the processor a descriptive name that indicates its purpose
 <3> We configure which components should be registered as event handlers
 <4> We create our event handler instance with the required `NotificationService` dependency
-<5> Custom token initialization for testing with InMemoryEventStore (this is a workaround for testing) - will not be needed in further Axon Framework milestones.
+<5> Custom token initialization for testing with `InMemoryEventStorageEngine` (this is a workaround for testing) - will not be needed in further Axon Framework milestones.
 <6> We register the processor module with the event processing configuration
 
 == Testing the event handler
