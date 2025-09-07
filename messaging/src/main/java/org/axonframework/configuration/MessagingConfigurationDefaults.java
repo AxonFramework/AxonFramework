@@ -102,6 +102,8 @@ import java.util.concurrent.CompletableFuture;
  *     <li>The {@link CommandBus} in a {@link InterceptingCommandBus} <b>if</b> there are any
  *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} present in the {@link DispatchInterceptorRegistry} or
  *     {@link MessageHandlerInterceptor MessageHandlerInterceptors} present in the {@link HandlerInterceptorRegistry}.</li>
+ *     <li>The {@link EventSink} in a {@link InterceptingEventSink} <b>if</b> there are any
+ *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} present in the {@link DispatchInterceptorRegistry}.</li>
  * </ul>
  *
  * @author Steven van Beelen

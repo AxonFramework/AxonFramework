@@ -45,6 +45,11 @@ import java.util.List;
  *     <li>Registers a {@link SimpleEventStore} for class {@link EventStore}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link Snapshotter}</li>
  * </ul>
+ * Furthermore, this enhancer will decorate the:
+ * <ul>
+ *     <li>The {@link EventStore} in a {@link InterceptingEventStore} <b>if</b> there are any
+ *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} present in the {@link DispatchInterceptorRegistry}.</li>
+ * </ul>
  *
  * @author Steven van Beelen
  * @since 5.0.0
