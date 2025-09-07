@@ -110,9 +110,9 @@ public class InterceptingEventSink implements EventSink, DescribableComponent {
 
         private InterceptingPublisher(
                 List<MessageDispatchInterceptor<? super Message>> interceptors,
-                BiFunction<? super Message, ProcessingContext, MessageStream<?>> dispatcher
+                BiFunction<? super Message, ProcessingContext, MessageStream<?>> publisher
         ) {
-            this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, dispatcher);
+            this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, publisher);
         }
 
         private CompletableFuture<Void> interceptAndPublish(
