@@ -18,12 +18,15 @@ package org.axonframework.messaging.interceptors;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.queryhandling.QueryMessage;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -51,24 +54,119 @@ class DefaultDispatchInterceptorRegistryTest {
     }
 
     @Test
-    void registeredDispatchInterceptorIsRetrievable() {
+    void registeredGenericInterceptorsIsReturnedForAllTypes() {
         DispatchInterceptorRegistry result = testSubject.registerInterceptor(c -> new GenericMessageDispatchInterceptor());
 
-        List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors = result.interceptors(config);
-        assertThat(dispatchInterceptors).size().isEqualTo(1);
+        List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors(config);
+        assertThat(commandInterceptors).size().isEqualTo(1);
+        List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors(config);
+        assertThat(eventInterceptors).size().isEqualTo(1);
+        List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
+        assertThat(queryInterceptors).size().isEqualTo(1);
     }
 
     @Test
-    void registeredDispatchInterceptorsAreOnlyCreatedOnce() {
+    void registeredGenericInterceptorsAreOnlyConstructedOnce() {
         AtomicInteger builderInvocationCount = new AtomicInteger(0);
         DispatchInterceptorRegistry result = testSubject.registerInterceptor(c -> {
             builderInvocationCount.incrementAndGet();
             return new GenericMessageDispatchInterceptor();
         });
 
-        result.interceptors(config);
-        result.interceptors(config);
-        result.interceptors(config);
+        result.commandInterceptors(config);
+        result.commandInterceptors(config);
+        result.eventInterceptors(config);
+        result.eventInterceptors(config);
+        result.queryInterceptors(config);
+        result.queryInterceptors(config);
+
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
+    }
+
+    @Test
+    void registeredCommandInterceptorsIsReturnedFromCommandInterceptorsOnly() {
+        DispatchInterceptorRegistry result = testSubject.registerCommandInterceptor(c -> new CommandDispatchInterceptor());
+
+        List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors(config);
+        assertThat(commandInterceptors).size().isEqualTo(1);
+        List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors(config);
+        assertThat(eventInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
+        assertThat(queryInterceptors).size().isEqualTo(0);
+    }
+
+    @Test
+    void registeredCommandInterceptorsAreOnlyCreatedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        DispatchInterceptorRegistry result = testSubject.registerCommandInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new CommandDispatchInterceptor();
+        });
+
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors(config);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        commandInterceptors = result.commandInterceptors(config);
+        commandInterceptors = result.commandInterceptors(config);
+        assertThat(commandInterceptors).size().isEqualTo(1);
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
+    }
+
+    @Test
+    void registeredEventInterceptorsIsReturnedFromEventInterceptorsOnly() {
+        DispatchInterceptorRegistry result = testSubject.registerEventInterceptor(c -> new EventDispatchInterceptor());
+
+        List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors(config);
+        assertThat(commandInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors(config);
+        assertThat(eventInterceptors).size().isEqualTo(1);
+        List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
+        assertThat(queryInterceptors).size().isEqualTo(0);
+    }
+
+    @Test
+    void registeredEventInterceptorsAreOnlyCreatedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        DispatchInterceptorRegistry result = testSubject.registerEventInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new EventDispatchInterceptor();
+        });
+
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors(config);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        eventInterceptors = result.eventInterceptors(config);
+        eventInterceptors = result.eventInterceptors(config);
+        assertThat(eventInterceptors).size().isEqualTo(1);
+        assertThat(builderInvocationCount.get()).isEqualTo(1);
+    }
+
+    @Test
+    void registeredQueryInterceptorsIsReturnedFromQueryInterceptorsOnly() {
+        DispatchInterceptorRegistry result = testSubject.registerQueryInterceptor(c -> new QueryDispatchInterceptor());
+
+        List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors(config);
+        assertThat(commandInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors(config);
+        assertThat(eventInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
+        assertThat(queryInterceptors).size().isEqualTo(1);
+    }
+
+    @Test
+    void registeredQueryInterceptorsAreOnlyCreatedOnce() {
+        AtomicInteger builderInvocationCount = new AtomicInteger(0);
+        DispatchInterceptorRegistry result = testSubject.registerQueryInterceptor(c -> {
+            builderInvocationCount.incrementAndGet();
+            return new QueryDispatchInterceptor();
+        });
+
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
+        //noinspection UnusedAssignment | Additional invocations are on purpose to validate the builder is invoked once.
+        queryInterceptors = result.queryInterceptors(config);
+        queryInterceptors = result.queryInterceptors(config);
+        assertThat(queryInterceptors).size().isEqualTo(1);
         assertThat(builderInvocationCount.get()).isEqualTo(1);
     }
 
@@ -79,6 +177,39 @@ class DefaultDispatchInterceptorRegistryTest {
         public MessageStream<?> interceptOnDispatch(@Nonnull Message message,
                                                     @Nullable ProcessingContext context,
                                                     @Nonnull MessageDispatchInterceptorChain<Message> chain) {
+            return chain.proceed(message, context);
+        }
+    }
+
+    static class CommandDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage> {
+
+        @Nonnull
+        @Override
+        public MessageStream<?> interceptOnDispatch(@Nonnull CommandMessage message,
+                                                    @Nullable ProcessingContext context,
+                                                    @Nonnull MessageDispatchInterceptorChain<CommandMessage> chain) {
+            return chain.proceed(message, context);
+        }
+    }
+
+    static class EventDispatchInterceptor implements MessageDispatchInterceptor<EventMessage> {
+
+        @Nonnull
+        @Override
+        public MessageStream<?> interceptOnDispatch(@Nonnull EventMessage message,
+                                                    @Nullable ProcessingContext context,
+                                                    @Nonnull MessageDispatchInterceptorChain<EventMessage> chain) {
+            return chain.proceed(message, context);
+        }
+    }
+
+    static class QueryDispatchInterceptor implements MessageDispatchInterceptor<QueryMessage> {
+
+        @Nonnull
+        @Override
+        public MessageStream<?> interceptOnDispatch(@Nonnull QueryMessage message,
+                                                    @Nullable ProcessingContext context,
+                                                    @Nonnull MessageDispatchInterceptorChain<QueryMessage> chain) {
             return chain.proceed(message, context);
         }
     }
