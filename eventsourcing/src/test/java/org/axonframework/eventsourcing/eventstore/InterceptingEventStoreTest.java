@@ -20,6 +20,7 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.InterceptingEventSink;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
@@ -237,7 +238,7 @@ class InterceptingEventStoreTest {
         testSubject.describeTo(descriptor);
 
         Map<String, Object> describedProperties = descriptor.getDescribedProperties();
-        assertThat(describedProperties).size().isEqualTo(2);
+        assertThat(describedProperties).size().isEqualTo(3);
         assertThat(describedProperties).containsKey("delegate");
         assertThat(describedProperties.get("delegate")).isEqualTo(eventStore);
         assertThat(describedProperties).containsKey("dispatchInterceptors");
@@ -245,5 +246,7 @@ class InterceptingEventStoreTest {
         List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
                 (List<MessageDispatchInterceptor<? super Message>>) describedProperties.get("dispatchInterceptors");
         assertThat(dispatchInterceptors).containsExactly(interceptorOne, interceptorTwo);
+        assertThat(describedProperties).containsKey("delegateSink");
+        assertThat(describedProperties.get("delegateSink")).isInstanceOf(InterceptingEventSink.class);
     }
 }

@@ -23,6 +23,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.InterceptingEventSink;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context;
@@ -36,7 +37,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -71,7 +71,7 @@ public class InterceptingEventStore implements EventStore {
     private final EventStore delegate;
     private final List<MessageDispatchInterceptor<? super Message>> interceptors;
     private final InterceptingAppender interceptingAppender;
-    private final InterceptingPublisher interceptingPublisher;
+    private final InterceptingEventSink delegateSink;
 
     private final Context.ResourceKey<EventStoreTransaction> delegateTransactionKey;
     private final Context.ResourceKey<EventStoreTransaction> interceptingTransactionKey;
@@ -93,9 +93,9 @@ public class InterceptingEventStore implements EventStore {
 
         this.delegate = Objects.requireNonNull(delegate, "The EventStore may not be null.");
         this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interceptors must not be null.");
-        this.interceptingAppender = new InterceptingAppender(interceptors,
-                                                             context -> context.getResource(delegateTransactionKey));
-        this.interceptingPublisher = new InterceptingPublisher(interceptors, this::publishEvent);
+        this.interceptingAppender =
+                new InterceptingAppender(interceptors, context -> context.getResource(delegateTransactionKey));
+        this.delegateSink = new InterceptingEventSink(delegate, interceptors);
     }
 
     @Override
@@ -115,18 +115,7 @@ public class InterceptingEventStore implements EventStore {
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
                                            @Nonnull List<EventMessage> events) {
-        return interceptingPublisher.interceptAndPublish(events, context);
-    }
-
-    private MessageStream.Empty<Message> publishEvent(@Nonnull Message message,
-                                                      @Nullable ProcessingContext context) {
-        if (!(message instanceof EventMessage event)) {
-            // The compiler should avoid this from happening.
-            throw new IllegalArgumentException("Unsupported message implementation: " + message);
-        }
-        return MessageStream.fromFuture(delegate.publish(context, event)
-                                                .thenApply(v -> null))
-                            .ignoreEntries();
+        return delegateSink.publish(context, events);
     }
 
     @Override
@@ -153,6 +142,7 @@ public class InterceptingEventStore implements EventStore {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("dispatchInterceptors", interceptors);
+        descriptor.describeProperty("delegateSink", delegateSink);
     }
 
     private class InterceptingEventStoreTransaction implements EventStoreTransaction {
@@ -210,30 +200,6 @@ public class InterceptingEventStore implements EventStore {
                             .ignoreEntries()
                             .asCompletableFuture()
                             .join();
-        }
-    }
-
-    private static class InterceptingPublisher {
-
-        private final DefaultMessageDispatchInterceptorChain<Message> interceptorChain;
-
-        private InterceptingPublisher(List<MessageDispatchInterceptor<? super Message>> interceptors,
-                                      BiFunction<? super Message, ProcessingContext, MessageStream<?>> publisher) {
-            this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, publisher);
-        }
-
-        private CompletableFuture<Void> interceptAndPublish(
-                @Nonnull List<EventMessage> events,
-                @Nullable ProcessingContext context
-        ) {
-            MessageStream<Message> resultStream = MessageStream.empty();
-            for (EventMessage event : events) {
-                resultStream = resultStream.concatWith(interceptorChain.proceed(event, context)
-                                                                       .cast());
-            }
-            return resultStream.ignoreEntries()
-                               .asCompletableFuture()
-                               .thenApply(v -> null);
         }
     }
 }
