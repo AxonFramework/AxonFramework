@@ -46,7 +46,7 @@ import java.util.function.BiFunction;
  * @since 5.0.0
  */
 @Internal
-public class InterceptingEventSink implements EventSink, DescribableComponent {
+public class InterceptingEventSink implements EventSink {
 
     /**
      * The order in which the {@link InterceptingEventSink} is applied as a
