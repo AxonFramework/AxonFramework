@@ -65,6 +65,7 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -280,6 +281,9 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 EventSink.class,
                 InterceptingEventSink.DECORATION_ORDER,
                 (config, name, delegate) -> {
+                    if (!isDirectImplementationOf(delegate, EventSink.class)) {
+                        return delegate;
+                    }
                     List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
                             config.getComponent(DispatchInterceptorRegistry.class).interceptors(config);
                     return dispatchInterceptors.isEmpty()
@@ -287,5 +291,11 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                             : new InterceptingEventSink(delegate, dispatchInterceptors);
                 }
         );
+    }
+
+    private static boolean isDirectImplementationOf(@Nonnull Object component,
+                                                    @Nonnull Class<EventSink> clazz) {
+        return Arrays.stream(component.getClass().getInterfaces())
+                     .anyMatch(iface -> iface == clazz);
     }
 }
