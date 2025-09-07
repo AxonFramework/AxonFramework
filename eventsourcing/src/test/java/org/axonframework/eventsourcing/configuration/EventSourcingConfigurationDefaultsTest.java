@@ -52,8 +52,8 @@ class EventSourcingConfigurationDefaultsTest {
     }
 
     @Test
-    void orderEqualsMaxInteger() {
-        assertEquals(Integer.MAX_VALUE - 10, testSubject.order());
+    void orderEqualsEnhancerOrderConstant() {
+        assertEquals(EventSourcingConfigurationDefaults.ENHANCER_ORDER, testSubject.order());
     }
 
     @Test
