@@ -71,7 +71,7 @@ public class InterceptingEventSink implements EventSink {
      * the given {@code delegate}.
      *
      * @param delegate     The delegate {@code EventSink} that will handle all dispatching and handling logic.
-     * @param interceptors The interceptors to invoke before dispatching a command and on the command result.
+     * @param interceptors The interceptors to invoke before publishing an event.
      */
     public InterceptingEventSink(@Nonnull EventSink delegate,
                                  @Nonnull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {

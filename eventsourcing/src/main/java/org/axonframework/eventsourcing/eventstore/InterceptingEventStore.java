@@ -82,7 +82,7 @@ public class InterceptingEventStore implements EventStore {
      * {@link #publish(ProcessingContext, List) publishing} is done by the given {@code delegate}.
      *
      * @param delegate     The delegate {@code EventSink} that will handle all dispatching and handling logic.
-     * @param interceptors The interceptors to invoke before dispatching a command and on the command result.
+     * @param interceptors The interceptors to invoke before appending and publishing an event.
      */
     @Internal
     public InterceptingEventStore(@Nonnull EventStore delegate,
