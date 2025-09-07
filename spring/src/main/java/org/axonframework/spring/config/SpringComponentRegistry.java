@@ -323,8 +323,8 @@ public class SpringComponentRegistry implements
      *     <li>Look for additional {@link ConfigurationEnhancer ConfigurationEnhancers} and {@link #registerEnhancer(ConfigurationEnhancer) registers} them.</li>
      *     <li>Invoke {@link ConfigurationEnhancer#enhance(ComponentRegistry)} on all registered enhancers.</li>
      *     <li>Looks for any {@link DecoratorDefinition DecoratorDefinitions} and {@link #registerDecorator(DecoratorDefinition) registers} them.</li>
+     *     <li>Registers <b>all</b> {@link Component Components} with the Application Context. This occurs before {@link DecoratorDefinition} registration to ensure decorators are not invoked twice!</li>
      *     <li>Decorate all registered {@code Components} by invoking all {@link #registerDecorator(DecoratorDefinition) registered decorators}.</li>
-     *     <li>Registers <b>all</b> {@link Component Components} with the Application Context.</li>
      *     <li>Looks for any {@link Module Modules} and {@link #registerModule(Module) registers} them.</li>
      *     <li>Builds all registered {@code Modules} so that they become available to {@link Configuration#getModuleConfigurations()}.</li>
      *     <li>Looks for any {@link ComponentFactory ComponentFactories} and {@link #registerFactory(ComponentFactory) registers} them.</li>
@@ -338,8 +338,8 @@ public class SpringComponentRegistry implements
         scanForConfigurationEnhancers();
         invokeEnhancers();
         scanForDecoratorDefinitions();
-        decorateComponents();
         registerLocalComponentsWithApplicationContext();
+        decorateComponents();
         scanForModules();
         buildModules();
         scanForComponentFactories();
