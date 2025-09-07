@@ -198,7 +198,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     @Test
     void registerDispatchInterceptorMakesInterceptorRetrievableThroughTheInterceptorRegistryForAllTypes() {
         AtomicInteger counter = new AtomicInteger();
-        MessageDispatchInterceptor<? super Message> dispatchInterceptor = (message, context, interceptorChain) -> {
+        MessageDispatchInterceptor<Message> dispatchInterceptor = (message, context, interceptorChain) -> {
             counter.incrementAndGet();
             //noinspection DataFlowIssue | Result is not important to validate invocation
             return null;

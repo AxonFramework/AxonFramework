@@ -248,7 +248,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
     public MessagingConfigurer registerDispatchInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super Message>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<Message>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 DispatchInterceptorRegistry.class,
@@ -273,7 +273,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
     public MessagingConfigurer registerCommandDispatchInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<CommandMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 DispatchInterceptorRegistry.class,
@@ -298,7 +298,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
     public MessagingConfigurer registerEventDispatchInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<EventMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 DispatchInterceptorRegistry.class,
@@ -323,7 +323,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
     public MessagingConfigurer registerQueryDispatchInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<QueryMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 DispatchInterceptorRegistry.class,

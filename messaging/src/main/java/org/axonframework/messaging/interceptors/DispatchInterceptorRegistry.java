@@ -57,7 +57,7 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      */
     @Nonnull
     DispatchInterceptorRegistry registerInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super Message>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<Message>> interceptorBuilder
     );
 
     /**
@@ -70,7 +70,7 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      */
     @Nonnull
     DispatchInterceptorRegistry registerCommandInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<CommandMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
     );
 
     /**
@@ -83,7 +83,7 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      */
     @Nonnull
     DispatchInterceptorRegistry registerEventInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<EventMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
     );
 
     /**
@@ -96,7 +96,7 @@ public interface DispatchInterceptorRegistry extends DescribableComponent {
      */
     @Nonnull
     DispatchInterceptorRegistry registerQueryInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<QueryMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
     );
 
     /**
