@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * TODO This should be regarded as a playground object to verify the API. Feel free to remove, adjust, or replicate this class to your needs.
+ * TODO #3488 This should be regarded as a playground object to verify the API. Feel free to remove, adjust, or replicate this class to your needs.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -44,10 +44,10 @@ public class SimpleQueryHandlingComponent implements QueryHandlingComponent {
     public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
                                                          @Nonnull ProcessingContext context) {
         QualifiedName name = query.type().qualifiedName();
-        // TODO #3103 - add interceptor knowledge
+        // TODO #3488 add interceptor knowledge
         QueryHandler handler = queryHandlers.get(name);
         if (handler == null) {
-            // TODO this would benefit from a dedicate exception
+            // TODO #3488 this would benefit from a dedicate exception
             return MessageStream.failed(new IllegalArgumentException(
                     "No handler found for query with name [" + name + "]"
             ));
