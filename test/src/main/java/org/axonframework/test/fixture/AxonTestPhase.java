@@ -119,6 +119,12 @@ public interface AxonTestPhase {
          * @return A {@link When} instance that allows executing the test.
          */
         When when();
+
+        /**
+         * Stops the fixture, releasing any active resources, like registered handlers or pending event processing
+         * tasks.
+         */
+        void stop();
     }
 
     /**
@@ -297,6 +303,9 @@ public interface AxonTestPhase {
      */
     interface When {
 
+        /**
+         * When-phase specific for executing a {@link CommandMessage command}.
+         */
         interface Command {
 
             /**
@@ -307,6 +316,9 @@ public interface AxonTestPhase {
             Then.Command then();
         }
 
+        /**
+         * When-phase specific for publishing an {@link EventMessage event}.
+         */
         interface Event {
 
             /**
@@ -568,34 +580,6 @@ public interface AxonTestPhase {
             T noCommands();
 
             /**
-             * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
-             * test scenarios within a single test method. The same configuration from the original fixture is reused,
-             * so all components are shared among the invocations.
-             * <p>
-             * Example usage:
-             * <pre>
-             * {@code
-             * fixture.given()
-             *        .event(new AccountCreatedEvent("account-1"))
-             *        .when()
-             *        .command(new WithdrawMoneyCommand("account-1", 50.00))
-             *        .then()
-             *        .events(new MoneyWithdrawnEvent("account-1", 50.00))
-             *        .success()
-             *        .and()  // Return to setup phase with same configuration
-             *        .given() // Start a new scenario
-             *        .event(new AccountCreatedEvent("account-2"))
-             *        .when()
-             *        .command(new WithdrawMoneyCommand("account-2", 30.00))
-             *        .then()
-             *        .events(new MoneyWithdrawnEvent("account-2", 30.00));
-             * }
-             * </pre>
-             *
-             * @return a {@link Setup} instance that allows configuring a new test scenario.
-             */
-
-            /**
              * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
              * should be exactly of that type, subclasses are not accepted.
              * <p>
@@ -631,7 +615,42 @@ public interface AxonTestPhase {
              */
             T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer);
 
+            /**
+             * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
+             * test scenarios within a single test method. The same configuration from the original fixture is reused,
+             * so all components are shared among the invocations.
+             * <p>
+             * Example usage:
+             * <pre>
+             * {@code
+             * fixture.given()
+             *        .event(new AccountCreatedEvent("account-1"))
+             *        .when()
+             *        .command(new WithdrawMoneyCommand("account-1", 50.00))
+             *        .then()
+             *        .events(new MoneyWithdrawnEvent("account-1", 50.00))
+             *        .success()
+             *        .and()  // Return to setup phase with same configuration
+             *        .given() // Start a new scenario
+             *        .event(new AccountCreatedEvent("account-2"))
+             *        .when()
+             *        .command(new WithdrawMoneyCommand("account-2", 30.00))
+             *        .then()
+             *        .events(new MoneyWithdrawnEvent("account-2", 30.00));
+             * }
+             * </pre>
+             *
+             * @return A {@link Setup} instance that allows configuring a new test scenario.
+             */
             Setup and();
+
+            /**
+             * Stops the fixture, releasing any active resources, like registered handlers or pending event processing
+             * tasks.
+             */
+            default void stop() {
+                and().stop();
+            }
         }
     }
 }

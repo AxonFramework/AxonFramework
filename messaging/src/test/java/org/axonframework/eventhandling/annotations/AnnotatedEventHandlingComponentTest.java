@@ -27,10 +27,10 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
@@ -206,7 +206,11 @@ class AnnotatedEventHandlingComponentTest {
             assertTrue(result.error().isPresent());
             var exception = result.error().get();
             assertInstanceOf(RuntimeException.class, exception);
-            assertEquals("No handler found for event with name [java.lang.Integer]", exception.getMessage());
+            assertEquals(
+                    "No handler found for event with name [java.lang.Integer] in component "
+                            + "[org.axonframework.eventhandling.SimpleEventHandlingComponent]",
+                    exception.getMessage()
+            );
             assertEquals(0, eventHandler.handledCount);
         }
 
