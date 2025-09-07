@@ -104,6 +104,10 @@ import java.util.List;
 public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     /**
+     * The order of {@code this} enhancer compared to others, equal to {@link Integer#MAX_VALUE}.
+     */
+    public static final int ENHANCER_ORDER = Integer.MAX_VALUE;
+    /**
      * The order in which the {@link ConvertingCommandGateway} is applied to the {@link CommandGateway} in the
      * {@link ComponentRegistry}. As such, any decorator with a lower value will be applied to the delegate, and any
      * higher value will be applied to the {@link ConvertingCommandGateway} itself. Using the same value can either lead
@@ -118,7 +122,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     @Override
     public int order() {
-        return Integer.MAX_VALUE;
+        return ENHANCER_ORDER;
     }
 
     @Override
