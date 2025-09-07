@@ -47,7 +47,7 @@ import java.util.List;
 @Internal
 public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRegistry {
 
-    private static final TypeReference<MessageDispatchInterceptor<? super Message>> INTERCEPTOR_TYPE_REF = new TypeReference<>() {
+    private static final TypeReference<MessageDispatchInterceptor<Message>> INTERCEPTOR_TYPE_REF = new TypeReference<>() {
     };
     private static final TypeReference<MessageDispatchInterceptor<? super CommandMessage>> COMMAND_INTERCEPTOR_TYPE_REF = new TypeReference<>() {
     };
@@ -63,12 +63,12 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @Nonnull
     @Override
     public DispatchInterceptorRegistry registerInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super Message>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<Message>> interceptorBuilder
     ) {
         GenericInterceptorDefinition genericInterceptorDef = new GenericInterceptorDefinition(interceptorBuilder);
 
         registerCommandInterceptor(config -> {
-            MessageDispatchInterceptor<? super Message> genericInterceptor = genericInterceptorDef.doResolve(config);
+            MessageDispatchInterceptor<Message> genericInterceptor = genericInterceptorDef.doResolve(config);
             return (message, context, chain) -> genericInterceptor.interceptOnDispatch(
                     message,
                     context,
@@ -76,7 +76,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
             );
         });
         registerEventInterceptor(config -> {
-            MessageDispatchInterceptor<? super Message> genericInterceptor = genericInterceptorDef.doResolve(config);
+            MessageDispatchInterceptor<Message> genericInterceptor = genericInterceptorDef.doResolve(config);
             return (message, context, chain) -> genericInterceptor.interceptOnDispatch(
                     message,
                     context,
@@ -84,7 +84,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
             );
         });
         registerQueryInterceptor(config -> {
-            MessageDispatchInterceptor<? super Message> genericInterceptor = genericInterceptorDef.doResolve(config);
+            MessageDispatchInterceptor<Message> genericInterceptor = genericInterceptorDef.doResolve(config);
             return (message, context, chain) -> genericInterceptor.interceptOnDispatch(
                     message,
                     context,
@@ -97,7 +97,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @Nonnull
     @Override
     public DispatchInterceptorRegistry registerCommandInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<CommandMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super CommandMessage>> interceptorBuilder
     ) {
         this.commandInterceptorDefinitions.add(ComponentDefinition.ofType(COMMAND_INTERCEPTOR_TYPE_REF)
                                                                   .withBuilder(interceptorBuilder));
@@ -107,7 +107,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @Nonnull
     @Override
     public DispatchInterceptorRegistry registerEventInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<EventMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super EventMessage>> interceptorBuilder
     ) {
         this.eventInterceptorDefinitions.add(ComponentDefinition.ofType(EVENT_INTERCEPTOR_TYPE_REF)
                                                                 .withBuilder(interceptorBuilder));
@@ -117,7 +117,7 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
     @Nonnull
     @Override
     public DispatchInterceptorRegistry registerQueryInterceptor(
-            @Nonnull ComponentBuilder<MessageDispatchInterceptor<QueryMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<? super QueryMessage>> interceptorBuilder
     ) {
         this.queryInterceptorDefinitions.add(ComponentDefinition.ofType(QUERY_INTERCEPTOR_TYPE_REF)
                                                                 .withBuilder(interceptorBuilder));
@@ -181,9 +181,9 @@ public class DefaultDispatchInterceptorRegistry implements DispatchInterceptorRe
 
     // Private class there to simplify use in registerInterceptor(...) only.
     private static class GenericInterceptorDefinition extends
-            LazyInitializedComponentDefinition<MessageDispatchInterceptor<? super Message>, MessageDispatchInterceptor<? super Message>> {
+            LazyInitializedComponentDefinition<MessageDispatchInterceptor<Message>, MessageDispatchInterceptor<Message>> {
 
-        public GenericInterceptorDefinition(ComponentBuilder<MessageDispatchInterceptor<? super Message>> builder) {
+        public GenericInterceptorDefinition(ComponentBuilder<MessageDispatchInterceptor<Message>> builder) {
             super(new Component.Identifier<>(INTERCEPTOR_TYPE_REF, null), builder);
         }
     }
