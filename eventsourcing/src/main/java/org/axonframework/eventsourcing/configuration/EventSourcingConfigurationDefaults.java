@@ -21,6 +21,7 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.MessagingConfigurationDefaults;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
@@ -29,7 +30,6 @@ import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
 
@@ -80,8 +80,8 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
                 EventStore.class,
                 InterceptingEventStore.DECORATION_ORDER,
                 (config, name, delegate) -> {
-                    List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).interceptors(config);
+                    List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors =
+                            config.getComponent(DispatchInterceptorRegistry.class).eventInterceptors(config);
                     return dispatchInterceptors.isEmpty()
                             ? delegate
                             : new InterceptingEventStore(delegate, dispatchInterceptors);

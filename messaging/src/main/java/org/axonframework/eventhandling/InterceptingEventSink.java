@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
@@ -62,7 +61,7 @@ public class InterceptingEventSink implements EventSink {
     public static final int DECORATION_ORDER = Integer.MIN_VALUE + 100;
 
     private final EventSink delegate;
-    private final List<MessageDispatchInterceptor<? super Message>> interceptors;
+    private final List<MessageDispatchInterceptor<? super EventMessage>> interceptors;
     private final InterceptingPublisher interceptingPublisher;
 
     /**
@@ -72,10 +71,10 @@ public class InterceptingEventSink implements EventSink {
      * the given {@code delegate}.
      *
      * @param delegate     The delegate {@code EventSink} that will handle all dispatching and handling logic.
-     * @param interceptors The interceptors to invoke before dispatching a command and on the command result.
+     * @param interceptors The interceptors to invoke before publishing an event.
      */
     public InterceptingEventSink(@Nonnull EventSink delegate,
-                                 @Nonnull List<MessageDispatchInterceptor<? super Message>> interceptors) {
+                                 @Nonnull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
         this.delegate = Objects.requireNonNull(delegate, "The EventSink may not be null.");
         this.interceptors = Objects.requireNonNull(interceptors, "The dispatch interceptors must not be null.");
         this.interceptingPublisher = new InterceptingPublisher(interceptors, this::publishEvent);
@@ -87,14 +86,9 @@ public class InterceptingEventSink implements EventSink {
         return interceptingPublisher.interceptAndPublish(events, context);
     }
 
-    private MessageStream.Empty<Message> publishEvent(@Nonnull Message message,
+    private MessageStream.Empty<Message> publishEvent(@Nonnull EventMessage event,
                                                       @Nullable ProcessingContext context) {
-        if (!(message instanceof EventMessage event)) {
-            // The compiler should avoid this from happening.
-            throw new IllegalArgumentException("Unsupported message implementation: " + message);
-        }
-        return MessageStream.fromFuture(delegate.publish(context, event)
-                                                .thenApply(v -> null))
+        return MessageStream.fromFuture(delegate.publish(context, event).thenApply(v -> null))
                             .ignoreEntries();
     }
 
@@ -106,11 +100,11 @@ public class InterceptingEventSink implements EventSink {
 
     private static class InterceptingPublisher {
 
-        private final DefaultMessageDispatchInterceptorChain<Message> interceptorChain;
+        private final DefaultMessageDispatchInterceptorChain<? super EventMessage> interceptorChain;
 
         private InterceptingPublisher(
-                List<MessageDispatchInterceptor<? super Message>> interceptors,
-                BiFunction<? super Message, ProcessingContext, MessageStream<?>> publisher
+                List<MessageDispatchInterceptor<? super EventMessage>> interceptors,
+                BiFunction<? super EventMessage, ProcessingContext, MessageStream<?>> publisher
         ) {
             this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, publisher);
         }

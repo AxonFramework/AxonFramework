@@ -259,6 +259,81 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
+     * Registers the given {@link CommandMessage}-specific {@link MessageDispatchInterceptor} factory in this
+     * {@code Configurer}.
+     * <p>
+     * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
+     * {@code CommandMessage}-specific {@code MessageDispatchInterceptor} instance.
+     * <p>
+     * {@code CommandMessage} {@code MessageDispatchInterceptors} are typically automatically registered with all
+     * applicable infrastructure components through the {@link DispatchInterceptorRegistry}.
+     *
+     * @param interceptorBuilder The builder constructing the {@link CommandMessage}-specific
+     *                           {@link MessageDispatchInterceptor}.
+     * @return A {@code ModellingConfigurer} instance for further configuring.
+     */
+    public MessagingConfigurer registerCommandDispatchInterceptor(
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<CommandMessage>> interceptorBuilder
+    ) {
+        delegate.componentRegistry(cr -> cr.registerDecorator(
+                DispatchInterceptorRegistry.class,
+                0,
+                (config, name, delegate) -> delegate.registerCommandInterceptor(interceptorBuilder)
+        ));
+        return this;
+    }
+
+    /**
+     * Registers the given {@link EventMessage}-specific {@link MessageDispatchInterceptor} factory in this
+     * {@code Configurer}.
+     * <p>
+     * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
+     * {@code EventMessage}-specific {@code MessageDispatchInterceptor} instance.
+     * <p>
+     * {@code EventMessage}-specific {@code MessageDispatchInterceptors} are typically automatically registered with all
+     * applicable infrastructure components through the {@link DispatchInterceptorRegistry}.
+     *
+     * @param interceptorBuilder The builder constructing the {@link EventMessage}-specific
+     *                           {@link MessageDispatchInterceptor}.
+     * @return A {@code ModellingConfigurer} instance for further configuring.
+     */
+    public MessagingConfigurer registerEventDispatchInterceptor(
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<EventMessage>> interceptorBuilder
+    ) {
+        delegate.componentRegistry(cr -> cr.registerDecorator(
+                DispatchInterceptorRegistry.class,
+                0,
+                (config, name, delegate) -> delegate.registerEventInterceptor(interceptorBuilder)
+        ));
+        return this;
+    }
+
+    /**
+     * Registers the given {@link QueryMessage}-specific {@link MessageDispatchInterceptor} factory in this
+     * {@code Configurer}.
+     * <p>
+     * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
+     * {@code QueryMessage}-specific {@code MessageDispatchInterceptor} instance.
+     * <p>
+     * {@code QueryMessage}-specific {@code MessageDispatchInterceptors} are typically automatically registered with all
+     * applicable infrastructure components through the {@link DispatchInterceptorRegistry}.
+     *
+     * @param interceptorBuilder The builder constructing the {@link QueryMessage}-specific
+     *                           {@link MessageDispatchInterceptor}.
+     * @return A {@code ModellingConfigurer} instance for further configuring.
+     */
+    public MessagingConfigurer registerQueryDispatchInterceptor(
+            @Nonnull ComponentBuilder<MessageDispatchInterceptor<QueryMessage>> interceptorBuilder
+    ) {
+        delegate.componentRegistry(cr -> cr.registerDecorator(
+                DispatchInterceptorRegistry.class,
+                0,
+                (config, name, delegate) -> delegate.registerQueryInterceptor(interceptorBuilder)
+        ));
+        return this;
+    }
+
+    /**
      * Registers the given generic {@link Message} {@link MessageHandlerInterceptor} factory in this
      * {@code Configurer}.
      * <p>

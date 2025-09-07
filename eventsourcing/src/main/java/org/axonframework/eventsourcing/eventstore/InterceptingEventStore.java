@@ -28,7 +28,6 @@ import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -69,7 +68,7 @@ public class InterceptingEventStore implements EventStore {
     public static final int DECORATION_ORDER = Integer.MIN_VALUE + 50;
 
     private final EventStore delegate;
-    private final List<MessageDispatchInterceptor<? super Message>> interceptors;
+    private final List<MessageDispatchInterceptor<? super EventMessage>> interceptors;
     private final InterceptingAppender interceptingAppender;
     private final InterceptingEventSink delegateSink;
 
@@ -83,11 +82,11 @@ public class InterceptingEventStore implements EventStore {
      * {@link #publish(ProcessingContext, List) publishing} is done by the given {@code delegate}.
      *
      * @param delegate     The delegate {@code EventSink} that will handle all dispatching and handling logic.
-     * @param interceptors The interceptors to invoke before dispatching a command and on the command result.
+     * @param interceptors The interceptors to invoke before appending and publishing an event.
      */
     @Internal
     public InterceptingEventStore(@Nonnull EventStore delegate,
-                                  @Nonnull List<MessageDispatchInterceptor<? super Message>> interceptors) {
+                                  @Nonnull List<MessageDispatchInterceptor<? super EventMessage>> interceptors) {
         this.delegateTransactionKey = Context.ResourceKey.withLabel("delegateTransaction");
         this.interceptingTransactionKey = Context.ResourceKey.withLabel("interceptingTransaction");
 
@@ -179,17 +178,12 @@ public class InterceptingEventStore implements EventStore {
 
     private static class InterceptingAppender {
 
-        private final DefaultMessageDispatchInterceptorChain<Message> interceptorChain;
+        private final DefaultMessageDispatchInterceptorChain<? super EventMessage> interceptorChain;
 
-        private InterceptingAppender(List<MessageDispatchInterceptor<? super Message>> interceptors,
+        private InterceptingAppender(List<MessageDispatchInterceptor<? super EventMessage>> interceptors,
                                      Function<ProcessingContext, EventStoreTransaction> transactionProvider) {
-            this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, (message, context) -> {
-                if (!(message instanceof EventMessage event)) {
-                    // The compiler should avoid this from happening.
-                    throw new IllegalArgumentException("Unsupported message implementation: " + message);
-                }
-                transactionProvider.apply(context)
-                                   .appendEvent(event);
+            this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, (event, context) -> {
+                transactionProvider.apply(context).appendEvent(event);
                 return MessageStream.empty();
             });
         }
