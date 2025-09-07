@@ -16,12 +16,12 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
 import org.axonframework.spring.config.SpringComponentRegistry;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -57,15 +57,22 @@ import java.util.Optional;
 })
 public class InterceptorAutoConfiguration {
 
-    // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
-//    @Bean
-//    @ConditionalOnBean(MessageDispatchInterceptor.class)
-//    public InitializingBean commandDispatchInterceptorConfigurer(
-//            CommandGateway commandGateway,
-//            Optional<List<MessageDispatchInterceptor<? super CommandMessage>>> interceptors
-//    ) {
-//        return () -> interceptors.ifPresent(it -> it.forEach(commandGateway::registerDispatchInterceptor));
-//    }
+    @Bean
+    @ConditionalOnBean(MessageDispatchInterceptor.class)
+    public DecoratorDefinition<DispatchInterceptorRegistry, DispatchInterceptorRegistry> dispatchInterceptorEnhancer(
+            Optional<List<MessageDispatchInterceptor<? super Message>>> interceptors
+    ) {
+        return DecoratorDefinition.forType(DispatchInterceptorRegistry.class)
+                                  .with((config, name, delegate) -> {
+                                      if (interceptors.isPresent()) {
+                                          for (MessageDispatchInterceptor<? super Message> interceptor : interceptors.get()) {
+                                              delegate = delegate.registerInterceptor(c -> interceptor);
+                                          }
+                                      }
+                                      return delegate;
+                                  });
+    }
+
 
     // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
 //    @Bean
