@@ -43,7 +43,6 @@ import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.ConfigurationApplicationContext;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -286,8 +285,8 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 (config, name, delegate) -> {
                     List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors =
                             config.getComponent(HandlerInterceptorRegistry.class).commandInterceptors(config);
-                    List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).interceptors(config);
+                    List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors =
+                            config.getComponent(DispatchInterceptorRegistry.class).commandInterceptors(config);
                     return handlerInterceptors.isEmpty() && dispatchInterceptors.isEmpty()
                             ? delegate
                             : new InterceptingCommandBus(delegate, handlerInterceptors, dispatchInterceptors);
@@ -300,8 +299,8 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                     if (!isDirectImplementationOf(delegate, EventSink.class)) {
                         return delegate;
                     }
-                    List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).interceptors(config);
+                    List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors =
+                            config.getComponent(DispatchInterceptorRegistry.class).eventInterceptors(config);
                     return dispatchInterceptors.isEmpty()
                             ? delegate
                             : new InterceptingEventSink(delegate, dispatchInterceptors);
