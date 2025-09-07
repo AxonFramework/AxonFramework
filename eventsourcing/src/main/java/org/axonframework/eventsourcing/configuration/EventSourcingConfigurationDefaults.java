@@ -25,9 +25,15 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
+
+import java.util.List;
 
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link EventSourcingConfigurer}.
@@ -58,11 +64,24 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
+        // Register components
         registry.registerIfNotPresent(TagResolver.class, EventSourcingConfigurationDefaults::defaultTagResolver)
                 .registerIfNotPresent(EventStorageEngine.class,
                                       EventSourcingConfigurationDefaults::defaultEventStorageEngine)
                 .registerIfNotPresent(EventStore.class, EventSourcingConfigurationDefaults::defaultEventStore)
                 .registerIfNotPresent(Snapshotter.class, EventSourcingConfigurationDefaults::defaultSnapshotter);
+        // Register decorators
+        registry.registerDecorator(
+                EventStore.class,
+                InterceptingEventStore.DECORATION_ORDER,
+                (config, name, delegate) -> {
+                    List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
+                            config.getComponent(DispatchInterceptorRegistry.class).interceptors(config);
+                    return dispatchInterceptors.isEmpty()
+                            ? delegate
+                            : new InterceptingEventStore(delegate, dispatchInterceptors);
+                }
+        );
     }
 
     private static TagResolver defaultTagResolver(Configuration configuration) {
