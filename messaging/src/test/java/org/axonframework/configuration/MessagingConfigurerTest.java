@@ -196,17 +196,80 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     }
 
     @Test
-    void registerDispatchInterceptorMakesInterceptorRetrievableThroughTheInterceptorRegistry() {
-        //noinspection unchecked
-        MessageDispatchInterceptor<Message> dispatchInterceptor = mock(MessageDispatchInterceptor.class);
+    void registerDispatchInterceptorMakesInterceptorRetrievableThroughTheInterceptorRegistryForAllTypes() {
+        AtomicInteger counter = new AtomicInteger();
+        MessageDispatchInterceptor<? super Message> dispatchInterceptor = (message, context, interceptorChain) -> {
+            counter.incrementAndGet();
+            //noinspection DataFlowIssue | Result is not important to validate invocation
+            return null;
+        };
 
         Configuration result = testSubject.registerDispatchInterceptor(c -> dispatchInterceptor)
                                           .build();
+        DispatchInterceptorRegistry interceptorRegistry = result.getComponent(DispatchInterceptorRegistry.class);
 
-        List<MessageDispatchInterceptor<? super Message>> interceptors =
+        List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors =
+                interceptorRegistry.commandInterceptors(result);
+        assertThat(commandInterceptors).hasSize(1);
+        //noinspection DataFlowIssue | Input is not important to validate invocation
+        commandInterceptors.getFirst().interceptOnDispatch(null, null, null);
+        assertThat(counter).hasValue(1);
+
+        List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors =
+                interceptorRegistry.eventInterceptors(result);
+        assertThat(eventInterceptors).hasSize(1);
+        //noinspection DataFlowIssue | Input is not important to validate invocation
+        eventInterceptors.getFirst().interceptOnDispatch(null, null, null);
+        assertThat(counter).hasValue(2);
+
+        List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors =
+                interceptorRegistry.queryInterceptors(result);
+        assertThat(queryInterceptors).hasSize(1);
+        //noinspection DataFlowIssue | Input is not important to validate invocation
+        queryInterceptors.getFirst().interceptOnDispatch(null, null, null);
+        assertThat(counter).hasValue(3);
+    }
+
+    @Test
+    void registerCommandDispatchInterceptorMakesInterceptorRetrievableThroughTheInterceptorRegistry() {
+        //noinspection unchecked
+        MessageDispatchInterceptor<CommandMessage> handlerInterceptor = mock(MessageDispatchInterceptor.class);
+
+        Configuration result = testSubject.registerCommandDispatchInterceptor(c -> handlerInterceptor)
+                                          .build();
+
+        List<MessageDispatchInterceptor<? super CommandMessage>> interceptors =
                 result.getComponent(DispatchInterceptorRegistry.class)
-                      .interceptors(result);
-        assertThat(interceptors).contains(dispatchInterceptor);
+                      .commandInterceptors(result);
+        assertThat(interceptors).contains(handlerInterceptor);
+    }
+
+    @Test
+    void registerEventDispatchInterceptorMakesInterceptorRetrievableThroughTheInterceptorRegistry() {
+        //noinspection unchecked
+        MessageDispatchInterceptor<EventMessage> handlerInterceptor = mock(MessageDispatchInterceptor.class);
+
+        Configuration result = testSubject.registerEventDispatchInterceptor(c -> handlerInterceptor)
+                                          .build();
+
+        List<MessageDispatchInterceptor<? super EventMessage>> interceptors =
+                result.getComponent(DispatchInterceptorRegistry.class)
+                      .eventInterceptors(result);
+        assertThat(interceptors).contains(handlerInterceptor);
+    }
+
+    @Test
+    void registerQueryDispatchInterceptorMakesInterceptorRetrievableThroughTheInterceptorRegistry() {
+        //noinspection unchecked
+        MessageDispatchInterceptor<QueryMessage> handlerInterceptor = mock(MessageDispatchInterceptor.class);
+
+        Configuration result = testSubject.registerQueryDispatchInterceptor(c -> handlerInterceptor)
+                                          .build();
+
+        List<MessageDispatchInterceptor<? super QueryMessage>> interceptors =
+                result.getComponent(DispatchInterceptorRegistry.class)
+                      .queryInterceptors(result);
+        assertThat(interceptors).contains(handlerInterceptor);
     }
 
     @Test
