@@ -32,6 +32,7 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.InterceptingEventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.conversion.EventConverter;
@@ -269,6 +270,17 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                     return handlerInterceptors.isEmpty() && dispatchInterceptors.isEmpty()
                             ? delegate
                             : new InterceptingCommandBus(delegate, handlerInterceptors, dispatchInterceptors);
+                }
+        );
+        registry.registerDecorator(
+                EventSink.class,
+                InterceptingEventSink.DECORATION_ORDER,
+                (config, name, delegate) -> {
+                    List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
+                            config.getComponent(DispatchInterceptorRegistry.class).interceptors(config);
+                    return dispatchInterceptors.isEmpty()
+                            ? delegate
+                            : new InterceptingEventSink(delegate, dispatchInterceptors);
                 }
         );
     }
