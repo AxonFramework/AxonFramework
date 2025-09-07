@@ -122,6 +122,11 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
+        registerComponents(registry);
+        registerDecorators(registry);
+    }
+
+    private static void registerComponents(@Nonnull ComponentRegistry registry) {
         registry.registerIfNotPresent(MessageTypeResolver.class,
                                       MessagingConfigurationDefaults::defaultMessageTypeResolver)
                 .registerIfNotPresent(Converter.class, c -> new JacksonConverter())
@@ -142,27 +147,6 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(QueryBus.class, MessagingConfigurationDefaults::defaultQueryBus)
                 .registerIfNotPresent(QueryUpdateEmitter.class,
                                       MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
-        registry.registerDecorator(
-                CommandGateway.class,
-                CONVERTING_COMMAND_GATEWAY_ORDER,
-                (config, name, delegate) -> new ConvertingCommandGateway(
-                        delegate,
-                        config.getComponent(MessageConverter.class)
-                )
-        );
-        registry.registerDecorator(
-                CommandBus.class,
-                InterceptingCommandBus.DECORATION_ORDER,
-                (config, name, delegate) -> {
-                    List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors =
-                            config.getComponent(HandlerInterceptorRegistry.class).commandInterceptors(config);
-                    List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
-                            config.getComponent(DispatchInterceptorRegistry.class).interceptors(config);
-                    return handlerInterceptors.isEmpty() && dispatchInterceptors.isEmpty()
-                            ? delegate
-                            : new InterceptingCommandBus(delegate, handlerInterceptors, dispatchInterceptors);
-                }
-        );
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(Configuration config) {
@@ -263,5 +247,29 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     private static RoutingStrategy defaultRoutingStrategy(Configuration config) {
         return new AnnotationRoutingStrategy();
+    }
+
+    private static void registerDecorators(@Nonnull ComponentRegistry registry) {
+        registry.registerDecorator(
+                CommandGateway.class,
+                CONVERTING_COMMAND_GATEWAY_ORDER,
+                (config, name, delegate) -> new ConvertingCommandGateway(
+                        delegate,
+                        config.getComponent(MessageConverter.class)
+                )
+        );
+        registry.registerDecorator(
+                CommandBus.class,
+                InterceptingCommandBus.DECORATION_ORDER,
+                (config, name, delegate) -> {
+                    List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors =
+                            config.getComponent(HandlerInterceptorRegistry.class).commandInterceptors(config);
+                    List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors =
+                            config.getComponent(DispatchInterceptorRegistry.class).interceptors(config);
+                    return handlerInterceptors.isEmpty() && dispatchInterceptors.isEmpty()
+                            ? delegate
+                            : new InterceptingCommandBus(delegate, handlerInterceptors, dispatchInterceptors);
+                }
+        );
     }
 }
