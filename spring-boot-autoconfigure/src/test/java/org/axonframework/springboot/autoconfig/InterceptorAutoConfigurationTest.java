@@ -174,7 +174,7 @@ class InterceptorAutoConfigurationTest {
     @Test
     public void eventDispatchInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
-            context.getBean("eventGateway", EventGateway.class).publish(null, "foo");
+            context.getBean(EventGateway.class).publish(null, "foo");
             //noinspection unchecked
             Queue<String> commandDispatchingInterceptingOutcome =
                     context.getBean("commandDispatchingInterceptingOutcome", Queue.class);

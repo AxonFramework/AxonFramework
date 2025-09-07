@@ -53,17 +53,18 @@ public class InterceptorAutoConfiguration {
      * Bean creation method for a {@link DecoratorDefinition} that registers {@link Message}-specific
      * {@link MessageDispatchInterceptor MessageDispatchInterceptors} with the {@link DispatchInterceptorRegistry}.
      *
-     * @param interceptors        Generic {@link Message} dispatch interceptors to register.
-     * @param commandInterceptors {@link CommandMessage}-specific dispatch interceptors to register.
-     * @param eventInterceptors   {@link EventMessage}-specific dispatch interceptors to register.
-     * @param queryInterceptors   {@link QueryMessage}-specific dispatch interceptors to register.
+     * @param commandInterceptors {@link CommandMessage}-specific and generic {@link Message} dispatch interceptors to
+     *                            register for commands.
+     * @param eventInterceptors   {@link EventMessage}-specific and generic {@link Message} dispatch interceptors to
+     *                            register for events.
+     * @param queryInterceptors   {@link QueryMessage}-specific and generic {@link Message} dispatch interceptors to
+     *                            register for queries.
      * @return A bean creation method for a {@link DecoratorDefinition} that registers {@link Message}-specific
      * {@link MessageDispatchInterceptor MessageDispatchInterceptors} with the {@link DispatchInterceptorRegistry}.
      */
     @Bean
     @ConditionalOnBean(MessageDispatchInterceptor.class)
     public DecoratorDefinition<DispatchInterceptorRegistry, DispatchInterceptorRegistry> dispatchInterceptorEnhancer(
-            Optional<List<MessageDispatchInterceptor<Message>>> interceptors,
             Optional<List<MessageDispatchInterceptor<? super CommandMessage>>> commandInterceptors,
             Optional<List<MessageDispatchInterceptor<? super EventMessage>>> eventInterceptors,
             Optional<List<MessageDispatchInterceptor<? super QueryMessage>>> queryInterceptors
@@ -71,7 +72,6 @@ public class InterceptorAutoConfiguration {
         return DecoratorDefinition.forType(DispatchInterceptorRegistry.class)
                                   .with((config, name, delegate) -> registerDispatchInterceptors(
                                           delegate,
-                                          interceptors,
                                           commandInterceptors,
                                           eventInterceptors,
                                           queryInterceptors
@@ -80,16 +80,10 @@ public class InterceptorAutoConfiguration {
 
     private static DispatchInterceptorRegistry registerDispatchInterceptors(
             DispatchInterceptorRegistry registry,
-            Optional<List<MessageDispatchInterceptor<Message>>> interceptors,
             Optional<List<MessageDispatchInterceptor<? super CommandMessage>>> commandInterceptors,
             Optional<List<MessageDispatchInterceptor<? super EventMessage>>> eventInterceptors,
             Optional<List<MessageDispatchInterceptor<? super QueryMessage>>> queryInterceptors
     ) {
-        if (interceptors.isPresent()) {
-            for (MessageDispatchInterceptor<Message> interceptor : interceptors.get()) {
-                registry = registry.registerInterceptor(c -> interceptor);
-            }
-        }
         if (commandInterceptors.isPresent()) {
             for (MessageDispatchInterceptor<? super CommandMessage> interceptor : commandInterceptors.get()) {
                 registry = registry.registerCommandInterceptor(c -> interceptor);
