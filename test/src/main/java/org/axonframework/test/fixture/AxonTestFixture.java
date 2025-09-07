@@ -19,11 +19,9 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.messaging.ConfigurationApplicationContext;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
@@ -47,18 +45,17 @@ import java.util.function.UnaryOperator;
  */
 public class AxonTestFixture implements AxonTestPhase.Setup {
 
-    private final Configuration configuration;
+    private final AxonConfiguration configuration;
     private final Customization customization;
-    private final MessageTypeResolver messageTypeResolver;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
+    private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
-    AxonTestFixture(@Nonnull Configuration configuration,
+    AxonTestFixture(@Nonnull AxonConfiguration configuration,
                     @Nonnull UnaryOperator<Customization> customization) {
         this.customization = customization.apply(new Customization());
         this.configuration = configuration;
-        this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
 
         CommandBus commandBusComponent = configuration.getComponent(CommandBus.class);
         if (!(commandBusComponent instanceof RecordingCommandBus)) {
@@ -82,8 +79,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             );
         }
         this.eventSink = (RecordingEventSink) eventSinkComponent;
-        this.unitOfWorkFactory = configuration.getOptionalComponent(UnitOfWorkFactory.class)
-                                              .orElse(new SimpleUnitOfWorkFactory(new ConfigurationApplicationContext(configuration)));
+        this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
+        this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
     }
 
     /**
@@ -132,20 +129,28 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         return new AxonTestWhen(
                 configuration,
                 customization,
-                messageTypeResolver,
                 commandBus,
                 eventSink,
+                messageTypeResolver,
                 unitOfWorkFactory
         );
     }
 
+    @Override
+    public void stop() {
+        configuration.shutdown();
+    }
+
     /**
      * Allow to customize the fixture setup.
+     *
+     * @param fieldFilters Collections of {@link FieldFilter FieldFilters} used to adjust the matchers for commands,
+     *                     events, and result messages.
      */
-    public record Customization(List<FieldFilter> fieldFilters) {
+    public record Customization(@Nonnull List<FieldFilter> fieldFilters) {
 
         /**
-         * Creates a new instance of {@link Customization}.
+         * Creates a new instance of {@code Customization}.
          */
         public Customization() {
             this(new ArrayList<>());

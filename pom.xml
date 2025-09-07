@@ -93,7 +93,7 @@
         <log4j.version>2.25.1</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
-        <dropwizard.metrics.version>4.2.35</dropwizard.metrics.version>
+        <dropwizard.metrics.version>4.2.36</dropwizard.metrics.version>
         <micrometer.version>1.15.3</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.17.7</byte-buddy.version>
