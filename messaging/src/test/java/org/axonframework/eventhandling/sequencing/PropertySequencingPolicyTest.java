@@ -16,11 +16,15 @@
 
 package org.axonframework.eventhandling.sequencing;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,7 +34,8 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Nils Christian Ehmke
  */
-@DisplayName("Unit-Test for the PropertySequencingPolicy") final class PropertySequencingPolicyTest {
+@DisplayName("Unit-Test for the PropertySequencingPolicy")
+final class PropertySequencingPolicyTest {
 
     @Test
     void propertyExtractorShouldReadCorrectValue() {
@@ -39,7 +44,10 @@ import static org.junit.jupiter.api.Assertions.*;
                 .propertyExtractor(TestEvent::id)
                 .build();
 
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent(new TestEvent("42")), new StubProcessingContext())).hasValue("42");
+        assertThat(sequencingPolicy.getSequenceIdentifierFor(
+                anEvent(new TestEvent("42")),
+                aProcessingContext())
+        ).hasValue("42");
     }
 
     @Test
@@ -49,7 +57,10 @@ import static org.junit.jupiter.api.Assertions.*;
                 .propertyName("id")
                 .build();
 
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent(new TestEvent("42")), new StubProcessingContext())).hasValue("42");
+        assertThat(sequencingPolicy.getSequenceIdentifierFor(
+                anEvent(new TestEvent("42")),
+                aProcessingContext())
+        ).hasValue("42");
     }
 
     @Test
@@ -60,7 +71,7 @@ import static org.junit.jupiter.api.Assertions.*;
                 .build();
 
         assertThrows(IllegalArgumentException.class,
-                     () -> sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent("42"), new StubProcessingContext()));
+                     () -> sequencingPolicy.getSequenceIdentifierFor(anEvent("42"), aProcessingContext()));
     }
 
     @Test
@@ -68,14 +79,24 @@ import static org.junit.jupiter.api.Assertions.*;
         final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
                 .builder(TestEvent.class, String.class)
                 .propertyName("id")
-                .fallbackSequencingPolicy(SequentialPerAggregatePolicy.instance())
+                .fallbackSequencingPolicy((event, context) -> Optional.of("A"))
                 .build();
 
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(newStubDomainEvent("42"), new StubProcessingContext())).hasValue("A");
+        assertThat(sequencingPolicy.getSequenceIdentifierFor(
+                anEvent("42"),
+                aProcessingContext())
+        ).hasValue("A");
     }
 
-    private DomainEventMessage newStubDomainEvent(final Object payload) {
-        return new GenericDomainEventMessage("type", "A", 0L, new MessageType("event"), payload);
+    private EventMessage anEvent(final Object payload) {
+        return EventTestUtils.asEventMessage(payload);
+    }
+
+    private static StubProcessingContext aProcessingContext() {
+        return StubProcessingContext.withComponent(
+                EventConverter.class,
+                new DelegatingEventConverter(new JacksonConverter())
+        );
     }
 
     private record TestEvent(String id) {
