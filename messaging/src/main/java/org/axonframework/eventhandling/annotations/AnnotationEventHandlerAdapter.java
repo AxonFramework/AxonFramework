@@ -176,7 +176,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     public <R> void prepareReset(R resetContext, ProcessingContext context) {
         try {
             ResetContext resetMessage = asResetContext(resetContext);
-            ProcessingContext messageProcessingContext = new LegacyMessageSupportingContext(resetMessage);
+            ProcessingContext messageProcessingContext = Message.addToContext(context, resetMessage);
             inspector.getHandlers(listenerType)
                      .filter(h -> h.canHandle(resetMessage, messageProcessingContext))
                      .findFirst()
