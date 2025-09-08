@@ -162,7 +162,7 @@ public class WhenAllCoursesFullyBookedThenSendNotification {
 <4> Business logic to determine if a course is fully booked
 <5> Default constructor creating empty state
 <6> Event sourcing handlers that evolve state based on different event types
-<7> Handler to track when notification has already been sent - thanks to that you can track it in your EventStore instead of external systems
+<7> Handler to track when notification has already been sent - allows you to track it in your EventStore instead of external systems
 
 === Step 3: Add command handler for notification
 
