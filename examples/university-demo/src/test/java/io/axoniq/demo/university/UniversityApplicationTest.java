@@ -94,7 +94,7 @@ public abstract class UniversityApplicationTest {
     protected void eventsOccurred(List<Object> events) {
         var eventGateway = sut.getComponent(EventGateway.class);
         var unitOfWork = sut.getComponent(UnitOfWorkFactory.class).create();
-        unitOfWork.onInvocation(ctx -> eventGateway.publish(null, events));
+        unitOfWork.onInvocation(ctx -> eventGateway.publish(ctx, events));
         unitOfWork.execute().join();
         var eventStore = (RecordingEventStore) sut.getComponent(EventStore.class);
         eventStore.reset();
