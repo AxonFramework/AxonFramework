@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -45,6 +46,8 @@ public class SequentialPerAggregatePolicy implements SequencingPolicy {
 
     @Override
     public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        Objects.requireNonNull(event, "EventMessage may not be null.");
+        Objects.requireNonNull(context, "ProcessingContext may not be null.");
         return Optional.ofNullable(context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
     }
 }
