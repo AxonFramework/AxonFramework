@@ -249,10 +249,15 @@ class WorkPackage {
     // todo: I'm not sure about this solution, but it's better than LegacyMessageSupportingContext
     // todo: event entry has Context (not ProcessingContext)!!!
     private boolean canHandleMessage(MessageStream.Entry<? extends EventMessage> eventEntry) {
+        var unitOfWork = messageUnitOfWork(eventEntry);
+        return unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(canHandle(eventEntry.message(), context))).join();
+    }
+
+    private UnitOfWork messageUnitOfWork(MessageStream.Entry<? extends EventMessage> eventEntry) {
         var message = eventEntry.message();
         var unitOfWork = unitOfWorkFactory.create();
         unitOfWork.runOnPreInvocation(ctx -> Message.addToContext(ctx, message));
-        return unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(canHandle(message, context))).join();
+        return unitOfWork;
     }
 
     /**
