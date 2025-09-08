@@ -105,9 +105,9 @@ public class UniversityAxonApplication {
 
     private static final String CONTEXT = "university"; // <1>
 
-    public static ApplicationConfigurer configurer() {
+    public static ApplicationConfigurer configurer(UnaryOperator<EventSourcingConfigurer> customization) {
         var configurer = EventSourcingConfigurer.create();
-        configurer = CreateCourseConfiguration.configure(configurer);
+        configurer = customization.apply(configurer);
 
         // Override default Axon Server configuration to use DCB context
         configurer.componentRegistry(r -> r.registerComponent(AxonServerConfiguration.class, c -> { // <2>
@@ -138,21 +138,11 @@ In Spring Boot applications, you'll be able to configure the context through sim
 == Testing with Axon Server
 
 One of the great benefits of Axon Framework's design (thanks to the new configuration approach and the test fixtures) is that your tests work seamlessly with both the in-memory Event Store and Axon Server.
-When you run your `AxonTestFixture` tests with the Axon Server connector dependency present, the fixture will automatically use your Axon Server configuration.
+When you run your `UniversityApplicationTest` tests with the Axon Server connector dependency present, the fixture will automatically use your Axon Server configuration.
 This means your tests now run against the same Event Store technology as production.
 
 Your existing test code doesn't need any changes, but just keep in mind that you should use random IDs, because the Axon Server events won't be purged automatically between test runs.
 
-[source,java]
-----
-@BeforeEach
-void beforeEach() {
-    var application = new UniversityAxonApplication();
-    fixture = AxonTestFixture.with(application.configurer()); // <1>
-}
-----
-
-<1> The fixture automatically detects and uses Axon Server when the connector is present.
 
 [NOTE]
 ====
