@@ -19,6 +19,7 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceOverridingEventHandlingComponent;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -67,7 +68,7 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * @return A sequence identifier for the given event.
      */
     @Nonnull
-    default Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+    default Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull Context context) {
         //noinspection OptionalGetWithoutIsPresent - it's safe because SequentialPolicy always returns a value.
         return SequentialPolicy.INSTANCE.getSequenceIdentifierFor(event, context).get();
     }

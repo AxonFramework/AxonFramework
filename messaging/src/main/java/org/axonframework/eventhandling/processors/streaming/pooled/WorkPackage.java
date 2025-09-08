@@ -256,6 +256,7 @@ class WorkPackage {
     private UnitOfWork messageUnitOfWork(MessageStream.Entry<? extends EventMessage> eventEntry) {
         var message = eventEntry.message();
         var unitOfWork = unitOfWorkFactory.create();
+        // todo: I need to add everything from eventEntry.context() here!!!
         unitOfWork.runOnPreInvocation(ctx -> Message.addToContext(ctx, message));
         return unitOfWork;
     }
