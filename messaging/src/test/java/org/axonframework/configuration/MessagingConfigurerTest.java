@@ -211,6 +211,19 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     }
 
     @Test
+    void registerCorrelationDataProviderMakesProviderRetrievableThroughProviderRegistry() {
+        CorrelationDataProvider provider = mock(CorrelationDataProvider.class);
+
+        Configuration result = testSubject.registerCorrelationDataProvider(c -> provider)
+                                          .build();
+
+        List<CorrelationDataProvider> interceptors =
+                result.getComponent(CorrelationDataProviderRegistry.class)
+                      .correlationDataProviders(result);
+        assertThat(interceptors).contains(provider);
+    }
+
+    @Test
     void registerDispatchInterceptorMakesInterceptorRetrievableThroughTheInterceptorRegistryForAllTypes() {
         AtomicInteger counter = new AtomicInteger();
         MessageDispatchInterceptor<Message> dispatchInterceptor = (message, context, interceptorChain) -> {
