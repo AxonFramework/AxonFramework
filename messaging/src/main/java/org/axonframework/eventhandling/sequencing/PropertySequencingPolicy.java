@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.ConversionException;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -68,6 +69,9 @@ public class PropertySequencingPolicy<T, K> implements SequencingPolicy {
             @Nonnull final EventMessage eventMessage,
             @Nonnull ProcessingContext context
     ) {
+        Objects.requireNonNull(eventMessage, "EventMessage may not be null");
+        Objects.requireNonNull(context, "ProcessingContext may not be null");
+
         if (payloadClass.isAssignableFrom(eventMessage.payloadType())) {
             @SuppressWarnings("unchecked") final T castedPayload = (T) eventMessage.payload();
             return Optional.ofNullable(propertyExtractor.apply(castedPayload));
