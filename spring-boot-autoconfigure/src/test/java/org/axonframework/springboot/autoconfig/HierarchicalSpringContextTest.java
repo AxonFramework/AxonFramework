@@ -25,6 +25,8 @@ import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.EmptyApplicationContext;
+import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
+import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.WebApplicationType;
@@ -112,6 +114,12 @@ public class HierarchicalSpringContextTest {
         @Bean
         CommandBus commandBus() {
             return aSimpleCommandBus();
+        }
+
+        // Adding empty registry ensures we don't get a CorrelationDataInterceptors leading to an InterceptingCommandBus
+        @Bean
+        CorrelationDataProviderRegistry correlationDataProviderRegistry() {
+            return new DefaultCorrelationDataProviderRegistry();
         }
     }
 
