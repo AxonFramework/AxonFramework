@@ -44,6 +44,10 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
+import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
+import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
+import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.DefaultDispatchInterceptorRegistry;
 import org.axonframework.messaging.interceptors.DefaultHandlerInterceptorRegistry;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
@@ -61,6 +65,7 @@ import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,6 +108,8 @@ class MessagingConfigurationDefaultsTest {
         assertThat(generalConverter).isEqualTo(messageConverterDelegate);
         MessageConverter eventConverterDelegate = ((DelegatingEventConverter) eventConverter).delegate();
         assertThat(messageConverter).isEqualTo(eventConverterDelegate);
+        assertThat(resultConfig.getComponent(CorrelationDataProviderRegistry.class))
+                .isInstanceOf(DefaultCorrelationDataProviderRegistry.class);
         assertThat(resultConfig.getComponent(DispatchInterceptorRegistry.class))
                 .isInstanceOf(DefaultDispatchInterceptorRegistry.class);
         assertThat(resultConfig.getComponent(HandlerInterceptorRegistry.class))
@@ -118,6 +125,19 @@ class MessagingConfigurationDefaultsTest {
         assertInstanceOf(DefaultQueryGateway.class, resultConfig.getComponent(QueryGateway.class));
         assertInstanceOf(SimpleQueryBus.class, resultConfig.getComponent(QueryBus.class));
         assertInstanceOf(SimpleQueryUpdateEmitter.class, resultConfig.getComponent(QueryUpdateEmitter.class));
+    }
+
+    @Test
+    void registersMessageOriginProviderInCorrelationDataProviderRegistryByDefault() {
+        ApplicationConfigurer configurer = new DefaultAxonApplication();
+        configurer.componentRegistry(cr -> testSubject.enhance(cr));
+        Configuration resultConfig = configurer.build();
+
+        List<CorrelationDataProvider> providers = resultConfig.getComponent(CorrelationDataProviderRegistry.class)
+                                                              .correlationDataProviders(resultConfig);
+
+        assertThat(providers).size().isEqualTo(1);
+        assertThat(providers.getFirst()).isInstanceOf(MessageOriginProvider.class);
     }
 
     @Test

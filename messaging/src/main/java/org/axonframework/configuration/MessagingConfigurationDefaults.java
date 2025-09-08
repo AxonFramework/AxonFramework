@@ -48,6 +48,9 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
+import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
+import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
+import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.DefaultDispatchInterceptorRegistry;
 import org.axonframework.messaging.interceptors.DefaultHandlerInterceptorRegistry;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
@@ -82,6 +85,7 @@ import java.util.concurrent.CompletableFuture;
  *     <li>Registers a {@link JacksonConverter} for class {@link Converter}</li>
  *     <li>Registers a {@link DelegatingMessageConverter} using the default {@link JacksonConverter}.</li>
  *     <li>Registers a {@link DelegatingEventConverter} using the default {@link JacksonConverter}.</li>
+ *     <li>Registers a {@link DefaultCorrelationDataProviderRegistry} for class {@link CorrelationDataProviderRegistry} containing the {@link MessageOriginProvider}.</li>
  *     <li>Registers a {@link DefaultDispatchInterceptorRegistry} for class {@link DispatchInterceptorRegistry}.</li>
  *     <li>Registers a {@link DefaultHandlerInterceptorRegistry} for class {@link HandlerInterceptorRegistry}.</li>
  *     <li>Registers a {@link TransactionalUnitOfWorkFactory} for class {@link UnitOfWorkFactory}</li>
@@ -145,6 +149,8 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(MessageConverter.class, MessagingConfigurationDefaults::defaultMessageConverter)
                 .registerIfNotPresent(EventConverter.class, MessagingConfigurationDefaults::defaultEventConverter)
                 .registerIfNotPresent(UnitOfWorkFactory.class, MessagingConfigurationDefaults::defaultUnitOfWorkFactory)
+                .registerIfNotPresent(CorrelationDataProviderRegistry.class,
+                                      MessagingConfigurationDefaults::defaultCorrelationDataProviderRegistry)
                 .registerIfNotPresent(DispatchInterceptorRegistry.class,
                                       MessagingConfigurationDefaults::defaultDispatchInterceptorRegistry)
                 .registerIfNotPresent(HandlerInterceptorRegistry.class,
@@ -183,6 +189,10 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 ),
                 new SimpleUnitOfWorkFactory(new ConfigurationApplicationContext(config))
         );
+    }
+
+    private static CorrelationDataProviderRegistry defaultCorrelationDataProviderRegistry(Configuration config) {
+        return new DefaultCorrelationDataProviderRegistry().registerProvider(c -> new MessageOriginProvider());
     }
 
     private static DispatchInterceptorRegistry defaultDispatchInterceptorRegistry(Configuration config) {
