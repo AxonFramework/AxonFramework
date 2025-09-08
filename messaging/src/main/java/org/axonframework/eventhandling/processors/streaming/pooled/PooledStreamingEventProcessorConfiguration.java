@@ -176,7 +176,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      */
     @Nonnull
     public PooledStreamingEventProcessorConfiguration addInterceptor(
-            @Nonnull MessageHandlerInterceptor<EventMessage> interceptor
+            @Nonnull MessageHandlerInterceptor<? super EventMessage> interceptor
     ) {
         return addInterceptor(c -> interceptor);
     }
@@ -191,7 +191,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      */
     @Nonnull
     public PooledStreamingEventProcessorConfiguration addInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<EventMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     ) {
         interceptorRegistry.registerEventInterceptor(interceptorBuilder);
         return this;
