@@ -228,23 +228,17 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link MessageDispatchInterceptor} factory in this {@code Configurer}.
+     * Registers the given generic {@link Message} {@link MessageDispatchInterceptor} factory in this
+     * {@code Configurer}.
      * <p>
-     * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
-     * {@code MessageDispatchInterceptor} instance.
+     * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a generic
+     * {@code Message} {@code MessageDispatchInterceptor} instance.
      * <p>
-     * {@code MessageDispatchInterceptors} are typically automatically registered with all applicable infrastructure
-     * components through the {@link HandlerInterceptorRegistry}.
-     * <p>
-     * Compared to {@link MessageHandlerInterceptor} registration, the {@link Message} type used by the
-     * {@code MessageDispatchInterceptor} does not matter for downstream components. This stems from the return types of
-     * command, event, and query handlers differing from {@link org.axonframework.messaging.MessageStream.Single},
-     * {@link org.axonframework.messaging.MessageStream.Empty}, and {@link org.axonframework.messaging.MessageStream}
-     * respectively, which <b>need</b> to be enforced by the intercepting infrastructure component. As such, there is
-     * only a single {@code MessageDispatchInterceptor} registration method compared to the multiple
-     * {@code MessageHandlerInterceptor} registration methods.
+     * Generic {@code MessageDispatchInterceptors} are typically automatically registered with all applicable
+     * infrastructure components through the {@link DispatchInterceptorRegistry}.
      *
-     * @param interceptorBuilder The builder constructing the {@link MessageDispatchInterceptor}.
+     * @param interceptorBuilder The builder constructing the generic {@link Message}
+     *                           {@link MessageDispatchInterceptor}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
     public MessagingConfigurer registerDispatchInterceptor(
