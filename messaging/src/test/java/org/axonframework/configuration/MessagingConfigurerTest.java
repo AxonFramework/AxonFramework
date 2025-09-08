@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
@@ -40,6 +40,9 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.NamespaceMessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
+import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
 import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -88,7 +91,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Optional<CommandBus> commandBus = result.getOptionalComponent(CommandBus.class);
         assertTrue(commandBus.isPresent());
-        assertInstanceOf(SimpleCommandBus.class, commandBus.get());
+        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
+        assertInstanceOf(InterceptingCommandBus.class, commandBus.get());
 
         Optional<EventGateway> eventGateway = result.getOptionalComponent(EventGateway.class);
         assertTrue(eventGateway.isPresent());
@@ -148,7 +152,13 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerCommandBusOverridesDefault() {
         CommandBus expected = aCommandBus();
 
-        Configuration result = testSubject.registerCommandBus(c -> expected)
+        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not build.
+        // This otherwise leads to the InterceptingCommandBus
+        Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
+                                                  CorrelationDataProviderRegistry.class,
+                                                  c -> new DefaultCorrelationDataProviderRegistry()
+                                          ))
+                                          .registerCommandBus(c -> expected)
                                           .build();
 
         assertEquals(expected, result.getComponent(CommandBus.class));
@@ -169,7 +179,12 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
             }
         };
 
-        Configuration result = testSubject.registerEventSink(c -> expected)
+        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not build.
+        // This otherwise leads to the InterceptingCommandBus
+        Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
+                                                  CorrelationDataProviderRegistry.class,
+                                                  c -> new DefaultCorrelationDataProviderRegistry()
+                                          )).registerEventSink(c -> expected)
                                           .build();
 
         assertEquals(expected, result.getComponent(EventSink.class));
@@ -204,7 +219,12 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
             return null;
         };
 
-        Configuration result = testSubject.registerDispatchInterceptor(c -> dispatchInterceptor)
+        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not present.
+        Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
+                                                  CorrelationDataProviderRegistry.class,
+                                                  c -> new DefaultCorrelationDataProviderRegistry()
+                                          ))
+                                          .registerDispatchInterceptor(c -> dispatchInterceptor)
                                           .build();
         DispatchInterceptorRegistry interceptorRegistry = result.getComponent(DispatchInterceptorRegistry.class);
 
@@ -281,7 +301,12 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
             return null;
         };
 
-        Configuration result = testSubject.registerMessageHandlerInterceptor(c -> handlerInterceptor)
+        // Overriding CorrelationDataProviderRegistry ensures CorrelationDataInterceptor is not present.
+        Configuration result = testSubject.componentRegistry(cr -> cr.registerComponent(
+                                                  CorrelationDataProviderRegistry.class,
+                                                  c -> new DefaultCorrelationDataProviderRegistry()
+                                          ))
+                                          .registerMessageHandlerInterceptor(c -> handlerInterceptor)
                                           .build();
         HandlerInterceptorRegistry handlerInterceptorRegistry = result.getComponent(HandlerInterceptorRegistry.class);
 

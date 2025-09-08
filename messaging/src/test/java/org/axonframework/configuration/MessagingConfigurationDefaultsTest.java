@@ -24,7 +24,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.RoutingStrategy;
-import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
@@ -118,7 +117,8 @@ class MessagingConfigurationDefaultsTest {
         // So we just check if _any_ CommandGateway has been added to the configuration.
         assertTrue(resultConfig.hasComponent(CommandGateway.class));
         assertInstanceOf(TransactionalUnitOfWorkFactory.class, resultConfig.getComponent(UnitOfWorkFactory.class));
-        assertInstanceOf(SimpleCommandBus.class, resultConfig.getComponent(CommandBus.class));
+        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
+        assertInstanceOf(InterceptingCommandBus.class, resultConfig.getComponent(CommandBus.class));
         assertInstanceOf(AnnotationRoutingStrategy.class, resultConfig.getComponent(RoutingStrategy.class));
         assertInstanceOf(DefaultEventGateway.class, resultConfig.getComponent(EventGateway.class));
         assertInstanceOf(SimpleEventBus.class, resultConfig.getComponent(EventBus.class));
@@ -141,12 +141,65 @@ class MessagingConfigurationDefaultsTest {
     }
 
     @Test
+    void registersCorrelationDataInterceptorInInterceptorRegistriesWhenSingleCorrelationDataProviderIsPresent() {
+        ApplicationConfigurer configurer = new DefaultAxonApplication();
+        configurer.componentRegistry(cr -> {
+            cr.registerComponent(CorrelationDataProviderRegistry.class,
+                                 config -> {
+                                     DefaultCorrelationDataProviderRegistry providerRegistry =
+                                             new DefaultCorrelationDataProviderRegistry();
+                                     return providerRegistry.registerProvider(c -> mock());
+                                 });
+            testSubject.enhance(cr);
+        });
+        Configuration resultConfig = configurer.build();
+
+        // Generic interceptors are wrapped for type safety and as such we cannot validate if the single interceptor is a CorrelationDataInterceptor
+        DispatchInterceptorRegistry dispatchInterceptorRegistry =
+                resultConfig.getComponent(DispatchInterceptorRegistry.class);
+        assertThat(dispatchInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(dispatchInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(dispatchInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
+        HandlerInterceptorRegistry handlerInterceptorRegistry =
+                resultConfig.getComponent(HandlerInterceptorRegistry.class);
+        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(1);
+        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(1);
+    }
+
+    @Test
+    void doesNotRegisterCorrelationDataInterceptorInInterceptorRegistriesWhenTheAreNoCorrelationDataProviders() {
+        ApplicationConfigurer configurer = new DefaultAxonApplication();
+        configurer.componentRegistry(cr -> {
+            cr.registerComponent(CorrelationDataProviderRegistry.class,
+                                 config -> new DefaultCorrelationDataProviderRegistry());
+            testSubject.enhance(cr);
+        });
+        Configuration resultConfig = configurer.build();
+
+        DispatchInterceptorRegistry dispatchInterceptorRegistry =
+                resultConfig.getComponent(DispatchInterceptorRegistry.class);
+        assertThat(dispatchInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(0);
+        assertThat(dispatchInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(0);
+        assertThat(dispatchInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(0);
+        HandlerInterceptorRegistry handlerInterceptorRegistry =
+                resultConfig.getComponent(HandlerInterceptorRegistry.class);
+        assertThat(handlerInterceptorRegistry.commandInterceptors(resultConfig)).size().isEqualTo(0);
+        assertThat(handlerInterceptorRegistry.eventInterceptors(resultConfig)).size().isEqualTo(0);
+        assertThat(handlerInterceptorRegistry.queryInterceptors(resultConfig)).size().isEqualTo(0);
+    }
+
+    @Test
     void enhanceOnlySetsDefaultsThatAreNotPresentYet() {
         TestCommandBus testCommandBus = new TestCommandBus();
 
-        ApplicationConfigurer configurer = new DefaultAxonApplication()
-                .componentRegistry(cr -> cr.registerComponent(CommandBus.class, c -> testCommandBus)
-                                           .registerEnhancer(testSubject));
+        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
+        ApplicationConfigurer configurer = new DefaultAxonApplication().componentRegistry(
+                cr -> cr.registerComponent(CommandBus.class, c -> testCommandBus)
+                        .registerComponent(CorrelationDataProviderRegistry.class,
+                                           c -> new DefaultCorrelationDataProviderRegistry())
+                        .registerEnhancer(testSubject)
+        );
 
         CommandBus configuredCommandBus = configurer.build()
                                                     .getComponent(CommandBus.class);
@@ -175,9 +228,14 @@ class MessagingConfigurationDefaultsTest {
 
     @Test
     void decoratorsCommandBusAsInterceptorCommandBusWhenCommandHandlerInterceptorIsPresent() {
+        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
         //noinspection unchecked
         MessagingConfigurer configurer =
                 MessagingConfigurer.create()
+                                   .componentRegistry(cr -> cr.registerComponent(
+                                           CorrelationDataProviderRegistry.class,
+                                           c -> new DefaultCorrelationDataProviderRegistry()
+                                   ))
                                    .registerCommandHandlerInterceptor(c -> mock(MessageHandlerInterceptor.class));
 
         Configuration resultConfig = configurer.build();
@@ -187,9 +245,14 @@ class MessagingConfigurationDefaultsTest {
 
     @Test
     void decoratorsCommandBusAsInterceptorCommandBusWhenDispatchInterceptorIsPresent() {
+        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
         //noinspection unchecked
         MessagingConfigurer configurer =
                 MessagingConfigurer.create()
+                                   .componentRegistry(cr -> cr.registerComponent(
+                                           CorrelationDataProviderRegistry.class,
+                                           c -> new DefaultCorrelationDataProviderRegistry()
+                                   ))
                                    .registerDispatchInterceptor(c -> mock(MessageDispatchInterceptor.class));
 
         Configuration resultConfig = configurer.build();
@@ -202,6 +265,10 @@ class MessagingConfigurationDefaultsTest {
         //noinspection unchecked
         MessagingConfigurer configurer =
                 MessagingConfigurer.create()
+                                   .componentRegistry(cr -> cr.registerComponent(
+                                           CorrelationDataProviderRegistry.class,
+                                           c -> new DefaultCorrelationDataProviderRegistry()
+                                   ))
                                    .registerDispatchInterceptor(c -> mock(MessageDispatchInterceptor.class));
 
         Configuration resultConfig = configurer.build();

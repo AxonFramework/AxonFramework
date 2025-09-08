@@ -48,9 +48,11 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
+import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
+import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.interceptors.DefaultDispatchInterceptorRegistry;
 import org.axonframework.messaging.interceptors.DefaultHandlerInterceptorRegistry;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
@@ -86,8 +88,8 @@ import java.util.concurrent.CompletableFuture;
  *     <li>Registers a {@link DelegatingMessageConverter} using the default {@link JacksonConverter}.</li>
  *     <li>Registers a {@link DelegatingEventConverter} using the default {@link JacksonConverter}.</li>
  *     <li>Registers a {@link DefaultCorrelationDataProviderRegistry} for class {@link CorrelationDataProviderRegistry} containing the {@link MessageOriginProvider}.</li>
- *     <li>Registers a {@link DefaultDispatchInterceptorRegistry} for class {@link DispatchInterceptorRegistry}.</li>
- *     <li>Registers a {@link DefaultHandlerInterceptorRegistry} for class {@link HandlerInterceptorRegistry}.</li>
+ *     <li>Registers a {@link DefaultDispatchInterceptorRegistry} for class {@link DispatchInterceptorRegistry} containing an {@link CorrelationDataInterceptor} if there are {@link CorrelationDataProvider CorrelationDataProviders} present.</li>
+ *     <li>Registers a {@link DefaultHandlerInterceptorRegistry} for class {@link HandlerInterceptorRegistry} containing an {@link CorrelationDataInterceptor} if there are {@link CorrelationDataProvider CorrelationDataProviders} present.</li>
  *     <li>Registers a {@link TransactionalUnitOfWorkFactory} for class {@link UnitOfWorkFactory}</li>
  *     <li>Registers a {@link DefaultCommandGateway} for class {@link CommandGateway}</li>
  *     <li>Registers a {@link SimpleCommandBus} for class {@link CommandBus}</li>
@@ -196,11 +198,21 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static DispatchInterceptorRegistry defaultDispatchInterceptorRegistry(Configuration config) {
-        return new DefaultDispatchInterceptorRegistry();
+        CorrelationDataProviderRegistry providerRegistry = config.getComponent(CorrelationDataProviderRegistry.class);
+        List<CorrelationDataProvider> providers = providerRegistry.correlationDataProviders(config);
+        DispatchInterceptorRegistry dispatchInterceptorRegistry = new DefaultDispatchInterceptorRegistry();
+        return providers.isEmpty()
+                ? dispatchInterceptorRegistry
+                : dispatchInterceptorRegistry.registerInterceptor(c -> new CorrelationDataInterceptor<>(providers));
     }
 
     private static HandlerInterceptorRegistry defaultHandlerInterceptorRegistry(Configuration config) {
-        return new DefaultHandlerInterceptorRegistry();
+        CorrelationDataProviderRegistry providerRegistry = config.getComponent(CorrelationDataProviderRegistry.class);
+        List<CorrelationDataProvider> providers = providerRegistry.correlationDataProviders(config);
+        DefaultHandlerInterceptorRegistry handlerInterceptorRegistry = new DefaultHandlerInterceptorRegistry();
+        return providers.isEmpty()
+                ? handlerInterceptorRegistry
+                : handlerInterceptorRegistry.registerInterceptor(c -> new CorrelationDataInterceptor<>(providers));
     }
 
     private static CommandBus defaultCommandBus(Configuration config) {
