@@ -113,6 +113,19 @@ class DefaultDispatchInterceptorRegistryTest {
     }
 
     @Test
+    void canRegisterGenericInterceptorForCommandsOnly() {
+        DispatchInterceptorRegistry result =
+                testSubject.registerCommandInterceptor(c -> new GenericMessageDispatchInterceptor());
+
+        List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors(config);
+        assertThat(commandInterceptors).size().isEqualTo(1);
+        List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors(config);
+        assertThat(eventInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
+        assertThat(queryInterceptors).size().isEqualTo(0);
+    }
+
+    @Test
     void registeredEventInterceptorsIsReturnedFromEventInterceptorsOnly() {
         DispatchInterceptorRegistry result = testSubject.registerEventInterceptor(c -> new EventDispatchInterceptor());
 
@@ -142,6 +155,19 @@ class DefaultDispatchInterceptorRegistryTest {
     }
 
     @Test
+    void canRegisterGenericInterceptorForEventsOnly() {
+        DispatchInterceptorRegistry result =
+                testSubject.registerEventInterceptor(c -> new GenericMessageDispatchInterceptor());
+
+        List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors(config);
+        assertThat(commandInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors(config);
+        assertThat(eventInterceptors).size().isEqualTo(1);
+        List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
+        assertThat(queryInterceptors).size().isEqualTo(0);
+    }
+
+    @Test
     void registeredQueryInterceptorsIsReturnedFromQueryInterceptorsOnly() {
         DispatchInterceptorRegistry result = testSubject.registerQueryInterceptor(c -> new QueryDispatchInterceptor());
 
@@ -168,6 +194,19 @@ class DefaultDispatchInterceptorRegistryTest {
         queryInterceptors = result.queryInterceptors(config);
         assertThat(queryInterceptors).size().isEqualTo(1);
         assertThat(builderInvocationCount.get()).isEqualTo(1);
+    }
+
+    @Test
+    void canRegisterGenericInterceptorForQueriesOnly() {
+        DispatchInterceptorRegistry result =
+                testSubject.registerQueryInterceptor(c -> new GenericMessageDispatchInterceptor());
+
+        List<MessageDispatchInterceptor<? super CommandMessage>> commandInterceptors = result.commandInterceptors(config);
+        assertThat(commandInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super EventMessage>> eventInterceptors = result.eventInterceptors(config);
+        assertThat(eventInterceptors).size().isEqualTo(0);
+        List<MessageDispatchInterceptor<? super QueryMessage>> queryInterceptors = result.queryInterceptors(config);
+        assertThat(queryInterceptors).size().isEqualTo(1);
     }
 
     static class GenericMessageDispatchInterceptor implements MessageDispatchInterceptor<Message> {

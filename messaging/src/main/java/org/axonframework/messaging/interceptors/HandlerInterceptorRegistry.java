@@ -50,7 +50,8 @@ import java.util.List;
 public interface HandlerInterceptorRegistry extends DescribableComponent {
 
     /**
-     * Registers the given {@code interceptorBuilder} for a generic {@link Message} {@link MessageHandlerInterceptor}.
+     * Registers the given {@code interceptorBuilder} constructing a generic {@link Message}
+     * {@link MessageHandlerInterceptor} for all handling infrastructure components.
      *
      * @param interceptorBuilder The generic {@link Message} {@link MessageHandlerInterceptor} builder to register.
      * @return This {@code InterceptorRegistry}, for fluent interfacing.
@@ -61,8 +62,8 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
     );
 
     /**
-     * Registers the given {@code interceptorBuilder} for a {@link CommandMessage}-specific
-     * {@link MessageHandlerInterceptor}.
+     * Registers the given {@code interceptorBuilder} for a {@link CommandMessage} {@link MessageHandlerInterceptor} for
+     * all command handling infrastructure components.
      *
      * @param interceptorBuilder The {@link CommandMessage}-specific {@link MessageHandlerInterceptor} builder to
      *                           register.
@@ -70,12 +71,12 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      */
     @Nonnull
     HandlerInterceptorRegistry registerCommandInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<CommandMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
     );
 
     /**
-     * Registers the given {@code interceptorBuilder} for a {@link EventMessage}-specific
-     * {@link MessageHandlerInterceptor}.
+     * Registers the given {@code interceptorBuilder} for a {@link EventMessage} {@link MessageHandlerInterceptor} for
+     * all event handling infrastructure components
      *
      * @param interceptorBuilder The {@link EventMessage}-specific {@link MessageHandlerInterceptor} builder to
      *                           register.
@@ -83,12 +84,12 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      */
     @Nonnull
     HandlerInterceptorRegistry registerEventInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<EventMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     );
 
     /**
-     * Registers the given {@code interceptorBuilder} for a {@link QueryMessage}-specific
-     * {@link MessageHandlerInterceptor}.
+     * Registers the given {@code interceptorBuilder} for a {@link QueryMessage} {@link MessageHandlerInterceptor} for
+     * all query handling infrastructure components
      *
      * @param interceptorBuilder The {@link QueryMessage}-specific {@link MessageHandlerInterceptor} builder to
      *                           register.
@@ -96,7 +97,7 @@ public interface HandlerInterceptorRegistry extends DescribableComponent {
      */
     @Nonnull
     HandlerInterceptorRegistry registerQueryInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<QueryMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
     );
 
     /**

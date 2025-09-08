@@ -359,21 +359,19 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link CommandMessage}-specific {@link MessageHandlerInterceptor} factory in this
-     * {@code Configurer}.
+     * Registers the given {@link CommandMessage} {@link MessageHandlerInterceptor} factory in this {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
-     * {@code CommandMessage}-specific {@code MessageHandlerInterceptor} instance.
+     * {@code CommandMessage} {@code MessageHandlerInterceptor} instance.
      * <p>
      * {@code CommandMessage} {@code MessageHandlerInterceptors} are typically automatically registered with all
      * applicable infrastructure components through the {@link HandlerInterceptorRegistry}.
      *
-     * @param interceptorBuilder The builder constructing the {@link CommandMessage}-specific
-     *                           {@link MessageHandlerInterceptor}.
+     * @param interceptorBuilder The builder constructing the {@link CommandMessage} {@link MessageHandlerInterceptor}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
     public MessagingConfigurer registerCommandHandlerInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<CommandMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 HandlerInterceptorRegistry.class,
@@ -384,21 +382,19 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} factory in this
-     * {@code Configurer}.
+     * Registers the given {@link EventMessage} {@link MessageHandlerInterceptor} factory in this {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
-     * {@code EventMessage}-specific {@code MessageHandlerInterceptor} instance.
+     * {@code EventMessage} {@code MessageHandlerInterceptor} instance.
      * <p>
-     * {@code EventMessage}-specific {@code MessageHandlerInterceptors} are typically automatically registered with all
+     * {@code EventMessage} {@code MessageHandlerInterceptors} are typically automatically registered with all
      * applicable infrastructure components through the {@link HandlerInterceptorRegistry}.
      *
-     * @param interceptorBuilder The builder constructing the {@link EventMessage}-specific
-     *                           {@link MessageHandlerInterceptor}.
+     * @param interceptorBuilder The builder constructing the {@link EventMessage} {@link MessageHandlerInterceptor}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
     public MessagingConfigurer registerEventHandlerInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<EventMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 HandlerInterceptorRegistry.class,
@@ -409,21 +405,19 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link QueryMessage}-specific {@link MessageHandlerInterceptor} factory in this
-     * {@code Configurer}.
+     * Registers the given {@link QueryMessage} {@link MessageHandlerInterceptor} factory in this {@code Configurer}.
      * <p>
      * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
-     * {@code QueryMessage}-specific {@code MessageHandlerInterceptor} instance.
+     * {@code QueryMessage} {@code MessageHandlerInterceptor} instance.
      * <p>
-     * {@code QueryMessage}-specific {@code MessageHandlerInterceptors} are typically automatically registered with all
+     * {@code QueryMessage} {@code MessageHandlerInterceptors} are typically automatically registered with all
      * applicable infrastructure components through the {@link HandlerInterceptorRegistry}.
      *
-     * @param interceptorBuilder The builder constructing the {@link QueryMessage}-specific
-     *                           {@link MessageHandlerInterceptor}.
+     * @param interceptorBuilder The builder constructing the {@link QueryMessage} {@link MessageHandlerInterceptor}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
     public MessagingConfigurer registerQueryHandlerInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<QueryMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
     ) {
         delegate.componentRegistry(cr -> cr.registerDecorator(
                 HandlerInterceptorRegistry.class,

@@ -97,30 +97,45 @@ public class DefaultHandlerInterceptorRegistry implements HandlerInterceptorRegi
     @Nonnull
     @Override
     public HandlerInterceptorRegistry registerCommandInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<CommandMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super CommandMessage>> interceptorBuilder
     ) {
-        this.commandInterceptorDefinitions.add(ComponentDefinition.ofType(COMMAND_INTERCEPTOR_TYPE_REF)
-                                                                  .withBuilder(interceptorBuilder));
+        //noinspection unchecked | Casting to CommandMessage is safe.
+        this.commandInterceptorDefinitions.add(
+                ComponentDefinition.ofType(COMMAND_INTERCEPTOR_TYPE_REF)
+                                   .withBuilder(
+                                           c -> (MessageHandlerInterceptor<CommandMessage>) interceptorBuilder.build(c)
+                                   )
+        );
         return this;
     }
 
     @Nonnull
     @Override
     public HandlerInterceptorRegistry registerEventInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<EventMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     ) {
-        this.eventInterceptorDefinitions.add(ComponentDefinition.ofType(EVENT_INTERCEPTOR_TYPE_REF)
-                                                                .withBuilder(interceptorBuilder));
+        //noinspection unchecked | Casting to EventMessage is safe.
+        this.eventInterceptorDefinitions.add(
+                ComponentDefinition.ofType(EVENT_INTERCEPTOR_TYPE_REF)
+                                   .withBuilder(
+                                           c -> (MessageHandlerInterceptor<EventMessage>) interceptorBuilder.build(c)
+                                   )
+        );
         return this;
     }
 
     @Nonnull
     @Override
     public HandlerInterceptorRegistry registerQueryInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<QueryMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super QueryMessage>> interceptorBuilder
     ) {
-        this.queryInterceptorDefinitions.add(ComponentDefinition.ofType(QUERY_INTERCEPTOR_TYPE_REF)
-                                                                .withBuilder(interceptorBuilder));
+        //noinspection unchecked | Casting to QueryMessage is safe.
+        this.queryInterceptorDefinitions.add(
+                ComponentDefinition.ofType(QUERY_INTERCEPTOR_TYPE_REF)
+                                   .withBuilder(
+                                           c -> (MessageHandlerInterceptor<QueryMessage>) interceptorBuilder.build(c)
+                                   )
+        );
         return this;
     }
 

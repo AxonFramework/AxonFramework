@@ -143,7 +143,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      */
     @Nonnull
     public SubscribingEventProcessorConfiguration addInterceptor(
-            @Nonnull MessageHandlerInterceptor<EventMessage> interceptor
+            @Nonnull MessageHandlerInterceptor<? super EventMessage> interceptor
     ) {
         return addInterceptor(c -> interceptor);
     }
@@ -158,7 +158,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      */
     @Nonnull
     public SubscribingEventProcessorConfiguration addInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<EventMessage>> interceptorBuilder
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
     ) {
         interceptorRegistry.registerEventInterceptor(interceptorBuilder);
         return this;
