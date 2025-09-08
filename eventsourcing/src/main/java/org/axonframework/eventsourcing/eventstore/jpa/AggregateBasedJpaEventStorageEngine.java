@@ -38,7 +38,7 @@ import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.LegacyResources;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamSpliterator;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;

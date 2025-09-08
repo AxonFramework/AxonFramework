@@ -40,7 +40,7 @@ import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedEventStorageEngineUtils;
-import org.axonframework.eventsourcing.eventstore.LegacyResources;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventstreaming.EventCriterion;
