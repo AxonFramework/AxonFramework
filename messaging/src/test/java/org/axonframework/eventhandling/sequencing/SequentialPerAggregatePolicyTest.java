@@ -36,27 +36,52 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SequentialPerAggregatePolicyTest {
 
-    @Test
-    void sequentialIdentifier() {
-        // ok, pretty useless, but everything should be tested
-        SequentialPerAggregatePolicy testSubject = new SequentialPerAggregatePolicy();
-        String aggregateIdentifier = UUID.randomUUID().toString();
-        EventWithProcessingContext case1 = eventWithProcessingContext(aggregateIdentifier);
-        Object id1 = testSubject.getSequenceIdentifierFor(case1.event(), case1.processingContext()).orElse(null);
-        Object id2 = testSubject.getSequenceIdentifierFor(case1.event(), case1.processingContext()).orElse(null);
+    private final SequentialPerAggregatePolicy testSubject = SequentialPerAggregatePolicy.instance();
 
-        EventWithProcessingContext case2 = eventWithProcessingContext(UUID.randomUUID().toString());
-        Object id3 = testSubject.getSequenceIdentifierFor(case2.event(), case2.processingContext()).orElse(null);
+    @Test
+    void sameAggregateIdentifierProducesSameSequentialIdentifier() {
+        // given
+        String aggregateIdentifier = UUID.randomUUID().toString();
+        EventWithProcessingContext event = eventWithProcessingContext(aggregateIdentifier);
+
+        // when
+        Object id1 = testSubject.getSequenceIdentifierFor(event.event(), event.processingContext()).orElse(null);
+        Object id2 = testSubject.getSequenceIdentifierFor(event.event(), event.processingContext()).orElse(null);
+
+        // then
+        assertEquals(id1, id2);
+    }
+
+    @Test
+    void differentAggregateIdentifiersProduceDifferentSequentialIdentifiers() {
+        // given
+        String aggregateIdentifier1 = UUID.randomUUID().toString();
+        String aggregateIdentifier2 = UUID.randomUUID().toString();
+        EventWithProcessingContext event1 = eventWithProcessingContext(aggregateIdentifier1);
+        EventWithProcessingContext event2 = eventWithProcessingContext(aggregateIdentifier2);
+
+        // when
+        Object id1 = testSubject.getSequenceIdentifierFor(event1.event(), event1.processingContext()).orElse(null);
+        Object id2 = testSubject.getSequenceIdentifierFor(event2.event(), event2.processingContext()).orElse(null);
+
+        // then
+        assertNotEquals(id1, id2);
+    }
+
+    @Test
+    void processingContextWithoutAggregateIdentifierReturnsEmpty() {
+        // given
         StubProcessingContext processingContextWithoutAggregateIdentifierResource = new StubProcessingContext();
-        Object id4 = testSubject.getSequenceIdentifierFor(
-                new GenericEventMessage(new MessageType("event"), "bla"),
+        EventMessage event = new GenericEventMessage(new MessageType("event"), "bla");
+
+        // when
+        Object sequenceIdentifier = testSubject.getSequenceIdentifierFor(
+                event,
                 processingContextWithoutAggregateIdentifierResource
         ).orElse(null);
 
-        assertEquals(id1, id2);
-        assertNotEquals(id1, id3);
-        assertNotEquals(id2, id3);
-        assertNull(id4);
+        // then
+        assertNull(sequenceIdentifier);
     }
 
     @Nonnull
