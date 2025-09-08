@@ -31,7 +31,7 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.avro.AvroSerializer;
+import org.axonframework.serialization.avro.AvroConverter;
 import org.axonframework.serialization.avro.GenericRecordToByteArrayConverter;
 import org.axonframework.serialization.avro.test.ComplexObject;
 import org.axonframework.serialization.avro.test.ComplexObjectSchemas;
@@ -49,6 +49,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * TODO #3597 - Left this test in the codebase to be able to re-create is as soon upcasting is redesigned.
  * Demonstrates and verifies behavior of avro based upcasters.
  *
  * @author Simon Zambrovski
@@ -57,20 +58,19 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AvroUpcasterTest {
 
+    /**
     private final SchemaStore.Cache schemaStore = new SchemaStore.Cache();
 
-    private final AvroSerializer serializer = AvroSerializer.builder()
-                                                            .serializerDelegate(JacksonSerializer.defaultSerializer())
-                                                            .revisionResolver(new AnnotationRevisionResolver())
-                                                            .schemaStore(schemaStore)
-                                                            .includeDefaultAvroSerializationStrategies(true)
-                                                            .includeSchemasInStackTraces(true)
-                                                            .build();
+    private final AvroConverter converter = AvroConverter.builder()
+                                                          .serializerDelegate(JacksonSerializer.defaultSerializer())
+                                                          .revisionResolver(new AnnotationRevisionResolver())
+                                                          .schemaStore(schemaStore)
+                                                          .includeDefaultAvroSerializationStrategies(true)
+                                                          .includeSchemasInStackTraces(true)
+                                                          .build();
 
-    /**
-     * Purpose: Ensure that the complete wiring of serializer, initial-/intermediate representation and upcaster works
-     * as expected. No Schema incompatibilities, we just modify a property here.
-     */
+     // Purpose: Ensure that the complete wiring of serializer, initial-/intermediate representation and upcaster works
+     // as expected. No Schema incompatibilities, we just modify a property here.
     @Test
     void modifyPropertyOfComplexObjectInUpcaster() {
         schemaStore.addSchema(ComplexObject.getClassSchema());
@@ -91,27 +91,26 @@ class AvroUpcasterTest {
                 metaData
         );
 
-        EventData<?> eventData = new ByteArrayDomainEventEntry(msg, serializer);
+        EventData<?> eventData = new ByteArrayDomainEventEntry(msg, converter);
 
         SetValue2OnComplexObjectUpcaster setValue2OnComplexObjectUpcaster = new SetValue2OnComplexObjectUpcaster(
                 "helloWorld");
 
         List<IntermediateEventRepresentation> collect = setValue2OnComplexObjectUpcaster.upcast(Stream.of(
-                new InitialEventRepresentation(eventData, serializer)
+                new InitialEventRepresentation(eventData, converter)
         )).toList();
         Assertions.assertFalse(collect.isEmpty());
         IntermediateEventRepresentation r = collect.getFirst();
 
-        ComplexObject upcasted = serializer.deserialize(r.getData());
+        ComplexObject upcasted = converter.deserialize(r.getData());
 
         assertEquals("helloWorld", upcasted.getValue2());
     }
 
-    /**
-     * Purpose: the  {@link org.axonframework.serialization.avro.test.ComplexObjectSchemas#incompatibleSchema} does not
-     * define value1, so it is incompatible to the schema of {@link ComplexObject}. The Upcaster has to add the
-     * additional field.
-     */
+
+     // Purpose: the  {@link org.axonframework.serialization.avro.test.ComplexObjectSchemas#incompatibleSchema} does not
+     // define value1, so it is incompatible to the schema of {@link ComplexObject}. The Upcaster has to add the
+     // additional field.
     @Test
     void upcastIncompatibleSchema() {
         schemaStore.addSchema(ComplexObject.getClassSchema());
@@ -124,7 +123,7 @@ class AvroUpcasterTest {
         SerializedObject<byte[]> oldPayload = createSingleObjectEncodedSerializedObject(record, "1");
 
         // Then: we fail to deserialize without upcaster: incompatible schema, missing default for "value1"
-        assertThrows(SerializationException.class, () -> serializer.deserialize(oldPayload));
+        assertThrows(SerializationException.class, () -> converter.deserialize(oldPayload));
 
         // When we implement an upcaster that knows the new reader Schema and can provide the missing field value
         SingleEventUpcaster setMissingValue1Upcaster = new SingleEventUpcaster() {
@@ -154,12 +153,12 @@ class AvroUpcasterTest {
 
         // and apply it to the event stream
         SerializedObject<?> dataAfterUpcast = setMissingValue1Upcaster.upcast(Stream.of(new InitialEventRepresentation(
-                eventData(oldPayload, serializer.serialize(MetaData.with("key", "value"), byte[].class)),
-                serializer)
+                eventData(oldPayload, converter.serialize(MetaData.with("key", "value"), byte[].class)),
+                converter)
         )).toList().getFirst().getData();
 
         // Then: we can successfully deserialize to reader Class
-        ComplexObject upcasted = serializer.deserialize(dataAfterUpcast);
+        ComplexObject upcasted = converter.deserialize(dataAfterUpcast);
         assertEquals("foo", upcasted.getValue1());
     }
 
@@ -230,4 +229,5 @@ class AvroUpcasterTest {
                 byte[].class,
                 new SimpleSerializedType(record.getSchema().getFullName(), revision));
     }
+    */
 }

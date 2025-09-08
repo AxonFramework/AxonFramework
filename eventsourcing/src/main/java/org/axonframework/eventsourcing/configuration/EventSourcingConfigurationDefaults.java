@@ -17,21 +17,23 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.configuration.MessagingConfigurationDefaults;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
+
+import java.util.List;
 
 /**
  * A {@link ConfigurationEnhancer} registering the default components of the {@link EventSourcingConfigurer}.
@@ -41,8 +43,12 @@ import org.axonframework.eventstreaming.StreamableEventSource;
  *     <li>Registers a {@link AnnotationBasedTagResolver} for class {@link TagResolver}</li>
  *     <li>Registers a {@link InMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
  *     <li>Registers a {@link SimpleEventStore} for class {@link EventStore}</li>
- *     <li>Registers a {@link SimpleEventStore} for class {@link EventSink}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link Snapshotter}</li>
+ * </ul>
+ * Furthermore, this enhancer will decorate the:
+ * <ul>
+ *     <li>The {@link EventStore} in a {@link InterceptingEventStore} <b>if</b> there are any
+ *     {@link MessageDispatchInterceptor MessageDispatchInterceptors} present in the {@link DispatchInterceptorRegistry}.</li>
  * </ul>
  *
  * @author Steven van Beelen
@@ -50,25 +56,37 @@ import org.axonframework.eventstreaming.StreamableEventSource;
  */
 public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
 
+    /**
+     * The order of {@code this} enhancer compared to others, equal to 100 positions before
+     * {@link MessagingConfigurationDefaults} (thus, {@link MessagingConfigurationDefaults#ENHANCER_ORDER} - 100).
+     */
+    public static final int ENHANCER_ORDER = MessagingConfigurationDefaults.ENHANCER_ORDER - 100;
+
     @Override
     public int order() {
-        return Integer.MAX_VALUE - 10;
+        return ENHANCER_ORDER;
     }
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
+        // Register components
         registry.registerIfNotPresent(TagResolver.class, EventSourcingConfigurationDefaults::defaultTagResolver)
                 .registerIfNotPresent(EventStorageEngine.class,
                                       EventSourcingConfigurationDefaults::defaultEventStorageEngine)
                 .registerIfNotPresent(EventStore.class, EventSourcingConfigurationDefaults::defaultEventStore)
-                .registerIfNotPresent(Snapshotter.class, EventSourcingConfigurationDefaults::defaultSnapshotter)
-                .registerDecorator(PooledStreamingEventProcessorModule.Customization.class,
-                                   Integer.MAX_VALUE,
-                                   (config, name, delegate) -> delegate.andThen(
-                                           (c, d) -> d.eventSource() == null
-                                                   ? d.eventSource(defaultStreamableEventSource(config)) : d
-                                   )
-                );
+                .registerIfNotPresent(Snapshotter.class, EventSourcingConfigurationDefaults::defaultSnapshotter);
+        // Register decorators
+        registry.registerDecorator(
+                EventStore.class,
+                InterceptingEventStore.DECORATION_ORDER,
+                (config, name, delegate) -> {
+                    List<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors =
+                            config.getComponent(DispatchInterceptorRegistry.class).eventInterceptors(config);
+                    return dispatchInterceptors.isEmpty()
+                            ? delegate
+                            : new InterceptingEventStore(delegate, dispatchInterceptors);
+                }
+        );
     }
 
     private static TagResolver defaultTagResolver(Configuration configuration) {
@@ -84,24 +102,9 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
                                     config.getComponent(TagResolver.class));
     }
 
-    private static EventSink defaultEventSink(Configuration config) {
-        return config.getComponent(EventStore.class);
-    }
-
     private static Snapshotter defaultSnapshotter(Configuration config) {
         return (aggregateType, aggregateIdentifier) -> {
             // TODO #3105 - Replace this Snapshotter for the new Snapshotter
         };
-    }
-
-    private static StreamableEventSource<? extends EventMessage> defaultStreamableEventSource(
-            Configuration configuration
-    ) {
-        EventStore eventStore = configuration.getComponent(EventStore.class);
-        if (eventStore instanceof StreamableEventSource) {
-            return (StreamableEventSource<? extends EventMessage>) eventStore;
-        }
-        throw new AxonConfigurationException(
-                "The EventStore is not a StreamableEventSource, so the StreamableEventSource must be configured explicitly.");
     }
 }

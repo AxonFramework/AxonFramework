@@ -15,19 +15,18 @@
  */
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
+import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.spring.config.SpringComponentRegistry;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 
 import java.util.List;
@@ -47,69 +46,118 @@ import java.util.Optional;
  * @since 4.11.0
  */
 @AutoConfiguration
-@ConditionalOnClass(SpringComponentRegistry.class)
-@AutoConfigureAfter({
-        LegacyAxonAutoConfiguration.class,
-        JpaAutoConfiguration.class,
-        JpaEventStoreAutoConfiguration.class,
-        NoOpTransactionAutoConfiguration.class,
-        TransactionAutoConfiguration.class
-})
+@AutoConfigureAfter(AxonAutoConfiguration.class)
 public class InterceptorAutoConfiguration {
 
-    // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
-//    @Bean
-//    @ConditionalOnBean(MessageDispatchInterceptor.class)
-//    public InitializingBean commandDispatchInterceptorConfigurer(
-//            CommandGateway commandGateway,
-//            Optional<List<MessageDispatchInterceptor<? super CommandMessage>>> interceptors
-//    ) {
-//        return () -> interceptors.ifPresent(it -> it.forEach(commandGateway::registerDispatchInterceptor));
-//    }
-
-    // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
-//    @Bean
-//    @ConditionalOnBean(MessageDispatchInterceptor.class)
-//    public InitializingBean eventDispatchInterceptorConfigurer(
-//            EventGateway eventGateway,
-//            Optional<List<MessageDispatchInterceptor<? super EventMessage>>> interceptors
-//    ) {
-//        return () -> interceptors.ifPresent(it -> it.forEach(eventGateway::registerDispatchInterceptor));
-//    }
-
-//    @Bean
-//    @ConditionalOnBean(MessageDispatchInterceptor.class)
-//    public InitializingBean queryDispatchInterceptorConfigurer(
-//            QueryGateway queryGateway,
-//            Optional<List<MessageDispatchInterceptor<? super QueryMessage>>> interceptors
-//    ) {
-//        return () -> interceptors.ifPresent(it -> it.forEach(queryGateway::registerDispatchInterceptor));
-//    }
-
-    // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
-//    @Bean
-//    @ConditionalOnBean(MessageHandlerInterceptor.class)
-//    public InitializingBean commandHandlerInterceptorConfigurer(
-//            CommandBus commandBus,
-//            Optional<List<MessageHandlerInterceptor<? super CommandMessage>>> interceptors
-//    ) {
-//        return () -> interceptors.ifPresent(it -> it.forEach(commandBus::registerHandlerInterceptor));
-//    }
-
-//    @Bean
-//    @ConditionalOnBean(MessageHandlerInterceptor.class)
-//    public InitializingBean queryHandlerInterceptorConfigurer(
-//            QueryBus queryBus,
-//            Optional<List<MessageHandlerInterceptor<QueryMessage>>> interceptors) {
-//        return () -> interceptors.ifPresent(it -> it.forEach(queryBus::registerHandlerInterceptor));
-//    }
-
+    /**
+     * Bean creation method for a {@link DecoratorDefinition} that registers {@link Message}-specific
+     * {@link MessageDispatchInterceptor MessageDispatchInterceptors} with the {@link DispatchInterceptorRegistry}.
+     *
+     * @param commandInterceptors {@link CommandMessage}-specific and generic {@link Message} dispatch interceptors to
+     *                            register for commands.
+     * @param eventInterceptors   {@link EventMessage}-specific and generic {@link Message} dispatch interceptors to
+     *                            register for events.
+     * @param queryInterceptors   {@link QueryMessage}-specific and generic {@link Message} dispatch interceptors to
+     *                            register for queries.
+     * @return A bean creation method for a {@link DecoratorDefinition} that registers {@link Message}-specific
+     * {@link MessageDispatchInterceptor MessageDispatchInterceptors} with the {@link DispatchInterceptorRegistry}.
+     */
     @Bean
-    public InitializingBean messageHandlerInterceptorConfigurer(
-            EventProcessingConfigurer eventProcessingConfigurer,
-            Optional<List<MessageHandlerInterceptor<EventMessage>>> interceptors
+    @ConditionalOnBean(MessageDispatchInterceptor.class)
+    public DecoratorDefinition<DispatchInterceptorRegistry, DispatchInterceptorRegistry> dispatchInterceptorEnhancer(
+            Optional<List<MessageDispatchInterceptor<? super CommandMessage>>> commandInterceptors,
+            Optional<List<MessageDispatchInterceptor<? super EventMessage>>> eventInterceptors,
+            Optional<List<MessageDispatchInterceptor<? super QueryMessage>>> queryInterceptors
     ) {
-        return () -> interceptors
-                .ifPresent(it -> it.forEach(i -> eventProcessingConfigurer.registerDefaultHandlerInterceptor((c, n) -> i)));
+        return DecoratorDefinition.forType(DispatchInterceptorRegistry.class)
+                                  .with((config, name, delegate) -> registerDispatchInterceptors(
+                                          delegate,
+                                          commandInterceptors,
+                                          eventInterceptors,
+                                          queryInterceptors
+                                  ));
+    }
+
+    private static DispatchInterceptorRegistry registerDispatchInterceptors(
+            DispatchInterceptorRegistry registry,
+            Optional<List<MessageDispatchInterceptor<? super CommandMessage>>> commandInterceptors,
+            Optional<List<MessageDispatchInterceptor<? super EventMessage>>> eventInterceptors,
+            Optional<List<MessageDispatchInterceptor<? super QueryMessage>>> queryInterceptors
+    ) {
+        if (commandInterceptors.isPresent()) {
+            for (MessageDispatchInterceptor<? super CommandMessage> interceptor : commandInterceptors.get()) {
+                registry = registry.registerCommandInterceptor(c -> interceptor);
+            }
+        }
+        if (eventInterceptors.isPresent()) {
+            for (MessageDispatchInterceptor<? super EventMessage> interceptor : eventInterceptors.get()) {
+                registry = registry.registerEventInterceptor(c -> interceptor);
+            }
+        }
+        if (queryInterceptors.isPresent()) {
+            for (MessageDispatchInterceptor<? super QueryMessage> interceptor : queryInterceptors.get()) {
+                registry = registry.registerQueryInterceptor(c -> interceptor);
+            }
+        }
+        return registry;
+    }
+
+    /**
+     * Bean creation method for a {@link DecoratorDefinition} that registers {@link Message}-specific
+     * {@link MessageHandlerInterceptor MessageHandlerInterceptors} with the {@link HandlerInterceptorRegistry}.
+     *
+     * @param interceptors        Generic {@link Message} handler interceptors to register.
+     * @param commandInterceptors {@link CommandMessage}-specific handler interceptors to register.
+     * @param eventInterceptors   {@link EventMessage}-specific handler interceptors to register.
+     * @param queryInterceptors   {@link QueryMessage}-specific handler interceptors to register.
+     * @return A bean creation method for a {@link DecoratorDefinition} that registers {@link Message}-specific
+     * {@link MessageHandlerInterceptor MessageHandlerInterceptors} with the {@link DispatchInterceptorRegistry}.
+     */
+    @Bean
+    @ConditionalOnBean(MessageHandlerInterceptor.class)
+    public DecoratorDefinition<HandlerInterceptorRegistry, HandlerInterceptorRegistry> handlerInterceptorEnhancer(
+            Optional<List<MessageHandlerInterceptor<Message>>> interceptors,
+            Optional<List<MessageHandlerInterceptor<CommandMessage>>> commandInterceptors,
+            Optional<List<MessageHandlerInterceptor<EventMessage>>> eventInterceptors,
+            Optional<List<MessageHandlerInterceptor<QueryMessage>>> queryInterceptors
+    ) {
+        return DecoratorDefinition.forType(HandlerInterceptorRegistry.class)
+                                  .with((config, name, delegate) -> registerHandlerInterceptors(
+                                          delegate,
+                                          interceptors,
+                                          commandInterceptors,
+                                          eventInterceptors,
+                                          queryInterceptors
+                                  ));
+    }
+
+    private static HandlerInterceptorRegistry registerHandlerInterceptors(
+            HandlerInterceptorRegistry registry,
+            Optional<List<MessageHandlerInterceptor<Message>>> interceptors,
+            Optional<List<MessageHandlerInterceptor<CommandMessage>>> commandInterceptors,
+            Optional<List<MessageHandlerInterceptor<EventMessage>>> eventInterceptors,
+            Optional<List<MessageHandlerInterceptor<QueryMessage>>> queryInterceptors
+    ) {
+        if (interceptors.isPresent()) {
+            for (MessageHandlerInterceptor<Message> interceptor : interceptors.get()) {
+                registry = registry.registerInterceptor(c -> interceptor);
+            }
+        }
+        if (commandInterceptors.isPresent()) {
+            for (MessageHandlerInterceptor<CommandMessage> interceptor : commandInterceptors.get()) {
+                registry = registry.registerCommandInterceptor(c -> interceptor);
+            }
+        }
+        if (eventInterceptors.isPresent()) {
+            for (MessageHandlerInterceptor<EventMessage> interceptor : eventInterceptors.get()) {
+                registry = registry.registerEventInterceptor(c -> interceptor);
+            }
+        }
+        if (queryInterceptors.isPresent()) {
+            for (MessageHandlerInterceptor<QueryMessage> interceptor : queryInterceptors.get()) {
+                registry = registry.registerQueryInterceptor(c -> interceptor);
+            }
+        }
+        return registry;
     }
 }

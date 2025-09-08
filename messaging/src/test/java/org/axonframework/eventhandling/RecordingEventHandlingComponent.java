@@ -47,7 +47,7 @@ public class RecordingEventHandlingComponent extends DelegatingEventHandlingComp
     @Nonnull
     @Override
     public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                                     @Nonnull ProcessingContext context) {
+                                               @Nonnull ProcessingContext context) {
         CompletableFuture<Message> resultFuture = new CompletableFuture<>();
         delegate.handle(event, context).asCompletableFuture()
                 .whenComplete((r, e) -> {
@@ -63,10 +63,6 @@ public class RecordingEventHandlingComponent extends DelegatingEventHandlingComp
 
     public List<EventMessage> recorded() {
         return recorded;
-    }
-
-    public boolean handledAnything() {
-        return !recorded.isEmpty();
     }
 
     public boolean handled(EventMessage event) {

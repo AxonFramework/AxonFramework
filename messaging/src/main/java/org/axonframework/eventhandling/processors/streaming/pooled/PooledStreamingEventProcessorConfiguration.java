@@ -19,24 +19,29 @@ package org.axonframework.eventhandling.processors.streaming.pooled;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
+import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
-import org.axonframework.eventhandling.processors.EventProcessor;
-import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
-import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
+import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
-import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
-import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
+import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.interceptors.DefaultHandlerInterceptorRegistry;
+import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -85,6 +90,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 public class PooledStreamingEventProcessorConfiguration extends EventProcessorConfiguration {
 
     private StreamableEventSource<? extends EventMessage> eventSource;
+    private final HandlerInterceptorRegistry interceptorRegistry = new DefaultHandlerInterceptorRegistry();
     private TokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
     private ScheduledExecutorService workerExecutor;
@@ -104,13 +110,13 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             eventMessage).reportIgnored();
 
     /**
-     * Constructs a new {@link PooledStreamingEventProcessorConfiguration} with default values.
+     * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with default values.
      */
     public PooledStreamingEventProcessorConfiguration() {
     }
 
     /**
-     * Constructs a new {@link PooledStreamingEventProcessorConfiguration} copying properties from the given
+     * Constructs a new {@code PooledStreamingEventProcessorConfiguration} copying properties from the given
      * configuration.
      *
      * @param base The {@link EventProcessorConfiguration} to copy properties from.
@@ -139,13 +145,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     @Override
-    public PooledStreamingEventProcessorConfiguration interceptors(
-            @Nonnull List<MessageHandlerInterceptor<EventMessage>> interceptors) {
-        super.interceptors(interceptors);
-        return this;
-    }
-
-    @Override
     public PooledStreamingEventProcessorConfiguration unitOfWorkFactory(
             @Nonnull UnitOfWorkFactory unitOfWorkFactory) {
         super.unitOfWorkFactory(unitOfWorkFactory);
@@ -164,6 +163,37 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             @Nonnull StreamableEventSource<? extends EventMessage> eventSource) {
         assertNonNull(eventSource, "StreamableEventSource may not be null");
         this.eventSource = eventSource;
+        return this;
+    }
+
+    /**
+     * Registers the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} for the
+     * {@link PooledStreamingEventProcessor} under construction.
+     *
+     * @param interceptor The {@link EventMessage}-specific {@link MessageHandlerInterceptor} to register for the
+     *                    {@link PooledStreamingEventProcessor} under construction.
+     * @return This {@code PooledStreamingEventProcessorConfiguration}, for fluent interfacing.
+     */
+    @Nonnull
+    public PooledStreamingEventProcessorConfiguration addInterceptor(
+            @Nonnull MessageHandlerInterceptor<? super EventMessage> interceptor
+    ) {
+        return addInterceptor(c -> interceptor);
+    }
+
+    /**
+     * Registers the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} factory for the
+     * {@link PooledStreamingEventProcessor} under construction.
+     *
+     * @param interceptorBuilder The builder constructing the {@link EventMessage}-specific
+     *                           {@link MessageHandlerInterceptor}.
+     * @return This {@code PooledStreamingEventProcessorConfiguration}, for fluent interfacing.
+     */
+    @Nonnull
+    public PooledStreamingEventProcessorConfiguration addInterceptor(
+            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
+    ) {
+        interceptorRegistry.registerEventInterceptor(interceptorBuilder);
         return this;
     }
 
@@ -431,6 +461,27 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     /**
+     * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link SubscribingEventProcessor} under construction.
+     *
+     * @param config The configuration to construct all {@link EventMessage}-specific
+     *               {@link MessageHandlerInterceptor MessageHandlerInterceptors}
+     * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link SubscribingEventProcessor} under construction.
+     */
+    @Nonnull
+    public List<MessageHandlerInterceptor<EventMessage>> addInterceptor(Configuration config) {
+        // First retrieve the default interceptors
+        List<MessageHandlerInterceptor<EventMessage>> interceptors =
+                config.getComponent(HandlerInterceptorRegistry.class)
+                      .eventInterceptors(config);
+        // Then add the PSEP-specific interceptors
+        interceptors.addAll(interceptorRegistry.eventInterceptors(config));
+        // And return
+        return interceptors;
+    }
+
+    /**
      * Returns the {@link TokenStore} used to store and fetch event tokens.
      *
      * @return The {@link TokenStore} for tracking progress.
@@ -551,6 +602,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         descriptor.describeProperty("eventSource", eventSource);
+        descriptor.describeProperty("interceptors", interceptorRegistry);
         descriptor.describeProperty("tokenStore", tokenStore);
         descriptor.describeProperty("coordinatorExecutor", coordinatorExecutor);
         descriptor.describeProperty("workerExecutor", workerExecutor);

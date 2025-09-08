@@ -20,14 +20,13 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
-import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.messaging.EmptyApplicationContext;
-import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -36,8 +35,6 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -64,20 +61,19 @@ public class EventProcessorConfiguration implements DescribableComponent {
     protected EventProcessorSpanFactory spanFactory = DefaultEventProcessorSpanFactory.builder()
                                                                                       .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                       .build();
-    private List<MessageHandlerInterceptor<EventMessage>> interceptors = new ArrayList<>();
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
 
     /**
-     * Constructs a new {@link EventProcessorConfiguration} with default values.
+     * Constructs a new {@code EventProcessorConfiguration} with default values.
      */
     public EventProcessorConfiguration() {
         super();
     }
 
     /**
-     * Constructs a new {@link EventProcessorConfiguration} copying properties from the given configuration.
+     * Constructs a new {@code EventProcessorConfiguration} copying properties from the given configuration.
      *
-     * @param base The {@link EventProcessorConfiguration} to copy properties from.
+     * @param base The {@code EventProcessorConfiguration} to copy properties from.
      */
     public EventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         Objects.requireNonNull(base, "Base configuration may not be null");
@@ -85,7 +81,6 @@ public class EventProcessorConfiguration implements DescribableComponent {
         this.errorHandler = base.errorHandler();
         this.messageMonitor = base.messageMonitor();
         this.spanFactory = base.spanFactory();
-        this.interceptors = base.interceptors();
         this.unitOfWorkFactory = base.unitOfWorkFactory();
     }
 
@@ -129,14 +124,6 @@ public class EventProcessorConfiguration implements DescribableComponent {
     public EventProcessorConfiguration spanFactory(@Nonnull EventProcessorSpanFactory spanFactory) {
         assertNonNull(spanFactory, "SpanFactory may not be null");
         this.spanFactory = spanFactory;
-        return this;
-    }
-
-    @Deprecated(since = "5.0.0", forRemoval = true)
-    public EventProcessorConfiguration interceptors(
-            @Nonnull List<MessageHandlerInterceptor<EventMessage>> interceptors) {
-        assertNonNull(spanFactory, "interceptors may not be null");
-        this.interceptors = interceptors;
         return this;
     }
 
@@ -192,15 +179,6 @@ public class EventProcessorConfiguration implements DescribableComponent {
     }
 
     /**
-     * Returns the list of {@link MessageHandlerInterceptor}s applied to event processing.
-     *
-     * @return The list of interceptors for this {@link EventProcessor} implementation.
-     */
-    public List<MessageHandlerInterceptor<EventMessage>> interceptors() {
-        return interceptors;
-    }
-
-    /**
      * Returns the {@link UnitOfWorkFactory} used to create {@link UnitOfWork} instances for event processing.
      *
      * @return The {@link UnitOfWorkFactory} for this {@link EventProcessor} implementation.
@@ -223,7 +201,6 @@ public class EventProcessorConfiguration implements DescribableComponent {
         descriptor.describeProperty("errorHandler", errorHandler);
         descriptor.describeProperty("messageMonitor", messageMonitor);
         descriptor.describeProperty("spanFactory", spanFactory);
-        descriptor.describeProperty("interceptors", interceptors);
         descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
     }
 }

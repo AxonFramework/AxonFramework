@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.DescribableComponent;
 
+import java.lang.reflect.Type;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
@@ -99,13 +100,25 @@ public interface Component<C> extends DescribableComponent {
     record Identifier<C>(@Nonnull TypeReference<C> type, @Nullable String name) {
 
         /**
+         * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code clazz} and {@code name}.
+         *
+         * @param clazz The clazz of the component this object identifies, typically an interface.
+         * @param name  The name of the component this object identifies, potentially {@code null} when unimportant.
+         *              Will throw an {@link IllegalArgumentException} for an empty {@code name}.
+         */
+        public Identifier(@Nonnull Class<C> clazz,
+                          @Nullable String name) {
+            this(TypeReference.fromClass(clazz), name);
+        }
+
+        /**
          * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
          *
          * @param type The type of the component this object identifies, typically an interface.
          * @param name The name of the component this object identifies, potentially {@code null} when unimportant. Will
          *             throw an {@link IllegalArgumentException} for an empty {@code name}.
          */
-        public Identifier(@Nonnull Class<C> type,
+        public Identifier(@Nonnull Type type,
                           @Nullable String name) {
             this(TypeReference.fromType(type), name);
         }
