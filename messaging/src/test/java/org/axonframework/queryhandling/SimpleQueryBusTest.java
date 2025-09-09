@@ -98,7 +98,6 @@ class SimpleQueryBusTest {
         when(messageMonitor.onMessageIngested(any())).thenReturn(monitorCallback);
 
         testSubject = SimpleQueryBus.builder()
-                                    .messageMonitor(messageMonitor)
                                     .errorHandler(errorHandler)
                                     .queryUpdateEmitter(SimpleQueryUpdateEmitter.builder()
                                                                                 .spanFactory(
@@ -151,7 +150,6 @@ class SimpleQueryBusTest {
     void subscribingSameQueryTwiceWithThrowingDuplicateResolver() {
         // Modify query bus with failing duplicate resolver
         testSubject = SimpleQueryBus.builder()
-                                    .messageMonitor(messageMonitor)
                                     .errorHandler(errorHandler)
                                     .duplicateQueryHandlerResolver(DuplicateQueryHandlerResolution.rejectDuplicates())
                                     .build();
@@ -564,7 +562,6 @@ class SimpleQueryBusTest {
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
         testSubject = SimpleQueryBus.builder()
-                                    .messageMonitor(messageMonitor)
                                     .transactionManager(mockTxManager)
                                     .errorHandler(errorHandler)
                                     .duplicateQueryHandlerResolver(silentlyAdd())
@@ -593,7 +590,6 @@ class SimpleQueryBusTest {
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
         testSubject = SimpleQueryBus.builder()
-                                    .messageMonitor(messageMonitor)
                                     .transactionManager(mockTxManager)
                                     .errorHandler(errorHandler)
                                     .duplicateQueryHandlerResolver(silentlyAdd())
@@ -626,7 +622,6 @@ class SimpleQueryBusTest {
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
         testSubject = SimpleQueryBus.builder()
-                                    .messageMonitor(messageMonitor)
                                     .transactionManager(mockTxManager)
                                     .errorHandler(errorHandler)
                                     .duplicateQueryHandlerResolver(silentlyAdd())

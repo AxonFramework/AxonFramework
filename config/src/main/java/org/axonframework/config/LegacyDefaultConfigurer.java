@@ -353,8 +353,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         return defaultComponent(QueryBus.class, config)
                 .orElseGet(() -> {
                     SimpleQueryBus queryBus = SimpleQueryBus.builder()
-                                                            .messageMonitor(config.messageMonitor(SimpleQueryBus.class,
-                                                                                                  "queryBus"))
                                                             .transactionManager(config.getComponent(
                                                                     TransactionManager.class,
                                                                     NoTransactionManager::instance

@@ -32,8 +32,6 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolver;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
@@ -94,7 +92,6 @@ public class SimpleQueryBus implements QueryBus {
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
     private final ConcurrentMap<String, List<QuerySubscription<?>>> subscriptions = new ConcurrentHashMap<>();
-    private final MessageMonitor<? super QueryMessage> messageMonitor;
     private final DuplicateQueryHandlerResolver duplicateQueryHandlerResolver;
     private final QueryInvocationErrorHandler errorHandler;
     private final MessageTypeResolver messageTypeResolver;
@@ -108,7 +105,6 @@ public class SimpleQueryBus implements QueryBus {
      */
     protected SimpleQueryBus(Builder builder) {
         builder.validate();
-        this.messageMonitor = builder.messageMonitor;
         this.errorHandler = builder.errorHandler;
         // TODO #3488 - Replace for TransactionalUnitOfWorkFactory
 //        if (builder.transactionManager != NoTransactionManager.INSTANCE) {
@@ -122,7 +118,7 @@ public class SimpleQueryBus implements QueryBus {
     /**
      * Instantiate a Builder to be able to create a {@link SimpleQueryBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to
+     * {@link TransactionManager} to
      * {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler},
      * the {@link QueryBusSpanFactory} defaults to a {@link DefaultQueryBusSpanFactory} backed by a
      * {@link NoOpSpanFactory} and {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}.
@@ -178,7 +174,6 @@ public class SimpleQueryBus implements QueryBus {
             @Nonnull QueryMessage query) {
         Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
                        () -> "Direct query does not support Flux as a return type.");
-        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> handlers =
                 getHandlersForMessage(query);
         CompletableFuture<QueryResponseMessage> result = new CompletableFuture<>();
@@ -209,7 +204,6 @@ public class SimpleQueryBus implements QueryBus {
 
 
                         result.complete(queryResponseMessage);
-                        monitorCallback.reportFailure(resultMessage.exceptionResult());
                         return result;
                     }
                 } else {
@@ -220,10 +214,8 @@ public class SimpleQueryBus implements QueryBus {
             if (!invocationSuccess) {
                 throw noSuitableHandlerException(query);
             }
-            monitorCallback.reportSuccess();
         } catch (Exception e) {
             result.completeExceptionally(e);
-            monitorCallback.reportFailure(e);
         }
         return result;
     }
@@ -240,9 +232,8 @@ public class SimpleQueryBus implements QueryBus {
                            .flatMap(new CatchLastError(lastError))
                            .doOnEach(new ErrorIfComplete(lastError, interceptedQuery))
                            .next()
-                           .doOnEach(new SuccessReporter())
                            .flatMapMany(m -> (Publisher) m.payload())
-                   ).contextWrite(new MonitorCallbackContextWriter(messageMonitor, query));
+                   );
     }
 
     /**
@@ -310,72 +301,6 @@ public class SimpleQueryBus implements QueryBus {
         }
     }
 
-
-    /**
-     * Reports result of streaming query execution to the
-     * {@link org.axonframework.monitoring.MessageMonitor.MonitorCallback} (assuming that a monitor callback is attached
-     * to the context).
-     * <p>
-     * The reason for this static class to exist at all is the ability of instantiating {@link SimpleQueryBus} even
-     * without Project Reactor on the classpath.
-     * </p>
-     * <p>
-     * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
-     * inner class). But, inner classes have a reference to an outer class making a single unit together with it. If an
-     * inner or outer class had a method with a parameter that belongs to a library which is not on the classpath,
-     * instantiation would fail.
-     * </p>
-     *
-     * @author Milan Savic
-     */
-    private static class SuccessReporter implements Consumer<Signal<?>> {
-
-        @Override
-        public void accept(Signal signal) {
-            MessageMonitor.MonitorCallback m = signal.getContextView()
-                                                     .get(MessageMonitor.MonitorCallback.class);
-            if (signal.isOnNext()) {
-                m.reportSuccess();
-            } else if (signal.isOnError()) {
-                m.reportFailure(signal.getThrowable());
-            }
-        }
-    }
-
-    /**
-     * Attaches {@link org.axonframework.monitoring.MessageMonitor.MonitorCallback} to the Project Reactor's
-     * {@link Context}.
-     * <p>
-     * The reason for this static class to exist at all is the ability of instantiating {@link SimpleQueryBus} even
-     * without Project Reactor on the classpath.
-     * </p>
-     * <p>
-     * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
-     * inner class). But, inner classes have a reference to an outer class making a single unit together with it. If an
-     * inner or outer class had a method with a parameter that belongs to a library which is not on the classpath,
-     * instantiation would fail.
-     * </p>
-     *
-     * @author Milan Savic
-     */
-    private static class MonitorCallbackContextWriter implements UnaryOperator<Context> {
-
-        private final MessageMonitor<? super QueryMessage> messageMonitor;
-        private final StreamingQueryMessage query;
-
-        private MonitorCallbackContextWriter(MessageMonitor<? super QueryMessage> messageMonitor,
-                                             StreamingQueryMessage query) {
-            this.messageMonitor = messageMonitor;
-            this.query = query;
-        }
-
-        @Override
-        public Context apply(Context ctx) {
-            return ctx.put(MessageMonitor.MonitorCallback.class,
-                           messageMonitor.onMessageIngested(query));
-        }
-    }
-
     private NoHandlerForQueryException noHandlerException(QueryMessage intercepted) {
         return new NoHandlerForQueryException(format("No handler found for [%s] with response type [%s]",
                                                      intercepted.type(),
@@ -393,23 +318,20 @@ public class SimpleQueryBus implements QueryBus {
                                                       @Nonnull TimeUnit unit) {
         Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
                        () -> "Scatter-Gather query does not support Flux as a return type.");
-        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
         List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> handlers =
                 getHandlersForMessage(query);
         if (handlers.isEmpty()) {
-            monitorCallback.reportIgnored();
             return Stream.empty();
         }
 
         long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
         return handlers
                 .stream()
-                .map(handler -> scatterGatherHandler(monitorCallback, query, deadline, handler))
+                .map(handler -> scatterGatherHandler(query, deadline, handler))
                 .filter(Objects::nonNull);
     }
 
     private QueryResponseMessage scatterGatherHandler(
-            MessageMonitor.MonitorCallback monitorCallback,
             QueryMessage interceptedQuery,
             long deadline,
             MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> handler
@@ -420,15 +342,12 @@ public class SimpleQueryBus implements QueryBus {
                                    handler);
         QueryResponseMessage response = null;
         if (resultMessage.isExceptional()) {
-            monitorCallback.reportFailure(resultMessage.exceptionResult());
             errorHandler.onError(resultMessage.exceptionResult(), interceptedQuery, handler);
         } else {
             try {
                 response = ((CompletableFuture<QueryResponseMessage>) resultMessage.payload()).get(leftTimeout,
                                                                                                    TimeUnit.MILLISECONDS);
-                monitorCallback.reportSuccess();
             } catch (Exception e) {
-                monitorCallback.reportFailure(e);
                 errorHandler.onError(e, interceptedQuery, handler);
             }
         }
@@ -654,14 +573,13 @@ public class SimpleQueryBus implements QueryBus {
     /**
      * Builder class to instantiate a {@link SimpleQueryBus}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to {@link NoOpMessageMonitor}, {@link TransactionManager} to
+     * {@link TransactionManager} to
      * {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to {@link LoggingQueryInvocationErrorHandler},
      * the {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter} and the {@link QueryBusSpanFactory} defaults
      * to a {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}.
      */
     public static class Builder {
 
-        private MessageMonitor<? super QueryMessage> messageMonitor = NoOpMessageMonitor.INSTANCE;
         private TransactionManager transactionManager = NoTransactionManager.instance();
         private QueryInvocationErrorHandler errorHandler = LoggingQueryInvocationErrorHandler.builder()
                                                                                              .logger(logger)
@@ -675,18 +593,6 @@ public class SimpleQueryBus implements QueryBus {
                                                                                                                             .build())
                                                                                 .build();
         private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
-
-        /**
-         * Sets the {@link MessageMonitor} used to monitor query messages. Defaults to a {@link NoOpMessageMonitor}.
-         *
-         * @param messageMonitor a {@link MessageMonitor} used to monitor query messages
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder messageMonitor(@Nonnull MessageMonitor<? super QueryMessage> messageMonitor) {
-            assertNonNull(messageMonitor, "MessageMonitor may not be null");
-            this.messageMonitor = messageMonitor;
-            return this;
-        }
 
         /**
          * Sets the duplicate query handler resolver. This determines which registrations are added to the query bus

@@ -89,7 +89,6 @@ public class AxonServerBusAutoConfiguration {
                                        TargetContextResolver<? super QueryMessage> targetContextResolver) {
         SimpleQueryBus simpleQueryBus =
                 SimpleQueryBus.builder()
-                              .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
                               .transactionManager(txManager)
                               .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                               .errorHandler(queryInvocationErrorHandler)
