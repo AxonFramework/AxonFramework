@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.axonframework.eventhandling.sequencing;
+
+import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.conversion.EventConverter;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+
+/**
+ * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the event message payload based
+ * on a given property or property extractor. If the event message payload is not of a supported type, a fallback
+ * sequencing policy is used. By default the fallback sequencing policy raises an exception.
+ *
+ * @param <T> The type of the supported event payloads.
+ * @param <K> The type of the extracted property.
+ * @author Nils Christian Ehmke
+ * @since 4.5.2
+ */
+@SuppressWarnings("rawtypes")
+public class ExpressionSequencingPolicy<T, K> implements SequencingPolicy {
+
+    private final Class<T> payloadClass;
+    private final Function<T, K> identifierExtractor;
+
+    /**
+     * Creates a new instance of the {@link ExpressionSequencingPolicy}, which extracts the sequence identifier from the
+     * event message payload of the given {@code payloadClass} using the given {@code identifierExtractor}.
+     *
+     * @param payloadClass        The class of the supported event payloads.
+     * @param identifierExtractor The function to extract the sequence identifier from the event payload.
+     */
+    public ExpressionSequencingPolicy(
+            @Nonnull Class<T> payloadClass,
+            @Nonnull Function<T, K> identifierExtractor
+    ) {
+        this.payloadClass = Objects.requireNonNull(payloadClass, "Payload class may not be null.");
+        this.identifierExtractor = Objects.requireNonNull(identifierExtractor,
+                                                          "Identifier extractor function may not be null.");
+    }
+
+    @Override
+    public Optional<Object> getSequenceIdentifierFor(
+            @Nonnull final EventMessage eventMessage,
+            @Nonnull ProcessingContext context
+    ) {
+        Objects.requireNonNull(eventMessage, "EventMessage may not be null");
+        Objects.requireNonNull(context, "ProcessingContext may not be null");
+
+        if (payloadClass.isAssignableFrom(eventMessage.payloadType())) {
+            @SuppressWarnings("unchecked") final T castedPayload = (T) eventMessage.payload();
+            return Optional.ofNullable(identifierExtractor.apply(castedPayload));
+        }
+
+        var converter = context.component(EventConverter.class);
+        var converted = eventMessage.payloadAs(payloadClass, converter);
+        return Optional.ofNullable(identifierExtractor.apply(converted));
+    }
+}

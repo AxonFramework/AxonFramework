@@ -34,15 +34,12 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Nils Christian Ehmke
  */
-@DisplayName("Unit-Test for the PropertySequencingPolicy")
-final class PropertySequencingPolicyTest {
+@DisplayName("Unit-Test for the PropertySequencingPolicy") final class PropertySequencingPolicyTest {
 
     @Test
     void propertyExtractorShouldReadCorrectValue() {
-        final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
-                .builder(TestEvent.class, String.class)
-                .propertyExtractor(TestEvent::id)
-                .build();
+        final SequencingPolicy sequencingPolicy =
+                new ExpressionSequencingPolicy<>(TestEvent.class, TestEvent::id);
 
         assertThat(sequencingPolicy.getSequenceIdentifierFor(
                 anEvent(new TestEvent("42")),
@@ -52,10 +49,7 @@ final class PropertySequencingPolicyTest {
 
     @Test
     void propertyShouldReadCorrectValue() {
-        final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
-                .builder(TestEvent.class, String.class)
-                .propertyName("id")
-                .build();
+        final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(TestEvent.class, "id");
 
         assertThat(sequencingPolicy.getSequenceIdentifierFor(
                 anEvent(new TestEvent("42")),
@@ -65,10 +59,7 @@ final class PropertySequencingPolicyTest {
 
     @Test
     void defaultFallbackShouldThrowException() {
-        final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
-                .builder(TestEvent.class, String.class)
-                .propertyName("id")
-                .build();
+        final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(TestEvent.class, "id");
 
         assertThrows(IllegalArgumentException.class,
                      () -> sequencingPolicy.getSequenceIdentifierFor(anEvent("42"), aProcessingContext()));
@@ -76,11 +67,11 @@ final class PropertySequencingPolicyTest {
 
     @Test
     void fallbackShouldBeApplied() {
-        final PropertySequencingPolicy<TestEvent, String> sequencingPolicy = PropertySequencingPolicy
-                .builder(TestEvent.class, String.class)
-                .propertyName("id")
-                .fallbackSequencingPolicy((event, context) -> Optional.of("A"))
-                .build();
+        final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(
+                TestEvent.class,
+                "id",
+                (event, context) -> Optional.of("A")
+        );
 
         assertThat(sequencingPolicy.getSequenceIdentifierFor(
                 anEvent("42"),
