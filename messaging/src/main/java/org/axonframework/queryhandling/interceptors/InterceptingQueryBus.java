@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling.intercepting;
+package org.axonframework.queryhandling.interceptors;
 
 // TODO 3488 - Introduce handler and dispatch interceptor logic here.
 public class InterceptingQueryBus {
@@ -35,6 +35,19 @@ public class InterceptingQueryBus {
     //         */
     //        return query;
     //    }
+
+    /* StreamingQuery -
+                    QueryHandler queryHandler = new QueryHandler() {
+                    @Nonnull
+                    @Override
+                    public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
+                                                                         @Nonnull ProcessingContext context) {
+                        return handler.handle((StreamingQueryMessage<Q, R>)query, context).cast();
+                    }
+                };
+                Object queryResponse = new QueryMessageHandlerInterceptorChain(handlerInterceptors, queryHandler)
+                        .proceed(uow.getMessage(), ctx);
+     */
 
     //    /**
     //     * Registers an interceptor that is used to intercept Queries before they are passed to their respective handlers.
