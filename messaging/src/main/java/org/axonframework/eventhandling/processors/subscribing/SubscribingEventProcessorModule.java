@@ -139,7 +139,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                                                  SubscribingEventProcessorConfiguration.class
                                          );
                                          return new InterceptingEventHandlingComponent(
-                                                 configuration.withInterceptor(config),
+                                                 configuration.interceptors(config),
                                                  delegate
                                          );
                                      });

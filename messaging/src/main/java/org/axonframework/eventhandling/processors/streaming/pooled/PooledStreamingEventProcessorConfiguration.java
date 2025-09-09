@@ -470,7 +470,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * add to the {@link SubscribingEventProcessor} under construction.
      */
     @Nonnull
-    public List<MessageHandlerInterceptor<EventMessage>> withInterceptor(Configuration config) {
+    public List<MessageHandlerInterceptor<EventMessage>> interceptors(Configuration config) {
         // First retrieve the default interceptors
         List<MessageHandlerInterceptor<EventMessage>> interceptors =
                 config.getComponent(HandlerInterceptorRegistry.class)
