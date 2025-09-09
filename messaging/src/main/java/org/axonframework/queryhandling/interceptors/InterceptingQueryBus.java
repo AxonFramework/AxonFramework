@@ -16,6 +16,12 @@
 
 package org.axonframework.queryhandling.interceptors;
 
+import org.axonframework.queryhandling.QueryExecutionException;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
 // TODO 3488 - Introduce handler and dispatch interceptor logic here.
 public class InterceptingQueryBus {
 
@@ -48,6 +54,44 @@ public class InterceptingQueryBus {
                 Object queryResponse = new QueryMessageHandlerInterceptorChain(handlerInterceptors, queryHandler)
                         .proceed(uow.getMessage(), ctx);
      */
+
+    /* Scatter gather
+    private ResultMessage interceptAndInvoke(
+            LegacyUnitOfWork<QueryMessage> uow,
+            MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> handler
+    ) {
+        return uow.executeWithResult((ctx) -> {
+            ResponseType<?> responseType = uow.getMessage().responseType();
+            // TODO #3488 - Reintegrate, and construct chain only once!
+            /*
+            QueryHandler queryHandler = new QueryHandler() {
+                @Nonnull
+                @Override
+                public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
+                                                                     @Nonnull ProcessingContext context) {
+                    return handler.handle((QueryMessage<?, R>)query, context).cast();
+                }
+            };
+            Object queryResponse = new QueryMessageHandlerInterceptorChain(handlerInterceptors, queryHandler).proceed(uow.getMessage(), ctx);
+             */
+//    Object queryResponse = handler.handleSync(uow.getMessage(), ctx);
+//            if (queryResponse instanceof CompletableFuture) {
+//        return ((CompletableFuture<?>) queryResponse).thenCompose(
+//                result -> buildCompletableFuture(responseType, result));
+//    } else if (queryResponse instanceof Future) {
+//        return CompletableFuture.supplyAsync(() -> {
+//            try {
+//                return asNullableResponseMessage(
+//                        responseType.responseMessagePayloadType(),
+//                        responseType.convert(((Future<?>) queryResponse).get()));
+//            } catch (InterruptedException | ExecutionException e) {
+//                throw new QueryExecutionException("Error happened while trying to execute query handler", e);
+//            }
+//        });
+//    }
+//            return buildCompletableFuture(responseType, queryResponse);
+//});
+//        }
 
     //    /**
     //     * Registers an interceptor that is used to intercept Queries before they are passed to their respective handlers.
