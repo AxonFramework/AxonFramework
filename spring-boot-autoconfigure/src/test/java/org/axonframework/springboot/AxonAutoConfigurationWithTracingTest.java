@@ -37,7 +37,6 @@ import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.queryhandling.tracing.QueryUpdateEmitterSpanFactory;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonTimeoutAutoConfiguration;
 import org.axonframework.springboot.autoconfig.OpenTelemetryAutoConfiguration;
 import org.axonframework.springboot.autoconfig.SecurityAutoConfiguration;
@@ -516,7 +515,6 @@ class AxonAutoConfigurationWithTracingTest {
 
     @EnableAutoConfiguration(exclude = {
             AxonServerAutoConfiguration.class,
-            AxonServerBusAutoConfiguration.class,
             AxonServerActuatorAutoConfiguration.class,
             DataSourceAutoConfiguration.class,
             HibernateJpaAutoConfiguration.class,

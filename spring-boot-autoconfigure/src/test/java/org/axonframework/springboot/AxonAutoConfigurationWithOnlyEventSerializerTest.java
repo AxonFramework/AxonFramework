@@ -20,7 +20,6 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
         AxonServerAutoConfiguration.class,
-        AxonServerBusAutoConfiguration.class,
         AxonServerActuatorAutoConfiguration.class,
         DataSourceAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,
