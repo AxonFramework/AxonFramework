@@ -22,7 +22,7 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
-import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
+import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.RoutingStrategy;

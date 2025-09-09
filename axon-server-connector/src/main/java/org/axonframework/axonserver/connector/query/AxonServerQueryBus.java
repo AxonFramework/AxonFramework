@@ -64,6 +64,7 @@ import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
