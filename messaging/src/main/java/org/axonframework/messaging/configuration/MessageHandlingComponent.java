@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryHandlerRegistry;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 
 import java.util.Set;
@@ -42,9 +43,13 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface MessageHandlingComponent
-        extends CommandHandlingComponent, CommandHandlerRegistry<MessageHandlingComponent>,
-        EventHandlingComponent, QueryHandlingComponent, MessageHandler {
+public interface MessageHandlingComponent extends
+        CommandHandlingComponent,
+        CommandHandlerRegistry<MessageHandlingComponent>,
+        EventHandlingComponent,
+        QueryHandlingComponent,
+        QueryHandlerRegistry<MessageHandlingComponent>,
+        MessageHandler {
 
     /**
      * Subscribe the given {@code handler} for {@link org.axonframework.messaging.Message messages} of the given
