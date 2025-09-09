@@ -87,7 +87,7 @@ public class PropertySequencingPolicy<T, K> extends ExpressionSequencingPolicy<T
     ) {
         try {
             return super.getSequenceIdentifierFor(eventMessage, context);
-        } catch (Exception e) {
+        } catch (ConversionException e) {
             return fallbackSequencingPolicy.getSequenceIdentifierFor(eventMessage, context);
         }
     }

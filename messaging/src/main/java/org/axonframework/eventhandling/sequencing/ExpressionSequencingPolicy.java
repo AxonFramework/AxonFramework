@@ -75,7 +75,7 @@ public class ExpressionSequencingPolicy<T, K> implements SequencingPolicy {
             return Optional.ofNullable(identifierExtractor.apply(castedPayload));
         }
 
-        var converted = eventMessage.payloadAs(payloadClass, eventConverter);
-        return Optional.ofNullable(identifierExtractor.apply(converted));
+        var convertedPayload = eventMessage.payloadAs(payloadClass, eventConverter);
+        return Optional.ofNullable(identifierExtractor.apply(convertedPayload));
     }
 }
