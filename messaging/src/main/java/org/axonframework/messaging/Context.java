@@ -19,6 +19,8 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
+import java.util.Map;
+
 /**
  * Interface describing operations for context-specific, <b>immutable</b>, resource management.
  * <p>
@@ -86,6 +88,14 @@ public interface Context {
      */
     <T> Context withResource(@Nonnull ResourceKey<T> key,
                              @Nonnull T resource);
+
+    /**
+     * Retrieves all resources contained within the current {@code Context}.
+     *
+     * @return A map containing all resources where each entry has a {@code ResourceKey<?>}
+     *         as the key and the associated resource object as the value.
+     */
+    Map<ResourceKey<?>, ?> resources();
 
     /**
      * Object that is used as a key to retrieve and register resources of a given type in a {@code Context}.

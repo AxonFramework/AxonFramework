@@ -18,6 +18,8 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.Map;
+
 /**
  * Implementation that represents an empty Context.
  * @since 5.0.0
@@ -46,5 +48,10 @@ class EmptyContext implements Context {
     @Override
     public <T> Context withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
         return Context.with(key, resource);
+    }
+
+    @Override
+    public Map<ResourceKey<?>, Object> resources() {
+        return Map.of();
     }
 }

@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.Callable;
@@ -420,6 +421,11 @@ public class UnitOfWork implements ProcessingLifecycle {
         public <T> T getResource(@Nonnull ResourceKey<T> key) {
             //noinspection unchecked
             return (T) resources.get(key);
+        }
+
+        @Override
+        public Map<ResourceKey<?>, ?> resources() {
+            return resources;
         }
 
         @Override
