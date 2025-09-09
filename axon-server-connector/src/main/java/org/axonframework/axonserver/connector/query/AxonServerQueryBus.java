@@ -543,7 +543,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<QueryMessage> interceptor) {
-        return localSegment.registerHandlerInterceptor(interceptor);
+        return null;
     }
 
     public @Nonnull

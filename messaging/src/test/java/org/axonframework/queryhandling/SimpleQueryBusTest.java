@@ -20,15 +20,10 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.TypeReference;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.correlation.MessageOriginProvider;
-import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
@@ -57,7 +52,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
@@ -109,27 +103,6 @@ class SimpleQueryBusTest {
                                                                                 .build())
                                     .duplicateQueryHandlerResolver(silentlyAdd())
                                     .build();
-
-        MessageHandlerInterceptor<QueryMessage> correlationDataInterceptor =
-                new CorrelationDataInterceptor<>(new MessageOriginProvider(CORRELATION_ID, TRACE_ID));
-        testSubject.registerHandlerInterceptor(correlationDataInterceptor);
-    }
-
-    @Disabled("TODO: reintegrate as part of #3079")
-    @Test
-    public void handlerInterceptorThrowsException() throws ExecutionException, InterruptedException {
-        testSubject.subscribe("test", String.class, (q, ctx) -> q.payload().toString());
-        testSubject.registerHandlerInterceptor(( message,context, chain) ->
-            MessageStream.failed(new RuntimeException("Faking"))
-        );
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("test"), "hello", instanceOf(String.class)
-        );
-
-        CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
-
-        assertTrue(result.isDone());
-        assertTrue(result.get().isExceptional());
     }
 
     @Test
@@ -454,30 +427,6 @@ class SimpleQueryBusTest {
         assertEquals("Mock", queryResponseMessage.exceptionResult().getMessage());
     }
 
-    @Disabled("TODO: reintegrate as part of #3079")
-    @Test
-    void queryWithInterceptors() throws Exception {
-        testSubject.registerDispatchInterceptor(
-                (message, context, chain) ->
-                        chain.proceed(message.andMetaData(Collections.singletonMap("key", "value")), context)
-        );
-        testSubject.registerHandlerInterceptor((message, context, chain) -> {
-            if (message.metaData().containsKey("key")) {
-                return MessageStream.just(new GenericQueryResponseMessage(new MessageType("response"), "fakeReply"));
-            }
-            return chain.proceed(message, context);
-        });
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "hello", singleStringResponse
-        );
-        CompletableFuture<Object> result = testSubject.query(testQuery)
-                                                      .thenApply(QueryResponseMessage::payload);
-
-        assertEquals("fakeReply", result.get());
-    }
-
     @Test
     void queryDoesNotArriveAtUnsubscribedHandler() throws Exception {
         testSubject.subscribe(String.class.getName(), String.class, (q, c) -> "1234");
@@ -698,35 +647,6 @@ class SimpleQueryBusTest {
     }
 
     @Test
-    @Disabled("TODO: reintegrate as part of #3079")
-    void scatterGatherWithInterceptors() {
-        testSubject.registerDispatchInterceptor(
-                (message, context, chain) ->
-                        chain.proceed(message.andMetaData(Collections.singletonMap("key", "value")), context)
-        );
-        testSubject.registerHandlerInterceptor((message, context, chain) -> {
-            if (message.metaData().containsKey("key")) {
-                return MessageStream.just(new GenericResultMessage(new MessageType("response"), "fakeReply"));
-            }
-            return chain.proceed(message, context);
-        });
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "567");
-
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", singleStringResponse
-        );
-        List<Object> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS)
-                                          .map(Message::payload)
-                                          .collect(Collectors.toList());
-
-        assertEquals(2, results.size());
-        verify(messageMonitor, times(1)).onMessageIngested(any());
-        verify(monitorCallback, times(2)).reportSuccess();
-        assertEquals(asList("fakeReply", "fakeReply"), results);
-    }
-
-    @Test
     void scatterGatherReturnsEmptyStreamWhenNoHandlersAvailable() {
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "Hello, World", singleStringResponse
@@ -755,20 +675,6 @@ class SimpleQueryBusTest {
         verify(messageMonitor, times(1)).onMessageIngested(any());
         verify(monitorCallback, times(1)).reportSuccess();
         verify(monitorCallback, times(1)).reportFailure(isA(MockException.class));
-    }
-
-    @Test
-    @Disabled("TODO: reintegrate as part of #3079")
-    void queryResponseMessageCorrelationData() throws ExecutionException, InterruptedException {
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-        testSubject.registerHandlerInterceptor(new CorrelationDataInterceptor<>(new MessageOriginProvider()));
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", singleStringResponse
-        );
-        QueryResponseMessage queryResponseMessage = testSubject.query(testQuery).get();
-        assertEquals(testQuery.identifier(), queryResponseMessage.metaData().get("traceId"));
-        assertEquals(testQuery.identifier(), queryResponseMessage.metaData().get("correlationId"));
-        assertEquals("Hello, World1234", queryResponseMessage.payload());
     }
 
     @Test

@@ -16,8 +16,6 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.annotation.QueryHandler;
@@ -38,7 +36,6 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests Streaming Query functionality using a {@link SimpleQueryBus}. Query Handlers are subscribed using
@@ -243,45 +240,6 @@ class StreamingQueryTest {
                     .expectNextCount(10)
                     .thenCancel()
                     .verify();
-    }
-
-    @Disabled("TODO reintegrate as part of #3079")
-    @Test
-    void dispatchInterceptor() {
-        AtomicBoolean hasBeenCalled = new AtomicBoolean();
-        queryBus.registerDispatchInterceptor((message, context, chain) -> {
-            hasBeenCalled.set(true);
-            return chain.proceed(message, context);
-        });
-
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType("fluxQuery"), "criteria", String.class
-        );
-
-        StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
-                    .expectNext("a", "b", "c", "d")
-                    .verifyComplete();
-
-        assertTrue(hasBeenCalled.get());
-    }
-
-    @Disabled("TODO reintegrate as part of #3079")
-    @Test
-    void handlerInterceptor() {
-        queryBus.registerHandlerInterceptor(
-                (message, context, chain) ->
-                        chain.proceed(message, context)
-                // TODO reintegrate as part of #3079
-                        // ((Flux) interceptorChain.proceedSync(context)).map(it -> "a")
-        );
-
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType("fluxQuery"), "criteria", String.class
-        );
-
-        StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
-                    .expectNext("a", "a", "a", "a")
-                    .verifyComplete();
     }
 
     @Test

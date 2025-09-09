@@ -96,9 +96,6 @@ public class AxonServerBusAutoConfiguration {
                               .errorHandler(queryInvocationErrorHandler)
                               .spanFactory(axonConfiguration.getComponent(QueryBusSpanFactory.class))
                               .build();
-        simpleQueryBus.registerHandlerInterceptor(
-                new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
-        );
 
         AxonServerQueryBus.Builder axonQueryBuilder = AxonServerQueryBus.builder()
                                                                         .axonServerConnectionManager(

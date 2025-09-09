@@ -24,9 +24,7 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
@@ -98,8 +96,6 @@ public class SimpleQueryBus implements QueryBus {
     private final MessageMonitor<? super QueryMessage> messageMonitor;
     private final DuplicateQueryHandlerResolver duplicateQueryHandlerResolver;
     private final QueryInvocationErrorHandler errorHandler;
-    private final List<MessageHandlerInterceptor<QueryMessage>> handlerInterceptors = new CopyOnWriteArrayList<>();
-    private final List<MessageDispatchInterceptor<? super QueryMessage>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final QueryBusSpanFactory spanFactory;
     private final MessageTypeResolver messageTypeResolver;
 
@@ -189,19 +185,18 @@ public class SimpleQueryBus implements QueryBus {
         Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
                        () -> "Direct query does not support Flux as a return type.");
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
-        QueryMessage interceptedQuery = intercept(query);
         List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> handlers =
-                getHandlersForMessage(interceptedQuery);
+                getHandlersForMessage(query);
         CompletableFuture<QueryResponseMessage> result = new CompletableFuture<>();
         try {
-            ResponseType<?> responseType = interceptedQuery.responseType();
+            ResponseType<?> responseType = query.responseType();
             if (handlers.isEmpty()) {
-                throw noHandlerException(interceptedQuery);
+                throw noHandlerException(query);
             }
             Iterator<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> handlerIterator = handlers.iterator();
             boolean invocationSuccess = false;
             while (!invocationSuccess && handlerIterator.hasNext()) {
-                LegacyDefaultUnitOfWork<QueryMessage> uow = LegacyDefaultUnitOfWork.startAndGet(interceptedQuery);
+                LegacyDefaultUnitOfWork<QueryMessage> uow = LegacyDefaultUnitOfWork.startAndGet(query);
                 ResultMessage resultMessage =
                         interceptAndInvoke(uow, handlerIterator.next());
                 if (resultMessage.isExceptional()) {
@@ -229,7 +224,7 @@ public class SimpleQueryBus implements QueryBus {
                 }
             }
             if (!invocationSuccess) {
-                throw noSuitableHandlerException(interceptedQuery);
+                throw noSuitableHandlerException(query);
             }
             monitorCallback.reportSuccess();
         } catch (Exception e) {
@@ -244,7 +239,7 @@ public class SimpleQueryBus implements QueryBus {
         Span span = spanFactory.createStreamingQuerySpan(query, false).start();
         try (SpanScope unused = span.makeCurrent()) {
             AtomicReference<Throwable> lastError = new AtomicReference<>();
-            return Mono.just(intercept(query))
+            return Mono.just(query)
                        .flatMapMany(interceptedQuery -> Mono
                                .just(interceptedQuery)
                                .flatMapMany(this::getStreamingHandlersForMessage)
@@ -409,9 +404,8 @@ public class SimpleQueryBus implements QueryBus {
         Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
                        () -> "Scatter-Gather query does not support Flux as a return type.");
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
-        QueryMessage interceptedQuery = intercept(query);
         List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> handlers =
-                getHandlersForMessage(interceptedQuery);
+                getHandlersForMessage(query);
         if (handlers.isEmpty()) {
             monitorCallback.reportIgnored();
             return Stream.empty();
@@ -428,7 +422,7 @@ public class SimpleQueryBus implements QueryBus {
                     .map(handler -> {
                         Span span = spans.get(handlers.indexOf(handler));
                         return span.runSupplier(
-                                () -> scatterGatherHandler(span, monitorCallback, interceptedQuery, deadline, handler));
+                                () -> scatterGatherHandler(span, monitorCallback, query, deadline, handler));
                     })
                     .filter(Objects::nonNull);
         });
@@ -660,20 +654,6 @@ public class SimpleQueryBus implements QueryBus {
                 responseType.convert(queryResponse)));
     }
 
-    private <Q, R, T extends QueryMessage> T intercept(T query) {
-        /*
-        // TODO #3488 - Reintegrate, and construct chain only once!
-        return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
-                .proceed(query, null)
-                .first()
-                .<T>cast()
-                .asMono()
-                .map(MessageStream.Entry::message)
-                .block();
-         */
-        return query;
-    }
-
     /**
      * Returns the subscriptions for this query bus. While the returned map is unmodifiable, it may or may not reflect
      * changes made to the subscriptions after the call was made.
@@ -682,33 +662,6 @@ public class SimpleQueryBus implements QueryBus {
      */
     protected Map<String, Collection<QuerySubscription<?>>> getSubscriptions() {
         return Collections.unmodifiableMap(subscriptions);
-    }
-
-    /**
-     * Registers an interceptor that is used to intercept Queries before they are passed to their respective handlers.
-     * The interceptor is invoked separately for each handler instance (in a separate unit of work).
-     *
-     * @param interceptor the interceptor to invoke before passing a Query to the handler
-     * @return handle to deregister the interceptor
-     */
-    public Registration registerHandlerInterceptor(
-            @Nonnull MessageHandlerInterceptor<QueryMessage> interceptor) {
-        handlerInterceptors.add(interceptor);
-        return () -> handlerInterceptors.remove(interceptor);
-    }
-
-    /**
-     * Registers an interceptor that intercepts Queries as they are sent. Each interceptor is called once, regardless of
-     * the type of query (point-to-point or scatter-gather) executed.
-     *
-     * @param interceptor the interceptor to invoke when sending a Query
-     * @return handle to deregister the interceptor
-     */
-    public @Nonnull
-    Registration registerDispatchInterceptor(
-            @Nonnull MessageDispatchInterceptor<? super QueryMessage> interceptor) {
-        dispatchInterceptors.add(interceptor);
-        return () -> dispatchInterceptors.remove(interceptor);
     }
 
     private List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> getHandlersForMessage(

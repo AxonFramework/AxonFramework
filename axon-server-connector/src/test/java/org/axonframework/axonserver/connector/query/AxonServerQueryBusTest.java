@@ -551,16 +551,6 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void handlerInterceptorRegisteredWithLocalSegment() {
-        MessageHandlerInterceptor<QueryMessage> interceptor =
-                (message, context, chain) -> chain.proceed(message, context);
-
-        testSubject.registerHandlerInterceptor(interceptor);
-
-        verify(localSegment).registerHandlerInterceptor(interceptor);
-    }
-
-    @Test
     void localSegmentReturnsLocalQueryBus() {
         assertEquals(localSegment, testSubject.localSegment());
     }
