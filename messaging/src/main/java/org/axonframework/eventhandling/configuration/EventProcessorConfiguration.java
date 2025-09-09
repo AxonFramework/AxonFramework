@@ -18,8 +18,10 @@ package org.axonframework.eventhandling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
@@ -27,6 +29,8 @@ import org.axonframework.eventhandling.processors.errorhandling.PropagatingError
 import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.messaging.EmptyApplicationContext;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -35,6 +39,8 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -62,12 +68,27 @@ public class EventProcessorConfiguration implements DescribableComponent {
                                                                                       .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                       .build();
     protected UnitOfWorkFactory unitOfWorkFactory = new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE);
+    protected List<MessageHandlerInterceptor<EventMessage>> interceptors = new ArrayList<>();
 
     /**
      * Constructs a new {@code EventProcessorConfiguration} with default values.
+     *
+     * @param configuration The configuration, used to retrieve global default values, like
+     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
      */
-    public EventProcessorConfiguration() {
-        super();
+    @Internal
+    public EventProcessorConfiguration(@Nonnull Configuration configuration) {
+        this(configuration.getComponent(HandlerInterceptorRegistry.class)
+                          .eventInterceptors(configuration));
+    }
+
+    /**
+     * Constructs a new {@code EventProcessorConfiguration} with given {@code interceptors}.
+     *
+     * @param interceptors The default set of interceptors for the event processor under construction
+     */
+    public EventProcessorConfiguration(@Nonnull List<MessageHandlerInterceptor<EventMessage>> interceptors) {
+        this.interceptors = new ArrayList<>(interceptors);
     }
 
     /**
@@ -75,6 +96,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      *
      * @param base The {@code EventProcessorConfiguration} to copy properties from.
      */
+    @Internal
     public EventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         Objects.requireNonNull(base, "Base configuration may not be null");
         assertNonNull(base, "Base configuration may not be null");
@@ -82,6 +104,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
         this.messageMonitor = base.messageMonitor();
         this.spanFactory = base.spanFactory();
         this.unitOfWorkFactory = base.unitOfWorkFactory();
+        this.interceptors = base.interceptors();
     }
 
     /**
@@ -188,6 +211,17 @@ public class EventProcessorConfiguration implements DescribableComponent {
     }
 
     /**
+     * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link EventProcessor} under construction with this configuration implementation.
+     *
+     * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
+     * add to the {@link EventProcessor} under construction with this configuration implementation.
+     */
+    public List<MessageHandlerInterceptor<EventMessage>> interceptors() {
+        return new ArrayList<>(interceptors);
+    }
+
+    /**
      * Returns whether this configuration is for a streaming event processor.
      *
      * @return {@code false} for basic configuration, {@code true} for streaming configurations.
@@ -202,5 +236,6 @@ public class EventProcessorConfiguration implements DescribableComponent {
         descriptor.describeProperty("messageMonitor", messageMonitor);
         descriptor.describeProperty("spanFactory", spanFactory);
         descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
+        descriptor.describeProperty("interceptors", interceptors);
     }
 }

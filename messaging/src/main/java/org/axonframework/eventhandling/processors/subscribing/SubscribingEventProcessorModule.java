@@ -139,7 +139,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                                                  SubscribingEventProcessorConfiguration.class
                                          );
                                          return new InterceptingEventHandlingComponent(
-                                                 configuration.interceptors(config),
+                                                 configuration.interceptors(),
                                                  delegate
                                          );
                                      });
@@ -201,8 +201,8 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     @Nonnull
     private static SubscribingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
         return new SubscribingEventProcessorConfiguration(
-                parentSharedCustomizationOrDefault(cfg).apply(cfg,
-                                                              new EventProcessorConfiguration())
+                parentSharedCustomizationOrDefault(cfg)
+                        .apply(cfg, new EventProcessorConfiguration(cfg))
         );
     }
 

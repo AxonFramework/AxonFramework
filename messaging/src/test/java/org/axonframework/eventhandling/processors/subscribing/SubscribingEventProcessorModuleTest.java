@@ -212,18 +212,18 @@ class SubscribingEventProcessorModuleTest {
                                         .eventHandlingComponents(
                                                 components -> components.declarative(cfg -> componentOne)
                                         )
-                                        .customized(
-                                                (config, psepConfig) -> psepConfig.withInterceptor(specificInterceptorOne)
-                                        );
+                                        .customized((config, psepConfig) -> psepConfig.withInterceptor(
+                                                specificInterceptorOne
+                                        ));
             RecordingEventHandlingComponent componentTwo = simpleRecordingTestComponent(new QualifiedName(Integer.class));
             SubscribingEventProcessorModule sepModuleTwo =
                     EventProcessorModule.subscribing("processor-two")
                                         .eventHandlingComponents(
                                                 components -> components.declarative(cfg -> componentTwo)
                                         )
-                                        .customized(
-                                                (config, psepConfig) -> psepConfig.withInterceptor(specificInterceptorTwo)
-                                        );
+                                        .customized((config, psepConfig) -> psepConfig.withInterceptor(
+                                                specificInterceptorTwo
+                                        ));
             // Register the global interceptor
             configurer.registerEventHandlerInterceptor(c -> globalInterceptor);
             // Register the default interceptor and attach both PSEP modules.

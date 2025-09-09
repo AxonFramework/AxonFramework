@@ -160,7 +160,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                                          var configuration =
                                                  config.getComponent(PooledStreamingEventProcessorConfiguration.class);
                                          return new InterceptingEventHandlingComponent(
-                                                 configuration.interceptors(config),
+                                                 configuration.interceptors(),
                                                  delegate
                                          );
                                      });
@@ -223,7 +223,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     private static PooledStreamingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
         return new PooledStreamingEventProcessorConfiguration(
-                parentSharedCustomizationOrDefault(cfg).apply(cfg, new EventProcessorConfiguration())
+                parentSharedCustomizationOrDefault(cfg)
+                        .apply(cfg, new EventProcessorConfiguration(cfg))
         );
     }
 
