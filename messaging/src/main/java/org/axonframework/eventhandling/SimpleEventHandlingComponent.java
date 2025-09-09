@@ -85,6 +85,11 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
         return Set.copyOf(eventHandlers.keySet());
     }
 
+    /**
+     * Starts the builder for an {@link EventHandlingComponent}.
+     *
+     * @return The {@link EventHandlingComponentBuilder.SequencingPolicyPhase} phase of this builder, for a fluent API.
+     */
     @Nonnull
     public static EventHandlingComponentBuilder.SequencingPolicyPhase builder() {
         return new DefaultEventHandlingComponentBuilder(new SimpleEventHandlingComponent());
