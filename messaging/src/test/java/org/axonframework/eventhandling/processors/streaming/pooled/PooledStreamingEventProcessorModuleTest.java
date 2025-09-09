@@ -605,7 +605,7 @@ class PooledStreamingEventProcessorModuleTest {
         return simpleRecordingTestComponent(new QualifiedName(String.class));
     }
 
-    private static RecordingEventHandlingComponent simpleRecordingTestComponent(@Nonnull QualifiedName handlerName) {
+    private static RecordingEventHandlingComponent simpleRecordingTestComponent(@Nonnull QualifiedName supportedEventName) {
         return new RecordingEventHandlingComponent(
                 SimpleEventHandlingComponent.builder()
                                             .handles(handlerName, (e, c) -> MessageStream.empty())
