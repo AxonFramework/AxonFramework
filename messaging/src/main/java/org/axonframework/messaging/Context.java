@@ -95,7 +95,7 @@ public interface Context {
      * @return A map containing all resources where each entry has a {@code ResourceKey<?>}
      *         as the key and the associated resource object as the value.
      */
-    Map<ResourceKey<?>, ?> resources();
+    Map<ResourceKey<?>, Object> resources();
 
     /**
      * Object that is used as a key to retrieve and register resources of a given type in a {@code Context}.

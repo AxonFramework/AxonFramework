@@ -424,7 +424,7 @@ public class UnitOfWork implements ProcessingLifecycle {
         }
 
         @Override
-        public Map<ResourceKey<?>, ?> resources() {
+        public Map<ResourceKey<?>, Object> resources() {
             return resources;
         }
 

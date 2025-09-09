@@ -254,19 +254,9 @@ class WorkPackage {
         return canHandle;
     }
 
-    // todo: I'm not sure about this solution, but it's better than LegacyMessageSupportingContext
-    // todo: event entry has Context (not ProcessingContext)!!!
     private boolean canHandleMessage(MessageStream.Entry<? extends EventMessage> eventEntry) {
-        var unitOfWork = messageUnitOfWork(eventEntry);
-        return unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(canHandle(eventEntry.message(),
-                                                                                                   context))).join();
-    }
-
-    private UnitOfWork messageUnitOfWork(MessageStream.Entry<? extends EventMessage> eventEntry) {
-        var message = eventEntry.message();
-        var unitOfWork = unitOfWorkFactory.create();
-        unitOfWork.runOnPreInvocation(ctx -> Message.addToContext(ctx, message));
-        return unitOfWork;
+        var processingContext = EventSchedulingProcessingContext.fromEntry(eventEntry);
+        return canHandle(eventEntry.message(), processingContext);
     }
 
     /**
@@ -821,10 +811,11 @@ class WorkPackage {
         private static final String UNSUPPORTED_MESSAGE = "Cannot register lifecycle actions in this ProcessingContext";
         private final ConcurrentMap<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
 
-        static EventSchedulingProcessingContext fromEntry(MessageStream.Entry<? extends EventMessage> entry) {
+        static ProcessingContext fromEntry(MessageStream.Entry<? extends EventMessage> entry) {
             var context = new EventSchedulingProcessingContext();
+            //noinspection unchecked
             entry.resources().forEach((k,v) -> context.putResource((ResourceKey<Object>) k, v));
-            return context;
+            return Message.addToContext(context, entry.message());
         }
 
         @Override
@@ -874,8 +865,8 @@ class WorkPackage {
         }
 
         @Override
-        public Map<ResourceKey<?>, ?> resources() {
-            return Map.of();
+        public Map<ResourceKey<?>, Object> resources() {
+            return Map.copyOf(resources);
         }
 
         @Override

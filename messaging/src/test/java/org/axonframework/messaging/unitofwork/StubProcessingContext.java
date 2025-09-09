@@ -147,6 +147,11 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     @Override
+    public Map<ResourceKey<?>, Object> resources() {
+        return Map.copyOf(resources);
+    }
+
+    @Override
     public <T> T putResource(@Nonnull ResourceKey<T> key,
                              @Nonnull T resource) {
         //noinspection unchecked
