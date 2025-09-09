@@ -90,7 +90,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 public class PooledStreamingEventProcessorConfiguration extends EventProcessorConfiguration {
 
     private StreamableEventSource<? extends EventMessage> eventSource;
-    private final HandlerInterceptorRegistry interceptorRegistry = new DefaultHandlerInterceptorRegistry();
+    private HandlerInterceptorRegistry interceptorRegistry = new DefaultHandlerInterceptorRegistry();
     private TokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
     private ScheduledExecutorService workerExecutor;
@@ -175,10 +175,10 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return This {@code PooledStreamingEventProcessorConfiguration}, for fluent interfacing.
      */
     @Nonnull
-    public PooledStreamingEventProcessorConfiguration addInterceptor(
+    public PooledStreamingEventProcessorConfiguration withInterceptor(
             @Nonnull MessageHandlerInterceptor<EventMessage> interceptor
     ) {
-        return addInterceptor(c -> interceptor);
+        return withInterceptor(c -> interceptor);
     }
 
     /**
@@ -190,10 +190,10 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return This {@code PooledStreamingEventProcessorConfiguration}, for fluent interfacing.
      */
     @Nonnull
-    public PooledStreamingEventProcessorConfiguration addInterceptor(
+    public PooledStreamingEventProcessorConfiguration withInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<EventMessage>> interceptorBuilder
     ) {
-        interceptorRegistry.registerEventInterceptor(interceptorBuilder);
+        interceptorRegistry = interceptorRegistry.registerEventInterceptor(interceptorBuilder);
         return this;
     }
 
@@ -470,7 +470,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * add to the {@link SubscribingEventProcessor} under construction.
      */
     @Nonnull
-    public List<MessageHandlerInterceptor<EventMessage>> addInterceptor(Configuration config) {
+    public List<MessageHandlerInterceptor<EventMessage>> withInterceptor(Configuration config) {
         // First retrieve the default interceptors
         List<MessageHandlerInterceptor<EventMessage>> interceptors =
                 config.getComponent(HandlerInterceptorRegistry.class)

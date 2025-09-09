@@ -59,7 +59,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
 
     private SubscribableMessageSource<? extends EventMessage> messageSource;
     private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
-    private final HandlerInterceptorRegistry interceptorRegistry = new DefaultHandlerInterceptorRegistry();
+    private HandlerInterceptorRegistry interceptorRegistry = new DefaultHandlerInterceptorRegistry();
 
     /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values.
@@ -134,7 +134,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     }
 
     /**
-     * Adds the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} for the
+     * Registers the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} for the
      * {@link SubscribingEventProcessor} under construction.
      *
      * @param interceptor The {@link EventMessage}-specific {@link MessageHandlerInterceptor} to register for the
@@ -142,14 +142,14 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * @return This {@code SubscribingEventProcessorConfiguration}, for fluent interfacing.
      */
     @Nonnull
-    public SubscribingEventProcessorConfiguration addInterceptor(
+    public SubscribingEventProcessorConfiguration withInterceptor(
             @Nonnull MessageHandlerInterceptor<EventMessage> interceptor
     ) {
-        return addInterceptor(c -> interceptor);
+        return withInterceptor(c -> interceptor);
     }
 
     /**
-     * Adds the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} factory for the
+     * Registers the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} factory for the
      * {@link SubscribingEventProcessor} under construction.
      *
      * @param interceptorBuilder The builder constructing the {@link EventMessage}-specific
@@ -157,10 +157,10 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * @return This {@code SubscribingEventProcessorConfiguration}, for fluent interfacing.
      */
     @Nonnull
-    public SubscribingEventProcessorConfiguration addInterceptor(
+    public SubscribingEventProcessorConfiguration withInterceptor(
             @Nonnull ComponentBuilder<MessageHandlerInterceptor<EventMessage>> interceptorBuilder
     ) {
-        interceptorRegistry.registerEventInterceptor(interceptorBuilder);
+        interceptorRegistry = interceptorRegistry.registerEventInterceptor(interceptorBuilder);
         return this;
     }
 
@@ -204,7 +204,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * add to the {@link SubscribingEventProcessor} under construction.
      */
     @Nonnull
-    public List<MessageHandlerInterceptor<EventMessage>> addInterceptor(Configuration config) {
+    public List<MessageHandlerInterceptor<EventMessage>> withInterceptor(Configuration config) {
         // First retrieve the default interceptors
         List<MessageHandlerInterceptor<EventMessage>> interceptors =
                 config.getComponent(HandlerInterceptorRegistry.class)

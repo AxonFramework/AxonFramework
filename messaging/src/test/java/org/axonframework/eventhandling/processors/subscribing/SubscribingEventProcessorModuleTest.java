@@ -213,7 +213,7 @@ class SubscribingEventProcessorModuleTest {
                                                 components -> components.declarative(cfg -> componentOne)
                                         )
                                         .customized(
-                                                (config, psepConfig) -> psepConfig.addInterceptor(specificInterceptorOne)
+                                                (config, psepConfig) -> psepConfig.withInterceptor(specificInterceptorOne)
                                         );
             RecordingEventHandlingComponent componentTwo = simpleRecordingTestComponent(new QualifiedName(Integer.class));
             SubscribingEventProcessorModule sepModuleTwo =
@@ -222,14 +222,14 @@ class SubscribingEventProcessorModuleTest {
                                                 components -> components.declarative(cfg -> componentTwo)
                                         )
                                         .customized(
-                                                (config, psepConfig) -> psepConfig.addInterceptor(specificInterceptorTwo)
+                                                (config, psepConfig) -> psepConfig.withInterceptor(specificInterceptorTwo)
                                         );
             // Register the global interceptor
             configurer.registerEventHandlerInterceptor(c -> globalInterceptor);
             // Register the default interceptor and attach both PSEP modules.
             configurer.eventProcessing(processingConfigurer -> processingConfigurer.subscribing(
                     sepConfigurer -> sepConfigurer.defaults(defaults -> defaults.messageSource(eventBus)
-                                                                                .addInterceptor(defaultInterceptor))
+                                                                                .withInterceptor(defaultInterceptor))
                                                   .processor(sepModuleOne)
                                                   .processor(sepModuleTwo)
             ));
