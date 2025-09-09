@@ -36,9 +36,10 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolver;
+import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanScope;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +97,6 @@ public class SimpleQueryBus implements QueryBus {
     private final MessageMonitor<? super QueryMessage> messageMonitor;
     private final DuplicateQueryHandlerResolver duplicateQueryHandlerResolver;
     private final QueryInvocationErrorHandler errorHandler;
-    private final QueryBusSpanFactory spanFactory;
     private final MessageTypeResolver messageTypeResolver;
 
     private final QueryUpdateEmitter queryUpdateEmitter;
@@ -116,7 +116,6 @@ public class SimpleQueryBus implements QueryBus {
 //        }
         this.queryUpdateEmitter = builder.queryUpdateEmitter;
         this.duplicateQueryHandlerResolver = builder.duplicateQueryHandlerResolver;
-        this.spanFactory = builder.spanFactory;
         this.messageTypeResolver = builder.messageTypeResolver;
     }
 
@@ -171,12 +170,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public CompletableFuture<QueryResponseMessage> query(@Nonnull QueryMessage query) {
-        Span span = spanFactory.createQuerySpan(query, false);
-        return span.runSupplier(() -> doQuery(query).whenComplete((r, t) -> {
-            if (t != null) {
-                span.recordException(t);
-            }
-        }));
+        return doQuery(query);
     }
 
     @Nonnull
@@ -236,23 +230,19 @@ public class SimpleQueryBus implements QueryBus {
 
     @Override
     public Publisher<QueryResponseMessage> streamingQuery(StreamingQueryMessage query) {
-        Span span = spanFactory.createStreamingQuerySpan(query, false).start();
-        try (SpanScope unused = span.makeCurrent()) {
-            AtomicReference<Throwable> lastError = new AtomicReference<>();
-            return Mono.just(query)
-                       .flatMapMany(interceptedQuery -> Mono
-                               .just(interceptedQuery)
-                               .flatMapMany(this::getStreamingHandlersForMessage)
-                               .switchIfEmpty(Flux.error(noHandlerException(interceptedQuery)))
-                               .map(handler -> interceptAndInvokeStreaming(interceptedQuery, handler, span))
-                               .flatMap(new CatchLastError(lastError))
-                               .doOnEach(new ErrorIfComplete(lastError, interceptedQuery))
-                               .next()
-                               .doOnEach(new SuccessReporter())
-                               .flatMapMany(m -> (Publisher)m.payload())
-                       ).contextWrite(new MonitorCallbackContextWriter(messageMonitor, query))
-                       .doOnTerminate(span::end);
-        }
+        AtomicReference<Throwable> lastError = new AtomicReference<>();
+        return Mono.just(query)
+                   .flatMapMany(interceptedQuery -> Mono
+                           .just(interceptedQuery)
+                           .flatMapMany(this::getStreamingHandlersForMessage)
+                           .switchIfEmpty(Flux.error(noHandlerException(interceptedQuery)))
+                           .map(handler -> invokeStreaming(interceptedQuery, handler))
+                           .flatMap(new CatchLastError(lastError))
+                           .doOnEach(new ErrorIfComplete(lastError, interceptedQuery))
+                           .next()
+                           .doOnEach(new SuccessReporter())
+                           .flatMapMany(m -> (Publisher) m.payload())
+                   ).contextWrite(new MonitorCallbackContextWriter(messageMonitor, query));
     }
 
     /**
@@ -411,25 +401,14 @@ public class SimpleQueryBus implements QueryBus {
             return Stream.empty();
         }
 
-        return spanFactory.createScatterGatherSpan(query, false).runSupplier(() -> {
-            long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
-            List<Span> spans = handlers.stream().map(handler -> {
-                int handlerIndex = handlers.indexOf(handler);
-                return spanFactory.createScatterGatherHandlerSpan(query, handlerIndex);
-            }).collect(Collectors.toList());
-            return handlers
-                    .stream()
-                    .map(handler -> {
-                        Span span = spans.get(handlers.indexOf(handler));
-                        return span.runSupplier(
-                                () -> scatterGatherHandler(span, monitorCallback, query, deadline, handler));
-                    })
-                    .filter(Objects::nonNull);
-        });
+        long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
+        return handlers
+                .stream()
+                .map(handler -> scatterGatherHandler(monitorCallback, query, deadline, handler))
+                .filter(Objects::nonNull);
     }
 
     private QueryResponseMessage scatterGatherHandler(
-            Span span,
             MessageMonitor.MonitorCallback monitorCallback,
             QueryMessage interceptedQuery,
             long deadline,
@@ -442,15 +421,13 @@ public class SimpleQueryBus implements QueryBus {
         QueryResponseMessage response = null;
         if (resultMessage.isExceptional()) {
             monitorCallback.reportFailure(resultMessage.exceptionResult());
-            span.recordException(resultMessage.exceptionResult());
             errorHandler.onError(resultMessage.exceptionResult(), interceptedQuery, handler);
         } else {
             try {
-                response = ((CompletableFuture<QueryResponseMessage>)resultMessage.payload()).get(leftTimeout,
-                                                       TimeUnit.MILLISECONDS);
+                response = ((CompletableFuture<QueryResponseMessage>) resultMessage.payload()).get(leftTimeout,
+                                                                                                   TimeUnit.MILLISECONDS);
                 monitorCallback.reportSuccess();
             } catch (Exception e) {
-                span.recordException(e);
                 monitorCallback.reportFailure(e);
                 errorHandler.onError(e, interceptedQuery, handler);
             }
@@ -469,10 +446,11 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         Mono<QueryResponseMessage> initialResult = Mono.fromFuture(() -> query(query))
-                                                          .doOnError(error -> logger.error(
-                                                                  "An error happened while trying to report an initial result. Query: {}",
-                                                                  query, error
-                                                          ));
+                                                       .doOnError(error -> logger.error(
+                                                               "An error happened while trying to report an initial result. Query: {}",
+                                                               query,
+                                                               error
+                                                       ));
         UpdateHandlerRegistration updateHandlerRegistration =
                 queryUpdateEmitter.registerUpdateHandler(query, updateBufferSize);
 
@@ -581,8 +559,8 @@ public class SimpleQueryBus implements QueryBus {
             //noinspection unchecked
             Message message = (Message) result;
             return new GenericQueryResponseMessage(messageTypeResolver.resolveOrThrow(message.payload()),
-                                                     message.payload(),
-                                                     message.metaData());
+                                                   message.payload(),
+                                                   message.metaData());
         } else {
             MessageType type = messageTypeResolver.resolveOrThrow(ObjectUtils.nullSafeTypeOf(result));
             //noinspection unchecked
@@ -590,31 +568,15 @@ public class SimpleQueryBus implements QueryBus {
         }
     }
 
-    private ResultMessage interceptAndInvokeStreaming(
+    private ResultMessage invokeStreaming(
             StreamingQueryMessage query,
-            MessageHandler<? super StreamingQueryMessage, ? extends QueryResponseMessage> handler, Span span) {
-        try (SpanScope unused = span.makeCurrent()) {
-            LegacyDefaultUnitOfWork<StreamingQueryMessage> uow = LegacyDefaultUnitOfWork.startAndGet(query);
-            return uow.executeWithResult((ctx) -> {
-                /*
-                // TODO #3488 - Reintegrate, and construct chain only once!
-                QueryHandler queryHandler = new QueryHandler() {
-                    @Nonnull
-                    @Override
-                    public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
-                                                                         @Nonnull ProcessingContext context) {
-                        return handler.handle((StreamingQueryMessage<Q, R>)query, context).cast();
-                    }
-                };
-                Object queryResponse = new QueryMessageHandlerInterceptorChain(handlerInterceptors, queryHandler)
-                        .proceed(uow.getMessage(), ctx);
-
-                 */
-                Object queryResponse = handler.handleSync(uow.getMessage(), ctx);
-                return Flux.from(query.responseType().convert(queryResponse))
-                           .map(this::asResponseMessage);
-            });
-        }
+            MessageHandler<? super StreamingQueryMessage, ? extends QueryResponseMessage> handler) {
+        LegacyDefaultUnitOfWork<StreamingQueryMessage> uow = LegacyDefaultUnitOfWork.startAndGet(query);
+        return uow.executeWithResult((ctx) -> {
+            Object queryResponse = handler.handleSync(uow.getMessage(), ctx);
+            return Flux.from(query.responseType().convert(queryResponse))
+                       .map(this::asResponseMessage);
+        });
     }
 
     /**
@@ -712,9 +674,6 @@ public class SimpleQueryBus implements QueryBus {
                                                                                                                                     NoOpSpanFactory.INSTANCE)
                                                                                                                             .build())
                                                                                 .build();
-        private QueryBusSpanFactory spanFactory = DefaultQueryBusSpanFactory.builder()
-                                                                            .spanFactory(NoOpSpanFactory.INSTANCE)
-                                                                            .build();
         private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         /**
@@ -789,22 +748,8 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the {@link QueryBusSpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no tracing
-         * capabilities.
-         *
-         * @param spanFactory The {@link QueryBusSpanFactory} implementation.
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder spanFactory(@Nonnull QueryBusSpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = spanFactory;
-            return this;
-        }
-
-        /**
-         * Sets the {@link MessageTypeResolver} to be used in order to resolve QualifiedName for published Event messages.
-         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} to be used in order to resolve QualifiedName for published Event
+         * messages. If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
          * @param messageTypeResolver which provides QualifiedName for Event messages
          * @return the current Builder instance, for fluent interfacing

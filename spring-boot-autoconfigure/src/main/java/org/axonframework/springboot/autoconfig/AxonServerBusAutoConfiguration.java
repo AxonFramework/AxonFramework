@@ -30,9 +30,8 @@ import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
@@ -94,7 +93,6 @@ public class AxonServerBusAutoConfiguration {
                               .transactionManager(txManager)
                               .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                               .errorHandler(queryInvocationErrorHandler)
-                              .spanFactory(axonConfiguration.getComponent(QueryBusSpanFactory.class))
                               .build();
 
         AxonServerQueryBus.Builder axonQueryBuilder = AxonServerQueryBus.builder()

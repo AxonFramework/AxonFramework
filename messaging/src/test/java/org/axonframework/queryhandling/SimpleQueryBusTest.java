@@ -28,6 +28,10 @@ import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerSubscriptionException;
+import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryUpdateEmitterSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -96,7 +100,6 @@ class SimpleQueryBusTest {
         testSubject = SimpleQueryBus.builder()
                                     .messageMonitor(messageMonitor)
                                     .errorHandler(errorHandler)
-                                    .spanFactory(queryBusSpanFactory)
                                     .queryUpdateEmitter(SimpleQueryUpdateEmitter.builder()
                                                                                 .spanFactory(
                                                                                         queryUpdateEmitterSpanFactory)

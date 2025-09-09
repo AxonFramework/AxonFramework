@@ -81,14 +81,14 @@ import org.axonframework.modelling.saga.SagaManagerSpanFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
-import org.axonframework.queryhandling.DefaultQueryUpdateEmitterSpanFactory;
+import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -365,9 +365,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                                                                                                             .build()
                                                             ))
                                                             .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                                                            .spanFactory(config.getComponent(QueryBusSpanFactory.class))
                                                             .build();
-                    queryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
                     return queryBus;
                 });
     }
