@@ -59,17 +59,19 @@ public class PropertySequencingPolicy<T, K> extends ExpressionSequencingPolicy<T
     public PropertySequencingPolicy(
             @Nonnull Class<T> payloadClass,
             @Nonnull String propertyName,
+            @Nonnull EventConverter eventConverter,
             @Nonnull SequencingPolicy fallbackSequencingPolicy
     ) {
-        super(payloadClass, extractProperty(payloadClass, propertyName)::getValue);
+        super(payloadClass, extractProperty(payloadClass, propertyName)::getValue, eventConverter);
         this.fallbackSequencingPolicy = fallbackSequencingPolicy;
     }
 
     public PropertySequencingPolicy(
             @Nonnull Class<T> payloadClass,
-            @Nonnull String propertyName
+            @Nonnull String propertyName,
+            @Nonnull EventConverter eventConverter
     ) {
-        this(payloadClass, propertyName, ExceptionRaisingSequencingPolicy.instance());
+        this(payloadClass, propertyName, eventConverter, ExceptionRaisingSequencingPolicy.instance());
     }
 
     private static <T> Property<T> extractProperty(@Nonnull Class<T> payloadClass, @Nonnull String propertyName) {

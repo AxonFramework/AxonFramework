@@ -40,6 +40,7 @@ public class ExpressionSequencingPolicy<T, K> implements SequencingPolicy {
 
     private final Class<T> payloadClass;
     private final Function<T, K> identifierExtractor;
+    private final EventConverter eventConverter;
 
     /**
      * Creates a new instance of the {@link ExpressionSequencingPolicy}, which extracts the sequence identifier from the
@@ -47,14 +48,18 @@ public class ExpressionSequencingPolicy<T, K> implements SequencingPolicy {
      *
      * @param payloadClass        The class of the supported event payloads.
      * @param identifierExtractor The function to extract the sequence identifier from the event payload.
+     * @param eventConverter      The converter to use to convert event messages if their payload is not of the expected
+     *                            type.
      */
     public ExpressionSequencingPolicy(
             @Nonnull Class<T> payloadClass,
-            @Nonnull Function<T, K> identifierExtractor
+            @Nonnull Function<T, K> identifierExtractor,
+            @Nonnull EventConverter eventConverter
     ) {
         this.payloadClass = Objects.requireNonNull(payloadClass, "Payload class may not be null.");
         this.identifierExtractor = Objects.requireNonNull(identifierExtractor,
                                                           "Identifier extractor function may not be null.");
+        this.eventConverter = eventConverter;
     }
 
     @Override
@@ -70,8 +75,7 @@ public class ExpressionSequencingPolicy<T, K> implements SequencingPolicy {
             return Optional.ofNullable(identifierExtractor.apply(castedPayload));
         }
 
-        var converter = context.component(EventConverter.class);
-        var converted = eventMessage.payloadAs(payloadClass, converter);
+        var converted = eventMessage.payloadAs(payloadClass, eventConverter);
         return Optional.ofNullable(identifierExtractor.apply(converted));
     }
 }

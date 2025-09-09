@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.sequencing;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
@@ -39,7 +40,11 @@ import static org.junit.jupiter.api.Assertions.*;
     @Test
     void propertyExtractorShouldReadCorrectValue() {
         final SequencingPolicy sequencingPolicy =
-                new ExpressionSequencingPolicy<>(TestEvent.class, TestEvent::id);
+                new ExpressionSequencingPolicy<>(
+                        TestEvent.class,
+                        TestEvent::id,
+                        eventConverter()
+                );
 
         assertThat(sequencingPolicy.getSequenceIdentifierFor(
                 anEvent(new TestEvent("42")),
@@ -49,7 +54,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
     @Test
     void propertyShouldReadCorrectValue() {
-        final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(TestEvent.class, "id");
+        final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(
+                TestEvent.class,
+                "id",
+                eventConverter()
+        );
 
         assertThat(sequencingPolicy.getSequenceIdentifierFor(
                 anEvent(new TestEvent("42")),
@@ -59,7 +68,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
     @Test
     void defaultFallbackShouldThrowException() {
-        final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(TestEvent.class, "id");
+        final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(
+                TestEvent.class,
+                "id",
+                eventConverter()
+        );
 
         assertThrows(IllegalArgumentException.class,
                      () -> sequencingPolicy.getSequenceIdentifierFor(anEvent("42"), aProcessingContext()));
@@ -70,6 +83,7 @@ import static org.junit.jupiter.api.Assertions.*;
         final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(
                 TestEvent.class,
                 "id",
+                eventConverter(),
                 (event, context) -> Optional.of("A")
         );
 
@@ -84,10 +98,12 @@ import static org.junit.jupiter.api.Assertions.*;
     }
 
     private static StubProcessingContext aProcessingContext() {
-        return StubProcessingContext.withComponent(
-                EventConverter.class,
-                new DelegatingEventConverter(new JacksonConverter())
-        );
+        return new StubProcessingContext();
+    }
+
+    @Nonnull
+    private static EventConverter eventConverter() {
+        return new DelegatingEventConverter(new JacksonConverter());
     }
 
     private record TestEvent(String id) {
