@@ -45,6 +45,7 @@ import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
@@ -177,7 +178,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
     @Test
     void registerQueryBusOverridesDefault() {
-        QueryBus expected = SimpleQueryBus.builder().build();
+        QueryBus expected = QueryBusTestUtils.aQueryBus();
 
         Configuration result = testSubject.registerQueryBus(c -> expected)
                                           .build();

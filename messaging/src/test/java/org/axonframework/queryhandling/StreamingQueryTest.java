@@ -46,7 +46,7 @@ import static java.util.Arrays.asList;
  */
 class StreamingQueryTest {
 
-    private final SimpleQueryBus queryBus = SimpleQueryBus.builder().build();
+    private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
     private final MyQueryHandler myQueryHandler = new MyQueryHandler();
     private final AnnotationQueryHandlerAdapter<MyQueryHandler> annotationQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
             myQueryHandler);

@@ -58,10 +58,8 @@ import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
@@ -261,17 +259,10 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static QueryBus defaultQueryBus(Configuration config) {
-        return SimpleQueryBus.builder()
-                             .transactionManager(config.getComponent(
-                                     TransactionManager.class,
-                                     NoTransactionManager::instance
-                             ))
-                             .errorHandler(config.getComponent(
-                                     QueryInvocationErrorHandler.class,
-                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
-                             ))
-                             .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                             .build();
+        return new SimpleQueryBus(
+                config.getComponent(UnitOfWorkFactory.class),
+                config.getComponent(QueryUpdateEmitter.class)
+        );
     }
 
     private static QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {

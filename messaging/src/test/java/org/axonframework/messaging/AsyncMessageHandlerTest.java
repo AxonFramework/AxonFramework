@@ -39,8 +39,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
@@ -62,7 +62,7 @@ class AsyncMessageHandlerTest {
     private final CommandBus commandBus = CommandBusTestUtils.aCommandBus();
     private final CommandGateway commandGateway =
             new DefaultCommandGateway(commandBus, new ClassBasedMessageTypeResolver());
-    private final QueryBus queryBus = SimpleQueryBus.builder().build();
+    private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
     private final QueryGateway queryGateway =
             new DefaultQueryGateway(queryBus, new ClassBasedMessageTypeResolver(), null);
     private final EventBus eventBus = SimpleEventBus.builder()

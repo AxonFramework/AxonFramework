@@ -16,10 +16,14 @@
 
 package org.axonframework.queryhandling;
 
-import static java.util.Arrays.asList;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.axonframework.common.TypeReference;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.junit.jupiter.api.*;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.Collection;
 import java.util.List;
@@ -31,16 +35,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.axonframework.common.TypeReference;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
-import org.axonframework.queryhandling.annotation.QueryHandler;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
+import static java.util.Arrays.asList;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for different types of queries hitting query handlers with {@link Future} or {@link CompletableFuture} as the
@@ -49,10 +47,12 @@ import reactor.test.StepVerifier;
  * @author Milan Savic
  */
 class FutureAsResponseTypeToQueryHandlersTest {
-    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {};
+
+    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
+    };
     private static final int FUTURE_RESOLVING_TIMEOUT = 500;
 
-    private final SimpleQueryBus queryBus = SimpleQueryBus.builder().build();
+    private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
     private final MyQueryHandler myQueryHandler = new MyQueryHandler();
     private final AnnotationQueryHandlerAdapter<MyQueryHandler> annotationQueryHandlerAdapter =
             new AnnotationQueryHandlerAdapter<>(myQueryHandler);

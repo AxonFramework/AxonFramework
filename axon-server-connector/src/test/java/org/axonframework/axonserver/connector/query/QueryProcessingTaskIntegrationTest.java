@@ -30,15 +30,15 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
+import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.tracing.TestSpanFactory;
@@ -83,7 +83,7 @@ class QueryProcessingTaskIntegrationTest {
         queryBusSpanFactory = DefaultQueryBusSpanFactory.builder()
                                                         .spanFactory(spanFactory)
                                                         .build();
-        localSegment = SimpleQueryBus.builder().build();
+        localSegment = QueryBusTestUtils.aQueryBus();
         responseHandler = new CachingReplyChannel<>();
         Serializer serializer = JacksonSerializer.defaultSerializer();
         AxonServerConfiguration config = AxonServerConfiguration.builder()

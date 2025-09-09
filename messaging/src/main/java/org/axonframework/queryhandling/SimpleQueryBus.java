@@ -17,11 +17,8 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
@@ -32,6 +29,7 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolver;
 import org.reactivestreams.Publisher;
@@ -65,7 +63,6 @@ import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
-import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
 
 /**
@@ -86,40 +83,35 @@ public class SimpleQueryBus implements QueryBus {
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
     private final ConcurrentMap<String, List<QuerySubscription<?>>> subscriptions = new ConcurrentHashMap<>();
-    private final DuplicateQueryHandlerResolver duplicateQueryHandlerResolver;
-    private final QueryInvocationErrorHandler errorHandler;
-    private final MessageTypeResolver messageTypeResolver;
 
+    private final UnitOfWorkFactory unitOfWorkFactory;
     private final QueryUpdateEmitter queryUpdateEmitter;
 
-    /**
-     * Instantiate a {@link SimpleQueryBus} based on the fields contained in the {@link Builder}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@link SimpleQueryBus} instance
-     */
-    protected SimpleQueryBus(Builder builder) {
-        builder.validate();
-        this.errorHandler = builder.errorHandler;
-        // TODO #3488 - Replace for TransactionalUnitOfWorkFactory
-//        if (builder.transactionManager != NoTransactionManager.INSTANCE) {
-//            registerHandlerInterceptor(new TransactionManagingInterceptor<>(builder.transactionManager));
-//        }
-        this.queryUpdateEmitter = builder.queryUpdateEmitter;
-        this.duplicateQueryHandlerResolver = builder.duplicateQueryHandlerResolver;
-        this.messageTypeResolver = builder.messageTypeResolver;
-    }
+    private final QueryInvocationErrorHandler errorHandler;
+    private final MessageTypeResolver messageTypeResolver;
+    private final DuplicateQueryHandlerResolver duplicateQueryHandlerResolver;
 
     /**
-     * Instantiate a Builder to be able to create a {@link SimpleQueryBus}.
-     * <p>
-     * {@link TransactionManager} to {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to
-     * {@link LoggingQueryInvocationErrorHandler}, and {@link QueryUpdateEmitter} to
-     * {@link SimpleQueryUpdateEmitter}.
+     * Construct a {@code SimpleQueryBus} with the given {@code unitOfWorkFactory} and {@code queryUpdateEmitter}.
      *
-     * @return a Builder to be able to create a {@link SimpleQueryBus}
+     * @param unitOfWorkFactory  The factory constructing
+     *                           {@link org.axonframework.messaging.unitofwork.UnitOfWork units of work} to dispatch and
+     *                           handle queries in.
+     * @param queryUpdateEmitter The query update emitter used to register update handlers for
+     *                           {@link #subscriptionQuery(SubscriptionQueryMessage, int) subscription queries}.
      */
-    public static Builder builder() {
-        return new Builder();
+    public SimpleQueryBus(@Nonnull UnitOfWorkFactory unitOfWorkFactory,
+                          @Nonnull QueryUpdateEmitter queryUpdateEmitter) {
+        this.unitOfWorkFactory = Objects.requireNonNull(unitOfWorkFactory, "The UnitOfWorkFactory must be provided.");
+        this.queryUpdateEmitter =
+                Objects.requireNonNull(queryUpdateEmitter, "The QueryUpdateEmitter must be provided.");
+
+        // TODO I think we can drop this, as it is only used for scatter-gather queries
+        this.errorHandler = LoggingQueryInvocationErrorHandler.builder().build();
+        // Replace as this is a gateway concern
+        this.messageTypeResolver = new ClassBasedMessageTypeResolver();
+        // Replace for in-subscribe logic
+        this.duplicateQueryHandlerResolver = DuplicateQueryHandlerResolution.logAndAccept();
     }
 
     @Override
@@ -546,114 +538,5 @@ public class SimpleQueryBus implements QueryBus {
     private Publisher<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> getStreamingHandlersForMessage(
             StreamingQueryMessage queryMessage) {
         return Flux.fromIterable(getHandlersForMessage(queryMessage));
-    }
-
-    /**
-     * Builder class to instantiate a {@link SimpleQueryBus}.
-     * <p>
-     * {@link TransactionManager} to {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to
-     * {@link LoggingQueryInvocationErrorHandler}, the {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}
-     */
-    public static class Builder {
-
-        private TransactionManager transactionManager = NoTransactionManager.instance();
-        private QueryInvocationErrorHandler errorHandler = LoggingQueryInvocationErrorHandler.builder()
-                                                                                             .logger(logger)
-                                                                                             .build();
-        private DuplicateQueryHandlerResolver duplicateQueryHandlerResolver = DuplicateQueryHandlerResolution.logAndAccept();
-        private QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder()
-                                                                                .build();
-        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
-
-        /**
-         * Sets the duplicate query handler resolver. This determines which registrations are added to the query bus
-         * when multiple handlers are detected for the same query.
-         * <p>
-         * {@link DuplicateQueryHandlerResolution} contains good examples on this and will most of the time suffice. The
-         * bus defaults to {@link DuplicateQueryHandlerResolution#logAndAccept()}.
-         *
-         * @param duplicateQueryHandlerResolver The {@link} DuplicateQueryHandlerResolver to use when multiple
-         *                                      registrations are detected
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder duplicateQueryHandlerResolver(DuplicateQueryHandlerResolver duplicateQueryHandlerResolver) {
-            assertNonNull(duplicateQueryHandlerResolver, "DuplicateQueryHandlerResolver may not be null");
-            this.duplicateQueryHandlerResolver = duplicateQueryHandlerResolver;
-            return this;
-        }
-
-        /**
-         * Sets the {@link TransactionManager} used to manage the query handling transactions. Defaults to a
-         * {@link NoTransactionManager}.
-         *
-         * @param transactionManager a {@link TransactionManager} used to manage the query handling transactions
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
-            assertNonNull(transactionManager, "TransactionManager may not be null");
-            this.transactionManager = transactionManager;
-            return this;
-        }
-
-        /**
-         * Sets the {@link QueryInvocationErrorHandler} to handle exceptions during query handler invocation. Defaults
-         * to a {@link LoggingQueryInvocationErrorHandler} using this instance it's {@link Logger}.
-         *
-         * @param errorHandler a {@link QueryInvocationErrorHandler} to handle exceptions during query handler
-         *                     invocation
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder errorHandler(@Nonnull QueryInvocationErrorHandler errorHandler) {
-            assertNonNull(errorHandler, "QueryInvocationErrorHandler may not be null");
-            this.errorHandler = errorHandler;
-            return this;
-        }
-
-        /**
-         * Sets the {@link QueryUpdateEmitter} used to emits updates for the
-         * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage)}. Defaults to a
-         * {@link SimpleQueryUpdateEmitter}.
-         *
-         * @param queryUpdateEmitter the {@link QueryUpdateEmitter} used to emits updates for the
-         *                           {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage)}
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder queryUpdateEmitter(@Nonnull QueryUpdateEmitter queryUpdateEmitter) {
-            assertNonNull(queryUpdateEmitter, "QueryUpdateEmitter may not be null");
-            this.queryUpdateEmitter = queryUpdateEmitter;
-            return this;
-        }
-
-        /**
-         * Sets the {@link MessageTypeResolver} to be used in order to resolve QualifiedName for published Event
-         * messages. If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
-         *
-         * @param messageTypeResolver which provides QualifiedName for Event messages
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {
-            assertNonNull(messageTypeResolver, "MessageNameResolver may not be null");
-            this.messageTypeResolver = messageTypeResolver;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link SimpleQueryBus} as specified through this Builder.
-         *
-         * @return a {@link SimpleQueryBus} as specified through this Builder
-         */
-        public SimpleQueryBus build() {
-            return new SimpleQueryBus(this);
-        }
-
-        /**
-         * Validate whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        protected void validate() throws AxonConfigurationException {
-            // Method kept for overriding
-        }
     }
 }
