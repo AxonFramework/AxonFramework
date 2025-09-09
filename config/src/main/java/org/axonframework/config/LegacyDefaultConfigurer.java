@@ -35,17 +35,17 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.SimpleDeadlineManager;
-import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
-import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
-import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
+import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
+import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
+import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
@@ -82,12 +82,10 @@ import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
-import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.DefaultQueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusSpanFactory;
-import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
@@ -211,7 +209,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         components.put(
                 QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter)
         );
-        components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
         components.put(ScopeAwareProvider.class,
@@ -344,17 +341,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     protected CommandGateway defaultCommandGateway(LegacyConfiguration config) {
         return defaultComponent(CommandGateway.class, config)
                 .orElseGet(() -> new DefaultCommandGateway(config.commandBus(), messageTypeResolver));
-    }
-
-    /**
-     * Returns a {@link DefaultQueryGateway} that will use the configuration's {@link QueryBus} to dispatch queries.
-     *
-     * @param config The configuration that supplies the query bus.
-     * @return The default query gateway.
-     */
-    protected QueryGateway defaultQueryGateway(LegacyConfiguration config) {
-        return defaultComponent(QueryGateway.class, config)
-                .orElseGet(() -> DefaultQueryGateway.builder().queryBus(config.queryBus()).build());
     }
 
     /**

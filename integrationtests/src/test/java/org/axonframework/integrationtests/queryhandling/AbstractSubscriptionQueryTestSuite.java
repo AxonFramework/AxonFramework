@@ -18,12 +18,11 @@ package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.common.TypeReference;
 import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -830,7 +829,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void queryGatewayCorrectlyReturnsNullOnSubscriptionQueryWithNullInitialResult()
             throws ExecutionException, InterruptedException {
-        QueryGateway queryGateway = DefaultQueryGateway.builder().queryBus(queryBus).build();
+        QueryGateway queryGateway = new DefaultQueryGateway(queryBus, new ClassBasedMessageTypeResolver(), null);
 
         assertNull(queryGateway.subscriptionQuery(new SomeQuery("not " + FOUND), String.class, String.class)
                                .initialResult()
@@ -839,7 +838,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
     @Test
     void queryGatewayCorrectlyReturnsOnSubscriptionQuery() throws ExecutionException, InterruptedException {
-        QueryGateway queryGateway = DefaultQueryGateway.builder().queryBus(queryBus).build();
+        QueryGateway queryGateway = new DefaultQueryGateway(queryBus, new ClassBasedMessageTypeResolver(), null);
         String result = queryGateway.subscriptionQuery(new SomeQuery(FOUND), String.class, String.class)
                                     .initialResult()
                                     .toFuture().get();

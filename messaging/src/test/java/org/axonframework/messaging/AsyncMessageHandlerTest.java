@@ -63,10 +63,8 @@ class AsyncMessageHandlerTest {
     private final CommandGateway commandGateway =
             new DefaultCommandGateway(commandBus, new ClassBasedMessageTypeResolver());
     private final QueryBus queryBus = SimpleQueryBus.builder().build();
-    private final QueryGateway queryGateway = DefaultQueryGateway.builder()
-                                                                 .queryBus(queryBus)
-                                                                 .messageNameResolver(new ClassBasedMessageTypeResolver())
-                                                                 .build();
+    private final QueryGateway queryGateway =
+            new DefaultQueryGateway(queryBus, new ClassBasedMessageTypeResolver(), null);
     private final EventBus eventBus = SimpleEventBus.builder()
                                                     .build();  // TODO #3392 - Replace for actual EventSink implementation.
     private final AtomicBoolean eventHandlerCalled = new AtomicBoolean();

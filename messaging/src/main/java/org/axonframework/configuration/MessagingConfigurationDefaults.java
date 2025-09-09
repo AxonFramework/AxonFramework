@@ -62,6 +62,7 @@ import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
@@ -252,9 +253,11 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static QueryGateway defaultQueryGateway(Configuration config) {
-        return DefaultQueryGateway.builder()
-                                  .queryBus(config.getComponent(QueryBus.class))
-                                  .build();
+        return new DefaultQueryGateway(
+                config.getComponent(QueryBus.class),
+                config.getComponent(MessageTypeResolver.class),
+                config.getOptionalComponent(QueryPriorityCalculator.class).orElse(null)
+        );
     }
 
     private static QueryBus defaultQueryBus(Configuration config) {
