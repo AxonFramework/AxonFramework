@@ -61,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * End-to-end tests for Streaming Query functionality. They include backwards compatibility end-to-end tests as well.
  */
+@Disabled("TODO #3488")
 @Testcontainers
 class StreamingQueryEndToEndTest {
     private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {};

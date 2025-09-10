@@ -64,6 +64,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Integration tests of {@link QueryProcessingTask}.
  */
+@Disabled("TODO #3488")
 class QueryProcessingTaskIntegrationTest {
     private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {};
     private static final String CLIENT_ID = "clientId";

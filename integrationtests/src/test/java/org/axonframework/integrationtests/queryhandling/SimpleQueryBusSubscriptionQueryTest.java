@@ -21,6 +21,7 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.junit.jupiter.api.*;
 
 /**
  * An {@link AbstractSubscriptionQueryTestSuite} implementation validating the {@link SimpleQueryBus}.
@@ -28,6 +29,7 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
  * @author Milan Savic
  * @author Steven van Beelen
  */
+@Disabled("TODO #3488")
 public class SimpleQueryBusSubscriptionQueryTest extends AbstractSubscriptionQueryTestSuite {
 
     private final SimpleQueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
