@@ -33,8 +33,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the event message payload based
- * on a given property or property extractor. If the event message payload is not of a supported type, a fallback
- * sequencing policy is used. By default the fallback sequencing policy raises an exception.
+ * on a given property. If the event message payload cannot be converted to the supported type, a fallback sequencing
+ * policy is used. By default the fallback sequencing policy raises an exception.
  *
  * @param <T> The type of the supported event payloads.
  * @param <K> The type of the extracted property.

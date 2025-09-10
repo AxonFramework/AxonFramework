@@ -27,13 +27,13 @@ import java.util.function.Function;
 
 /**
  * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the event message payload based
- * on a given property or property extractor. If the event message payload is not of a supported type, a fallback
- * sequencing policy is used. By default the fallback sequencing policy raises an exception.
+ * on a given property extractor.
  *
  * @param <T> The type of the supported event payloads.
  * @param <K> The type of the extracted property.
+ * @author Mateusz Nowak
  * @author Nils Christian Ehmke
- * @since 4.5.2
+ * @since 5.0.0
  */
 @SuppressWarnings("rawtypes")
 public class ExpressionSequencingPolicy<T, K> implements SequencingPolicy {
