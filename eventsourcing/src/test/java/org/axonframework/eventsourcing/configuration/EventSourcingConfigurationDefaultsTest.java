@@ -26,16 +26,20 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.InterceptingEventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.Tag;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link EventSourcingConfigurationDefaults}.
@@ -52,8 +56,8 @@ class EventSourcingConfigurationDefaultsTest {
     }
 
     @Test
-    void orderEqualsMaxInteger() {
-        assertEquals(Integer.MAX_VALUE - 10, testSubject.order());
+    void orderEqualsEnhancerOrderConstant() {
+        assertEquals(EventSourcingConfigurationDefaults.ENHANCER_ORDER, testSubject.order());
     }
 
     @Test
@@ -96,6 +100,18 @@ class EventSourcingConfigurationDefaultsTest {
                                                       .getComponent(TagResolver.class);
 
         assertEquals(testTagResolver, configuredTagResolver);
+    }
+
+    @Test
+    void decoratorsEventStoreAsInterceptorEventStoreWhenDispatchInterceptorIsPresent() {
+        //noinspection unchecked
+        MessagingConfigurer configurer =
+                MessagingConfigurer.create()
+                                   .registerDispatchInterceptor(c -> mock(MessageDispatchInterceptor.class));
+
+        Configuration resultConfig = configurer.build();
+
+        assertThat(resultConfig.getComponent(EventStore.class)).isInstanceOf(InterceptingEventStore.class);
     }
 
     private static class TestTagResolver implements TagResolver {
