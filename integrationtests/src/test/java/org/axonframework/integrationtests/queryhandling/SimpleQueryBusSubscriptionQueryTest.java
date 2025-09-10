@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
@@ -30,9 +31,7 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 public class SimpleQueryBusSubscriptionQueryTest extends AbstractSubscriptionQueryTestSuite {
 
     private final SimpleQueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
-    private final SimpleQueryBus queryBus = SimpleQueryBus.builder()
-                                                          .queryUpdateEmitter(queryUpdateEmitter)
-                                                          .build();
+    private final SimpleQueryBus queryBus = new SimpleQueryBus(UnitOfWorkTestUtils.SIMPLE_FACTORY, queryUpdateEmitter);
 
     @Override
     public QueryBus queryBus() {
