@@ -122,6 +122,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
      * for events. Please use {@link #PooledStreamingEventProcessorConfiguration(Configuration)} when those are desired.
      */
+    @Internal
     public PooledStreamingEventProcessorConfiguration() {
         super(List.of());
     }

@@ -75,6 +75,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
      * for events. Please use {@link #SubscribingEventProcessorConfiguration(Configuration)} when those are desired.
      */
+    @Internal
     public SubscribingEventProcessorConfiguration() {
         super(List.of());
     }
