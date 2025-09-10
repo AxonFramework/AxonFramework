@@ -1450,7 +1450,7 @@ for Axon Framework. Furthermore, this approach inclined components to be constru
 interceptors to them. For example, to register a `MessageDispatchInterceptor` to the `CommandBus` in Axon Framework 4,
 you needed to be sure the `CommandBus` was constructed first.
 
-We felt this solution to be suboptimal and not inline with the overall configuration experience in Axon Framework.
+We felt this solution to be suboptimal and not in line with the overall configuration experience in Axon Framework.
 As such, interceptors should now be registered with
 the [ApplicationConfigurer](#applicationconfigurer-and-configuration). As interceptors are a general messaging concern,
 the operations for registration are present on the `MessagingConfigurer`. Down below is a snippet configuring dispatch
