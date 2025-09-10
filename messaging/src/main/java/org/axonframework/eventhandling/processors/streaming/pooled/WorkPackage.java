@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
@@ -52,7 +51,6 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
-import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
  * Defines the process of handling {@link EventMessage}s for a specific {@link Segment}. This entails validating if the
@@ -279,14 +277,16 @@ class WorkPackage {
      * <p>
      * <b>Threading note:</b> This method is safe to be called by both the {@link Coordinator} threads and {@link
      * WorkPackage} threads of a {@link PooledStreamingEventProcessor}.
+     *
+     * @return a {@link CompletableFuture} that completes when the worker has been scheduled
      */
-    public void scheduleWorker() {
+    public CompletableFuture<Void> scheduleWorker() {
         if (!scheduled.compareAndSet(false, true)) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
         logger.debug("Scheduling Work Package [{}]-[{}] to process events.", segment.getSegmentId(), name);
 
-        executorService.submit(() -> {
+        return CompletableFuture.runAsync(() -> {
             CompletableFuture<Exception> aborting = abortFlag.get();
             if (aborting != null) {
                 logger.debug("Work Package [{}]-[{}] should be aborted. Will shutdown this work package.",
@@ -296,23 +296,25 @@ class WorkPackage {
                 return;
             }
 
-            try {
-                processEvents();
-            } catch (Exception e) {
-                logger.warn("Error while processing batch in Work Package [{}]-[{}]. Aborting Work Package...",
-                            segment.getSegmentId(), name, e);
-                abort(e);
-            }
-            scheduled.set(false);
-            if (!processingQueue.isEmpty() || abortFlag.get() != null) {
-                logger.debug("Rescheduling Work Package [{}]-[{}] since there are events left.",
-                             segment.getSegmentId(), name);
-                scheduleWorker();
-            }
-        });
+            processEvents()
+                .exceptionally(e -> {
+                    logger.warn("Error while processing batch in Work Package [{}]-[{}]. Aborting Work Package...",
+                                segment.getSegmentId(), name, e);
+                    abort((Exception) e);
+                    return null;
+                })
+                .thenRun(() -> {
+                    scheduled.set(false);
+                    if (!processingQueue.isEmpty() || abortFlag.get() != null) {
+                        logger.debug("Rescheduling Work Package [{}]-[{}] since there are events left.",
+                                     segment.getSegmentId(), name);
+                        scheduleWorker();
+                    }
+                });
+        }, executorService);
     }
 
-    private void processEvents() throws Exception {
+    private CompletableFuture<Void> processEvents() {
         List<EventMessage> eventBatch = new ArrayList<>();
         while (!isAbortTriggered() && eventBatch.size() < batchSize && !processingQueue.isEmpty()) {
             ProcessingEntry entry = processingQueue.poll();
@@ -326,40 +328,38 @@ class WorkPackage {
         if (!eventBatch.isEmpty()) {
             logger.debug("Work Package [{}]-[{}] is processing a batch of {} events.",
                          segment.getSegmentId(), name, eventBatch.size());
-            try {
-                processingEvents.set(true);
-                var unitOfWork = unitOfWorkFactory.create();
-                unitOfWork.runOnPreInvocation(ctx -> {
-                    ctx.putResource(Segment.RESOURCE_KEY, segment);
-                    ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
-                });
+            
+            processingEvents.set(true);
+            var unitOfWork = unitOfWorkFactory.create();
+            unitOfWork.runOnPreInvocation(ctx -> {
+                ctx.putResource(Segment.RESOURCE_KEY, segment);
+                ctx.putResource(TrackingToken.RESOURCE_KEY, lastConsumedToken);
+            });
 
-                unitOfWork.onInvocation(ctx -> batchProcessor.process(eventBatch, ctx).asCompletableFuture());
+            unitOfWork.onInvocation(ctx -> batchProcessor.process(eventBatch, ctx).asCompletableFuture());
 
-                unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
-                unitOfWork.runOnAfterCommit(
-                        u -> {
-                            segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
-                            batchProcessedCallback.run();
-                        }
-                );
-                FutureUtils.joinAndUnwrap(unitOfWork.execute());
-            } finally {
-                processingEvents.set(false);
-            }
+            unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
+            unitOfWork.runOnAfterCommit(
+                    u -> {
+                        segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
+                        batchProcessedCallback.run();
+                    }
+            );
+            
+            return unitOfWork.execute()
+                .whenComplete((result, throwable) -> processingEvents.set(false));
         } else {
             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
             if (lastStoredToken != lastConsumedToken && now() > nextClaimExtension.get()) {
-                joinAndUnwrap(
-                        unitOfWorkFactory
-                                .create()
-                                .executeWithResult(context -> {
-                                    storeToken(lastConsumedToken);
-                                    return emptyCompletedFuture();
-                                })
-                );
+                return unitOfWorkFactory
+                        .create()
+                        .executeWithResult(context -> {
+                            storeToken(lastConsumedToken);
+                            return emptyCompletedFuture();
+                        })
+                        .thenCompose(result -> (CompletableFuture<Void>) result);
             } else {
-                extendClaimIfThresholdIsMet();
+                return extendClaimIfThresholdIsMet();
             }
         }
     }
@@ -367,20 +367,24 @@ class WorkPackage {
     /**
      * Extend the claim of the {@link TrackingToken} owned by this {@code WorkPackage}, if the configurable
      * {@link PooledStreamingEventProcessorConfiguration#claimExtensionThreshold(long) claim extension threshold} is met.
+     *
+     * @return a {@link CompletableFuture} that completes when the claim extension operation is finished
      */
-    public void extendClaimIfThresholdIsMet() {
+    public CompletableFuture<Void> extendClaimIfThresholdIsMet() {
         if (now() > nextClaimExtension.get()) {
             logger.debug("Work Package [{}]-[{}] will extend its token claim.", name, segment.getSegmentId());
-            joinAndUnwrap(
-                    unitOfWorkFactory
-                            .create()
-                            .executeWithResult(context -> {
-                                tokenStore.extendClaim(name, segment.getSegmentId());
-                                return emptyCompletedFuture();
-                            })
-            );
-            nextClaimExtension.set(now() + claimExtensionThreshold);
+            return unitOfWorkFactory
+                    .create()
+                    .executeWithResult(context -> {
+                        tokenStore.extendClaim(name, segment.getSegmentId());
+                        return emptyCompletedFuture();
+                    })
+                    .thenCompose(result -> {
+                        nextClaimExtension.set(now() + claimExtensionThreshold);
+                        return (CompletableFuture<Void>) result;
+                    });
         }
+        return CompletableFuture.completedFuture(null);
     }
 
     private void storeToken(TrackingToken token) {
