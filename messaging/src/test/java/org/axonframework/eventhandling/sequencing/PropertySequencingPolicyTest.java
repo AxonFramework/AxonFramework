@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Nils Christian Ehmke
  */
-@DisplayName("Unit-Test for the PropertySequencingPolicy") final class PropertySequencingPolicyTest {
+final class PropertySequencingPolicyTest {
 
     @Test
     void propertyExtractorShouldReadCorrectValue() {

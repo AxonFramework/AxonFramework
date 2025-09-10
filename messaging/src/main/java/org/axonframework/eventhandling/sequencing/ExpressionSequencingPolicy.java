@@ -58,7 +58,7 @@ public class ExpressionSequencingPolicy<T, K> implements SequencingPolicy {
         this.payloadClass = Objects.requireNonNull(payloadClass, "Payload class may not be null.");
         this.identifierExtractor = Objects.requireNonNull(identifierExtractor,
                                                           "Identifier extractor function may not be null.");
-        this.eventConverter = eventConverter;
+        this.eventConverter = Objects.requireNonNull(eventConverter, "EventConverter may not be null");
     }
 
     @Override
