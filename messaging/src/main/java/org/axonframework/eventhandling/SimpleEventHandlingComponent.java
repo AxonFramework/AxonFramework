@@ -17,8 +17,6 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentBuilder;
-import org.axonframework.eventhandling.configuration.EventHandlingComponentBuilder;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -83,10 +81,5 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
     @Override
     public Set<QualifiedName> supportedEvents() {
         return Set.copyOf(eventHandlers.keySet());
-    }
-
-    @Nonnull
-    public static EventHandlingComponentBuilder.SequencingPolicyPhase builder() {
-        return new DefaultEventHandlingComponentBuilder(new SimpleEventHandlingComponent());
     }
 }

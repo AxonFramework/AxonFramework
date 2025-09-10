@@ -139,7 +139,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                                                  SubscribingEventProcessorConfiguration.class
                                          );
                                          return new InterceptingEventHandlingComponent(
-                                                 configuration.addInterceptor(config),
+                                                 configuration.interceptors(),
                                                  delegate
                                          );
                                      });
@@ -169,6 +169,7 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     ) {
         return new TracingEventHandlingComponent(
                 (event) -> configuration.spanFactory().createProcessEventSpan(false, event),
+                // TODO #3595 - Move this monitoring decorator to be placed around **all** other decorators for an EHC.
                 new MonitoringEventHandlingComponent(
                         configuration.messageMonitor(),
                         new SequenceCachingEventHandlingComponent(c)
@@ -200,8 +201,8 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     @Nonnull
     private static SubscribingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
         return new SubscribingEventProcessorConfiguration(
-                parentSharedCustomizationOrDefault(cfg).apply(cfg,
-                                                              new EventProcessorConfiguration())
+                parentSharedCustomizationOrDefault(cfg)
+                        .apply(cfg, new EventProcessorConfiguration(cfg))
         );
     }
 

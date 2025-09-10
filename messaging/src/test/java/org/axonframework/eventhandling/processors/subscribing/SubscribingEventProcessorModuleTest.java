@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.RecordingEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.eventhandling.configuration.EventHandlingComponentBuilder;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
@@ -212,24 +213,24 @@ class SubscribingEventProcessorModuleTest {
                                         .eventHandlingComponents(
                                                 components -> components.declarative(cfg -> componentOne)
                                         )
-                                        .customized(
-                                                (config, psepConfig) -> psepConfig.addInterceptor(specificInterceptorOne)
-                                        );
+                                        .customized((config, psepConfig) -> psepConfig.withInterceptor(
+                                                specificInterceptorOne
+                                        ));
             RecordingEventHandlingComponent componentTwo = simpleRecordingTestComponent(new QualifiedName(Integer.class));
             SubscribingEventProcessorModule sepModuleTwo =
                     EventProcessorModule.subscribing("processor-two")
                                         .eventHandlingComponents(
                                                 components -> components.declarative(cfg -> componentTwo)
                                         )
-                                        .customized(
-                                                (config, psepConfig) -> psepConfig.addInterceptor(specificInterceptorTwo)
-                                        );
+                                        .customized((config, psepConfig) -> psepConfig.withInterceptor(
+                                                specificInterceptorTwo
+                                        ));
             // Register the global interceptor
             configurer.registerEventHandlerInterceptor(c -> globalInterceptor);
             // Register the default interceptor and attach both PSEP modules.
             configurer.eventProcessing(processingConfigurer -> processingConfigurer.subscribing(
                     sepConfigurer -> sepConfigurer.defaults(defaults -> defaults.messageSource(eventBus)
-                                                                                .addInterceptor(defaultInterceptor))
+                                                                                .withInterceptor(defaultInterceptor))
                                                   .processor(sepModuleOne)
                                                   .processor(sepModuleTwo)
             ));
@@ -563,11 +564,13 @@ class SubscribingEventProcessorModuleTest {
         return simpleRecordingTestComponent(new QualifiedName(String.class));
     }
 
-    private static RecordingEventHandlingComponent simpleRecordingTestComponent(@Nonnull QualifiedName handlerName) {
+    private static RecordingEventHandlingComponent simpleRecordingTestComponent(
+            @Nonnull QualifiedName supportedEventName
+    ) {
         return new RecordingEventHandlingComponent(
-                SimpleEventHandlingComponent.builder()
-                                            .handles(handlerName, (e, c) -> MessageStream.empty())
-                                            .build()
+                EventHandlingComponentBuilder.builder()
+                                             .handles(supportedEventName, (e, c) -> MessageStream.empty())
+                                             .build()
         );
     }
 
