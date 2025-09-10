@@ -21,7 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
@@ -31,7 +31,7 @@ import java.util.Optional;
 
 /**
  * Factory for the default parameter resolvers. This factory is capable for providing parameter resolvers for Message,
- * MetaData and @MetaDataValue annotated parameters.
+ * Metadata and @MetadataValue annotated parameters.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -49,12 +49,12 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             return new MessageParameterResolver(parameterType);
         }
         Optional<Map<String, Object>>
-                metaDataValueAnnotation = AnnotationUtils.findAnnotationAttributes(parameters[parameterIndex], MetaDataValue.class);
-        if (metaDataValueAnnotation.isPresent()) {
-            return new AnnotatedMetaDataParameterResolver(metaDataValueAnnotation.get(), parameterType);
+                metadataValueAnnotation = AnnotationUtils.findAnnotationAttributes(parameters[parameterIndex], MetadataValue.class);
+        if (metadataValueAnnotation.isPresent()) {
+            return new AnnotatedMetadataParameterResolver(metadataValueAnnotation.get(), parameterType);
         }
-        if (org.axonframework.messaging.MetaData.class.isAssignableFrom(parameterType)) {
-            return MetaDataParameterResolver.INSTANCE;
+        if (org.axonframework.messaging.Metadata.class.isAssignableFrom(parameterType)) {
+            return MetadataParameterResolver.INSTANCE;
         }
         if (parameterIndex == 0) {
             Class<?> payloadType = (Class<?>) AnnotationUtils.findAnnotationAttributes(executable, MessageHandler.class)
@@ -67,24 +67,24 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         return null;
     }
 
-    private static class AnnotatedMetaDataParameterResolver implements ParameterResolver<Object> {
+    private static class AnnotatedMetadataParameterResolver implements ParameterResolver<Object> {
 
         private static final String REQUIRED_PROPERTY = "required";
-        private static final String META_DATA_VALUE_PROPERTY = "metaDataValue";
+        private static final String METADATA_VALUE_PROPERTY = "metadataValue";
 
-        private final Map<String, Object> metaDataValue;
+        private final Map<String, Object> metadataValue;
         private final Class<?> parameterType;
 
-        public AnnotatedMetaDataParameterResolver(Map<String, Object> metaDataValue, Class<?> parameterType) {
-            this.metaDataValue = metaDataValue;
+        public AnnotatedMetadataParameterResolver(Map<String, Object> metadataValue, Class<?> parameterType) {
+            this.metadataValue = metadataValue;
             this.parameterType = parameterType;
         }
 
         @Override
         public Object resolveParameterValue(@Nonnull ProcessingContext context) {
             return Message.fromContext(context)
-                          .metaData()
-                          .get(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString());
+                          .metadata()
+                          .get(metadataValue.get(METADATA_VALUE_PROPERTY).toString());
         }
 
         @Override
@@ -93,26 +93,26 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             if (message == null) {
                 return false;
             }
-            return !(parameterType.isPrimitive() || (boolean) metaDataValue.get(REQUIRED_PROPERTY))
+            return !(parameterType.isPrimitive() || (boolean) metadataValue.get(REQUIRED_PROPERTY))
                     || (
-                    message.metaData().containsKey(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString())
-                            && parameterType.isInstance(message.metaData().get(metaDataValue.get(META_DATA_VALUE_PROPERTY).toString()))
+                    message.metadata().containsKey(metadataValue.get(METADATA_VALUE_PROPERTY).toString())
+                            && parameterType.isInstance(message.metadata().get(metadataValue.get(METADATA_VALUE_PROPERTY).toString()))
             );
         }
     }
 
-    private static final class MetaDataParameterResolver implements ParameterResolver<MetaData> {
+    private static final class MetadataParameterResolver implements ParameterResolver<Metadata> {
 
-        private static final MetaDataParameterResolver INSTANCE = new MetaDataParameterResolver();
+        private static final MetadataParameterResolver INSTANCE = new MetadataParameterResolver();
 
-        private MetaDataParameterResolver() {
+        private MetadataParameterResolver() {
         }
 
         @Nullable
         @Override
-        public MetaData resolveParameterValue(@Nonnull ProcessingContext context) {
+        public Metadata resolveParameterValue(@Nonnull ProcessingContext context) {
             Message message = Message.fromContext(context);
-            return message.metaData();
+            return message.metadata();
         }
 
         @Override

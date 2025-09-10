@@ -147,14 +147,14 @@ class MessageTimerMonitorTest {
     @Test
     void messagesWithMetadataAsCustomTag() {
         MessageTimerMonitor testSubject = testSubjectBuilder.tagsBuilder(
-                message -> Tags.of("myMetaData", message.metaData().get("myMetadataKey").toString())
+                message -> Tags.of("myMetadata", message.metadata().get("myMetadataKey").toString())
         ).build();
 
-        EventMessage foo = asEventMessage("foo").withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage foo = asEventMessage("foo").withMetadata(Collections.singletonMap("myMetadataKey",
                                                                                                "myMetadataValue1"));
-        EventMessage bar = asEventMessage("bar").withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage bar = asEventMessage("bar").withMetadata(Collections.singletonMap("myMetadataKey",
                                                                                                "myMetadataValue2"));
-        EventMessage baz = asEventMessage("baz").withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage baz = asEventMessage("baz").withMetadata(Collections.singletonMap("myMetadataKey",
                                                                                                "myMetadataValue2"));
 
         Map<? super Message, MessageMonitor.MonitorCallback> callbacks =
@@ -177,26 +177,26 @@ class MessageTimerMonitorTest {
         assertEquals(2, ignoredTimer.size(), 0);
 
         assertTrue(all.stream()
-                      .filter(timer -> Objects.equals(timer.getId().getTag("myMetaData"), "myMetadataValue1"))
+                      .filter(timer -> Objects.equals(timer.getId().getTag("myMetadata"), "myMetadataValue1"))
                       .allMatch(timer -> timer.totalTime(TimeUnit.SECONDS) == 1));
         assertTrue(all.stream()
-                      .filter(timer -> Objects.equals(timer.getId().getTag("myMetaData"), "myMetadataValue2"))
+                      .filter(timer -> Objects.equals(timer.getId().getTag("myMetadata"), "myMetadataValue2"))
                       .allMatch(timer -> (timer.totalTime(TimeUnit.SECONDS) == 2 && timer.max(TimeUnit.SECONDS) == 1)));
 
         assertTrue(successTimer.stream()
-                               .filter(timer -> Objects.equals(timer.getId().getTag("myMetaData"), "myMetadataValue1"))
+                               .filter(timer -> Objects.equals(timer.getId().getTag("myMetadata"), "myMetadataValue1"))
                                .allMatch(timer -> timer.totalTime(TimeUnit.SECONDS) == 1));
 
         assertTrue(successTimer.stream()
-                               .filter(timer -> Objects.equals(timer.getId().getTag("myMetaData"), "myMetadataValue2"))
+                               .filter(timer -> Objects.equals(timer.getId().getTag("myMetadata"), "myMetadataValue2"))
                                .allMatch(timer -> timer.totalTime(TimeUnit.SECONDS) == 0));
 
         assertTrue(failureTimer.stream()
-                               .filter(timer -> Objects.equals(timer.getId().getTag("myMetaData"), "myMetadataValue1"))
+                               .filter(timer -> Objects.equals(timer.getId().getTag("myMetadata"), "myMetadataValue1"))
                                .allMatch(timer -> timer.totalTime(TimeUnit.SECONDS) == 0));
 
         assertTrue(failureTimer.stream()
-                               .filter(timer -> Objects.equals(timer.getId().getTag("myMetaData"), "myMetadataValue2"))
+                               .filter(timer -> Objects.equals(timer.getId().getTag("myMetadata"), "myMetadataValue2"))
                                .allMatch(timer -> timer.totalTime(TimeUnit.SECONDS) == 1));
     }
 

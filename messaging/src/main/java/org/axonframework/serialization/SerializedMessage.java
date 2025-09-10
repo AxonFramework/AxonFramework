@@ -21,16 +21,16 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.AbstractMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
- * A message containing serialized {@link #payload() payload data} and {@link #metaData() metadata}.
+ * A message containing serialized {@link #payload() payload data} and {@link #metadata() metadata}.
  * <p>
  * A {@link SerializedMessage} will deserialize the payload or metadata on demand when {@link #payload()} or
- * {@link #metaData()} is called.
+ * {@link #metadata()} is called.
  * <p>
  * The {@code SerializedMessage} guarantees that the payload and metadata will not be deserialized more than once.
  * Messages of this type  will not be serialized more than once by the same serializer.
@@ -45,28 +45,28 @@ import java.util.Map;
 public class SerializedMessage<P> extends AbstractMessage {
 
     private final LazyDeserializingObject<?> payload;
-    private final LazyDeserializingObject<MetaData> metaData;
+    private final LazyDeserializingObject<Metadata> metadata;
 
     /**
      * Constructs a {@code SerializedMessage} with given {@code identifier} from the given {@code serializedPayload} and
-     * {@code serializedMetaData}.
+     * {@code serializedMetadata}.
      * <p>
      * The given {@code serializer} is used to deserialize the data.
      *
      * @param identifier         The identifier of this {@code SerializedMessage}.
      * @param serializedPayload  The {@link SerializedObject serializer} message payload.
-     * @param serializedMetaData The {@link SerializedObject serializer} message metadata.
+     * @param serializedMetadata The {@link SerializedObject serializer} message metadata.
      * @param serializer         The {@link Serializer} required when the data needs to be deserialized.
      */
     public SerializedMessage(@Nonnull String identifier,
                              @Nonnull SerializedObject<?> serializedPayload,
-                             @Nonnull SerializedObject<?> serializedMetaData,
+                             @Nonnull SerializedObject<?> serializedMetadata,
                              @Nonnull Serializer serializer) {
         // TODO #3012 - I think the Serializer/Converter should provide the MessageType in this case.
         this(identifier,
              new MessageType(serializedPayload.getType().getName()),
              new LazyDeserializingObject<>(serializedPayload, serializer),
-             new LazyDeserializingObject<>(serializedMetaData, serializer));
+             new LazyDeserializingObject<>(serializedMetadata, serializer));
     }
 
     /**
@@ -79,20 +79,20 @@ public class SerializedMessage<P> extends AbstractMessage {
      * @param identifier The identifier of this {@code SerializedMessage}.
      * @param type       The {@link MessageType type} for this {@code SerializedMessage}.
      * @param payload    serialized payload that can be deserialized on demand and never more than once
-     * @param metaData   serialized metadata that can be deserialized on demand and never more than once
+     * @param metadata   serialized metadata that can be deserialized on demand and never more than once
      */
     public SerializedMessage(@Nonnull String identifier,
                              @Nonnull MessageType type,
                              @Nonnull LazyDeserializingObject<?> payload,
-                             @Nonnull LazyDeserializingObject<MetaData> metaData) {
+                             @Nonnull LazyDeserializingObject<Metadata> metadata) {
         super(identifier, type);
-        this.metaData = metaData;
+        this.metadata = metadata;
         this.payload = payload;
     }
 
     private SerializedMessage(@Nonnull SerializedMessage message,
-                              @Nonnull LazyDeserializingObject<MetaData> newMetaData) {
-        this(message.identifier(), message.type(), message.payload, newMetaData);
+                              @Nonnull LazyDeserializingObject<Metadata> newMetadata) {
+        this(message.identifier(), message.type(), message.payload, newMetadata);
     }
 
     @Override
@@ -114,11 +114,11 @@ public class SerializedMessage<P> extends AbstractMessage {
 
     @Override
     @Nonnull
-    public MetaData metaData() {
+    public Metadata metadata() {
         try {
-            return metaData.getObject();
+            return metadata.getObject();
         } catch (SerializationException e) {
-            throw new SerializationException("Error while deserializing meta data of message " + identifier(), e);
+            throw new SerializationException("Error while deserializing metadata of message " + identifier(), e);
         }
     }
 
@@ -129,23 +129,23 @@ public class SerializedMessage<P> extends AbstractMessage {
     }
 
     @Override
-    protected SerializedMessage withMetaData(MetaData metaData) {
-        if (metaData().equals(metaData)) {
+    protected SerializedMessage withMetadata(Metadata metadata) {
+        if (metadata().equals(metadata)) {
             return this;
         }
-        return new SerializedMessage(this, new LazyDeserializingObject<>(metaData));
+        return new SerializedMessage(this, new LazyDeserializingObject<>(metadata));
     }
 
     @Override
     @Nonnull
-    public SerializedMessage withMetaData(@Nonnull Map<String, String> metaData) {
-        return (SerializedMessage) super.withMetaData(metaData);
+    public SerializedMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        return (SerializedMessage) super.withMetadata(metadata);
     }
 
     @Override
     @Nonnull
-    public SerializedMessage andMetaData(@Nonnull Map<String, String> metaData) {
-        return (SerializedMessage) super.andMetaData(metaData);
+    public SerializedMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        return (SerializedMessage) super.andMetadata(metadata);
     }
 
     @Override
@@ -165,11 +165,11 @@ public class SerializedMessage<P> extends AbstractMessage {
     }
 
     /**
-     * Indicates whether the metaData of this message has already been deserialized.
+     * Indicates whether the metadata of this message has already been deserialized.
      *
-     * @return {@code true} if the metaData is deserialized, otherwise {@code false}
+     * @return {@code true} if the metadata is deserialized, otherwise {@code false}
      */
-    public boolean isMetaDataDeserialized() {
-        return metaData.isDeserialized();
+    public boolean isMetadataDeserialized() {
+        return metadata.isDeserialized();
     }
 }

@@ -19,7 +19,7 @@ package org.axonframework.messaging.unitofwork;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 
@@ -201,7 +201,7 @@ public interface LegacyUnitOfWork<T extends Message> {
      *
      * @return The correlation data contained in the message processed by this Unit of Work
      */
-    MetaData getCorrelationData();
+    Metadata getCorrelationData();
 
     /**
      * Register given {@code correlationDataProvider} with this Unit of Work. Correlation data providers are used

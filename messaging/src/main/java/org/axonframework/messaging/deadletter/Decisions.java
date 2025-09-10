@@ -17,7 +17,7 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.util.function.Function;
 
@@ -103,13 +103,13 @@ public abstract class Decisions {
     /**
      * Construct a {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be enqueued because of
      * the given {@code enqueueCause}. The {@code diagnosticsBuilder} constructs
-     * {@link DeadLetter#diagnostics() diagnostic} {@link MetaData} to append to the letter to enqueue.
+     * {@link DeadLetter#diagnostics() diagnostic} {@link Metadata} to append to the letter to enqueue.
      * <p>
      * Note that the result is <em>only</em> used to define the letter should be enqueued with the given
      * {@code enqueueCause} and diagnostics, and nothing more.
      *
      * @param enqueueCause       The reason for enqueueing a {@link DeadLetter dead letter}.
-     * @param diagnosticsBuilder A builder of {@link DeadLetter#diagnostics() diagnostic} {@link MetaData}.
+     * @param diagnosticsBuilder A builder of {@link DeadLetter#diagnostics() diagnostic} {@link Metadata}.
      * @param <M>                The type of message contained in the {@link DeadLetter} that's been made a decision
      *                           on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be enqueued because of the
@@ -117,7 +117,7 @@ public abstract class Decisions {
      */
     public static <M extends Message> ShouldEnqueue<M> enqueue(
             Throwable enqueueCause,
-            Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder
+            Function<DeadLetter<? extends M>, Metadata> diagnosticsBuilder
     ) {
         return new ShouldEnqueue<>(enqueueCause, diagnosticsBuilder);
     }
@@ -141,13 +141,13 @@ public abstract class Decisions {
     /**
      * Construct a {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be requeued because of
      * the given {@code requeueCause}. The {@code diagnosticsBuilder} constructs
-     * {@link DeadLetter#diagnostics() diagnostic} {@link MetaData} to append to the letter to requeue.
+     * {@link DeadLetter#diagnostics() diagnostic} {@link Metadata} to append to the letter to requeue.
      * <p>
      * Note that the result is <em>only</em> used to define the letter should be requeued with the given
      * {@code requeueCause} and diagnostics, and nothing more.
      *
      * @param requeueCause       The reason for requeueing a {@link DeadLetter dead letter}.
-     * @param diagnosticsBuilder A builder of {@link DeadLetter#diagnostics() diagnostic} {@link MetaData}.
+     * @param diagnosticsBuilder A builder of {@link DeadLetter#diagnostics() diagnostic} {@link Metadata}.
      * @param <M>                The type of message contained in the {@link DeadLetter} that's been made a decision
      *                           on.
      * @return A {@link ShouldEnqueue} defining that a {@link DeadLetter dead letter} should be requeued because of the
@@ -155,7 +155,7 @@ public abstract class Decisions {
      */
     public static <M extends Message> ShouldEnqueue<M> requeue(
             Throwable requeueCause,
-            Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder
+            Function<DeadLetter<? extends M>, Metadata> diagnosticsBuilder
     ) {
         return new ShouldEnqueue<>(requeueCause, diagnosticsBuilder);
     }

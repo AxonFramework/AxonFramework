@@ -23,9 +23,9 @@ import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.annotation.MetadataValue;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.serialization.PassThroughConverter;
@@ -154,7 +154,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
         @Test
         void throwsErrorIfRuntimeParametersDontMatch() {
             when(eventMessage.type()).thenReturn(new MessageType("metadata-required-test-type"));
-            when(eventMessage.metaData()).thenReturn(MetaData.emptyInstance());
+            when(eventMessage.metadata()).thenReturn(Metadata.emptyInstance());
             AxonConfigurationException exception = assertThrows(AxonConfigurationException.class, () -> {
                 factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             });
@@ -172,7 +172,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
 
             @EntityCreator(payloadQualifiedNames = "metadata-required-test-type")
-            public PayloadTypeSpecificTestEntity(EventMessage eventMessage, @MetaDataValue(required = true, value = "blabla") Integer blabla) {
+            public PayloadTypeSpecificTestEntity(EventMessage eventMessage, @MetadataValue(required = true, value = "blabla") Integer blabla) {
                 this.eventMessage = eventMessage;
             }
 
@@ -310,7 +310,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                     converter
             );
 
-            when(eventMessage.metaData()).thenReturn(MetaData.from(Collections.singletonMap("blabla", "blabla")));
+            when(eventMessage.metadata()).thenReturn(Metadata.from(Collections.singletonMap("blabla", "blabla")));
             var entity = factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             assertEquals("id-and-metadata", entity.invoked);
         }
@@ -325,7 +325,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
                     converter
             );
 
-            when(eventMessage.metaData()).thenReturn(MetaData.emptyInstance());
+            when(eventMessage.metadata()).thenReturn(Metadata.emptyInstance());
             var entity = factory.create("test-id", eventMessage, StubProcessingContext.forMessage(eventMessage));
             assertEquals("simply-id", entity.invoked);
         }
@@ -355,7 +355,7 @@ class AnnotationBasedEventSourcedEntityFactoryTest {
 
             @EntityCreator
             public MostSpecificHandlerEntity(@InjectEntityId String id,
-                                             @MetaDataValue(required = true, value = "blabla") String blabla) {
+                                             @MetadataValue(required = true, value = "blabla") String blabla) {
                 this.invoked = "id-and-metadata";
             }
         }

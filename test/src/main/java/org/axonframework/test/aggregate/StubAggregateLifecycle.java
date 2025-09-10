@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.ApplyMore;
@@ -106,14 +106,14 @@ public class StubAggregateLifecycle extends AggregateLifecycle {
             return new GenericEventMessage(message, () -> GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage(
-                new GenericMessage(new MessageType(event.getClass()), (P) event),
+                new GenericMessage(new MessageType(event.getClass()), event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
 
     @Override
-    protected <T> ApplyMore doApply(T payload, MetaData metaData) {
-        appliedMessages.add(new GenericEventMessage(new MessageType(payload.getClass()), payload, metaData));
+    protected <T> ApplyMore doApply(T payload, Metadata metadata) {
+        appliedMessages.add(new GenericEventMessage(new MessageType(payload.getClass()), payload, metadata));
 
         return new ApplyMore() {
             @Override

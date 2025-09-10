@@ -113,7 +113,7 @@ public class FireEventJob implements Job {
         return event instanceof EventMessage
                 ? new GenericEventMessage(((EventMessage) event).type(),
                                             ((EventMessage) event).payload(),
-                                            ((EventMessage) event).metaData())
+                                            ((EventMessage) event).metadata())
                 : new GenericEventMessage(messageTypeResolver.resolveOrThrow(event), event);
     }
 }

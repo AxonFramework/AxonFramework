@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
@@ -124,11 +124,11 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void metaDataReturnsTheSameMapAsWasInsertedInTheSubscriptionQuery() {
-        MetaData expectedMetaData = MetaData.with("some-key", "some-value");
+    void metadataReturnsTheSameMapAsWasInsertedInTheSubscriptionQuery() {
+        Metadata expectedMetadata = Metadata.with("some-key", "some-value");
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
-        ).withMetaData(expectedMetaData);
+        ).withMetadata(expectedMetadata);
         SubscriptionQuery testSubscriptionQuery =
                 SubscriptionQuery.newBuilder()
                                  .setQueryRequest(subscriptionMessageSerializer.serializeQuery(testQuery))
@@ -138,7 +138,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
         GrpcBackedSubscriptionQueryMessage<TestQuery, String, String> testSubject =
                 new GrpcBackedSubscriptionQueryMessage<>(testSubscriptionQuery, serializer, serializer);
 
-        assertEquals(expectedMetaData, testSubject.metaData());
+        assertEquals(expectedMetadata, testSubject.metadata());
     }
 
     @Test
@@ -177,11 +177,11 @@ class GrpcBackedSubscriptionQueryMessageTest {
     }
 
     @Test
-    void withMetaDataCompletelyReplacesTheInitialMetaDataMap() {
-        MetaData testMetaData = MetaData.with("some-key", "some-value");
+    void withMetadataCompletelyReplacesTheInitialMetadataMap() {
+        Metadata testMetadata = Metadata.with("some-key", "some-value");
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
-        ).withMetaData(testMetaData);
+        ).withMetadata(testMetadata);
         SubscriptionQuery testSubscriptionQuery =
                 SubscriptionQuery.newBuilder()
                                  .setQueryRequest(subscriptionMessageSerializer.serializeQuery(testQuery))
@@ -191,20 +191,20 @@ class GrpcBackedSubscriptionQueryMessageTest {
         GrpcBackedSubscriptionQueryMessage<TestQuery, String, String> testSubject =
                 new GrpcBackedSubscriptionQueryMessage<>(testSubscriptionQuery, serializer, serializer);
 
-        MetaData replacementMetaData = MetaData.with("some-other-key", "some-other-value");
+        Metadata replacementMetadata = Metadata.with("some-other-key", "some-other-value");
 
-        testSubject = testSubject.withMetaData(replacementMetaData);
-        MetaData resultMetaData = testSubject.metaData();
-        assertFalse(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
-        assertEquals(replacementMetaData, resultMetaData);
+        testSubject = testSubject.withMetadata(replacementMetadata);
+        Metadata resultMetadata = testSubject.metadata();
+        assertFalse(resultMetadata.containsKey(testMetadata.keySet().iterator().next()));
+        assertEquals(replacementMetadata, resultMetadata);
     }
 
     @Test
-    void andMetaDataAppendsToTheExistingMetaData() {
-        MetaData testMetaData = MetaData.with("some-key", "some-value");
+    void andMetadataAppendsToTheExistingMetadata() {
+        Metadata testMetadata = Metadata.with("some-key", "some-value");
         SubscriptionQueryMessage<TestQuery, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE, RESPONSE_TYPE
-        ).withMetaData(testMetaData);
+        ).withMetadata(testMetadata);
         SubscriptionQuery testSubscriptionQuery =
                 SubscriptionQuery.newBuilder()
                                  .setQueryRequest(subscriptionMessageSerializer.serializeQuery(testQuery))
@@ -214,13 +214,13 @@ class GrpcBackedSubscriptionQueryMessageTest {
         GrpcBackedSubscriptionQueryMessage<TestQuery, String, String> testSubject =
                 new GrpcBackedSubscriptionQueryMessage<>(testSubscriptionQuery, serializer, serializer);
 
-        MetaData additionalMetaData = MetaData.with("some-other-key", "some-other-value");
+        Metadata additionalMetadata = Metadata.with("some-other-key", "some-other-value");
 
-        testSubject = testSubject.andMetaData(additionalMetaData);
-        MetaData resultMetaData = testSubject.metaData();
+        testSubject = testSubject.andMetadata(additionalMetadata);
+        Metadata resultMetadata = testSubject.metadata();
 
-        assertTrue(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
-        assertTrue(resultMetaData.containsKey(additionalMetaData.keySet().iterator().next()));
+        assertTrue(resultMetadata.containsKey(testMetadata.keySet().iterator().next()));
+        assertTrue(resultMetadata.containsKey(additionalMetadata.keySet().iterator().next()));
     }
 
     private static class TestQuery {

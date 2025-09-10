@@ -80,7 +80,7 @@ public abstract class EventStreamUtils {
                     ir.getMessageIdentifier(),
                     new MessageType(serializer.classForType(ir.getType())),
                     new LazyDeserializingObject<>(ir::getData, ir.getType(), serializer),
-                    ir.getMetaData()
+                    ir.getMetadata()
             );
             if (ir.getTrackingToken().isPresent()) {
                 return new GenericTrackedDomainEventMessage(ir.getTrackingToken().get(), ir.getAggregateType().get(),

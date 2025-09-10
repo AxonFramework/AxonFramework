@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.serialization.*;
 import org.junit.jupiter.api.*;
@@ -258,12 +258,12 @@ class JacksonSerializerTest {
     }
 
     @Test
-    void serializeMetaData() {
+    void serializeMetadata() {
         testSubject = JacksonSerializer.builder().build();
 
         SerializedObject<byte[]> serialized =
-                testSubject.serialize(MetaData.from(singletonMap("test", "test")), byte[].class);
-        MetaData actual = testSubject.deserialize(serialized);
+                testSubject.serialize(Metadata.from(singletonMap("test", "test")), byte[].class);
+        Metadata actual = testSubject.deserialize(serialized);
 
         assertNotNull(actual);
         assertEquals("test", actual.get("test"));

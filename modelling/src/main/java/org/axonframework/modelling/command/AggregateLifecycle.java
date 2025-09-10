@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
 
@@ -41,14 +41,14 @@ public abstract class AggregateLifecycle extends Scope {
      * use the returned {@link ApplyMore} instance.
      *
      * @param payload  the payload of the event to apply
-     * @param metaData any meta-data that must be registered with the Event
+     * @param metadata any meta-data that must be registered with the Event
      * @return a gizmo to apply additional events after the given event has been processed by the entire aggregate
      * @see ApplyMore
      * @deprecated In favor of {@link org.axonframework.eventhandling.gateway.EventAppender#append(List)}
      */
     @Deprecated(since = "5.0.0", forRemoval = true)
-    public static ApplyMore apply(Object payload, MetaData metaData) {
-        return AggregateLifecycle.getInstance().doApply(payload, metaData);
+    public static ApplyMore apply(Object payload, Metadata metadata) {
+        return AggregateLifecycle.getInstance().doApply(payload, metadata);
     }
 
     /**
@@ -67,7 +67,7 @@ public abstract class AggregateLifecycle extends Scope {
      */
     @Deprecated(since = "5.0.0", forRemoval = true)
     public static ApplyMore apply(Object payload) {
-        return AggregateLifecycle.getInstance().doApply(payload, MetaData.emptyInstance());
+        return AggregateLifecycle.getInstance().doApply(payload, Metadata.emptyInstance());
     }
 
     /**
@@ -166,11 +166,11 @@ public abstract class AggregateLifecycle extends Scope {
      * event.
      *
      * @param payload  the payload of the event to apply
-     * @param metaData any meta-data that must be registered with the Event
+     * @param metadata any meta-data that must be registered with the Event
      * @return a gizmo to apply additional events after the given event has been processed by the entire aggregate
      * @see ApplyMore
      */
-    protected abstract <T> ApplyMore doApply(T payload, MetaData metaData);
+    protected abstract <T> ApplyMore doApply(T payload, Metadata metadata);
 
     /**
      * Creates a new aggregate instance. In order for new aggregate to be created, a {@link LegacyRepository} should be

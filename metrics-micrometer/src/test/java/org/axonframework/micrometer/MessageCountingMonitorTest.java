@@ -144,16 +144,16 @@ class MessageCountingMonitorTest {
         MessageCountingMonitor testSubject = MessageCountingMonitor.buildMonitor(PROCESSOR_NAME,
                                                                                  meterRegistry,
                                                                                  message -> Tags
-                                                                                         .of("myMetaData",
-                                                                                             message.metaData()
+                                                                                         .of("myMetadata",
+                                                                                             message.metadata()
                                                                                                     .get("myMetadataKey")
                                                                                                     .toString()));
-        EventMessage foo = asEventMessage(1).withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage foo = asEventMessage(1).withMetadata(Collections.singletonMap("myMetadataKey",
                                                                                            "myMetadataValue1"));
-        EventMessage bar = asEventMessage("bar").withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage bar = asEventMessage("bar").withMetadata(Collections.singletonMap("myMetadataKey",
                                                                                                "myMetadataValue2"));
         ;
-        EventMessage baz = asEventMessage("baz").withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage baz = asEventMessage("baz").withMetadata(Collections.singletonMap("myMetadataKey",
                                                                                                "myMetadataValue2"));
         ;
         Map<? super Message, MessageMonitor.MonitorCallback> callbacks = testSubject
@@ -177,17 +177,17 @@ class MessageCountingMonitorTest {
 
         assertTrue(ingestedCounters.stream()
                                    .filter(counter -> Objects
-                                           .equals(counter.getId().getTag("myMetaData"), "myMetadataValue1"))
+                                           .equals(counter.getId().getTag("myMetadata"), "myMetadataValue1"))
                                    .allMatch(counter -> counter.count() == 1));
         assertTrue(ingestedCounters.stream()
                                    .filter(counter -> Objects
-                                           .equals(counter.getId().getTag("myMetaData"), "myMetadataValue2"))
+                                           .equals(counter.getId().getTag("myMetadata"), "myMetadataValue2"))
                                    .allMatch(counter -> counter.count() == 2));
 
 
         assertTrue(processedCounters.stream()
                                     .filter(counter -> Objects
-                                            .equals(counter.getId().getTag("myMetaData"), "myMetadataValue1"))
+                                            .equals(counter.getId().getTag("myMetadata"), "myMetadataValue1"))
                                     .allMatch(counter -> counter.count() == 1));
         assertTrue(processedCounters.stream()
                                     .filter(counter -> Objects

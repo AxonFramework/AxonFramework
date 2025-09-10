@@ -18,7 +18,7 @@ package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -161,9 +161,9 @@ public abstract class AbstractLegacyUnitOfWork<T extends Message> implements Leg
     }
 
     @Override
-    public MetaData getCorrelationData() {
+    public Metadata getCorrelationData() {
         if (correlationDataProviders.isEmpty()) {
-            return MetaData.emptyInstance();
+            return Metadata.emptyInstance();
         }
         Map<String, String> result = new HashMap<>();
         for (CorrelationDataProvider correlationDataProvider : correlationDataProviders) {
@@ -179,7 +179,7 @@ public abstract class AbstractLegacyUnitOfWork<T extends Message> implements Leg
                         e);
             }
         }
-        return MetaData.from(result);
+        return Metadata.from(result);
     }
 
     @Override

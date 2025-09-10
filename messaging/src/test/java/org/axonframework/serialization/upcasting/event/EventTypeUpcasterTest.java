@@ -185,12 +185,12 @@ class EventTypeUpcasterTest {
     private static class TestEventEntry extends AbstractEventEntry<byte[]> {
 
         private static final TestEvent PAYLOAD = new TestEvent("payload");
-        private static final TestEvent META_DATA = new TestEvent("metadata");
+        private static final TestEvent METADATA = new TestEvent("metadata");
 
         public TestEventEntry(String payloadType, String payloadRevision, Serializer serializer) {
             super("eventIdentifier", "timestamp", payloadType, payloadRevision,
                   serializer.serialize(PAYLOAD, byte[].class).getData(),
-                  serializer.serialize(META_DATA, byte[].class).getData());
+                  serializer.serialize(METADATA, byte[].class).getData());
         }
     }
 

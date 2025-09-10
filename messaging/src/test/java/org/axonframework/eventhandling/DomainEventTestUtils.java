@@ -18,7 +18,7 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.time.Instant;
 import java.util.List;
@@ -38,7 +38,7 @@ public abstract class DomainEventTestUtils {
     public static final String PAYLOAD = "payload";
     public static final String AGGREGATE = "aggregate";
     private static final String AGGREGATE_TYPE = "aggregateType";
-    private static final MetaData METADATA = MetaData.emptyInstance();
+    private static final Metadata METADATA = Metadata.emptyInstance();
 
     private DomainEventTestUtils() {
         // Utility class
@@ -100,14 +100,14 @@ public abstract class DomainEventTestUtils {
                                                                String aggregateId,
                                                                long sequenceNumber,
                                                                String payload,
-                                                               MetaData metaData) {
+                                                               Metadata metadata) {
         return new GenericDomainEventMessage(type,
                                                aggregateId,
                                                sequenceNumber,
                                                eventId,
                                                TYPE,
                                                payload,
-                                               metaData,
+                                               metadata,
                                                GenericDomainEventMessage.clock.instant());
     }
 }

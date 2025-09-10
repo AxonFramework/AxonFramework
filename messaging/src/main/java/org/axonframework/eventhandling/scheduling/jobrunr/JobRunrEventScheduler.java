@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
@@ -139,7 +139,7 @@ public class JobRunrEventScheduler implements EventScheduler {
         String serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();
-        String serializedMetadata = serializer.serialize(eventMessage.metaData(), String.class).getData();
+        String serializedMetadata = serializer.serialize(eventMessage.metadata(), String.class).getData();
         if (isNull(revision)) {
             job.withDetails(() -> publish(serializedPayload, payloadClass, serializedMetadata));
         } else {
@@ -247,7 +247,7 @@ public class JobRunrEventScheduler implements EventScheduler {
         return new GenericEventMessage(
                 messageTypeResolver.resolveOrThrow(event),
                 event,
-                MetaData.emptyInstance()
+                Metadata.emptyInstance()
         );
     }
 
@@ -257,10 +257,10 @@ public class JobRunrEventScheduler implements EventScheduler {
             String revision,
             String serializedMetadata) {
         EventMessage eventMessage = createMessage(serializedPayload, payloadClass, revision);
-        SimpleSerializedObject<String> serializedMetaData = new SimpleSerializedObject<>(
-                serializedMetadata, String.class, MetaData.class.getName(), null
+        SimpleSerializedObject<String> serialized = new SimpleSerializedObject<>(
+                serializedMetadata, String.class, Metadata.class.getName(), null
         );
-        return eventMessage.andMetaData(serializer.deserialize(serializedMetaData));
+        return eventMessage.andMetadata(serializer.deserialize(serialized));
     }
 
     private void publishEventMessage(EventMessage eventMessage) {
@@ -314,10 +314,10 @@ public class JobRunrEventScheduler implements EventScheduler {
 
         /**
          * Sets the {@link Serializer} used to de-/serialize the {@code payload} and the
-         * {@link org.axonframework.messaging.MetaData}.
+         * {@link org.axonframework.messaging.Metadata}.
          *
          * @param serializer a {@link Serializer} used to de-/serialize the {@code payload}, and
-         *                   {@link org.axonframework.messaging.MetaData}.
+         *                   {@link org.axonframework.messaging.Metadata}.
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder serializer(Serializer serializer) {

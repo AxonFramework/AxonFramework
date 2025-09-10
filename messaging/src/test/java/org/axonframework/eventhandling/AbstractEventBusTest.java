@@ -178,7 +178,7 @@ class AbstractEventBusTest {
 
         //noinspection unchecked
         MessageDispatchInterceptor<EventMessage> dispatchInterceptorMock = mock(MessageDispatchInterceptor.class);
-        String key = "additional", value = "metaData";
+        String key = "additional", value = "metadata";
         when(dispatchInterceptorMock.interceptOnDispatch(any(), any(), any())).thenAnswer(invocation -> {
             EventMessage message = invocation.getArgument(0);
             synchronized (seenMessages) {

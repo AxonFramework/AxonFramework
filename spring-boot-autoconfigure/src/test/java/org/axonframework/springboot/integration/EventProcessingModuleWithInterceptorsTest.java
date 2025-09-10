@@ -27,7 +27,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.annotation.MetadataValue;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -57,7 +57,7 @@ class EventProcessingModuleWithInterceptorsTest {
 
     private static <P> EventMessage asEventMessage(P event) {
         return new GenericEventMessage(
-                new GenericMessage(new MessageType(event.getClass()), (P) event),
+                new GenericMessage(new MessageType(event.getClass()), event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -71,7 +71,7 @@ class EventProcessingModuleWithInterceptorsTest {
 
             eventBus.publish(asEventMessage("myEvent"));
 
-            assertEquals("myMetaDataValue", myEventHandler.getMetaDataValue());
+            assertEquals("myMetadataValue", myEventHandler.getMetadataValue());
         });
     }
 
@@ -97,7 +97,7 @@ class EventProcessingModuleWithInterceptorsTest {
                     @Nonnull MessageHandlerInterceptorChain<EventMessage> interceptorChain
             ) {
                 return interceptorChain.proceed(
-                        message.andMetaData(Collections.singletonMap("myMetaDataKey", "myMetaDataValue")),
+                        message.andMetadata(Collections.singletonMap("myMetadataKey", "myMetadataValue")),
                         context);
             }
         }
@@ -105,15 +105,15 @@ class EventProcessingModuleWithInterceptorsTest {
         @Component
         static class MyEventHandler {
 
-            private String metaDataValue;
+            private String metadataValue;
 
-            public String getMetaDataValue() {
-                return metaDataValue;
+            public String getMetadataValue() {
+                return metadataValue;
             }
 
             @EventHandler
-            public void on(String event, @MetaDataValue("myMetaDataKey") String metaDataValue) {
-                this.metaDataValue = metaDataValue;
+            public void on(String event, @MetadataValue("myMetadataKey") String metadataValue) {
+                this.metadataValue = metadataValue;
             }
         }
     }

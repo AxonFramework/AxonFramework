@@ -25,7 +25,7 @@ import jakarta.annotation.Nonnull;
  * This {@link TextMapGetter} implementation is able to extract the parent OpenTelemetry span context from a
  * {@link Message}.
  * <p>
- * The trace parent is part of the message's {@link org.axonframework.messaging.MetaData}, if it was set when
+ * The trace parent is part of the message's {@link org.axonframework.messaging.Metadata}, if it was set when
  * dispatching by the {@link MetadataContextSetter}. This is done using the
  * {@link org.axonframework.tracing.SpanFactory#propagateContext(Message)} method for the message.
  *
@@ -45,7 +45,7 @@ public class MetadataContextGetter implements TextMapGetter<Message> {
 
     @Override
     public Iterable<String> keys(Message message) {
-        return message.metaData().keySet();
+        return message.metadata().keySet();
     }
 
     @Override
@@ -53,6 +53,6 @@ public class MetadataContextGetter implements TextMapGetter<Message> {
         if (message == null) {
             return null;
         }
-        return (String) message.metaData().get(key);
+        return (String) message.metadata().get(key);
     }
 }

@@ -67,12 +67,12 @@ public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> 
      * @param payloadType         The fully qualified class name or alias of the event payload
      * @param payloadRevision     The revision of the event payload
      * @param payload             The serialized payload
-     * @param metaData            The serialized metadata
+     * @param metadata            The serialized metadata
      */
     public AbstractDomainEventEntry(String type, String aggregateIdentifier, long sequenceNumber,
                                     String eventIdentifier, Object timestamp, String payloadType,
-                                    String payloadRevision, T payload, T metaData) {
-        super(eventIdentifier, timestamp, payloadType, payloadRevision, payload, metaData);
+                                    String payloadRevision, T payload, T metadata) {
+        super(eventIdentifier, timestamp, payloadType, payloadRevision, payload, metadata);
         this.type = type;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;

@@ -32,160 +32,160 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 /**
- * Represents {@code MetaData} that is passed along with a payload in a {@link Message}.
+ * Represents metadata that is passed along with a payload in a {@link Message}.
  * <p>
- * Typically, the {@code MetaData} contains information about the message payload that isn't "domain-specific." Examples
+ * Typically, the metadata contains information about the message payload that isn't "domain-specific." Examples
  * are originating IP-address or executing User ID.
  *
  * @author Allard Buijze
  * @since 2.0.0
  */
-public class MetaData implements Map<String, String> {
+public class Metadata implements Map<String, String> {
 
-    private static final MetaData EMPTY_META_DATA = new MetaData();
-    private static final String UNSUPPORTED_MUTATION_MSG = "MetaData is immutable.";
+    private static final Metadata EMPTY_METADATA = new Metadata();
+    private static final String UNSUPPORTED_MUTATION_MSG = "Metadata is immutable.";
 
     private final Map<String, String> values;
 
-    private MetaData() {
+    private Metadata() {
         values = Collections.emptyMap();
     }
 
     /**
-     * Initializes a {@code MetaData} instance with the given {@code items} as content.
+     * Initializes a {@code Metadata} instance with the given {@code items} as content.
      * <p>
-     * Note that the items are copied into the {@code MetaData}. Modifications in the {@code Map} of items will not
-     * reflect is the {@code MetaData}, or vice versa. Modifications in the items themselves <em>are</em> reflected in
-     * the {@code MetaData}.
+     * Note that the items are copied into the {@code Metadata}. Modifications in the {@code Map} of items will not
+     * reflect is the {@code Metadata}, or vice versa. Modifications in the items themselves <em>are</em> reflected in
+     * the {@code Metadata}.
      *
-     * @param items The items to populate the {@code MetaData} with.
+     * @param items The items to populate the {@code Metadata} with.
      */
-    public MetaData(@Nonnull Map<String, String> items) {
+    public Metadata(@Nonnull Map<String, String> items) {
         values = Collections.unmodifiableMap(new HashMap<>(items));
     }
 
     /**
-     * Returns an empty {@code MetaData} instance.
+     * Returns an empty {@code Metadata} instance.
      *
-     * @return An empty {@code MetaData} instance.
+     * @return An empty {@code Metadata} instance.
      */
-    public static MetaData emptyInstance() {
-        return EMPTY_META_DATA;
+    public static Metadata emptyInstance() {
+        return EMPTY_METADATA;
     }
 
     /**
-     * Creates a new {@code MetaData} instance from the given {@code metaDataEntries}.
+     * Creates a new {@code Metadata} instance from the given {@code metadataEntries}.
      * <p>
-     * If {@code metaDataEntries} is already a {@code MetaData} instance, it is returned as is. This makes this method
-     * more suitable than the {@link #MetaData(java.util.Map)} copy-constructor.
+     * If {@code metadataEntries} is already a {@code Metadata} instance, it is returned as is. This makes this method
+     * more suitable than the {@link #Metadata(java.util.Map)} copy-constructor.
      *
-     * @param metaDataEntries The entries to populate the {@code MetaData} with.
-     * @return A {@code MetaData}Data instance with the given {@code metaDataEntries} as content.
+     * @param metadataEntries The entries to populate the {@code Metadata} with.
+     * @return A {@code Metadata}Data instance with the given {@code MetadataEntries} as content.
      */
-    public static MetaData from(@Nullable Map<String, String> metaDataEntries) {
-        if (metaDataEntries instanceof MetaData) {
-            return (MetaData) metaDataEntries;
-        } else if (metaDataEntries == null || metaDataEntries.isEmpty()) {
-            return MetaData.emptyInstance();
+    public static Metadata from(@Nullable Map<String, String> metadataEntries) {
+        if (metadataEntries instanceof Metadata) {
+            return (Metadata) metadataEntries;
+        } else if (metadataEntries == null || metadataEntries.isEmpty()) {
+            return Metadata.emptyInstance();
         }
-        return new MetaData(metaDataEntries);
+        return new Metadata(metadataEntries);
     }
 
     /**
-     * Creates a {@code MetaData} instances with a single entry from the given {@code key} and given {@code value}.
+     * Creates a {@code Metadata} instance with a single entry from the given {@code key} and given {@code value}.
      *
      * @param key   The key for the entry.
      * @param value The value of the entry.
-     * @return A {@code MetaData} instance with a single entry.
+     * @return A {@code Metadata} instance with a single entry.
      */
-    public static MetaData with(@Nonnull String key, @Nullable String value) {
-        return MetaData.from(Collections.singletonMap(key, value));
+    public static Metadata with(@Nonnull String key, @Nullable String value) {
+        return Metadata.from(Collections.singletonMap(key, value));
     }
 
     /**
-     * Returns a {@code MetaData} instances containing the current entries, <b>and</b> the given {@code key} and given
+     * Returns a {@code Metadata} instance containing the current entries, <b>and</b> the given {@code key} and given
      * {@code value}.
      * <p>
      * If {@code key} already existed, it's old {@code value} is overwritten with the given {@code value}.
      *
      * @param key   The key for the entry.
      * @param value The value of the entry.
-     * @return A {@code MetaData} instance with an additional entry.
+     * @return A {@code Metadata} instance with an additional entry.
      */
-    public MetaData and(@Nonnull String key, @Nullable String value) {
+    public Metadata and(@Nonnull String key, @Nullable String value) {
         HashMap<String, String> newValues = new HashMap<>(values);
         newValues.put(key, value);
-        return new MetaData(newValues);
+        return new Metadata(newValues);
     }
 
     /**
-     * Returns a {@code MetaData} instances containing the current entries, <b>and</b> the given {@code key} if it was
-     * not yet present in this {@code MetaData}.
+     * Returns a {@code Metadata} instance containing the current entries, <b>and</b> the given {@code key} if it was
+     * not yet present in this {@code Metadata}.
      * <p>
      * If the given {@code key} already existed, the current value will be used. Otherwise, the {@code value}
      * {@link Supplier} function will provide the value for {@code key}.
      *
      * @param key   The key for the entry.
      * @param value A {@code Supplier} function which provides the value.
-     * @return A {@code MetaData} instance with an additional entry.
+     * @return A {@code Metadata} instance with an additional entry.
      */
-    public MetaData andIfNotPresent(@Nonnull String key, @Nonnull Supplier<String> value) {
+    public Metadata andIfNotPresent(@Nonnull String key, @Nonnull Supplier<String> value) {
         return containsKey(key) ? this : this.and(key, value.get());
     }
 
     /**
-     * Returns a {@code MetaData} instance containing values of {@code this}, combined with the given
+     * Returns a {@code Metadata} instance containing values of {@code this}, combined with the given
      * {@code additionalEntries}.
      * <p>
      * If any entries have identical keys, the values from the {@code additionalEntries} will take precedence.
      *
-     * @param additionalEntries The additional entries for the new {@code MetaData}.
-     * @return A {@code MetaData} instance containing values of {@code this}, combined with the given
+     * @param additionalEntries The additional entries for the new {@code Metadata}.
+     * @return A {@code Metadata} instance containing values of {@code this}, combined with the given
      * {@code additionalEntries}.
      */
-    public MetaData mergedWith(@Nonnull Map<String, String> additionalEntries) {
+    public Metadata mergedWith(@Nonnull Map<String, String> additionalEntries) {
         if (additionalEntries.isEmpty()) {
             return this;
         }
         if (isEmpty()) {
-            return MetaData.from(additionalEntries);
+            return Metadata.from(additionalEntries);
         }
         Map<String, String> merged = new HashMap<>(values);
         merged.putAll(additionalEntries);
-        return new MetaData(merged);
+        return new Metadata(merged);
     }
 
     /**
-     * Returns a {@code MetaData} instance for which the entries with given {@code keys} are removed.
+     * Returns a {@code Metadata} instance for which the entries with given {@code keys} are removed.
      * <p>
-     * Keys for which there is no assigned value are ignored. This MetaData instance is not influenced by this
+     * Keys for which there is no assigned value are ignored. This {@code Metadata} instance is not influenced by this
      * operation.
      *
      * @param keys The keys of the entries to remove.
-     * @return A {@code MetaData} instance without the given {@code keys}.
+     * @return A {@code Metadata} instance without the given {@code keys}.
      */
-    public MetaData withoutKeys(@Nonnull Set<String> keys) {
+    public Metadata withoutKeys(@Nonnull Set<String> keys) {
         if (keys.isEmpty()) {
             return this;
         }
         Map<String, String> modified = new HashMap<>(values);
         keys.forEach(modified::remove);
-        return new MetaData(modified);
+        return new Metadata(modified);
     }
 
     /**
-     * Returns a {@code MetaData} instance containing a subset of the {@code keys} in this instance.
+     * Returns a {@code Metadata} instance containing a subset of the {@code keys} in this instance.
      * <p>
-     * Keys for which there is no assigned value are ignored. This MetaData instance is not influenced by this
+     * Keys for which there is no assigned value are ignored. This {@code Metadata} instance is not influenced by this
      * operation.
      *
      * @param keys The keys of the entries to remove.
-     * @return A {@code MetaData} instance containing the given {@code keys} if these were already present.
+     * @return A {@code Metadata} instance containing the given {@code keys} if these were already present.
      */
-    public MetaData subset(String... keys) {
-        return MetaData.from(Stream.of(keys)
+    public Metadata subset(String... keys) {
+        return Metadata.from(Stream.of(keys)
                                    .filter(this::containsKey)
-                                   .collect(new MetaDataCollector(this::get)));
+                                   .collect(new MetadataCollector(this::get)));
     }
 
     @Override
@@ -194,7 +194,7 @@ public class MetaData implements Map<String, String> {
     }
 
     /**
-     * <strong>This operation is not supported since {@code MetaData} is an immutable object.</strong>
+     * <strong>This operation is not supported since {@code Metadata} is an immutable object.</strong>
      * <p>
      * {@inheritDoc}
      */
@@ -204,7 +204,7 @@ public class MetaData implements Map<String, String> {
     }
 
     /**
-     * <strong>This operation is not supported since {@code MetaData} is an immutable object.</strong>
+     * <strong>This operation is not supported since {@code Metadata} is an immutable object.</strong>
      * <p>
      * {@inheritDoc}
      */
@@ -214,7 +214,7 @@ public class MetaData implements Map<String, String> {
     }
 
     /**
-     * <strong>This operation is not supported since {@code MetaData} is an immutable object.</strong>
+     * <strong>This operation is not supported since {@code Metadata} is an immutable object.</strong>
      * <p>
      * {@inheritDoc}
      */
@@ -224,7 +224,7 @@ public class MetaData implements Map<String, String> {
     }
 
     /**
-     * <strong>This operation is not supported since {@code MetaData} is an immutable object.</strong>
+     * <strong>This operation is not supported since {@code Metadata} is an immutable object.</strong>
      * <p>
      * {@inheritDoc}
      */
@@ -304,8 +304,8 @@ public class MetaData implements Map<String, String> {
      * Collector implementation that, unlike {@link java.util.stream.Collectors#toMap(Function, Function)} allows
      * {@code null} values.
      */
-    private record MetaDataCollector(Function<String, String> valueProvider)
-            implements Collector<String, Map<String, String>, MetaData> {
+    private record MetadataCollector(Function<String, String> valueProvider)
+            implements Collector<String, Map<String, String>, Metadata> {
 
         @Override
         public Supplier<Map<String, String>> supplier() {
@@ -327,8 +327,8 @@ public class MetaData implements Map<String, String> {
         }
 
         @Override
-        public Function<Map<String, String>, MetaData> finisher() {
-            return MetaData::from;
+        public Function<Map<String, String>, Metadata> finisher() {
+            return Metadata::from;
         }
 
         @Override

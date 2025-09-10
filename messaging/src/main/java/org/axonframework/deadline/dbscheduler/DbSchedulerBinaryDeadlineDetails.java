@@ -20,7 +20,7 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -69,7 +69,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
      * @param payload              The {@link String} with the payload. This can be null.
      * @param payloadClass         The {@link String} which tells what the class of the scope payload is.
      * @param payloadRevision      The {@link String} which tells what the revision of the scope payload is.
-     * @param metaData             The {@link String} containing the metadata about the deadline. This can be null.
+     * @param metadata             The {@link String} containing the metadata about the deadline. This can be null.
      */
     @SuppressWarnings("squid:S107")
     public DbSchedulerBinaryDeadlineDetails(@Nonnull String deadlineName,
@@ -79,7 +79,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
                                             @Nullable byte[] payload,
                                             @Nullable String payloadClass,
                                             @Nullable String payloadRevision,
-                                            @Nullable byte[] metaData) {
+                                            @Nullable byte[] metadata) {
         this.d = deadlineName;
         this.t = type;
         this.s = scopeDescriptor;
@@ -87,7 +87,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
         this.p = payload;
         this.pc = payloadClass;
         this.r = payloadRevision;
-        this.m = metaData;
+        this.m = metadata;
     }
 
     /**
@@ -107,7 +107,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
                                                        @Nonnull Serializer serializer) {
         SerializedObject<byte[]> serializedDescriptor = serializer.serialize(descriptor, byte[].class);
         SerializedObject<byte[]> serializedPayload = serializer.serialize(message.payload(), byte[].class);
-        SerializedObject<byte[]> serializedMetaData = serializer.serialize(message.metaData(), byte[].class);
+        SerializedObject<byte[]> serializedMetadata = serializer.serialize(message.metadata(), byte[].class);
 
         return new DbSchedulerBinaryDeadlineDetails(deadlineName,
                                                     message.type().toString(),
@@ -116,7 +116,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
                                                     serializedPayload.getData(),
                                                     serializedPayload.getType().getName(),
                                                     serializedPayload.getType().getRevision(),
-                                                    serializedMetaData.getData());
+                                                    serializedMetadata.getData());
     }
 
     /**
@@ -201,7 +201,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
         return new GenericDeadlineMessage(d,
                                           MessageType.fromString(t),
                                           getDeserializedPayload(serializer),
-                                          getDeserializedMetaData(serializer));
+                                          getDeserializedMetadata(serializer));
     }
 
     private Object getDeserializedPayload(Serializer serializer) {
@@ -210,10 +210,10 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
         return serializer.deserialize(serializedDeadlinePayload);
     }
 
-    private MetaData getDeserializedMetaData(Serializer serializer) {
-        SimpleSerializedObject<byte[]> serializedDeadlineMetaData =
-                new SimpleSerializedObject<>(m, byte[].class, MetaData.class.getName(), null);
-        return serializer.deserialize(serializedDeadlineMetaData);
+    private Metadata getDeserializedMetadata(Serializer serializer) {
+        SimpleSerializedObject<byte[]> serializedDeadlineMetadata =
+                new SimpleSerializedObject<>(m, byte[].class, Metadata.class.getName(), null);
+        return serializer.deserialize(serializedDeadlineMetadata);
     }
 
     /**

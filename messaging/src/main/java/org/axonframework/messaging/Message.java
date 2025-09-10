@@ -28,7 +28,7 @@ import java.util.Map;
 
 /**
  * Representation of a {@link Message}, containing a {@link MessageType type}, payload, and
- * {@link MetaData}.
+ * {@link Metadata}.
  * <p>
  * Typical examples of a {@code Messages} are {@link org.axonframework.commandhandling.CommandMessage commands},
  * {@link org.axonframework.eventhandling.EventMessage events}, and
@@ -85,7 +85,7 @@ public interface Message {
      * Returns the identifier of this {@code Message}.
      * <p>
      * Two messages with the same identifiers should be interpreted as different representations of the same conceptual
-     * message. In such case, the {@link Message#metaData() metadata} may be different for both representations. The
+     * message. In such case, the {@link Message#metadata() metadata} may be different for both representations. The
      * {@link Message#payload() payload} <em>may</em> be identical.
      *
      * @return The unique identifier of this {@code Message}.
@@ -218,40 +218,40 @@ public interface Message {
     Class<?> payloadType();
 
     /**
-     * Returns the {@link MetaData} for this {@code Message}.
+     * Returns the {@link Metadata} for this {@code Message}.
      * <p>
-     * The {@code MetaData} is a collection of key-value pairs, where both the key and values are {@link String}s.
+     * The {@code Metadata} is a collection of key-value pairs, where both the key and values are {@link String}s.
      *
-     * @return The {@link MetaData} for this {@code Message}.
+     * @return The {@link Metadata} for this {@code Message}.
      */
     @Nonnull
-    MetaData metaData();
+    Metadata metadata();
 
     /**
-     * Returns a copy of this {@code Message} (implementation) with the given {@code metaData}.
+     * Returns a copy of this {@code Message} (implementation) with the given {@code metadata}.
      * <p>
      * All other fields, like for example the {@link #payload()}, remain unchanged.
      * <p>
      * While the implementation returned may be different from the implementation of {@code this}, implementations must
      * take special care in returning the same type of {@code Message} to prevent errors further downstream.
      *
-     * @param metaData The new metadata for the {@code Message}.
-     * @return A copy of {@code this Message (implementation)} with the given {@code metaData}.
+     * @param metadata The new metadata for the {@code Message}.
+     * @return A copy of {@code this Message (implementation)} with the given {@code metadata}.
      */
     @Nonnull
-    Message withMetaData(@Nonnull Map<String, String> metaData);
+    Message withMetadata(@Nonnull Map<String, String> metadata);
 
     /**
-     * Returns a copy of this {@code Message} (implementation) with its {@link Message#metaData() metadata} merged with
-     * the given {@code metaData}.
+     * Returns a copy of this {@code Message} (implementation) with its {@link Message#metadata() metadata} merged with
+     * the given {@code metadata}.
      * <p>
      * All other fields, like for example the {@link #payload()}, remain unchanged.
      *
-     * @param metaData The metadata to merge with.
-     * @return A copy of {@code this Message (implementation)} with the given {@code metaData}.
+     * @param metadata The metadata to merge with.
+     * @return A copy of {@code this Message (implementation)} with the given {@code metadata}.
      */
     @Nonnull
-    Message andMetaData(@Nonnull Map<String, String> metaData);
+    Message andMetadata(@Nonnull Map<String, String> metadata);
 
     /**
      * Returns a <b>new</b> {@code Message} implementation with its {@link #payload()} converted to the given

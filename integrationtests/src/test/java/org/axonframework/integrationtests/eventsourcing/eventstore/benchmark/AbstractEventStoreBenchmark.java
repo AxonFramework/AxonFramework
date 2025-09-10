@@ -189,7 +189,7 @@ public abstract class AbstractEventStoreBenchmark {
                         .mapToObj(sequenceNumber -> createDomainEvent(aggregateId, sequenceNumber))
                         .peek(event -> serializer().ifPresent(serializer -> {
                             serializer.serialize(event.payload(), byte[].class);
-                            serializer.serialize(event.metaData(), byte[].class);
+                            serializer.serialize(event.metadata(), byte[].class);
                         })).toArray(EventMessage[]::new);
     }
 

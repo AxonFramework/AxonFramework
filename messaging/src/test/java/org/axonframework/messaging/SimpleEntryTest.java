@@ -58,17 +58,17 @@ class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
     @Test
     void mapsContainedMessageAndContextAsExpected() {
         Message expectedMessage = TEST_MESSAGE;
-        MetaData expectedMetaData = MetaData.from(Map.of("key", "value"));
+        Metadata expectedMetadata = Metadata.from(Map.of("key", "value"));
         String expectedResourceValue = "test";
         ResourceKey<String> expectedContextKey = ResourceKey.withLabel(expectedResourceValue);
         Context testContext = Context.empty().withResource(expectedContextKey, expectedResourceValue);
 
         Entry<Message> testSubject = new SimpleEntry<>(expectedMessage, testContext);
 
-        Entry<Message> result = testSubject.map(message -> message.withMetaData(expectedMetaData));
+        Entry<Message> result = testSubject.map(message -> message.withMetadata(expectedMetadata));
 
         assertNotEquals(expectedMessage, result.message());
-        assertEquals(expectedMetaData, result.message().metaData());
+        assertEquals(expectedMetadata, result.message().metadata());
         assertTrue(result.containsResource(expectedContextKey));
         assertEquals(expectedResourceValue, result.getResource(expectedContextKey));
     }

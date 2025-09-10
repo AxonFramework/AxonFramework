@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Context;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -79,7 +79,7 @@ public interface CommandDispatcher extends DescribableComponent {
      * {@link org.axonframework.commandhandling.CommandMessage} that is eventually posted on the {@code CommandBus},
      * unless the {@code command} already implements {@link org.axonframework.messaging.Message}. In that case, a
      * {@code CommandMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.MetaData}.
+     * {@link org.axonframework.messaging.Metadata}.
      *
      * @param command      The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
      * @param expectedType The expected result type.
@@ -108,7 +108,7 @@ public interface CommandDispatcher extends DescribableComponent {
      * {@link org.axonframework.commandhandling.CommandMessage} that is eventually posted on the {@code CommandBus},
      * unless the {@code command} already implements {@link org.axonframework.messaging.Message}. In that case, a
      * {@code CommandMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.MetaData}.
+     * {@link org.axonframework.messaging.Metadata}.
      *
      * @param command The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
      * @return A command result success and failure hooks can be registered. The
@@ -117,7 +117,7 @@ public interface CommandDispatcher extends DescribableComponent {
     CommandResult send(@Nonnull Object command);
 
     /**
-     * Sends the given {@code command} with the given {@code metaData} and returns a {@link CommandResult} immediately,
+     * Sends the given {@code command} with the given {@code metadata} and returns a {@link CommandResult} immediately,
      * without waiting for the command to execute.
      * <p>
      * The caller will therefore not receive any immediate feedback on the {@code command's} execution. Instead, hooks
@@ -128,18 +128,18 @@ public interface CommandDispatcher extends DescribableComponent {
      * Note that this operation expects the {@link org.axonframework.commandhandling.CommandBus} to use new threads for
      * command execution.
      * <p/>
-     * The given {@code command} and {@code metaData} are wrapped as the payload of the
+     * The given {@code command} and {@code metadata} are wrapped as the payload of the
      * {@link org.axonframework.commandhandling.CommandMessage} that is eventually posted on the
      * {@link org.axonframework.commandhandling.CommandBus}, unless the {@code command} already implements
      * {@link org.axonframework.messaging.Message}. In that case, a {@code CommandMessage} is constructed from that
-     * message's payload and {@link org.axonframework.messaging.MetaData}. The provided {@code metaData} is attached
+     * message's payload and {@link org.axonframework.messaging.Metadata}. The provided {@code metadata} is attached
      * afterward in this case.
      *
      * @param command  The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
-     * @param metaData Metadata that must be registered with the {@code command}.
+     * @param metadata Metadata that must be registered with the {@code command}.
      * @return A command result success and failure hooks can be registered. The
      * {@link CommandResult#getResultMessage()} serves as a shorthand to retrieve the response.
      */
     CommandResult send(@Nonnull Object command,
-                       @Nonnull MetaData metaData);
+                       @Nonnull Metadata metadata);
 }

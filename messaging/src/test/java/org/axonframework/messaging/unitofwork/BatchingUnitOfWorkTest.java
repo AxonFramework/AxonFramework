@@ -19,7 +19,7 @@ package org.axonframework.messaging.unitofwork;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -184,18 +184,18 @@ class BatchingUnitOfWorkTest {
                                                          .filter(ResultMessage::isExceptional)
                                                          .map(ResultMessage::exceptionResult)
                                                          .collect(Collectors.toList());
-        List<MetaData> expectedMetaData = expectedMessages.stream()
-                                                          .map(Message::metaData)
+        List<Metadata> expectedMetadata = expectedMessages.stream()
+                                                          .map(Message::metadata)
                                                           .collect(Collectors.toList());
-        List<MetaData> actualMetaData = actualMessages.stream()
-                                                      .map(Message::metaData)
+        List<Metadata> actualMetadata = actualMessages.stream()
+                                                      .map(Message::metadata)
                                                       .collect(Collectors.toList());
         assertEquals(expectedPayloads.size(), actualPayloads.size());
         //noinspection SuspiciousMethodCalls
         assertTrue(expectedPayloads.containsAll(actualPayloads));
         assertEquals(expectedExceptions.size(), actualExceptions.size());
         assertTrue(expectedExceptions.containsAll(actualExceptions));
-        assertTrue(expectedMetaData.containsAll(actualMetaData));
+        assertTrue(expectedMetadata.containsAll(actualMetadata));
     }
 
     private static class PhaseTransition {
