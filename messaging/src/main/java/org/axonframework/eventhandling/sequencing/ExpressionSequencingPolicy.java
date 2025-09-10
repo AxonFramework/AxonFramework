@@ -35,7 +35,6 @@ import java.util.function.Function;
  * @author Nils Christian Ehmke
  * @since 5.0.0
  */
-@SuppressWarnings("rawtypes")
 public class ExpressionSequencingPolicy<T, K> implements SequencingPolicy {
 
     private final Class<T> payloadClass;

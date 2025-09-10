@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.serialization.ConversionException;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 
@@ -67,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.*;
     }
 
     @Test
-    void defaultFallbackShouldThrowException() {
+    void withoutFallbackShouldThrowException() {
         final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(
                 TestEvent.class,
                 "id",
@@ -79,12 +80,15 @@ import static org.junit.jupiter.api.Assertions.*;
     }
 
     @Test
-    void fallbackShouldBeApplied() {
-        final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(
-                TestEvent.class,
-                "id",
-                eventConverter(),
-                (event, context) -> Optional.of("A")
+    void withFallbackShouldNotThrowException() {
+        final SequencingPolicy sequencingPolicy = new FallbackSequencingPolicy<>(
+                new PropertySequencingPolicy<>(
+                        TestEvent.class,
+                        "id",
+                        eventConverter()
+                ),
+                (event, context) -> Optional.of("A"),
+                ConversionException.class
         );
 
         assertThat(sequencingPolicy.getSequenceIdentifierFor(
