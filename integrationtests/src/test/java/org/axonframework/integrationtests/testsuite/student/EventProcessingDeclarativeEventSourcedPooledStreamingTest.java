@@ -20,11 +20,11 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.eventhandling.configuration.EventHandlingComponentBuilder;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
@@ -48,7 +48,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the declarative {@link PooledStreamingEventProcessor}
@@ -96,7 +96,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
 
     @Nonnull
     private static EventHandlingComponent whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation() {
-        return SimpleEventHandlingComponent
+        return EventHandlingComponentBuilder
                 .builder()
                 .sequencingPolicy(SequentialPolicy.INSTANCE)
                 .handles(

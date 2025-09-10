@@ -120,7 +120,7 @@ class InterceptingCommandBusTest {
 
         countingTestSubject.dispatch(firstCommand, StubProcessingContext.forMessage(firstCommand))
                            .get();
-        countingTestSubject.dispatch(secondCommand, StubProcessingContext.forMessage(firstCommand))
+        countingTestSubject.dispatch(secondCommand, StubProcessingContext.forMessage(secondCommand))
                            .get();
 
         assertThat(counter.get()).isEqualTo(2);

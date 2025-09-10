@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.QualifiedName;
 
@@ -31,13 +32,23 @@ import java.util.function.UnaryOperator;
 /**
  * Builder interface for configuring {@link EventHandlingComponent} instances using a fluent API.
  * <p>
- * Provides type-safe builder phases to ensure proper configuration order: optional sequencing policy,
- * required event handler registration, optional additional handlers and decorators, and final building.
+ * Provides type-safe builder phases to ensure proper configuration order: optional sequencing policy, required event
+ * handler registration, optional additional handlers and decorators, and final building.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 public interface EventHandlingComponentBuilder {
+
+    /**
+     * Starts the builder for an {@link EventHandlingComponent}.
+     *
+     * @return The {@link EventHandlingComponentBuilder.SequencingPolicyPhase} phase of this builder, for a fluent API.
+     */
+    @Nonnull
+    static EventHandlingComponentBuilder.SequencingPolicyPhase builder() {
+        return new DefaultEventHandlingComponentBuilder(new SimpleEventHandlingComponent());
+    }
 
     /**
      * Initial builder phase allowing optional sequencing policy configuration.

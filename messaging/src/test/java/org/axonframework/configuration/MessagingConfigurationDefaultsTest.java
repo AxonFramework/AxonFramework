@@ -30,6 +30,8 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.InterceptingEventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.conversion.EventConverter;
@@ -173,6 +175,18 @@ class MessagingConfigurationDefaultsTest {
         Configuration resultConfig = configurer.build();
 
         assertThat(resultConfig.getComponent(CommandBus.class)).isInstanceOf(InterceptingCommandBus.class);
+    }
+
+    @Test
+    void decoratorsEventSinkAsInterceptorEventSinkWhenDispatchInterceptorIsPresent() {
+        //noinspection unchecked
+        MessagingConfigurer configurer =
+                MessagingConfigurer.create()
+                                   .registerDispatchInterceptor(c -> mock(MessageDispatchInterceptor.class));
+
+        Configuration resultConfig = configurer.build();
+
+        assertThat(resultConfig.getComponent(EventSink.class)).isInstanceOf(InterceptingEventSink.class);
     }
 
     private static class TestCommandBus implements CommandBus {
