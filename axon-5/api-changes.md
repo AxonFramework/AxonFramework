@@ -1703,6 +1703,7 @@ This section contains five tables:
 | org.axonframework.queryhandling.registration.DuplicateQueryHandlerSubscriptionException  | Redundant class with current handler registration flow                                                                                         |
 | org.axonframework.queryhandling.registration.FailingDuplicateQueryHandlerResolver        | Redundant class with current handler registration flow                                                                                         |
 | org.axonframework.queryhandling.registration.LoggingDuplicateQueryHandlerResolver        | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.QuerySubscription                                        | Redundant class with current handler registration flow                                                                                         |
 
 ### Marked for removal Classes
 
