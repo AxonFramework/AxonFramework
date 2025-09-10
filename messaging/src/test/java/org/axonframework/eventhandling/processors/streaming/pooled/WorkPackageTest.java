@@ -81,7 +81,7 @@ class WorkPackageTest {
     void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
         executorService = spy(new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(1)));
-        eventFilter = new TestEventFilter();
+        eventFilter = spy(new TestEventFilter());
         batchProcessor = new TestBatchProcessor();
         segment = Segment.ROOT_SEGMENT;
         initialTrackingToken = new GlobalSequenceTrackingToken(0L);
@@ -143,6 +143,22 @@ class WorkPackageTest {
         testSubject.scheduleEvent(testEvent);
 
         assertEquals(expectedToken, testSubject.lastDeliveredToken());
+    }
+
+    @Test
+    void scheduleEventIsFilteredWithContextResourcesFromTheEventEntry() throws Exception {
+        TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
+        var testEvent = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"), globalTrackingTokenContext(1L));
+
+
+        testSubject.scheduleEvent(testEvent);
+
+        verify(eventFilter).canHandle(any(EventMessage.class), argThat(processingContext -> {
+            // Verify ProcessingContext contains the tracking token from the event entry
+            return TrackingToken.fromContext(processingContext)
+                    .map(expectedToken::equals)
+                    .orElse(false);
+        }), any(Segment.class));
     }
 
     @Test
