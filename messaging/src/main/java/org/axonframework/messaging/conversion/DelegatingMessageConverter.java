@@ -77,11 +77,11 @@ public class DelegatingMessageConverter implements MessageConverter {
     }
 
     /**
-     * Returns the delegate {@link Converter} this {@code MessageConverter} delegates too.
+     * Returns the delegate {@link Converter} this {@code MessageConverter} delegates to.
      * <p>
      * Useful to construct other instances with the exact same {@code Converter}.
      *
-     * @return The {@link Converter} this {@code MessageConverter} delegates too.
+     * @return The {@link Converter} this {@code MessageConverter} delegates to.
      */
     @Internal
     public Converter delegate() {

@@ -91,11 +91,11 @@ public class DelegatingEventConverter implements EventConverter {
     }
 
     /**
-     * Returns the {@link MessageConverter} this {@code EventConverter} delegates too.
+     * Returns the {@link MessageConverter} this {@code EventConverter} delegates to.
      * <p>
      * Useful to construct other instances with the exact same {@code Converter}.
      *
-     * @return The {@link MessageConverter} this {@code EventConverter} delegates too.
+     * @return The {@link MessageConverter} this {@code EventConverter} delegates to.
      */
     @Internal
     public MessageConverter delegate() {
