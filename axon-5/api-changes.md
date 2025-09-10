@@ -1698,6 +1698,11 @@ This section contains five tables:
 | org.axonframework.messaging.MessageDispatchInterceptorSupport                            | See [here](#message-handler-interceptors-and-dispatch-interceptors)                                                                            |
 | org.axonframework.messaging.MessageHandlerInterceptorSupport                             | See [here](#message-handler-interceptors-and-dispatch-interceptors)                                                                            |
 | org.axonframework.queryhandling.QueryHandlerAdapter                                      | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution             | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolver               | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.registration.DuplicateQueryHandlerSubscriptionException  | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.registration.FailingDuplicateQueryHandlerResolver        | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.registration.LoggingDuplicateQueryHandlerResolver        | Redundant class with current handler registration flow                                                                                         |
 
 ### Marked for removal Classes
 

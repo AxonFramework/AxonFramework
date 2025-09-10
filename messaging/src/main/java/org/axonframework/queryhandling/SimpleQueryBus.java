@@ -29,8 +29,6 @@ import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
-import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
-import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolver;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +79,6 @@ public class SimpleQueryBus implements QueryBus {
 
     private final QueryInvocationErrorHandler errorHandler;
     private final MessageTypeResolver messageTypeResolver;
-    private final DuplicateQueryHandlerResolver duplicateQueryHandlerResolver;
 
     /**
      * Construct a {@code SimpleQueryBus} with the given {@code unitOfWorkFactory} and {@code queryUpdateEmitter}.
@@ -102,8 +99,6 @@ public class SimpleQueryBus implements QueryBus {
         this.errorHandler = LoggingQueryInvocationErrorHandler.builder().build();
         // Replace as this is a gateway concern
         this.messageTypeResolver = new ClassBasedMessageTypeResolver();
-        // Replace for in-subscribe logic
-        this.duplicateQueryHandlerResolver = DuplicateQueryHandlerResolution.logAndAccept();
     }
 
     @Override
