@@ -220,8 +220,7 @@ public interface Message {
     /**
      * Returns the {@link MetaData} for this {@code Message}.
      * <p>
-     * The {@code MetaData} is a collection of key-value pairs, where the key is a {@link String}, and the value is a
-     * serializable object.
+     * The {@code MetaData} is a collection of key-value pairs, where both the key and values are {@link String}s.
      *
      * @return The {@link MetaData} for this {@code Message}.
      */
