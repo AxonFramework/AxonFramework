@@ -862,9 +862,9 @@ public abstract class MessageStreamTest<M extends Message> {
         M first = createRandomMessage();
         M second = createRandomMessage();
         M third = createRandomMessage();
-        
+
         MessageStream<M> stream1 = completedTestSubject(List.of(first));
-        MessageStream<M> stream2 = completedTestSubject(List.of(second));  
+        MessageStream<M> stream2 = completedTestSubject(List.of(second));
         MessageStream<M> stream3 = completedTestSubject(List.of(third));
 
         MessageStream<M> concatenated = stream1.concatWith(stream2).concatWith(stream3);
@@ -910,7 +910,7 @@ public abstract class MessageStreamTest<M extends Message> {
         M first2 = createRandomMessage();
         M second1 = createRandomMessage();
         M second2 = createRandomMessage();
-        
+
         MessageStream<M> stream1 = completedTestSubject(List.of(first1, first2));
         MessageStream<M> stream2 = completedTestSubject(List.of(second1, second2));
 
@@ -1022,7 +1022,7 @@ public abstract class MessageStreamTest<M extends Message> {
     void shouldExecuteWhenCompleteCallbackOnlyAfterAllMessagesProcessed() {
         AtomicBoolean callbackExecuted = new AtomicBoolean(false);
         AtomicInteger processedCount = new AtomicInteger(0);
-        
+
         List<M> messages = List.of(createRandomMessage(), createRandomMessage(), createRandomMessage());
         MessageStream<M> testSubject = completedTestSubject(messages)
             .onNext(entry -> {
@@ -1030,11 +1030,11 @@ public abstract class MessageStreamTest<M extends Message> {
                 assertFalse(callbackExecuted.get(), "Callback should not execute until completion");
             })
             .whenComplete(() -> callbackExecuted.set(true));
-        
+
         StepVerifier.create(testSubject.asFlux())
                     .expectNextCount(3)
                     .verifyComplete();
-        
+
         assertEquals(3, processedCount.get());
         assertTrue(callbackExecuted.get());
     }
@@ -1043,14 +1043,14 @@ public abstract class MessageStreamTest<M extends Message> {
     void shouldNotExecuteWhenCompleteCallbackOnError() {
         RuntimeException testException = new RuntimeException("Stream failed");
         AtomicBoolean callbackExecuted = new AtomicBoolean(false);
-        
+
         MessageStream<M> testSubject = failingTestSubject(List.of(), testException)
             .whenComplete(() -> callbackExecuted.set(true));
-        
+
         StepVerifier.create(testSubject.asFlux())
                     .expectErrorMatches(e -> e instanceof RuntimeException && e.getMessage().equals("Stream failed"))
                     .verify();
-        
+
         assertFalse(callbackExecuted.get());
     }
 
@@ -1058,32 +1058,32 @@ public abstract class MessageStreamTest<M extends Message> {
     void shouldNotChangeStreamContentWithWhenComplete() {
         List<M> originalMessages = List.of(createRandomMessage(), createRandomMessage(), createRandomMessage());
         AtomicBoolean callbackExecuted = new AtomicBoolean(false);
-        
+
         MessageStream<M> original = completedTestSubject(originalMessages);
         MessageStream<M> withCallback = original.whenComplete(() -> callbackExecuted.set(true));
-        
+
         StepVerifier.create(withCallback.asFlux())
                     .expectNextMatches(entry -> entry.message().equals(originalMessages.get(0)))
                     .expectNextMatches(entry -> entry.message().equals(originalMessages.get(1)))
                     .expectNextMatches(entry -> entry.message().equals(originalMessages.get(2)))
                     .verifyComplete();
-        
+
         assertTrue(callbackExecuted.get());
     }
 
     @Test
     void shouldChainMultipleWhenCompleteCallbacks() {
         AtomicInteger callbackCount = new AtomicInteger(0);
-        
+
         MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage()))
             .whenComplete(callbackCount::incrementAndGet)
             .whenComplete(callbackCount::incrementAndGet)
             .whenComplete(callbackCount::incrementAndGet);
-        
+
         StepVerifier.create(testSubject.asFlux())
                     .expectNextCount(1)
                     .verifyComplete();
-        
+
         assertEquals(3, callbackCount.get());
     }
 
@@ -1091,19 +1091,19 @@ public abstract class MessageStreamTest<M extends Message> {
     void shouldShowDifferentPurposesOfConcatWithAndWhenComplete() {
         AtomicBoolean stream1Completed = new AtomicBoolean(false);
         AtomicBoolean stream2Completed = new AtomicBoolean(false);
-        
+
         MessageStream<M> stream1 = completedTestSubject(List.of(createRandomMessage()))
             .whenComplete(() -> stream1Completed.set(true));
-        
+
         MessageStream<M> stream2 = completedTestSubject(List.of(createRandomMessage()))
             .whenComplete(() -> stream2Completed.set(true));
 
         MessageStream<M> concatenated = stream1.concatWith(stream2);
-        
+
         StepVerifier.create(concatenated.asFlux())
                     .expectNextCount(2)
                     .verifyComplete();
-        
+
         assertTrue(stream1Completed.get());
         assertTrue(stream2Completed.get());
     }
@@ -1203,6 +1203,8 @@ public abstract class MessageStreamTest<M extends Message> {
             assertEquals(message.payload(), peeked.get().message().payload());
             assertTrue(peekedAgain.isPresent());
             assertEquals(message.payload(), peekedAgain.get().message().payload());
+            assertFalse(stream.isCompleted());
+            assertTrue(stream.hasNextAvailable());
         }
 
         @Test
@@ -1304,6 +1306,8 @@ public abstract class MessageStreamTest<M extends Message> {
             assertEquals(message.payload(), peeked.get().message().payload());
             assertTrue(peekedAgain.isPresent());
             assertEquals(message.payload(), peekedAgain.get().message().payload());
+            assertFalse(stream.isCompleted());
+            assertTrue(stream.hasNextAvailable());
         }
 
         @Test
@@ -1318,6 +1322,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
             //then
             assertTrue(peeked.isEmpty());
+            assertTrue(stream.isCompleted());
+            assertFalse(stream.hasNextAvailable());
         }
     }
 }

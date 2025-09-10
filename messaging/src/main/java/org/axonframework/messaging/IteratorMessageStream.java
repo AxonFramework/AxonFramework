@@ -81,12 +81,12 @@ class IteratorMessageStream<M extends Message> implements MessageStream<M> {
 
     @Override
     public boolean isCompleted() {
-        return !source.hasNext();
+        return peeked == null && !source.hasNext();
     }
 
     @Override
     public boolean hasNextAvailable() {
-        return source.hasNext();
+        return peeked != null || source.hasNext();
     }
 
     @Override
