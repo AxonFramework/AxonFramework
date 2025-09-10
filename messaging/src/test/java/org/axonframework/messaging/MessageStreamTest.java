@@ -1203,6 +1203,8 @@ public abstract class MessageStreamTest<M extends Message> {
             assertEquals(message.payload(), peeked.get().message().payload());
             assertTrue(peekedAgain.isPresent());
             assertEquals(message.payload(), peekedAgain.get().message().payload());
+            assertFalse(stream.isCompleted());
+            assertTrue(stream.hasNextAvailable());
         }
 
         @Test
@@ -1304,6 +1306,8 @@ public abstract class MessageStreamTest<M extends Message> {
             assertEquals(message.payload(), peeked.get().message().payload());
             assertTrue(peekedAgain.isPresent());
             assertEquals(message.payload(), peekedAgain.get().message().payload());
+            assertFalse(stream.isCompleted());
+            assertTrue(stream.hasNextAvailable());
         }
 
         @Test
@@ -1318,6 +1322,8 @@ public abstract class MessageStreamTest<M extends Message> {
 
             //then
             assertTrue(peeked.isEmpty());
+            assertTrue(stream.isCompleted());
+            assertFalse(stream.hasNextAvailable());
         }
     }
 }
