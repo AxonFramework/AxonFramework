@@ -69,7 +69,7 @@ public class InterceptingCommandBus implements CommandBus {
 
     private final CommandBus delegate;
     private final List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors;
-    private final List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors;
+    private final List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors;
     private final InterceptingDispatcher interceptingDispatcher;
 
     /**
@@ -86,7 +86,7 @@ public class InterceptingCommandBus implements CommandBus {
     public InterceptingCommandBus(
             @Nonnull CommandBus delegate,
             @Nonnull List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors,
-            @Nonnull List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors
+            @Nonnull List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors
     ) {
         this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
         this.handlerInterceptors = new ArrayList<>(
@@ -95,7 +95,7 @@ public class InterceptingCommandBus implements CommandBus {
         this.dispatchInterceptors = new ArrayList<>(
                 requireNonNull(dispatchInterceptors, "The dispatch interceptors must not be null.")
         );
-        this.interceptingDispatcher = new InterceptingDispatcher(dispatchInterceptors, this::dispatchMessage);
+        this.interceptingDispatcher = new InterceptingDispatcher(dispatchInterceptors, this::dispatchCommand);
     }
 
     @Override
@@ -111,9 +111,13 @@ public class InterceptingCommandBus implements CommandBus {
         return interceptingDispatcher.interceptAndDispatch(command, processingContext);
     }
 
-    private MessageStream<?> dispatchMessage(@Nonnull Message message,
+    private MessageStream<?> dispatchCommand(@Nonnull Message message,
                                              @Nullable ProcessingContext processingContext) {
-        return MessageStream.fromFuture(delegate.dispatch((CommandMessage) message, processingContext));
+        if (!(message instanceof CommandMessage command)) {
+            // The compiler should avoid this from happening.
+            throw new IllegalArgumentException("Unsupported message implementation: " + message);
+        }
+        return MessageStream.fromFuture(delegate.dispatch(command, processingContext));
     }
 
     @Override
@@ -144,20 +148,20 @@ public class InterceptingCommandBus implements CommandBus {
 
     private static class InterceptingDispatcher {
 
-        private final DefaultMessageDispatchInterceptorChain<Message> interceptorChain;
+        private final DefaultMessageDispatchInterceptorChain<? super CommandMessage> interceptorChain;
 
         private InterceptingDispatcher(
-                List<MessageDispatchInterceptor<? super Message>> interceptors,
-                BiFunction<? super Message, ProcessingContext, MessageStream<?>> dispatcher
+                List<MessageDispatchInterceptor<? super CommandMessage>> interceptors,
+                BiFunction<? super CommandMessage, ProcessingContext, MessageStream<?>> dispatcher
         ) {
             this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, dispatcher);
         }
 
         private CompletableFuture<CommandResultMessage<?>> interceptAndDispatch(
-                @Nonnull CommandMessage message,
-                @Nullable ProcessingContext processingContext
+                @Nonnull CommandMessage command,
+                @Nullable ProcessingContext context
         ) {
-            return interceptorChain.proceed(message, processingContext)
+            return interceptorChain.proceed(command, context)
                                    .first()
                                    .<CommandResultMessage<?>>cast()
                                    .asCompletableFuture()
