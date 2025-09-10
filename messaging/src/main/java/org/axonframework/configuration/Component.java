@@ -173,6 +173,17 @@ public interface Component<C> extends DescribableComponent {
             return this.type.getTypeAsClass();
         }
 
+        /**
+         * Checks whether the {@link Class#getName()} of this {@code Identifier's} given {@code type} is equal to the
+         * given {@code name}.
+         *
+         * @return {@code true} whenever the {@link Class#getName()} of this {@code Identifier's} given {@code type} is
+         * equal to the given {@code name}, {@code false} otherwise.
+         */
+        public boolean areTypeAndNameEqual() {
+            return type.getTypeAsClass().getName().equals(name);
+        }
+
         @Override
         public String toString() {
             return type.getTypeAsClass().getName() + ":" + name;
