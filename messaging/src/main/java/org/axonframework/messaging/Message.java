@@ -27,7 +27,7 @@ import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
- * Representation of a {@link Message}, containing a {@link MessageType type}, payload of type {@code T}, and
+ * Representation of a {@link Message}, containing a {@link MessageType type}, payload, and
  * {@link MetaData}.
  * <p>
  * Typical examples of a {@code Messages} are {@link org.axonframework.commandhandling.CommandMessage commands},
@@ -102,11 +102,11 @@ public interface Message {
     MessageType type();
 
     /**
-     * Returns the payload of this {@code Message} of generic type {@code P}.
+     * Returns the payload of this {@code Message}.
      * <p>
      * The payload is the application-specific information.
      *
-     * @return The payload of this {@code Message} of generic type {@code P}.
+     * @return The payload of this {@code Message}.
      */
     @Nullable
     Object payload();
