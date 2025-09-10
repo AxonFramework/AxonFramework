@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ class FixtureTest_RegisteringSagaEnhancements {
         this.testSubject.givenAPublished(testEvent);
     }
 
-    @Disabled("TODO revise after #3103 is finished and Saga support is enabled")
+    @Disabled("TODO revise after Saga support is enabled")
     @Test
     void exceptionsAreRethrownAsFixtureExecutionExceptionDuringGivenPhaseWithoutInvokedCustomErrorHandler() {
         SomeTestSaga.SomeEvent testEvent = new SomeTestSaga.SomeEvent("some-id", true);
