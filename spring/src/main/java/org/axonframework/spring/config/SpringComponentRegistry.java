@@ -54,9 +54,7 @@ import org.springframework.core.ResolvableType;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -295,6 +293,11 @@ public class SpringComponentRegistry implements
         }
 
         Component.Identifier<Object> componentId = new Component.Identifier<>(beanType.getType(), beanName);
+        if (isLocalComponent(componentId)) {
+            logger.debug("Will not post process component [{}] since Axon registered it directly.", componentId);
+            return bean;
+        }
+
         Component<?> springComponent = new SpringComponent<>(componentId, bean);
         //noinspection rawtypes
         for (DecoratorDefinition.CompletedDecoratorDefinition decorator : decorators) {
@@ -306,6 +309,30 @@ public class SpringComponentRegistry implements
         }
 
         return springComponent.resolve(configuration);
+    }
+
+    /**
+     * Checks whether the given {@code beanComponentId} is a bean {@code this ComponentRegistry} registered as part of
+     * the {@link #initialize()}.
+     * <p>
+     * If {@code true} we are dealing with a component "local" to {@code this ComponentRegistry}. Furthermore, that
+     * means the registered {@link #registerDecorator(DecoratorDefinition) decorators} have already processed for this
+     * component. As such, this check can ensure we do not accidentally decorate Axon Framework components multiple
+     * times.
+     *
+     * @param beanComponentId The identifier based on the type and name of the bean given on
+     *                        {@link #postProcessAfterInitialization(Object, String)}.
+     * @return {@code true} if we are dealing with a component "local" to {@code this ComponentRegistry}, {@code false}
+     * otherwise.
+     */
+    private boolean isLocalComponent(Component.Identifier<Object> beanComponentId) {
+        if (components.contains(beanComponentId)) {
+            return true;
+        }
+        if (beanComponentId.areTypeAndNameEqual()) {
+            return components.contains(new Component.Identifier<>(beanComponentId.type(), null));
+        }
+        return false;
     }
 
     /**
@@ -323,8 +350,8 @@ public class SpringComponentRegistry implements
      *     <li>Look for additional {@link ConfigurationEnhancer ConfigurationEnhancers} and {@link #registerEnhancer(ConfigurationEnhancer) registers} them.</li>
      *     <li>Invoke {@link ConfigurationEnhancer#enhance(ComponentRegistry)} on all registered enhancers.</li>
      *     <li>Looks for any {@link DecoratorDefinition DecoratorDefinitions} and {@link #registerDecorator(DecoratorDefinition) registers} them.</li>
-     *     <li>Registers <b>all</b> {@link Component Components} with the Application Context. This occurs before {@link DecoratorDefinition} registration to ensure decorators are not invoked twice!</li>
      *     <li>Decorate all registered {@code Components} by invoking all {@link #registerDecorator(DecoratorDefinition) registered decorators}.</li>
+     *     <li>Registers <b>all</b> {@link Component Components} with the Application Context.</li>
      *     <li>Looks for any {@link Module Modules} and {@link #registerModule(Module) registers} them.</li>
      *     <li>Builds all registered {@code Modules} so that they become available to {@link Configuration#getModuleConfigurations()}.</li>
      *     <li>Looks for any {@link ComponentFactory ComponentFactories} and {@link #registerFactory(ComponentFactory) registers} them.</li>
@@ -338,8 +365,8 @@ public class SpringComponentRegistry implements
         scanForConfigurationEnhancers();
         invokeEnhancers();
         scanForDecoratorDefinitions();
-        registerLocalComponentsWithApplicationContext();
         decorateComponents();
+        registerLocalComponentsWithApplicationContext();
         scanForModules();
         buildModules();
         scanForComponentFactories();

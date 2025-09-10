@@ -48,7 +48,7 @@ public interface EventMessage extends Message {
      * If two messages have the same identifier, they both represent the same unique occurrence of an event, even though
      * the resulting view may be different. You may not assume two messages are equal (i.e. interchangeable) if their
      * identifier is equal.
-     * <p/>
+     * <p>
      * For example, an {@code AddressChangeEvent} may occur twice for the same event, because someone moved back to the
      * previous address. In that case, the event payload is equal for both {@code EventMessage} instances, but the event
      * identifier is different for both.

@@ -29,8 +29,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -94,10 +93,10 @@ class DefaultEventHandlingComponentsConfigurerTest {
         @Test
         void shouldDecorateAllComponents() {
             //given
-            var component1 = SimpleEventHandlingComponent.builder()
-                                                         .handles(new QualifiedName(String.class),
-                                                                  (e, c) -> MessageStream.empty())
-                                                         .build();
+            var component1 = EventHandlingComponentBuilder.builder()
+                                                          .handles(new QualifiedName(String.class),
+                                                                   (e, c) -> MessageStream.empty())
+                                                          .build();
             var component2 = new SimpleEventHandlingComponent();
             component2.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 

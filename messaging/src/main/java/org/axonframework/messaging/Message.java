@@ -27,13 +27,13 @@ import java.lang.reflect.Type;
 import java.util.Map;
 
 /**
- * Representation of a {@link Message}, containing a {@link MessageType type}, payload of type {@code T}, and
+ * Representation of a {@link Message}, containing a {@link MessageType type}, payload, and
  * {@link MetaData}.
  * <p>
  * Typical examples of a {@code Messages} are {@link org.axonframework.commandhandling.CommandMessage commands},
  * {@link org.axonframework.eventhandling.EventMessage events}, and
  * {@link org.axonframework.queryhandling.QueryMessage queries}.
- * <p/>
+ * <p>
  * Instead of implementing {@code Message} directly, consider implementing {@code CommandMessage}, {@code EventMessage}
  * or {@code QueryMessage} instead.
  *
@@ -102,11 +102,11 @@ public interface Message {
     MessageType type();
 
     /**
-     * Returns the payload of this {@code Message} of generic type {@code P}.
+     * Returns the payload of this {@code Message}.
      * <p>
      * The payload is the application-specific information.
      *
-     * @return The payload of this {@code Message} of generic type {@code P}.
+     * @return The payload of this {@code Message}.
      */
     @Nullable
     Object payload();
@@ -121,9 +121,9 @@ public interface Message {
      * {@link Converter#convert(Object, Class)} invocation in the process. Only when this optimization is in place will
      * a {@code null converter} result in a successful invocation of this method.
      *
-     * @param type      The type to convert this {@code Message's} payload too.
+     * @param type      The type to convert this {@code Message's} payload to.
      * @param converter The converter to convert this {@code Message's} payload with.
-     * @param <T>       The generic type to convert this {@code Message's} payload too.
+     * @param <T>       The generic type to convert this {@code Message's} payload to.
      * @return The payload of this {@code Message}, converted to the given {@code type}.
      * @throws ConversionException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                             {@code converter} is given.
@@ -138,8 +138,8 @@ public interface Message {
      * {@link Class#isAssignableFrom(Class) assignable from} the given {@code type}, otherwise throws a
      * {@link ConversionException}.
      *
-     * @param type The type to convert this {@code Message's} payload too.
-     * @param <T>  The generic type to convert this {@code Message's} payload too.
+     * @param type The type to convert this {@code Message's} payload to.
+     * @param <T>  The generic type to convert this {@code Message's} payload to.
      * @return The payload of this {@code Message}, converted to the given {@code type}.
      * @throws ConversionException When the given type is not compatible with the payload type.
      */
@@ -158,9 +158,9 @@ public interface Message {
      * {@link Converter#convert(Object, Class)} invocation in the process. Only when this optimization is in place will
      * a {@code null converter} result in a successful invocation of this method.
      *
-     * @param type      The type to convert this {@code Message's} payload too.
+     * @param type      The type to convert this {@code Message's} payload to.
      * @param converter The converter to convert this {@code Message's} payload with.
-     * @param <T>       The generic type to convert this {@code Message's} payload too.
+     * @param <T>       The generic type to convert this {@code Message's} payload to.
      * @return The payload of this {@code Message}, converted to the given {@code type}.
      * @throws ConversionException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                             {@code converter} is given.
@@ -175,8 +175,8 @@ public interface Message {
      * {@link Class#isAssignableFrom(Class) assignable from} the given {@code type}, otherwise throws a
      * {@link ConversionException}.
      *
-     * @param type The type to convert this {@code Message's} payload too.
-     * @param <T>  The generic type to convert this {@code Message's} payload too.
+     * @param type The type to convert this {@code Message's} payload to.
+     * @param <T>  The generic type to convert this {@code Message's} payload to.
      * @return The payload of this {@code Message}, converted to the given {@code type}.
      * @throws ConversionException When the given type is not compatible with the payload type.
      */
@@ -196,9 +196,9 @@ public interface Message {
      * {@link Converter#convert(Object, Class)} invocation in the process. Only when this optimization is in place will
      * a {@code null converter} result in a successful invocation of this method.
      *
-     * @param type      The type to convert this {@code Message's} payload too.
+     * @param type      The type to convert this {@code Message's} payload to.
      * @param converter The converter to convert this {@code Message's} payload with.
-     * @param <T>       The generic type to convert this {@code Message's} payload too.
+     * @param <T>       The generic type to convert this {@code Message's} payload to.
      * @return The payload of this {@code Message}, converted to the given {@code type}.
      * @throws ConversionException When {@link Converter#convert(Object, Class) conversion} is mandatory but no
      *                             {@code converter} is given.
@@ -208,7 +208,7 @@ public interface Message {
 
     /**
      * Returns the type of the payload.
-     * <p/>
+     * <p>
      * Is semantically equal to {@code getPayload().getClass()}, but allows implementations to optimize by using lazy
      * loading or deserialization.
      *
@@ -220,8 +220,7 @@ public interface Message {
     /**
      * Returns the {@link MetaData} for this {@code Message}.
      * <p>
-     * The {@code MetaData} is a collection of key-value pairs, where the key is a {@link String}, and the value is a
-     * serializable object.
+     * The {@code MetaData} is a collection of key-value pairs, where both the key and values are {@link String}s.
      *
      * @return The {@link MetaData} for this {@code Message}.
      */
@@ -231,8 +230,8 @@ public interface Message {
     /**
      * Returns a copy of this {@code Message} (implementation) with the given {@code metaData}.
      * <p>
-     * All others fields, like for example the {@link #payload()}, remain unchanged.
-     * <p/>
+     * All other fields, like for example the {@link #payload()}, remain unchanged.
+     * <p>
      * While the implementation returned may be different from the implementation of {@code this}, implementations must
      * take special care in returning the same type of {@code Message} to prevent errors further downstream.
      *
@@ -246,7 +245,7 @@ public interface Message {
      * Returns a copy of this {@code Message} (implementation) with its {@link Message#metaData() metadata} merged with
      * the given {@code metaData}.
      * <p>
-     * All others fields, like for example the {@link #payload()}, remain unchanged.
+     * All other fields, like for example the {@link #payload()}, remain unchanged.
      *
      * @param metaData The metadata to merge with.
      * @return A copy of {@code this Message (implementation)} with the given {@code metaData}.

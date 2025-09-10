@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.RecordingEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.eventhandling.configuration.EventHandlingComponentBuilder;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
@@ -218,7 +219,7 @@ class PooledStreamingEventProcessorModuleTest {
                                                 components -> components.declarative(cfg -> componentOne)
                                         )
                                         .customized(
-                                                (config, psepConfig) -> psepConfig.addInterceptor(specificInterceptorOne)
+                                                (config, psepConfig) -> psepConfig.withInterceptor(specificInterceptorOne)
                                         );
             RecordingEventHandlingComponent componentTwo = simpleRecordingTestComponent(new QualifiedName(Integer.class));
             PooledStreamingEventProcessorModule psepModuleTwo =
@@ -227,7 +228,7 @@ class PooledStreamingEventProcessorModuleTest {
                                                 components -> components.declarative(cfg -> componentTwo)
                                         )
                                         .customized(
-                                                (config, psepConfig) -> psepConfig.addInterceptor(specificInterceptorTwo)
+                                                (config, psepConfig) -> psepConfig.withInterceptor(specificInterceptorTwo)
                                         );
             // Register the global interceptor
             configurer.registerEventHandlerInterceptor(c -> globalInterceptor);
@@ -235,7 +236,7 @@ class PooledStreamingEventProcessorModuleTest {
             configurer.eventProcessing(processingConfigurer -> processingConfigurer.pooledStreaming(
                     psepConfigurer -> psepConfigurer.defaults(
                                                             defaults -> defaults.eventSource(eventSource)
-                                                                                .addInterceptor(defaultInterceptor)
+                                                                                .withInterceptor(defaultInterceptor)
                                                     )
                                                     .processor(psepModuleOne)
                                                     .processor(psepModuleTwo)
@@ -605,11 +606,13 @@ class PooledStreamingEventProcessorModuleTest {
         return simpleRecordingTestComponent(new QualifiedName(String.class));
     }
 
-    private static RecordingEventHandlingComponent simpleRecordingTestComponent(@Nonnull QualifiedName handlerName) {
+    private static RecordingEventHandlingComponent simpleRecordingTestComponent(
+            @Nonnull QualifiedName supportedEventName
+    ) {
         return new RecordingEventHandlingComponent(
-                SimpleEventHandlingComponent.builder()
-                                            .handles(handlerName, (e, c) -> MessageStream.empty())
-                                            .build()
+                EventHandlingComponentBuilder.builder()
+                                             .handles(supportedEventName, (e, c) -> MessageStream.empty())
+                                             .build()
         );
     }
 
