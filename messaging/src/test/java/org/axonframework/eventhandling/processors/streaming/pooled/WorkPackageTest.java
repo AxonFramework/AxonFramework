@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
@@ -147,17 +148,25 @@ class WorkPackageTest {
 
     @Test
     void scheduleEventIsFilteredWithContextResourcesFromTheEventEntry() throws Exception {
+        // given
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
-        var testEvent = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"), globalTrackingTokenContext(1L));
+        var aggregateIdentifier = "aggregate-1";
+        Context context = globalTrackingTokenContext(1L).withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, aggregateIdentifier);
+        var testEvent = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"), context);
 
-
+        // when
         testSubject.scheduleEvent(testEvent);
 
+        // then
         verify(eventFilter).canHandle(any(EventMessage.class), argThat(processingContext -> {
             // Verify ProcessingContext contains the tracking token from the event entry
-            return TrackingToken.fromContext(processingContext)
+            var trackingTokenAsExpected = TrackingToken.fromContext(processingContext)
                     .map(expectedToken::equals)
                     .orElse(false);
+            var aggregateIdentifierAsExpected = aggregateIdentifier.equals(
+                    processingContext.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)
+            );
+            return trackingTokenAsExpected && aggregateIdentifierAsExpected;
         }), any(Segment.class));
     }
 
