@@ -189,9 +189,10 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      */
     @Nonnull
     public PooledStreamingEventProcessorConfiguration withInterceptor(
-            @Nonnull MessageHandlerInterceptor<EventMessage> interceptor
+            @Nonnull MessageHandlerInterceptor<? super EventMessage> interceptor
     ) {
-        this.interceptors.add(interceptor);
+        //noinspection unchecked | Casting to EventMessage is safe.
+        this.interceptors.add((MessageHandlerInterceptor<EventMessage>) interceptor);
         return this;
     }
 
