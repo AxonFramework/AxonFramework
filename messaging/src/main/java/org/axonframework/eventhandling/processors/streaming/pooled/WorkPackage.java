@@ -806,6 +806,13 @@ class WorkPackage {
         }
     }
 
+    /**
+     * A concrete implementation of the {@link ProcessingContext} interface specifically designed for event scheduling
+     * in the {@link WorkPackage}. This implementation provides resource management capabilities while disallowing
+     * lifecycle actions and does not allow retrieving components. Currently, the only usage of the context is for
+     * {@link org.axonframework.eventhandling.EventHandlingComponent#sequenceIdentifierFor(EventMessage,
+     * ProcessingContext) execution.}
+     */
     private static class EventSchedulingProcessingContext implements ProcessingContext {
 
         private static final String UNSUPPORTED_MESSAGE = "Cannot register lifecycle actions in this ProcessingContext";
@@ -814,7 +821,7 @@ class WorkPackage {
         static ProcessingContext fromEntry(MessageStream.Entry<? extends EventMessage> entry) {
             var context = new EventSchedulingProcessingContext();
             //noinspection unchecked
-            entry.resources().forEach((k,v) -> context.putResource((ResourceKey<Object>) k, v));
+            entry.resources().forEach((k, v) -> context.putResource((ResourceKey<Object>) k, v));
             return Message.addToContext(context, entry.message());
         }
 
