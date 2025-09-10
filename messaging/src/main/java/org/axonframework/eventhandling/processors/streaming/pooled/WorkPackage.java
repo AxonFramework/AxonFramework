@@ -297,11 +297,21 @@ class WorkPackage {
             }
 
             processEvents()
-                .exceptionally(e -> {
-                    logger.warn("Error while processing batch in Work Package [{}]-[{}]. Aborting Work Package...",
-                                segment.getSegmentId(), name, e);
-                    abort((Exception) e);
-                    return null;
+                .whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        // Unwrap CompletionException to get the actual cause
+                        Throwable actualThrowable = throwable;
+                        while (actualThrowable instanceof java.util.concurrent.CompletionException && 
+                               actualThrowable.getCause() != null) {
+                            actualThrowable = actualThrowable.getCause();
+                        }
+                        
+                        Exception e = actualThrowable instanceof Exception ? (Exception) actualThrowable 
+                                    : new RuntimeException(actualThrowable);
+                        logger.warn("Error while processing batch in Work Package [{}]-[{}]. Aborting Work Package...",
+                                    segment.getSegmentId(), name, e);
+                        abort(e);
+                    }
                 })
                 .thenRun(() -> {
                     scheduled.set(false);
