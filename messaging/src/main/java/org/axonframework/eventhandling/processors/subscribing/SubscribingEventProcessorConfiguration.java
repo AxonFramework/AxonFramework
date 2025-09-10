@@ -18,13 +18,16 @@ package org.axonframework.eventhandling.processors.subscribing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.*;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
+import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
-import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -56,17 +59,33 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
 
     /**
-     * Constructs a new {@link SubscribingEventProcessorConfiguration} with default values.
+     * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values.
+     *
+     * @param configuration The configuration, used to retrieve global default values, like
+     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
      */
-    public SubscribingEventProcessorConfiguration() {
-        super();
+    @Internal
+    public SubscribingEventProcessorConfiguration(@Nonnull Configuration configuration) {
+        super(configuration);
     }
 
     /**
-     * Constructs a new {@link SubscribingEventProcessorConfiguration} copying properties from the given configuration.
+     * Constructs a new {@code SubscribingEventProcessorConfiguration}.
+     * <p>
+     * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
+     * for events. Please use {@link #SubscribingEventProcessorConfiguration(Configuration)} when those are desired.
+     */
+    @Internal
+    public SubscribingEventProcessorConfiguration() {
+        super(List.of());
+    }
+
+    /**
+     * Constructs a new {@code SubscribingEventProcessorConfiguration} copying properties from the given configuration.
      *
      * @param base The {@link EventProcessorConfiguration} to copy properties from.
      */
+    @Internal
     public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         super(base);
     }
@@ -127,10 +146,19 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         return this;
     }
 
-    @Override
-    public SubscribingEventProcessorConfiguration interceptors(
-            @Nonnull List<MessageHandlerInterceptor<EventMessage>> interceptors) {
-        super.interceptors(interceptors);
+    /**
+     * Registers the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} for the
+     * {@link SubscribingEventProcessor} under construction.
+     *
+     * @param interceptor The {@link EventMessage}-specific {@link MessageHandlerInterceptor} to register for the
+     *                    {@link SubscribingEventProcessor} under construction.
+     * @return This {@code SubscribingEventProcessorConfiguration}, for fluent interfacing.
+     */
+    @Nonnull
+    public SubscribingEventProcessorConfiguration withInterceptor(
+            @Nonnull MessageHandlerInterceptor<EventMessage> interceptor
+    ) {
+        this.interceptors.add(interceptor);
         return this;
     }
 
