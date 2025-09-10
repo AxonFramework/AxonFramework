@@ -18,7 +18,6 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.common.Registration;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
@@ -39,12 +38,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Signal;
 
-import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,13 +51,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
 import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
 
 /**
@@ -76,13 +68,13 @@ import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
  * @author Allard Buijze
  * @author Steven van Beelen
  * @author Milan Savic
- * @since 3.1
+ * @since 3.1.0
  */
 public class SimpleQueryBus implements QueryBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
-    private final ConcurrentMap<String, List<QuerySubscription<?>>> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<QueryHandlerName, List<QueryHandler>> subscriptions = new ConcurrentHashMap<>();
 
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final QueryUpdateEmitter queryUpdateEmitter;
@@ -115,38 +107,23 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    public Registration subscribe(@Nonnull String queryName,
-                                  @Nonnull Type responseType,
-                                  @Nonnull MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> handler) {
-        QuerySubscription<?> querySubscription = new QuerySubscription<>(responseType, handler);
-        List<QuerySubscription<?>> handlers =
-                subscriptions.computeIfAbsent(queryName, k -> new CopyOnWriteArrayList<>());
-        if (handlers.contains(querySubscription)) {
-            return () -> unsubscribe(queryName, querySubscription);
-        }
-        List<QuerySubscription<?>> existingHandlers = handlers.stream()
-                                                              .filter(q -> q.getResponseType().equals(responseType))
-                                                              .collect(Collectors.toList());
-        if (existingHandlers.isEmpty()) {
-            handlers.add(querySubscription);
-        } else {
-            List<QuerySubscription<?>> resolvedHandlers =
-                    duplicateQueryHandlerResolver.resolve(queryName, responseType, existingHandlers, querySubscription);
-            subscriptions.put(queryName, resolvedHandlers);
-        }
-
-        return () -> unsubscribe(queryName, querySubscription);
-    }
-
-    private <R> boolean unsubscribe(String queryName, QuerySubscription<R> querySubscription) {
-        subscriptions.computeIfPresent(queryName, (key, handlers) -> {
-            handlers.remove(querySubscription);
-            if (handlers.isEmpty()) {
-                return null;
+    public QueryBus subscribe(@Nonnull QueryHandlerName handlerName, @Nonnull QueryHandler queryHandler) {
+        logger.debug("Subscribing query handler for name [{}].", handlerName);
+        subscriptions.compute(handlerName, (n, handlers) -> {
+            if (handlers == null) {
+                handlers = new CopyOnWriteArrayList<>();
+            } else {
+                logger.warn(
+                        "A duplicate query handler was found for query [{}] and response [{}}]. "
+                                + "This is only valid for scatter-gather queries. "
+                                + "Other queries will only use one of these handlers.",
+                        handlerName.queryName(), handlerName.responseName()
+                );
             }
+            handlers.add(queryHandler);
             return handlers;
         });
-        return true;
+        return this;
     }
 
     @Override
@@ -505,34 +482,26 @@ public class SimpleQueryBus implements QueryBus {
                 responseType.convert(queryResponse)));
     }
 
-    /**
-     * Returns the subscriptions for this query bus. While the returned map is unmodifiable, it may or may not reflect
-     * changes made to the subscriptions after the call was made.
-     *
-     * @return the subscriptions for this query bus
-     */
-    protected Map<String, Collection<QuerySubscription<?>>> getSubscriptions() {
-        return Collections.unmodifiableMap(subscriptions);
-    }
-
     private List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> getHandlersForMessage(
-            QueryMessage queryMessage) {
-        ResponseType<?> responseType = queryMessage.responseType();
-        return subscriptions.computeIfAbsent(queryMessage.type().name(), k -> new CopyOnWriteArrayList<>())
-                            .stream()
-                            .collect(groupingBy(
-                                    querySubscription -> responseType.matchRank(querySubscription.getResponseType()),
-                                    mapping(Function.identity(), Collectors.toList())
-                            ))
-                            .entrySet()
-                            .stream()
-                            .filter(entry -> entry.getKey() != ResponseType.NO_MATCH)
-                            .sorted((entry1, entry2) -> entry2.getKey() - entry1.getKey())
-                            .map(Map.Entry::getValue)
-                            .flatMap(Collection::stream)
-                            .map(QuerySubscription::getQueryHandler)
-                            .map(queryHandler -> (MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>) queryHandler)
-                            .collect(Collectors.toList());
+            QueryMessage queryMessage
+    ) {
+        return List.of();
+//        ResponseType<?> responseType = queryMessage.responseType();
+//        return oldsubscriptions.computeIfAbsent(queryMessage.type().name(), k -> new CopyOnWriteArrayList<>())
+//                               .stream()
+//                               .collect(groupingBy(
+//                                       querySubscription -> responseType.matchRank(querySubscription.getResponseType()),
+//                                       mapping(Function.identity(), Collectors.toList())
+//                               ))
+//                               .entrySet()
+//                               .stream()
+//                               .filter(entry -> entry.getKey() != ResponseType.NO_MATCH)
+//                               .sorted((entry1, entry2) -> entry2.getKey() - entry1.getKey())
+//                               .map(Map.Entry::getValue)
+//                               .flatMap(Collection::stream)
+//                               .map(QuerySubscription::getQueryHandler)
+//                               .map(queryHandler -> (MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>) queryHandler)
+//                               .collect(Collectors.toList());
     }
 
     private Publisher<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> getStreamingHandlersForMessage(

@@ -61,6 +61,7 @@ import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -186,6 +187,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     @Override
+    public QueryBus subscribe(@Nonnull QueryHandlerName handlerName,
+                              @Nonnull org.axonframework.queryhandling.QueryHandler queryHandler) {
+        // TODO #3488 - Pick up when replacing the AxonServerQueryBus
+        return null;
+    }
+
+    @Override
     public Publisher<QueryResponseMessage> streamingQuery(StreamingQueryMessage query) {
         Span span = spanFactory.createStreamingQuerySpan(query, true).start();
         try (SpanScope unused = span.makeCurrent()) {
@@ -249,12 +257,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         shutdownLatch.initialize();
     }
 
-    @Override
+    // TODO #3488 - Pick up when replacing the AxonServerQueryBus
     public Registration subscribe(
             @Nonnull String queryName,
             @Nonnull Type responseType,
             @Nonnull MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> handler) {
-        Registration localRegistration = localSegment.subscribe(queryName, responseType, handler);
+//        Registration localRegistration = localSegment.subscribe(queryName, responseType, handler);
+        Registration localRegistration = () -> true;
         QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType);
         io.axoniq.axonserver.connector.Registration serverRegistration =
                 axonServerConnectionManager.getConnection(context)
