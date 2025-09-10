@@ -18,8 +18,8 @@ package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -32,7 +32,6 @@ import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventstreaming.EventCriteria;
@@ -40,8 +39,6 @@ import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.interceptors.DefaultHandlerInterceptorRegistry;
-import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -84,13 +81,12 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  *     <li>A {@link ScheduledExecutorService} to process work packages.</li>
  * </ul>
  *
- * @since 5.0.0
  * @author Mateusz Nowak
+ * @since 5.0.0
  */
 public class PooledStreamingEventProcessorConfiguration extends EventProcessorConfiguration {
 
     private StreamableEventSource<? extends EventMessage> eventSource;
-    private final HandlerInterceptorRegistry interceptorRegistry = new DefaultHandlerInterceptorRegistry();
     private TokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
     private ScheduledExecutorService workerExecutor;
@@ -111,8 +107,24 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
 
     /**
      * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with default values.
+     *
+     * @param configuration The configuration, used to retrieve global default values, like
+     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
      */
+    @Internal
+    public PooledStreamingEventProcessorConfiguration(@Nonnull Configuration configuration) {
+        super(configuration);
+    }
+
+    /**
+     * Constructs a new {@code PooledStreamingEventProcessorConfiguration}.
+     * <p>
+     * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
+     * for events. Please use {@link #PooledStreamingEventProcessorConfiguration(Configuration)} when those are desired.
+     */
+    @Internal
     public PooledStreamingEventProcessorConfiguration() {
+        super(List.of());
     }
 
     /**
@@ -121,6 +133,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *
      * @param base The {@link EventProcessorConfiguration} to copy properties from.
      */
+    @Internal
     public PooledStreamingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         super(base);
     }
@@ -175,25 +188,11 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * @return This {@code PooledStreamingEventProcessorConfiguration}, for fluent interfacing.
      */
     @Nonnull
-    public PooledStreamingEventProcessorConfiguration addInterceptor(
+    public PooledStreamingEventProcessorConfiguration withInterceptor(
             @Nonnull MessageHandlerInterceptor<? super EventMessage> interceptor
     ) {
-        return addInterceptor(c -> interceptor);
-    }
-
-    /**
-     * Registers the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} factory for the
-     * {@link PooledStreamingEventProcessor} under construction.
-     *
-     * @param interceptorBuilder The builder constructing the {@link EventMessage}-specific
-     *                           {@link MessageHandlerInterceptor}.
-     * @return This {@code PooledStreamingEventProcessorConfiguration}, for fluent interfacing.
-     */
-    @Nonnull
-    public PooledStreamingEventProcessorConfiguration addInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
-    ) {
-        interceptorRegistry.registerEventInterceptor(interceptorBuilder);
+        //noinspection unchecked | Casting to EventMessage is safe.
+        this.interceptors.add((MessageHandlerInterceptor<EventMessage>) interceptor);
         return this;
     }
 
@@ -248,7 +247,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * stored in the configured {@link TokenStore} upon start up of this {@link StreamingEventProcessor}. The given
      * value should at least be {@code 1}. Defaults to {@code 16}.
      *
-     * @param initialSegmentCount The {@code int} specifying the initial segment count used to create segments on startup.
+     * @param initialSegmentCount The {@code int} specifying the initial segment count used to create segments on
+     *                            startup.
      * @return The current instance, for fluent interfacing.
      */
     public PooledStreamingEventProcessorConfiguration initialSegmentCount(int initialSegmentCount) {
@@ -312,7 +312,9 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      *                           {@link StreamingEventProcessor} may claim per instance.
      * @return The current instance, for fluent interfacing.
      */
-    public PooledStreamingEventProcessorConfiguration maxSegmentProvider(@Nonnull MaxSegmentProvider maxSegmentProvider) {
+    public PooledStreamingEventProcessorConfiguration maxSegmentProvider(
+            @Nonnull MaxSegmentProvider maxSegmentProvider
+    ) {
         assertNonNull(maxSegmentProvider,
                       "The max segment provider may not be null. "
                               + "Provide a lambda of type (processorName: String) -> maxSegmentsToClaim");
@@ -325,8 +327,8 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      * {@link TrackingToken}. The threshold will only be met in absence of regular event processing, since that updates
      * the {@code TrackingToken} automatically. Defaults to {@code 5000} milliseconds.
      *
-     * @param claimExtensionThreshold The time in milliseconds the work packages of this processor should extend the claim
-     *                                on a {@link TrackingToken}.
+     * @param claimExtensionThreshold The time in milliseconds the work packages of this processor should extend the
+     *                                claim on a {@link TrackingToken}.
      * @return The current instance, for fluent interfacing
      */
     public PooledStreamingEventProcessorConfiguration claimExtensionThreshold(long claimExtensionThreshold) {
@@ -461,27 +463,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     /**
-     * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
-     * add to the {@link SubscribingEventProcessor} under construction.
-     *
-     * @param config The configuration to construct all {@link EventMessage}-specific
-     *               {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
-     * add to the {@link SubscribingEventProcessor} under construction.
-     */
-    @Nonnull
-    public List<MessageHandlerInterceptor<EventMessage>> addInterceptor(Configuration config) {
-        // First retrieve the default interceptors
-        List<MessageHandlerInterceptor<EventMessage>> interceptors =
-                config.getComponent(HandlerInterceptorRegistry.class)
-                      .eventInterceptors(config);
-        // Then add the PSEP-specific interceptors
-        interceptors.addAll(interceptorRegistry.eventInterceptors(config));
-        // And return
-        return interceptors;
-    }
-
-    /**
      * Returns the {@link TokenStore} used to store and fetch event tokens.
      *
      * @return The {@link TokenStore} for tracking progress.
@@ -602,7 +583,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         descriptor.describeProperty("eventSource", eventSource);
-        descriptor.describeProperty("interceptors", interceptorRegistry);
         descriptor.describeProperty("tokenStore", tokenStore);
         descriptor.describeProperty("coordinatorExecutor", coordinatorExecutor);
         descriptor.describeProperty("workerExecutor", workerExecutor);

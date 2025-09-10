@@ -18,8 +18,8 @@ package org.axonframework.eventhandling.processors.subscribing;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -31,8 +31,6 @@ import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.interceptors.DefaultHandlerInterceptorRegistry;
-import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -59,13 +57,27 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
 
     private SubscribableMessageSource<? extends EventMessage> messageSource;
     private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
-    private final HandlerInterceptorRegistry interceptorRegistry = new DefaultHandlerInterceptorRegistry();
 
     /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values.
+     *
+     * @param configuration The configuration, used to retrieve global default values, like
+     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
      */
+    @Internal
+    public SubscribingEventProcessorConfiguration(@Nonnull Configuration configuration) {
+        super(configuration);
+    }
+
+    /**
+     * Constructs a new {@code SubscribingEventProcessorConfiguration}.
+     * <p>
+     * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
+     * for events. Please use {@link #SubscribingEventProcessorConfiguration(Configuration)} when those are desired.
+     */
+    @Internal
     public SubscribingEventProcessorConfiguration() {
-        super();
+        super(List.of());
     }
 
     /**
@@ -73,6 +85,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      *
      * @param base The {@link EventProcessorConfiguration} to copy properties from.
      */
+    @Internal
     public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         super(base);
     }
@@ -134,7 +147,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     }
 
     /**
-     * Adds the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} for the
+     * Registers the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} for the
      * {@link SubscribingEventProcessor} under construction.
      *
      * @param interceptor The {@link EventMessage}-specific {@link MessageHandlerInterceptor} to register for the
@@ -142,25 +155,11 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * @return This {@code SubscribingEventProcessorConfiguration}, for fluent interfacing.
      */
     @Nonnull
-    public SubscribingEventProcessorConfiguration addInterceptor(
+    public SubscribingEventProcessorConfiguration withInterceptor(
             @Nonnull MessageHandlerInterceptor<? super EventMessage> interceptor
     ) {
-        return addInterceptor(c -> interceptor);
-    }
-
-    /**
-     * Adds the given {@link EventMessage}-specific {@link MessageHandlerInterceptor} factory for the
-     * {@link SubscribingEventProcessor} under construction.
-     *
-     * @param interceptorBuilder The builder constructing the {@link EventMessage}-specific
-     *                           {@link MessageHandlerInterceptor}.
-     * @return This {@code SubscribingEventProcessorConfiguration}, for fluent interfacing.
-     */
-    @Nonnull
-    public SubscribingEventProcessorConfiguration addInterceptor(
-            @Nonnull ComponentBuilder<MessageHandlerInterceptor<? super EventMessage>> interceptorBuilder
-    ) {
-        interceptorRegistry.registerEventInterceptor(interceptorBuilder);
+        //noinspection unchecked | Casting to EventMessage is safe.
+        this.interceptors.add((MessageHandlerInterceptor<EventMessage>) interceptor);
         return this;
     }
 
@@ -194,32 +193,10 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         return processingStrategy;
     }
 
-    /**
-     * Returns the list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
-     * add to the {@link SubscribingEventProcessor} under construction.
-     *
-     * @param config The configuration to construct all {@link EventMessage}-specific
-     *               {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * @return The list of {@link EventMessage}-specific {@link MessageHandlerInterceptor MessageHandlerInterceptors} to
-     * add to the {@link SubscribingEventProcessor} under construction.
-     */
-    @Nonnull
-    public List<MessageHandlerInterceptor<EventMessage>> addInterceptor(Configuration config) {
-        // First retrieve the default interceptors
-        List<MessageHandlerInterceptor<EventMessage>> interceptors =
-                config.getComponent(HandlerInterceptorRegistry.class)
-                      .eventInterceptors(config);
-        // Then add the SEP-specific interceptors
-        interceptors.addAll(interceptorRegistry.eventInterceptors(config));
-        // And return
-        return interceptors;
-    }
-
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         descriptor.describeProperty("messageSource", messageSource);
         descriptor.describeProperty("processingStrategy", processingStrategy);
-        descriptor.describeProperty("interceptors", interceptorRegistry);
     }
 }
