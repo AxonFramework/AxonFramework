@@ -52,7 +52,7 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
         super(delegate);
         this.delegate = delegate;
         this.completeHandler = completeHandler;
-        delegate.onAvailable(this::invokceCompletionHandlerIfCompleted);
+        delegate.onAvailable(this::invokeCompletionHandlerIfCompleted);
     }
 
     @Override
@@ -65,7 +65,7 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     public Optional<Entry<M>> next() {
         Optional<Entry<M>> next = delegate.next();
         if (next.isEmpty()) {
-            invokceCompletionHandlerIfCompleted();
+            invokeCompletionHandlerIfCompleted();
         }
         return next;
     }
@@ -74,12 +74,12 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     public Optional<Entry<M>> peek() {
         Optional<Entry<M>> peek = delegate.peek();
         if (peek.isEmpty()) {
-            invokceCompletionHandlerIfCompleted();
+            invokeCompletionHandlerIfCompleted();
         }
         return peek;
     }
 
-    private void invokceCompletionHandlerIfCompleted() {
+    private void invokeCompletionHandlerIfCompleted() {
         if (delegate.isCompleted() && delegate.error().isEmpty() && !invoked.getAndSet(true)) {
             completeHandler.run();
         }
@@ -89,13 +89,13 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     public void onAvailable(@Nonnull Runnable callback) {
         delegate.onAvailable(() -> {
             callback.run();
-            invokceCompletionHandlerIfCompleted();
+            invokeCompletionHandlerIfCompleted();
         });
     }
 
     @Override
     public Optional<Throwable> error() {
-        invokceCompletionHandlerIfCompleted();
+        invokeCompletionHandlerIfCompleted();
         return delegate.error();
     }
 
@@ -103,7 +103,7 @@ class CompletionCallbackMessageStream<M extends Message> extends DelegatingMessa
     public boolean hasNextAvailable() {
         boolean b = delegate.hasNextAvailable();
         if (!b && delegate().isCompleted()) {
-            invokceCompletionHandlerIfCompleted();
+            invokeCompletionHandlerIfCompleted();
         }
         return b;
     }
