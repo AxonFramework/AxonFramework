@@ -1443,7 +1443,54 @@ out for guidance.
 
 ### Interceptor Configuration
 
-TODO
+The registration process for interceptors changed as well. Previously, components implemented the
+`MessageDispatchInterceptorSupport` or `MessageHandlerInterceptorSupport` interface to support registration of
+interceptors. This allows interceptor registration during runtime, which made it "the" oddball in configuring components
+for Axon Framework. Furthermore, this approach inclined components to be constructor **before** we could register
+interceptors to them. For example, to register a `MessageDispatchInterceptor` to the `CommandBus` in Axon Framework 4,
+you needed to be sure the `CommandBus` was constructed first.
+
+We felt this solution to be suboptimal and not inline with the overall configuration experience in Axon Framework.
+As such, interceptors should now be registered with
+the [ApplicationConfigurer](#applicationconfigurer-and-configuration). As interceptors are a general messaging concern,
+the operations for registration are present on the `MessagingConfigurer`. Down below is a snippet configuring dispatch
+and handler interceptors, both generically and for specific `Message` types:
+
+```java
+public static void main(String[] args) {
+    MessagingConfigurer.create()
+                       .registerMessageHandlerInterceptor(config -> new BeanValidationInterceptor<>()) // 1
+                       .registerEventHandlerInterceptor(config -> new LoggingInterceptor<>()) // 2
+                       .registerDispatchInterceptor(config -> new LoggingInterceptor<>()) // 3
+                       .registerCommandDispatchInterceptor(config -> new BeanValidationInterceptor<>()); // 4
+    // Further configuration...
+}
+```
+
+1. The `BeanValidationInterceptor` is registered as a **generic** `MessageHandlerInterceptor`. Registering a generic
+   handler interceptor this way ensure it is set on **all** message handling components.
+2. The `LoggingInterceptor` is registered as an `EventMessage` **specific** `MessageHandlerInterceptor`. Registering a
+   `Message`-specific `MessageHandlerInterceptor` ensures it is set only for that type. Thus, in this case, the
+   `LoggingInterceptor` will only be configured for event handling, and not command and query handling.
+3. The `LoggingInterceptor` is registered as a **generic** `MessageDispatchInterceptor`. Registering a generic dispatch
+   interceptor this way ensure it is set on **all** message dispatching components.
+4. The `BeanValidationInterceptor` is registered as an `CommandMessage` **specific** `MessageDispatchInterceptor`.
+   Registering a `Message`-specific `MessageDispatchInterceptor` ensures it is set only for that type. Thus, in this
+   case, the `BeanValidationInterceptor` will only be configured for command dispatching, and not event publication and
+   query dispatching.
+
+As shown, there is no need to interact with the specific message dispatching or handling infrastructure components
+anymore to register interceptors.
+If you would still require this, we recommend to use
+the [decorator](#decorating-components-with-the-componentdecorator-interface) support within the configuration API to
+decorate the specific component.
+
+Lastly, if you are in a Spring Boot environment, you can simply provide your interceptors as beans to the Application
+Context.
+Axon Framework will automatically gather them and set them on their respective infrastructure components. The `Message`
+generic specified on the `MessageHandlerInterceptor` and `MessageDispatchInterceptor` will be taken into account in our
+auto-configuration, ensuring (e.g.) that `MessageDispatchInterceptor<QueryMessage>` beans are **only** used for query
+dispatching components.  
 
 Minor API Changes
 =================
