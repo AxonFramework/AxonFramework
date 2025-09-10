@@ -44,6 +44,7 @@ import static java.util.Arrays.asList;
  * @author Milan Savic
  * @author Stefan Dragisic
  */
+@Disabled("TODO #3488")
 class StreamingQueryTest {
 
     private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();

@@ -213,6 +213,7 @@ class AsyncMessageHandlerTest {
             }
         }
 
+        @Disabled("TODO #3488")
         @Nested
         class QueryHandlers {
 

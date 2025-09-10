@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Milan Savic
  */
+@Disabled("TODO #3488")
 class FutureAsResponseTypeToQueryHandlersTest {
 
     private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {

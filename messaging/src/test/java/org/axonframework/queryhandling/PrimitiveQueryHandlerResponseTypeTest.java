@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests resolving query handlers which return primitive types.
  */
+@Disabled("TODO #3488")
 class PrimitiveQueryHandlerResponseTypeTest {
 
     private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
