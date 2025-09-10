@@ -44,7 +44,7 @@ public class ReplayToken implements TrackingToken, WrappedToken {
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
     private final TrackingToken currentToken;
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
-    private final Object context;
+    private final Object context; // add business name to be able to deserialize it, MessageType?
     private final transient boolean lastMessageWasReplay;
 
     /**
