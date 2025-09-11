@@ -64,9 +64,9 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     /**
-     * Creates a new stub {@link ProcessingContext} with the given {@link ApplicationContext}. You can use this to create
-     * a context compatible with most of the framework. Do note that this context does not commit or advance phases on
-     * its own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
+     * Creates a new stub {@link ProcessingContext} with the given {@link ApplicationContext}. You can use this to
+     * create a context compatible with most of the framework. Do note that this context does not commit or advance
+     * phases on its own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
      *
      * @param applicationContext The application context to use for this processing context.
      */
@@ -194,16 +194,21 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     /**
+     * Creates a new stub {@link ProcessingContext} for the given {@link DomainEventMessage}. You can use this to create
+     * a context compatible with tests that are based on Aggregates.
      *
-     * @param domainEventMessage
-     * @return
+     * @param domainEventMessage The event message with aggregate id, sequence and type.
+     * @return A new {@link ProcessingContext} instance containing the given {@code domainEventMessage} aggregate data
+     * as resources.
      */
     @Deprecated
     public static ProcessingContext forMessage(DomainEventMessage domainEventMessage) {
         return Message.addToContext(new StubProcessingContext(), domainEventMessage)
-                .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, domainEventMessage.getAggregateIdentifier())
-                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, domainEventMessage.getSequenceNumber())
-                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, domainEventMessage.getType());
+                      .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY,
+                                    domainEventMessage.getAggregateIdentifier())
+                      .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
+                                    domainEventMessage.getSequenceNumber())
+                      .withResource(LegacyResources.AGGREGATE_TYPE_KEY, domainEventMessage.getType());
     }
 
     /**
@@ -219,9 +224,9 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     /**
-     * Creates a new stub {@link ProcessingContext} with the given {@code component}. You can use this to
-     * create a context compatible with most of the framework. Do note that this context does not commit or advance
-     * phases on its own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
+     * Creates a new stub {@link ProcessingContext} with the given {@code component}. You can use this to create a
+     * context compatible with most of the framework. Do note that this context does not commit or advance phases on its
+     * own, but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
      *
      * @param type     The type of the component to register.
      * @param instance The instance of the component to register.
@@ -262,9 +267,9 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     /**
-     * Add given {@code message} to the {@link ProcessingContext}. You can use this to create a context
-     * compatible with most of the framework. Do note that this context does not commit or advance phases on its own,
-     * but you can use {@link #moveToPhase(Phase)} to advance the context to a specific phase.
+     * Add given {@code message} to the {@link ProcessingContext}. You can use this to create a context compatible with
+     * most of the framework. Do note that this context does not commit or advance phases on its own, but you can use
+     * {@link #moveToPhase(Phase)} to advance the context to a specific phase.
      *
      * @param message The message to add to the context.
      * @return A new {@link ProcessingContext} instance containing the given {@code message} as a resource.

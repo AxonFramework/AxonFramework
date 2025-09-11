@@ -189,9 +189,9 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        EventMessage eventMessageOne = createDomainEvent("foo", 2);
-        EventMessage eventMessageTwo = createDomainEvent("bar", 2);
-        EventMessage eventMessageThree = createDomainEvent("foo", 3);
+        DomainEventMessage eventMessageOne = createDomainEvent("foo", 2);
+        DomainEventMessage eventMessageTwo = createDomainEvent("bar", 2);
+        DomainEventMessage eventMessageThree = createDomainEvent("foo", 3);
 
         testSubject.handle(eventMessageOne, StubProcessingContext.forMessage(eventMessageOne), Segment.ROOT_SEGMENT);
         testSubject.handle(eventMessageTwo, StubProcessingContext.forMessage(eventMessageTwo), Segment.ROOT_SEGMENT);
