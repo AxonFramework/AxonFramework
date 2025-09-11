@@ -21,7 +21,6 @@ import org.axonframework.metrics.GlobalMetricRegistry;
 import org.axonframework.metrics.MetricsConfigurerModule;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration
 @EnableAutoConfiguration(exclude = {
         AxonServerAutoConfiguration.class,
-        AxonServerBusAutoConfiguration.class,
         AxonServerActuatorAutoConfiguration.class,
         DataSourceAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,

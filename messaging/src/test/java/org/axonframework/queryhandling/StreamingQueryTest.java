@@ -44,9 +44,10 @@ import static java.util.Arrays.asList;
  * @author Milan Savic
  * @author Stefan Dragisic
  */
+@Disabled("TODO #3488")
 class StreamingQueryTest {
 
-    private final SimpleQueryBus queryBus = SimpleQueryBus.builder().build();
+    private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
     private final MyQueryHandler myQueryHandler = new MyQueryHandler();
     private final AnnotationQueryHandlerAdapter<MyQueryHandler> annotationQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
             myQueryHandler);

@@ -16,42 +16,37 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Registration;
-import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.QualifiedName;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.concurrent.Queues;
 
-import java.lang.reflect.Type;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
- * The mechanism that dispatches Query objects to their appropriate QueryHandlers. QueryHandlers can subscribe and
- * un-subscribe to specific queries (identified by their {@link QueryMessage#getQueryName()} and {@link
- * QueryMessage#responseType()} on the query bus. There may be multiple handlers for each combination of
- * queryName/responseType.
+ * The mechanism that dispatches {@link QueryMessage queries} to their appropriate {@link QueryHandler query handler}.
+ * <p>
+ * Query handlers can {@link #subscribe(QueryHandlerName, QueryHandler) subscribed} to the query bus to handle queries
+ * matching the {@link QueryHandlerName#queryName()} and {@link QueryHandlerName#responseName()}. Matching is done based
+ * on the {@link QualifiedName} present in the {@link QueryMessage#type() query's type} and the {@code QualifiedName}
+ * resulting from the {@link QueryMessage#responseType() response type}.
+ * <p>
+ * Hence, queries dispatched (through either {@link #query(QueryMessage)},
+ * {@link #streamingQuery(StreamingQueryMessage)}, {@link #scatterGather(QueryMessage, long, TimeUnit)}, and
+ * {@link #subscriptionQuery(SubscriptionQueryMessage)}) match a subscribed query handler based on "query name" and
+ * "query response name."
+ * <p>
+ * There may be multiple handlers for each query- and response-name combination.
  *
  * @author Marc Gathier
  * @author Allard Buijze
  * @since 3.1
  */
-public interface QueryBus {
-
-    /**
-     * Subscribe the given {@code handler} to queries with the given {@code queryName} and {@code responseType}.
-     * Multiple handlers may subscribe to the same combination of queryName/responseType.
-     *
-     * @param queryName    the name of the query request to subscribe
-     * @param responseType the type of response the subscribed component answers with
-     * @param handler      a handler that implements the query
-     * @return a handle to un-subscribe the query handler
-     */
-    Registration subscribe(@Nonnull String queryName, @Nonnull Type responseType,
-                           @Nonnull MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> handler);
+public interface QueryBus extends QueryHandlerRegistry<QueryBus> {
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s queryName and
