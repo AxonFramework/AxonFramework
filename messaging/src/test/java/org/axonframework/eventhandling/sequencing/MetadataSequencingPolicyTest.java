@@ -28,38 +28,37 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link MetaDataSequencingPolicy}.
+ * Test class validating the {@link MetadataSequencingPolicy}.
  *
  * @author Lucas Campos
  */
-@DisplayName("Unit-Test for the MetaDataSequencingPolicy")
-public class MetaDataSequencingPolicyTest {
+public class MetadataSequencingPolicyTest {
 
     @Test
     void propertyShouldReadCorrectValue() {
-        final MetaDataSequencingPolicy metaDataPolicy = new MetaDataSequencingPolicy("metaDataKey");
+        final MetadataSequencingPolicy metadataPolicy = new MetadataSequencingPolicy("metadataKey");
 
-        EventMessage testEvent = EventTestUtils.asEventMessage("42").withMetaData(Map.of("metaDataKey", "metaDataValue"));
+        EventMessage testEvent = EventTestUtils.asEventMessage("42").withMetadata(Map.of("metadataKey", "metadataValue"));
 
-        assertThat(metaDataPolicy.getSequenceIdentifierFor(testEvent, new StubProcessingContext())).contains("metaDataValue");
+        assertThat(metadataPolicy.getSequenceIdentifierFor(testEvent, new StubProcessingContext())).contains("metadataValue");
     }
 
     @Test
-    void fallbackShouldBeAppliedWhenMetaDataDoesNotContainsTheKey() {
-        final MetaDataSequencingPolicy metaDataPolicy = new MetaDataSequencingPolicy("metaDataKey");
+    void fallbackShouldBeAppliedWhenMetadataDoesNotContainsTheKey() {
+        final MetadataSequencingPolicy metadataPolicy = new MetadataSequencingPolicy("metadataKey");
 
-        assertThat(metaDataPolicy.getSequenceIdentifierFor(EventTestUtils.asEventMessage("42"), new StubProcessingContext())).isPresent();
+        assertThat(metadataPolicy.getSequenceIdentifierFor(EventTestUtils.asEventMessage("42"), new StubProcessingContext())).isPresent();
     }
 
     @Test
-    void nullMetaDataKeyShouldThrowException() {
+    void nullMetadataKeyShouldThrowException() {
         assertThrows(AxonConfigurationException.class,
-                     () -> new MetaDataSequencingPolicy(null));
+                     () -> new MetadataSequencingPolicy(null));
     }
 
     @Test
-    void blankMetaDataKeyShouldThrowException() {
+    void blankMetadataKeyShouldThrowException() {
         assertThrows(AxonConfigurationException.class,
-                     () -> new MetaDataSequencingPolicy("   "));
+                     () -> new MetadataSequencingPolicy("   "));
     }
 }

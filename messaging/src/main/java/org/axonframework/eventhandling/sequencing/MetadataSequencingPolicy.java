@@ -27,34 +27,34 @@ import static org.axonframework.common.BuilderUtils.*;
 
 /**
  * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the {@link EventMessage}'s
- * {@link org.axonframework.messaging.MetaData}, based on a given {@code metaDataKey}. In the absence of the given
- * {@code metaDataKey} on the {@link org.axonframework.messaging.MetaData}, the {@link EventMessage#identifier()} is
+ * {@link org.axonframework.messaging.Metadata}, based on a given {@code metadataKey}. In the absence of the given
+ * {@code metadataKey} on the {@link org.axonframework.messaging.Metadata}, the {@link EventMessage#identifier()} is
  * used.
  *
  * @author Lucas Campos
  * @since 4.6.0
  */
-public class MetaDataSequencingPolicy implements SequencingPolicy {
+public class MetadataSequencingPolicy implements SequencingPolicy {
 
-    private final String metaDataKey;
+    private final String metadataKey;
 
     /**
-     * Instantiate a {@link MetaDataSequencingPolicy}.
+     * Instantiate a {@link MetadataSequencingPolicy}.
      * <p>
-     * Will assert that the {@code metaDataKey} is not {@code null} and will throw an {@link AxonConfigurationException}
+     * Will assert that the {@code metadataKey} is not {@code null} and will throw an {@link AxonConfigurationException}
      * if this is the case.
      *
-     * @param metaDataKey The key to be used as a lookup for the property to be used as the Sequence Policy.
+     * @param metadataKey The key to be used as a lookup for the property to be used as the Sequence Policy.
      */
-    public MetaDataSequencingPolicy(@Nonnull String metaDataKey) {
-        this.metaDataKey =  assertNonBlank(metaDataKey, "MetaDataKey value may not be null or blank.");;
+    public MetadataSequencingPolicy(@Nonnull String metadataKey) {
+        this.metadataKey =  assertNonBlank(metadataKey, "MetadataKey value may not be null or blank.");;
     }
 
     @Override
     public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         return Optional.ofNullable(
-                event.metaData()
-                     .getOrDefault(metaDataKey, event.identifier())
+                event.metadata()
+                     .getOrDefault(metadataKey, event.identifier())
         );
     }
 }
