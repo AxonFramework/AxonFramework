@@ -19,8 +19,8 @@ package org.axonframework.messaging.annotation;
 import java.lang.annotation.*;
 
 /**
- * Annotation that indicates the parameter needs to be resolved to the value of the Message MetaData stored under the
- * given {@code key}. If {@code required}, and no such MetaData value is available, the handler will not be
+ * Annotation that indicates the parameter needs to be resolved to the value of the Message Metadata stored under the
+ * given {@code key}. If {@code required}, and no such Metadata value is available, the handler will not be
  * invoked.
  *
  * @author Allard Buijze
@@ -29,15 +29,15 @@ import java.lang.annotation.*;
 @Documented
 @Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface MetaDataValue {
+public @interface MetadataValue {
 
     /**
-     * The key of the MetaData field to inject as method parameter.
+     * The key of the Metadata field to inject as method parameter.
      */
     String value();
 
     /**
-     * Indicates whether the MetaData must be available in order for the Message handler method to be invoked. Defaults
+     * Indicates whether the Metadata must be available in order for the Message handler method to be invoked. Defaults
      * to {@code false}, in which case {@code null} is injected as parameter.
      * <p/>
      * Note that if the annotated parameter is a primitive type, the required property will always be

@@ -37,12 +37,12 @@ public class GenericDomainEventEntry<T> extends AbstractDomainEventEntry<T> {
      * @param payloadType         The fully qualified class name or alias of the event payload
      * @param payloadRevision     The revision of the event payload
      * @param payload             The serialized payload
-     * @param metaData            The serialized metadata
+     * @param metadata            The serialized metadata
      */
     public GenericDomainEventEntry(String type, String aggregateIdentifier, long sequenceNumber, String eventIdentifier,
                                    Object timestamp, String payloadType, String payloadRevision, T payload,
-                                   T metaData) {
+                                   T metadata) {
         super(type, aggregateIdentifier, sequenceNumber, eventIdentifier, timestamp, payloadType, payloadRevision,
-              payload, metaData);
+              payload, metadata);
     }
 }

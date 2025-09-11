@@ -25,7 +25,7 @@ import io.axoniq.axonserver.grpc.command.CommandResponse;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.MetaDataConverter;
+import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
@@ -46,7 +46,7 @@ import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.axonserver.connector.MetaDataConverter.convertMetaDataValuesToGrpc;
+import static org.axonframework.axonserver.connector.MetadataConverter.convertMetadataValuesToGrpc;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.createProcessingInstruction;
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.priority;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -109,7 +109,7 @@ public class CommandConverter {
                       .setComponentName(componentName)
                       .setMessageIdentifier(command.identifier())
                       .setName(command.type().name())
-                      .putAllMetaData(MetaDataConverter.convertGrpcToMetaDataValues(command.metaData()))
+                      .putAllMetaData(MetadataConverter.convertGrpcToMetadataValues(command.metadata()))
                       .setPayload(SerializedObject.newBuilder()
                                                   .setData(ByteString.copyFrom(payloadAsBytes))
                                                   .setType(command.type().name())
@@ -160,7 +160,7 @@ public class CommandConverter {
 
         MessageType messageType = new MessageType(commandResponse.getPayload().getType(),
                                                   commandResponse.getPayload().getRevision());
-        Map<String, String> metadata = convertMetaDataValuesToGrpc(commandResponse.getMetaDataMap());
+        Map<String, String> metadata = convertMetadataValuesToGrpc(commandResponse.getMetaDataMap());
         return CompletableFuture.completedFuture(new GenericCommandResultMessage<>(new GenericMessage(
                 commandResponse.getMessageIdentifier(),
                 messageType,
@@ -198,7 +198,7 @@ public class CommandConverter {
                         command.getMessageIdentifier(),
                         new MessageType(commandPayload.getType(), commandPayload.getRevision()),
                         commandPayload.getData().toByteArray(),
-                        convertMetaDataValuesToGrpc(command.getMetaDataMap())
+                        convertMetadataValuesToGrpc(command.getMetaDataMap())
                 ),
                 routingKey,
                 priority
@@ -231,7 +231,7 @@ public class CommandConverter {
         CommandResponse.Builder responseBuilder =
                 CommandResponse.newBuilder()
                                .setMessageIdentifier(messageId)
-                               .putAllMetaData(MetaDataConverter.convertGrpcToMetaDataValues(resultMessage.metaData()))
+                               .putAllMetaData(MetadataConverter.convertGrpcToMetadataValues(resultMessage.metadata()))
                                .setRequestIdentifier(requestIdentifier);
 
         if (payload != null && !(payload instanceof byte[])) {

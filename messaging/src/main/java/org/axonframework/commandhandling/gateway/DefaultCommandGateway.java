@@ -25,7 +25,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -94,7 +94,7 @@ public class DefaultCommandGateway implements CommandGateway {
     @Override
     public CommandResult send(@Nonnull Object command,
                               @Nullable ProcessingContext context) {
-        CommandMessage commandMessage = asCommandMessage(command, MetaData.emptyInstance());
+        CommandMessage commandMessage = asCommandMessage(command, Metadata.emptyInstance());
         return new FutureCommandResult(
                 commandBus.dispatch(commandMessage, context)
                           .thenCompose(
@@ -107,9 +107,9 @@ public class DefaultCommandGateway implements CommandGateway {
 
     @Override
     public CommandResult send(@Nonnull Object command,
-                              @Nonnull MetaData metaData,
+                              @Nonnull Metadata metadata,
                               @Nullable ProcessingContext context) {
-        CommandMessage commandMessage = asCommandMessage(command, metaData);
+        CommandMessage commandMessage = asCommandMessage(command, metadata);
         return new FutureCommandResult(
                 commandBus.dispatch(commandMessage, context)
                           .thenCompose(
@@ -123,27 +123,27 @@ public class DefaultCommandGateway implements CommandGateway {
     /**
      * Returns the given command as a {@link CommandMessage}. If {@code command} already implements
      * {@code CommandMessage}, it is returned as-is. When the {@code command} is another implementation of
-     * {@link Message}, the {@link Message#payload()} and {@link Message#metaData()} are used as input for a new
+     * {@link Message}, the {@link Message#payload()} and {@link Message#metadata()} are used as input for a new
      * {@link GenericCommandMessage}. Otherwise, the given {@code command} is wrapped into a
      * {@code GenericCommandMessage} as its payload.
      *
      * @param command The command to wrap as {@link CommandMessage}.
      * @return A {@link CommandMessage} containing given {@code command} as payload, a {@code command} if it already
      * implements {@code CommandMessage}, or a {@code CommandMessage} based on the result of {@link Message#payload()}
-     * and {@link Message#metaData()} for other {@link Message} implementations.
+     * and {@link Message#metadata()} for other {@link Message} implementations.
      */
-    private CommandMessage asCommandMessage(Object command, MetaData metaData) {
-        CommandMessage commandMessage = createCommandMessage(command, metaData);
+    private CommandMessage asCommandMessage(Object command, Metadata metadata) {
+        CommandMessage commandMessage = createCommandMessage(command, metadata);
         return enrichCommandMessage(commandMessage);
     }
 
-    private CommandMessage createCommandMessage(Object command, MetaData metaData) {
+    private CommandMessage createCommandMessage(Object command, Metadata metadata) {
         if (command instanceof CommandMessage) {
             return (CommandMessage) command;
         }
         return command instanceof Message message
-                ? new GenericCommandMessage(message.type(), message.payload(), message.metaData())
-                : new GenericCommandMessage(messageTypeResolver.resolveOrThrow(command), command, metaData);
+                ? new GenericCommandMessage(message.type(), message.payload(), message.metadata())
+                : new GenericCommandMessage(messageTypeResolver.resolveOrThrow(command), command, metadata);
     }
 
     private CommandMessage enrichCommandMessage(CommandMessage commandMessage) {

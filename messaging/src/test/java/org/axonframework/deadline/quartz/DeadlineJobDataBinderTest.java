@@ -21,7 +21,7 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.TestScopeDescriptor;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -48,7 +48,7 @@ class DeadlineJobDataBinderTest {
     private static final String TEST_DEADLINE_PAYLOAD = "deadline-payload";
 
     private final DeadlineMessage testDeadlineMessage;
-    private final MetaData testMetaData;
+    private final Metadata testMetadata;
     private final ScopeDescriptor testDeadlineScope;
 
     public DeadlineJobDataBinderTest() {
@@ -58,8 +58,8 @@ class DeadlineJobDataBinderTest {
                         new GenericMessage(new MessageType(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
                         Instant::now
                 );
-        testMetaData = MetaData.with("some-key", "some-value");
-        this.testDeadlineMessage = testDeadlineMessage.withMetaData(testMetaData);
+        testMetadata = Metadata.with("some-key", "some-value");
+        this.testDeadlineMessage = testDeadlineMessage.withMetadata(testMetadata);
         testDeadlineScope = new TestScopeDescriptor("aggregate-type", "aggregate-identifier");
     }
 
@@ -96,7 +96,7 @@ class DeadlineJobDataBinderTest {
         assertEquals(testDeadlineScope.getClass().getName(), result.get(SERIALIZED_DEADLINE_SCOPE_CLASS_NAME));
 
         verify(serializer).serialize(TEST_DEADLINE_PAYLOAD, byte[].class);
-        verify(serializer).serialize(testMetaData, byte[].class);
+        verify(serializer).serialize(testMetadata, byte[].class);
         verify(serializer).serialize(testDeadlineScope, byte[].class);
     }
 
@@ -116,7 +116,7 @@ class DeadlineJobDataBinderTest {
         assertEquals(testDeadlineMessage.timestamp(), result.timestamp());
         assertEquals(testDeadlineMessage.payload(), result.payload());
         assertEquals(testDeadlineMessage.payloadType(), result.payloadType());
-        assertEquals(testDeadlineMessage.metaData(), result.metaData());
+        assertEquals(testDeadlineMessage.metadata(), result.metadata());
 
         verify(serializer, times(2))
                 .deserialize(argThat(new DeadlineMessageSerializedObjectMatcher(expectedSerializedClassType, revisionMatcher)));
@@ -137,12 +137,12 @@ class DeadlineJobDataBinderTest {
 
             SerializedType type = serializedObject.getType();
             String serializedTypeName = type.getName();
-            boolean isSerializedMetaData = serializedTypeName.equals(MetaData.class.getName());
+            boolean isSerializedMetadata = serializedTypeName.equals(Metadata.class.getName());
 
             return serializedObject.getData() != null &&
                     serializedObject.getContentType().equals(byte[].class) &&
-                    (serializedTypeName.equals(expectedSerializedPayloadType) || isSerializedMetaData) &&
-                    (isSerializedMetaData || revisionMatcher.test(type.getRevision()));
+                    (serializedTypeName.equals(expectedSerializedPayloadType) || isSerializedMetadata) &&
+                    (isSerializedMetadata || revisionMatcher.test(type.getRevision()));
         }
     }
 

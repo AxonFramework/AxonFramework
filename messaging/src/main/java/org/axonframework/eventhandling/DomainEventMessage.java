@@ -58,28 +58,28 @@ public interface DomainEventMessage extends EventMessage {
     String getType();
 
     /**
-     * Returns a copy of this DomainEventMessage with the given {@code metaData}. The payload,
+     * Returns a copy of this DomainEventMessage with the given {@code metadata}. The payload,
      * {@link #timestamp() Timestamp} and {@link #identifier() EventIdentifier}, as well as the
      * {@link #getAggregateIdentifier() Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain
      * unchanged.
      *
-     * @param metaData The new MetaData for the Message
-     * @return a copy of this message with the given MetaData
+     * @param metadata The new Metadata for the Message
+     * @return a copy of this message with the given Metadata
      */
     @Override
     @Nonnull
-    DomainEventMessage withMetaData(@Nonnull Map<String, String> metaData);
+    DomainEventMessage withMetadata(@Nonnull Map<String, String> metadata);
 
     /**
-     * Returns a copy of this DomainEventMessage with its MetaData merged with the given {@code metaData}. The payload,
+     * Returns a copy of this DomainEventMessage with its Metadata merged with the given {@code metadata}. The payload,
      * {@link #timestamp() Timestamp} and {@link #identifier() EventIdentifier}, as well as the {@link
      * #getAggregateIdentifier() Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain
      * unchanged.
      *
-     * @param metaData The MetaData to merge with
-     * @return a copy of this message with the given MetaData
+     * @param metadata The Metadata to merge with
+     * @return a copy of this message with the given Metadata
      */
     @Override
     @Nonnull
-    DomainEventMessage andMetaData(@Nonnull Map<String, String> metaData);
+    DomainEventMessage andMetadata(@Nonnull Map<String, String> metadata);
 }

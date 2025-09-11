@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector.util;
 
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.MetaDataValue;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -39,7 +39,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @since 4.0
  */
-public class GrpcMetaDataConverter {
+public class GrpcMetadataConverter {
 
     private final Serializer serializer;
 
@@ -48,7 +48,7 @@ public class GrpcMetaDataConverter {
      *
      * @param serializer the {@link Serializer} to serialize objects with
      */
-    public GrpcMetaDataConverter(Serializer serializer) {
+    public GrpcMetadataConverter(Serializer serializer) {
         this.serializer = serializer;
     }
 
@@ -66,7 +66,7 @@ public class GrpcMetaDataConverter {
      * @param value the {@link Object} to convert into a {@link MetaDataValue}
      * @return a {@link MetaDataValue} representing the given {@code value}
      */
-    public MetaDataValue convertToMetaDataValue(Object value) {
+    public MetaDataValue convertToMetadataValue(Object value) {
         MetaDataValue.Builder builder = MetaDataValue.newBuilder();
 
         if (value instanceof CharSequence) {
@@ -98,26 +98,26 @@ public class GrpcMetaDataConverter {
      * Convert the given {@link Map} of {@link MetaDataValue}s to a Map containing the Java representations of each of
      * those values.
      * <p>
-     * See {@link #convertToMetaDataValue(Object)} for details about the mapping.
+     * See {@link #convertToMetadataValue(Object)} for details about the mapping.
      *
-     * @param metaDataMap a {@link Map} containing {@link MetaDataValue} representations of each {@link MetaData} key
-     * @return a {@link MetaData} map containing the same keys, referencing to the Java representation of each
+     * @param metaDataMap a {@link Map} containing {@link MetaDataValue} representations of each {@link Metadata} key
+     * @return a {@link Metadata} map containing the same keys, referencing to the Java representation of each
      * corresponding value in the given {@code metaDataMap}
      */
-    public MetaData convert(Map<String, MetaDataValue> metaDataMap) {
+    public Metadata convert(Map<String, MetaDataValue> metaDataMap) {
         if (metaDataMap.isEmpty()) {
-            return MetaData.emptyInstance();
+            return Metadata.emptyInstance();
         }
 
         Map<String, String> metaData = new HashMap<>(metaDataMap.size());
         metaDataMap.forEach((k, v) -> metaData.put(k, convertFromMetaDataValue(v)));
-        return MetaData.from(metaData);
+        return Metadata.from(metaData);
     }
 
     /**
      * Convert the given {@link MetaDataValue} to its Java representation.
      * <p>
-     * See {@link #convertToMetaDataValue(Object)} for details about the mapping.
+     * See {@link #convertToMetadataValue(Object)} for details about the mapping.
      *
      * @param value the {@link MetaDataValue} to convert to its Java representation
      * @return an {@link Object} representing the same value
@@ -145,10 +145,10 @@ public class GrpcMetaDataConverter {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof GrpcMetaDataConverter)) {
+        if (!(o instanceof GrpcMetadataConverter)) {
             return false;
         }
-        GrpcMetaDataConverter that = (GrpcMetaDataConverter) o;
+        GrpcMetadataConverter that = (GrpcMetadataConverter) o;
         return serializer.equals(that.serializer);
     }
 

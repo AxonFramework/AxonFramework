@@ -31,7 +31,7 @@ import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
@@ -232,7 +232,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
                                  taggedEventMessage(
                                          "event-0",
                                          TEST_AGGREGATE_TAGS,
-                                         MetaData.with("key1", "value1")
+                                         Metadata.with("key1", "value1")
                                                  .and("key2", "true")
                                                  .and("key3", "44")
                                  )
@@ -565,7 +565,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         assertEquals(expected.payload(), convertPayload(actual).payload());
         assertEquals(expected.identifier(), actual.identifier());
         assertEquals(expected.timestamp().toEpochMilli(), actual.timestamp().toEpochMilli());
-        assertEquals(expected.metaData(), actual.metaData());
+        assertEquals(expected.metadata(), actual.metadata());
     }
 
     protected abstract EventMessage convertPayload(EventMessage original);
@@ -576,12 +576,12 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
     }
 
     protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags) {
-        return taggedEventMessage(payload, tags, MetaData.emptyInstance());
+        return taggedEventMessage(payload, tags, Metadata.emptyInstance());
     }
 
-    protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags, MetaData metaData) {
+    protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags, Metadata metadata) {
         return new GenericTaggedEventMessage<>(
-                new GenericEventMessage(new MessageType("event"), payload, metaData),
+                new GenericEventMessage(new MessageType("event"), payload, metadata),
                 tags
         );
     }

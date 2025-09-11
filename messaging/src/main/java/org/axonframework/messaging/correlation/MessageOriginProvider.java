@@ -24,41 +24,29 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * {@code CorrelationDataProvider} that provides the {@link Message#identifier() identifier} of a {@link Message} to
- * other messages that are created as result of processing the first message.
+ * A {@code CorrelationDataProvider} implementation that provides the {@link Message#identifier() identifier} of a
+ * {@link Message} to other {@code Messages} that are created as result of processing the given {@code message}.
  *
  * @author Rene de Waele
  * @since 3.0.0
  */
 public class MessageOriginProvider implements CorrelationDataProvider {
 
-    private static final String DEFAULT_CORRELATION_KEY = "correlationId";
-    private static final String DEFAULT_TRACE_KEY = "traceId";
-
     /**
-     * Returns the default metadata key for the correlation id of a message.
-     *
-     * @return the default metadata key for the correlation id
+     * The default {@link Message#metaData() metadata} key for the correlation identifier of a {@link Message}.
      */
-    public static String getDefaultCorrelationKey() {
-        return DEFAULT_CORRELATION_KEY;
-    }
-
+    public static final String DEFAULT_CORRELATION_KEY = "correlationId";
     /**
-     * Returns the default metadata key for the trace id of a message.
-     *
-     * @return the default metadata key for the trace id
+     * The default {@link Message#metaData() metadata} key for the trace identifier of a {@link Message}.
      */
-    public static String getDefaultTraceKey() {
-        return DEFAULT_TRACE_KEY;
-    }
+    public static final String DEFAULT_TRACE_KEY = "traceId";
 
     private final String correlationKey;
     private final String traceKey;
 
     /**
-     * Initializes a {@code MessageOriginProvider} that uses the default correlation id key:
-     * {@link #getDefaultCorrelationKey()} and trace id key: {@link #getDefaultTraceKey()}.
+     * Initializes a {@code MessageOriginProvider} using the {@link #DEFAULT_CORRELATION_KEY} and
+     * {@link #DEFAULT_TRACE_KEY} as the {@code correlationKey} and {@code traceKey} respectively.
      */
     public MessageOriginProvider() {
         this(DEFAULT_CORRELATION_KEY, DEFAULT_TRACE_KEY);
@@ -67,11 +55,13 @@ public class MessageOriginProvider implements CorrelationDataProvider {
     /**
      * Initializes a {@code MessageOriginProvider} that uses the given {@code correlationKey}.
      *
-     * @param correlationKey the key used to store the identifier of a message in the metadata of a resulting message
-     * @param traceKey       the key used to store the identifier of the original message giving rise to the current
-     *                       message
+     * @param correlationKey The key used to store the identifier of a {@link Message} in the {@link Message#metaData()}
+     *                       of a resulting {@code Message}.
+     * @param traceKey       The key used to store the identifier of the original {@link Message} giving rise to the
+     *                       current {@code Message}.
      */
-    public MessageOriginProvider(@Nonnull String correlationKey, @Nonnull String traceKey) {
+    public MessageOriginProvider(@Nonnull String correlationKey,
+                                 @Nonnull String traceKey) {
         this.correlationKey = Objects.requireNonNull(correlationKey, "Correlation key must not be null.");
         this.traceKey = Objects.requireNonNull(traceKey, "Trace key must not be null.");
     }
@@ -81,7 +71,7 @@ public class MessageOriginProvider implements CorrelationDataProvider {
     public Map<String, String> correlationDataFor(@Nonnull Message message) {
         Map<String, String> result = new HashMap<>();
         result.put(correlationKey, message.identifier());
-        result.put(traceKey, message.metaData().getOrDefault(traceKey, message.identifier()));
+        result.put(traceKey, message.metadata().getOrDefault(traceKey, message.identifier()));
         return result;
     }
 }

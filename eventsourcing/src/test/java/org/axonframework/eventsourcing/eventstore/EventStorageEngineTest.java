@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.junit.jupiter.api.*;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,7 +85,7 @@ public abstract class EventStorageEngineTest {
     @Test
     public void storeAndLoadApplicationEvent() {
         EventMessage testEvent = new GenericEventMessage(
-                new MessageType("event"), "application event", MetaData.with("key", "value")
+                new MessageType("event"), "application event", Metadata.with("key", "value")
         );
         testSubject.appendEvents(testEvent);
         assertEquals(1, testSubject.readEvents(null, false).count());
@@ -93,26 +93,26 @@ public abstract class EventStorageEngineTest {
         assertTrue(optionalFirst.isPresent());
         EventMessage message = optionalFirst.get();
         assertEquals("application event", message.payload());
-        assertEquals(MetaData.with("key", "value"), message.metaData());
+        assertEquals(Metadata.with("key", "value"), message.metadata());
     }
 
     @Test
     public void returnedEventMessageBehavior() {
-        testSubject.appendEvents(createDomainEvent().withMetaData(singletonMap("key", "value")));
-        DomainEventMessage messageWithMetaData = testSubject.readEvents(AGGREGATE).next();
+        testSubject.appendEvents(createDomainEvent().withMetadata(singletonMap("key", "value")));
+        DomainEventMessage messageWithMetadata = testSubject.readEvents(AGGREGATE).next();
 
-        /// we make sure persisted events have the same MetaData alteration logic
-        DomainEventMessage altered = messageWithMetaData.withMetaData(singletonMap("key2", "value"));
-        DomainEventMessage combined = messageWithMetaData.andMetaData(singletonMap("key2", "value"));
-        assertTrue(altered.metaData().containsKey("key2"));
+        /// we make sure persisted events have the same Metadata alteration logic
+        DomainEventMessage altered = messageWithMetadata.withMetadata(singletonMap("key2", "value"));
+        DomainEventMessage combined = messageWithMetadata.andMetadata(singletonMap("key2", "value"));
+        assertTrue(altered.metadata().containsKey("key2"));
         altered.payload();
-        assertFalse(altered.metaData().containsKey("key"));
-        assertTrue(altered.metaData().containsKey("key2"));
-        assertTrue(combined.metaData().containsKey("key"));
-        assertTrue(combined.metaData().containsKey("key2"));
-        assertNotNull(messageWithMetaData.payload());
-        assertNotNull(messageWithMetaData.metaData());
-        assertFalse(messageWithMetaData.metaData().isEmpty());
+        assertFalse(altered.metadata().containsKey("key"));
+        assertTrue(altered.metadata().containsKey("key2"));
+        assertTrue(combined.metadata().containsKey("key"));
+        assertTrue(combined.metadata().containsKey("key2"));
+        assertNotNull(messageWithMetadata.payload());
+        assertNotNull(messageWithMetadata.metadata());
+        assertFalse(messageWithMetadata.metadata().isEmpty());
     }
 
     @Test

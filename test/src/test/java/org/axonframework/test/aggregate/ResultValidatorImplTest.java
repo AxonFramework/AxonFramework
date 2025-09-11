@@ -72,21 +72,21 @@ class ResultValidatorImplTest {
 
     @Test
     void shouldCompareValuesForEquality() {
-        EventMessage expected = actualEvents().iterator().next().andMetaData(singletonMap("key1", "otherValue"));
+        EventMessage expected = actualEvents().iterator().next().andMetadata(singletonMap("key1", "otherValue"));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectEvents(expected));
     }
 
     @Test
     void shouldCompareKeysForEquality() {
-        EventMessage expected = actualEvents().iterator().next().andMetaData(singletonMap("KEY1", "value1"));
+        EventMessage expected = actualEvents().iterator().next().andMetadata(singletonMap("KEY1", "value1"));
 
         assertThrows(AxonAssertionError.class, () -> validator.expectEvents(expected));
     }
 
     @Test
     void shouldSuccessfullyCompareEqualMetadata() {
-        EventMessage expected = actualEvents().iterator().next().andMetaData(singletonMap("key1", "value1"));
+        EventMessage expected = actualEvents().iterator().next().andMetadata(singletonMap("key1", "value1"));
 
         validator.expectEvents(expected);
     }
@@ -347,7 +347,7 @@ class ResultValidatorImplTest {
 
     private List<EventMessage> actualEvents() {
         return singletonList(asEventMessage(new MyEvent("aggregateId", 123))
-                                     .andMetaData(singletonMap("key1", "value1")));
+                                     .andMetadata(singletonMap("key1", "value1")));
     }
 
     private ScheduledDeadlineInfo createDeadline(Instant expiryTime) {

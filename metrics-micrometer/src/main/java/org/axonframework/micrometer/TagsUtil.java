@@ -55,7 +55,7 @@ public class TagsUtil {
     /**
      * The function for creating the Micrometer {@link Tag}s based on the message metadata.
      */
-    public static final Function<Message, Iterable<Tag>> META_DATA_TAGGER_FUNCTION = message -> message
-            .metaData().entrySet().stream().map(it -> Tag.of(it.getKey(), it.getValue().toString()))
+    public static final Function<Message, Iterable<Tag>> METADATA_TAGGER_FUNCTION = message -> message
+            .metadata().entrySet().stream().map(it -> Tag.of(it.getKey(), it.getValue().toString()))
             .collect(Collectors.toList());
 }

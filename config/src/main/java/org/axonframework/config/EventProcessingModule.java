@@ -395,9 +395,6 @@ public class EventProcessingModule
                 .getOrDefault(processorName, defaultEventProcessorBuilder)
                 .build(processorName, configuration, multiEventHandlerInvoker);
 
-        // TODO #3103 - implement differently
-//        addInterceptors(processorName, eventProcessor);
-
         return eventProcessor;
     }
 
@@ -719,10 +716,6 @@ public class EventProcessingModule
     public EventProcessingConfigurer registerHandlerInterceptor(String processorName,
                                                                 Function<LegacyConfiguration, MessageHandlerInterceptor<EventMessage>> interceptorBuilder) {
         Component<EventProcessor> eps = eventProcessors.get(processorName);
-        if (eps != null && eps.isInitialized()) {
-            // TODO #3103 - implement differently
-//            eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
-        }
         this.handlerInterceptorsBuilders.computeIfAbsent(processorName, k -> new ArrayList<>())
                                         .add(interceptorBuilder);
         return this;

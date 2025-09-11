@@ -360,7 +360,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         }
 
         @Override
-        public <P> ApplyMore doApply(P payload, MetaData metaData) {
+        public <P> ApplyMore doApply(P payload, Metadata metadata) {
             return this;
         }
 

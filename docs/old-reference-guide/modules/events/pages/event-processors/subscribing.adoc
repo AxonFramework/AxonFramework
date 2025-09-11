@@ -180,9 +180,9 @@ Usage of the same name will overwrite the existing connection.
 * `initialPosition`: First token to read.
 * `filter`: Filter for events on Axon Server side, use `null` to receive all events.
 
-The `sequencingPolicyParameters` must be set if the sequencing policy is `PropertySequencingPolicy` or `MetaDataSequencingPolicy`.
+The `sequencingPolicyParameters` must be set if the sequencing policy is `PropertySequencingPolicy` or `MetadataSequencingPolicy`.
 
-For the `MetaDataSequencingPolicy`, the `sequencingPolicyParameters` must contain the name of one or more of the event's metadata fields.
+For the `MetadataSequencingPolicy`, the `sequencingPolicyParameters` must contain the name of one or more of the event's metadata fields.
 Events with the same value for these fields are passed in the same segment.
 
 The `PropertySequencingPolicy` requires 4 values in the `sequencingPolicyParameters` list.

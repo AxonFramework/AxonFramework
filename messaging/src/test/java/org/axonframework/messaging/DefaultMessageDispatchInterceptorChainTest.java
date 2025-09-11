@@ -40,10 +40,10 @@ class DefaultMessageDispatchInterceptorChainTest {
     @Test
     void proceedInvokesRegisteredInterceptorsInOrder() {
         MessageDispatchInterceptor<Message> interceptorOne = (message, context, chain) -> chain.proceed(
-                message.andMetaData(Map.of("interceptorOne", "valueOne")), context
+                message.andMetadata(Map.of("interceptorOne", "valueOne")), context
         );
         MessageDispatchInterceptor<Message> interceptorTwo = (message, context, chain) -> chain.proceed(
-                message.andMetaData(Map.of("interceptorTwo", "valueTwo")), context
+                message.andMetadata(Map.of("interceptorTwo", "valueTwo")), context
         );
         DefaultMessageDispatchInterceptorChain<Message> testSubject =
                 new DefaultMessageDispatchInterceptorChain<>(List.of(interceptorOne, interceptorTwo));
@@ -53,7 +53,7 @@ class DefaultMessageDispatchInterceptorChainTest {
         assertThat(resultStream.error()).isNotPresent();
         Optional<? extends MessageStream.Entry<?>> messageEntry = resultStream.next();
         assertThat(messageEntry).isPresent();
-        MetaData resultMetadata = messageEntry.get().message().metaData();
+        Metadata resultMetadata = messageEntry.get().message().metadata();
         assertThat(resultMetadata.size()).isEqualTo(2);
         assertThat(resultMetadata.get("interceptorOne")).isEqualTo("valueOne");
         assertThat(resultMetadata.get("interceptorTwo")).isEqualTo("valueTwo");

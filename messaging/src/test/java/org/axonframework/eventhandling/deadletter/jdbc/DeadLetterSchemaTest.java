@@ -307,26 +307,26 @@ class DeadLetterSchemaTest {
     }
 
     @Test
-    void buildWithMetaDataColumnReturnsConfiguredColumnName() {
+    void buildWithMetadataColumnReturnsConfiguredColumnName() {
         DeadLetterSchema result = DeadLetterSchema.builder()
-                                                  .metaDataColumn(TEST_COLUMN_NAME)
+                                                  .metadataColumn(TEST_COLUMN_NAME)
                                                   .build();
 
-        assertEquals(TEST_COLUMN_NAME, result.metaDataColumn());
+        assertEquals(TEST_COLUMN_NAME, result.metadataColumn());
     }
 
     @Test
-    void buildWithNullMetaDataColumnThrowsAxonConfigurationException() {
+    void buildWithNullMetadataColumnThrowsAxonConfigurationException() {
         DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.metaDataColumn(null));
+        assertThrows(AxonConfigurationException.class, () -> testBuilder.metadataColumn(null));
     }
 
     @Test
-    void buildWithEmptyMetaDataColumnThrowsAxonConfigurationException() {
+    void buildWithEmptyMetadataColumnThrowsAxonConfigurationException() {
         DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.metaDataColumn(""));
+        assertThrows(AxonConfigurationException.class, () -> testBuilder.metadataColumn(""));
     }
 
     @Test

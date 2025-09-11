@@ -28,7 +28,7 @@ import jakarta.annotation.Nonnull;
  * {@link Map}. It's the responsibility the implementing {@link OpenTelemetrySpanFactory} to mutate the message through
  * {@link OpenTelemetrySpanFactory#propagateContext(Message)}.
  * <p>
- * The trace becomes the message's parent span in its{@link org.axonframework.messaging.MetaData}.
+ * The trace becomes the message's parent span in its{@link org.axonframework.messaging.Metadata}.
  *
  * @author Mitchell Herrijgers
  * @since 4.6.0

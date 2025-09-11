@@ -22,7 +22,7 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -52,7 +52,7 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
     private String payload;
     private String payloadClass;
     private String payloadRevision;
-    private String metaData;
+    private String metadata;
 
     DbSchedulerHumanReadableDeadlineDetails() {
         //no-args constructor needed for deserialization
@@ -68,7 +68,7 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
      * @param payload              The {@link String} with the payload. This can be null.
      * @param payloadClass         The {@link String} which tells what the class of the scope payload is.
      * @param payloadRevision      The {@link String} which tells what the revision of the scope payload is.
-     * @param metaData             The {@link String} containing the metadata about the deadline. This can be null.
+     * @param metadata             The {@link String} containing the metadata about the deadline. This can be null.
      */
     @SuppressWarnings("squid:S107")
     DbSchedulerHumanReadableDeadlineDetails(@Nonnull String deadlineName,
@@ -78,7 +78,7 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
                                             @Nullable String payload,
                                             @Nullable String payloadClass,
                                             @Nullable String payloadRevision,
-                                            @Nullable String metaData) {
+                                            @Nullable String metadata) {
         this.deadlineName = deadlineName;
         this.type = type;
         this.scopeDescriptor = scopeDescriptor;
@@ -86,7 +86,7 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
         this.payload = payload;
         this.payloadClass = payloadClass;
         this.payloadRevision = payloadRevision;
-        this.metaData = metaData;
+        this.metadata = metadata;
     }
 
     /**
@@ -107,7 +107,7 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
                                                               @Nonnull Serializer serializer) {
         SerializedObject<String> serializedDescriptor = serializer.serialize(descriptor, String.class);
         SerializedObject<String> serializedPayload = serializer.serialize(message.payload(), String.class);
-        SerializedObject<String> serializedMetaData = serializer.serialize(message.metaData(), String.class);
+        SerializedObject<String> serializedMetadata = serializer.serialize(message.metadata(), String.class);
 
         return new DbSchedulerHumanReadableDeadlineDetails(deadlineName,
                                                            message.type().toString(),
@@ -116,7 +116,7 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
                                                            serializedPayload.getData(),
                                                            serializedPayload.getType().getName(),
                                                            serializedPayload.getType().getRevision(),
-                                                           serializedMetaData.getData());
+                                                           serializedMetadata.getData());
     }
 
     /**
@@ -188,8 +188,8 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
      *
      * @return The {@link String} containing the metadata about the deadline.
      */
-    public String getMetaData() {
-        return metaData;
+    public String getMetadata() {
+        return metadata;
     }
 
     /**
@@ -202,7 +202,7 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
         return new GenericDeadlineMessage(deadlineName,
                                           MessageType.fromString(type),
                                           getDeserializedPayload(serializer),
-                                          getDeserializedMetaData(serializer));
+                                          getDeserializedMetadata(serializer));
     }
 
     private Object getDeserializedPayload(Serializer serializer) {
@@ -211,10 +211,10 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
         return serializer.deserialize(serializedDeadlinePayload);
     }
 
-    private MetaData getDeserializedMetaData(Serializer serializer) {
-        SimpleSerializedObject<String> serializedDeadlineMetaData =
-                new SimpleSerializedObject<>(metaData, String.class, MetaData.class.getName(), null);
-        return serializer.deserialize(serializedDeadlineMetaData);
+    private Metadata getDeserializedMetadata(Serializer serializer) {
+        SimpleSerializedObject<String> serializedDeadlineMetadata =
+                new SimpleSerializedObject<>(metadata, String.class, Metadata.class.getName(), null);
+        return serializer.deserialize(serializedDeadlineMetadata);
     }
 
     /**
@@ -246,7 +246,7 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
                       payload,
                       payloadClass,
                       payloadRevision,
-                      metaData);
+                      metadata);
     }
 
     @Override
@@ -258,7 +258,7 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
                             payload,
                             payloadClass,
                             payloadRevision,
-                            metaData);
+                            metadata);
     }
 
     @Override
@@ -277,6 +277,6 @@ public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
                 Objects.equals(this.payload, other.payload) &&
                 Objects.equals(this.payloadClass, other.payloadClass) &&
                 Objects.equals(this.payloadRevision, other.payloadRevision) &&
-                Objects.equals(this.metaData, other.metaData);
+                Objects.equals(this.metadata, other.metadata);
     }
 }

@@ -94,7 +94,7 @@ public class OpenTelemetrySpanFactory implements SpanFactory {
     public <M extends Message> M propagateContext(M message) {
         HashMap<String, String> additionalMetadataProperties = new HashMap<>();
         textMapPropagator.inject(Context.current(), additionalMetadataProperties, textMapSetter);
-        return (M) message.andMetaData(additionalMetadataProperties);
+        return (M) message.andMetadata(additionalMetadataProperties);
     }
 
     @Override

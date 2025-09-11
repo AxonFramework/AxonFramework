@@ -656,7 +656,7 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
                 resultSet.getString(schema.payloadTypeColumn()),
                 resultSet.getString(schema.payloadRevisionColumn()),
                 readPayload(resultSet, schema.payloadColumn()),
-                readPayload(resultSet, schema.metaDataColumn())
+                readPayload(resultSet, schema.metadataColumn())
         );
 
         // Now that we have the event itself, we can calculate the token.
@@ -697,7 +697,7 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
                                              resultSet.getString(schema.payloadTypeColumn()),
                                              resultSet.getString(schema.payloadRevisionColumn()),
                                              readPayload(resultSet, schema.payloadColumn()),
-                                             readPayload(resultSet, schema.metaDataColumn()));
+                                             readPayload(resultSet, schema.metadataColumn()));
     }
 
     /**
@@ -716,7 +716,7 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
                                              resultSet.getString(schema.payloadTypeColumn()),
                                              resultSet.getString(schema.payloadRevisionColumn()),
                                              readPayload(resultSet, schema.payloadColumn()),
-                                             readPayload(resultSet, schema.metaDataColumn()));
+                                             readPayload(resultSet, schema.metadataColumn()));
     }
 
     /**
@@ -1098,10 +1098,10 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
         }
 
         /**
-         * Sets the {@code dataType} specifying the serialized type of the Event Message's payload and Meta Data.
+         * Sets the {@code dataType} specifying the serialized type of the Event Message's payload and metadata.
          * Defaults to the {@code byte[]} {@link Class}.
          *
-         * @param dataType a {@link Class} specifying the serialized type of the Event Message's payload and Meta Data
+         * @param dataType a {@link Class} specifying the serialized type of the Event Message's payload and metadata
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder dataType(Class<?> dataType) {

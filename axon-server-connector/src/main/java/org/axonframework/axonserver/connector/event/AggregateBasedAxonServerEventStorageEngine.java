@@ -26,7 +26,7 @@ import io.axoniq.axonserver.grpc.event.Event;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import jakarta.annotation.Nonnull;
-import org.axonframework.axonserver.connector.MetaDataConverter;
+import org.axonframework.axonserver.connector.MetadataConverter;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -48,7 +48,7 @@ import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -123,8 +123,8 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
                     builder.setAggregateIdentifier(aggregateIdentifier).setAggregateType(aggregateType)
                            .setAggregateSequenceNumber(nextSequence);
                 }
-                var modifiableMetaDataMap = new HashMap<>(builder.getMetaDataMap());
-                buildMetaData(event.metaData(), modifiableMetaDataMap);
+                var modifiableMetadataMap = new HashMap<>(builder.getMetaDataMap());
+                buildMetadata(event.metadata(), modifiableMetadataMap);
                 Event message = builder.build();
                 tx.appendEvent(message);
             });
@@ -156,8 +156,8 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
         });
     }
 
-    private void buildMetaData(MetaData metaData, Map<String, MetaDataValue> metaDataMap) {
-        metaData.forEach((k, v) -> metaDataMap.put(k, MetaDataValue.newBuilder().setTextValue(v).build()));
+    private void buildMetadata(Metadata metadata, Map<String, MetaDataValue> metadataMap) {
+        metadata.forEach((k, v) -> metadataMap.put(k, MetaDataValue.newBuilder().setTextValue(v).build()));
     }
 
     @Override
@@ -243,13 +243,13 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
                 event.getMessageIdentifier(),
                 new MessageType(payload.getType(), payload.getRevision()),
                 payload.getData().toByteArray(),
-                getMetaData(event.getMetaDataMap()),
+                getMetadata(event.getMetaDataMap()),
                 Instant.ofEpochMilli(event.getTimestamp())
         );
     }
 
-    private MetaData getMetaData(Map<String, MetaDataValue> metaDataMap) {
-        return new MetaData(MetaDataConverter.convertMetaDataValuesToGrpc(metaDataMap));
+    private Metadata getMetadata(Map<String, MetaDataValue> metadataMap) {
+        return new Metadata(MetadataConverter.convertMetadataValuesToGrpc(metadataMap));
     }
 
     @Override

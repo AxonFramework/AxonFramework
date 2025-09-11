@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
@@ -29,7 +29,7 @@ import java.util.Optional;
 
 /**
  * A {@link DeadLetter} that was saved to a JDBC-backed database and reconstructed from it. This object is immutable and
- * should only be changed using the {@link #withCause(Throwable)}, {@link #withDiagnostics(MetaData)} and
+ * should only be changed using the {@link #withCause(Throwable)}, {@link #withDiagnostics(Metadata)} and
  * {@link #markTouched()} functions. These reconstruct a new object with the specified new properties.
  *
  * @param <E> The {@link EventMessage} contained in this {@link DeadLetter}.
@@ -45,7 +45,7 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
     private final Instant enqueuedAt;
     private final Instant lastTouched;
     private final Cause cause;
-    private final MetaData diagnostics;
+    private final Metadata diagnostics;
     private final E message;
 
     /**
@@ -67,7 +67,7 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
                           Instant enqueuedAt,
                           Instant lastTouched,
                           Cause cause,
-                          MetaData diagnostics,
+                          Metadata diagnostics,
                           E message) {
         this.identifier = identifier;
         this.sequenceIndex = index;
@@ -100,7 +100,7 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
     }
 
     @Override
-    public MetaData diagnostics() {
+    public Metadata diagnostics() {
         return diagnostics;
     }
 
@@ -158,7 +158,7 @@ public class JdbcDeadLetter<E extends EventMessage> implements DeadLetter<E> {
     }
 
     @Override
-    public DeadLetter<E> withDiagnostics(MetaData diagnostics) {
+    public DeadLetter<E> withDiagnostics(Metadata diagnostics) {
         return new JdbcDeadLetter<>(identifier,
                                     sequenceIndex,
                                     sequenceIdentifier,

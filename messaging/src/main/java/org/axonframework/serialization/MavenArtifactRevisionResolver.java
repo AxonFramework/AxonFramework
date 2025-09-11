@@ -21,7 +21,7 @@ import org.axonframework.util.MavenArtifactVersionResolver;
 import java.io.IOException;
 
 /**
- * RevisionResolver that uses Maven meta data to retrieve the application version. This application version is used
+ * RevisionResolver that uses Maven metadata to retrieve the application version. This application version is used
  * as event revision.
  * <p/>
  * By default, Maven stores the meta-data in a file called 'pom.properties' in the JAR files under
@@ -35,7 +35,7 @@ public class MavenArtifactRevisionResolver implements RevisionResolver {
     private final String version;
 
     /**
-     * Initialize the RevisionResolver to look for the version in the Meta Data of the artifact with given
+     * Initialize the RevisionResolver to look for the version in the metadata of the artifact with given
      * {@code groupId} and {@code artifactId}.
      * <p/>
      * The class loader that loaded the MavenArtifactRevisionResolver class is used to load the artifact configuration.
@@ -49,7 +49,7 @@ public class MavenArtifactRevisionResolver implements RevisionResolver {
     }
 
     /**
-     * Initialize the RevisionResolver to look for the version in the Meta Data of the artifact with given
+     * Initialize the RevisionResolver to look for the version in the metadata of the artifact with given
      * {@code groupId} and {@code artifactId}.
      *
      * @param groupId     The groupId as defined in the pom.xml file of the module

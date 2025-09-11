@@ -47,11 +47,11 @@ public interface DeadlineMessage extends EventMessage {
 
     @Override
     @Nonnull
-    DeadlineMessage withMetaData(@Nonnull Map<String, String> metaData);
+    DeadlineMessage withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    DeadlineMessage andMetaData(@Nonnull Map<String, String> additionalMetaData);
+    DeadlineMessage andMetadata(@Nonnull Map<String, String> additionalMetadata);
 
     @Override
     @Nonnull

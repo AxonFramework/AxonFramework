@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -85,7 +85,7 @@ public class TaggedEventConverter implements DescribableComponent {
                     .setName(eventMessage.type().name())
                     .setVersion(eventMessage.type().version())
                     .setPayload(convertPayload(eventMessage))
-                    .putAllMetadata(convertMetaData(eventMessage.metaData()))
+                    .putAllMetadata(convertMetadata(eventMessage.metadata()))
                     .build();
     }
 
@@ -94,8 +94,8 @@ public class TaggedEventConverter implements DescribableComponent {
         return bytes == null || bytes.length == 0 ? ByteString.EMPTY : ByteString.copyFrom(bytes);
     }
 
-    private Map<String, String> convertMetaData(MetaData metaData) {
-        return metaData.entrySet()
+    private Map<String, String> convertMetadata(Metadata metadata) {
+        return metadata.entrySet()
                        .stream()
                        .collect(Collectors.toUnmodifiableMap(
                                Map.Entry::getKey,

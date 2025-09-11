@@ -49,7 +49,7 @@ public class GlobalIndexConsistencyMarker extends AbstractConsistencyMarker<Glob
         } else if (consistencyMarker == ConsistencyMarker.ORIGIN) {
             return -1;
         } else if (consistencyMarker == ConsistencyMarker.INFINITY) {
-            return Integer.MAX_VALUE;
+            return Long.MAX_VALUE;
         }
         throw new IllegalArgumentException(consistencyMarker + " is not a global index consistency marker");
     }

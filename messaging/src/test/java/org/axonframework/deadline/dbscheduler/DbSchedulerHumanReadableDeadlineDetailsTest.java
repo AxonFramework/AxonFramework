@@ -25,7 +25,7 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.TestScopeDescriptor;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.TestSerializer;
 import org.junit.jupiter.params.*;
@@ -44,7 +44,7 @@ class DbSchedulerHumanReadableDeadlineDetailsTest {
 
     private static final String TEST_DEADLINE_NAME = "deadline-name";
     private static final String TEST_DEADLINE_PAYLOAD = "deadline-payload";
-    private static final MetaData META_DATA = getMetaData();
+    private static final Metadata METADATA = getMetadata();
     private static final DeadlineMessage MESSAGE = getMessage();
 
     @MethodSource("dbSchedulerSerializers")
@@ -82,7 +82,7 @@ class DbSchedulerHumanReadableDeadlineDetailsTest {
 
         assertNotNull(resultMessage);
         assertEquals(TEST_DEADLINE_PAYLOAD, resultMessage.payload());
-        assertEquals(META_DATA, resultMessage.metaData());
+        assertEquals(METADATA, resultMessage.metadata());
     }
 
     public static Collection<Serializer> dbSchedulerSerializers() {
@@ -99,11 +99,11 @@ class DbSchedulerHumanReadableDeadlineDetailsTest {
         return testSerializerList;
     }
 
-    private static MetaData getMetaData() {
+    private static Metadata getMetadata() {
         Map<String, String> map = new HashMap<>();
         map.put("someStringValue", "foo");
         map.put("someIntValue", "2");
-        return new MetaData(map);
+        return new Metadata(map);
     }
 
     private static DeadlineMessage getMessage() {
@@ -111,6 +111,6 @@ class DbSchedulerHumanReadableDeadlineDetailsTest {
                 TEST_DEADLINE_NAME,
                 new GenericMessage(new MessageType(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
                 Instant::now
-        ).withMetaData(getMetaData());
+        ).withMetadata(getMetadata());
     }
 }

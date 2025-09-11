@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
@@ -156,7 +156,7 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Test
-        void whenCommandWithMetaDataThenSuccessWithTheMetaData() {
+        void whenCommandWithMetadataThenSuccessWithTheMetadata() {
             var configurer = MessagingConfigurer.create();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
@@ -164,14 +164,14 @@ class AxonTestFixtureMessagingTest {
 
             fixture.when()
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"),
-                            MetaData.with("sample", "metaValue"))
+                            Metadata.with("sample", "metaValue"))
                    .then()
                    .success()
                    .resultMessagePayload(new CommandResult("Result name-1", "metaValue"));
         }
 
         @Test
-        void whenCommandWithMetaDataMapThenSuccessWithTheMetaData() {
+        void whenCommandWithMetadataMapThenSuccessWithTheMetadata() {
             var configurer = MessagingConfigurer.create();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
@@ -185,7 +185,7 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Test
-        void whenCommandWithMetaDataMapThenSuccessWithTheMetaDataSatisfies() {
+        void whenCommandWithMetadataMapThenSuccessWithTheMetadataSatisfies() {
             var configurer = MessagingConfigurer.create();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
@@ -683,7 +683,7 @@ class AxonTestFixtureMessagingTest {
                         new QualifiedName(ChangeStudentNameCommand.class),
                         (command, context) -> {
                             ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.payload();
-                            var metadataSample = (String) command.metaData().get("sample");
+                            var metadataSample = command.metadata().get("sample");
                             var eventSink = c.getComponent(EventSink.class);
                             eventSink.publish(context, studentNameChangedEventMessage(payload.id(), payload.name(), 1));
                             var resultMessage = new GenericCommandResultMessage<>(

@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.Converter;
@@ -100,7 +100,7 @@ class PayloadConvertingCommandBusConnectorTest {
         CommandMessage capturedCommand = commandCaptor.getValue();
         assertArrayEquals(CONVERTED_PAYLOAD, (byte[]) capturedCommand.payload());
         assertEquals(originalCommand.type(), capturedCommand.type());
-        assertEquals(originalCommand.metaData(), capturedCommand.metaData());
+        assertEquals(originalCommand.metadata(), capturedCommand.metadata());
     }
 
     @Test
@@ -138,7 +138,7 @@ class PayloadConvertingCommandBusConnectorTest {
         Message convertedMessage = messageCaptor.getValue();
         assertArrayEquals(CONVERTED_PAYLOAD, (byte[]) convertedMessage.payload());
         assertEquals(resultMessage.type(), convertedMessage.type());
-        assertEquals(resultMessage.metaData(), convertedMessage.metaData());
+        assertEquals(resultMessage.metadata(), convertedMessage.metadata());
     }
 
     @Test
@@ -202,9 +202,9 @@ class PayloadConvertingCommandBusConnectorTest {
     @Test
     void preservesCommandMetadataWhenConverting() {
         // Given
-        MetaData originalMetaData = MetaData.with("key", "value");
+        Metadata originalMetadata = Metadata.with("key", "value");
         CommandMessage originalCommand = new GenericCommandMessage(
-                COMMAND_TYPE, ORIGINAL_PAYLOAD, originalMetaData);
+                COMMAND_TYPE, ORIGINAL_PAYLOAD, originalMetadata);
 
         when(mockConverter.convert(ORIGINAL_PAYLOAD, byte[].class)).thenReturn(CONVERTED_PAYLOAD);
         //noinspection unchecked
@@ -220,6 +220,6 @@ class PayloadConvertingCommandBusConnectorTest {
         verify(mockDelegate).dispatch(commandCaptor.capture(), any());
 
         CommandMessage capturedCommand = commandCaptor.getValue();
-        assertEquals(originalMetaData, capturedCommand.metaData());
+        assertEquals(originalMetadata, capturedCommand.metadata());
     }
 }

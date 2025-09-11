@@ -94,7 +94,7 @@ public interface QueryUpdateEmitter {
                         new MessageType(cause.getClass()),
                         cause,
                         resultMessage.payloadType(),
-                        resultMessage.metaData()
+                        resultMessage.metadata()
                 );
             }
             return new GenericSubscriptionQueryUpdateMessage(resultMessage);

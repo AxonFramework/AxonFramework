@@ -108,7 +108,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
 
         assertEquals(1, publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
-        assertTrue(publishedMessage.metaData().isEmpty());
+        assertTrue(publishedMessage.metadata().isEmpty());
     }
 
     @Test
@@ -139,7 +139,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
 
         assertEquals(2, publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
-        assertEquals(metadata, publishedMessage.metaData());
+        assertEquals(metadata, publishedMessage.metadata());
     }
 
     @Test
@@ -154,7 +154,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
 
         assertEquals(new PayloadWithRevision(), publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
-        assertTrue(publishedMessage.metaData().isEmpty());
+        assertTrue(publishedMessage.metadata().isEmpty());
     }
 
     @Test
@@ -174,7 +174,7 @@ abstract class AbstractDbSchedulerEventSchedulerTest {
 
         assertEquals(new PayloadWithRevision(), publishedMessage.payload());
         assertTrue(rightAfterSchedule.isBefore(publishedMessage.timestamp()));
-        assertEquals(metadata, publishedMessage.metaData());
+        assertEquals(metadata, publishedMessage.metadata());
     }
 
     @Test

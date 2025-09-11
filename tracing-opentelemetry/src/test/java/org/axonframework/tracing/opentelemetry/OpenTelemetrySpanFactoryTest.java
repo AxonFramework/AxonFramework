@@ -213,7 +213,7 @@ class OpenTelemetrySpanFactoryTest {
         EventMessage originalMessage = asEventMessage("MyEvent");
         EventMessage modifiedMessage = factory.propagateContext(originalMessage);
 
-        assertNotNull(modifiedMessage.metaData().get("traceparent"));
+        assertNotNull(modifiedMessage.metadata().get("traceparent"));
     }
 
     @Test
@@ -241,6 +241,6 @@ class OpenTelemetrySpanFactoryTest {
     }
 
     private Message generateMessageWithTraceId(String traceId) {
-        return asEventMessage("MyEvent").andMetaData(Collections.singletonMap("traceparent", traceId));
+        return asEventMessage("MyEvent").andMetadata(Collections.singletonMap("traceparent", traceId));
     }
 }

@@ -25,6 +25,8 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
+import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
@@ -169,7 +171,13 @@ class SimpleEventSourcedEntityModuleTest {
     @Test
     void registersAnEntityCommandHandlingComponentWithTheCommandBus() {
         CommandBus commandBus = mock(CommandBus.class);
+        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
+        // This ensures we keep the SimpleCommandBus, from which we can retrieve the subscription for validation.
         EventSourcingConfigurer.create()
+                               .componentRegistry(cr -> cr.registerComponent(
+                                       CorrelationDataProviderRegistry.class,
+                                       c -> new DefaultCorrelationDataProviderRegistry())
+                               )
                                .componentRegistry(cr -> cr.registerModule(testSubject)
                                                           .registerComponent(CommandBus.class, c -> commandBus))
                                .start();

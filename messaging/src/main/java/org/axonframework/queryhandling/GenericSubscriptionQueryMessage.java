@@ -22,7 +22,7 @@ import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.serialization.Converter;
 
@@ -50,7 +50,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      * Constructs a {@code GenericSubscriptionQueryMessage} for the given {@code type}, {@code payload},
      * {@code queryName}, {@code responseType}, and {@code updateResponseType}.
      * <p>
-     * The {@link MetaData} defaults to an empty instance.
+     * The {@link Metadata} defaults to an empty instance.
      *
      * @param type               The {@link MessageType type} for this {@link SubscriptionQueryMessage}.
      * @param payload            The payload of type {@code P} expressing the query for this
@@ -73,7 +73,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      * {@code updateResponseType}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
-     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@link Message#metadata() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -81,7 +81,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
      *
      * @param delegate           The {@link Message} containing {@link Message#payload() payload},
      *                           {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                           {@link Message#metaData() metadata} for the {@link SubscriptionQueryMessage} to
+     *                           {@link Message#metadata() metadata} for the {@link SubscriptionQueryMessage} to
      *                           reconstruct.
      * @param responseType       The expected {@link ResponseType response type} for this
      *                           {@link SubscriptionQueryMessage}.
@@ -103,16 +103,16 @@ public class GenericSubscriptionQueryMessage<P, I, U>
 
     @Override
     @Nonnull
-    public SubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericSubscriptionQueryMessage<>(delegate().withMetaData(metaData),
+    public SubscriptionQueryMessage<P, I, U> withMetadata(@Nonnull Map<String, String> metadata) {
+        return new GenericSubscriptionQueryMessage<>(delegate().withMetadata(metadata),
                                                      (ResponseType<I>)responseType(),
                                                      updateResponseType);
     }
 
     @Override
     @Nonnull
-    public SubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericSubscriptionQueryMessage<>(delegate().andMetaData(metaData),
+    public SubscriptionQueryMessage<P, I, U> andMetadata(@Nonnull Map<String, String> metadata) {
+        return new GenericSubscriptionQueryMessage<>(delegate().andMetadata(metadata),
                                                      (ResponseType<I>)responseType(),
                                                      updateResponseType);
     }
@@ -129,7 +129,7 @@ public class GenericSubscriptionQueryMessage<P, I, U>
         Message converted = new GenericMessage(delegate.identifier(),
                                                     delegate.type(),
                                                     convertedPayload,
-                                                    delegate.metaData());
+                                                    delegate.metadata());
         return new GenericSubscriptionQueryMessage<>(converted, (ResponseType<I>)responseType(), updatesResponseType());
     }
 }

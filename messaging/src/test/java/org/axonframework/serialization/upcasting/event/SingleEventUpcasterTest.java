@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -55,10 +55,10 @@ class SingleEventUpcasterTest {
     @Test
     void upcastsKnownType() {
         String newValue = "newNameValue";
-        MetaData metaData = MetaData.with("key", "value");
+        Metadata metadata = Metadata.with("key", "value");
         DomainEventMessage testEvent = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"),
-                new StubDomainEvent("oldName"), metaData
+                new StubDomainEvent("oldName"), metadata
         );
         EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster(newValue);
@@ -71,7 +71,7 @@ class SingleEventUpcasterTest {
         assertEquals(newValue, upcastedEvent.getName());
         assertEquals(eventData.getEventIdentifier(), firstEvent.getMessageIdentifier());
         assertEquals(eventData.getTimestamp(), firstEvent.getTimestamp());
-        assertEquals(metaData, firstEvent.getMetaData().getObject());
+        assertEquals(metadata, firstEvent.getMetadata().getObject());
     }
 
     @Test
@@ -90,7 +90,7 @@ class SingleEventUpcasterTest {
                                               serializedPayload.getType().getName(),
                                               serializedPayload.getType().getRevision(),
                                               serializedPayload,
-                                              serializer.serialize(MetaData.emptyInstance(), String.class))
+                                              serializer.serialize(Metadata.emptyInstance(), String.class))
         );
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);

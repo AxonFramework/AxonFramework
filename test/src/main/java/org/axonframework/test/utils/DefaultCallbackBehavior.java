@@ -17,7 +17,7 @@
 package org.axonframework.test.utils;
 
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 /**
  * Default implementation of the CallbackBehavior interface. This implementation always returns {@code null}, which
@@ -31,7 +31,7 @@ import org.axonframework.messaging.MetaData;
 public class DefaultCallbackBehavior implements CallbackBehavior {
 
     @Override
-    public Object handle(Object commandPayload, MetaData commandMetaData) {
+    public Object handle(Object commandPayload, Metadata commandMetadata) {
         return null;
     }
 }

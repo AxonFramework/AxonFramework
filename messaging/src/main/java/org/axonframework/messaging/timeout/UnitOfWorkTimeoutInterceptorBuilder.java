@@ -15,7 +15,7 @@
  */
 package org.axonframework.messaging.timeout;
 
-import org.axonframework.deadline.DeadlineMessage;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
@@ -106,15 +106,36 @@ public class UnitOfWorkTimeoutInterceptorBuilder {
         this.logger = logger;
     }
 
+    /**
+     * Constructs a {@link CommandMessage} handler interceptor, to be registered on (e.g.) the
+     * {@link org.axonframework.commandhandling.CommandBus}.
+     *
+     * @return A {@link CommandMessage} handler interceptor, to be registered on (e.g.) the
+     * {@link org.axonframework.commandhandling.CommandBus}.
+     */
+    public MessageHandlerInterceptor<CommandMessage> buildCommandInterceptor() {
+        return build();
+    }
+
+    /**
+     * Constructs a {@link EventMessage} handler interceptor, to be registered on (e.g.) the
+     * {@link org.axonframework.eventhandling.configuration.EventProcessorConfiguration}.
+     *
+     * @return A {@link EventMessage} handler interceptor, to be registered on (e.g.) the
+     * {@link org.axonframework.eventhandling.configuration.EventProcessorConfiguration}.
+     */
     public MessageHandlerInterceptor<EventMessage> buildEventInterceptor() {
         return build();
     }
 
+    /**
+     * Constructs a {@link QueryMessage} handler interceptor, to be registered on (e.g.) the
+     * {@link org.axonframework.queryhandling.QueryBus}.
+     *
+     * @return A {@link QueryMessage} handler interceptor, to be registered on (e.g.) the
+     * {@link org.axonframework.queryhandling.QueryBus}.
+     */
     public MessageHandlerInterceptor<QueryMessage> buildQueryInterceptor() {
-        return build();
-    }
-
-    public MessageHandlerInterceptor<DeadlineMessage> buildDeadlineInterceptor() {
         return build();
     }
 

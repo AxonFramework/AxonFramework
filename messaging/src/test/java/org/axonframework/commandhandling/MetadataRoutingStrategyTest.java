@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -26,30 +26,30 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link MetaDataRoutingStrategy}.
+ * Test class validating the {@link MetadataRoutingStrategy}.
  *
  * @author Steven van Beelen
  */
-class MetaDataRoutingStrategyTest {
+class MetadataRoutingStrategyTest {
 
-    private static final String META_DATA_KEY = "some-metadata-key";
+    private static final String METADATA_KEY = "some-metadata-key";
     private static final MessageType TEST_NAME = new MessageType("command");
 
-    private MetaDataRoutingStrategy testSubject;
+    private MetadataRoutingStrategy testSubject;
 
     private final RoutingStrategy fallbackRoutingStrategy = mock(RoutingStrategy.class);
 
     @BeforeEach
     void setUp() {
-        testSubject = new MetaDataRoutingStrategy(META_DATA_KEY);
+        testSubject = new MetadataRoutingStrategy(METADATA_KEY);
     }
 
     @Test
-    void resolvesRoutingKeyFromMetaData() {
+    void resolvesRoutingKeyFromMetadata() {
         String expectedRoutingKey = "some-routing-key";
 
-        MetaData testMetaData = MetaData.from(Collections.singletonMap(META_DATA_KEY, expectedRoutingKey));
-        CommandMessage testCommand = new GenericCommandMessage(TEST_NAME, "some-payload", testMetaData);
+        Metadata testMetadata = Metadata.from(Collections.singletonMap(METADATA_KEY, expectedRoutingKey));
+        CommandMessage testCommand = new GenericCommandMessage(TEST_NAME, "some-payload", testMetadata);
 
         assertEquals(expectedRoutingKey, testSubject.getRoutingKey(testCommand));
         verifyNoInteractions(fallbackRoutingStrategy);
@@ -57,8 +57,8 @@ class MetaDataRoutingStrategyTest {
 
     @Test
     void returnsNullOnUnresolvedMetadataKey() {
-        MetaData noMetaData = MetaData.emptyInstance();
-        CommandMessage testCommand = new GenericCommandMessage(TEST_NAME, "some-payload", noMetaData);
+        Metadata noMetadata = Metadata.emptyInstance();
+        CommandMessage testCommand = new GenericCommandMessage(TEST_NAME, "some-payload", noMetadata);
 
         assertNull(testSubject.getRoutingKey(testCommand));
     }

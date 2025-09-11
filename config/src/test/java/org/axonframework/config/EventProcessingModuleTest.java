@@ -213,39 +213,6 @@ class EventProcessingModuleTest {
         assertThrows(LifecycleHandlerInvocationException.class, configurer::start);
     }
 
-    @Disabled("TODO #3103 - Rewrite with Event Handling interceptors support")
-    @Test
-    void assignmentRulesOverrideThoseWithLowerPriority() {
-        Map<String, StubEventProcessor> processors = new HashMap<>();
-        ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<>();
-        configurer.eventProcessing()
-                  .registerEventProcessorFactory((name, config, handlers) -> {
-                      StubEventProcessor processor = new StubEventProcessor(name, handlers);
-                      processors.put(name, processor);
-                      return processor;
-                  })
-                  .assignHandlerInstancesMatching("java.util.concurrent", "concurrent"::equals)
-                  .assignHandlerInstancesMatching("java.util.concurrent2",
-                                                  1,
-                                                  "concurrent"::equals)
-                  .registerEventHandler(c -> new Object()) // --> java.lang
-                  .registerEventHandler(c -> "") // --> java.lang
-                  .registerEventHandler(c -> "concurrent") // --> java.util.concurrent2
-                  .registerEventHandler(c -> map); // --> java.util.concurrent
-        LegacyConfiguration configuration = configurer.start();
-
-        assertEquals(3, configuration.eventProcessingConfiguration().eventProcessors().size());
-        assertTrue(processors.get("java.util.concurrent2").getEventHandlers().contains("concurrent"));
-//        assertInstanceOf(CorrelationDataInterceptor.class,
-//                         processors.get("java.util.concurrent2").getHandlerInterceptors().getFirst());
-//        assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains(map));
-//        assertInstanceOf(CorrelationDataInterceptor.class,
-//                         processors.get("java.util.concurrent").getHandlerInterceptors().getFirst());
-//        assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
-//        assertInstanceOf(CorrelationDataInterceptor.class,
-//                         processors.get("java.lang").getHandlerInterceptors().getFirst());
-    }
-
     @Test
     void defaultAssignToKeepsAnnotationScanning() {
         Map<String, StubEventProcessor> processors = new HashMap<>();
@@ -373,28 +340,6 @@ class EventProcessingModuleTest {
         processorMap.forEach((c, processor) -> assertInstanceOf(SubscribingEventProcessor.class, processor));
         assertEquals(2, processorMap.size());
         verify(mockBuilder, times(2)).build(anyString());
-    }
-
-    @Disabled("TODO #3103 - Rewrite with Event Handling interceptors support")
-    @Test
-    void assignInterceptors() {
-        StubInterceptor interceptor1 = new StubInterceptor();
-        StubInterceptor interceptor2 = new StubInterceptor();
-        configurer.eventProcessing()
-                  .registerEventProcessor("default", (name, config, handlers) -> new StubEventProcessor(name, handlers))
-                  .byDefaultAssignTo("default")
-                  .assignHandlerInstancesMatching("concurrent", 1, "concurrent"::equals)
-                  .registerEventHandler(c -> new Object()) // --> java.lang
-                  .registerEventHandler(c -> "concurrent") // --> java.util.concurrent2
-                  .registerHandlerInterceptor("default", c -> interceptor1)
-                  .registerDefaultHandlerInterceptor((c, n) -> interceptor2);
-        LegacyConfiguration config = configurer.start();
-
-        // CorrelationDataInterceptor is automatically configured
-        Optional<EventProcessor> defaultProcessor = config.eventProcessingConfiguration()
-                                                          .eventProcessor("default");
-        assertTrue(defaultProcessor.isPresent());
-//        assertEquals(3, defaultProcessor.get().getHandlerInterceptors().size());
     }
 
     @Test

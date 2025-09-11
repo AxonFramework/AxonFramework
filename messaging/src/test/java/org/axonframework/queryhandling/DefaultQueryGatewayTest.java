@@ -22,7 +22,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -89,20 +89,20 @@ class DefaultQueryGatewayTest {
         assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
         assertEquals(String.class, result.responseType().getExpectedResponseType());
-        assertEquals(MetaData.emptyInstance(), result.metaData());
+        assertEquals(Metadata.emptyInstance(), result.metadata());
     }
 
     @Test
-    void pointToPointQueryWithMetaData() throws Exception {
-        String expectedMetaDataKey = "key";
-        String expectedMetaDataValue = "value";
+    void pointToPointQueryWithMetadata() throws Exception {
+        String expectedMetadataKey = "key";
+        String expectedMetadataValue = "value";
 
         when(mockBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
 
         GenericMessage testQuery = new GenericMessage(
                 new MessageType("query"),
                 "query",
-                MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
+                Metadata.with(expectedMetadataKey, expectedMetadataValue)
         );
 
         CompletableFuture<String> queryResponse = testSubject.query(testQuery, instanceOf(String.class));
@@ -118,9 +118,9 @@ class DefaultQueryGatewayTest {
         assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
         assertEquals(String.class, result.responseType().getExpectedResponseType());
-        MetaData resultMetaData = result.metaData();
-        assertTrue(resultMetaData.containsKey(expectedMetaDataKey));
-        assertTrue(resultMetaData.containsValue(expectedMetaDataValue));
+        Metadata resultMetadata = result.metadata();
+        assertTrue(resultMetadata.containsKey(expectedMetadataKey));
+        assertTrue(resultMetadata.containsValue(expectedMetadataValue));
     }
 
     @Test
@@ -191,13 +191,13 @@ class DefaultQueryGatewayTest {
         assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
         assertEquals(String.class, result.responseType().getExpectedResponseType());
-        assertEquals(MetaData.emptyInstance(), result.metaData());
+        assertEquals(Metadata.emptyInstance(), result.metadata());
     }
 
     @Test
-    void scatterGatherQueryWithMetaData() {
-        String expectedMetaDataKey = "key";
-        String expectedMetaDataValue = "value";
+    void scatterGatherQueryWithMetadata() {
+        String expectedMetadataKey = "key";
+        String expectedMetadataValue = "value";
         long expectedTimeout = 1L;
         TimeUnit expectedTimeUnit = TimeUnit.SECONDS;
 
@@ -206,7 +206,7 @@ class DefaultQueryGatewayTest {
 
         Message testQuery = new GenericMessage(
                 new MessageType("query"), "scatterGather",
-                MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
+                Metadata.with(expectedMetadataKey, expectedMetadataValue)
         );
 
         Stream<String> queryResponse =
@@ -225,9 +225,9 @@ class DefaultQueryGatewayTest {
         assertEquals(String.class, result.payloadType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
         assertEquals(String.class, result.responseType().getExpectedResponseType());
-        MetaData resultMetaData = result.metaData();
-        assertTrue(resultMetaData.containsKey(expectedMetaDataKey));
-        assertTrue(resultMetaData.containsValue(expectedMetaDataValue));
+        Metadata resultMetadata = result.metadata();
+        assertTrue(resultMetadata.containsKey(expectedMetadataKey));
+        assertTrue(resultMetadata.containsValue(expectedMetadataValue));
     }
 
     @Test
@@ -250,13 +250,13 @@ class DefaultQueryGatewayTest {
         assertEquals(String.class, result.responseType().getExpectedResponseType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.updatesResponseType().getClass()));
         assertEquals(String.class, result.updatesResponseType().getExpectedResponseType());
-        assertEquals(MetaData.emptyInstance(), result.metaData());
+        assertEquals(Metadata.emptyInstance(), result.metadata());
     }
 
     @Test
-    void subscriptionQueryWithMetaData() {
-        String expectedMetaDataKey = "key";
-        String expectedMetaDataValue = "value";
+    void subscriptionQueryWithMetadata() {
+        String expectedMetadataKey = "key";
+        String expectedMetadataValue = "value";
 
         when(mockBus.subscriptionQuery(any(), anyInt()))
                 .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
@@ -264,7 +264,7 @@ class DefaultQueryGatewayTest {
 
         Message testQuery = new GenericMessage(
                 new MessageType("query"), "subscription",
-                MetaData.with(expectedMetaDataKey, expectedMetaDataValue)
+                Metadata.with(expectedMetadataKey, expectedMetadataValue)
         );
         testSubject.subscriptionQuery(testQuery, instanceOf(String.class), instanceOf(String.class));
 
@@ -281,9 +281,9 @@ class DefaultQueryGatewayTest {
         assertEquals(String.class, result.responseType().getExpectedResponseType());
         assertTrue(InstanceResponseType.class.isAssignableFrom(result.updatesResponseType().getClass()));
         assertEquals(String.class, result.updatesResponseType().getExpectedResponseType());
-        MetaData resultMetaData = result.metaData();
-        assertTrue(resultMetaData.containsKey(expectedMetaDataKey));
-        assertTrue(resultMetaData.containsValue(expectedMetaDataValue));
+        Metadata resultMetadata = result.metadata();
+        assertTrue(resultMetadata.containsKey(expectedMetadataKey));
+        assertTrue(resultMetadata.containsValue(expectedMetadataValue));
     }
 
     @Test
@@ -417,18 +417,18 @@ class DefaultQueryGatewayTest {
     }
 
     @Test
-    void dispatchStreamingQueryWithMetaData() {
+    void dispatchStreamingQueryWithMetadata() {
         when(mockBus.streamingQuery(any())).thenReturn(Flux.empty());
 
         StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
                 new MessageType("query"), "Query", String.class
-        ).andMetaData(MetaData.with("key", "value"));
+        ).andMetadata(Metadata.with("key", "value"));
 
         StepVerifier.create(testSubject.streamingQuery(testQuery, String.class))
                     .verifyComplete();
 
         verify(mockBus).streamingQuery(argThat(
-                streamingQuery -> "value".equals(streamingQuery.metaData().get("key"))
+                streamingQuery -> "value".equals(streamingQuery.metadata().get("key"))
         ));
     }
 

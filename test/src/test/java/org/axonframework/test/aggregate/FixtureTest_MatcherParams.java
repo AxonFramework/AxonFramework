@@ -200,7 +200,7 @@ class FixtureTest_MatcherParams {
     @Test
     @SuppressWarnings("unchecked")
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
-    void fixture_DispatchMetaDataInCommand() throws Exception {
+    void fixture_DispatchMetadataInCommand() throws Exception {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
@@ -214,8 +214,8 @@ class FixtureTest_MatcherParams {
         verify(mockCommandHandler).handleSync(captor.capture(), any());
         List<CommandMessage> dispatched = captor.getAllValues();
         assertEquals(1, dispatched.size());
-        assertEquals(1, dispatched.get(0).metaData().size());
-        assertEquals("value", dispatched.get(0).metaData().get("meta"));
+        assertEquals(1, dispatched.get(0).metadata().size());
+        assertEquals("value", dispatched.get(0).metadata().get("meta"));
     }
 
     @Test
