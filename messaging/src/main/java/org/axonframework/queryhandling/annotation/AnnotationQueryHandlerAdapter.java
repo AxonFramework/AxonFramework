@@ -109,7 +109,7 @@ public class AnnotationQueryHandlerAdapter<T> implements MessageHandler<QueryMes
                 model.getHandlers(target.getClass())
                      .filter(m -> m.canHandle(message, context))
                      .findFirst()
-                     .orElseThrow(() -> new NoHandlerForQueryException(message));
+                     .orElseThrow(() -> NoHandlerForQueryException.forHandlingComponent(message));
 
         return model.chainedInterceptor(target.getClass())
                     .handleSync(message, context, target, handler);

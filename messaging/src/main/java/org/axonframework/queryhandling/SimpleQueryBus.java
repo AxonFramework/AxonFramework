@@ -137,7 +137,7 @@ public class SimpleQueryBus implements QueryBus {
         try {
             ResponseType<?> responseType = query.responseType();
             if (handlers.isEmpty()) {
-                throw noHandlerException(query);
+//                throw noHandlerException(query);
             }
             Iterator<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> handlerIterator = handlers.iterator();
             boolean invocationSuccess = false;
@@ -183,7 +183,7 @@ public class SimpleQueryBus implements QueryBus {
         return Mono.just(query)
                    .flatMapMany(q -> Mono.just(q)
                                          .flatMapMany(this::getStreamingHandlersForMessage)
-                                         .switchIfEmpty(Flux.error(noHandlerException(q)))
+                                         .switchIfEmpty(Flux.error(NoHandlerForQueryException.forBus(q)))
                                          .map(handler -> invokeStreaming(q, handler))
                                          .flatMap(new CatchLastError(lastError))
                                          .doOnEach(new ErrorIfComplete(lastError, q))
@@ -255,12 +255,6 @@ public class SimpleQueryBus implements QueryBus {
                 }
             }
         }
-    }
-
-    private NoHandlerForQueryException noHandlerException(QueryMessage query) {
-        return new NoHandlerForQueryException(format("No handler found for [%s] with response type [%s]",
-                                                     query.type(),
-                                                     query.responseType()));
     }
 
     private static NoHandlerForQueryException noSuitableHandlerException(QueryMessage query) {
