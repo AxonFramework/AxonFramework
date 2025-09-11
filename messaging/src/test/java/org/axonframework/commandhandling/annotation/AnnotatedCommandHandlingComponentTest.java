@@ -169,7 +169,7 @@ class AnnotatedCommandHandlingComponentTest {
                                    .payload();
 
         assertNull(result);
-        // TODO #3103 The interceptor chain is not yet implemented fully through the MessageStream.
+        // TODO #34805 The interceptor chain is not yet implemented fully through the MessageStream.
         //  Hence, this test does not end up in the message handler.
 //        assertEquals(1, annotatedCommandHandler.voidHandlerInvoked);
         assertEquals(Collections.singletonList(testCommandMessage), withInterceptor);

@@ -17,6 +17,8 @@
 org.axonframework.springboot.autoconfig.AvroSchemaStoreAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration
-org.axonframework.springboot.autoconfig.ConverterAutoConfiguration
 org.axonframework.springboot.autoconfig.CBORMapperAutoConfiguration
+org.axonframework.springboot.autoconfig.ConverterAutoConfiguration
+org.axonframework.springboot.autoconfig.CorrelationDataProviderAutoConfiguration
+org.axonframework.springboot.autoconfig.InterceptorAutoConfiguration
 org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration

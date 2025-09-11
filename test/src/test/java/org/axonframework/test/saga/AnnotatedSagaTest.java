@@ -93,7 +93,7 @@ class AnnotatedSagaTest {
                .expectAssociationWith("extraIdentifier", extraIdentifier);
     }
 
-    @Disabled("TODO revise after #3103 is finished and Saga support is enabled")
+    @Disabled("TODO revise after Saga support is enabled")
     @Test
     void fixtureApi_NonTransientResourceInjected() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);

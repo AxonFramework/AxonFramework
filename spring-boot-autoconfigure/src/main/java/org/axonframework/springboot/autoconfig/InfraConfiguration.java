@@ -103,12 +103,6 @@ public class InfraConfiguration {
         return springParameterResolverFactoryBean;
     }
 
-    @ConditionalOnClass(CorrelationDataProvider.class)
-    @Bean
-    public ConfigurerModule correlationDataProvidersConfigurer(List<CorrelationDataProvider> correlationDataProviders) {
-        return configurer -> configurer.configureCorrelationDataProviders(c -> correlationDataProviders);
-    }
-
     @ConditionalOnClass(EventUpcaster.class)
     @Bean
     public ConfigurerModule eventUpcastersConfigurer(List<EventUpcaster> upcasters) {

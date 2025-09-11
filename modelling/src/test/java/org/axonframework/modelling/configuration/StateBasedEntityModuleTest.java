@@ -21,6 +21,9 @@ import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
+import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.modelling.SimpleRepository;
 import org.axonframework.modelling.SimpleRepositoryEntityLoader;
 import org.axonframework.modelling.SimpleRepositoryEntityPersister;
@@ -141,8 +144,12 @@ class StateBasedEntityModuleTest {
     @Test
     void doesRegisterCommandHandlingComponentWithModel() {
         CommandBus commandBus = mock(CommandBus.class);
+        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
+        // This ensures we keep the SimpleCommandBus, from which we can capture the handling component subscribe method.
         ModellingConfigurer
                 .create()
+                .componentRegistry(cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
+                                                              c -> new DefaultCorrelationDataProviderRegistry()))
                 .componentRegistry(cr -> cr.registerModule(stateBasedModuleWithModel()))
                 .componentRegistry(cr -> cr.registerComponent(CommandBus.class, c -> commandBus))
                 .start();

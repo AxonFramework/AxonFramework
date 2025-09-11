@@ -54,9 +54,7 @@ import org.springframework.core.ResolvableType;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -295,6 +293,11 @@ public class SpringComponentRegistry implements
         }
 
         Component.Identifier<Object> componentId = new Component.Identifier<>(beanType.getType(), beanName);
+        if (isLocalComponent(componentId)) {
+            logger.debug("Will not post process component [{}] since Axon registered it directly.", componentId);
+            return bean;
+        }
+
         Component<?> springComponent = new SpringComponent<>(componentId, bean);
         //noinspection rawtypes
         for (DecoratorDefinition.CompletedDecoratorDefinition decorator : decorators) {
@@ -306,6 +309,30 @@ public class SpringComponentRegistry implements
         }
 
         return springComponent.resolve(configuration);
+    }
+
+    /**
+     * Checks whether the given {@code beanComponentId} is a bean {@code this ComponentRegistry} registered as part of
+     * the {@link #initialize()}.
+     * <p>
+     * If {@code true} we are dealing with a component "local" to {@code this ComponentRegistry}. Furthermore, that
+     * means the registered {@link #registerDecorator(DecoratorDefinition) decorators} have already processed for this
+     * component. As such, this check can ensure we do not accidentally decorate Axon Framework components multiple
+     * times.
+     *
+     * @param beanComponentId The identifier based on the type and name of the bean given on
+     *                        {@link #postProcessAfterInitialization(Object, String)}.
+     * @return {@code true} if we are dealing with a component "local" to {@code this ComponentRegistry}, {@code false}
+     * otherwise.
+     */
+    private boolean isLocalComponent(Component.Identifier<Object> beanComponentId) {
+        if (components.contains(beanComponentId)) {
+            return true;
+        }
+        if (beanComponentId.areTypeAndNameEqual()) {
+            return components.contains(new Component.Identifier<>(beanComponentId.type(), null));
+        }
+        return false;
     }
 
     /**

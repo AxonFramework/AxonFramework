@@ -38,6 +38,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Decorator around the {@link EventStore} intercepting all {@link EventMessage events} before they are
@@ -100,15 +101,44 @@ public class InterceptingEventStore implements EventStore {
     @Override
     public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext) {
         // Set the delegate transaction to ensure the InterceptingAppender can reach the correct EventStoreTransaction.
-        EventStoreTransaction delegateTransaction = processingContext.computeResourceIfAbsent(
-                delegateTransactionKey,
-                () -> delegate.transaction(processingContext)
-        );
+        EventStoreTransaction delegateTransaction = getAndSetDelegateTransaction(processingContext);
         // Set the intercepting transaction to ensure subsequent transaction operation receive the same intercepting transaction.
         return processingContext.computeResourceIfAbsent(
                 interceptingTransactionKey,
                 () -> new InterceptingEventStoreTransaction(processingContext, delegateTransaction)
         );
+    }
+
+    /**
+     * Gets the {@link EventStoreTransaction} from given {@code context}, if present.
+     * <p>
+     * If not present, we invoked the delegate {@link EventStore#transaction(ProcessingContext)} operation and set it
+     * afterward. This is deliberately not done in a
+     * {@link ProcessingContext#computeResourceIfAbsent(Context.ResourceKey, Supplier)}, as the delegate
+     * {@link EventStore} typically uses the {@code computeResourceIfAbsent}. Hence, we are optionally faced with
+     * concurrency exceptions by using {@code computeResourceIfAbsent} here.
+     * <p>
+     * Although this solution may lead to an override of the delegate {@code EventStoreTransaction} in the resources,
+     * given that the {@code EventStore#transaction} method describes it adds the transaction to the context, we may
+     * assume <b>it</b> is thread safe. Hence, implementations will ensure that not using
+     * {@code computeResourceIfAbsent} is safe.
+     * <p>
+     * Lastly, note that we are making this loop to ensure the {@code InterceptingEventStore} does not have to create a
+     * {@link DefaultMessageDispatchInterceptorChain} for every new transaction!
+     *
+     * @param context The context to retrieve the delegate {@code EventStoreTransaction} from. When not present, it will
+     *                be added to this context.
+     * @return The {@code EventStoreTransaction} from the delegate {@link EventStore}.
+     */
+    private EventStoreTransaction getAndSetDelegateTransaction(@Nonnull ProcessingContext context) {
+        EventStoreTransaction delegateTransaction;
+        if (context.containsResource(delegateTransactionKey)) {
+            delegateTransaction = context.getResource(delegateTransactionKey);
+        } else {
+            delegateTransaction = delegate.transaction(context);
+            context.putResourceIfAbsent(delegateTransactionKey, delegateTransaction);
+        }
+        return delegateTransaction;
     }
 
     @Override
