@@ -46,7 +46,7 @@ public class WhenAllCoursesFullyBookedThenSendNotificationTest extends Universit
 
         // then
         var expectedNotification = new NotificationService.Notification("admin", "All courses are fully booked now.");
-        var notificationService = (RecordingNotificationService) sut.getComponent(NotificationService.class);
+        var notificationService = (RecordingNotificationService) configuration.getComponent(NotificationService.class);
         await().atMost(10, TimeUnit.SECONDS)
                 .untilAsserted(() -> assertThat(notificationService.sent()).contains(expectedNotification));
     }
