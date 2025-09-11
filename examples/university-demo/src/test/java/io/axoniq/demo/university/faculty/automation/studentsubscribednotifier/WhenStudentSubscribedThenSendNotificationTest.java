@@ -33,7 +33,7 @@ public class WhenStudentSubscribedThenSendNotificationTest extends UniversityApp
 
         // then
         var expectedNotification = new NotificationService.Notification(studentId.raw(), "You have subscribed to course " + courseId);
-        var notificationService = (RecordingNotificationService) sut.getComponent(NotificationService.class);
+        var notificationService = (RecordingNotificationService) configuration.getComponent(NotificationService.class);
         await().atMost(2, TimeUnit.SECONDS)
                 .untilAsserted(() -> assertThat(notificationService.sent()).contains(expectedNotification));
     }

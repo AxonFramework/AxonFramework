@@ -28,18 +28,18 @@ import java.util.concurrent.CompletableFuture;
 
 public abstract class UniversityApplicationTest {
 
-    protected AxonConfiguration sut;
+    protected AxonConfiguration configuration;
 
     @BeforeEach
     void beforeEach() {
         var properties = overrideProperties(ConfigurationProperties.load());
         var configurer = new UniversityAxonApplication().configurer(properties, this::configureTestApplication);
-        sut = configurer.start();
+        configuration = configurer.start();
     }
 
     @AfterEach
     void afterEach() {
-        sut.shutdown();
+        configuration.shutdown();
     }
 
     private EventSourcingConfigurer configureTestApplication(EventSourcingConfigurer configurer) {
@@ -92,26 +92,26 @@ public abstract class UniversityApplicationTest {
     }
 
     protected void eventsOccurred(List<Object> events) {
-        var eventGateway = sut.getComponent(EventGateway.class);
-        var unitOfWork = sut.getComponent(UnitOfWorkFactory.class).create();
+        var eventGateway = configuration.getComponent(EventGateway.class);
+        var unitOfWork = configuration.getComponent(UnitOfWorkFactory.class).create();
         unitOfWork.onInvocation(ctx -> eventGateway.publish(ctx, events));
         unitOfWork.execute().join();
-        var eventStore = (RecordingEventStore) sut.getComponent(EventStore.class);
+        var eventStore = (RecordingEventStore) configuration.getComponent(EventStore.class);
         eventStore.reset();
     }
 
     protected void executeCommand(Object command) {
-        var commandGateway = sut.getComponent(CommandGateway.class);
+        var commandGateway = configuration.getComponent(CommandGateway.class);
         commandGateway.sendAndWait(command);
     }
 
     protected void assertEvents(Object... events) {
-        var eventStore = (RecordingEventStore) sut.getComponent(EventStore.class);
+        var eventStore = (RecordingEventStore) configuration.getComponent(EventStore.class);
         Assertions.assertThat(eventStore.recorded().stream().map(Message::payload)).contains(events);
     }
 
     protected void assertNoEvents() {
-        var eventStore = (RecordingEventStore) sut.getComponent(EventStore.class);
+        var eventStore = (RecordingEventStore) configuration.getComponent(EventStore.class);
         Assertions.assertThat(eventStore.recorded().stream().map(Message::payload)).isEmpty();
     }
 
