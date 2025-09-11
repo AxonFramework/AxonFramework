@@ -70,20 +70,21 @@ class EventSourcingConfigurationDefaultsTest {
         assertInstanceOf(InMemoryEventStorageEngine.class,
                          resultConfig.getComponent(EventStorageEngine.class));
 
+        // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
         EventStore eventStore = resultConfig.getComponent(EventStore.class);
-        assertInstanceOf(SimpleEventStore.class, eventStore);
+        assertInstanceOf(InterceptingEventStore.class, eventStore);
 
         EventSink eventSink = resultConfig.getComponent(EventSink.class);
-        assertInstanceOf(SimpleEventStore.class, eventSink);
+        assertInstanceOf(InterceptingEventStore.class, eventSink);
         // By default, the Event Store and the Event Sink should be the same instance.
         assertEquals(eventStore, eventSink);
-        assertInstanceOf(SimpleEventStore.class, eventSink);
+        assertInstanceOf(InterceptingEventStore.class, eventSink);
 
         StreamableEventSource<EventMessage> eventSource = resultConfig.getComponent(StreamableEventSource.class);
-        assertInstanceOf(SimpleEventStore.class, eventSource);
+        assertInstanceOf(InterceptingEventStore.class, eventSource);
         // By default, the Event Store and the Event Sink should be the same instance.
         assertEquals(eventStore, eventSource);
-        assertInstanceOf(SimpleEventStore.class, eventSource);
+        assertInstanceOf(InterceptingEventStore.class, eventSource);
 
         assertInstanceOf(Snapshotter.class, resultConfig.getComponent(Snapshotter.class));
     }
