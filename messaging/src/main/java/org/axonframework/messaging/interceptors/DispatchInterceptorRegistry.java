@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
@@ -30,7 +31,9 @@ import org.axonframework.queryhandling.QueryMessage;
 import java.util.List;
 
 /**
- * A registry of {@link MessageDispatchInterceptor MessageDispatchInterceptors}.
+ * A registry of {@link MessageDispatchInterceptor MessageDispatchInterceptors}, acting as a collection of
+ * {@link org.axonframework.configuration.ComponentRegistry#registerComponent(ComponentDefinition) registered
+ * MessageDispatchInterceptors components}.
  * <p>
  * Provides operations to register generic {@link Message}, {@link CommandMessage}-specific,
  * {@link EventMessage}-specific, or {@link QueryMessage}-specific {@code MessageDispatchInterceptor}. Registered type

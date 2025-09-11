@@ -19,12 +19,15 @@ package org.axonframework.messaging.correlation;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 
 import java.util.List;
 
 /**
- * A registry of {@link CorrelationDataProvider CorrelationDataProviders}.
+ * A registry of {@link CorrelationDataProvider CorrelationDataProviders}, acting as a collection of
+ * {@link org.axonframework.configuration.ComponentRegistry#registerComponent(ComponentDefinition) registered
+ * CorrelationDataProvider components}.
  * <p>
  * Provides operations to register {@code CorrelationDataProviders} one by one. Registered providers can be retrieved
  * through {@link #correlationDataProviders(Configuration)}.
