@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.annotations;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -30,11 +30,11 @@ import java.lang.annotation.*;
  * <p>
  * Axon provides a number of parameter resolvers that allow you to use the following parameter types:<ul>
  * <li>The first parameter is always the payload of the Event Message
- * <li>Parameters annotated with {@code @MetaDataValue} will resolve to the Meta Data value with the key as indicated
+ * <li>Parameters annotated with {@code @MetadataValue} will resolve to the Meta Data value with the key as indicated
  * on the annotation. If required is false (default), null is passed when the meta data value is not present. If
  * required is true, the resolver will not match and prevent the method from being invoked when the meta data value is
  * not present.</li>
- * <li>Parameters of type {@link MetaData} will have the entire Meta Data of an Event Message
+ * <li>Parameters of type {@link Metadata} will have the entire Meta Data of an Event Message
  * injected.</li>
  * <li>Parameters of type {@link java.time.Instant} (or any of its super classes or implemented interfaces) will
  * resolve to the timestamp of the EventMessage. This is the time at which the Event was generated.</li>

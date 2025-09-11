@@ -1558,7 +1558,7 @@ public class AxonServerConfiguration {
          *     <li>{@link PersistentStreamSequencingPolicyProvider#FULL_CONCURRENCY_POLICY}</li>
          *     <li>{@link PersistentStreamSequencingPolicyProvider#SEQUENTIAL_POLICY}</li>
          *     <li>{@link PersistentStreamSequencingPolicyProvider#PROPERTY_SEQUENCING_POLICY}</li>
-         *     <li>{@link PersistentStreamSequencingPolicyProvider#META_DATA_SEQUENCING_POLICY}</li>
+         *     <li>{@link PersistentStreamSequencingPolicyProvider#METADATA_SEQUENCING_POLICY}</li>
          * </ul>
          */
         private String sequencingPolicy = DEFAULT_SEQUENCING_POLICY;
@@ -1649,7 +1649,7 @@ public class AxonServerConfiguration {
          *     <li>FullConcurrencyPolicy</li>
          *     <li>SequentialPolicy</li>
          *     <li>PropertySequencingPolicy</li>
-         *     <li>MetaDataSequencingPolicy</li>
+         *     <li>MetadataSequencingPolicy</li>
          * </ul>
          * </p>
          * <p>This value is only used for creating the persistent stream.</p>
@@ -1672,7 +1672,7 @@ public class AxonServerConfiguration {
         /**
          * Sets the parameters specified for the sequencing policy.
          * <p>
-         * The <em>PropertySequencingPolicy</em> and <em>MetaDataSequencingPolicy</em> require parameters.
+         * The <em>PropertySequencingPolicy</em> and <em>MetadataSequencingPolicy</em> require parameters.
          * </p>
          * <p>This value is only used for creating the persistent stream.</p>
          *

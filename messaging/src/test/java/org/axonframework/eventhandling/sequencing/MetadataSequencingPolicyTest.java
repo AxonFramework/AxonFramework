@@ -20,7 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -31,47 +31,47 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link MetaDataSequencingPolicy}.
+ * Test class validating the {@link MetadataSequencingPolicy}.
  *
  * @author Lucas Campos
  */
-@DisplayName("Unit-Test for the MetaDataSequencingPolicy")
-public class MetaDataSequencingPolicyTest {
+@DisplayName("Unit-Test for the MetadataSequencingPolicy")
+public class MetadataSequencingPolicyTest {
 
     @Test
     void propertyShouldReadCorrectValue() {
-        final MetaDataSequencingPolicy metaDataPolicy = MetaDataSequencingPolicy
+        final MetadataSequencingPolicy metadataPolicy = MetadataSequencingPolicy
                 .builder()
-                .metaDataKey("metaDataKey")
+                .metadataKey("metadataKey")
                 .build();
 
         DomainEventMessage testEvent =
-                newStubDomainEvent("42", Collections.singletonMap("metaDataKey", "metaDataValue"));
+                newStubDomainEvent("42", Collections.singletonMap("metadataKey", "metadataValue"));
 
-        assertThat(metaDataPolicy.getSequenceIdentifierFor(testEvent, new StubProcessingContext())).contains("metaDataValue");
+        assertThat(metadataPolicy.getSequenceIdentifierFor(testEvent, new StubProcessingContext())).contains("metadataValue");
     }
 
     @Test
-    void fallbackShouldBeAppliedWhenMetaDataDoesNotContainsTheKey() {
-        final MetaDataSequencingPolicy metaDataPolicy = MetaDataSequencingPolicy
+    void fallbackShouldBeAppliedWhenMetadataDoesNotContainsTheKey() {
+        final MetadataSequencingPolicy metadataPolicy = MetadataSequencingPolicy
                 .builder()
-                .metaDataKey("metaDataKey")
+                .metadataKey("metadataKey")
                 .build();
 
-        assertThat(metaDataPolicy.getSequenceIdentifierFor(newStubDomainEvent("42"), new StubProcessingContext())).isPresent();
+        assertThat(metadataPolicy.getSequenceIdentifierFor(newStubDomainEvent("42"), new StubProcessingContext())).isPresent();
     }
 
     @Test
     void missingHardRequirementShouldThrowException() {
         assertThrows(AxonConfigurationException.class,
-                     () -> MetaDataSequencingPolicy
+                     () -> MetadataSequencingPolicy
                              .builder()
                              .build());
     }
 
-    private DomainEventMessage newStubDomainEvent(final Object payload, Map<String, String> metaData) {
+    private DomainEventMessage newStubDomainEvent(final Object payload, Map<String, String> metadata) {
         return new GenericDomainEventMessage(
-                "aggregateType", "A", 0L, new MessageType("event"), payload, MetaData.from(metaData)
+                "aggregateType", "A", 0L, new MessageType("event"), payload, Metadata.from(metadata)
         );
     }
 

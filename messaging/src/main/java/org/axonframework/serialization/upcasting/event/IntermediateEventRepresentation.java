@@ -17,7 +17,7 @@
 package org.axonframework.serialization.upcasting.event;
 
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
@@ -55,13 +55,13 @@ public interface IntermediateEventRepresentation {
      * @param outputType                 The output type of the event after upcasting
      * @param expectedRepresentationType The type of the serialized payload required by the upcast function
      * @param upcastFunction             The upcast function for the event's payload
-     * @param metaDataUpcastFunction     The upcast function for the event's metadata
+     * @param metadataUpcastFunction     The upcast function for the event's metadata
      * @param <T>                        The expected payload type before and after upcasting
      * @return The intermediate representation of the event after upcasting
      */
     <T> IntermediateEventRepresentation upcast(SerializedType outputType, Class<T> expectedRepresentationType,
                                                Function<T, T> upcastFunction,
-                                               Function<MetaData, MetaData> metaDataUpcastFunction);
+                                               Function<Metadata, Metadata> metadataUpcastFunction);
 
     /**
      * Returns the type and version of the data contained in this representation.
@@ -142,12 +142,12 @@ public interface IntermediateEventRepresentation {
     Instant getTimestamp();
 
     /**
-     * Returns the meta data of the message wrapping the object being upcast. If the meta data is not available, or is
+     * Returns the metadata of the message wrapping the object being upcast. If the metadata is not available, or is
      * in fact the subject of being upcast itself, this method returns {@code null}.
      *
-     * @return the MetaData of the message wrapping the object to upcast, if available
+     * @return the metadata of the message wrapping the object to upcast, if available
      */
-    LazyDeserializingObject<MetaData> getMetaData();
+    LazyDeserializingObject<Metadata> getMetadata();
 
     /**
      * Checks if the data can be converted to the given {@code requiredType}.

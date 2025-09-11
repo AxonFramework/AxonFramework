@@ -43,11 +43,11 @@ public interface StreamingQueryMessage extends QueryMessage {
 
     @Override
     @Nonnull
-    StreamingQueryMessage withMetaData(@Nonnull Map<String, String> metaData);
+    StreamingQueryMessage withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    StreamingQueryMessage andMetaData(@Nonnull Map<String, String> additionalMetaData);
+    StreamingQueryMessage andMetadata(@Nonnull Map<String, String> additionalMetadata);
 
     @Override
     @Nonnull

@@ -17,7 +17,7 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -71,11 +71,11 @@ public interface DeadLetter<M extends Message> {
     Instant lastTouched();
 
     /**
-     * The diagnostic {@link MetaData} concerning this letter.
+     * The diagnostic {@link Metadata} concerning this letter.
      *
-     * @return The diagnostic {@link MetaData} concerning this letter.
+     * @return The diagnostic {@link Metadata} concerning this letter.
      */
-    MetaData diagnostics();
+    Metadata diagnostics();
 
     /**
      * Construct a copy of this {@link DeadLetter}, replacing the {@link #lastTouched()} with the current time.
@@ -96,23 +96,23 @@ public interface DeadLetter<M extends Message> {
      * Construct a copy of this {@link DeadLetter}, replacing the {@link DeadLetter#diagnostics()} with the given
      * {@code diagnostics}.
      *
-     * @param diagnostics The diagnostic {@link MetaData} to append to the {@link DeadLetter} under construction.
+     * @param diagnostics The diagnostic {@link Metadata} to append to the {@link DeadLetter} under construction.
      * @return A copy of this {@link DeadLetter}, replacing the {@link DeadLetter#diagnostics()} with the given
      * {@code diagnostics}.
      */
-    DeadLetter<M> withDiagnostics(MetaData diagnostics);
+    DeadLetter<M> withDiagnostics(Metadata diagnostics);
 
     /**
      * Construct a copy of this {@link DeadLetter}, replacing the {@link DeadLetter#diagnostics()} with the result of
      * the given {@code diagnosticsBuilder}. The {@code diagnosticsBuilder} will be invoked with the diagnostics of this
      * instance.
      *
-     * @param diagnosticsBuilder The {@link UnaryOperator lambda} constructing diagnostic {@link MetaData} to replace
-     *                           the {@code MetaData} of the {@link DeadLetter} under construction.
+     * @param diagnosticsBuilder The {@link UnaryOperator lambda} constructing diagnostic {@link Metadata} to replace
+     *                           the {@code Metadata} of the {@link DeadLetter} under construction.
      * @return A copy of this {@link DeadLetter}, replacing the {@link DeadLetter#diagnostics()} with the result of the
      * given {@code diagnosticsBuilder}.
      */
-    default DeadLetter<M> withDiagnostics(UnaryOperator<MetaData> diagnosticsBuilder) {
+    default DeadLetter<M> withDiagnostics(UnaryOperator<Metadata> diagnosticsBuilder) {
         return withDiagnostics(diagnosticsBuilder.apply(this.diagnostics()));
     }
 }

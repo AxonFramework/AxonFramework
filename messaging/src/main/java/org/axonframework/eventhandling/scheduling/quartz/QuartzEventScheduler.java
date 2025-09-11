@@ -31,7 +31,7 @@ import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -154,7 +154,7 @@ public class QuartzEventScheduler implements EventScheduler {
         return new GenericEventMessage(
                 messageTypeResolver.resolveOrThrow(event),
                 event,
-                MetaData.emptyInstance()
+                Metadata.emptyInstance()
         );
     }
 
@@ -267,7 +267,7 @@ public class QuartzEventScheduler implements EventScheduler {
          */
         public static final String MESSAGE_TIMESTAMP = "axon-message-timestamp";
         /**
-         * Key pointing to the {@link MetaData} of a message.
+         * Key pointing to the {@link Metadata} of a message.
          */
         public static final String MESSAGE_METADATA = "axon-metadata";
         /**
@@ -303,9 +303,9 @@ public class QuartzEventScheduler implements EventScheduler {
             jobData.put(MESSAGE_TYPE, serializedPayload.getType().getName());
             jobData.put(MESSAGE_REVISION, serializedPayload.getType().getRevision());
 
-            SerializedObject<byte[]> serializedMetaData =
-                    serializer.serialize(eventMessage.metaData(), byte[].class);
-            jobData.put(MESSAGE_METADATA, serializedMetaData.getData());
+            SerializedObject<byte[]> serializedMetadata =
+                    serializer.serialize(eventMessage.metadata(), byte[].class);
+            jobData.put(MESSAGE_METADATA, serializedMetadata.getData());
 
             return jobData;
         }
@@ -315,7 +315,7 @@ public class QuartzEventScheduler implements EventScheduler {
             return new GenericEventMessage((String) jobDataMap.get(MESSAGE_ID),
                                              MessageType.fromString((String) jobDataMap.get(TYPE)),
                                              deserializePayload(jobDataMap),
-                                             deserializeMetaData(jobDataMap),
+                                             deserializeMetadata(jobDataMap),
                                              retrieveDeadlineTimestamp(jobDataMap));
         }
 
@@ -329,11 +329,11 @@ public class QuartzEventScheduler implements EventScheduler {
             return serializer.deserialize(serializedPayload);
         }
 
-        private Map<String, String> deserializeMetaData(JobDataMap jobDataMap) {
-            SimpleSerializedObject<byte[]> serializedDeadlineMetaData = new SimpleSerializedObject<>(
-                    (byte[]) jobDataMap.get(MESSAGE_METADATA), byte[].class, MetaData.class.getName(), null
+        private Map<String, String> deserializeMetadata(JobDataMap jobDataMap) {
+            SimpleSerializedObject<byte[]> serializedDeadlineMetadata = new SimpleSerializedObject<>(
+                    (byte[]) jobDataMap.get(MESSAGE_METADATA), byte[].class, Metadata.class.getName(), null
             );
-            return serializer.deserialize(serializedDeadlineMetaData);
+            return serializer.deserialize(serializedDeadlineMetadata);
         }
 
         private Instant retrieveDeadlineTimestamp(JobDataMap jobDataMap) {

@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 /**
  * Utility class for the {@link EventGateway} and {@link EventAppender} implementations.
@@ -55,7 +55,7 @@ class EventPublishingUtils {
         return new GenericEventMessage(
                 messageTypeResolver.resolveOrThrow(event),
                 event,
-                MetaData.emptyInstance()
+                Metadata.emptyInstance()
         );
     }
 }

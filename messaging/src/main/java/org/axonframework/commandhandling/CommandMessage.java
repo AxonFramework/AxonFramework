@@ -58,11 +58,11 @@ public interface CommandMessage extends Message {
 
     @Override
     @Nonnull
-    CommandMessage withMetaData(@Nonnull Map<String, String> metaData);
+    CommandMessage withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    CommandMessage andMetaData(@Nonnull Map<String, String> metaData);
+    CommandMessage andMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull

@@ -18,7 +18,7 @@ package org.axonframework.messaging.correlation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,14 +39,14 @@ public class SimpleCorrelationDataProvider implements CorrelationDataProvider {
     private final String[] headerNames;
 
     /**
-     * Initializes a {@code SimpleCorrelationDataProvider} that returns the {@link Message#metaData()} entries of given
-     * {@link Message messages} that match the given {@code metaDataKeys} as correlation data.
+     * Initializes a {@code SimpleCorrelationDataProvider} that returns the {@link Message#metadata()} entries of given
+     * {@link Message messages} that match the given {@code metadataKeys} as correlation data.
      *
-     * @param metaDataKeys The keys of the {@link Message#metaData()} entries from {@link Message messages} to return as
+     * @param metadataKeys The keys of the {@link Message#metadata()} entries from {@link Message messages} to return as
      *                     correlation data.
      */
-    public SimpleCorrelationDataProvider(String... metaDataKeys) {
-        this.headerNames = Arrays.copyOf(metaDataKeys, metaDataKeys.length);
+    public SimpleCorrelationDataProvider(String... metadataKeys) {
+        this.headerNames = Arrays.copyOf(metadataKeys, metadataKeys.length);
     }
 
     @Nonnull
@@ -56,10 +56,10 @@ public class SimpleCorrelationDataProvider implements CorrelationDataProvider {
             return Collections.emptyMap();
         }
         Map<String, String> data = new HashMap<>();
-        final MetaData metaData = message.metaData();
+        final Metadata metadata = message.metadata();
         for (String headerName : headerNames) {
-            if (metaData.containsKey(headerName)) {
-                data.put(headerName, metaData.get(headerName));
+            if (metadata.containsKey(headerName)) {
+                data.put(headerName, metadata.get(headerName));
             }
         }
         return data;

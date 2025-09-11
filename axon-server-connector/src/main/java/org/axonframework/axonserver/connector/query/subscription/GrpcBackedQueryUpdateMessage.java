@@ -20,11 +20,11 @@ import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.GrpcMetaData;
+import org.axonframework.axonserver.connector.util.GrpcMetadata;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;
@@ -47,15 +47,15 @@ class GrpcBackedQueryUpdateMessage implements SubscriptionQueryUpdateMessage {
     private final QueryUpdate queryUpdate;
     private final LazyDeserializingObject<?> serializedPayload;
     private final Throwable exception;
-    private final Supplier<MetaData> metaDataSupplier;
+    private final Supplier<Metadata> metadataSupplier;
     private final MessageType type;
 
     /**
      * Instantiate a {@link GrpcBackedQueryUpdateMessage} with the given {@code queryUpdate}, using the provided
-     * {@code serializer} to be able to retrieve the payload and {@link MetaData} from it.
+     * {@code serializer} to be able to retrieve the payload and {@link Metadata} from it.
      *
      * @param queryUpdate A {@link QueryUpdate} which is being wrapped as a {@link SubscriptionQueryUpdateMessage}.
-     * @param serializer  A {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
+     * @param serializer  A {@link Serializer} used to deserialize the payload and {@link Metadata} from the given
      *                    {@code queryUpdate}.
      */
     public GrpcBackedQueryUpdateMessage(QueryUpdate queryUpdate, Serializer serializer) {
@@ -70,7 +70,7 @@ class GrpcBackedQueryUpdateMessage implements SubscriptionQueryUpdateMessage {
                 ? ErrorCode.getFromCode(queryUpdate.getErrorCode())
                            .convert(queryUpdate.getErrorMessage(), exceptionDetails)
                 : null;
-        this.metaDataSupplier = new GrpcMetaData(queryUpdate.getMetaDataMap(), serializer);
+        this.metadataSupplier = new GrpcMetadata(queryUpdate.getMetaDataMap(), serializer);
         if (serializedPayload != null) {
             this.type = new MessageType(
                     serializer.classForType(new GrpcSerializedObject(queryUpdate.getPayload()).getType())
@@ -85,12 +85,12 @@ class GrpcBackedQueryUpdateMessage implements SubscriptionQueryUpdateMessage {
     private GrpcBackedQueryUpdateMessage(QueryUpdate queryUpdate,
                                          LazyDeserializingObject<?> serializedPayload,
                                          Throwable exception,
-                                         Supplier<MetaData> metaDataSupplier,
+                                         Supplier<Metadata> metadataSupplier,
                                          MessageType type) {
         this.queryUpdate = queryUpdate;
         this.serializedPayload = serializedPayload;
         this.exception = exception;
-        this.metaDataSupplier = metaDataSupplier;
+        this.metadataSupplier = metadataSupplier;
         this.type = type;
     }
 
@@ -108,8 +108,8 @@ class GrpcBackedQueryUpdateMessage implements SubscriptionQueryUpdateMessage {
 
     @Override
     @Nonnull
-    public MetaData metaData() {
-        return metaDataSupplier.get();
+    public Metadata metadata() {
+        return metadataSupplier.get();
     }
 
     @Override
@@ -150,18 +150,18 @@ class GrpcBackedQueryUpdateMessage implements SubscriptionQueryUpdateMessage {
 
     @Override
     @Nonnull
-    public GrpcBackedQueryUpdateMessage withMetaData(@Nonnull Map<String, String> metaData) {
+    public GrpcBackedQueryUpdateMessage withMetadata(@Nonnull Map<String, String> metadata) {
         return new GrpcBackedQueryUpdateMessage(queryUpdate,
                                                   serializedPayload,
                                                   exception,
-                                                  () -> MetaData.from(metaData),
+                                                  () -> Metadata.from(metadata),
                                                   type);
     }
 
     @Override
     @Nonnull
-    public GrpcBackedQueryUpdateMessage andMetaData(@Nonnull Map<String, String> metaData) {
-        return withMetaData(metaData().mergedWith(metaData));
+    public GrpcBackedQueryUpdateMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        return withMetadata(metadata().mergedWith(metadata));
     }
 
     @Override

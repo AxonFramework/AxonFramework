@@ -41,7 +41,7 @@ class GenericDeadlineMessageTest extends MessageTestSuite<DeadlineMessage> {
     @Override
     protected DeadlineMessage buildDefaultMessage() {
         Message delegate =
-                new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+                new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA);
         return new GenericDeadlineMessage(TEST_DEADLINE_NAME, delegate, () -> TEST_TIMESTAMP);
     }
 

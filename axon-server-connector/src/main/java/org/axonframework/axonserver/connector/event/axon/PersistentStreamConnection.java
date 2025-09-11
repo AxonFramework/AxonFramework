@@ -211,12 +211,12 @@ public class PersistentStreamConnection {
         private final AtomicBoolean processGate = new AtomicBoolean();
         private final AtomicBoolean doneConfirmed = new AtomicBoolean();
         private final PersistentStreamSegment persistentStreamSegment;
-//        private final GrpcMetaDataAwareSerializer serializer;
+//        private final GrpcMetadataAwareSerializer serializer;
         private final AtomicReference<SegmentState> currentState = new AtomicReference<>(new ProcessingState());
 
         public SegmentConnection(PersistentStreamSegment persistentStreamSegment) {
             this.persistentStreamSegment = persistentStreamSegment;
-//            serializer = new GrpcMetaDataAwareSerializer(configuration.getComponent(Serializer.class));
+//            serializer = new GrpcMetadataAwareSerializer(configuration.getComponent(Serializer.class));
         }
 
         private class RetryState implements SegmentState {

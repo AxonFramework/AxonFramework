@@ -26,7 +26,7 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
@@ -197,14 +197,14 @@ class SimpleQueryBusTest {
 
         QueryMessage testQuery =
                 new GenericQueryMessage(new MessageType(String.class), "hello", singleStringResponse)
-                        .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
+                        .andMetadata(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
         CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
 
         assertTrue(result.isDone(), "SimpleQueryBus should resolve CompletableFutures directly");
         assertEquals("hello1234", result.get().payload());
         assertEquals(
-                MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
-                result.get().metaData()
+                Metadata.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
+                result.get().metadata()
         );
     }
 
@@ -214,7 +214,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, (p, ctx) -> null);
         QueryMessage testQuery =
                 new GenericQueryMessage(new MessageType(String.class), "hello", singleStringResponse)
-                        .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
+                        .andMetadata(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
         CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
 
         assertTrue(result.isDone(), "SimpleQueryBus should resolve CompletableFutures directly");
@@ -223,8 +223,8 @@ class SimpleQueryBusTest {
         assertEquals(
                 // TODO: this assumes the correlation and tracing data gets into response
                 // but this is done via interceptors, which are currently not integrated
-                MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
-                result.get().metaData()
+                Metadata.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
+                result.get().metadata()
         );
     }
 
@@ -459,10 +459,10 @@ class SimpleQueryBusTest {
     void queryWithInterceptors() throws Exception {
         testSubject.registerDispatchInterceptor(
                 (message, context, chain) ->
-                        chain.proceed(message.andMetaData(Collections.singletonMap("key", "value")), context)
+                        chain.proceed(message.andMetadata(Collections.singletonMap("key", "value")), context)
         );
         testSubject.registerHandlerInterceptor((message, context, chain) -> {
-            if (message.metaData().containsKey("key")) {
+            if (message.metadata().containsKey("key")) {
                 return MessageStream.just(new GenericQueryResponseMessage(new MessageType("response"), "fakeReply"));
             }
             return chain.proceed(message, context);
@@ -702,10 +702,10 @@ class SimpleQueryBusTest {
     void scatterGatherWithInterceptors() {
         testSubject.registerDispatchInterceptor(
                 (message, context, chain) ->
-                        chain.proceed(message.andMetaData(Collections.singletonMap("key", "value")), context)
+                        chain.proceed(message.andMetadata(Collections.singletonMap("key", "value")), context)
         );
         testSubject.registerHandlerInterceptor((message, context, chain) -> {
-            if (message.metaData().containsKey("key")) {
+            if (message.metadata().containsKey("key")) {
                 return MessageStream.just(new GenericResultMessage(new MessageType("response"), "fakeReply"));
             }
             return chain.proceed(message, context);
@@ -766,8 +766,8 @@ class SimpleQueryBusTest {
                 new MessageType(String.class), "Hello, World", singleStringResponse
         );
         QueryResponseMessage queryResponseMessage = testSubject.query(testQuery).get();
-        assertEquals(testQuery.identifier(), queryResponseMessage.metaData().get("traceId"));
-        assertEquals(testQuery.identifier(), queryResponseMessage.metaData().get("correlationId"));
+        assertEquals(testQuery.identifier(), queryResponseMessage.metadata().get("traceId"));
+        assertEquals(testQuery.identifier(), queryResponseMessage.metadata().get("correlationId"));
         assertEquals("Hello, World1234", queryResponseMessage.payload());
     }
 

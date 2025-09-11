@@ -17,7 +17,7 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -34,7 +34,7 @@ import java.util.function.Function;
 public class ShouldEnqueue<M extends Message> implements EnqueueDecision<M> {
 
     private final Throwable enqueueCause;
-    private final Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder;
+    private final Function<DeadLetter<? extends M>, Metadata> diagnosticsBuilder;
 
     /**
      * Constructs a default {@link EnqueueDecision}. This decision does not carry any {@link #enqueueCause()} or
@@ -51,7 +51,7 @@ public class ShouldEnqueue<M extends Message> implements EnqueueDecision<M> {
      * @param enqueueCause The {@link Throwable} that was used to decide to enqueue.
      */
     public ShouldEnqueue(Throwable enqueueCause) {
-        this(enqueueCause, d -> MetaData.emptyInstance());
+        this(enqueueCause, d -> Metadata.emptyInstance());
     }
 
     /**
@@ -62,7 +62,7 @@ public class ShouldEnqueue<M extends Message> implements EnqueueDecision<M> {
      * @param diagnosticsBuilder A function constructing diagnostics to append during
      *                           {@link #withDiagnostics(DeadLetter)}.
      */
-    public ShouldEnqueue(Throwable enqueueCause, Function<DeadLetter<? extends M>, MetaData> diagnosticsBuilder) {
+    public ShouldEnqueue(Throwable enqueueCause, Function<DeadLetter<? extends M>, Metadata> diagnosticsBuilder) {
         this.enqueueCause = enqueueCause;
         this.diagnosticsBuilder = diagnosticsBuilder;
     }

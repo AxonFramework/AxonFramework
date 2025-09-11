@@ -36,11 +36,11 @@ public interface ResetContext extends Message {
 
     @Override
     @Nonnull
-    ResetContext withMetaData(@Nonnull Map<String, String> metaData);
+    ResetContext withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    ResetContext andMetaData(@Nonnull Map<String, String> metaData);
+    ResetContext andMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull

@@ -83,7 +83,7 @@ public abstract class EventUtils {
                     ir.getMessageIdentifier(),
                     new MessageType(serializer.classForType(ir.getType())),
                     new LazyDeserializingObject<>(ir::getData, ir.getType(), serializer),
-                    ir.getMetaData()
+                    ir.getMetadata()
             );
             if (ir.getAggregateIdentifier().isPresent()) {
                 return new GenericTrackedDomainEventMessage(ir.getTrackingToken().get(),

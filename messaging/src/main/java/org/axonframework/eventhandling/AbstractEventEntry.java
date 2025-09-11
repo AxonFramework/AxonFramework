@@ -21,7 +21,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Lob;
 import jakarta.persistence.MappedSuperclass;
 import org.axonframework.common.DateTimeUtils;
-import org.axonframework.serialization.SerializedMetaData;
+import org.axonframework.serialization.SerializedMetadata;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -58,7 +58,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
     @Basic
     @Lob
     @Column(length = 10000)
-    private T metaData;
+    private T metadata;
 
     /**
      * Construct a new event entry from a published event message to enable storing the event or sending it to a remote
@@ -73,12 +73,12 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
      */
     public AbstractEventEntry(EventMessage eventMessage, Serializer serializer, Class<T> contentType) {
         SerializedObject<T> payload = serializer.serialize(eventMessage.payload(), contentType);
-        SerializedObject<T> metaData = serializer.serialize(eventMessage.metaData(), contentType);
+        SerializedObject<T> metadata = serializer.serialize(eventMessage.metadata(), contentType);
         this.eventIdentifier = eventMessage.identifier();
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();
         this.payload = payload.getData();
-        this.metaData = metaData.getData();
+        this.metadata = metadata.getData();
         this.timeStamp = formatInstant(eventMessage.timestamp());
     }
 
@@ -90,10 +90,10 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
      * @param payloadType     The fully qualified class name or alias of the event payload
      * @param payloadRevision The revision of the event payload
      * @param payload         The serialized payload
-     * @param metaData        The serialized metadata
+     * @param metadata        The serialized metadata
      */
     public AbstractEventEntry(String eventIdentifier, Object timestamp, String payloadType, String payloadRevision,
-                              T payload, T metaData) {
+                              T payload, T metadata) {
         this.eventIdentifier = eventIdentifier;
         if (timestamp instanceof TemporalAccessor) {
             this.timeStamp = formatInstant((TemporalAccessor) timestamp);
@@ -103,7 +103,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
         this.payloadType = payloadType;
         this.payloadRevision = payloadRevision;
         this.payload = payload;
-        this.metaData = metaData;
+        this.metadata = metadata;
     }
 
     /**
@@ -124,8 +124,8 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public SerializedObject<T> getMetaData() {
-        return new SerializedMetaData<>(metaData, (Class<T>) metaData.getClass());
+    public SerializedObject<T> getMetadata() {
+        return new SerializedMetadata<>(metadata, (Class<T>) metadata.getClass());
     }
 
     @Override

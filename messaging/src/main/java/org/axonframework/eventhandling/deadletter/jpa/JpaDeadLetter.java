@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.deadletter.jpa;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
@@ -29,7 +29,7 @@ import java.util.Optional;
 
 /**
  * A {@link DeadLetter} that was saved to the database and reconstructed from it. This object is immutable and should
- * only be changed using the {@link #withCause(Throwable)}, {@link #withDiagnostics(MetaData)} and
+ * only be changed using the {@link #withCause(Throwable)}, {@link #withDiagnostics(Metadata)} and
  * {@link #markTouched()} functions. These reconstruct a new object with the specified new properties.
  *
  * @param <M> The {@link EventMessage} type of the contained message.
@@ -44,7 +44,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
     private final Instant enqueuedAt;
     private final Instant lastTouched;
     private final Cause cause;
-    private final MetaData diagnostics;
+    private final Metadata diagnostics;
     private final M message;
 
     /**
@@ -52,10 +52,10 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
      * reconstructed message.
      *
      * @param entry       The {@link DeadLetterEntry} to construct this letter from.
-     * @param diagnostics The deserialized diagnostics {@link MetaData}.
+     * @param diagnostics The deserialized diagnostics {@link Metadata}.
      * @param message     The reconstructed {@link EventMessage}.
      */
-    public JpaDeadLetter(DeadLetterEntry entry, MetaData diagnostics, M message) {
+    public JpaDeadLetter(DeadLetterEntry entry, Metadata diagnostics, M message) {
         this.id = entry.getDeadLetterId();
         this.index = entry.getSequenceIndex();
         this.enqueuedAt = entry.getEnqueuedAt();
@@ -89,7 +89,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
                   Instant enqueuedAt,
                   Instant lastTouched,
                   Cause cause,
-                  MetaData diagnostics,
+                  Metadata diagnostics,
                   M message) {
         this.id = id;
         this.index = index;
@@ -122,7 +122,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
     }
 
     @Override
-    public MetaData diagnostics() {
+    public Metadata diagnostics() {
         return diagnostics;
     }
 
@@ -180,7 +180,7 @@ public class JpaDeadLetter<M extends EventMessage> implements DeadLetter<M> {
     }
 
     @Override
-    public DeadLetter<M> withDiagnostics(MetaData diagnostics) {
+    public DeadLetter<M> withDiagnostics(Metadata diagnostics) {
         return new JpaDeadLetter<>(id, index, sequenceIdentifier, enqueuedAt, GenericDeadLetter.clock.instant(), cause, diagnostics, message);
     }
 

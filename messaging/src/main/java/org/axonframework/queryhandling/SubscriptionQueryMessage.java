@@ -52,11 +52,11 @@ public interface SubscriptionQueryMessage<P, I, U> extends QueryMessage {
 
     @Override
     @Nonnull
-    SubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData);
+    SubscriptionQueryMessage<P, I, U> withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    SubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> additionalMetaData);
+    SubscriptionQueryMessage<P, I, U> andMetadata(@Nonnull Map<String, String> additionalMetadata);
 
     @Override
     @Nonnull

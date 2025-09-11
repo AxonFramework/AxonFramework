@@ -46,11 +46,11 @@ public interface EventData<T> {
     Instant getTimestamp();
 
     /**
-     * Returns the serialized data of the MetaData of the serialized Event.
+     * Returns the serialized data of the Metadata of the serialized Event.
      *
-     * @return the serialized data of the MetaData of the serialized Event
+     * @return the serialized data of the Metadata of the serialized Event
      */
-    SerializedObject<T> getMetaData();
+    SerializedObject<T> getMetadata();
 
     /**
      * Returns the serialized data of the Event Message's payload.

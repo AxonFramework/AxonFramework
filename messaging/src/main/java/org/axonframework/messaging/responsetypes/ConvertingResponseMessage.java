@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Converter;
 
@@ -81,8 +81,8 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage {
 
     @Override
     @Nonnull
-    public MetaData metaData() {
-        return responseMessage.metaData();
+    public Metadata metadata() {
+        return responseMessage.metadata();
     }
 
     @Override
@@ -119,14 +119,14 @@ public class ConvertingResponseMessage<R> implements QueryResponseMessage {
 
     @Override
     @Nonnull
-    public QueryResponseMessage withMetaData(@Nonnull Map<String, String> metaData) {
-        return new ConvertingResponseMessage<>(expectedResponseType, responseMessage.withMetaData(metaData));
+    public QueryResponseMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        return new ConvertingResponseMessage<>(expectedResponseType, responseMessage.withMetadata(metadata));
     }
 
     @Override
     @Nonnull
-    public QueryResponseMessage andMetaData(@Nonnull Map<String, String> additionalMetaData) {
-        return new ConvertingResponseMessage<>(expectedResponseType, responseMessage.andMetaData(additionalMetaData));
+    public QueryResponseMessage andMetadata(@Nonnull Map<String, String> additionalMetadata) {
+        return new ConvertingResponseMessage<>(expectedResponseType, responseMessage.andMetadata(additionalMetadata));
     }
 
     @Override

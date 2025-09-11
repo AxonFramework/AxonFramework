@@ -17,38 +17,38 @@
 package org.axonframework.axonserver.connector.util;
 
 import io.axoniq.axonserver.grpc.MetaDataValue;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * Implementation that provides access to a {@link Map} of gRPC {@link MetaDataValue}s in the form of {@link MetaData}.
+ * Implementation that provides access to a {@link Map} of gRPC {@link MetaDataValue}s in the form of {@link Metadata}.
  *
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class GrpcMetaData implements Supplier<MetaData> {
+public class GrpcMetadata implements Supplier<Metadata> {
 
     private final Map<String, MetaDataValue> metaDataValues;
-    private final GrpcMetaDataConverter grpcMetaDataConverter;
-    private volatile MetaData metaData;
+    private final GrpcMetadataConverter grpcMetaDataConverter;
+    private volatile Metadata metaData;
 
     /**
-     * Instantiate a wrapper around the given {@code metaDataValues} providing access to them as a {@link MetaData}
+     * Instantiate a wrapper around the given {@code metaDataValues} providing access to them as a {@link Metadata}
      * object.
      *
-     * @param metaDataValues a {@link Map} of {@link String} to {@link MetaDataValue} to wrap as a {@link MetaData}
+     * @param metaDataValues a {@link Map} of {@link String} to {@link MetaDataValue} to wrap as a {@link Metadata}
      * @param serializer     the {@link Serializer} used to deserialize {@link MetaDataValue}s with
      */
-    public GrpcMetaData(Map<String, MetaDataValue> metaDataValues, Serializer serializer) {
+    public GrpcMetadata(Map<String, MetaDataValue> metaDataValues, Serializer serializer) {
         this.metaDataValues = metaDataValues;
-        this.grpcMetaDataConverter = new GrpcMetaDataConverter(serializer);
+        this.grpcMetaDataConverter = new GrpcMetadataConverter(serializer);
     }
 
     @Override
-    public MetaData get() {
+    public Metadata get() {
         if (metaData == null) {
             this.metaData = grpcMetaDataConverter.convert(metaDataValues);
         }

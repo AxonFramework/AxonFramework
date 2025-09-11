@@ -35,7 +35,7 @@ import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
@@ -203,7 +203,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         byte[] serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();
-        byte[] serializedMetadata = serializer.serialize(eventMessage.metaData(), byte[].class).getData();
+        byte[] serializedMetadata = serializer.serialize(eventMessage.metadata(), byte[].class).getData();
         return new DbSchedulerBinaryEventData(serializedPayload, payloadClass, revision, serializedMetadata);
     }
 
@@ -230,7 +230,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         String serializedPayload = serialized.getData();
         String payloadClass = serialized.getType().getName();
         String revision = serialized.getType().getRevision();
-        String serializedMetadata = serializer.serialize(eventMessage.metaData(), String.class).getData();
+        String serializedMetadata = serializer.serialize(eventMessage.metadata(), String.class).getData();
         return new DbSchedulerHumanReadableEventData(serializedPayload, payloadClass, revision, serializedMetadata);
     }
 
@@ -241,10 +241,10 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         Object deserializedPayload = serializer.deserialize(serializedObject);
         EventMessage eventMessage = asEventMessage(deserializedPayload);
         if (!isNull(data.getM())) {
-            SimpleSerializedObject<byte[]> serializedMetaData = new SimpleSerializedObject<>(
-                    data.getM(), byte[].class, MetaData.class.getName(), null
+            SimpleSerializedObject<byte[]> serializedMetadata = new SimpleSerializedObject<>(
+                    data.getM(), byte[].class, Metadata.class.getName(), null
             );
-            eventMessage = eventMessage.andMetaData(serializer.deserialize(serializedMetaData));
+            eventMessage = eventMessage.andMetadata(serializer.deserialize(serializedMetadata));
         }
         return eventMessage;
     }
@@ -259,7 +259,7 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         return new GenericEventMessage(
                 messageTypeResolver.resolveOrThrow(event),
                 event,
-                MetaData.emptyInstance()
+                Metadata.emptyInstance()
         );
     }
 
@@ -270,10 +270,10 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         Object deserializedPayload = serializer.deserialize(serializedObject);
         EventMessage eventMessage = asEventMessage(deserializedPayload);
         if (!isNull(data.getSerializedMetadata())) {
-            SimpleSerializedObject<String> serializedMetaData = new SimpleSerializedObject<>(
-                    data.getSerializedMetadata(), String.class, MetaData.class.getName(), null
+            SimpleSerializedObject<String> serializedMetadata = new SimpleSerializedObject<>(
+                    data.getSerializedMetadata(), String.class, Metadata.class.getName(), null
             );
-            eventMessage = eventMessage.andMetaData(serializer.deserialize(serializedMetaData));
+            eventMessage = eventMessage.andMetadata(serializer.deserialize(serializedMetadata));
         }
         return eventMessage;
     }
@@ -363,9 +363,9 @@ public class DbSchedulerEventScheduler implements EventScheduler {
         }
 
         /**
-         * Sets the {@link Serializer} used to de-/serialize the {@code payload} and the {@link MetaData}.
+         * Sets the {@link Serializer} used to de-/serialize the {@code payload} and the {@link Metadata}.
          *
-         * @param serializer a {@link Serializer} used to de-/serialize the {@code payload}, and {@link MetaData}.
+         * @param serializer a {@link Serializer} used to de-/serialize the {@code payload}, and {@link Metadata}.
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder serializer(Serializer serializer) {

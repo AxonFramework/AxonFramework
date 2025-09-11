@@ -23,11 +23,11 @@ import jakarta.annotation.Nonnull;
 
 /**
  * Used to derive the value of an association property by looking it up the event message's {@link
- * org.axonframework.messaging.MetaData}.
+ * org.axonframework.messaging.Metadata}.
  *
  * @author Sofia Guy Ang
  */
-public class MetaDataAssociationResolver implements AssociationResolver {
+public class MetadataAssociationResolver implements AssociationResolver {
 
     /**
      * Does nothing because we can only check for existence of property in the metadata during event handling.
@@ -39,11 +39,11 @@ public class MetaDataAssociationResolver implements AssociationResolver {
 
     /**
      * Finds the association property value by looking up the association property name in the event message's {@link
-     * org.axonframework.messaging.MetaData}.
+     * org.axonframework.messaging.Metadata}.
      */
     @Override
     public <T> Object resolve(@Nonnull String associationPropertyName, @Nonnull EventMessage message,
                               @Nonnull MessageHandlingMember<T> handler) {
-        return message.metaData().get(associationPropertyName);
+        return message.metadata().get(associationPropertyName);
     }
 }

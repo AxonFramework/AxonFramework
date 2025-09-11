@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.time.Instant;
 import java.util.Map;
@@ -44,7 +44,7 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
      * Constructs a {@code GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
      * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code type}, and {@code payload}.
      * <p>
-     * The {@link MetaData} defaults to an empty instance.
+     * The {@link Metadata} defaults to an empty instance.
      *
      * @param aggregateType       The domain type generating this {@link DomainEventMessage}.
      * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
@@ -57,38 +57,38 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
                                      long sequenceNumber,
                                      @Nonnull MessageType type,
                                      @Nonnull Object payload) {
-        this(aggregateType, aggregateIdentifier, sequenceNumber, type, payload, MetaData.emptyInstance());
+        this(aggregateType, aggregateIdentifier, sequenceNumber, type, payload, Metadata.emptyInstance());
     }
 
     /**
      * Constructs a {@code GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
      * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code type}, {@code payload}, and
-     * {@code metaData}.
+     * {@code metadata}.
      *
      * @param aggregateType       The domain type generating this {@link DomainEventMessage}.
      * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
      * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
      * @param type                The {@link MessageType type} for this {@link DomainEventMessage}.
      * @param payload             The payload for this {@link DomainEventMessage}.
-     * @param metaData            The metadata for this {@link DomainEventMessage}.
+     * @param metadata            The metadata for this {@link DomainEventMessage}.
      */
     public GenericDomainEventMessage(String aggregateType,
                                      String aggregateIdentifier,
                                      long sequenceNumber,
                                      @Nonnull MessageType type,
                                      @Nonnull Object payload,
-                                     @Nonnull Map<String, String> metaData) {
+                                     @Nonnull Map<String, String> metadata) {
         this(aggregateType,
              aggregateIdentifier,
              sequenceNumber,
-             new GenericMessage(type, payload, metaData),
+             new GenericMessage(type, payload, metadata),
              clock.instant());
     }
 
     /**
      * Constructs a {@code GenericDomainEventMessage} originating from an aggregate of the given {@code aggregateType}
      * with the given {@code aggregateIdentifier}, {@code sequenceNumber}, {@code messageIdentifier}, {@code type},
-     * {@code payload}, {@code metaData}, and {@code timestamp}.
+     * {@code payload}, {@code metadata}, and {@code timestamp}.
      *
      * @param aggregateType       The domain type generating this {@link DomainEventMessage}.
      * @param aggregateIdentifier The identifier of the aggregate generating this {@link DomainEventMessage}.
@@ -96,7 +96,7 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
      * @param messageIdentifier   The identifier of this {@link DomainEventMessage}.
      * @param type                The {@link MessageType type} for this {@link DomainEventMessage}.
      * @param payload             The payload for this {@link DomainEventMessage}.
-     * @param metaData            The metadata for this {@link DomainEventMessage}.
+     * @param metadata            The metadata for this {@link DomainEventMessage}.
      * @param timestamp           The {@link Instant timestamp} of this {@link DomainEventMessage DomainEventMessage's}
      *                            creation.
      */
@@ -106,12 +106,12 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
                                      @Nonnull String messageIdentifier,
                                      @Nonnull MessageType type,
                                      @Nonnull Object payload,
-                                     @Nonnull Map<String, String> metaData,
+                                     @Nonnull Map<String, String> metadata,
                                      @Nonnull Instant timestamp) {
         this(aggregateType,
              aggregateIdentifier,
              sequenceNumber,
-             new GenericMessage(messageIdentifier, type, payload, metaData),
+             new GenericMessage(messageIdentifier, type, payload, metadata),
              timestamp);
     }
 
@@ -131,7 +131,7 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
      * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
      * @param delegate            The {@link Message} containing {@link Message#payload() payload},
      *                            {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                            {@link Message#metaData() metadata} for the {@link DomainEventMessage} to
+     *                            {@link Message#metadata() metadata} for the {@link DomainEventMessage} to
      *                            reconstruct.
      * @param timestampSupplier   The {@link Instant timestampSupplier} of this
      *                            {@link DomainEventMessage GenericDomainEventMessage's} creation.
@@ -153,7 +153,7 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
      * intended to reconstruct another {@link DomainEventMessage}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
-     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@link Message#metadata() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericEventMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -164,7 +164,7 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
      * @param sequenceNumber      The {@link DomainEventMessage DomainEventMessage's} sequence number.
      * @param delegate            The {@link Message} containing {@link Message#payload() payload},
      *                            {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                            {@link Message#metaData() metadata} for the {@link DomainEventMessage} to
+     *                            {@link Message#metadata() metadata} for the {@link DomainEventMessage} to
      *                            reconstruct.
      * @param timestamp           The {@link Instant timestamp} of this {@link DomainEventMessage DomainEventMessage's}
      *                            creation.
@@ -197,28 +197,28 @@ public class GenericDomainEventMessage extends GenericEventMessage implements Do
 
     @Override
     @Nonnull
-    public GenericDomainEventMessage withMetaData(@Nonnull Map<String, String> metaData) {
-        if (metaData().equals(metaData)) {
+    public GenericDomainEventMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        if (metadata().equals(metadata)) {
             return this;
         }
         return new GenericDomainEventMessage(aggregateType,
                                              aggregateIdentifier,
                                              sequenceNumber,
-                                             delegate().withMetaData(metaData),
+                                             delegate().withMetadata(metadata),
                                              timestamp());
     }
 
     @Override
     @Nonnull
-    public GenericDomainEventMessage andMetaData(@Nonnull Map<String, String> metaData) {
+    public GenericDomainEventMessage andMetadata(@Nonnull Map<String, String> metadata) {
         //noinspection ConstantConditions
-        if (metaData == null || metaData.isEmpty() || metaData().equals(metaData)) {
+        if (metadata == null || metadata.isEmpty() || metadata().equals(metadata)) {
             return this;
         }
         return new GenericDomainEventMessage(aggregateType,
                                              aggregateIdentifier,
                                              sequenceNumber,
-                                             delegate().andMetaData(metaData),
+                                             delegate().andMetadata(metadata),
                                              timestamp());
     }
 

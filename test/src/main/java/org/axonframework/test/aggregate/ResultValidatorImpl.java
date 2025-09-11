@@ -108,9 +108,9 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
         Iterator<EventMessage> iterator = publishedEvents.iterator();
         for (EventMessage expectedEvent : expectedEvents) {
             EventMessage actualEvent = iterator.next();
-            if (!verifyMetaDataEquality(expectedEvent.payloadType(),
-                                        expectedEvent.metaData(),
-                                        actualEvent.metaData())) {
+            if (!verifyMetadataEquality(expectedEvent.payloadType(),
+                                        expectedEvent.metadata(),
+                                        actualEvent.metadata())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
@@ -357,13 +357,13 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
-        MapStringEntryMatcher expectedMatcher = new MapStringEntryMatcher(expectedResultMessage.metaData());
-        MapStringEntryMatcher actualMatcher = new MapStringEntryMatcher(actualReturnValue.metaData());
+        MapStringEntryMatcher expectedMatcher = new MapStringEntryMatcher(expectedResultMessage.metadata());
+        MapStringEntryMatcher actualMatcher = new MapStringEntryMatcher(actualReturnValue.metadata());
         expectedMatcher.describeTo(expectedDescription);
         actualMatcher.describeTo(actualDescription);
-        if (!verifyMetaDataEquality(expectedResultMessage.payloadType(),
-                                    expectedResultMessage.metaData(),
-                                    actualReturnValue.metaData())) {
+        if (!verifyMetadataEquality(expectedResultMessage.payloadType(),
+                                    expectedResultMessage.metadata(),
+                                    actualReturnValue.metadata())) {
             reporter.reportWrongResult(actualDescription, expectedDescription);
         }
 
@@ -533,12 +533,12 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean verifyMetaDataEquality(Class<?> eventType,
-                                           Map<String, String> expectedMetaData,
-                                           Map<String, String> actualMetaData) {
-        MapStringEntryMatcher matcher = new MapStringEntryMatcher(expectedMetaData);
-        if (!matcher.matches(actualMetaData)) {
-            reporter.reportDifferentMetaData(eventType, matcher.getMissingEntries(), matcher.getAdditionalEntries());
+    private boolean verifyMetadataEquality(Class<?> eventType,
+                                           Map<String, String> expectedMetadata,
+                                           Map<String, String> actualMetadata) {
+        MapStringEntryMatcher matcher = new MapStringEntryMatcher(expectedMetadata);
+        if (!matcher.matches(actualMetadata)) {
+            reporter.reportDifferentMetadata(eventType, matcher.getMissingEntries(), matcher.getAdditionalEntries());
         }
         return true;
     }

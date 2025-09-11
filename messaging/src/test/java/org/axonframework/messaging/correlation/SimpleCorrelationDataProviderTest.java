@@ -31,12 +31,12 @@ class SimpleCorrelationDataProviderTest {
 
     @Test
     void resolveCorrelationData() {
-        Map<String, String> metaData = new HashMap<>();
-        metaData.put("key1", "value1");
-        metaData.put("key2", "value2");
-        metaData.put("key3", "value3");
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("key1", "value1");
+        metadata.put("key2", "value2");
+        metadata.put("key3", "value3");
         Message message =
-                new GenericMessage(new MessageType("message"), "payload", metaData);
+                new GenericMessage(new MessageType("message"), "payload", metadata);
 
         assertEquals(singletonMap("key1", "value1"),
                      new SimpleCorrelationDataProvider("key1").correlationDataFor(message));

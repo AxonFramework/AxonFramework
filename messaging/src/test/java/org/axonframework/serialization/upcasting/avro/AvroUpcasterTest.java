@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.SerializationException;
 import org.axonframework.serialization.SerializedObject;
@@ -75,7 +75,7 @@ class AvroUpcasterTest {
     void modifyPropertyOfComplexObjectInUpcaster() {
         schemaStore.addSchema(ComplexObject.getClassSchema());
 
-        MetaData metaData = MetaData.with("key", "value");
+        Metadata metadata = Metadata.with("key", "value");
         ComplexObject payload = ComplexObject.newBuilder()
                                              .setValue1("foo")
                                              .setValue2("bar")
@@ -88,7 +88,7 @@ class AvroUpcasterTest {
                 0,
                 new MessageType(ComplexObject.class),
                 payload,
-                metaData
+                metadata
         );
 
         EventData<?> eventData = new ByteArrayDomainEventEntry(msg, converter);
@@ -153,7 +153,7 @@ class AvroUpcasterTest {
 
         // and apply it to the event stream
         SerializedObject<?> dataAfterUpcast = setMissingValue1Upcaster.upcast(Stream.of(new InitialEventRepresentation(
-                eventData(oldPayload, converter.serialize(MetaData.with("key", "value"), byte[].class)),
+                eventData(oldPayload, converter.serialize(Metadata.with("key", "value"), byte[].class)),
                 converter)
         )).toList().getFirst().getData();
 
@@ -197,7 +197,7 @@ class AvroUpcasterTest {
         }
     }
 
-    private static EventData<byte[]> eventData(SerializedObject<byte[]> payload, SerializedObject<byte[]> metaData) {
+    private static EventData<byte[]> eventData(SerializedObject<byte[]> payload, SerializedObject<byte[]> metadata) {
         return new EventData<>() {
             @Override
             public String getEventIdentifier() {
@@ -210,8 +210,8 @@ class AvroUpcasterTest {
             }
 
             @Override
-            public SerializedObject<byte[]> getMetaData() {
-                return metaData;
+            public SerializedObject<byte[]> getMetadata() {
+                return metadata;
             }
 
             @Override

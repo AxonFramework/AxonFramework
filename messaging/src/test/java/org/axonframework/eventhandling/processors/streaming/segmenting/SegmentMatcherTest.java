@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
@@ -62,7 +62,7 @@ class SegmentMatcherTest {
                 new GenericEventMessage(messageId,
                                           messageType,
                                           "test-payload",
-                                          MetaData.emptyInstance(),
+                                          Metadata.emptyInstance(),
                                           Instant.now()));
         Segment segment = Segment.ROOT_SEGMENT; // Matches everything
 

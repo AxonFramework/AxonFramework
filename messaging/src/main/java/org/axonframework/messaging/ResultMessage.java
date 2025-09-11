@@ -80,11 +80,11 @@ public interface ResultMessage extends Message {
 
     @Override
     @Nonnull
-    ResultMessage withMetaData(@Nonnull Map<String, String> metaData);
+    ResultMessage withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    ResultMessage andMetaData(@Nonnull Map<String, String> metaData);
+    ResultMessage andMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull

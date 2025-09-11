@@ -23,7 +23,7 @@ import io.axoniq.axonserver.grpc.event.Event;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
-import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
+import org.axonframework.axonserver.connector.util.GrpcMetadataConverter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
@@ -32,7 +32,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
@@ -59,7 +59,7 @@ public class AxonServerEventScheduler implements EventScheduler {
     private final long requestTimeout;
     private final Serializer serializer;
     private final AxonServerConnectionManager axonServerConnectionManager;
-    private final GrpcMetaDataConverter converter;
+    private final GrpcMetadataConverter converter;
     private final String context;
 
     private final AtomicBoolean started = new AtomicBoolean();
@@ -92,7 +92,7 @@ public class AxonServerEventScheduler implements EventScheduler {
         this.serializer = builder.serializer.get();
         this.axonServerConnectionManager = builder.axonServerConnectionManager;
         this.context = builder.defaultContext;
-        this.converter = new GrpcMetaDataConverter(serializer);
+        this.converter = new GrpcMetadataConverter(serializer);
     }
 
     /**
@@ -211,14 +211,14 @@ public class AxonServerEventScheduler implements EventScheduler {
 
     private Event toEvent(Object event) {
         SerializedObject<byte[]> serializedPayload;
-        MetaData metadata;
+        Metadata metadata;
         String requestId = null;
         if (event instanceof EventMessage e) {
             serializedPayload = serializer.serialize(e.payload(), byte[].class);
-            metadata = e.metaData();
+            metadata = e.metadata();
             requestId = e.identifier();
         } else {
-            metadata = MetaData.emptyInstance();
+            metadata = Metadata.emptyInstance();
             serializedPayload = serializer.serialize(event, byte[].class);
         }
         if (requestId == null) {
@@ -234,7 +234,7 @@ public class AxonServerEventScheduler implements EventScheduler {
                                                                   ""
                                                           ))
                                                           .setData(ByteString.copyFrom(serializedPayload.getData())));
-        metadata.forEach((k, v) -> builder.putMetaData(k, converter.convertToMetaDataValue(v)));
+        metadata.forEach((k, v) -> builder.putMetaData(k, converter.convertToMetadataValue(v)));
         return builder.build();
     }
 

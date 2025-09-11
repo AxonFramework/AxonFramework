@@ -152,7 +152,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
      * @param transactionManager    The transaction manager, ensuring all operations to the storage solution occur
      *                              transactionally.
      * @param converter             The converter used to convert the {@link EventMessage#payload()} and
-     *                              {@link EventMessage#metaData()} to a {@code byte[]}.
+     *                              {@link EventMessage#metadata()} to a {@code byte[]}.
      * @param configurer            A unary operator of the {@link AggregateBasedJpaEventStorageEngineConfiguration}
      *                              that customizes the {@code AggregateBasedJpaEventStorageEngine} under construction.
      */
@@ -268,7 +268,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                 event.type().name(),
                 event.type().version(),
                 event.payloadAs(byte[].class, converter),
-                converter.convert(event.metaData(), byte[].class),
+                converter.convert(event.metadata(), byte[].class),
                 event.timestamp(),
                 resolveAggregateType(tags),
                 resolveAggregateIdentifier(tags),
@@ -441,7 +441,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         return new GenericEventMessage(event.identifier(),
                                        new MessageType(event.type(), event.version()),
                                        event.payload(),
-                                       converter.convert(event.metaData(), METADATA_MAP_TYPE_REF.getType()),
+                                       converter.convert(event.metadata(), METADATA_MAP_TYPE_REF.getType()),
                                        event.timestamp());
     }
 

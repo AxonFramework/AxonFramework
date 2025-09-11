@@ -22,7 +22,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.query.GrpcBackedQueryMessage;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
@@ -54,12 +54,12 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
 
     /**
      * Instantiate a {@link GrpcBackedSubscriptionQueryMessage} with the given {@code subscriptionQuery}, using the
-     * provided {@code messageSerializer} to be able to retrieve the payload and {@link MetaData} from it. The
+     * provided {@code messageSerializer} to be able to retrieve the payload and {@link Metadata} from it. The
      * {@code serializer} is solely used to deserialize the response type of the update message.
      *
      * @param subscriptionQuery The {@link SubscriptionQuery} which is being wrapped as a
      *                          {@link SubscriptionQueryMessage}.
-     * @param messageSerializer The {@link Serializer} used to deserialize the payload and {@link MetaData} from the
+     * @param messageSerializer The {@link Serializer} used to deserialize the payload and {@link Metadata} from the
      *                          given {@code queryRequest}.
      * @param serializer        The {@link Serializer} used to deserialize the response type.
      */
@@ -118,8 +118,8 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
 
     @Override
     @Nonnull
-    public MetaData metaData() {
-        return grpcBackedQueryMessage.metaData();
+    public Metadata metadata() {
+        return grpcBackedQueryMessage.metadata();
     }
 
     @Override
@@ -130,16 +130,16 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
 
     @Override
     @Nonnull
-    public GrpcBackedSubscriptionQueryMessage<P, I, U> withMetaData(@Nonnull Map<String, String> metaData) {
+    public GrpcBackedSubscriptionQueryMessage<P, I, U> withMetadata(@Nonnull Map<String, String> metadata) {
         return new GrpcBackedSubscriptionQueryMessage<>(subscriptionQuery,
-                                                        grpcBackedQueryMessage.withMetaData(metaData),
+                                                        grpcBackedQueryMessage.withMetadata(metadata),
                                                         serializedUpdateResponseType);
     }
 
     @Override
     @Nonnull
-    public GrpcBackedSubscriptionQueryMessage<P, I, U> andMetaData(@Nonnull Map<String, String> metaData) {
-        return withMetaData(metaData().mergedWith(metaData));
+    public GrpcBackedSubscriptionQueryMessage<P, I, U> andMetadata(@Nonnull Map<String, String> metadata) {
+        return withMetadata(metadata().mergedWith(metadata));
     }
 
     @Override

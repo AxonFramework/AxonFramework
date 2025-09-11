@@ -23,7 +23,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
@@ -46,54 +46,54 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
     /**
      * Constructs a {@code GenericCommandMessage} for the given {@code type} and {@code payload}.
      * <p>
-     * The {@link MetaData} defaults to an empty instance.
+     * The {@link Metadata} defaults to an empty instance.
      *
      * @param type    The {@link MessageType type} for this {@link CommandMessage}.
      * @param payload The payload for this {@link CommandMessage}.
      */
     public GenericCommandMessage(@Nonnull MessageType type,
                                  @Nullable Object payload) {
-        this(type, payload, MetaData.emptyInstance());
+        this(type, payload, Metadata.emptyInstance());
     }
 
     /**
-     * Constructs a {@code GenericCommandMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
+     * Constructs a {@code GenericCommandMessage} for the given {@code type}, {@code payload}, and {@code metadata}.
      *
      * @param type     The {@link MessageType type} for this {@link CommandMessage}.
      * @param payload  The payload for this {@link CommandMessage}.
-     * @param metaData The metadata for this {@link CommandMessage}.
+     * @param metadata The metadata for this {@link CommandMessage}.
      */
     public GenericCommandMessage(@Nonnull MessageType type,
                                  @Nullable Object payload,
-                                 @Nonnull Map<String, String> metaData) {
-        this(new GenericMessage(type, payload, metaData));
+                                 @Nonnull Map<String, String> metadata) {
+        this(new GenericMessage(type, payload, metadata));
     }
 
 
     /**
-     * Constructs a {@code GenericCommandMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
+     * Constructs a {@code GenericCommandMessage} for the given {@code type}, {@code payload}, and {@code metadata}.
      * <p>
      * Optionally, a {@code routingKey} and/or a {@code priority} may be passed.
      *
      * @param type       The {@link MessageType type} for this {@link CommandMessage}.
      * @param payload    The payload for this {@link CommandMessage}.
-     * @param metaData   The metadata for this {@link CommandMessage}.
+     * @param metadata   The metadata for this {@link CommandMessage}.
      * @param routingKey The routing key for this {@link CommandMessage}, if any.
      * @param priority   The priority for this {@link CommandMessage}, if any.
      */
     public GenericCommandMessage(@Nonnull MessageType type,
                                  @Nonnull Object payload,
-                                 @Nonnull Map<String, String> metaData,
+                                 @Nonnull Map<String, String> metadata,
                                  @Nullable String routingKey,
                                  @Nullable Integer priority) {
-        this(new GenericMessage(type, payload, metaData), routingKey, priority);
+        this(new GenericMessage(type, payload, metadata), routingKey, priority);
     }
 
     /**
      * Constructs a {@code GenericCommandMessage} with given {@code delegate}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
-     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@link Message#metadata() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericCommandMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -101,7 +101,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      *
      * @param delegate The {@link Message} containing {@link Message#payload() payload},
      *                 {@link Message#type() qualifiedName}, {@link Message#identifier() identifier} and
-     *                 {@link Message#metaData() metadata} for the {@link CommandMessage} to reconstruct.
+     *                 {@link Message#metadata() metadata} for the {@link CommandMessage} to reconstruct.
      */
     public GenericCommandMessage(@Nonnull Message delegate) {
         this(delegate, null, null);
@@ -112,7 +112,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      * {@code priority}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
-     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@link Message#metadata() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericCommandMessage}.<br/> Optionally, a {@code routingKey} and/or a {@code priority} may be passed.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -120,7 +120,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
      *
      * @param delegate   The {@link Message} containing {@link Message#payload() payload},
      *                   {@link Message#type() qualifiedName}, {@link Message#identifier() identifier} and
-     *                   {@link Message#metaData() metadata} for the {@link CommandMessage} to reconstruct.
+     *                   {@link Message#metadata() metadata} for the {@link CommandMessage} to reconstruct.
      * @param routingKey The routing key for this {@link CommandMessage}, if any.
      * @param priority   The priority for this {@link CommandMessage}, if any.
      */
@@ -147,14 +147,14 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
 
     @Override
     @Nonnull
-    public CommandMessage withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericCommandMessage(delegate().withMetaData(metaData));
+    public CommandMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        return new GenericCommandMessage(delegate().withMetadata(metadata));
     }
 
     @Override
     @Nonnull
-    public CommandMessage andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericCommandMessage(delegate().andMetaData(metaData));
+    public CommandMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        return new GenericCommandMessage(delegate().andMetadata(metadata));
     }
 
     @Override
@@ -168,7 +168,7 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
         Message converted = new GenericMessage(delegate.identifier(),
                                                delegate.type(),
                                                convertedPayload,
-                                               delegate.metaData());
+                                               delegate.metadata());
         return new GenericCommandMessage(converted, routingKey, priority);
     }
 

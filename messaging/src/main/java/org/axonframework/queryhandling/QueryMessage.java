@@ -47,11 +47,11 @@ public interface QueryMessage extends Message {
 
     @Override
     @Nonnull
-    QueryMessage withMetaData(@Nonnull Map<String, String> metaData);
+    QueryMessage withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    QueryMessage andMetaData(@Nonnull Map<String, String> additionalMetaData);
+    QueryMessage andMetadata(@Nonnull Map<String, String> additionalMetadata);
 
     @Override
     @Nonnull

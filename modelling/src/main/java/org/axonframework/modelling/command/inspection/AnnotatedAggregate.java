@@ -28,7 +28,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.Aggregate;
@@ -471,11 +471,11 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     }
 
     @Override
-    protected <P> ApplyMore doApply(P payload, MetaData metaData) {
+    protected <P> ApplyMore doApply(P payload, Metadata metadata) {
         if (!applying && aggregateRoot != null) {
             applying = true;
             try {
-                publish(createMessage(payload, metaData));
+                publish(createMessage(payload, metadata));
             } finally {
                 applying = false;
             }
@@ -491,20 +491,20 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 }
             }
         } else {
-            delayedTasks.add(() -> doApply(payload, metaData));
+            delayedTasks.add(() -> doApply(payload, metadata));
         }
         return this;
     }
 
     /**
-     * Creates an {@link EventMessage} with given {@code payload} and {@code metaData}.
+     * Creates an {@link EventMessage} with given {@code payload} and {@code metadata}.
      *
      * @param payload  payload of the resulting message
-     * @param metaData metadata of the resulting message
+     * @param metadata metadata of the resulting message
      * @param <P>      the payload type
      * @return the resulting message
      */
-    protected <P> EventMessage createMessage(P payload, MetaData metaData) {
+    protected <P> EventMessage createMessage(P payload, Metadata metadata) {
         MessageType type = new MessageType(payload.getClass());
         if (lastKnownSequence != null) {
             String aggregateType = inspector.declaredType(rootType())
@@ -514,11 +514,11 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             if (id == null) {
                 Assert.state(seq == 0,
                              () -> "The aggregate identifier has not been set. It must be set at the latest when applying the creation event");
-                return new LazyIdentifierDomainEventMessage<>(aggregateType, seq, type, payload, metaData);
+                return new LazyIdentifierDomainEventMessage<>(aggregateType, seq, type, payload, metadata);
             }
-            return new GenericDomainEventMessage(aggregateType, identifierAsString(), seq, type, payload, metaData);
+            return new GenericDomainEventMessage(aggregateType, identifierAsString(), seq, type, payload, metadata);
         }
-        return new GenericEventMessage(type, payload, metaData);
+        return new GenericEventMessage(type, payload, metadata);
     }
 
     /**
@@ -555,9 +555,9 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      */
     protected void applyMessageOrPayload(Object payloadOrMessage) {
         if (payloadOrMessage instanceof Message message) {
-            apply(message.payload(), message.metaData());
+            apply(message.payload(), message.metadata());
         } else if (payloadOrMessage != null) {
-            apply(payloadOrMessage, MetaData.emptyInstance());
+            apply(payloadOrMessage, Metadata.emptyInstance());
         }
     }
 
@@ -567,8 +567,8 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                                                 long seq,
                                                 MessageType type,
                                                 P payload,
-                                                MetaData metaData) {
-            super(aggregateType, null, seq, type, payload, metaData);
+                                                Metadata metadata) {
+            super(aggregateType, null, seq, type, payload, metadata);
         }
 
         @Override
@@ -578,34 +578,34 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
         @Override
         @Nonnull
-        public GenericDomainEventMessage withMetaData(@Nonnull Map<String, String> newMetaData) {
+        public GenericDomainEventMessage withMetadata(@Nonnull Map<String, String> newMetadata) {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage(
                         getType(), getAggregateIdentifier(), getSequenceNumber(),
-                        identifier(), type(), payload(), metaData(), timestamp()
+                        identifier(), type(), payload(), metadata(), timestamp()
                 );
             } else {
                 return new LazyIdentifierDomainEventMessage<>(
                         getType(), getSequenceNumber(),
-                        type(), payload(), MetaData.from(newMetaData)
+                        type(), payload(), Metadata.from(newMetadata)
                 );
             }
         }
 
         @Override
         @Nonnull
-        public GenericDomainEventMessage andMetaData(@Nonnull Map<String, String> additionalMetaData) {
+        public GenericDomainEventMessage andMetadata(@Nonnull Map<String, String> additionalMetadata) {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage(
                         getType(), getAggregateIdentifier(), getSequenceNumber(),
-                        identifier(), type(), payload(), metaData(), timestamp()
-                ).andMetaData(additionalMetaData);
+                        identifier(), type(), payload(), metadata(), timestamp()
+                ).andMetadata(additionalMetadata);
             } else {
                 return new LazyIdentifierDomainEventMessage<>(
                         getType(), getSequenceNumber(),
-                        type(), payload(), metaData().mergedWith(additionalMetaData)
+                        type(), payload(), metadata().mergedWith(additionalMetadata)
                 );
             }
         }

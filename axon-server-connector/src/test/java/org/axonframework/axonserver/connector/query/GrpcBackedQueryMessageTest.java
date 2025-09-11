@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -92,17 +92,17 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void metaDataReturnsTheSameMapAsWasInsertedInTheQueryRequest() {
-        MetaData expectedMetaData = MetaData.with("some-key", "some-value");
+    void metadataReturnsTheSameMapAsWasInsertedInTheQueryRequest() {
+        Metadata expectedMetadata = Metadata.with("some-key", "some-value");
         QueryMessage testQueryMessage = new GenericQueryMessage(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE
-        ).withMetaData(expectedMetaData);
+        ).withMetadata(expectedMetadata);
         QueryRequest testQueryRequest =
                 querySerializer.serializeRequest(testQueryMessage, NUMBER_OF_RESULTS, TIMEOUT, PRIORITY);
         GrpcBackedQueryMessage<TestQuery, String> testSubject =
                 new GrpcBackedQueryMessage<>(testQueryRequest, serializer, serializer);
 
-        assertEquals(expectedMetaData, testSubject.metaData());
+        assertEquals(expectedMetadata, testSubject.metadata());
     }
 
     @Test
@@ -131,42 +131,42 @@ class GrpcBackedQueryMessageTest {
     }
 
     @Test
-    void withMetaDataCompletelyReplacesTheInitialMetaDataMap() {
-        MetaData testMetaData = MetaData.with("some-key", "some-value");
+    void withMetadataCompletelyReplacesTheInitialMetadataMap() {
+        Metadata testMetadata = Metadata.with("some-key", "some-value");
         QueryMessage testQueryMessage = new GenericQueryMessage(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE
-        ).withMetaData(testMetaData);
+        ).withMetadata(testMetadata);
         QueryRequest testQueryRequest =
                 querySerializer.serializeRequest(testQueryMessage, NUMBER_OF_RESULTS, TIMEOUT, PRIORITY);
         GrpcBackedQueryMessage<TestQuery, String> testSubject =
                 new GrpcBackedQueryMessage<>(testQueryRequest, serializer, serializer);
 
-        MetaData replacementMetaData = MetaData.with("some-other-key", "some-other-value");
+        Metadata replacementMetadata = Metadata.with("some-other-key", "some-other-value");
 
-        testSubject = testSubject.withMetaData(replacementMetaData);
-        MetaData resultMetaData = testSubject.metaData();
-        assertFalse(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
-        assertEquals(replacementMetaData, resultMetaData);
+        testSubject = testSubject.withMetadata(replacementMetadata);
+        Metadata resultMetadata = testSubject.metadata();
+        assertFalse(resultMetadata.containsKey(testMetadata.keySet().iterator().next()));
+        assertEquals(replacementMetadata, resultMetadata);
     }
 
     @Test
-    void andMetaDataAppendsToTheExistingMetaData() {
-        MetaData testMetaData = MetaData.with("some-key", "some-value");
+    void andMetadataAppendsToTheExistingMetadata() {
+        Metadata testMetadata = Metadata.with("some-key", "some-value");
         QueryMessage testQueryMessage = new GenericQueryMessage(
                 new MessageType("query"), TEST_QUERY, RESPONSE_TYPE
-        ).withMetaData(testMetaData);
+        ).withMetadata(testMetadata);
         QueryRequest testQueryRequest =
                 querySerializer.serializeRequest(testQueryMessage, NUMBER_OF_RESULTS, TIMEOUT, PRIORITY);
         GrpcBackedQueryMessage<TestQuery, String> testSubject =
                 new GrpcBackedQueryMessage<>(testQueryRequest, serializer, serializer);
 
-        MetaData additionalMetaData = MetaData.with("some-other-key", "some-other-value");
+        Metadata additionalMetadata = Metadata.with("some-other-key", "some-other-value");
 
-        testSubject = testSubject.andMetaData(additionalMetaData);
-        MetaData resultMetaData = testSubject.metaData();
+        testSubject = testSubject.andMetadata(additionalMetadata);
+        Metadata resultMetadata = testSubject.metadata();
 
-        assertTrue(resultMetaData.containsKey(testMetaData.keySet().iterator().next()));
-        assertTrue(resultMetaData.containsKey(additionalMetaData.keySet().iterator().next()));
+        assertTrue(resultMetadata.containsKey(testMetadata.keySet().iterator().next()));
+        assertTrue(resultMetadata.containsKey(additionalMetadata.keySet().iterator().next()));
     }
 
     private static class TestQuery {
