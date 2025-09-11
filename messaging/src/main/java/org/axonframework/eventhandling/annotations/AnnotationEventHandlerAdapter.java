@@ -169,7 +169,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
 
     @Override
     public void prepareReset(ProcessingContext context) {
-        prepareReset(null, null);
+        prepareReset(null, context);
     }
 
     @Override

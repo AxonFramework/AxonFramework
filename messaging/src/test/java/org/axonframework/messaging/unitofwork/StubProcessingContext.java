@@ -22,9 +22,11 @@ import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.DefaultComponentRegistry;
+import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.ApplicationContext;
 import org.axonframework.messaging.ConfigurationApplicationContext;
 import org.axonframework.messaging.EmptyApplicationContext;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Message;
 import org.axonframework.utils.StubLifecycleRegistry;
 
@@ -189,6 +191,19 @@ public class StubProcessingContext implements ProcessingContext {
     public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
                                       @Nonnull T expectedResource) {
         return resources.remove(key, expectedResource);
+    }
+
+    /**
+     *
+     * @param domainEventMessage
+     * @return
+     */
+    @Deprecated
+    public static ProcessingContext forMessage(DomainEventMessage domainEventMessage) {
+        return Message.addToContext(new StubProcessingContext(), domainEventMessage)
+                .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, domainEventMessage.getAggregateIdentifier())
+                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, domainEventMessage.getSequenceNumber())
+                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, domainEventMessage.getType());
     }
 
     /**
