@@ -23,7 +23,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Optional;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.*;
 
 /**
  * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the {@link EventMessage}'s
@@ -47,8 +47,7 @@ public class MetaDataSequencingPolicy implements SequencingPolicy {
      * @param metaDataKey The key to be used as a lookup for the property to be used as the Sequence Policy.
      */
     public MetaDataSequencingPolicy(@Nonnull String metaDataKey) {
-        assertNonNull(metaDataKey, "MetaDataKey value may not be null");
-        this.metaDataKey = metaDataKey;
+        this.metaDataKey =  assertNonBlank(metaDataKey, "MetaDataKey value may not be null or blank.");;
     }
 
     @Override

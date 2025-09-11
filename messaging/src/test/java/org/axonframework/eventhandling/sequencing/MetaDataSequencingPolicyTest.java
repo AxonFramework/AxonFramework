@@ -52,8 +52,14 @@ public class MetaDataSequencingPolicyTest {
     }
 
     @Test
-    void missingHardRequirementShouldThrowException() {
+    void nullMetaDataKeyShouldThrowException() {
         assertThrows(AxonConfigurationException.class,
                      () -> new MetaDataSequencingPolicy(null));
+    }
+
+    @Test
+    void blankMetaDataKeyShouldThrowException() {
+        assertThrows(AxonConfigurationException.class,
+                     () -> new MetaDataSequencingPolicy("   "));
     }
 }

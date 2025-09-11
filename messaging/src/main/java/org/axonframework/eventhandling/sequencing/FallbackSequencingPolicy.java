@@ -53,12 +53,10 @@ public class FallbackSequencingPolicy<E extends Exception> implements Sequencing
     public FallbackSequencingPolicy(@Nonnull SequencingPolicy delegate, 
                                     @Nonnull SequencingPolicy fallback,
                                     @Nonnull Class<E> exceptionType) {
-        Objects.requireNonNull(delegate, "Delegate may not be null.");
-        Objects.requireNonNull(fallback, "Fallback may not be null.");
-        Objects.requireNonNull(exceptionType, "Exception type may not be null.");
-        this.delegate = delegate;
-        this.fallback = fallback;
-        this.exceptionType = exceptionType;
+
+        this.delegate =  Objects.requireNonNull(delegate, "Delegate may not be null.");
+        this.fallback = Objects.requireNonNull(fallback, "Fallback may not be null.");
+        this.exceptionType = Objects.requireNonNull(exceptionType, "Exception type may not be null.");;
     }
 
     @Override

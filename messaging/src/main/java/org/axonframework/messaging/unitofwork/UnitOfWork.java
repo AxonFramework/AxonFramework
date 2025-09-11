@@ -425,7 +425,7 @@ public class UnitOfWork implements ProcessingLifecycle {
 
         @Override
         public Map<ResourceKey<?>, Object> resources() {
-            return resources;
+            return Map.copyOf(resources);
         }
 
         @Override

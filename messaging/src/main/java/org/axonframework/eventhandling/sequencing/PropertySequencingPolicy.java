@@ -33,7 +33,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 4.5.2
  */
 @SuppressWarnings("rawtypes")
-public class PropertySequencingPolicy<T, K> extends ExpressionSequencingPolicy<T, K> {
+public class PropertySequencingPolicy<T, K> extends ExtractionSequencingPolicy<T, K> {
     /**
      * Creates a new instance of the {@link PropertySequencingPolicy}, which extracts the sequence identifier from the
      * event message payload of the given {@code payloadClass} using the given {@code identifierExtractor}.

@@ -35,14 +35,14 @@ import java.util.function.Function;
  * @author Nils Christian Ehmke
  * @since 5.0.0
  */
-public class ExpressionSequencingPolicy<T, K> implements SequencingPolicy {
+public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy {
 
     private final Class<T> payloadClass;
     private final Function<T, K> identifierExtractor;
     private final EventConverter eventConverter;
 
     /**
-     * Creates a new instance of the {@link ExpressionSequencingPolicy}, which extracts the sequence identifier from the
+     * Creates a new instance of the {@link ExtractionSequencingPolicy}, which extracts the sequence identifier from the
      * event message payload of the given {@code payloadClass} using the given {@code identifierExtractor}.
      *
      * @param payloadClass        The class of the supported event payloads.
@@ -50,7 +50,7 @@ public class ExpressionSequencingPolicy<T, K> implements SequencingPolicy {
      * @param eventConverter      The converter to use to convert event messages if their payload is not of the expected
      *                            type.
      */
-    public ExpressionSequencingPolicy(
+    public ExtractionSequencingPolicy(
             @Nonnull Class<T> payloadClass,
             @Nonnull Function<T, K> identifierExtractor,
             @Nonnull EventConverter eventConverter
@@ -68,11 +68,6 @@ public class ExpressionSequencingPolicy<T, K> implements SequencingPolicy {
     ) {
         Objects.requireNonNull(eventMessage, "EventMessage may not be null");
         Objects.requireNonNull(context, "ProcessingContext may not be null");
-
-        if (payloadClass.isAssignableFrom(eventMessage.payloadType())) {
-            @SuppressWarnings("unchecked") final T castedPayload = (T) eventMessage.payload();
-            return Optional.ofNullable(identifierExtractor.apply(castedPayload));
-        }
 
         var convertedPayload = eventMessage.payloadAs(payloadClass, eventConverter);
         return Optional.ofNullable(identifierExtractor.apply(convertedPayload));

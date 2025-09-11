@@ -24,12 +24,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Implementation of {@link SequencingPolicy} that combines two policies in a fallback pattern. When the primary
- * policy fails to determine a sequence identifier for an event (returns {@code Optional.empty()}), this implementation
- * will delegate to a secondary fallback policy.
+ * Implementation of {@link SequencingPolicy} that combines two policies in a fallback pattern. When the primary policy
+ * fails to determine a sequence identifier for an event (returns {@code Optional.empty()}), this implementation will
+ * delegate to a secondary fallback policy.
  * <p>
- * This allows for composing sequencing strategies where certain event types might be handled by specialized
- * policies, falling back to more generic approaches when specialized sequencing fails.
+ * This allows for composing sequencing strategies where certain event types might be handled by specialized policies,
+ * falling back to more generic approaches when specialized sequencing fails.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -42,15 +42,13 @@ public class HierarchicalSequencingPolicy implements SequencingPolicy {
     /**
      * Initializes a new instance with the given primary {@code delegate} and {@code fallback} policies.
      *
-     * @param primary The primary policy to attempt sequence identification with first, not {@code null}.
+     * @param primary   The primary policy to attempt sequence identification with first, not {@code null}.
      * @param secondary The fallback policy to use when the delegate fails, not {@code null}.
      * @throws NullPointerException When either the {@code delegate} or {@code fallback} is {@code null}.
      */
     public HierarchicalSequencingPolicy(@Nonnull SequencingPolicy primary, @Nonnull SequencingPolicy secondary) {
-        Objects.requireNonNull(primary, "Primary may not be null.");
-        Objects.requireNonNull(secondary, "Secondary may not be null.");
-        this.primary = primary;
-        this.secondary = secondary;
+        this.primary = Objects.requireNonNull(primary, "Primary may not be null.");
+        this.secondary = Objects.requireNonNull(secondary, "Secondary may not be null.");
     }
 
     @Override

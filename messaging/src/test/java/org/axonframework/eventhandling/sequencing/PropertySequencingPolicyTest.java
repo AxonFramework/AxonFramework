@@ -41,7 +41,7 @@ final class PropertySequencingPolicyTest {
     @Test
     void propertyExtractorShouldReadCorrectValue() {
         final SequencingPolicy sequencingPolicy =
-                new ExpressionSequencingPolicy<>(
+                new ExtractionSequencingPolicy<>(
                         TestEvent.class,
                         TestEvent::id,
                         eventConverter()

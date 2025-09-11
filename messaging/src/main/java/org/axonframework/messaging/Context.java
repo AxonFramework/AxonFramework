@@ -18,6 +18,7 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
 
 import java.util.Map;
 
@@ -91,10 +92,15 @@ public interface Context {
 
     /**
      * Retrieves all resources contained within the current {@code Context}.
+     * <p>
+     * Most of the time, none of the keys make any sense to the component that would retrieve them. Thus, this method is
+     * purely here for copying resources between {@code Context} instances, not for retrieval. For that, there's the
+     * {@link #getResource(ResourceKey)} method.
      *
-     * @return A map containing all resources where each entry has a {@code ResourceKey<?>}
-     *         as the key and the associated resource object as the value.
+     * @return A map containing all resources where each entry has a {@code ResourceKey<?>} as the key and the
+     * associated resource object as the value.
      */
+    @Internal
     Map<ResourceKey<?>, Object> resources();
 
     /**

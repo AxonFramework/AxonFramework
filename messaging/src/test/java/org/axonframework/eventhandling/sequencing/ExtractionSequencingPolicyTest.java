@@ -32,17 +32,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Test class validating the {@link ExpressionSequencingPolicy}.
+ * Test class validating the {@link ExtractionSequencingPolicy}.
  *
  * @author Mateusz Nowak
  */
-@DisplayName("Unit-Test for the ExpressionSequencingPolicy")
-final class ExpressionSequencingPolicyTest {
+final class ExtractionSequencingPolicyTest {
 
     @Test
     void shouldExtractSequenceIdentifierFromMatchingPayloadType() {
         // given
-        final SequencingPolicy sequencingPolicy = new ExpressionSequencingPolicy<>(
+        final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
                 TestEvent::id,
                 eventConverter()
@@ -58,7 +57,7 @@ final class ExpressionSequencingPolicyTest {
     @Test
     void shouldExtractComplexSequenceIdentifier() {
         // given
-        final SequencingPolicy sequencingPolicy = new ExpressionSequencingPolicy<>(
+        final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
                 event -> event.id() + "-" + event.version(),
                 eventConverter()
@@ -74,7 +73,7 @@ final class ExpressionSequencingPolicyTest {
     @Test
     void shouldReturnNullWhenExtractorReturnsNull() {
         // given
-        final SequencingPolicy sequencingPolicy = new ExpressionSequencingPolicy<>(
+        final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
                 event -> null,
                 eventConverter()
@@ -90,7 +89,7 @@ final class ExpressionSequencingPolicyTest {
     @Test
     void shouldReturnEmptyWhenExtractorReturnsNull() {
         // given
-        final SequencingPolicy sequencingPolicy = new ExpressionSequencingPolicy<>(
+        final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
                 event -> null,
                 eventConverter()
@@ -108,7 +107,7 @@ final class ExpressionSequencingPolicyTest {
     @Test
     void shouldConvertPayloadWhenNotDirectlyAssignable() {
         // given
-        final SequencingPolicy sequencingPolicy = new ExpressionSequencingPolicy<>(
+        final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
                 TestEvent::id,
                 eventConverter()
@@ -124,7 +123,7 @@ final class ExpressionSequencingPolicyTest {
     @Test
     void shouldThrowConversionExceptionWhenPayloadCannotBeConverted() {
         // given
-        final SequencingPolicy sequencingPolicy = new ExpressionSequencingPolicy<>(
+        final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
                 TestEvent::id,
                 eventConverter()
@@ -138,7 +137,7 @@ final class ExpressionSequencingPolicyTest {
     @Test
     void shouldWorkWithFallbackPolicyForConversionErrors() {
         // given
-        final SequencingPolicy expressionPolicy = new ExpressionSequencingPolicy<>(
+        final SequencingPolicy expressionPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
                 TestEvent::id,
                 eventConverter()
@@ -163,21 +162,21 @@ final class ExpressionSequencingPolicyTest {
         void shouldThrowNullPointerExceptionWhenPayloadClassIsNull() {
             // when / then
             assertThrows(NullPointerException.class, () ->
-                    new ExpressionSequencingPolicy<>(null, TestEvent::id, eventConverter()));
+                    new ExtractionSequencingPolicy<>(null, TestEvent::id, eventConverter()));
         }
 
         @Test
         void shouldThrowNullPointerExceptionWhenIdentifierExtractorIsNull() {
             // when / then
             assertThrows(NullPointerException.class, () ->
-                    new ExpressionSequencingPolicy<>(TestEvent.class, null, eventConverter()));
+                    new ExtractionSequencingPolicy<>(TestEvent.class, null, eventConverter()));
         }
 
         @Test
         void shouldThrowNullPointerExceptionWhenEventConverterIsNull() {
             // when / then
             assertThrows(NullPointerException.class, () ->
-                    new ExpressionSequencingPolicy<>(TestEvent.class, null, eventConverter()));
+                    new ExtractionSequencingPolicy<>(TestEvent.class, null, eventConverter()));
         }
     }
 
@@ -187,7 +186,7 @@ final class ExpressionSequencingPolicyTest {
         @Test
         void shouldThrowNullPointerExceptionWhenEventMessageIsNull() {
             // given
-            final SequencingPolicy sequencingPolicy = new ExpressionSequencingPolicy<>(
+            final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                     TestEvent.class,
                     TestEvent::id,
                     eventConverter()
@@ -201,7 +200,7 @@ final class ExpressionSequencingPolicyTest {
         @Test
         void shouldThrowNullPointerExceptionWhenProcessingContextIsNull() {
             // given
-            final SequencingPolicy sequencingPolicy = new ExpressionSequencingPolicy<>(
+            final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                     TestEvent.class,
                     TestEvent::id,
                     eventConverter()
