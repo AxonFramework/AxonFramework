@@ -25,6 +25,7 @@ import java.util.Set;
 /**
  * Interface describing a registry of {@link EventHandler event handlers}.
  *
+ * @param <S> The type of the registry itself, used for fluent interfacing.
  * @author Allard Buijze
  * @author Gerard Klijs
  * @author Milan Savic
@@ -33,7 +34,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface QueryHandlerRegistry {
+public interface QueryHandlerRegistry<S extends QueryHandlerRegistry<S>> {
 
     /**
      * Subscribe the given {@code handler} for {@link QueryMessage queries} of the given {@code names}.
@@ -46,10 +47,11 @@ public interface QueryHandlerRegistry {
      * @param queryHandler The handler instance that handles {@link QueryMessage queries} for the given names.
      * @return This registry for fluent interfacing.
      */
-    default QueryHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names,
-                                           @Nonnull QueryHandler queryHandler) {
+    default S subscribe(@Nonnull Set<QualifiedName> names,
+                        @Nonnull QueryHandler queryHandler) {
         names.forEach(name -> subscribe(name, queryHandler));
-        return this;
+        //noinspection unchecked
+        return (S) this;
     }
 
     /**
@@ -63,8 +65,8 @@ public interface QueryHandlerRegistry {
      * @param queryHandler The handler instance that handles {@link QueryMessage queries} for the given name.
      * @return This registry for fluent interfacing.
      */
-    QueryHandlerRegistry subscribe(@Nonnull QualifiedName name,
-                                   @Nonnull QueryHandler queryHandler);
+    S subscribe(@Nonnull QualifiedName name,
+                @Nonnull QueryHandler queryHandler);
 
     /**
      * Subscribe the given {@code handlingComponent} with this registry.
@@ -76,7 +78,7 @@ public interface QueryHandlerRegistry {
      * @param handlingComponent The query handling component instance to subscribe with this registry.
      * @return This registry for fluent interfacing.
      */
-    default QueryHandlerRegistry subscribe(@Nonnull QueryHandlingComponent handlingComponent) {
+    default S subscribe(@Nonnull QueryHandlingComponent handlingComponent) {
         return subscribe(handlingComponent.supportedQueries(), handlingComponent);
     }
 }

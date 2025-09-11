@@ -18,6 +18,8 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryUpdateEmitterSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.reactivestreams.Publisher;

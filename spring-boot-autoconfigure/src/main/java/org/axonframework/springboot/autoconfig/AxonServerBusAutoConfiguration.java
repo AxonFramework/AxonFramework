@@ -22,7 +22,7 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
-import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
+import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.RoutingStrategy;
@@ -30,9 +30,8 @@ import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
@@ -90,15 +89,10 @@ public class AxonServerBusAutoConfiguration {
                                        TargetContextResolver<? super QueryMessage> targetContextResolver) {
         SimpleQueryBus simpleQueryBus =
                 SimpleQueryBus.builder()
-                              .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
                               .transactionManager(txManager)
                               .queryUpdateEmitter(axonConfiguration.getComponent(QueryUpdateEmitter.class))
                               .errorHandler(queryInvocationErrorHandler)
-                              .spanFactory(axonConfiguration.getComponent(QueryBusSpanFactory.class))
                               .build();
-        simpleQueryBus.registerHandlerInterceptor(
-                new CorrelationDataInterceptor<>(axonConfiguration.correlationDataProviders())
-        );
 
         AxonServerQueryBus.Builder axonQueryBuilder = AxonServerQueryBus.builder()
                                                                         .axonServerConnectionManager(

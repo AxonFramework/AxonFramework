@@ -31,7 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class SimpleQueryHandlingComponent implements QueryHandlingComponent {
+public class SimpleQueryHandlingComponent
+        implements QueryHandlingComponent, QueryHandlerRegistry<SimpleQueryHandlingComponent> {
 
     private final ConcurrentHashMap<QualifiedName, QueryHandler> queryHandlers;
 
@@ -42,7 +43,7 @@ public class SimpleQueryHandlingComponent implements QueryHandlingComponent {
     @Nonnull
     @Override
     public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
-                                                         @Nonnull ProcessingContext context) {
+                                                      @Nonnull ProcessingContext context) {
         QualifiedName name = query.type().qualifiedName();
         // TODO #3488 add interceptor knowledge
         QueryHandler handler = queryHandlers.get(name);
