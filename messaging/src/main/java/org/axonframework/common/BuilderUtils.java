@@ -127,5 +127,6 @@ public abstract class BuilderUtils {
      */
     public static String assertNonBlank(String string, String exceptionMessage) {
         assertThat(string, e -> e != null && !e.isBlank(), exceptionMessage);
+        return string;
     }
 }
