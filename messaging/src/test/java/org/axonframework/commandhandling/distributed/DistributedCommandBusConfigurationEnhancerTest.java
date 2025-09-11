@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.junit.jupiter.api.*;
@@ -59,7 +59,8 @@ class DistributedCommandBusConfigurationEnhancerTest {
                                    .build();
 
         CommandBus commandBus = config.getComponent(CommandBus.class);
-        assertInstanceOf(SimpleCommandBus.class, commandBus);
+        // Intercepting at all times, since we have a default CorrelationDataInterceptor.
+        assertInstanceOf(InterceptingCommandBus.class, commandBus);
         assertFalse(config.hasComponent(DistributedCommandBusConfiguration.class));
     }
 }

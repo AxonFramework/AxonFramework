@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TerminalEventMessage;
@@ -45,6 +46,7 @@ import static java.util.Arrays.asList;
  * @author Steven van Beelen
  * @since 3.0
  */
+@Internal
 public interface EventStorageEngine extends DescribableComponent {
 
     /**
