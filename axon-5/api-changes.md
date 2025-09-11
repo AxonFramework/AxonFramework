@@ -1764,9 +1764,9 @@ per class described) approach.
 
 Note that **any**  changes here may have far extending impact on the original class.
 
-| Class      | Before           | After            | Explanation                                                  | 
-|------------|------------------|------------------|--------------------------------------------------------------|
-| `MetaData` | `Map<String, ?>` | `Map<String, ?>` | See the [metadata description](#metadata-with-string-values) |
+| Class      | Before           | After                 | Explanation                                                  | 
+|------------|------------------|-----------------------|--------------------------------------------------------------|
+| `MetaData` | `Map<String, ?>` | `Map<String, String>` | See the [metadata description](#metadata-with-string-values) |
 
 ### Adjusted Constants
 
