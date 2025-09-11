@@ -254,6 +254,29 @@ class WorkPackage {
         return canHandle;
     }
 
+    /**
+     * Determines whether this {@link WorkPackage} can handle the given {@link MessageStream.Entry}. This method creates
+     * a specialized {@link ProcessingContext} from the event entry to evaluate if the event should be processed by this
+     * work package's {@link Segment}.
+     * <p>
+     * The method extracts resources from the {@code eventEntry} that were set by the
+     * {@link org.axonframework.eventstreaming.StreamableEventSource} to make filtering decisions. Example: These resources
+     * include data like {@link org.axonframework.messaging.LegacyResources#AGGREGATE_IDENTIFIER_KEY}, which might be
+     * essential (while using the Aggreate based approach) for event sequencing since Axon Framework 5.0.0 no longer embeds aggregate identifiers directly in
+     * event messages.
+     * <p>
+     * The temporary {@link EventSchedulingProcessingContext} created here has limitations - it cannot access
+     * configuration components or register lifecycle hooks. Its sole purpose is to provide resource access during
+     * event filtering evaluation.
+     * <p>
+     * This method is called during event scheduling in {@link #scheduleEvent(MessageStream.Entry)} and
+     * {@link #scheduleEvents(List)} to determine if events should be added to the processing queue.
+     *
+     * @param eventEntry The event entry containing the message and associated resources to evaluate.
+     * @return {@code true} if this {@code WorkPackage} can handle the event for processing, {@code false} otherwise
+     * @see #canHandle(EventMessage, ProcessingContext)
+     * @see EventSchedulingProcessingContext
+     */
     private boolean canHandleMessage(MessageStream.Entry<? extends EventMessage> eventEntry) {
         var processingContext = EventSchedulingProcessingContext.fromEntry(eventEntry);
         return canHandle(eventEntry.message(), processingContext);
