@@ -26,6 +26,8 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
+import org.axonframework.messaging.correlation.DefaultCorrelationDataProviderRegistry;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
@@ -72,8 +74,12 @@ class CommandHandlingModuleTest {
                                               .build())
                                       .entityIdResolver(config -> (message, context) -> "1");
 
+        // Registers default provider registry to remove MessageOriginProvider, thus removing CorrelationDataInterceptor.
+        // This ensures we keep the SimpleCommandBus, from which we can retrieve the subscription for validation.
         AxonConfiguration configuration = ModellingConfigurer
                 .create()
+                .componentRegistry(cr -> cr.registerComponent(CorrelationDataProviderRegistry.class,
+                                                              c -> new DefaultCorrelationDataProviderRegistry()))
                 .componentRegistry(cr -> cr.registerModule(entityModule))
                 .componentRegistry(cr -> cr.registerModule(setupPhase
                                           .commandHandlers()

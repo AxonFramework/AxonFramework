@@ -29,6 +29,8 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
 import org.axonframework.messaging.interceptors.HandlerInterceptorRegistry;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -224,6 +226,29 @@ public class MessagingConfigurer implements ApplicationConfigurer {
         delegate.componentRegistry(
                 cr -> cr.registerComponent(UnitOfWorkFactory.class, unitOfWorkFactoryBuilder)
         );
+        return this;
+    }
+
+    /**
+     * Registers the given {@link CorrelationDataProvider} factory in this {@code providerBuilder}.
+     * <p>
+     * The {@code interceptorBuilder} receives the {@link Configuration} as input and is expected to return a
+     * {@code CorrelationDataProvider} instance.
+     * <p>
+     * {@code CorrelationDataProviders} are typically automatically registered with all applicable infrastructure
+     * components through the {@link CorrelationDataProviderRegistry}.
+     *
+     * @param providerBuilder The builder constructing the {@link CorrelationDataProvider}.
+     * @return A {@code ModellingConfigurer} instance for further configuring.
+     */
+    public MessagingConfigurer registerCorrelationDataProvider(
+            @Nonnull ComponentBuilder<CorrelationDataProvider> providerBuilder
+    ) {
+        delegate.componentRegistry(cr -> cr.registerDecorator(
+                CorrelationDataProviderRegistry.class,
+                0,
+                (config, name, delegate) -> delegate.registerProvider(providerBuilder)
+        ));
         return this;
     }
 

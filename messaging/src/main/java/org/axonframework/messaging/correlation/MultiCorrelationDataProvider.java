@@ -25,8 +25,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * {@code CorrelationDataProvider} that combines the data of multiple other correlation providers. When multiple
- * instance provide the same keys, a delegate will override the entries provided by previously resolved delegates.
+ * A {@code CorrelationDataProvider} that combines the data of multiple other correlation providers.
+ * <p>
+ * When multiple instance provide the same keys, a delegate will override the entries provided by previously resolved
+ * delegates.
  *
  * @author Allard Buijze
  * @since 2.3.0
@@ -36,9 +38,9 @@ public class MultiCorrelationDataProvider implements CorrelationDataProvider {
     private final List<? extends CorrelationDataProvider> delegates;
 
     /**
-     * Initialize the correlation data provider, delegating to given {@code correlationDataProviders}.
+     * Initialize a {@code MultiCorrelationDataProvider}, delegating to given {@code correlationDataProviders}.
      *
-     * @param correlationDataProviders The providers to delegate to.
+     * @param correlationDataProviders The {@code CorrelationDataProviders} to delegate to.
      */
     public MultiCorrelationDataProvider(@Nonnull List<? extends CorrelationDataProvider> correlationDataProviders) {
         delegates = new ArrayList<>(correlationDataProviders);
