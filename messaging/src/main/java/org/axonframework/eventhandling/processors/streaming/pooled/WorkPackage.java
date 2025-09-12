@@ -17,8 +17,10 @@
 package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.configuration.ComponentNotFoundException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
@@ -28,8 +30,8 @@ import org.axonframework.eventhandling.processors.streaming.token.WrappedToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -40,15 +42,20 @@ import java.lang.invoke.MethodHandles;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
@@ -144,8 +151,8 @@ class WorkPackage {
      * <em>several instances</em>. When tokens differ between events please use
      * {@link #scheduleEvent(MessageStream.Entry)}.
      * <p>
-     * Will disregard the given {@code eventEntries} if their {@code TrackingTokens} are covered by the previously scheduled
-     * event.
+     * Will disregard the given {@code eventEntries} if their {@code TrackingTokens} are covered by the previously
+     * scheduled event.
      * <p>
      * <b>Threading note:</b> This method is and should only to be called by the {@link Coordinator} thread of a {@link
      * PooledStreamingEventProcessor}.
@@ -182,8 +189,7 @@ class WorkPackage {
         BatchProcessingEntry batchProcessingEntry = new BatchProcessingEntry();
         boolean canHandleAny = eventEntries.stream()
                                            .map(eventEntry -> {
-                                               var context = new LegacyMessageSupportingContext(eventEntry.message());
-                                               boolean canHandle = canHandle(eventEntry.message(), context);
+                                               boolean canHandle = canHandleMessage(eventEntry);
                                                batchProcessingEntry.add(new DefaultProcessingEntry(eventEntry,
                                                                                                    canHandle));
                                                return canHandle;
@@ -221,10 +227,11 @@ class WorkPackage {
      */
     public boolean scheduleEvent(MessageStream.Entry<? extends EventMessage> eventEntry) {
         TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
+        EventMessage message = eventEntry.message();
         if (shouldNotSchedule(eventEntry)) {
             logger.trace("Ignoring event [{}] with position [{}] for work package [{}]. "
                                  + "The last token [{}] covers event's token [{}].",
-                         eventEntry.message().identifier(),
+                         message.identifier(),
                          eventToken != null ? eventToken.position().orElse(-1) : -1,
                          segment.getSegmentId(),
                          lastDeliveredToken,
@@ -233,18 +240,46 @@ class WorkPackage {
         }
 
         logger.debug("Assigned event [{}] with position [{}] to work package [{}].",
-                     eventEntry.message().identifier(),
+                     message.identifier(),
                      eventToken != null ? eventToken.position().orElse(-1) : -1,
                      segment.getSegmentId());
 
-        var context = new LegacyMessageSupportingContext(eventEntry.message());
-        boolean canHandle = canHandle(eventEntry.message(), context);
+        var canHandle = canHandleMessage(eventEntry);
+
         processingQueue.add(new DefaultProcessingEntry(eventEntry, canHandle));
         lastDeliveredToken = eventToken;
         // the worker must always be scheduled to ensure claims are extended
         scheduleWorker();
 
         return canHandle;
+    }
+
+    /**
+     * Determines whether this {@link WorkPackage} can handle the given {@link MessageStream.Entry}. This method creates
+     * a specialized {@link ProcessingContext} from the event entry to evaluate if the event should be processed by this
+     * work package's {@link Segment}.
+     * <p>
+     * The method extracts resources from the {@code eventEntry} that were set by the
+     * {@link org.axonframework.eventstreaming.StreamableEventSource} to make filtering decisions. Example: These resources
+     * include data like {@link org.axonframework.messaging.LegacyResources#AGGREGATE_IDENTIFIER_KEY}, which might be
+     * essential (while using the Aggreate based approach) for event sequencing since Axon Framework 5.0.0 no longer embeds aggregate identifiers directly in
+     * event messages.
+     * <p>
+     * The temporary {@link EventSchedulingProcessingContext} created here has limitations - it cannot access
+     * configuration components or register lifecycle hooks. Its sole purpose is to provide resource access during
+     * event filtering evaluation.
+     * <p>
+     * This method is called during event scheduling in {@link #scheduleEvent(MessageStream.Entry)} and
+     * {@link #scheduleEvents(List)} to determine if events should be added to the processing queue.
+     *
+     * @param eventEntry The event entry containing the message and associated resources to evaluate.
+     * @return {@code true} if this {@code WorkPackage} can handle the event for processing, {@code false} otherwise
+     * @see #canHandle(EventMessage, ProcessingContext)
+     * @see EventSchedulingProcessingContext
+     */
+    private boolean canHandleMessage(MessageStream.Entry<? extends EventMessage> eventEntry) {
+        var processingContext = EventSchedulingProcessingContext.fromEntry(eventEntry);
+        return canHandle(eventEntry.message(), processingContext);
     }
 
     /**
@@ -366,7 +401,8 @@ class WorkPackage {
 
     /**
      * Extend the claim of the {@link TrackingToken} owned by this {@code WorkPackage}, if the configurable
-     * {@link PooledStreamingEventProcessorConfiguration#claimExtensionThreshold(long) claim extension threshold} is met.
+     * {@link PooledStreamingEventProcessorConfiguration#claimExtensionThreshold(long) claim extension threshold} is
+     * met.
      */
     public void extendClaimIfThresholdIsMet() {
         if (now() > nextClaimExtension.get()) {
@@ -530,7 +566,8 @@ class WorkPackage {
     }
 
     /**
-     * Functional interface defining the processing of a batch of {@link EventMessage}s within a {@link ProcessingContext}.
+     * Functional interface defining the processing of a batch of {@link EventMessage}s within a
+     * {@link ProcessingContext}.
      */
     @FunctionalInterface
     interface BatchProcessor {
@@ -729,8 +766,8 @@ class WorkPackage {
         TrackingToken trackingToken();
 
         /**
-         * Add this entry's events to the {@code eventBatch}. Since tracking is handled at the UnitOfWork level,
-         * we only need to add the actual event messages to the batch.
+         * Add this entry's events to the {@code eventBatch}. Since tracking is handled at the UnitOfWork level, we only
+         * need to add the actual event messages to the batch.
          *
          * @param eventBatch The list of events to add this entry's events to.
          */
@@ -789,6 +826,123 @@ class WorkPackage {
         @Override
         public void addToBatch(List<EventMessage> eventBatch) {
             processingEntries.forEach(entry -> entry.addToBatch(eventBatch));
+        }
+    }
+
+    /**
+     * A concrete implementation of the {@link ProcessingContext} interface specifically designed for event scheduling
+     * in the {@link WorkPackage}. This implementation provides resource management capabilities while disallowing
+     * lifecycle actions and does not allow retrieving components. Currently, the only usage of the context is for
+     * {@link org.axonframework.eventhandling.EventHandlingComponent#sequenceIdentifierFor(EventMessage,
+     * ProcessingContext) execution.}
+     */
+    private static class EventSchedulingProcessingContext implements ProcessingContext {
+
+        private static final String UNSUPPORTED_MESSAGE = "Cannot register lifecycle actions in this ProcessingContext";
+        private final ConcurrentMap<ResourceKey<?>, Object> resources = new ConcurrentHashMap<>();
+
+        static ProcessingContext fromEntry(MessageStream.Entry<? extends EventMessage> entry) {
+            var context = new EventSchedulingProcessingContext();
+            //noinspection unchecked
+            entry.resources().forEach((k, v) -> context.putResource((ResourceKey<Object>) k, v));
+            return Message.addToContext(context, entry.message());
+        }
+
+        @Override
+        public boolean isStarted() {
+            return true;
+        }
+
+        @Override
+        public boolean isError() {
+            return false;
+        }
+
+        @Override
+        public boolean isCommitted() {
+            return false;
+        }
+
+        @Override
+        public boolean isCompleted() {
+            return false;
+        }
+
+        @Override
+        public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
+            throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
+        }
+
+        @Override
+        public ProcessingLifecycle onError(ErrorHandler action) {
+            throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
+        }
+
+        @Override
+        public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
+            throw new UnsupportedOperationException(UNSUPPORTED_MESSAGE);
+        }
+
+        @Override
+        public boolean containsResource(@Nonnull ResourceKey<?> key) {
+            return resources.containsKey(key);
+        }
+
+        @Override
+        public <T> T getResource(@Nonnull ResourceKey<T> key) {
+            //noinspection unchecked
+            return (T) resources.get(key);
+        }
+
+        @Override
+        public Map<ResourceKey<?>, Object> resources() {
+            return Map.copyOf(resources);
+        }
+
+        @Override
+        public <T> T putResource(@Nonnull ResourceKey<T> key,
+                                 @Nonnull T resource) {
+            //noinspection unchecked
+            return (T) resources.put(key, resource);
+        }
+
+        @Override
+        public <T> T updateResource(@Nonnull ResourceKey<T> key,
+                                    @Nonnull UnaryOperator<T> resourceUpdater) {
+            //noinspection unchecked
+            return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
+        }
+
+        @Override
+        public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                         @Nonnull T resource) {
+            //noinspection unchecked
+            return (T) resources.putIfAbsent(key, resource);
+        }
+
+        @Override
+        public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                             @Nonnull Supplier<T> resourceSupplier) {
+            //noinspection unchecked
+            return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
+        }
+
+        @Override
+        public <T> T removeResource(@Nonnull ResourceKey<T> key) {
+            //noinspection unchecked
+            return (T) resources.remove(key);
+        }
+
+        @Override
+        public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
+                                          @Nonnull T expectedResource) {
+            return resources.remove(key, expectedResource);
+        }
+
+        @Nonnull
+        @Override
+        public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
+            throw new ComponentNotFoundException(type, name);
         }
     }
 }

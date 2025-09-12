@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.MessageStream.Entry;
 
+import java.util.Map;
 import java.util.function.Function;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -73,5 +74,10 @@ public record SimpleEntry<M extends Message>(@Nullable M message, @Nonnull Conte
     @Override
     public <T> Entry<M> withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource) {
         return new SimpleEntry<>(message, context.withResource(key, resource));
+    }
+
+    @Override
+    public Map<ResourceKey<?>, Object> resources() {
+        return this.context.resources();
     }
 }

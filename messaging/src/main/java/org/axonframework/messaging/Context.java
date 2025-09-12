@@ -18,6 +18,9 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
+
+import java.util.Map;
 
 /**
  * Interface describing operations for context-specific, <b>immutable</b>, resource management.
@@ -86,6 +89,19 @@ public interface Context {
      */
     <T> Context withResource(@Nonnull ResourceKey<T> key,
                              @Nonnull T resource);
+
+    /**
+     * Retrieves all resources contained within the current {@code Context}.
+     * <p>
+     * Most of the time, none of the keys make any sense to the component that would retrieve them. Thus, this method is
+     * purely here for copying resources between {@code Context} instances, not for retrieval. For that, there's the
+     * {@link #getResource(ResourceKey)} method.
+     *
+     * @return A map containing all resources where each entry has a {@code ResourceKey<?>} as the key and the
+     * associated resource object as the value.
+     */
+    @Internal
+    Map<ResourceKey<?>, Object> resources();
 
     /**
      * Object that is used as a key to retrieve and register resources of a given type in a {@code Context}.

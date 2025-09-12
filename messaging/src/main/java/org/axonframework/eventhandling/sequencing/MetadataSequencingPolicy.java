@@ -23,7 +23,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Optional;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static org.axonframework.common.BuilderUtils.*;
 
 /**
  * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the {@link EventMessage}'s
@@ -39,32 +39,15 @@ public class MetadataSequencingPolicy implements SequencingPolicy {
     private final String metadataKey;
 
     /**
-     * Instantiate a {@link MetadataSequencingPolicy} based on the fields contained in the
-     * {@link MetadataSequencingPolicy.Builder}.
+     * Instantiate a {@link MetadataSequencingPolicy}.
      * <p>
      * Will assert that the {@code metadataKey} is not {@code null} and will throw an {@link AxonConfigurationException}
      * if this is the case.
      *
-     * @param builder The {@link MetadataSequencingPolicy.Builder} used to instantiate a
-     *                {@link MetadataSequencingPolicy} instance.
+     * @param metadataKey The key to be used as a lookup for the property to be used as the Sequence Policy.
      */
-    protected MetadataSequencingPolicy(Builder builder) {
-        builder.validate();
-        this.metadataKey = builder.metadataKey;
-    }
-
-    /**
-     * Instantiate a Builder to be able to create a {@link MetadataSequencingPolicy}.
-     * <p>
-     * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
-     * <ul>
-     * <li>The {@code metadataKey} key to be used as a lookup for the property to be used as the Sequence Policy.</li>
-     * </ul>
-     *
-     * @return A Builder to be able to create a {@link MetadataSequencingPolicy}.
-     */
-    public static Builder builder() {
-        return new Builder();
+    public MetadataSequencingPolicy(@Nonnull String metadataKey) {
+        this.metadataKey =  assertNonBlank(metadataKey, "MetadataKey value may not be null or blank.");;
     }
 
     @Override
@@ -73,45 +56,5 @@ public class MetadataSequencingPolicy implements SequencingPolicy {
                 event.metadata()
                      .getOrDefault(metadataKey, event.identifier())
         );
-    }
-
-    /**
-     * Builder class to instantiate a {@link MetadataSequencingPolicy}.
-     * <p>
-     * The following fields of this builder are <b>hard requirements</b> and as such should be provided:
-     * <ul>
-     * <li>The {@code metadataKey} key to be used as a lookup for the property to be used as the Sequence Policy.</li>
-     * </ul>
-     */
-    public static class Builder {
-
-        private String metadataKey;
-
-        private Builder() {
-        }
-
-        /**
-         * Defines the metadataKey key to be used as a lookup for the property to be used as the Sequence Policy.
-         *
-         * @param metadataKey Key to be used as a lookup for the property to be used as the Sequence Policy.
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder metadataKey(String metadataKey) {
-            this.metadataKey = metadataKey;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link MetadataSequencingPolicy} as specified through this Builder.
-         *
-         * @return A {@link MetadataSequencingPolicy} as specified through this Builder.
-         */
-        public MetadataSequencingPolicy build() {
-            return new MetadataSequencingPolicy(this);
-        }
-
-        protected void validate() {
-            assertNonNull(metadataKey, "MetadataKey value may not be null");
-        }
     }
 }

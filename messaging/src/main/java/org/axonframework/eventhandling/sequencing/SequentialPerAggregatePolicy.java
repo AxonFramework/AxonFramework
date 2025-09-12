@@ -17,15 +17,16 @@
 package org.axonframework.eventhandling.sequencing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
  * Concurrency policy that requires sequential processing of events raised by the same aggregate. Events from different
- * aggregates may be processed in different threads, as will events that do not extend the DomainEvent type.
+ * aggregates may be processed in different threads.
  *
  * @author Allard Buijze
  * @since 0.3
@@ -45,10 +46,8 @@ public class SequentialPerAggregatePolicy implements SequencingPolicy {
 
     @Override
     public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
-        if (event instanceof DomainEventMessage) {
-            var aggregateId = ((DomainEventMessage) event).getAggregateIdentifier();
-            return Optional.ofNullable(aggregateId);
-        }
-        return Optional.empty();
+        Objects.requireNonNull(event, "EventMessage may not be null.");
+        Objects.requireNonNull(context, "ProcessingContext may not be null.");
+        return Optional.ofNullable(context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY));
     }
 }

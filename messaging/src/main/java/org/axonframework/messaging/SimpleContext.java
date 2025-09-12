@@ -66,6 +66,11 @@ public class SimpleContext implements Context {
     }
 
     @Override
+    public Map<ResourceKey<?>, Object> resources() {
+        return Map.copyOf(resources);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
