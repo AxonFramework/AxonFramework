@@ -40,6 +40,7 @@ public class PropertySequencingPolicy<T, K> extends ExtractionSequencingPolicy<T
      *
      * @param payloadClass             The class of the supported event payloads.
      * @param propertyName             The name of the property to be extracted as sequence identifier.
+     * @param eventConverter           The converter to use to convert event messages payload to the supported type.
      */
     public PropertySequencingPolicy(
             @Nonnull Class<T> payloadClass,
