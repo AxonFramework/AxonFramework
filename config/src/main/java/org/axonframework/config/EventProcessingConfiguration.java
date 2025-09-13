@@ -66,9 +66,7 @@ public interface EventProcessingConfiguration {
      * @return an {@link Optional} specifying whether an {@link EventProcessor} for the given {@link SagaConfiguration}
      * exists
      */
-    default <T extends EventProcessor> Optional<T> sagaEventProcessor(Class<?> sagaType) {
-        return eventProcessorByProcessingGroup(sagaProcessingGroup(sagaType));
-    }
+    <T extends EventProcessor> Optional<T> sagaEventProcessor(Class<?> sagaType);
 
     /**
      * Returns the {@link EventProcessor} with the given {@code name} if present, matching the given {@code
@@ -82,15 +80,6 @@ public interface EventProcessingConfiguration {
     default <T extends EventProcessor> Optional<T> eventProcessor(String name, Class<T> expectedType) {
         return eventProcessor(name).filter(expectedType::isInstance).map(expectedType::cast);
     }
-
-    /**
-     * Obtains an {@link EventProcessor} by it's {@code processingGroup}.
-     *
-     * @param processingGroup a {@link String} specifying the processing group of an {@link EventProcessor}
-     * @param <T>             the type of the expected {@link EventProcessor}
-     * @return an {@link Optional} referencing the {@link EventProcessor}
-     */
-    <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup);
 
     /**
      * Obtains all registered {@link EventProcessor}s.

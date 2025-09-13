@@ -414,10 +414,14 @@ public class EventProcessingModule
         );
     }
 
+    @Override
+    public <T extends EventProcessor> Optional<T> sagaEventProcessor(Class<?> sagaType) {
+        return eventProcessorByProcessingGroup(sagaProcessingGroup(sagaType));
+    }
+
     //<editor-fold desc="configuration methods">
     @SuppressWarnings("unchecked")
-    @Override
-    public <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup) {
+    private <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup) {
         return Optional.ofNullable((T) eventProcessors().get(processorNameForProcessingGroup(processingGroup)));
     }
 
