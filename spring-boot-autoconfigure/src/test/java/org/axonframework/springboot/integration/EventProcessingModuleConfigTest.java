@@ -50,46 +50,6 @@ class EventProcessingModuleConfigTest {
                                                                .withUserConfiguration(TestContext.class);
     }
 
-    @Test
-    @Disabled("TODO #3495")
-    void eventProcessingConfiguration() {
-        testApplicationContext.run(context -> {
-            EventProcessingModule eventProcessingConfiguration = context.getBean(EventProcessingModule.class);
-            assertEquals(3, eventProcessingConfiguration.eventProcessors().size());
-            assertTrue(eventProcessingConfiguration.eventProcessor("processor2").isPresent());
-            assertTrue(eventProcessingConfiguration.eventProcessor("subscribingProcessor").isPresent());
-
-            Optional<EventProcessor> optionalProcessorOne =
-                    eventProcessingConfiguration.eventProcessorByProcessingGroup("processor1");
-            assertTrue(optionalProcessorOne.isPresent());
-            EventProcessor processorOne = optionalProcessorOne.get();
-            assertEquals("processor2", processorOne.name());
-//            List<MessageHandlerInterceptor<? super EventMessage<?>>> interceptorsFor =
-//                    eventProcessingConfiguration.interceptorsFor("processor2");
-//            assertEquals(2, interceptorsFor.size());
-//            assertTrue(interceptorsFor.stream().anyMatch(i -> i instanceof CorrelationDataInterceptor));
-//            assertTrue(interceptorsFor.stream().anyMatch(i -> i instanceof LoggingInterceptor));
-
-            Optional<EventProcessor> optionalProcessorTwo =
-                    eventProcessingConfiguration.eventProcessorByProcessingGroup("processor2");
-            assertTrue(optionalProcessorTwo.isPresent());
-            assertEquals("processor2", optionalProcessorTwo.get().name());
-
-            Optional<EventProcessor> optionalProcessorThree =
-                    eventProcessingConfiguration.eventProcessorByProcessingGroup("processor3");
-            assertTrue(optionalProcessorThree.isPresent());
-            assertEquals("subscribingProcessor", optionalProcessorThree.get().name());
-            optionalProcessorThree = eventProcessingConfiguration.eventProcessorByProcessingGroup("Saga3Processor");
-            assertTrue(optionalProcessorThree.isPresent());
-            assertEquals("subscribingProcessor", optionalProcessorThree.get().name());
-
-            Optional<EventProcessor> optionalProcessorFour =
-                    eventProcessingConfiguration.eventProcessorByProcessingGroup("processor4");
-            assertTrue(optionalProcessorFour.isPresent());
-            assertEquals("processor4", optionalProcessorFour.get().name());
-        });
-    }
-
     @Configuration
     @EnableAutoConfiguration
     static class TestContext {
