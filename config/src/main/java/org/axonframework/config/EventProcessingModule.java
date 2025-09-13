@@ -751,13 +751,6 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerMessageMonitorFactory(String eventProcessorName,
-                                                                   MessageMonitorFactory messageMonitorFactory) {
-        this.messageMonitorFactories.put(eventProcessorName, messageMonitorFactory);
-        return this;
-    }
-
-    @Override
     public EventProcessingConfigurer registerTransactionManager(String name,
                                                                 Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder) {
         this.transactionManagers.put(name, new Component<>(() -> configuration,
