@@ -454,33 +454,6 @@ public interface EventProcessingConfigurer {
     );
 
     /**
-     * Registers a builder {@link Function} to create the {@link MessageMonitor} for a {@link EventProcessor} of the
-     * given {@code name}.
-     *
-     * @param eventProcessorName    a {@link String} specifying the name of an {@link EventProcessor}
-     * @param messageMonitorBuilder a builder {@link Function} to create a {@link MessageMonitor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    default EventProcessingConfigurer registerMessageMonitor(String eventProcessorName,
-                                                             Function<LegacyConfiguration, MessageMonitor<Message>> messageMonitorBuilder) {
-        return registerMessageMonitorFactory(
-                eventProcessorName,
-                (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration)
-        );
-    }
-
-    /**
-     * Registers the factory to create the {@link MessageMonitor} for a {@link EventProcessor} of the given
-     * {@code name}.
-     *
-     * @param eventProcessorName    a {@link String} specifying the name of an {@link EventProcessor}
-     * @param messageMonitorFactory a {@link MessageMonitorFactory} used to create a {@link MessageMonitor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerMessageMonitorFactory(String eventProcessorName,
-                                                            MessageMonitorFactory messageMonitorFactory);
-
-    /**
      * Registers a {@link TransactionManager} for a {@link EventProcessor} of the given {@code name}.
      *
      * @param name                      a {@link String} specifying the name of an {@link EventProcessor}

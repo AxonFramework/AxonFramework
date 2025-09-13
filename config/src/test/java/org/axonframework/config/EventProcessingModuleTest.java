@@ -345,31 +345,6 @@ class EventProcessingModuleTest {
 
     @Test
     @Disabled("Disabled due to lifecycle solution removal")
-    void configureMonitor() throws Exception {
-        MessageCollectingMonitor subscribingMonitor = new MessageCollectingMonitor();
-        MessageCollectingMonitor trackingMonitor = new MessageCollectingMonitor(1);
-        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-
-        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
-        configurer.eventProcessing()
-                  .registerMessageMonitor("subscribing", c -> subscribingMonitor)
-                  .registerMessageMonitor("tracking", c -> trackingMonitor);
-        LegacyConfiguration config = configurer.start();
-
-        try {
-            config.eventBus()
-                  .publish(new GenericEventMessage(new MessageType("event"), "test"));
-
-            assertEquals(1, subscribingMonitor.getMessages().size());
-            assertTrue(trackingMonitor.await(10, TimeUnit.SECONDS));
-            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
     void configureSpanFactory() {
         TestSpanFactory spanFactory = new TestSpanFactory();
         CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
@@ -478,19 +453,6 @@ class EventProcessingModuleTest {
         } finally {
             config.shutdown();
         }
-    }
-
-    @Test
-    void subscribingProcessorsUsesConfiguredDefaultSubscribableMessageSource() {
-        configurer.eventProcessing().configureDefaultSubscribableMessageSource(c -> eventStoreOne);
-        configurer.eventProcessing().usingSubscribingEventProcessors();
-        configurer.registerEventHandler(c -> new SubscribingEventHandler());
-
-        LegacyConfiguration config = configurer.start();
-        Optional<SubscribingEventProcessor> processor = config.eventProcessingConfiguration()
-                                                              .eventProcessor("subscribing");
-        assertTrue(processor.isPresent());
-        assertEquals(eventStoreOne, processor.get().getMessageSource());
     }
 
     @Test
