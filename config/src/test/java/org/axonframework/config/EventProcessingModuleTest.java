@@ -690,57 +690,6 @@ class EventProcessingModuleTest {
 //        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
     }
 
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void defaultTransactionManagerIsUsedUponEventProcessorConstruction() throws InterruptedException {
-        String testName = "pooled-streaming";
-        EventMessage testEvent = new GenericEventMessage(new MessageType("event"), 1000);
-
-        CountDownLatch transactionCommitted = new CountDownLatch(1);
-        TransactionManager defaultTransactionManager = new StubTransactionManager(transactionCommitted);
-
-        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                  .eventProcessing()
-                  .registerPooledStreamingEventProcessor(testName)
-                  .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerDefaultTransactionManager(c -> defaultTransactionManager);
-        LegacyConfiguration config = configurer.start();
-
-        try {
-            config.eventBus().publish(testEvent);
-            assertTrue(transactionCommitted.await(10, TimeUnit.SECONDS));
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void defaultTransactionManagerIsOverriddenByProcessorSpecificInstance() throws InterruptedException {
-        String testName = "pooled-streaming";
-        EventMessage testEvent = new GenericEventMessage(new MessageType("event"), 1000);
-
-        TransactionManager defaultTransactionManager = spy(TransactionManager.class);
-        CountDownLatch transactionCommitted = new CountDownLatch(1);
-        TransactionManager processorSpecificTransactionManager = new StubTransactionManager(transactionCommitted);
-
-        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                  .eventProcessing()
-                  .registerPooledStreamingEventProcessor(testName)
-                  .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerDefaultTransactionManager(c -> defaultTransactionManager)
-                  .registerTransactionManager(testName, c -> processorSpecificTransactionManager);
-        LegacyConfiguration config = configurer.start();
-
-        try {
-            config.eventBus().publish(testEvent);
-            assertTrue(transactionCommitted.await(10, TimeUnit.SECONDS));
-        } finally {
-            config.shutdown();
-        }
-        verifyNoInteractions(defaultTransactionManager);
-    }
-
     @Disabled("TODO #3517 - Revise Dead Letter Queue")
     @Test
     void registerDeadLetterQueueConstructsDeadLetteringEventHandlerInvoker(
@@ -752,8 +701,7 @@ class EventProcessingModuleTest {
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue);
         LegacyConfiguration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage>> optionalPolicy = config.eventProcessingConfiguration()
@@ -800,8 +748,7 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
-                  .registerDefaultDeadLetterPolicy(c -> expectedPolicy)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  .registerDefaultDeadLetterPolicy(c -> expectedPolicy);
         LegacyConfiguration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage>> optionalPolicy = config.eventProcessingConfiguration()
@@ -849,8 +796,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
                   .registerDeadLetterPolicy(processingGroup, c -> expectedPolicy)
-                  .registerDeadLetterPolicy("unused-processing-group", c -> unexpectedPolicy)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  .registerDeadLetterPolicy("unused-processing-group", c -> unexpectedPolicy);
         LegacyConfiguration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage>> optionalPolicy = config.eventProcessingConfiguration()
@@ -899,8 +845,7 @@ class EventProcessingModuleTest {
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
                   .registerDeadLetteringEventHandlerInvokerConfiguration(
                           processingGroup, (config, builder) -> builder.allowReset(true)
-                  )
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  );
         LegacyConfiguration config = configurer.start();
 
         Optional<SequencedDeadLetterQueue<EventMessage>> configuredDlq =
@@ -940,8 +885,7 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessor(otherProcessingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerEventHandler(config -> new TrackingEventHandler())
-                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue);
 
         LegacyConfiguration config = configurer.start();
         EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
@@ -975,7 +919,6 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE)
                   .registerHandlerInterceptor(processingGroup, c -> interceptor1)
                   .registerDefaultHandlerInterceptor((c, n) -> interceptor2);
 
@@ -1000,8 +943,7 @@ class EventProcessingModuleTest {
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerDeadLetterQueueProvider(p -> c -> deadLetterQueue)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  .registerDeadLetterQueueProvider(p -> c -> deadLetterQueue);
         LegacyConfiguration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage>> optionalPolicy = config.eventProcessingConfiguration()
@@ -1047,8 +989,7 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDeadLetterQueue(processingGroup, c -> specificDeadLetterQueue)
-                  .registerDeadLetterQueueProvider(p -> c -> genericDeadLetterQueue)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  .registerDeadLetterQueueProvider(p -> c -> genericDeadLetterQueue);
         LegacyConfiguration config = configurer.start();
 
         Optional<SequencedDeadLetterQueue<EventMessage>> configuredDlq =
