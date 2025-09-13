@@ -93,21 +93,6 @@ public interface EventProcessingConfiguration {
     <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup);
 
     /**
-     * Returns an {@link EventProcessor} by the given {@code processingGroup} if present, matching the given {@code
-     * expectedType}.
-     *
-     * @param processingGroup a {@link String} specifying the processing group of an {@link EventProcessor}
-     * @param expectedType    the type of the {@link EventProcessor} to return
-     * @param <T>             the type of the expected {@link EventProcessor}
-     * @return an {@link Optional} referencing the {@link EventProcessor}, if present and of expected type
-     */
-    default <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup,
-                                                                                   Class<T> expectedType) {
-        return eventProcessorByProcessingGroup(processingGroup).filter(expectedType::isInstance)
-                                                               .map(expectedType::cast);
-    }
-
-    /**
      * Obtains all registered {@link EventProcessor}s.
      *
      * @return a {@link Map} of registered {@link EventProcessor}s within this configuration with the processor names as
