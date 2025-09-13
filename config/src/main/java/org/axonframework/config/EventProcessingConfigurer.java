@@ -454,27 +454,6 @@ public interface EventProcessingConfigurer {
     );
 
     /**
-     * Registers a {@link TransactionManager} for a {@link EventProcessor} of the given {@code name}.
-     *
-     * @param name                      a {@link String} specifying the name of an {@link EventProcessor}
-     * @param transactionManagerBuilder a {@link Function} that builds a {@link TransactionManager}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerTransactionManager(String name,
-                                                         Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder);
-
-    /**
-     * Registers a default {@link TransactionManager} for all {@link EventProcessor}s. The provided
-     * {@code TransactionManager} is used whenever no processor specific {@code TransactionManager} is configured.
-     *
-     * @param transactionManagerBuilder a {@link Function} that builds a {@link TransactionManager}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerDefaultTransactionManager(
-            Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder
-    );
-
-    /**
      * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
      * receive the given {@code name}.
      *

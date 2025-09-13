@@ -751,23 +751,6 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerTransactionManager(String name,
-                                                                Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder) {
-        this.transactionManagers.put(name, new Component<>(() -> configuration,
-                                                           "transactionManager",
-                                                           transactionManagerBuilder));
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerDefaultTransactionManager(
-            Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder
-    ) {
-        this.defaultTransactionManager.update(transactionManagerBuilder);
-        return this;
-    }
-
-    @Override
     public EventProcessingConfigurer registerPooledStreamingEventProcessor(
             String name,
             Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage>> messageSource,
