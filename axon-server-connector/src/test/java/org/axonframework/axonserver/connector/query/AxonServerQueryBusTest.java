@@ -201,7 +201,7 @@ class AxonServerQueryBusTest {
 //        assertEquals("test", testSubject.query(testQuery).get().payload());
 
         verify(targetContextResolver).resolveContext(testQuery);
-        verify(localSegment, never()).query(testQuery);
+        verify(localSegment, never()).query(testQuery, null);
         spanFactory.verifySpanCompleted("QueryBus.queryDistributed");
         spanFactory.verifySpanPropagated("QueryBus.queryDistributed", testQuery);
     }
@@ -245,9 +245,9 @@ class AxonServerQueryBusTest {
 //                    new GenericQueryResponseMessage(new MessageType("query"), "ok")
 //            ));
 
-            testSubject.query(testQuery);
+            testSubject.query(testQuery, null);
 
-            verify(localSegment).query(testQuery);
+            verify(localSegment).query(testQuery, null);
             verify(mockQueryChannel, never()).query(any());
         }
 
@@ -255,9 +255,9 @@ class AxonServerQueryBusTest {
         void queryWhenRegistrationIsCancel() {
             registration.cancel();
 
-            testSubject.query(testQuery);
+            testSubject.query(testQuery, null);
 
-            verify(localSegment, never()).query(testQuery);
+            verify(localSegment, never()).query(testQuery, null);
         }
 
         @Test
@@ -543,7 +543,7 @@ class AxonServerQueryBusTest {
                 new MessageType("query"), "payload", new InstanceResponseType<>(String.class)
         );
 
-        testSubject.query(testQuery);
+        testSubject.query(testQuery, null);
         assertEquals("payload", results.getFirst());
         assertEquals(1, results.size());
     }
@@ -563,7 +563,7 @@ class AxonServerQueryBusTest {
 
         assertWithin(
                 50, TimeUnit.MILLISECONDS,
-                () -> assertThrows(ShutdownInProgressException.class, () -> testSubject.query(testQuery))
+                () -> assertThrows(ShutdownInProgressException.class, () -> testSubject.query(testQuery, null))
         );
     }
 
@@ -695,7 +695,7 @@ class AxonServerQueryBusTest {
         }).when(mockQueryChannel)
           .registerQueryHandler(any(), any());
 
-        when(localSegment.query(any())).thenAnswer(i -> {
+        when(localSegment.query(any(), null)).thenAnswer(i -> {
             startProcessingGate.await();
             QueryMessage message = i.getArgument(0);
             actual.add(message.metaData().get("index"));
@@ -840,7 +840,7 @@ class AxonServerQueryBusTest {
         }).when(mockQueryChannel)
           .registerQueryHandler(any(), any());
 
-        when(localSegment.query(any())).thenAnswer(i -> {
+        when(localSegment.query(any(), null)).thenAnswer(i -> {
             responseLatch.await();
             QueryMessage message = i.getArgument(0);
             QueryResponseMessage queryResponse = new GenericQueryResponseMessage(

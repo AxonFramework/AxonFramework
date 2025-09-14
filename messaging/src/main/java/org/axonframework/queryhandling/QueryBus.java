@@ -16,9 +16,12 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.reactivestreams.Publisher;
 import reactor.util.concurrent.Queues;
 
@@ -34,7 +37,7 @@ import java.util.stream.Stream;
  * on the {@link QualifiedName} present in the {@link QueryMessage#type() query's type} and the {@code QualifiedName}
  * resulting from the {@link QueryMessage#responseType() response type}.
  * <p>
- * Hence, queries dispatched (through either {@link #query(QueryMessage)},
+ * Hence, queries dispatched (through either {@link #query(QueryMessage, ProcessingContext)},
  * {@link #streamingQuery(StreamingQueryMessage)}, {@link #scatterGather(QueryMessage, long, TimeUnit)}, and
  * {@link #subscriptionQuery(SubscriptionQueryMessage)}) match a subscribed query handler based on "query name" and
  * "query response name."
@@ -62,7 +65,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * @return a CompletableFuture that resolves when the response is available
      */
     @Nonnull
-    MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query);
+    MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context);
 
     /**
      * Builds a {@link Publisher} of responses to the given {@code query}. The actual query is not dispatched until

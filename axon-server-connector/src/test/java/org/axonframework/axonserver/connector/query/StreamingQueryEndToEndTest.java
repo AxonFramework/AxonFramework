@@ -251,8 +251,8 @@ class StreamingQueryEndToEndTest {
         MessageStream<QueryResponseMessage> response = null;
         try {
             response = supportsStreaming
-                    ? senderQueryBus.query(query)
-                    : nonStreamingSenderQueryBus.query(query);
+                    ? senderQueryBus.query(query, null)
+                    : nonStreamingSenderQueryBus.query(query, null);
             return response.first()
                            .asCompletableFuture()
                            .thenApply(MessageStream.Entry::message)

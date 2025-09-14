@@ -138,7 +138,7 @@ class SimpleQueryBusTest {
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
             // when...
-            Optional<Object> optionalResult = testSubject.query(testQuery)
+            Optional<Object> optionalResult = testSubject.query(testQuery, null)
                                                          .next()
                                                          .map(entry -> entry.message().payload());
             // then...
@@ -156,7 +156,7 @@ class SimpleQueryBusTest {
             // given...
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", SINGLE_STRING_RESPONSE);
             // when...
-            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery);
+            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
             assertThat(result.isCompleted()).isTrue();
             Optional<Throwable> optionalError = result.error();
@@ -170,7 +170,7 @@ class SimpleQueryBusTest {
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", SINGLE_STRING_RESPONSE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
             // when...
-            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery);
+            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
             assertThat(result.isCompleted()).isFalse();
             assertThat(result.hasNextAvailable()).isTrue();
@@ -191,7 +191,7 @@ class SimpleQueryBusTest {
             };
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
             // when...
-            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery);
+            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
             assertThat(result.isCompleted()).isTrue();
             assertThat(result.hasNextAvailable()).isFalse();
@@ -208,7 +208,7 @@ class SimpleQueryBusTest {
             QueryHandler failingHandler = (query, context) -> MessageStream.failed(new MockException("Mock"));
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
             // when...
-            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery);
+            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
             assertThat(result.isCompleted()).isTrue();
             assertThat(result.hasNextAvailable()).isFalse();
@@ -224,7 +224,7 @@ class SimpleQueryBusTest {
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", SINGLE_STRING_RESPONSE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
             // when...
-            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery);
+            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
             assertThat(result.isCompleted()).isTrue();
             assertThat(result.hasNextAvailable()).isFalse();
@@ -247,7 +247,7 @@ class SimpleQueryBusTest {
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, passingHandler);
             // when...
-            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery);
+            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
             assertThat(result.hasNextAvailable()).isTrue();
             Optional<MessageStream.Entry<QueryResponseMessage>> nextResponse = result.next();
@@ -263,7 +263,7 @@ class SimpleQueryBusTest {
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", MULTI_STRING_RESPONSE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
             // when...
-            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery);
+            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
             Optional<MessageStream.Entry<QueryResponseMessage>> nextResponse = result.next();
             assertThat(nextResponse).isPresent();
@@ -279,7 +279,7 @@ class SimpleQueryBusTest {
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, MULTI_RESPONSE_HANDLER);
             // when...
-            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery);
+            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
             Optional<MessageStream.Entry<QueryResponseMessage>> nextResponse = result.next();
             assertThat(nextResponse).isPresent();
@@ -296,7 +296,7 @@ class SimpleQueryBusTest {
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", SINGLE_STRING_RESPONSE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
             // when...
-            CompletableFuture<Object> result = testSubject.query(testQuery)
+            CompletableFuture<Object> result = testSubject.query(testQuery, null)
                                                           .first()
                                                           .asCompletableFuture()
                                                           .thenApply(entry -> entry.message().payload());
@@ -313,7 +313,7 @@ class SimpleQueryBusTest {
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, MULTI_RESPONSE_HANDLER);
             // when...
             CompletableFuture<List<String>> result =
-                    testSubject.query(testQuery)
+                    testSubject.query(testQuery, null)
                                .reduce(new ArrayList<>(), (results, entry) -> {
                                    results.add(entry.message().payloadAs(String.class));
                                    return results;

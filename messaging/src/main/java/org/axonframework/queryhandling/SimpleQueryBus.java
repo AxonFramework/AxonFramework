@@ -16,6 +16,7 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -30,6 +31,7 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.reactivestreams.Publisher;
@@ -124,7 +126,7 @@ public class SimpleQueryBus implements QueryBus {
 
     @Nonnull
     @Override
-    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query) {
+    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context) {
         if (logger.isDebugEnabled()) {
             logger.debug("Dispatching direct-query for query name [{}] and response [{}].",
                          query.type().name(), query.responseType());

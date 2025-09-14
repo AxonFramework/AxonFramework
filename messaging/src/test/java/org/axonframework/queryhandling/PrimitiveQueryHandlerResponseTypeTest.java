@@ -94,11 +94,11 @@ class PrimitiveQueryHandlerResponseTypeTest {
         final QueryMessage queryBoxed = new GenericQueryMessage(type, value, ResponseTypes.instanceOf(boxed));
         final QueryMessage queryPrimitive = new GenericQueryMessage(type, value, ResponseTypes.instanceOf(primitive));
 
-        final T responseBoxed = queryBus.query(queryBoxed)
+        final T responseBoxed = queryBus.query(queryBoxed, null)
                                         .next()
                                         .map(entry -> entry.message().payloadAs(boxed))
                                         .orElseGet(() -> Assertions.fail("Boxed query returned nothing."));
-        final T responsePrimitive = queryBus.query(queryPrimitive)
+        final T responsePrimitive = queryBus.query(queryPrimitive, null)
                                             .next()
                                             .map(entry -> entry.message().payloadAs(boxed))
                                             .orElseGet(() -> Assertions.fail("Primitive query returned nothing."));

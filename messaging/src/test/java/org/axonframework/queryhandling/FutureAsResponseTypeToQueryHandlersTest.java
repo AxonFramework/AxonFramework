@@ -73,7 +73,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
                 multipleInstancesOf(String.class)
         );
 
-        List<String> result = queryBus.query(testQuery)
+        List<String> result = queryBus.query(testQuery, null)
                                       .reduce(new ArrayList<String>(), (list, entry) -> {
                                           list.add(entry.message().payloadAs(String.class));
                                           return list;
@@ -90,7 +90,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
                 instanceOf(String.class)
         );
 
-        MessageStream<QueryResponseMessage> resultStream = queryBus.query(testQuery);
+        MessageStream<QueryResponseMessage> resultStream = queryBus.query(testQuery, null);
         Object result = resultStream.first()
                                     .asCompletableFuture()
                                     .thenApply(MessageStream.Entry::message)
@@ -172,7 +172,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
                 multipleInstancesOf(String.class)
         );
 
-        List<String> result = queryBus.query(testQuery)
+        List<String> result = queryBus.query(testQuery, null)
                                       .reduce(new ArrayList<String>(), (list, entry) -> {
                                           list.add(entry.message().payloadAs(String.class));
                                           return list;

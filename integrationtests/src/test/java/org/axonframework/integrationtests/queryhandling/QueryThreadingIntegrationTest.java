@@ -146,7 +146,7 @@ class QueryThreadingIntegrationTest {
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE_B,
                                                              "start",
                                                              ResponseTypes.instanceOf(String.class));
-            QueryResponseMessage b = queryBus.query(testQuery)
+            QueryResponseMessage b = queryBus.query(testQuery, null)
                                              .first()
                                              .asCompletableFuture()
                                              .thenApply(MessageStream.Entry::message)
@@ -156,22 +156,22 @@ class QueryThreadingIntegrationTest {
         });
 
         MessageStream<QueryResponseMessage> query1 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
+                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
         );
         MessageStream<QueryResponseMessage> query2 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
+                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
         );
         MessageStream<QueryResponseMessage> query3 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
+                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
         );
         MessageStream<QueryResponseMessage> query4 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
+                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
         );
         MessageStream<QueryResponseMessage> query5 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
+                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
         );
         MessageStream<QueryResponseMessage> query6 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
+                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
         );
 
         // Wait until all queries are waiting on the secondary query. Note that query 6 cannot be processed

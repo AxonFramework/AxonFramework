@@ -73,7 +73,7 @@ class DefaultQueryGatewayTest {
 
         ArgumentCaptor<QueryMessage> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
 
-        verify(queryBus).query(queryMessageCaptor.capture());
+        verify(queryBus).query(queryMessageCaptor.capture(), null);
 
         QueryMessage result = queryMessageCaptor.getValue();
         assertEquals("query", result.payload());
@@ -102,7 +102,7 @@ class DefaultQueryGatewayTest {
 
         ArgumentCaptor<QueryMessage> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
 
-        verify(queryBus).query(queryMessageCaptor.capture());
+        verify(queryBus).query(queryMessageCaptor.capture(), null);
 
         QueryMessage result = queryMessageCaptor.getValue();
         assertEquals("query", result.payload());

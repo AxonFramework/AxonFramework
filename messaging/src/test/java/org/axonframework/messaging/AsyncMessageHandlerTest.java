@@ -269,7 +269,8 @@ class AsyncMessageHandlerTest {
 
     private void assertQuery() throws Exception {
         List<Integer> primes = queryGateway.query(new GetKnownPrimes(),
-                                                  ResponseTypes.multipleInstancesOf(Integer.class)).get();
+                                                  ResponseTypes.multipleInstancesOf(Integer.class),
+                                                  null).get();
 
         assertThat(primes).isEqualTo(List.of(2, 3, 5, 7));
     }
