@@ -46,6 +46,7 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.StringUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
@@ -349,6 +350,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     private QueryRequest serializeStreaming(QueryMessage query, int priority) {
         return serialize(query, true, priority);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        // TODO #3488 Implement as part of Axon Server Query Bus implementation
     }
 
     /**

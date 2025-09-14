@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
@@ -72,10 +73,9 @@ public class SimpleQueryBus implements QueryBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
-    private final ConcurrentMap<QueryHandlerName, List<QueryHandler>> subscriptions = new ConcurrentHashMap<>();
-
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final QueryUpdateEmitter queryUpdateEmitter;
+    private final ConcurrentMap<QueryHandlerName, List<QueryHandler>> subscriptions = new ConcurrentHashMap<>();
 
     private final QueryInvocationErrorHandler errorHandler;
     private final MessageTypeResolver messageTypeResolver;
@@ -496,5 +496,12 @@ public class SimpleQueryBus implements QueryBus {
     private Publisher<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> getStreamingHandlersForMessage(
             StreamingQueryMessage queryMessage) {
         return Flux.fromIterable(getHandlersForMessage(queryMessage));
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
+        descriptor.describeProperty("queryUpdateEmitter", queryUpdateEmitter);
+        descriptor.describeProperty("subscriptions", subscriptions);
     }
 }

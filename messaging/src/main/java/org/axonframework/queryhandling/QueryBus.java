@@ -16,6 +16,8 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -46,7 +48,7 @@ import java.util.stream.Stream;
  * @author Allard Buijze
  * @since 3.1
  */
-public interface QueryBus extends QueryHandlerRegistry<QueryBus> {
+public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableComponent {
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s queryName and
