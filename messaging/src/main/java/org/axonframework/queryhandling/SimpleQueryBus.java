@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
@@ -509,5 +510,12 @@ public class SimpleQueryBus implements QueryBus {
             throw NoHandlerForQueryException.forBus(query);
         }
         return subscriptions.get(handlerName);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
+        descriptor.describeProperty("queryUpdateEmitter", queryUpdateEmitter);
+        descriptor.describeProperty("subscriptions", subscriptions);
     }
 }
