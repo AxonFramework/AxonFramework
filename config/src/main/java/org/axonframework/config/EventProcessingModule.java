@@ -648,22 +648,6 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerDefaultErrorHandler(
-            Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder) {
-        this.defaultErrorHandler.update(errorHandlerBuilder);
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerErrorHandler(String eventProcessorName,
-                                                          Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder) {
-        this.errorHandlers.put(eventProcessorName, new Component<>(() -> configuration,
-                                                                   "errorHandler",
-                                                                   errorHandlerBuilder));
-        return this;
-    }
-
-    @Override
     public EventProcessingConfigurer byDefaultAssignHandlerInstancesTo(Function<Object, String> assignmentFunction) {
         this.instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(assignmentFunction);
         return this;

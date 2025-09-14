@@ -240,27 +240,6 @@ public interface EventProcessingConfigurer {
                                                                 Function<LegacyConfiguration, SubscribableMessageSource<? extends EventMessage>> messageSource);
 
     /**
-     * Registers a {@link Function} that builds the default {@link ErrorHandler}. Defaults to a
-     * {@link PropagatingErrorHandler}.
-     *
-     * @param errorHandlerBuilder a {@link Function} that builds an {@link ErrorHandler}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerDefaultErrorHandler(
-            Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder
-    );
-
-    /**
-     * Registers a {@link Function} that builds an {@link ErrorHandler} for the given {@code eventProcessorName}.
-     *
-     * @param eventProcessorName  a {@link String} specifying the name of an {@link EventProcessor}
-     * @param errorHandlerBuilder a {@link Function} that builds an {@link ErrorHandler}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerErrorHandler(String eventProcessorName,
-                                                   Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder);
-
-    /**
      * Registers the {@code processingGroup} name to assign Event Handler and Saga beans to when no other, more
      * explicit, rule matches and no {@link ProcessingGroup} annotation is found.
      *
