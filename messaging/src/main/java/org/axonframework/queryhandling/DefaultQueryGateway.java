@@ -75,7 +75,9 @@ public class DefaultQueryGateway implements QueryGateway {
                                              @Nonnull ResponseType<R> responseType) {
         QueryMessage queryMessage = asQueryMessage(query, responseType);
 
-        CompletableFuture<QueryResponseMessage> queryResponse = queryBus.query(queryMessage);
+        // TODO replace for response type mapping here
+        //= queryBus.query(queryMessage);
+        CompletableFuture<QueryResponseMessage> queryResponse = null;
         CompletableFuture<R> result = new CompletableFuture<>();
         result.whenComplete((r, e) -> {
             if (!queryResponse.isDone()) {

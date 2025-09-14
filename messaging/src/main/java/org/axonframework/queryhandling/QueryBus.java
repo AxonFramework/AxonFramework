@@ -22,7 +22,6 @@ import org.axonframework.messaging.QualifiedName;
 import org.reactivestreams.Publisher;
 import reactor.util.concurrent.Queues;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -62,7 +61,8 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * @param query the query
      * @return a CompletableFuture that resolves when the response is available
      */
-    CompletableFuture<QueryResponseMessage> query(@Nonnull QueryMessage query);
+    @Nonnull
+    MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query);
 
     /**
      * Builds a {@link Publisher} of responses to the given {@code query}. The actual query is not dispatched until

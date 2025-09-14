@@ -22,6 +22,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
@@ -29,6 +30,7 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -37,7 +39,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Signal;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -121,60 +122,66 @@ public class SimpleQueryBus implements QueryBus {
         return this;
     }
 
+    @Nonnull
     @Override
-    public CompletableFuture<QueryResponseMessage> query(@Nonnull QueryMessage query) {
-        return doQuery(query);
+    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Dispatching direct-query for query name [{}] and response [{}].",
+                         query.type().name(), query.responseType());
+        }
+
+        try {
+            for (QueryHandler handler : handlersFor(query)) {
+                MessageStream<QueryResponseMessage> responseStream = handle(query, handler).get();
+                if (containsResponseOrUserException(responseStream)) {
+                    return responseStream;
+                }
+            }
+            return MessageStream.failed(NoHandlerForQueryException.forBus(query));
+        } catch (Exception e) {
+            return MessageStream.failed(e);
+        }
     }
 
     @Nonnull
-    private CompletableFuture<QueryResponseMessage> doQuery(
-            @Nonnull QueryMessage query) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
-                       () -> "Direct query does not support Flux as a return type.");
-        List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> handlers =
-                getHandlersForMessage(query);
-        CompletableFuture<QueryResponseMessage> result = new CompletableFuture<>();
-        try {
-            ResponseType<?> responseType = query.responseType();
-            if (handlers.isEmpty()) {
-//                throw noHandlerException(query);
-            }
-            Iterator<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> handlerIterator = handlers.iterator();
-            boolean invocationSuccess = false;
-            while (!invocationSuccess && handlerIterator.hasNext()) {
-                LegacyDefaultUnitOfWork<QueryMessage> uow = LegacyDefaultUnitOfWork.startAndGet(query);
-                ResultMessage resultMessage =
-                        invoke(uow, handlerIterator.next());
-                if (resultMessage.isExceptional()) {
-                    if (!(resultMessage.exceptionResult() instanceof NoHandlerForQueryException)) {
-                        GenericQueryResponseMessage queryResponseMessage =
-                                responseType.convertExceptional(resultMessage.exceptionResult())
-                                            .map(exceptionalResult -> new GenericQueryResponseMessage(
-                                                    messageTypeResolver.resolveOrThrow(exceptionalResult),
-                                                    exceptionalResult
-                                            ))
-                                            .orElse(new GenericQueryResponseMessage(
-                                                    messageTypeResolver.resolveOrThrow(resultMessage.exceptionResult()),
-                                                    resultMessage.exceptionResult(),
-                                                    responseType.responseMessagePayloadType()
-                                            ));
-
-
-                        result.complete(queryResponseMessage);
-                        return result;
-                    }
-                } else {
-                    result = (CompletableFuture<QueryResponseMessage>) resultMessage.payload();
-                    invocationSuccess = true;
-                }
-            }
-            if (!invocationSuccess) {
-                throw noSuitableHandlerException(query);
-            }
-        } catch (Exception e) {
-            result.completeExceptionally(e);
+    private CompletableFuture<MessageStream<QueryResponseMessage>> handle(@Nonnull QueryMessage query,
+                                                                          @Nonnull QueryHandler handler) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Handling query [{} {name={},response={}}]",
+                         query.identifier(), query.type(), query.responseType());
         }
-        return result;
+
+        UnitOfWork unitOfWork = unitOfWorkFactory.create();
+        return unitOfWork.executeWithResult(
+                context -> {
+                    MessageStream<QueryResponseMessage> result;
+                    try {
+                        result = handler.handle(query, context);
+                    } catch (Exception e) {
+                        result = MessageStream.failed(e);
+                    }
+                    return CompletableFuture.completedFuture(result);
+                }
+        );
+    }
+
+    /**
+     * Validates whether the given {@code responseStream} is <b>not</b> completed or has an exception thrown by the
+     * user's {@link QueryHandler}.
+     * <p>
+     * If it has not completed yet, we can assume responses will be returned, making it a valuable response. If it has
+     * an exception that has been (consciously) thrown by the user, they should know about it, making it a valuable
+     * response.
+     *
+     * @param responseStream The response stream to check whether it is not completed or had an exception.
+     * @return {@code true} when the given {@code responseStream} is <b>not</b> completed or has an
+     * {@link MessageStream#error() error} (consciously) thrown by the user, {@code false} otherwise.
+     */
+    private static boolean containsResponseOrUserException(MessageStream<QueryResponseMessage> responseStream) {
+        return !responseStream.isCompleted()
+                || responseStream.error()
+                                 .map(e -> !(e instanceof NoHandlerForQueryException))
+                                 .orElse(false);
     }
 
     @Override
@@ -313,13 +320,14 @@ public class SimpleQueryBus implements QueryBus {
         if (queryUpdateEmitter.queryUpdateHandlerRegistered(query)) {
             throw new IllegalArgumentException("There is already a subscription with the given message identifier");
         }
-
-        Mono<QueryResponseMessage> initialResult = Mono.fromFuture(() -> query(query))
-                                                       .doOnError(error -> logger.error(
-                                                               "An error happened while trying to report an initial result. Query: {}",
-                                                               query,
-                                                               error
-                                                       ));
+        Mono<QueryResponseMessage> initialResult = null;
+        // TODO #3488 - Fix once implementing subscription queries
+//        Mono<QueryResponseMessage> initialResult = Mono.fromFuture(() -> query(query))
+//                                                       .doOnError(error -> logger.error(
+//                                                               "An error happened while trying to report an initial result. Query: {}",
+//                                                               query,
+//                                                               error
+//                                                       ));
         UpdateHandlerRegistration updateHandlerRegistration =
                 queryUpdateEmitter.registerUpdateHandler(query, updateBufferSize);
 
@@ -469,6 +477,20 @@ public class SimpleQueryBus implements QueryBus {
         return CompletableFuture.completedFuture(asNullableResponseMessage(
                 responseType.responseMessagePayloadType(),
                 responseType.convert(queryResponse)));
+    }
+
+    @Nonnull
+    private List<QueryHandler> handlersFor(@Nonnull QueryMessage query) {
+        ResponseType<?> responseType = query.responseType();
+        QueryHandlerName handlerName = new QueryHandlerName(
+                query.type().qualifiedName(),
+                new QualifiedName(responseType.getExpectedResponseType())
+        );
+        List<QueryHandler> handlers = subscriptions.get(handlerName);
+        if (handlers == null || handlers.isEmpty()) {
+            throw NoHandlerForQueryException.forBus(query);
+        }
+        return handlers;
     }
 
     private List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> getHandlersForMessage(

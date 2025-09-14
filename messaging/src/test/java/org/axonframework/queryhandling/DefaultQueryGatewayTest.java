@@ -65,7 +65,8 @@ class DefaultQueryGatewayTest {
 
     @Test
     void pointToPointQuery() throws Exception {
-        when(queryBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
+        // TODO fix as part of gateway fix
+//        when(queryBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
 
         CompletableFuture<String> queryResponse = testSubject.query("query", String.class);
         assertEquals("answer", queryResponse.get());
@@ -87,7 +88,8 @@ class DefaultQueryGatewayTest {
         String expectedMetaDataKey = "key";
         String expectedMetaDataValue = "value";
 
-        when(queryBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
+        // TODO fix as part of gateway fix
+//        when(queryBus.query(anyMessage(String.class, String.class))).thenReturn(completedFuture(answer));
 
         GenericMessage testQuery = new GenericMessage(
                 new MessageType("query"),
@@ -118,8 +120,9 @@ class DefaultQueryGatewayTest {
         QueryResponseMessage testQuery = new GenericQueryResponseMessage(
                 new MessageType("query"), expected, String.class
         );
-        when(queryBus.query(anyMessage(String.class, String.class)))
-                .thenReturn(completedFuture(testQuery));
+        // TODO fix as part of gateway fix
+//        when(queryBus.query(anyMessage(String.class, String.class)))
+//                .thenReturn(completedFuture(testQuery));
 
         CompletableFuture<String> result = testSubject.query("query", String.class);
 
@@ -130,9 +133,10 @@ class DefaultQueryGatewayTest {
 
     @Test
     void pointToPointQueryWhenClientCancelQuery() {
+        // TODO fix as part of gateway fix
         CompletableFuture<QueryResponseMessage> queryBusFutureResult = new CompletableFuture<>();
-        when(queryBus.query(anyMessage(String.class, String.class)))
-                .thenReturn(queryBusFutureResult);
+//        when(queryBus.query(anyMessage(String.class, String.class)))
+//                .thenReturn(queryBusFutureResult);
 
         CompletableFuture<String> result = testSubject.query("query", String.class);
         assertFalse(queryBusFutureResult.isDone());
@@ -147,7 +151,8 @@ class DefaultQueryGatewayTest {
         Throwable expected = new Throwable("oops");
         CompletableFuture<QueryResponseMessage> queryResponseCompletableFuture = new CompletableFuture<>();
         queryResponseCompletableFuture.completeExceptionally(expected);
-        when(queryBus.query(anyMessage(String.class, String.class))).thenReturn(queryResponseCompletableFuture);
+        // TODO fix as part of gateway fix
+//        when(queryBus.query(anyMessage(String.class, String.class))).thenReturn(queryResponseCompletableFuture);
 
         CompletableFuture<String> result = testSubject.query("query", String.class);
 
@@ -333,15 +338,16 @@ class DefaultQueryGatewayTest {
 
     @Test
     void payloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
-        when(queryBus.query(anyMessage(String.class, String.class)))
-                .thenReturn(completedFuture(new GenericQueryResponseMessage(
-                        new MessageType("query"), "test"
-                ) {
-                    @Override
-                    public String payload() {
-                        throw new MockException("Faking serialization problem");
-                    }
-                }));
+        // TODO fix as part of gateway fix
+//        when(queryBus.query(anyMessage(String.class, String.class)))
+//                .thenReturn(completedFuture(new GenericQueryResponseMessage(
+//                        new MessageType("query"), "test"
+//                ) {
+//                    @Override
+//                    public String payload() {
+//                        throw new MockException("Faking serialization problem");
+//                    }
+//                }));
 
         CompletableFuture<String> actual = testSubject.query("query", String.class);
         assertTrue(actual.isDone());

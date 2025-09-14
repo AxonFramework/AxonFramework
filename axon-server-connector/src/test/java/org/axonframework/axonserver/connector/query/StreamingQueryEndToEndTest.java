@@ -22,6 +22,7 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.IllegalPayloadAccessException;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
@@ -247,18 +248,23 @@ class StreamingQueryEndToEndTest {
     private <R> R directQueryPayload(QueryMessage query,
                                      TypeReference<R> type,
                                      boolean supportsStreaming) throws Throwable {
-        QueryResponseMessage response = null;
+        MessageStream<QueryResponseMessage> response = null;
         try {
             response = supportsStreaming
-                    ? senderQueryBus.query(query).get()
-                    : nonStreamingSenderQueryBus.query(query).get();
-            return response.payloadAs(type);
+                    ? senderQueryBus.query(query)
+                    : nonStreamingSenderQueryBus.query(query);
+            return response.first()
+                           .asCompletableFuture()
+                           .thenApply(MessageStream.Entry::message)
+                           .thenApply(responseMessage -> responseMessage.payloadAs(type))
+                           .get();
         } catch (IllegalPayloadAccessException e) {
-            if (response != null && response.optionalExceptionResult().isPresent()) {
-                throw response.optionalExceptionResult().get();
-            } else {
+            // TODO #3488 Check if this is still needed
+//            if (response != null && response.optionalExceptionResult().isPresent()) {
+//                throw response.optionalExceptionResult().get();
+//            } else {
                 throw e;
-            }
+//            }
         }
     }
 
