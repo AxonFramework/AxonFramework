@@ -626,21 +626,6 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerTokenStore(String processorName,
-                                                        Function<LegacyConfiguration, TokenStore> tokenStore) {
-        this.tokenStore.put(processorName, new Component<>(() -> configuration,
-                                                           "tokenStore",
-                                                           tokenStore));
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerTokenStore(Function<LegacyConfiguration, TokenStore> tokenStore) {
-        this.defaultTokenStore.update(tokenStore);
-        return this;
-    }
-
-    @Override
     public EventProcessingConfigurer usingSubscribingEventProcessors() {
         this.defaultEventProcessorBuilder = (name, conf, eventHandlerInvoker) ->
                 subscribingEventProcessor(name, eventHandlerInvoker, defaultSubscribableSource.get());
