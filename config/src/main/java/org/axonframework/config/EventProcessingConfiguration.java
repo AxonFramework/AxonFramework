@@ -17,19 +17,16 @@
 package org.axonframework.config;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.List;
 import java.util.Map;
@@ -151,30 +148,12 @@ public interface EventProcessingConfiguration {
     }
 
     /**
-     * Returns the {@link MessageMonitor} set to the given {@code componentType} and {@code componentName} registered
-     * within this configuration.
-     *
-     * @param componentType a {@link Class} type of component to be monitored
-     * @param componentName a {@link String} specifying the name of the component to be monitored
-     * @return the {@link MessageMonitor} registered to the given {@code componentType} and {@code componentName}
-     */
-    MessageMonitor<? super Message> messageMonitor(Class<?> componentType, String componentName);
-
-    /**
      * Returns the {@link TokenStore} tied to the given {@code processorName}.
      *
      * @param processorName a {@link String} specifying a event processor
      * @return the {@link TokenStore} belonging to the given {@code processorName}
      */
     TokenStore tokenStore(String processorName);
-
-    /**
-     * Returns the {@link TransactionManager} tied to the given {@code processorName}.
-     *
-     * @param processorName a {@link String} specifying a processing group
-     * @return the {@link TransactionManager}belonging to the given {@code processorName}
-     */
-    TransactionManager transactionManager(String processorName);
 
     /**
      * Returns the {@link SequencedDeadLetterQueue} tied to the given {@code processingGroup} in an {@link Optional}.

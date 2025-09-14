@@ -484,8 +484,7 @@ public class EventProcessingModule
                                                                 .apply(processingGroup));
     }
 
-    @Override
-    public MessageMonitor<? super Message> messageMonitor(Class<?> componentType,
+    private MessageMonitor<? super Message> messageMonitor(Class<?> componentType,
                                                              String eventProcessorName) {
         validateConfigInitialization();
         if (messageMonitorFactories.containsKey(eventProcessorName)) {
@@ -505,8 +504,7 @@ public class EventProcessingModule
                 : defaultTokenStore.get();
     }
 
-    @Override
-    public TransactionManager transactionManager(String processorName) {
+    private TransactionManager transactionManager(String processorName) {
         validateConfigInitialization();
         return transactionManagers.containsKey(processorName)
                 ? transactionManagers.get(processorName).get()
