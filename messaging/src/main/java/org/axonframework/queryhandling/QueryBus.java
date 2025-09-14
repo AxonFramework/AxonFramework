@@ -20,8 +20,6 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.util.concurrent.Queues;
 
 import java.util.concurrent.CompletableFuture;
@@ -149,27 +147,10 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * @param <U>              the incremental response types of the query
      * @return query result containing initial result and incremental updates
      */
-    default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage<Q, I, U> query, int updateBufferSize
-    ) {
-        return new SubscriptionQueryResult<>() {
-
-            @Override
-            public Mono<QueryResponseMessage> initialResult() {
-                return Mono.fromFuture(() -> query(query));
-            }
-
-            @Override
-            public Flux<SubscriptionQueryUpdateMessage> updates() {
-                return Flux.empty();
-            }
-
-            @Override
-            public boolean cancel() {
-                return true;
-            }
-        };
-    }
+    <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
+            @Nonnull SubscriptionQueryMessage<Q, I, U> query,
+            int updateBufferSize
+    );
 
     /**
      * Gets the {@link QueryUpdateEmitter} associated with this {@link QueryBus}.
