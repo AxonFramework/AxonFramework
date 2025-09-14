@@ -284,43 +284,6 @@ class EventProcessingModuleTest {
         assertTrue(configuration.eventProcessor("ConcurrentMapProcessor").isPresent());
     }
 
-    @Disabled("TODO #3098 - Must be refactored because of the eventProcessorOperations removal")
-    @Test
-    void assignSequencingPolicy() throws NoSuchFieldException, IllegalAccessException {
-        Object mockHandler = new Object();
-        Object specialHandler = new Object();
-        SequentialPolicy sequentialPolicy = SequentialPolicy.INSTANCE;
-        FullConcurrencyPolicy fullConcurrencyPolicy = FullConcurrencyPolicy.INSTANCE;
-        configurer.eventProcessing()
-                  .registerEventHandler(c -> mockHandler)
-                  .registerEventHandler(c -> specialHandler)
-                  .assignHandlerInstancesMatching("special", specialHandler::equals)
-                  .byDefaultAssignTo("default")
-                  .registerDefaultSequencingPolicy(c -> sequentialPolicy)
-                  .registerSequencingPolicy("special", c -> fullConcurrencyPolicy);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<EventProcessor> defaultProcessorOptional =
-                config.eventProcessingConfiguration().eventProcessor("default", EventProcessor.class);
-        assertTrue(defaultProcessorOptional.isPresent());
-        EventProcessor defaultProcessor = defaultProcessorOptional.get();
-
-        Optional<EventProcessor> specialProcessorOptional =
-                config.eventProcessingConfiguration().eventProcessor("special", EventProcessor.class);
-        assertTrue(specialProcessorOptional.isPresent());
-        EventProcessor specialProcessor = specialProcessorOptional.get();
-
-//        DefaultEventProcessingPipeline defaultOperations = getField("eventProcessorOperations", defaultProcessor);
-//        EventHandlingComponent defaultInvoker = getField("eventHandlingComponent", defaultOperations);
-//        DefaultEventProcessingPipeline specialOperations = getField("eventProcessorOperations", specialProcessor);
-//        EventHandlingComponent specialInvoker = getField("eventHandlingComponent", specialOperations);
-//
-//        EventMessage<Object> message =
-//                new GenericEventMessage<>(new MessageType("event"), "test");
-//        assertThat(sequentialPolicy.getSequenceIdentifierFor(message)).hasValue(defaultInvoker.sequenceIdentifierFor(message));
-//        assertThat(fullConcurrencyPolicy.getSequenceIdentifierFor(message)).hasValue(specialInvoker.sequenceIdentifierFor(message));
-    }
-
     @Test
     void createSubscribingEventProcessorIfSubscribableMessageSourceDefinitionBuilderPresent(
             @Mock EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder mockBuilder,

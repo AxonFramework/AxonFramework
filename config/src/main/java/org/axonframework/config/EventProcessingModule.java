@@ -712,14 +712,6 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerDefaultSequencingPolicy(
-            Function<LegacyConfiguration, SequencingPolicy> policyBuilder
-    ) {
-        this.defaultSequencingPolicy.update(policyBuilder);
-        return this;
-    }
-
-    @Override
     public EventProcessingConfigurer registerPooledStreamingEventProcessor(
             String name,
             Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage>> messageSource,

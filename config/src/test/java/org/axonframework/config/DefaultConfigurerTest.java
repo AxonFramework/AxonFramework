@@ -130,34 +130,6 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void defaultConfigurationWithPooledStreamingProcessorExplicitlyConfigured() {
-        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
-        String processorName = "myProcessor";
-        configurer.eventProcessing()
-                  .registerPooledStreamingEventProcessor(processorName,
-                                                  LegacyConfiguration::eventStore,
-                                                  (config, builder) -> builder.workerExecutor(
-                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
-                  .byDefaultAssignTo(processorName)
-                  .registerDefaultSequencingPolicy(c -> FullConcurrencyPolicy.INSTANCE)
-                  .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
-        LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                                               .start();
-        try {
-            PooledStreamingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(processorName,
-                                                                                                    PooledStreamingEventProcessor.class)
-                                                     .orElseThrow(RuntimeException::new);
-            assertRetryingWithin(Duration.ofSeconds(5),
-                                 () -> assertEquals(2,
-                                                    config.getComponent(TokenStore.class)
-                                                          .fetchSegments(processor.name()).length));
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void defaultConfigurationWithUpcaster() {
         AtomicInteger counter = new AtomicInteger();

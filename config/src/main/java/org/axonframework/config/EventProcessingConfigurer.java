@@ -18,9 +18,7 @@ package org.axonframework.config;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.SubscribableMessageSourceDefinition;
-import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
@@ -29,14 +27,10 @@ import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocati
 import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.sequencing.SequencingPolicy;
-import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
-import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
-import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -44,7 +38,6 @@ import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -399,19 +392,6 @@ public interface EventProcessingConfigurer {
      */
     EventProcessingConfigurer registerSequencingPolicy(String processingGroup,
                                                        Function<LegacyConfiguration, SequencingPolicy> policyBuilder);
-
-    /**
-     * Registers the {@link SequencingPolicy} created by given {@code policyBuilder} to the processing groups for which
-     * no explicit policy is defined (using {@link #registerSequencingPolicy(String, Function)}).
-     * <p>
-     * Defaults to a {@link SequentialPerAggregatePolicy}.
-     *
-     * @param policyBuilder a builder {@link Function} to create the {@link SequencingPolicy} to use
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerDefaultSequencingPolicy(
-            Function<LegacyConfiguration, SequencingPolicy> policyBuilder
-    );
 
     /**
      * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
