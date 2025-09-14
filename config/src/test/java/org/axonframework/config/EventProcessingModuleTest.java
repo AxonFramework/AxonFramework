@@ -344,118 +344,6 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void configureSpanFactory() {
-        TestSpanFactory spanFactory = new TestSpanFactory();
-        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-
-        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
-        configurer.configureSpanFactory(c -> spanFactory);
-        LegacyConfiguration config = configurer.start();
-
-        try {
-            EventMessage message =
-                    new GenericEventMessage(new MessageType("event"), "test");
-            config.eventBus().publish(message);
-
-            spanFactory.verifySpanCompleted("EventProcessor.process", message);
-            assertWithin(2, TimeUnit.SECONDS,
-                         () -> spanFactory.verifySpanCompleted("StreamingEventProcessor.process", message));
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void configureDefaultListenerInvocationErrorHandler() throws Exception {
-        EventMessage errorThrowingEventMessage =
-                new GenericEventMessage(new MessageType("event"), true);
-
-        int expectedListenerInvocationErrorHandlerCalls = 2;
-
-        StubErrorHandler errorHandler = new StubErrorHandler(2);
-        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-
-        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
-        configurer.eventProcessing()
-                  .registerDefaultListenerInvocationErrorHandler(config -> errorHandler);
-        LegacyConfiguration config = configurer.start();
-
-        //noinspection Duplicates
-        try {
-            config.eventBus().publish(errorThrowingEventMessage);
-            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
-
-            assertTrue(errorHandler.await(10, TimeUnit.SECONDS));
-            assertEquals(expectedListenerInvocationErrorHandlerCalls, errorHandler.getErrorCounter());
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void configureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
-        EventMessage errorThrowingEventMessage =
-                new GenericEventMessage(new MessageType("event"), true);
-
-        int expectedErrorHandlerCalls = 1;
-
-        StubErrorHandler subscribingErrorHandler = new StubErrorHandler(1);
-        StubErrorHandler trackingErrorHandler = new StubErrorHandler(1);
-        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-
-        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
-        configurer.eventProcessing()
-                  .registerListenerInvocationErrorHandler("subscribing", config -> subscribingErrorHandler)
-                  .registerListenerInvocationErrorHandler("tracking", config -> trackingErrorHandler);
-        LegacyConfiguration config = configurer.start();
-
-        //noinspection Duplicates
-        try {
-            config.eventBus().publish(errorThrowingEventMessage);
-
-            assertEquals(expectedErrorHandlerCalls, subscribingErrorHandler.getErrorCounter());
-
-            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
-            assertTrue(trackingErrorHandler.await(10, TimeUnit.SECONDS));
-            assertEquals(expectedErrorHandlerCalls, trackingErrorHandler.getErrorCounter());
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void configureDefaultErrorHandler() throws Exception {
-        EventMessage failingEventMessage =
-                new GenericEventMessage(new MessageType("event"), 1000);
-
-        int expectedErrorHandlerCalls = 2;
-
-        StubErrorHandler errorHandler = new StubErrorHandler(2);
-        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-
-        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
-        configurer.eventProcessing()
-                  .registerDefaultListenerInvocationErrorHandler(c -> PropagatingErrorHandler.instance())
-                  .registerDefaultErrorHandler(config -> errorHandler);
-        LegacyConfiguration config = configurer.start();
-
-        //noinspection Duplicates
-        try {
-            config.eventBus().publish(failingEventMessage);
-            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
-
-            assertTrue(errorHandler.await(10, TimeUnit.SECONDS));
-            assertEquals(expectedErrorHandlerCalls, errorHandler.getErrorCounter());
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
     void subscribingProcessorsUsesSpecificSource() {
         configurer.eventProcessing()
                   .configureDefaultSubscribableMessageSource(c -> eventStoreOne)
@@ -467,40 +355,6 @@ class EventProcessingModuleTest {
                                                               .eventProcessor("subscribing");
         assertTrue(processor.isPresent());
         assertEquals(eventStoreTwo, processor.get().getMessageSource());
-    }
-
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void configureErrorHandlerPerEventProcessor() throws Exception {
-        EventMessage failingEventMessage =
-                new GenericEventMessage(new MessageType("event"), 1000);
-
-        int expectedErrorHandlerCalls = 1;
-
-        StubErrorHandler subscribingErrorHandler = new StubErrorHandler(1);
-        StubErrorHandler trackingErrorHandler = new StubErrorHandler(1);
-        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-
-        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
-        configurer.eventProcessing()
-                  .registerDefaultListenerInvocationErrorHandler(c -> PropagatingErrorHandler.instance())
-                  .registerErrorHandler("subscribing", config -> subscribingErrorHandler)
-                  .registerErrorHandler("tracking", config -> trackingErrorHandler);
-        LegacyConfiguration config = configurer.start();
-
-        //noinspection Duplicates
-        try {
-            config.eventBus().publish(failingEventMessage);
-
-            assertEquals(expectedErrorHandlerCalls, subscribingErrorHandler.getErrorCounter());
-
-            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
-            assertTrue(trackingErrorHandler.await(10, TimeUnit.SECONDS));
-            assertEquals(expectedErrorHandlerCalls, trackingErrorHandler.getErrorCounter());
-        } finally {
-            config.shutdown();
-        }
     }
 
     @Test
@@ -1010,29 +864,6 @@ class EventProcessingModuleTest {
         field.setAccessible(true);
         //noinspection unchecked
         return (R) field.get(object);
-    }
-
-    private void buildComplexEventHandlingConfiguration(CountDownLatch tokenStoreInvocation) {
-        // Use InMemoryEventStorageEngine so tracking processors don't miss events
-        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine());
-        configurer.eventProcessing()
-                  .registerSubscribingEventProcessor("subscribing")
-                  .registerPooledStreamingEventProcessor("pooled")
-                  .assignHandlerInstancesMatching(
-                          "subscribing", eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class)
-                  )
-                  .assignHandlerInstancesMatching(
-                          "tracking", eh -> eh.getClass().isAssignableFrom(TrackingEventHandler.class)
-                  )
-                  .registerEventHandler(c -> new SubscribingEventHandler())
-                  .registerEventHandler(c -> new TrackingEventHandler())
-                  .registerTokenStore("tracking", c -> new InMemoryTokenStore() {
-                      @Override
-                      public int[] fetchSegments(@Nonnull String processorName) {
-                          tokenStoreInvocation.countDown();
-                          return super.fetchSegments(processorName);
-                      }
-                  });
     }
 
     @SuppressWarnings("WeakerAccess")
