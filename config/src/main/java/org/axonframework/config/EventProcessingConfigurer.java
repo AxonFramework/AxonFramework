@@ -175,25 +175,6 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer registerEventProcessor(String name, EventProcessorBuilder eventProcessorBuilder);
 
     /**
-     * Register a {@link Function} that builds a {@link TokenStore} for the given {@code processorName}.
-     *
-     * @param processorName     a {@link String} specifying the name of a event processor
-     * @param tokenStoreBuilder a {@link Function} that builds a {@link TokenStore}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerTokenStore(String processorName,
-                                                 Function<LegacyConfiguration, TokenStore> tokenStoreBuilder);
-
-    /**
-     * Register a {@link Function} that builds a {@link TokenStore} to use as the default in case no explicit token
-     * store was configured for a processor.
-     *
-     * @param tokenStore a {@link Function} that builds a {@link TokenStore}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerTokenStore(Function<LegacyConfiguration, TokenStore> tokenStore);
-
-    /**
      * Defaults Event Processors builders to use {@link SubscribingEventProcessor}.
      * <p>
      * The default behavior depends on the EventBus available in the Configuration. If the Event Bus is a
