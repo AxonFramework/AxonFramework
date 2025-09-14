@@ -51,18 +51,25 @@ import java.util.stream.Stream;
 public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableComponent {
 
     /**
-     * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s queryName and
-     * responseType. This method returns all values returned by the Query Handler as a Collection. This may or may not
-     * be the exact collection as defined in the Query Handler.
+     * Dispatch the given {@code query} to a {@link QueryHandler}
+     * {@link #subscribe(QueryHandlerName, QueryHandler) subscribed} to the given {@code query}'s
+     * {@link MessageType#qualifiedName() query name} and {@link QueryMessage#responseType()}.
      * <p>
-     * If the Query Handler defines a single return object (i.e. not a collection or array), that object is returned as
-     * the sole entry in a singleton collection.
+     * The resulting {@link MessageStream} will contain 0, 1, or N {@link QueryResponseMessage QueryResponseMessages},
+     * depending on the {@code QueryHandler} that handled the given {@code query}.
      * <p>
-     * When no handlers are available that can answer the given {@code query}, the returned CompletableFuture will be
-     * completed with a {@link NoHandlerForQueryException}.
+     * As several {@code QueryHandlers} can be registered for the same query name and response name, this method will
+     * loop through them (in insert order) until one has a suitable return valuable. A suitable response is any value or
+     * user exception returned from a {@code QueryHandler} When no handlers are available that can answer the given
+     * {@code query}, the returned {@link MessageStream} will have {@link MessageStream#failed(Throwable) failed} with a
+     * {@link NoHandlerForQueryException}.
      *
-     * @param query the query
-     * @return a CompletableFuture that resolves when the response is available
+     * @param query   The query to dispatch.
+     * @param context The processing context under which the query is being published (can be {@code null}).
+     * @return A message stream containing either 0, 1, or N {@link QueryResponseMessage QueryResponseMessages}.
+     * @throws NoHandlerForQueryException When no {@link QueryHandler} is registered for the given {@code query}'s
+     *                                    {@link MessageType#qualifiedName() query name} and
+     *                                    {@link QueryMessage#responseType()}.
      */
     @Nonnull
     MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context);
