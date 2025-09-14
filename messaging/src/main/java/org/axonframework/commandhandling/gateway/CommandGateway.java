@@ -55,17 +55,17 @@ public interface CommandGateway {
      * {@code CommandMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.MetaData}.
      *
-     * @param command      The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
-     * @param context      The processing context, if any, to dispatch the given {@code command} in.
-     * @param expectedType The expected result type.
-     * @param <R>          The generic type of the expected response.
+     * @param command    The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
+     * @param context    The processing context, if any, to dispatch the given {@code command} in.
+     * @param resultType The class representing the type of the expected command result.
+     * @param <R>        The generic type of the expected response.
      * @return A {@link CompletableFuture} that will be resolved successfully or exceptionally based on the eventual
      * command execution result.
      */
     default <R> CompletableFuture<R> send(@Nonnull Object command,
                                           @Nullable ProcessingContext context,
-                                          @Nonnull Class<R> expectedType) {
-        return send(command, context).resultAs(expectedType);
+                                          @Nonnull Class<R> resultType) {
+        return send(command, context).resultAs(resultType);
     }
 
     /**
