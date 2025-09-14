@@ -576,14 +576,6 @@ public class EventProcessingModule
     //</editor-fold>
 
     @Override
-    public EventProcessingConfigurer registerDefaultListenerInvocationErrorHandler(
-            Function<LegacyConfiguration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder
-    ) {
-        defaultListenerInvocationErrorHandler.update(listenerInvocationErrorHandlerBuilder);
-        return this;
-    }
-
-    @Override
     public EventProcessingConfigurer registerListenerInvocationErrorHandler(String processingGroup,
                                                                             Function<LegacyConfiguration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
         listenerInvocationErrorHandlers.put(processingGroup, new Component<>(() -> configuration,
@@ -605,13 +597,6 @@ public class EventProcessingModule
             Function<LegacyConfiguration, SubscribableMessageSource<EventMessage>> defaultSource
     ) {
         this.defaultSubscribableSource.update(defaultSource);
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerEventProcessorFactory(
-            EventProcessorBuilder eventProcessorBuilder) {
-        this.defaultEventProcessorBuilder = eventProcessorBuilder;
         return this;
     }
 
@@ -656,13 +641,6 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer byDefaultAssignHandlerTypesTo(Function<Class<?>, String> assignmentFunction) {
         this.typeFallback = TypeProcessingGroupSelector.defaultSelector(assignmentFunction);
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup, int priority,
-                                                                    Predicate<Object> criteria) {
-        this.instanceSelectors.add(new InstanceProcessingGroupSelector(processingGroup, priority, criteria));
         return this;
     }
 

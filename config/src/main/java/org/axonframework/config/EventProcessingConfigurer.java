@@ -93,17 +93,6 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer registerEventHandler(Function<LegacyConfiguration, Object> eventHandlerBuilder);
 
     /**
-     * Registers a {@link Function} that builds the default {@link ListenerInvocationErrorHandler}. Defaults to a
-     * {@link LoggingErrorHandler}.
-     *
-     * @param listenerInvocationErrorHandlerBuilder a {@link Function} that builds the default
-     *                                              {@link ListenerInvocationErrorHandler}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerDefaultListenerInvocationErrorHandler(
-            Function<LegacyConfiguration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder);
-
-    /**
      * Registers a {@link Function} that builds a {@link ListenerInvocationErrorHandler} for the given
      * {@code processingGroup}.
      *
@@ -148,15 +137,6 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer configureDefaultSubscribableMessageSource(
             Function<LegacyConfiguration, SubscribableMessageSource<EventMessage>> defaultSource
     );
-
-    /**
-     * Registers a factory that builds the default {@link EventProcessor}. This is the {@link EventProcessorBuilder} to
-     * be used when there is no specific builder for given processor name.
-     *
-     * @param eventProcessorBuilder a {@link Function} that builds an {@link EventProcessor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerEventProcessorFactory(EventProcessorBuilder eventProcessorBuilder);
 
     /**
      * Registers an {@link EventProcessorBuilder} for the given processor {@code name}.
@@ -271,23 +251,6 @@ public interface EventProcessingConfigurer {
      * undefined.
      *
      * @param processingGroup a {@link String} specifying the name of a processing group to assign matching Event
-     *                        Handlers to
-     * @param criteria        a {@link Predicate} defining the criteria for an Event Handler to match
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    default EventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup,
-                                                                     Predicate<Object> criteria) {
-        return assignHandlerInstancesMatching(processingGroup, 0, criteria);
-    }
-
-    /**
-     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
-     * with given {@code name}, with neutral priority (value 0).
-     * <p>
-     * Note that, when beans match multiple criteria for different Processing Groups with equal priority, the outcome is
-     * undefined.
-     *
-     * @param processingGroup a {@link String} specifying the name of a processing group to assign matching Event
      *                        Handlers or Sagas to
      * @param criteria        a {@link Predicate} defining the criteria for an Event Handler or Saga to match
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
@@ -295,24 +258,6 @@ public interface EventProcessingConfigurer {
     default EventProcessingConfigurer assignHandlerTypesMatching(String processingGroup, Predicate<Class<?>> criteria) {
         return assignHandlerTypesMatching(processingGroup, 0, criteria);
     }
-
-    /**
-     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
-     * with given {@code name}, with given {@code priority}. Rules with higher value of {@code priority} take precedence
-     * over those with a lower value.
-     * <p>
-     * Note that, when beans match multiple criteria for different processing groups with equal priority, the outcome is
-     * undefined.
-     *
-     * @param processingGroup a {@link String} specifying the name of a processing group to assign matching Event
-     *                        Handlers to
-     * @param priority        The priority for this rule
-     * @param criteria        a {@link Predicate} defining the criteria for an Event Handler to match
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup,
-                                                             int priority,
-                                                             Predicate<Object> criteria);
 
     /**
      * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
