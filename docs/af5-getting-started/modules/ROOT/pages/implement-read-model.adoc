@@ -3,7 +3,7 @@
 In this tutorial, we'll implement a read model (projection) that provides course statistics including enrollment numbers and capacity information.
 This enables administrators and instructors to quickly access optimized views of course data for reporting, dashboards, and real-time monitoring without rebuilding the entire state from events for every read.
 
-== What is a Read Model (Projection)?
+== What is a read model (projection)?
 
 A read model, also called a projection, is a view of data that's optimized for queries rather than commands.
 It's built by processing events from the event store and maintaining a specialized data structure that supports specific read patterns.
@@ -11,22 +11,22 @@ It's built by processing events from the event store and maintaining a specializ
 Read models are **query-optimized** (structured for performant reads), **eventually consistent** (updated asynchronously), and **purpose-built** (each projection serves specific query needs using dedicated persistence mechanisms like SQL, Graph DB, etc.)
 Common use cases include creating search indexes, building dashboards and reporting views, generating real-time analytics, and supporting complex queries across tags in the event store.
 
-== Understanding the Course Statistics Feature
+== Understanding the course statistics feature
 
 image::FacultyContext_EventModeling.png[]
 
 The Event Modeling diagram shows various green sticky notes representing read models (views). The Course Statistics read model is one such view (*Courses* green sticky note) that provides real-time course enrollment and capacity information.
 In Event Modeling terminology, these green sticky notes represent "views" that are continuously updated as events flow through the system.
 
-== Setting Up the Read Model
+== Setting up the read model
 
 We'll build a complete read model system with these classes:
-— Read Model** - The data structure representing course statistics
+- **Read Model** - The data structure representing course statistics
 - **Repository** - Interface for storing and retrieving read models
 - **Projection** - Event handlers that build and update the read model
 - **Configuration** - Wiring everything together with event processing
 
-=== Step 1: Define the Read Model Data Structure
+=== Step 1: Define the read model data structure
 
 First, let's create the read model that represents course statistics:
 
@@ -128,7 +128,7 @@ class InMemoryCourseStatsRepository implements CourseStatsRepository {
 <.> Save by course ID as the key
 <.> Safe retrieval that handles missing entries
 
-=== Step 4: Implement the Projection with Event Handlers
+=== Step 4: Implement the projection with event handlers
 
 Now let's create the projection that builds the read model from events:
 
@@ -196,7 +196,7 @@ class CoursesStatsProjection {
 <.> Increment student count when a student subscribes
 <.> Decrement student count when a student unsubscribes
 
-=== Step 5: Configure the Read Model Components
+=== Step 5: Configure the read model components
 
 Finally, let's wire everything together with a proper Axon Framework 5 configuration:
 
@@ -242,7 +242,7 @@ public class CourseStatsConfiguration {
 <.> Register the repository implementation as a component
 <.> Register the event processor with the framework
 
-== Testing the Read Model
+== Testing the read model
 
 Let's create comprehensive tests to verify our read model works correctly:
 
@@ -411,9 +411,9 @@ public class CourseStatsProjectionTest extends UniversityApplicationTest { // <1
 <.> Async assertion using Awaitility, because the projection is eventually consistent, we need to wait for it to be updated
 <.> Helper to access the repository from the test configuration
 
-== Key Read Model Concepts
+== Key read model concepts
 
-=== Write Model Vs Query Model
+=== Write model vs query model
 
 |===
 |Aspect |Write Model |Query Model
@@ -424,7 +424,7 @@ public class CourseStatsProjectionTest extends UniversityApplicationTest { // <1
 |**Complexity** |Business logic complexity |Simple data transformation
 |===
 
-== Integration with the Main Application
+== Integration with the main application
 
 To use this read model in your main application, register the configuration:
 
