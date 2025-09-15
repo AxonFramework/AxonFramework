@@ -8,7 +8,7 @@ This enables administrators and instructors to quickly access optimized views of
 A read model, also called a projection, is a view of data that's optimized for queries rather than commands.
 It's built by processing events from the event store and maintaining a specialized data structure that supports specific read patterns.
 
-Read models are **query-optimized** (structured for performant reads), **eventually consistent** (updated asynchronously), and **purpose-built** (each projection serves specific query needs using dedicated persistence mechanisms like SQL, Graph DB etc.).
+Read models are **query-optimized** (structured for performant reads), **eventually consistent** (updated asynchronously), and **purpose-built** (each projection serves specific query needs using dedicated persistence mechanisms like SQL, Graph DB, etc.)
 Common use cases include creating search indexes, building dashboards and reporting views, generating real-time analytics, and supporting complex queries across tags in the event store.
 
 == Understanding the Course Statistics Feature
@@ -21,7 +21,7 @@ In Event Modeling terminology, these green sticky notes represent "views" that a
 == Setting Up the Read Model
 
 We'll build a complete read model system with these classes:
-- **Read Model** - The data structure representing course statistics
+— Read Model** - The data structure representing course statistics
 - **Repository** - Interface for storing and retrieving read models
 - **Projection** - Event handlers that build and update the read model
 - **Configuration** - Wiring everything together with event processing
@@ -190,15 +190,15 @@ class CoursesStatsProjection {
 }
 ----
 
-<.> Create initial read model when course is created with zero students
-<.> Update course name when renamed
+<.> Create an initial read model when a course is created with zero students
+<.> Update the course name when renamed
 <.> Update capacity when changed
-<.> Increment student count when student subscribes
-<.> Decrement student count when student unsubscribes
+<.> Increment student count when a student subscribes
+<.> Decrement student count when a student unsubscribes
 
 === Step 5: Configure the Read Model Components
 
-Finally, let's wire everything together with proper Axon Framework 5 configuration:
+Finally, let's wire everything together with a proper Axon Framework 5 configuration:
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/read/coursestats/CourseStatsConfiguration.java
@@ -448,7 +448,7 @@ public class UniversityAxonApplication {
 
 == Summary
 
-In this tutorial, you learned how to implement read models (projections) with Axon Framework 5. Key takeaways:
+In this tutorial, you have learned how to implement read models (projections) with Axon Framework 5. Key takeaways:
 
 - **Read models** provide query-optimized views of your data built from events
 - **Event handlers** in projections update read models as events are processed
