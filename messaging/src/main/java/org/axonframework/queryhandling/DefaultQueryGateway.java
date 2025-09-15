@@ -83,6 +83,7 @@ public class DefaultQueryGateway implements QueryGateway {
                             .asCompletableFuture()
                             .thenApply(MessageStream.Entry::message)
                             .thenApply(queryResponseMessage -> queryResponseMessage.payloadAs(responseType));
+        // We cannot chain the whenComplete call, as otherwise CompletableFuture#cancel is not propagated to the lambda.
         resultFuture.whenComplete((r, e) -> {
             if (!resultStream.isCompleted()) {
                 resultStream.close();
@@ -103,6 +104,7 @@ public class DefaultQueryGateway implements QueryGateway {
                     list.add(entry.message().payloadAs(responseType));
                     return list;
                 });
+        // We cannot chain the whenComplete call, as otherwise CompletableFuture#cancel is not propagated to the lambda.
         resultFuture.whenComplete((r, e) -> {
             if (!resultStream.isCompleted()) {
                 resultStream.close();
