@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 
 /**
- * CommandTargetResolver implementation that uses MetaData entries to extract the identifier.
+ * CommandTargetResolver implementation that uses Metadata entries to extract the identifier.
  * <p/>
  * While this may require duplication of data (as the identifier is already included in the payload as well), it is a
  * more performing alternative to a reflection based CommandTargetResolvers.
@@ -28,29 +28,29 @@ import org.axonframework.commandhandling.CommandMessage;
  * @author Allard Buijze
  * @since 2.0
  */
-public class MetaDataCommandTargetResolver implements CommandTargetResolver {
+public class MetadataCommandTargetResolver implements CommandTargetResolver {
 
     private final String identifierKey;
 
     /**
-     * Initializes the MetaDataCommandTargetResolver to use the given {@code identifierKey} as the MetaData key to the
+     * Initializes the MetadataCommandTargetResolver to use the given {@code identifierKey} as the Metadata key to the
      * aggregate identifier.
      * <p/>
-     * When the given {@code identifierKey} is not present in a command's MetaData,
+     * When the given {@code identifierKey} is not present in a command's Metadata,
      * {@link #resolveTarget(CommandMessage)} will raise an {@link IllegalArgumentException}
      *
      * @param identifierKey The key of the metadata field containing the aggregate identifier
      */
-    public MetaDataCommandTargetResolver(String identifierKey) {
+    public MetadataCommandTargetResolver(String identifierKey) {
         this.identifierKey = identifierKey;
     }
 
     @Override
     public String resolveTarget(@Nonnull CommandMessage command) {
-        String identifier = command.metaData().get(identifierKey).toString();
+        String identifier = command.metadata().get(identifierKey).toString();
         if (identifier == null) {
             throw new IdentifierMissingException(
-                    "The MetaData for the command does not contain an identifier under key [" + identifierKey + "]"
+                    "The Metadata for the command does not contain an identifier under key [" + identifierKey + "]"
             );
         }
         return identifier;

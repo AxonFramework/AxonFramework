@@ -26,8 +26,8 @@ import org.axonframework.eventhandling.annotations.Timestamp;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.annotation.MetadataValue;
 import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.serialization.json.JacksonConverter;
@@ -292,13 +292,13 @@ class AnnotationBasedEntityEvolvingComponentTest {
         return domainEvent(seq, null);
     }
 
-    private static DomainEventMessage domainEvent(int seq, String sampleMetaData) {
+    private static DomainEventMessage domainEvent(int seq, String sampleMetadata) {
         return new GenericDomainEventMessage(
                 "test",
                 "id",
                 seq,
                 new MessageType(Integer.class),
-                seq, sampleMetaData == null ? MetaData.emptyInstance() : MetaData.with("sampleKey", sampleMetaData)
+                seq, sampleMetadata == null ? Metadata.emptyInstance() : Metadata.with("sampleKey", sampleMetadata)
         );
     }
 
@@ -323,7 +323,7 @@ class AnnotationBasedEntityEvolvingComponentTest {
         @EventHandler
         void handle(
                 Integer payload,
-                @MetaDataValue("sampleKey") String metadata,
+                @MetadataValue("sampleKey") String metadata,
                 @SequenceNumber Long sequenceNumber,
                 @SourceId String source,
                 @Timestamp Instant timestamp

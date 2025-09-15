@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.deadletter.jpa;
 
 import jakarta.persistence.*;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -105,7 +105,7 @@ public class DeadLetterEntry {
                            Instant enqueuedAt,
                            Instant lastTouched,
                            Cause cause,
-                           MetaData diagnostics,
+                           Metadata diagnostics,
                            Serializer serializer) {
         this.deadLetterId = IdentifierFactory.getInstance().generateIdentifier();
         this.processingGroup = processingGroup;
@@ -232,7 +232,7 @@ public class DeadLetterEntry {
         return new SimpleSerializedObject<>(
                 diagnostics,
                 byte[].class,
-                MetaData.class.getName(),
+                Metadata.class.getName(),
                 null);
     }
 
@@ -253,7 +253,7 @@ public class DeadLetterEntry {
      * @param diagnostics The new diagnostics.
      * @param serializer  The {@link Serializer} to use.
      */
-    public void setDiagnostics(MetaData diagnostics, Serializer serializer) {
+    public void setDiagnostics(Metadata diagnostics, Serializer serializer) {
         SerializedObject<byte[]> serializedDiagnostics = serializer.serialize(diagnostics, byte[].class);
         this.diagnostics = serializedDiagnostics.getData();
     }

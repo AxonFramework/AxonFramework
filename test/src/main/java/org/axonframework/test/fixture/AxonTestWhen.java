@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
@@ -82,9 +82,9 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Command command(@Nonnull Object payload, @Nonnull MetaData metaData) {
+    public Command command(@Nonnull Object payload, @Nonnull Metadata metadata) {
         var messageType = messageTypeResolver.resolveOrThrow(payload);
-        var message = new GenericCommandMessage(messageType, payload, metaData);
+        var message = new GenericCommandMessage(messageType, payload, metadata);
         inUnitOfWorkOnInvocation(processingContext ->
                                          commandBus.dispatch(message, processingContext)
                                                    .whenComplete((r, e) -> {
@@ -101,17 +101,17 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Event event(@Nonnull Object payload, @Nonnull MetaData metaData) {
-        var eventMessage = toGenericEventMessage(payload, metaData);
+    public Event event(@Nonnull Object payload, @Nonnull Metadata metadata) {
+        var eventMessage = toGenericEventMessage(payload, metadata);
         return events(eventMessage);
     }
 
-    private GenericEventMessage toGenericEventMessage(Object payload, MetaData metaData) {
+    private GenericEventMessage toGenericEventMessage(Object payload, Metadata metadata) {
         var messageType = messageTypeResolver.resolveOrThrow(payload);
         return new GenericEventMessage(
                 messageType,
                 payload,
-                metaData
+                metadata
         );
     }
 
@@ -120,7 +120,7 @@ class AxonTestWhen implements AxonTestPhase.When {
         var messages = Arrays.stream(events)
                              .map(e -> e instanceof EventMessage message
                                      ? message
-                                     : toGenericEventMessage(e, MetaData.emptyInstance())
+                                     : toGenericEventMessage(e, Metadata.emptyInstance())
                              ).toArray(EventMessage[]::new);
         return events(messages);
     }

@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.annotation.MetadataValue;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
@@ -67,7 +67,7 @@ public class StubSaga {
     public void handleSagaStart(TriggerSagaStartEvent event,
                                 TrackingToken trackingToken,
                                 EventMessage message,
-                                @MetaDataValue("extraIdentifier") Object extraIdentifier) {
+                                @MetadataValue("extraIdentifier") Object extraIdentifier) {
         assertNotNull(trackingToken);
         handledEvents.add(event);
 

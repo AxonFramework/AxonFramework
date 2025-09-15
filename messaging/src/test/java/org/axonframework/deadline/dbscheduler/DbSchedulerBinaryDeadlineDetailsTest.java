@@ -41,7 +41,7 @@ class DbSchedulerBinaryDeadlineDetailsTest {
 
     private static final String TEST_DEADLINE_NAME = "deadline-name";
     private static final String TEST_DEADLINE_PAYLOAD = "deadline-payload";
-    private static final MetaData META_DATA = getMetaData();
+    private static final Metadata METADATA = getMetadata();
     private static final DeadlineMessage MESSAGE = getMessage();
 
     @MethodSource("dbSchedulerSerializers")
@@ -78,7 +78,7 @@ class DbSchedulerBinaryDeadlineDetailsTest {
         DeadlineMessage resultMessage = result.asDeadLineMessage(serializer);
         assertNotNull(resultMessage);
         assertEquals(TEST_DEADLINE_PAYLOAD, resultMessage.payload());
-        assertEquals(META_DATA, resultMessage.metaData());
+        assertEquals(METADATA, resultMessage.metadata());
     }
 
     public static Collection<Serializer> dbSchedulerSerializers() {
@@ -95,11 +95,11 @@ class DbSchedulerBinaryDeadlineDetailsTest {
         return testSerializerList;
     }
 
-    private static MetaData getMetaData() {
+    private static Metadata getMetadata() {
         Map<String, String> map = new HashMap<>();
         map.put("someStringValue", "foo");
         map.put("someIntValue", "2");
-        return new MetaData(map);
+        return new Metadata(map);
     }
 
     private static DeadlineMessage getMessage() {
@@ -107,6 +107,6 @@ class DbSchedulerBinaryDeadlineDetailsTest {
                 TEST_DEADLINE_NAME,
                 new GenericMessage(new MessageType(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
                 Instant::now
-        ).withMetaData(META_DATA);
+        ).withMetadata(METADATA);
     }
 }

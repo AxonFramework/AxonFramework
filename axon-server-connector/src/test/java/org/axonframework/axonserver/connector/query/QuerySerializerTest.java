@@ -21,7 +21,7 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryExecutionException;
@@ -65,7 +65,7 @@ class QuerySerializerTest {
         QueryMessage deserialized = testSubject.deserializeRequest(queryRequest);
 
         assertEquals(message.identifier(), deserialized.identifier());
-        assertEquals(message.metaData(), deserialized.metaData());
+        assertEquals(message.metadata(), deserialized.metadata());
         assertTrue(message.responseType().matches(deserialized.responseType().responseMessagePayloadType()));
         assertEquals(message.payload(), deserialized.payload());
         assertEquals(message.payloadType(), deserialized.payloadType());
@@ -85,7 +85,7 @@ class QuerySerializerTest {
                 testSubject.deserializeResponse(grpcMessage, instanceOf(BigDecimal.class));
 
         assertEquals(message.identifier(), deserialized.identifier());
-        assertEquals(message.metaData(), deserialized.metaData());
+        assertEquals(message.metadata(), deserialized.metadata());
         assertEquals(message.payloadType(), deserialized.payloadType());
         assertEquals(message.payload(), deserialized.payload());
     }
@@ -94,7 +94,7 @@ class QuerySerializerTest {
     void serializeExceptionalResponse() {
         RuntimeException exception = new RuntimeException("oops");
         QueryResponseMessage responseMessage = new GenericQueryResponseMessage(
-                new MessageType("query"), exception, String.class, MetaData.with("test", "testValue")
+                new MessageType("query"), exception, String.class, Metadata.with("test", "testValue")
         );
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
@@ -102,7 +102,7 @@ class QuerySerializerTest {
 
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), outbound.getErrorCode());
         assertEquals(responseMessage.identifier(), deserialize.identifier());
-        assertEquals(responseMessage.metaData(), deserialize.metaData());
+        assertEquals(responseMessage.metadata(), deserialize.metadata());
         assertTrue(deserialize.isExceptional());
         assertTrue(deserialize.optionalExceptionResult().isPresent());
         assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
@@ -113,7 +113,7 @@ class QuerySerializerTest {
     void serializeDeserializeNonTransientExceptionalResponse() {
         SerializationException exception = new SerializationException("oops");
         QueryResponseMessage responseMessage = new GenericQueryResponseMessage(
-                new MessageType("query"), exception, String.class, MetaData.with("test", "testValue")
+                new MessageType("query"), exception, String.class, Metadata.with("test", "testValue")
         );
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
@@ -121,7 +121,7 @@ class QuerySerializerTest {
 
         assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), outbound.getErrorCode());
         assertEquals(responseMessage.identifier(), deserialize.identifier());
-        assertEquals(responseMessage.metaData(), deserialize.metaData());
+        assertEquals(responseMessage.metadata(), deserialize.metadata());
         assertTrue(deserialize.isExceptional());
         assertTrue(deserialize.optionalExceptionResult().isPresent());
         assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());
@@ -133,14 +133,14 @@ class QuerySerializerTest {
     void serializeExceptionalResponseWithDetails() {
         Exception exception = new QueryExecutionException("oops", null, "Details");
         QueryResponseMessage responseMessage = new GenericQueryResponseMessage(
-                new MessageType("query"), exception, String.class, MetaData.with("test", "testValue")
+                new MessageType("query"), exception, String.class, Metadata.with("test", "testValue")
         );
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
         QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
 
         assertEquals(responseMessage.identifier(), deserialize.identifier());
-        assertEquals(responseMessage.metaData(), deserialize.metaData());
+        assertEquals(responseMessage.metadata(), deserialize.metadata());
         assertTrue(deserialize.isExceptional());
         assertTrue(deserialize.optionalExceptionResult().isPresent());
         assertEquals(exception.getMessage(), deserialize.exceptionResult().getMessage());

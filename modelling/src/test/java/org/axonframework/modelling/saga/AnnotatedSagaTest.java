@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.replay.ResetNotSupportedException;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.NoMoreInterceptors;
@@ -91,12 +91,12 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void invokeSagaMetaDataAssociationResolver() {
+    void invokeSagaMetadataAssociationResolver() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
-        Map<String, String> metaData = new HashMap<>();
-        metaData.put("propertyName", "id");
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("propertyName", "id");
         EventMessage eventWithMetadata = new GenericEventMessage(
-                new MessageType("event"), new EventWithoutProperties(), new MetaData(metaData)
+                new MessageType("event"), new EventWithoutProperties(), new Metadata(metadata)
         );
         testSubject.handleSync(eventWithMetadata, StubProcessingContext.forMessage(eventWithMetadata));
         GenericEventMessage eventWithoutMetadata = new GenericEventMessage(new MessageType(
@@ -215,7 +215,7 @@ class AnnotatedSagaTest {
             invocationCount++;
         }
 
-        @SagaEventHandler(associationProperty = "propertyName", associationResolver = MetaDataAssociationResolver.class)
+        @SagaEventHandler(associationProperty = "propertyName", associationResolver = MetadataAssociationResolver.class)
         public void handleStubDomainEvent(EventWithoutProperties event) {
             invocationCount++;
         }

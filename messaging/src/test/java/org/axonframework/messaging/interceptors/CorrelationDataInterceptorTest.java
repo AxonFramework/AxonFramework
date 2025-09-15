@@ -86,7 +86,7 @@ class CorrelationDataInterceptorTest {
 
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
         verify(dispatchInterceptorChain).proceed(messageCaptor.capture(), eq(testContext));
-        assertThat(messageCaptor.getValue().metaData()).isEqualTo(expectedCorrelationData);
+        assertThat(messageCaptor.getValue().metadata()).isEqualTo(expectedCorrelationData);
     }
 
     @Test

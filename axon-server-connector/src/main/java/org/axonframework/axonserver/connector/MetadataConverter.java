@@ -35,9 +35,9 @@ import java.util.Map;
  * @since 5.0.0
  */
 @Internal
-public class MetaDataConverter {
+public class MetadataConverter {
 
-    private MetaDataConverter() {
+    private MetadataConverter() {
         // Utility class
     }
 
@@ -48,7 +48,7 @@ public class MetaDataConverter {
      * @return A map where each value is converted to an Axon Server {@link MetaDataValue}.
      */
     @Nonnull
-    public static Map<String, MetaDataValue> convertGrpcToMetaDataValues(@Nonnull Map<String, String> source) {
+    public static Map<String, MetaDataValue> convertGrpcToMetadataValues(@Nonnull Map<String, String> source) {
         Map<String, MetaDataValue> result = new HashMap<>();
         source.forEach((k, v) -> {
             MetaDataValue convertedValue = convertToTextMetaDataValue(v);
@@ -68,7 +68,7 @@ public class MetaDataConverter {
      * @return A map where each value is converted to a String representation.
      */
     @Nonnull
-    public static Map<String, String> convertMetaDataValuesToGrpc(@Nonnull Map<String, MetaDataValue> source) {
+    public static Map<String, String> convertMetadataValuesToGrpc(@Nonnull Map<String, MetaDataValue> source) {
         Map<String, String> result = new HashMap<>();
         source.forEach((k, v) -> {
             String convertedValue = convertFromMetaDataValue(v);

@@ -24,7 +24,7 @@ import org.axonframework.common.jpa.PagingJpaQueryIterable;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.DeadLetterQueueOverflowException;
@@ -310,7 +310,7 @@ public class JpaSequencedDeadLetterQueue<M extends EventMessage> implements Sequ
                         "No converter found to convert message of class [%s].",
                         entry.getMessage().getEventType())
                 ));
-        MetaData deserializedDiagnostics = eventSerializer.deserialize(entry.getDiagnostics());
+        Metadata deserializedDiagnostics = eventSerializer.deserialize(entry.getDiagnostics());
         return new JpaDeadLetter<>(entry,
                                    deserializedDiagnostics,
                                    converter.convert(entry.getMessage(), eventSerializer, genericSerializer));

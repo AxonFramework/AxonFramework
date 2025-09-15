@@ -50,7 +50,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
@@ -402,11 +402,11 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         for (Object event : domainEvents) {
             Object payload = event;
-            MetaData metaData = null;
+            Metadata metadata = null;
             String type = aggregateType.getSimpleName();
             if (event instanceof Message) {
                 payload = ((Message) event).payload();
-                metaData = ((Message) event).metaData();
+                metadata = ((Message) event).metadata();
             }
             if (event instanceof DomainEventMessage) {
                 type = ((DomainEventMessage) event).getType();
@@ -415,7 +415,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                     type,
                     aggregateIdentifier,
                     sequenceNumber++,
-                    new GenericMessage(new MessageType(payload.getClass()), payload, metaData),
+                    new GenericMessage(new MessageType(payload.getClass()), payload, metadata),
                     deadlineManager.getCurrentDateTime()
             );
             this.givenEvents.add(eventMessage);
@@ -502,14 +502,14 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> when(Object command) {
-        return when(command, MetaData.emptyInstance());
+        return when(command, Metadata.emptyInstance());
     }
 
     @Override
-    public ResultValidator<T> when(Object command, Map<String, String> metaData) {
+    public ResultValidator<T> when(Object command, Map<String, String> metadata) {
         return when(resultValidator -> {
             CommandMessage commandMessage =
-                    new GenericCommandMessage(new MessageType(command.getClass()), command, metaData);
+                    new GenericCommandMessage(new MessageType(command.getClass()), command, metadata);
             commandBus.dispatch(commandMessage, new LegacyMessageSupportingContext(commandMessage))
                       .whenComplete((r, e) -> {
                           if (e == null) {
@@ -1045,7 +1045,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                                     oldEvent.identifier(),
                                                                     oldEvent.type(),
                                                                     oldEvent.payload(),
-                                                                    oldEvent.metaData(),
+                                                                    oldEvent.metadata(),
                                                                     oldEvent.timestamp()));
                 } else {
                     givenEvents.add(oldEvent);

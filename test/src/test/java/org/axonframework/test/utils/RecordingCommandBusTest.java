@@ -70,7 +70,7 @@ class RecordingCommandBusTest {
         CommandMessage firstTestCommand = new GenericCommandMessage(TEST_TYPE, "First");
         CommandMessage secondTestCommand = new GenericCommandMessage(TEST_TYPE, "Second");
 
-        testSubject.setCallbackBehavior((commandPayload, commandMetaData) -> "callbackResult");
+        testSubject.setCallbackBehavior((commandPayload, commandMetadata) -> "callbackResult");
         testSubject.dispatch(firstTestCommand, null);
 
         var commandResultMessage = testSubject.dispatch(secondTestCommand, null).get();

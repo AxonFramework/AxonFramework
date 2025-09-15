@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -43,12 +43,12 @@ class DirectEventJobDataBinderTest {
     private static final String TEST_EVENT_PAYLOAD = "event-payload";
 
     private final EventMessage testEventMessage;
-    private final MetaData testMetaData;
+    private final Metadata testMetadata;
 
     DirectEventJobDataBinderTest() {
-        this.testMetaData = MetaData.with("some-key", "some-value");
+        this.testMetadata = Metadata.with("some-key", "some-value");
         this.testEventMessage = EventTestUtils.asEventMessage(TEST_EVENT_PAYLOAD)
-                                              .withMetaData(testMetaData);
+                                              .withMetadata(testMetadata);
     }
 
     static Stream<Arguments> serializerImplementationAndAssertionSpecifics() {
@@ -83,7 +83,7 @@ class DirectEventJobDataBinderTest {
         assertNotNull(result.get(MESSAGE_METADATA));
 
         verify(serializer).serialize(TEST_EVENT_PAYLOAD, byte[].class);
-        verify(serializer).serialize(testMetaData, byte[].class);
+        verify(serializer).serialize(testMetadata, byte[].class);
     }
 
     @MethodSource("serializerImplementationAndAssertionSpecifics")
@@ -106,7 +106,7 @@ class DirectEventJobDataBinderTest {
         assertEquals(testEventMessage.timestamp(), resultEventMessage.timestamp());
         assertEquals(testEventMessage.payload(), resultEventMessage.payload());
         assertEquals(testEventMessage.payloadType(), resultEventMessage.payloadType());
-        assertEquals(testEventMessage.metaData(), resultEventMessage.metaData());
+        assertEquals(testEventMessage.metadata(), resultEventMessage.metadata());
 
         verify(serializer, times(2)).deserialize(
                 argThat(new MatchEventMessageSerializedObject(expectedSerializedClassType, revisionMatcher))
@@ -129,12 +129,12 @@ class DirectEventJobDataBinderTest {
 
             SerializedType type = serializedObject.getType();
             String serializedTypeName = type.getName();
-            boolean isSerializedMetaData = serializedTypeName.equals(MetaData.class.getName());
+            boolean isSerializedMetadata = serializedTypeName.equals(Metadata.class.getName());
 
             return serializedObject.getData() != null &&
                     serializedObject.getContentType().equals(byte[].class) &&
-                    (serializedTypeName.equals(expectedSerializedPayloadType) || isSerializedMetaData) &&
-                    (isSerializedMetaData || revisionMatcher.test(type.getRevision()));
+                    (serializedTypeName.equals(expectedSerializedPayloadType) || isSerializedMetadata) &&
+                    (isSerializedMetadata || revisionMatcher.test(type.getRevision()));
         }
     }
 

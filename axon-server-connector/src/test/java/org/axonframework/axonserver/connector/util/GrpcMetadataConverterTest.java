@@ -32,22 +32,22 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test whether the {@link GrpcMetaDataConverter} can cope with several forms of the {@link MetaDataValue}. Born out of
+ * Test whether the {@link GrpcMetadataConverter} can cope with several forms of the {@link MetaDataValue}. Born out of
  * the scenario that gRPC is of pulling a serialized object of type {@code empty} over the wire, which any used
  * {@link Serializer} would be incapable of handling correctly.
  *
  * @author Steven van Beelen
  */
-class GrpcMetaDataConverterTest {
+class GrpcMetadataConverterTest {
 
     private final Serializer serializer = spy(JacksonSerializer.defaultSerializer());
-    private final GrpcMetaDataConverter testSubject = new GrpcMetaDataConverter(serializer);
+    private final GrpcMetadataConverter testSubject = new GrpcMetadataConverter(serializer);
 
     @Test
-    void convertStringToMetaDataValue() {
+    void convertStringToMetadDataValue() {
         String testValue = "some-text";
 
-        MetaDataValue result = testSubject.convertToMetaDataValue(testValue);
+        MetaDataValue result = testSubject.convertToMetadataValue(testValue);
 
         assertEquals(testValue, result.getTextValue());
     }
@@ -56,7 +56,7 @@ class GrpcMetaDataConverterTest {
     void convertDoubleToMetaDataValue() {
         double testValue = 10d;
 
-        MetaDataValue result = testSubject.convertToMetaDataValue(testValue);
+        MetaDataValue result = testSubject.convertToMetadataValue(testValue);
 
         assertEquals(testValue, result.getDoubleValue(), 0);
     }
@@ -65,7 +65,7 @@ class GrpcMetaDataConverterTest {
     void convertFloatToMetaDataValue() {
         float testValue = 10f;
 
-        MetaDataValue result = testSubject.convertToMetaDataValue(testValue);
+        MetaDataValue result = testSubject.convertToMetadataValue(testValue);
 
         assertEquals(testValue, result.getDoubleValue(), 0);
     }
@@ -74,7 +74,7 @@ class GrpcMetaDataConverterTest {
     void convertIntegerToMetaDataValue() {
         int testValue = 10;
 
-        MetaDataValue result = testSubject.convertToMetaDataValue(testValue);
+        MetaDataValue result = testSubject.convertToMetadataValue(testValue);
 
         assertEquals(testValue, result.getNumberValue());
     }
@@ -83,14 +83,14 @@ class GrpcMetaDataConverterTest {
     void convertLongToMetaDataValue() {
         long testValue = 10L;
 
-        MetaDataValue result = testSubject.convertToMetaDataValue(testValue);
+        MetaDataValue result = testSubject.convertToMetadataValue(testValue);
 
         assertEquals(testValue, result.getNumberValue());
     }
 
     @Test
     void convertBooleanToMetaDataValue() {
-        MetaDataValue result = testSubject.convertToMetaDataValue(true);
+        MetaDataValue result = testSubject.convertToMetadataValue(true);
 
         assertTrue(result.getBooleanValue());
     }
@@ -99,7 +99,7 @@ class GrpcMetaDataConverterTest {
     void convertObjectToMetaDataValueUsesSerializer() {
         TestObject testObject = new TestObject("some-text");
 
-        MetaDataValue result = testSubject.convertToMetaDataValue(testObject);
+        MetaDataValue result = testSubject.convertToMetadataValue(testObject);
 
         verify(serializer).serialize(testObject, byte[].class);
 
@@ -113,7 +113,7 @@ class GrpcMetaDataConverterTest {
     void convertObjectWithRevisionToMetaDataValue() {
         RevisionTestObject testObject = new RevisionTestObject("some-text");
 
-        MetaDataValue result = testSubject.convertToMetaDataValue(testObject);
+        MetaDataValue result = testSubject.convertToMetadataValue(testObject);
 
         verify(serializer).serialize(testObject, byte[].class);
 
@@ -125,7 +125,7 @@ class GrpcMetaDataConverterTest {
 
     @Test
     void convertNullToMetaDataValue() {
-        MetaDataValue result = testSubject.convertToMetaDataValue(null);
+        MetaDataValue result = testSubject.convertToMetadataValue(null);
 
         verify(serializer).serialize(null, byte[].class);
 
@@ -149,7 +149,7 @@ class GrpcMetaDataConverterTest {
     @Test
     void convertFromBytesMetaDataValue() {
         TestObject testObject = new TestObject("some-text");
-        MetaDataValue testMetaData = testSubject.convertToMetaDataValue(testObject);
+        MetaDataValue testMetaData = testSubject.convertToMetadataValue(testObject);
 
         String result = testSubject.convertFromMetaDataValue(testMetaData);
 
@@ -159,9 +159,9 @@ class GrpcMetaDataConverterTest {
 
     @Test
     void convertFromBytesMetaDataValueOfTypeEmptyReturnsNull() {
-        MetaDataValue testMetaData = testSubject.convertToMetaDataValue(null);
+        MetaDataValue data = testSubject.convertToMetadataValue(null);
 
-        assertNull(testSubject.convertFromMetaDataValue(testMetaData));
+        assertNull(testSubject.convertFromMetaDataValue(data));
     }
 
     @Test

@@ -90,17 +90,17 @@ public class GenericTrackedDomainEventMessage
 
     @Override
     @Nonnull
-    public GenericTrackedDomainEventMessage withMetaData(@Nonnull Map<String, String> metaData) {
+    public GenericTrackedDomainEventMessage withMetadata(@Nonnull Map<String, String> metadata) {
         return new GenericTrackedDomainEventMessage(trackingToken, getType(), getAggregateIdentifier(),
-                                                      getSequenceNumber(), delegate().withMetaData(metaData),
+                                                      getSequenceNumber(), delegate().withMetadata(metadata),
                                                       timestamp());
     }
 
     @Override
     @Nonnull
-    public GenericTrackedDomainEventMessage andMetaData(@Nonnull Map<String, String> metaData) {
+    public GenericTrackedDomainEventMessage andMetadata(@Nonnull Map<String, String> metadata) {
         return new GenericTrackedDomainEventMessage(trackingToken, getType(), getAggregateIdentifier(),
-                                                      getSequenceNumber(), delegate().andMetaData(metaData),
+                                                      getSequenceNumber(), delegate().andMetadata(metadata),
                                                       timestamp());
     }
 

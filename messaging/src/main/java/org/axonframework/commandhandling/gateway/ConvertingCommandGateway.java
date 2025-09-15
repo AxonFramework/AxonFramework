@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -61,9 +61,9 @@ public class ConvertingCommandGateway implements CommandGateway {
 
     @Override
     public CommandResult send(@Nonnull Object command,
-                              @Nonnull MetaData metaData,
+                              @Nonnull Metadata metadata,
                               @Nullable ProcessingContext context) {
-        return new ConvertingCommandResult(converter, delegate.send(command, metaData, context));
+        return new ConvertingCommandResult(converter, delegate.send(command, metadata, context));
     }
 
     private record ConvertingCommandResult(

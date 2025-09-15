@@ -325,7 +325,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
             return new GenericEventMessage(message, () -> GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage(
-                new GenericMessage(new MessageType(event.getClass()), (P) event),
+                new GenericMessage(new MessageType(event.getClass()), event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -368,8 +368,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public ContinuedGivenState givenAPublished(Object event, Map<String, String> metaData) {
-        EventMessage msg = asEventMessage(event).andMetaData(metaData);
+    public ContinuedGivenState givenAPublished(Object event, Map<String, String> metadata) {
+        EventMessage msg = asEventMessage(event).andMetadata(metadata);
         handleInSaga(timeCorrectedEventMessage(msg));
         return this;
     }
@@ -388,16 +388,16 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public ContinuedGivenState andThenAPublished(Object event, Map<String, String> metaData) {
-        EventMessage msg = asEventMessage(event).andMetaData(metaData);
+    public ContinuedGivenState andThenAPublished(Object event, Map<String, String> metadata) {
+        EventMessage msg = asEventMessage(event).andMetadata(metadata);
 
         handleInSaga(timeCorrectedEventMessage(msg));
         return this;
     }
 
     @Override
-    public FixtureExecutionResult whenPublishingA(Object event, Map<String, String> metaData) {
-        EventMessage msg = asEventMessage(event).andMetaData(metaData);
+    public FixtureExecutionResult whenPublishingA(Object event, Map<String, String> metadata) {
+        EventMessage msg = asEventMessage(event).andMetadata(metadata);
 
         fixtureExecutionResult.startRecording();
         handleInSaga(timeCorrectedEventMessage(msg));
@@ -407,7 +407,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private EventMessage timeCorrectedEventMessage(Object event) {
         EventMessage msg = asEventMessage(event);
         return new GenericEventMessage(
-                msg.identifier(), msg.type(), msg.payload(), msg.metaData(), currentTime()
+                msg.identifier(), msg.type(), msg.payload(), msg.metadata(), currentTime()
         );
     }
 
@@ -495,10 +495,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         return aggregatePublishers.get(aggregateIdentifier);
     }
 
+    @Override
     public EventBus getEventBus() {
         return eventBus;
     }
 
+    @Override
     public RecordingCommandBus getCommandBus() {
         return commandBus;
     }
@@ -527,8 +529,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         }
 
         @Override
-        public FixtureExecutionResult publishes(Object event, Map<String, String> metaData) {
-            EventMessage eventMessage = asEventMessage(event).andMetaData(metaData);
+        public FixtureExecutionResult publishes(Object event, Map<String, String> metadata) {
+            EventMessage eventMessage = asEventMessage(event).andMetadata(metadata);
             publish(eventMessage);
 
             return fixtureExecutionResult;
@@ -543,7 +545,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                                                              eventMessage.identifier(),
                                                              eventMessage.type(),
                                                              eventMessage.payload(),
-                                                             eventMessage.metaData(),
+                                                             eventMessage.metadata(),
                                                              currentTime()));
             }
         }

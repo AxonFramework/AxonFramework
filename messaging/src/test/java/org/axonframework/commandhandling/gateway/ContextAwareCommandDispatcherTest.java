@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
@@ -99,25 +99,25 @@ class ContextAwareCommandDispatcherTest {
     }
 
     @Test
-    void sendCommandsWithMetaDataAreGivenToCommandGateway() {
-        MetaData metaDataOne = MetaData.with("keyOne", "valueOne");
-        MetaData metaDataTwo = MetaData.with("keyTwo", "valueTwo");
+    void sendCommandsWithMetadataAreGivenToCommandGateway() {
+        Metadata metadataOne = Metadata.with("keyOne", "valueOne");
+        Metadata metadataTwo = Metadata.with("keyTwo", "valueTwo");
 
-        CommandResult resultOne = testSubject.send(TEST_COMMAND_PAYLOAD_ONE, metaDataOne);
+        CommandResult resultOne = testSubject.send(TEST_COMMAND_PAYLOAD_ONE, metadataOne);
         CompletableFuture<? extends Message> resultMessageOne = resultOne.getResultMessage();
         assertThat(resultMessageOne).isNotCompleted();
         messageOneFuture.complete(new GenericCommandResultMessage<>(new MessageType("result"), "resultOne"));
         assertThat(resultMessageOne).isCompleted();
 
-        CommandResult resultTwo = testSubject.send(TEST_COMMAND_PAYLOAD_TWO, metaDataTwo);
+        CommandResult resultTwo = testSubject.send(TEST_COMMAND_PAYLOAD_TWO, metadataTwo);
         CompletableFuture<? extends Message> resultMessageTwo = resultTwo.getResultMessage();
         assertThat(resultMessageTwo).isNotCompleted();
         messageTwoFuture.complete(TEST_RESULT_MESSAGE_TWO);
         assertThat(resultMessageTwo).isCompleted();
 
-        ArgumentCaptor<MetaData> metaDataCaptor = ArgumentCaptor.forClass(MetaData.class);
+        ArgumentCaptor<Metadata> metadataCaptor = ArgumentCaptor.forClass(Metadata.class);
 
-        verify(commandGateway, times(2)).send(payloadCaptor.capture(), metaDataCaptor.capture(), eq(context));
+        verify(commandGateway, times(2)).send(payloadCaptor.capture(), metadataCaptor.capture(), eq(context));
 
         List<Object> resultCommandPayloads = payloadCaptor.getAllValues();
         assertThat(resultCommandPayloads.size()).isEqualTo(2);
@@ -126,12 +126,12 @@ class ContextAwareCommandDispatcherTest {
         assertThat(TEST_COMMAND_PAYLOAD_ONE).isEqualTo(resultPayloadOne);
         assertThat(TEST_COMMAND_PAYLOAD_TWO).isEqualTo(resultPayloadTwo);
 
-        List<MetaData> resultMetaData = metaDataCaptor.getAllValues();
-        assertThat(resultMetaData.size()).isEqualTo(2);
-        MetaData resultMetaDataOne = resultMetaData.get(0);
-        MetaData resultMetaDataTwo = resultMetaData.get(1);
-        assertThat(metaDataOne).isEqualTo(resultMetaDataOne);
-        assertThat(metaDataTwo).isEqualTo(resultMetaDataTwo);
+        List<Metadata> resultMetadata = metadataCaptor.getAllValues();
+        assertThat(resultMetadata.size()).isEqualTo(2);
+        Metadata resultMetadataOne = resultMetadata.get(0);
+        Metadata resultMetadataTwo = resultMetadata.get(1);
+        assertThat(metadataOne).isEqualTo(resultMetadataOne);
+        assertThat(metadataTwo).isEqualTo(resultMetadataTwo);
     }
 
     @Test

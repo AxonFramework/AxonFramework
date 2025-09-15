@@ -27,36 +27,36 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link MetaDataBasedTagResolver}.
+ * Test class validating the {@link MetadataBasedTagResolver}.
  *
  * @author Mateusz Nowak
  */
-class MetaDataBasedTagResolverTest {
+class MetadataBasedTagResolverTest {
 
-    private static final String META_DATA_KEY = "testKey";
+    private static final String METADATA_KEY = "testKey";
     private static final GenericEventMessage TEST_EVENT = new GenericEventMessage(
             new MessageType("test", "event", "0.0.1"),
             "payload",
-            Map.of(META_DATA_KEY, "testValue")
+            Map.of(METADATA_KEY, "testValue")
     );
 
     @Test
-    void resolveReturnsExpectedTagWhenMetaDataKeyExists() {
+    void resolveReturnsExpectedTagWhenMetadataKeyExists() {
         // given
-        MetaDataBasedTagResolver testSubject = new MetaDataBasedTagResolver(META_DATA_KEY);
+        MetadataBasedTagResolver testSubject = new MetadataBasedTagResolver(METADATA_KEY);
 
         // when
         Set<Tag> result = testSubject.resolve(TEST_EVENT);
 
         // then
         assertEquals(1, result.size());
-        assertTrue(result.contains(new Tag(META_DATA_KEY, "testValue")));
+        assertTrue(result.contains(new Tag(METADATA_KEY, "testValue")));
     }
 
     @Test
-    void resolveReturnsEmptySetWhenMetaDataKeyDoesNotExist() {
+    void resolveReturnsEmptySetWhenMetadataKeyDoesNotExist() {
         // given
-        MetaDataBasedTagResolver testSubject = new MetaDataBasedTagResolver("nonExistentKey");
+        MetadataBasedTagResolver testSubject = new MetadataBasedTagResolver("nonExistentKey");
 
         // when
         Set<Tag> result = testSubject.resolve(TEST_EVENT);
@@ -66,8 +66,8 @@ class MetaDataBasedTagResolverTest {
     }
 
     @Test
-    void constructorThrowsNullPointerExceptionForNullMetaDataKey() {
+    void constructorThrowsNullPointerExceptionForNullMetadataKey() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new MetaDataBasedTagResolver(null));
+        assertThrows(NullPointerException.class, () -> new MetadataBasedTagResolver(null));
     }
 }

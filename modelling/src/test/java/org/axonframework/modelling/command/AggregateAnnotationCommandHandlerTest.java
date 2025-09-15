@@ -25,11 +25,11 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
-import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.annotation.MetadataValue;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -808,11 +808,11 @@ class AggregateAnnotationCommandHandlerTest {
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(CreateCommand createCommand,
-                           MetaData metaData,
+                           Metadata metadata,
                            LegacyUnitOfWork<CommandMessage> unitOfWork,
-                           @MetaDataValue("notExist") String value) {
+                           @MetadataValue("notExist") String value) {
             this.setIdentifier(createCommand.getId());
-            assertNotNull(metaData);
+            assertNotNull(metadata);
             assertNotNull(unitOfWork);
             assertNull(value);
             apply(new StubDomainEvent());

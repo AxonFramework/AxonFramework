@@ -113,7 +113,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
         testSubject.registerParameterResolverFactory(new TestParameterResolverFactory(new AtomicBoolean(false)))
                    .givenAggregate(TEST_AGGREGATE_IDENTIFIER)
                    .published(asEventMessage(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER))
-                                            .withMetaData(
+                                            .withMetadata(
                                                          Collections.singletonMap("extraIdentifier",
                                                                                   "myExtraIdentifier")))
                    .whenPublishingA(new ParameterResolvedEvent(TEST_AGGREGATE_IDENTIFIER))

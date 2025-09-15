@@ -55,7 +55,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
 
     @Override
     public <T> Message convertToOutboundMessage(EventMessage event) {
-        Map<String, Object> headers = new HashMap<>(event.metaData());
+        Map<String, Object> headers = new HashMap<>(event.metadata());
         headers.put(MESSAGE_ID, event.identifier());
         headers.put(MESSAGE_TYPE, event.type().toString());
         if (event instanceof DomainEventMessage) {
@@ -70,7 +70,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
     @Override
     public <T> EventMessage convertFromInboundMessage(Message message) {
         MessageHeaders headers = message.getHeaders();
-        Map<String, String> metaData = headers.entrySet()
+        Map<String, String> metadata = headers.entrySet()
                                               .stream()
                                               .filter(entry -> !entry.getKey().startsWith(AXON_MESSAGE_PREFIX))
                                               .collect(Collectors.toMap(
@@ -83,7 +83,7 @@ public class DefaultEventMessageConverter implements EventMessageConverter {
         Long timestamp = headers.getTimestamp();
 
         org.axonframework.messaging.GenericMessage genericMessage
-                = new org.axonframework.messaging.GenericMessage(messageId, type, message.getPayload(), metaData);
+                = new org.axonframework.messaging.GenericMessage(messageId, type, message.getPayload(), metadata);
         if (headers.containsKey(AGGREGATE_ID)) {
             //noinspection DataFlowIssue - Just let it throw a NullPointerException if the sequence or timestamp is null
             return new GenericDomainEventMessage(Objects.toString(headers.get(AGGREGATE_TYPE)),

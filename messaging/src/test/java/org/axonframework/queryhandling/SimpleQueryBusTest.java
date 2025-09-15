@@ -23,7 +23,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerSubscriptionException;
@@ -152,14 +152,14 @@ class SimpleQueryBusTest {
 
         QueryMessage testQuery =
                 new GenericQueryMessage(new MessageType(String.class), "hello", singleStringResponse)
-                        .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
+                        .andMetadata(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
         CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
 
         assertTrue(result.isDone(), "SimpleQueryBus should resolve CompletableFutures directly");
         assertEquals("hello1234", result.get().payload());
         assertEquals(
-                MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
-                result.get().metaData()
+                Metadata.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
+                result.get().metadata()
         );
     }
 
@@ -169,7 +169,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, (p, ctx) -> null);
         QueryMessage testQuery =
                 new GenericQueryMessage(new MessageType(String.class), "hello", singleStringResponse)
-                        .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
+                        .andMetadata(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
         CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
 
         assertTrue(result.isDone(), "SimpleQueryBus should resolve CompletableFutures directly");
@@ -178,8 +178,8 @@ class SimpleQueryBusTest {
         assertEquals(
                 // TODO: this assumes the correlation and tracing data gets into response
                 // but this is done via interceptors, which are currently not integrated
-                MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
-                result.get().metaData()
+                Metadata.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
+                result.get().metadata()
         );
     }
 

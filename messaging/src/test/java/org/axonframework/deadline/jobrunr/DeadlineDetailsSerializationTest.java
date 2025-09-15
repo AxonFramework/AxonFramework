@@ -21,7 +21,7 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.TestScopeDescriptor;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -38,7 +38,7 @@ class DeadlineDetailsSerializationTest {
 
     private static final String TEST_DEADLINE_NAME = "deadline-name";
     private static final String TEST_DEADLINE_PAYLOAD = "deadline-payload";
-    private static MetaData metaData;
+    private static Metadata metadata;
     private static DeadlineMessage message;
 
     @BeforeAll
@@ -46,12 +46,12 @@ class DeadlineDetailsSerializationTest {
         Map<String, String> map = new HashMap<>();
         map.put("someStringValue", "foo");
         map.put("someIntValue", "2");
-        metaData = new MetaData(map);
+        metadata = new Metadata(map);
         message = new GenericDeadlineMessage(
                 TEST_DEADLINE_NAME,
                 new GenericMessage(new MessageType(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
                 Instant::now
-        ).withMetaData(metaData);
+        ).withMetadata(metadata);
     }
 
     @Test
@@ -66,10 +66,10 @@ class DeadlineDetailsSerializationTest {
         ScopeDescriptor descriptor = new TestScopeDescriptor(expectedType, expectedIdentifier);
         String serializedDeadlineDetails = DeadlineDetails.serialized(
                 TEST_DEADLINE_NAME, descriptor, message, serializer);
-        SimpleSerializedObject<String> serializedDeadlineMetaData = new SimpleSerializedObject<>(
+        SimpleSerializedObject<String> serializedDeadlineMetadata = new SimpleSerializedObject<>(
                 serializedDeadlineDetails, String.class, DeadlineDetails.class.getName(), null
         );
-        DeadlineDetails result = serializer.deserialize(serializedDeadlineMetaData);
+        DeadlineDetails result = serializer.deserialize(serializedDeadlineMetadata);
 
         assertEquals(TEST_DEADLINE_NAME, result.getDeadlineName());
         assertEquals(descriptor, result.getDeserializedScopeDescriptor(serializer));
@@ -77,6 +77,6 @@ class DeadlineDetailsSerializationTest {
 
         assertNotNull(resultMessage);
         assertEquals(TEST_DEADLINE_PAYLOAD, resultMessage.payload());
-        assertEquals(metaData, resultMessage.metaData());
+        assertEquals(metadata, resultMessage.metadata());
     }
 }

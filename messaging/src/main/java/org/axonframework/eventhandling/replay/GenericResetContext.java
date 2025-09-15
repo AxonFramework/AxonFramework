@@ -24,7 +24,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
@@ -41,27 +41,27 @@ public class GenericResetContext extends MessageDecorator implements ResetContex
     /**
      * Constructs a {@code GenericResetContext} for the given {@code type} and {@code payload}.
      * <p>
-     * The {@link MetaData} defaults to an empty instance.
+     * The {@link Metadata} defaults to an empty instance.
      *
      * @param type    The {@link MessageType type} for this {@link ResetContext}.
      * @param payload The payload for this {@link ResetContext}.
      */
     public GenericResetContext(@Nonnull MessageType type,
                                @Nullable Object payload) {
-        this(type, payload, MetaData.emptyInstance());
+        this(type, payload, Metadata.emptyInstance());
     }
 
     /**
-     * Constructs a {@code GenericResetContext} for the given {@code type}, {@code payload}, and {@code metaData}.
+     * Constructs a {@code GenericResetContext} for the given {@code type}, {@code payload}, and {@code metadata}.
      *
      * @param type     The {@link MessageType type} for this {@link ResetContext}.
      * @param payload  The payload for this {@link ResetContext}.
-     * @param metaData The metadata for this {@link ResetContext}.
+     * @param metadata The metadata for this {@link ResetContext}.
      */
     public GenericResetContext(@Nonnull MessageType type,
                                @Nullable Object payload,
-                               @Nonnull Map<String, String> metaData) {
-        this(new GenericMessage(type, payload, metaData));
+                               @Nonnull Map<String, String> metadata) {
+        this(new GenericMessage(type, payload, metadata));
     }
 
     /**
@@ -72,7 +72,7 @@ public class GenericResetContext extends MessageDecorator implements ResetContex
      * of Work.
      *
      * @param delegate The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
-     *                 {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
+     *                 {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
      *                 {@link EventMessage} to reconstruct.
      */
     public GenericResetContext(@Nonnull Message delegate) {
@@ -81,14 +81,14 @@ public class GenericResetContext extends MessageDecorator implements ResetContex
 
     @Override
     @Nonnull
-    public ResetContext withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericResetContext(delegate().withMetaData(metaData));
+    public ResetContext withMetadata(@Nonnull Map<String, String> metadata) {
+        return new GenericResetContext(delegate().withMetadata(metadata));
     }
 
     @Override
     @Nonnull
-    public ResetContext andMetaData(@Nonnull Map<String, String> additionalMetaData) {
-        return new GenericResetContext(delegate().andMetaData(additionalMetaData));
+    public ResetContext andMetadata(@Nonnull Map<String, String> additionalMetadata) {
+        return new GenericResetContext(delegate().andMetadata(additionalMetadata));
     }
 
     @Override
@@ -102,7 +102,7 @@ public class GenericResetContext extends MessageDecorator implements ResetContex
         return new GenericResetContext(new GenericMessage(delegate.identifier(),
                                                           delegate.type(),
                                                           convertedPayload,
-                                                          delegate.metaData()));
+                                                          delegate.metadata()));
     }
 
     @Override

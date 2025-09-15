@@ -48,7 +48,7 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
      */
     public GenericResultMessage(@Nonnull MessageType type,
                                 @Nullable Object result) {
-        this(type, result, MetaData.emptyInstance());
+        this(type, result, Metadata.emptyInstance());
     }
 
     /**
@@ -62,34 +62,34 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
      */
     public GenericResultMessage(@Nonnull MessageType type,
                                 @Nonnull Throwable exception) {
-        this(type, exception, MetaData.emptyInstance());
+        this(type, exception, Metadata.emptyInstance());
     }
 
     /**
-     * Constructs a {@code GenericResultMessage} for the given {@code type}, {@code result}, and {@code metaData}.
+     * Constructs a {@code GenericResultMessage} for the given {@code type}, {@code result}, and {@code metadata}.
      *
      * @param type     The {@link MessageType type} for this {@link ResultMessage}.
      * @param result   The result for this {@link ResultMessage}.
-     * @param metaData The metadata for this {@link ResultMessage}.
+     * @param metadata The metadata for this {@link ResultMessage}.
      */
     public GenericResultMessage(@Nonnull MessageType type,
                                 @Nullable Object result,
-                                @Nonnull Map<String, String> metaData) {
-        this(new GenericMessage(type, result, metaData));
+                                @Nonnull Map<String, String> metadata) {
+        this(new GenericMessage(type, result, metadata));
     }
 
     /**
-     * Constructs a {@code GenericResultMessage} for the given {@code type}, {@code exception}, and {@code metaData}.
+     * Constructs a {@code GenericResultMessage} for the given {@code type}, {@code exception}, and {@code metadata}.
      *
      * @param type      The {@link MessageType type} for this {@link ResultMessage}.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link ResultMessage}.
-     * @param metaData  The metadata for this {@link ResultMessage}.
+     * @param metadata  The metadata for this {@link ResultMessage}.
      */
     public GenericResultMessage(@Nonnull MessageType type,
                                 @Nonnull Throwable exception,
-                                @Nonnull Map<String, String> metaData) {
-        this(new GenericMessage(type, null, metaData), exception);
+                                @Nonnull Map<String, String> metadata) {
+        this(new GenericMessage(type, null, metadata), exception);
     }
 
     /**
@@ -100,7 +100,7 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
      * of Work.
      *
      * @param delegate The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
-     *                 {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
+     *                 {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */
     public GenericResultMessage(@Nonnull Message delegate) {
@@ -115,7 +115,7 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
      * of Work.
      *
      * @param delegate  The {@link Message} containing {@link Message#payload() payload}, {@link Message#type() type},
-     *                  {@link Message#identifier() identifier} and {@link Message#metaData() metadata} for the
+     *                  {@link Message#identifier() identifier} and {@link Message#metadata() metadata} for the
      *                  {@link QueryResponseMessage} to reconstruct.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link ResultMessage}.
@@ -183,14 +183,14 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
 
     @Override
     @Nonnull
-    public ResultMessage withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericResultMessage(delegate().withMetaData(metaData), exception);
+    public ResultMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        return new GenericResultMessage(delegate().withMetadata(metadata), exception);
     }
 
     @Override
     @Nonnull
-    public ResultMessage andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericResultMessage(delegate().andMetaData(metaData), exception);
+    public ResultMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        return new GenericResultMessage(delegate().andMetadata(metadata), exception);
     }
 
     @Override
@@ -204,7 +204,7 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
         Message converted = new GenericMessage(delegate.identifier(),
                                                     delegate.type(),
                                                     convertedPayload,
-                                                    delegate.metaData());
+                                                    delegate.metadata());
         return optionalExceptionResult().isPresent()
                 ? new GenericResultMessage(converted, optionalExceptionResult().get())
                 : new GenericResultMessage(converted);
@@ -216,7 +216,7 @@ public class GenericResultMessage extends MessageDecorator implements ResultMess
                      .append(isExceptional() ? null : payload())
                      .append('}')
                      .append(", metadata={")
-                     .append(metaData())
+                     .append(metadata())
                      .append('}')
                      .append(", messageIdentifier='")
                      .append(identifier())

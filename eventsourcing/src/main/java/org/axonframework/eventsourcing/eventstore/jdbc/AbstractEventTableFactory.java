@@ -38,7 +38,7 @@ public abstract class AbstractEventTableFactory implements EventTableFactory {
                 schema.sequenceNumberColumn() + " BIGINT NOT NULL,\n" +
                 schema.typeColumn() + " VARCHAR(255),\n" +
                 schema.eventIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
-                schema.metaDataColumn() + " " + payloadType() + ",\n" +
+                schema.metadataColumn() + " " + payloadType() + ",\n" +
                 schema.payloadColumn() + " " + payloadType() + " NOT NULL,\n" +
                 schema.payloadRevisionColumn() + " VARCHAR(255),\n" +
                 schema.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
@@ -59,7 +59,7 @@ public abstract class AbstractEventTableFactory implements EventTableFactory {
                 schema.sequenceNumberColumn() + " BIGINT NOT NULL,\n" +
                 schema.typeColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.eventIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
-                schema.metaDataColumn() + " " + payloadType() + ",\n" +
+                schema.metadataColumn() + " " + payloadType() + ",\n" +
                 schema.payloadColumn() + " " + payloadType() + " NOT NULL,\n" +
                 schema.payloadRevisionColumn() + " VARCHAR(255),\n" +
                 schema.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +

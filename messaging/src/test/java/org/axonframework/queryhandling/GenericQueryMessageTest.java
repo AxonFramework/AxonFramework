@@ -40,7 +40,7 @@ class GenericQueryMessageTest extends MessageTestSuite<QueryMessage> {
     @Override
     protected QueryMessage buildDefaultMessage() {
         Message delegate =
-                new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+                new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA);
         return new GenericQueryMessage(delegate, TEST_RESPONSE_TYPE);
     }
 

@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -41,31 +41,31 @@ class GenericDomainEventMessageTest {
         DomainEventMessage message1 = new GenericDomainEventMessage(
                 "type", id, seqNo, new MessageType("event"), payload
         );
-        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
-        MetaData metaData = MetaData.from(metaDataMap);
+        Map<String, String> metadataMap = Collections.singletonMap("key", "value");
+        Metadata metadata = Metadata.from(metadataMap);
         DomainEventMessage message2 = new GenericDomainEventMessage(
-                "type", id, seqNo, new MessageType("event"), payload, metaData
+                "type", id, seqNo, new MessageType("event"), payload, metadata
         );
         DomainEventMessage message3 = new GenericDomainEventMessage(
-                "type", id, seqNo, new MessageType("event"), payload, metaDataMap
+                "type", id, seqNo, new MessageType("event"), payload, metadataMap
         );
 
         assertSame(id, message1.getAggregateIdentifier());
         assertEquals(seqNo, message1.getSequenceNumber());
-        assertSame(MetaData.emptyInstance(), message1.metaData());
+        assertSame(Metadata.emptyInstance(), message1.metadata());
         assertEquals(Object.class, message1.payload().getClass());
         assertEquals(Object.class, message1.payloadType());
 
         assertSame(id, message2.getAggregateIdentifier());
         assertEquals(seqNo, message2.getSequenceNumber());
-        assertSame(metaData, message2.metaData());
+        assertSame(metadata, message2.metadata());
         assertEquals(Object.class, message2.payload().getClass());
         assertEquals(Object.class, message2.payloadType());
 
         assertSame(id, message3.getAggregateIdentifier());
         assertEquals(seqNo, message3.getSequenceNumber());
-        assertNotSame(metaDataMap, message3.metaData());
-        assertEquals(metaDataMap, message3.metaData());
+        assertNotSame(metadataMap, message3.metadata());
+        assertEquals(metadataMap, message3.metadata());
         assertEquals(Object.class, message3.payload().getClass());
         assertEquals(Object.class, message3.payloadType());
 
@@ -75,48 +75,48 @@ class GenericDomainEventMessageTest {
     }
 
     @Test
-    void withMetaData() {
+    void withMetadata() {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
-        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
-        MetaData metaData = MetaData.from(metaDataMap);
+        Map<String, String> metadataMap = Collections.singletonMap("key", "value");
+        Metadata metadata = Metadata.from(metadataMap);
         GenericDomainEventMessage message = new GenericDomainEventMessage(
-                "type", id, seqNo, new MessageType("event"), payload, metaData
+                "type", id, seqNo, new MessageType("event"), payload, metadata
         );
-        GenericDomainEventMessage message1 = message.withMetaData(MetaData.emptyInstance());
-        GenericDomainEventMessage message2 = message.withMetaData(
-                MetaData.from(Collections.singletonMap("key", "otherValue")));
+        GenericDomainEventMessage message1 = message.withMetadata(Metadata.emptyInstance());
+        GenericDomainEventMessage message2 = message.withMetadata(
+                Metadata.from(Collections.singletonMap("key", "otherValue")));
 
-        assertEquals(0, message1.metaData().size());
-        assertEquals(1, message2.metaData().size());
+        assertEquals(0, message1.metadata().size());
+        assertEquals(1, message2.metadata().size());
     }
 
     @Test
-    void andMetaData() {
+    void andMetadata() {
         Object payload = new Object();
         long seqNo = 0;
         String id = UUID.randomUUID().toString();
-        Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
-        MetaData metaData = MetaData.from(metaDataMap);
+        Map<String, String> metadataMap = Collections.singletonMap("key", "value");
+        Metadata metadata = Metadata.from(metadataMap);
         GenericDomainEventMessage message = new GenericDomainEventMessage(
-                "type", id, seqNo, new MessageType("event"), payload, metaData
+                "type", id, seqNo, new MessageType("event"), payload, metadata
         );
-        GenericDomainEventMessage message1 = message.andMetaData(MetaData.emptyInstance());
-        GenericDomainEventMessage message2 = message.andMetaData(
-                MetaData.from(Collections.singletonMap("key", "otherValue")));
+        GenericDomainEventMessage message1 = message.andMetadata(Metadata.emptyInstance());
+        GenericDomainEventMessage message2 = message.andMetadata(
+                Metadata.from(Collections.singletonMap("key", "otherValue")));
 
-        assertEquals(1, message1.metaData().size());
-        assertEquals("value", message1.metaData().get("key"));
-        assertEquals(1, message2.metaData().size());
-        assertEquals("otherValue", message2.metaData().get("key"));
+        assertEquals(1, message1.metadata().size());
+        assertEquals("value", message1.metadata().get("key"));
+        assertEquals(1, message2.metadata().size());
+        assertEquals("otherValue", message2.metadata().get("key"));
     }
 
     @Test
     void toStringIsAsExpected() {
         String actual = new GenericDomainEventMessage(
                 "AggregateType", "id1", 1, new MessageType("event"), "MyPayload"
-        ).andMetaData(MetaData.with("key", "value").and("key2", "13"))
+        ).andMetadata(Metadata.with("key", "value").and("key2", "13"))
          .toString();
         assertTrue(actual.startsWith("GenericDomainEventMessage{type={event#0.0.1}, payload={MyPayload}, metadata={"),
                    "Wrong output: " + actual);

@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -137,7 +137,7 @@ class EventMultiUpcasterTest {
                 testTrackingToken, new GenericDomainEventEntry<>(
                 testAggregateType, testAggregateId, testSequenceNumber, "eventId", Instant.now(),
                 testPayload.getType().getName(), testPayload.getType().getRevision(), testPayload,
-                serializer.serialize(MetaData.emptyInstance(), String.class)
+                serializer.serialize(Metadata.emptyInstance(), String.class)
         ));
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
 
@@ -171,10 +171,10 @@ class EventMultiUpcasterTest {
         String expectedRevisionNumber = "1";
         String expectedSecondAndThirdRevisionNumber = null;
 
-        MetaData testMetaData = MetaData.with("key", "value");
+        Metadata testMetadata = Metadata.with("key", "value");
         DomainEventMessage testEventMessage = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"),
-                new StubDomainEvent("oldName"), testMetaData
+                new StubDomainEvent("oldName"), testMetadata
         );
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         InitialEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
@@ -188,7 +188,7 @@ class EventMultiUpcasterTest {
         assertEquals(expectedRevisionNumber, firstResultRepresentation.getType().getRevision());
         assertEquals(testEventData.getEventIdentifier(), firstResultRepresentation.getMessageIdentifier());
         assertEquals(testEventData.getTimestamp(), firstResultRepresentation.getTimestamp());
-        assertEquals(testMetaData, firstResultRepresentation.getMetaData().getObject());
+        assertEquals(testMetadata, firstResultRepresentation.getMetadata().getObject());
         StubDomainEvent firstUpcastedEvent = serializer.deserialize(firstResultRepresentation.getData());
         assertEquals(expectedNewString, firstUpcastedEvent.getName());
 
@@ -196,7 +196,7 @@ class EventMultiUpcasterTest {
         assertEquals(expectedSecondAndThirdRevisionNumber, secondResultRepresentation.getType().getRevision());
         assertEquals(testEventData.getEventIdentifier(), secondResultRepresentation.getMessageIdentifier());
         assertEquals(testEventData.getTimestamp(), secondResultRepresentation.getTimestamp());
-        assertEquals(testMetaData, secondResultRepresentation.getMetaData().getObject());
+        assertEquals(testMetadata, secondResultRepresentation.getMetadata().getObject());
         SecondStubEvent secondUpcastedEvent = serializer.deserialize(secondResultRepresentation.getData());
         assertEquals(expectedNewString, secondUpcastedEvent.getName());
         assertEquals(expectedNewInteger, secondUpcastedEvent.getNumber());
@@ -205,7 +205,7 @@ class EventMultiUpcasterTest {
         assertEquals(expectedSecondAndThirdRevisionNumber, thirdResultRepresentation.getType().getRevision());
         assertEquals(testEventData.getEventIdentifier(), thirdResultRepresentation.getMessageIdentifier());
         assertEquals(testEventData.getTimestamp(), thirdResultRepresentation.getTimestamp());
-        assertEquals(testMetaData, thirdResultRepresentation.getMetaData().getObject());
+        assertEquals(testMetadata, thirdResultRepresentation.getMetadata().getObject());
         ThirdStubEvent thirdUpcastedEvent = serializer.deserialize(thirdResultRepresentation.getData());
         assertEquals(expectedNewString, thirdUpcastedEvent.getName());
         assertEquals(expectedNewInteger, thirdUpcastedEvent.getNumber());

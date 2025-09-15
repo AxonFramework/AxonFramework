@@ -23,7 +23,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.serialization.Converter;
 
@@ -44,7 +44,7 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
     /**
      * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, and {@code responseType}.
      * <p>
-     * The {@link MetaData} defaults to an empty instance. Initializes the message with the given {@code payload} and
+     * The {@link Metadata} defaults to an empty instance. Initializes the message with the given {@code payload} and
      * expected {@code responseType}.
      *
      * @param type         The {@link MessageType type} for this {@link QueryMessage}.
@@ -54,14 +54,14 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
     public GenericQueryMessage(@Nonnull MessageType type,
                                @Nullable Object payload,
                                @Nonnull ResponseType<?> responseType) {
-        this(new GenericMessage(type, payload, MetaData.emptyInstance()), responseType);
+        this(new GenericMessage(type, payload, Metadata.emptyInstance()), responseType);
     }
 
     /**
      * Constructs a {@code GenericQueryMessage} with given {@code delegate} and {@code responseType}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
-     * {@link Message#metaData() metadata} and {@link Message#identifier() identifier} of the resulting
+     * {@link Message#metadata() metadata} and {@link Message#identifier() identifier} of the resulting
      * {@code GenericQueryMessage}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
@@ -69,7 +69,7 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      *
      * @param delegate     The {@link Message} containing {@link Message#payload() payload},
      *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                     {@link Message#metaData() metadata} for the {@link QueryMessage} to reconstruct.
+     *                     {@link Message#metadata() metadata} for the {@link QueryMessage} to reconstruct.
      * @param responseType The expected {@link ResponseType response type} for this {@link QueryMessage}.
      */
     public GenericQueryMessage(@Nonnull Message delegate,
@@ -86,14 +86,14 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
 
     @Override
     @Nonnull
-    public QueryMessage withMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericQueryMessage(delegate().withMetaData(metaData), responseType);
+    public QueryMessage withMetadata(@Nonnull Map<String, String> metadata) {
+        return new GenericQueryMessage(delegate().withMetadata(metadata), responseType);
     }
 
     @Override
     @Nonnull
-    public QueryMessage andMetaData(@Nonnull Map<String, String> metaData) {
-        return new GenericQueryMessage(delegate().andMetaData(metaData), responseType);
+    public QueryMessage andMetadata(@Nonnull Map<String, String> metadata) {
+        return new GenericQueryMessage(delegate().andMetadata(metadata), responseType);
     }
 
     @Override
@@ -107,7 +107,7 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
         Message converted = new GenericMessage(delegate.identifier(),
                                                delegate.type(),
                                                convertedPayload,
-                                               delegate.metaData());
+                                               delegate.metadata());
         return new GenericQueryMessage(converted, responseType);
     }
 

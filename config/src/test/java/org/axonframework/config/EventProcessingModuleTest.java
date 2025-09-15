@@ -289,7 +289,7 @@ class EventProcessingModuleTest {
         Object mockHandler = new Object();
         Object specialHandler = new Object();
         SequentialPolicy sequentialPolicy = SequentialPolicy.INSTANCE;
-        FullConcurrencyPolicy fullConcurrencyPolicy = new FullConcurrencyPolicy();
+        FullConcurrencyPolicy fullConcurrencyPolicy = FullConcurrencyPolicy.INSTANCE;
         configurer.eventProcessing()
                   .registerEventHandler(c -> mockHandler)
                   .registerEventHandler(c -> specialHandler)

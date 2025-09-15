@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.RepositoryProvider;
@@ -240,11 +240,11 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     }
 
     @Override
-    public <P> ApplyMore doApply(P payload, MetaData metaData) {
+    public <P> ApplyMore doApply(P payload, Metadata metadata) {
         if (initializing) {
             return IgnoreApplyMore.INSTANCE;
         } else {
-            return super.doApply(payload, metaData);
+            return super.doApply(payload, metadata);
         }
     }
 
@@ -275,7 +275,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     protected void publishOnEventBus(EventMessage msg) {
         if (!initializing) {
             // force conversion of LazyIdentifierDomainEventMessage to Generic to release reference to Aggregate.
-            super.publishOnEventBus(msg.andMetaData(Collections.emptyMap()));
+            super.publishOnEventBus(msg.andMetadata(Collections.emptyMap()));
         }
     }
 

@@ -19,7 +19,7 @@ package org.axonframework.messaging.deadletter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -506,7 +506,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
     void processInvocationReturnsFalseAndRequeuesTheLetter() {
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
         Throwable testThrowable = generateThrowable();
-        MetaData testDiagnostics = MetaData.with("custom-key", "custom-value");
+        Metadata testDiagnostics = Metadata.with("custom-key", "custom-value");
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             resultLetter.set(letter);
             return Decisions.requeue(testThrowable, l -> testDiagnostics);
@@ -756,7 +756,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
         setAndGetTime();
         AtomicReference<DeadLetter<? extends M>> resultLetter = new AtomicReference<>();
         Throwable testThrowable = generateThrowable();
-        MetaData testDiagnostics = MetaData.with("custom-key", "custom-value");
+        Metadata testDiagnostics = Metadata.with("custom-key", "custom-value");
         Function<DeadLetter<? extends M>, EnqueueDecision<M>> testTask = letter -> {
             resultLetter.set(letter);
             return Decisions.requeue(testThrowable, l -> testDiagnostics);
@@ -970,7 +970,7 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
     protected DeadLetter<M> generateRequeuedLetter(DeadLetter<M> original, Throwable requeueCause) {
         // Move time to impose changes to lastTouched.
         Instant lastTouched = setAndGetTime();
-        return generateRequeuedLetter(original, lastTouched, requeueCause, MetaData.emptyInstance());
+        return generateRequeuedLetter(original, lastTouched, requeueCause, Metadata.emptyInstance());
     }
 
     /**
@@ -982,14 +982,14 @@ public abstract class SequencedDeadLetterQueueTest<M extends Message> {
      * @param original     The original {@link DeadLetter} to base the requeued dead letter on.
      * @param lastTouched  The {@link DeadLetter#lastTouched()} of the generated {@link DeadLetter} implementation.
      * @param requeueCause The cause for requeueing the {@code original}.
-     * @param diagnostics  The diagnostics {@link MetaData} added to the requeued letter for monitoring.
+     * @param diagnostics  The diagnostics {@link Metadata} added to the requeued letter for monitoring.
      * @return A {@link DeadLetter} implementation expected by the test subject based on the given {@code original}
      * that's requeued.
      */
     protected DeadLetter<M> generateRequeuedLetter(DeadLetter<M> original,
                                                    Instant lastTouched,
                                                    Throwable requeueCause,
-                                                   MetaData diagnostics) {
+                                                   Metadata diagnostics) {
         setAndGetTime(lastTouched);
         return original.withCause(requeueCause)
                        .withDiagnostics(diagnostics)

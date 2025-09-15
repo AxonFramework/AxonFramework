@@ -19,7 +19,7 @@ package org.axonframework.modelling.saga;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.lang.annotation.*;
 
@@ -29,11 +29,11 @@ import java.lang.annotation.*;
  * The parameters of the annotated method are resolved using parameter resolvers.
  * <p>
  * Axon provides a number of parameter resolvers that allow you to use the following parameter types:<ul> <li>The first
- * parameter is always the payload of the Event Message <li>Parameters annotated with {@code @MetaDataValue} will
- * resolve to the Meta Data value with the key as indicated on the annotation. If required is false (default), null is
- * passed when the meta data value is not present. If required is true, the resolver will not match and prevent the
- * method from being invoked when the meta data value is not present.</li> <li>Parameters of type {@link MetaData} will
- * have the entire Meta Data of an Event Message injected.</li> <li>Parameters of type {@link java.time.Instant} (or any
+ * parameter is always the payload of the Event Message <li>Parameters annotated with {@code @MetadataValue} will
+ * resolve to the metadata value with the key as indicated on the annotation. If required is false (default), null is
+ * passed when the metadata value is not present. If required is true, the resolver will not match and prevent the
+ * method from being invoked when the metadata value is not present.</li> <li>Parameters of type {@link Metadata} will
+ * have the entire metadata of an Event Message injected.</li> <li>Parameters of type {@link java.time.Instant} (or any
  * of its super classes or implemented interfaces) will resolve to the timestamp of the EventMessage. This is the time
  * at which the Event was generated.</li> <li>Parameters assignable to {@link Message} will have the entire {@link
  * EventMessage} injected (if the message is assignable to that parameter). If the first parameter is of type message,

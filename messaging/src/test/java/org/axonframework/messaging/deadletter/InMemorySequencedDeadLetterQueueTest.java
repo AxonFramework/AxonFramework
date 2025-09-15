@@ -18,7 +18,7 @@ package org.axonframework.messaging.deadletter;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -67,7 +67,7 @@ class InMemorySequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<
     protected DeadLetter<EventMessage> generateRequeuedLetter(DeadLetter<EventMessage> original,
                                                                  Instant lastTouched,
                                                                  Throwable requeueCause,
-                                                                 MetaData diagnostics) {
+                                                                 Metadata diagnostics) {
         setAndGetTime(lastTouched);
         return original.withCause(requeueCause)
                        .withDiagnostics(diagnostics)

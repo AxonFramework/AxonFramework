@@ -51,11 +51,11 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message> implemen
     /**
      * Construct a {@code MessageAuthorizationDispatchInterceptor} using the given {@code converter} to convert the
      * {@link Authentication#getPrincipal() principal} and {@link Authentication#getAuthorities()} before they are
-     * stored in the {@link org.axonframework.messaging.MetaData} of the outgoing {@link Message} of type {@code T}.
+     * stored in the {@link org.axonframework.messaging.Metadata} of the outgoing {@link Message} of type {@code T}.
      *
      * @param converter The {@code Converter} converting the {@link Authentication#getPrincipal() principal} and
      *                  {@link Authentication#getAuthorities()} before they go into the
-     *                  {@link org.axonframework.messaging.MetaData} of the outgoing {@link Message} of type {@code T}.
+     *                  {@link org.axonframework.messaging.Metadata} of the outgoing {@link Message} of type {@code T}.
      */
     public MessageAuthorizationDispatchInterceptor(@Nonnull Converter converter) {
         this.converter = Objects.requireNonNull(converter, "Converter must not be null.");
@@ -81,6 +81,6 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message> implemen
                                            .collect(Collectors.joining(","));
         authenticationDetails.put("authorities", authorities);
         //noinspection unchecked
-        return interceptorChain.proceed((T) message.andMetaData(authenticationDetails), context);
+        return interceptorChain.proceed((T) message.andMetadata(authenticationDetails), context);
     }
 }

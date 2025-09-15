@@ -64,7 +64,7 @@ class MessageAuthorizationHandlerInterceptorTest {
                .when(new CreateAggregateCommand(aggregateId))
                .expectSuccessfulHandlerExecution()
                .expectResultMessageMatching(Matchers.matches(
-                       message -> message.metaData().get("username").equals("admin")
+                       message -> message.metadata().get("username").equals("admin")
                ));
     }
 

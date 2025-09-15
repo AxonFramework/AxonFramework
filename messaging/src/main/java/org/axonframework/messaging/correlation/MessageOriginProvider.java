@@ -71,7 +71,7 @@ public class MessageOriginProvider implements CorrelationDataProvider {
     public Map<String, String> correlationDataFor(@Nonnull Message message) {
         Map<String, String> result = new HashMap<>();
         result.put(correlationKey, message.identifier());
-        result.put(traceKey, message.metaData().getOrDefault(traceKey, message.identifier()));
+        result.put(traceKey, message.metadata().getOrDefault(traceKey, message.identifier()));
         return result;
     }
 }

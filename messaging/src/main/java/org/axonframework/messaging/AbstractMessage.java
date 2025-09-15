@@ -58,27 +58,27 @@ public abstract class AbstractMessage implements Message {
 
     @Override
     @Nonnull
-    public Message withMetaData(@Nonnull Map<String, String> metaData) {
-        if (metaData().equals(metaData)) {
+    public Message withMetadata(@Nonnull Map<String, String> metadata) {
+        if (metadata().equals(metadata)) {
             return this;
         }
-        return withMetaData(MetaData.from(metaData));
+        return withMetadata(Metadata.from(metadata));
     }
 
     @Override
     @Nonnull
-    public Message andMetaData(@Nonnull Map<String, String> metaData) {
-        if (metaData.isEmpty()) {
+    public Message andMetadata(@Nonnull Map<String, String> metadata) {
+        if (metadata.isEmpty()) {
             return this;
         }
-        return withMetaData(metaData().mergedWith(metaData));
+        return withMetadata(metadata().mergedWith(metadata));
     }
 
     /**
-     * Returns a new message instance with the same payload and properties as this message but given {@code metaData}.
+     * Returns a new message instance with the same payload and properties as this message but given {@code metadata}.
      *
-     * @param metaData The metadata in the new message
+     * @param metadata The metadata in the new message
      * @return a copy of this instance with given metadata
      */
-    protected abstract Message withMetaData(MetaData metaData);
+    protected abstract Message withMetadata(Metadata metadata);
 }
