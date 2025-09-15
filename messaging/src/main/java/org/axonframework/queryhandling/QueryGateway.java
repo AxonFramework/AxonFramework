@@ -17,6 +17,7 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
@@ -40,7 +41,7 @@ import java.util.stream.Stream;
  * @author Steven van Beelen
  * @since 3.1.0
  */
-public interface QueryGateway {
+public interface QueryGateway extends DescribableComponent {
 
     /**
      * Sends given {@code query} over the {@link QueryBus}, expecting a single response with the given

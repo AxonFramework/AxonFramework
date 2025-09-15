@@ -17,6 +17,7 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
@@ -185,5 +186,12 @@ public class DefaultQueryGateway implements QueryGateway {
                       .map(t -> (U) t.payload()),
                 result
         );
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("queryBus", queryBus);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("priorityCalculator", priorityCalculator);
     }
 }
