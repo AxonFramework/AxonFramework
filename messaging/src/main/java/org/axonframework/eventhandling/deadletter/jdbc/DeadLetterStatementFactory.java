@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.deadletter.jdbc;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 
@@ -113,7 +113,7 @@ public interface DeadLetterStatementFactory<E extends EventMessage> {
                                        @Nonnull String identifier,
                                        Cause cause,
                                        @Nonnull Instant lastTouched,
-                                       MetaData diagnostics) throws SQLException;
+                                       Metadata diagnostics) throws SQLException;
 
     /**
      * Constructs the {@link PreparedStatement} used for the {@link JdbcSequencedDeadLetterQueue#contains(Object)}

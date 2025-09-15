@@ -61,8 +61,8 @@ public class TrackedDomainEventData<T> implements TrackedEventData<T>, DomainEve
     }
 
     @Override
-    public SerializedObject<T> getMetaData() {
-        return eventData.getMetaData();
+    public SerializedObject<T> getMetadata() {
+        return eventData.getMetadata();
     }
 
     @Override

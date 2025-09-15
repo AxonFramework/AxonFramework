@@ -26,7 +26,7 @@ import org.axonframework.eventsourcing.eventstore.GenericTaggedEventMessage;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
@@ -107,10 +107,10 @@ class TaggedEventConverterTest {
         assertEquals(EVENT_VERSION, resultEvent.getVersion());
         verify(converter).convert(eventPayload, (Type) byte[].class);
         assertArrayEquals(eventPayloadByteArray, resultEvent.getPayload().toByteArray());
-        Map<String, String> resultMetaData = resultEvent.getMetadataMap();
-        assertEquals(1, resultMetaData.size());
-        assertTrue(resultMetaData.containsKey("String"));
-        assertEquals("Lorem Ipsum", resultMetaData.get("String"));
+        Map<String, String> resultMetadata = resultEvent.getMetadataMap();
+        assertEquals(1, resultMetadata.size());
+        assertTrue(resultMetadata.containsKey("String"));
+        assertEquals("Lorem Ipsum", resultMetadata.get("String"));
         List<io.axoniq.axonserver.grpc.event.dcb.Tag> tagList = result.getTagList();
         assertEquals(3, tagList.size());
         assertTrue(tagList.contains(
@@ -134,9 +134,9 @@ class TaggedEventConverterTest {
     }
 
     @Test
-    void convertTaggedEventMessageConvertsAnyTypeOfMetaData() {
+    void convertTaggedEventMessageConvertsAnyTypeOfMetadata() {
         // given...
-        MetaData metaData = MetaData.from(Map.of(
+        Metadata metadata = Metadata.from(Map.of(
                 "String", "Lorem Ipsum",
                 "Double", "3.53d",
                 "Float", "3.53f",
@@ -146,7 +146,7 @@ class TaggedEventConverterTest {
                 "Byte", "4",
                 "Boolean", "false"
         ));
-        EventMessage eventMessage = new GenericEventMessage(EVENT_TYPE, eventPayload, metaData);
+        EventMessage eventMessage = new GenericEventMessage(EVENT_TYPE, eventPayload, metadata);
         TaggedEventMessage<EventMessage> taggedEventMessage =
                 new GenericTaggedEventMessage<>(eventMessage, Set.of(Tag.of("key", "value")));
         // when...
@@ -188,15 +188,11 @@ class TaggedEventConverterTest {
         assertEquals(EVENT_ID, result.identifier());
         assertEquals(EVENT_TYPE, result.type());
         assertArrayEquals(eventPayloadByteArray, result.payloadAs(byte[].class));
-        assertEquals(EVENT_METADATA, result.metaData());
+        assertEquals(EVENT_METADATA, result.metadata());
         assertEquals(EVENT_TIMESTAMP, result.timestamp().toEpochMilli());
     }
 
     private record TestEvent(String stringState, Integer intState, List<Boolean> booleanState) {
-
-    }
-
-    private record TestMetaDataValue(Integer integerState, String stringState) {
 
     }
 }

@@ -71,11 +71,11 @@ public interface EventMessage extends Message {
 
     @Override
     @Nonnull
-    EventMessage withMetaData(@Nonnull Map<String, String> metaData);
+    EventMessage withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    EventMessage andMetaData(@Nonnull Map<String, String> metaData);
+    EventMessage andMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull

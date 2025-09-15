@@ -62,7 +62,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         // make us able to store deserialization errors as well.
         SerializedObject<byte[]> serializedPayload = eventSerializer.serialize(message.payload(), byte[].class);
         // For compatibility, we use the serializer directly for the metadata
-        SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.metaData(), byte[].class);
+        SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(message.metadata(), byte[].class);
         Optional<SerializedObject<byte[]>> serializedToken =
                 trackedEventMessage.map(m -> genericSerializer.serialize(m.trackingToken(), byte[].class));
 
@@ -89,7 +89,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                                    Serializer genericSerializer) {
         SerializedMessage serializedMessage = new SerializedMessage(entry.getEventIdentifier(),
                                                                          entry.getPayload(),
-                                                                         entry.getMetaData(),
+                                                                         entry.getMetadata(),
                                                                          eventSerializer);
         Supplier<Instant> timestampSupplier = () -> Instant.parse(entry.getTimeStamp());
         if (entry.getTrackingToken() != null) {
@@ -112,7 +112,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                                                    serializedMessage.identifier(),
                                                    MessageType.fromString(entry.getType()),
                                                    serializedMessage.payload(),
-                                                   serializedMessage.metaData(),
+                                                   serializedMessage.metadata(),
                                                    timestampSupplier.get());
         } else {
             return new GenericEventMessage(serializedMessage, timestampSupplier);

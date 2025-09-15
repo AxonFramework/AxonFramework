@@ -16,7 +16,7 @@
 
 package org.axonframework.serialization;
 
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,23 +24,23 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * @author Allard Buijze
  */
-class SerializedMetaDataValueTest {
+class SerializedMetadataValueTest {
 
     @Test
-    void serializeMetaData() {
+    void serializeMetadata() {
         byte[] stubData = new byte[]{};
-        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(stubData, byte[].class);
-        assertEquals(stubData, serializedMetaData.getData());
-        assertEquals(byte[].class, serializedMetaData.getContentType());
-        assertNull(serializedMetaData.getType().getRevision());
-        assertEquals(MetaData.class.getName(), serializedMetaData.getType().getName());
+        SerializedMetadata<byte[]> serializedMetadata = new SerializedMetadata<>(stubData, byte[].class);
+        assertEquals(stubData, serializedMetadata.getData());
+        assertEquals(byte[].class, serializedMetadata.getContentType());
+        assertNull(serializedMetadata.getType().getRevision());
+        assertEquals(Metadata.class.getName(), serializedMetadata.getType().getName());
     }
 
     @Test
-    void isSerializedMetaData() {
-        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(new byte[]{}, byte[].class);
-        assertTrue(SerializedMetaData.isSerializedMetaData(serializedMetaData));
-        assertFalse(SerializedMetaData.isSerializedMetaData(
+    void isSerializedMetadata() {
+        SerializedMetadata<byte[]> serializedMetadata = new SerializedMetadata<>(new byte[]{}, byte[].class);
+        assertTrue(SerializedMetadata.isSerializedMetadata(serializedMetadata));
+        assertFalse(SerializedMetadata.isSerializedMetadata(
                 new SimpleSerializedObject<>("test", String.class, "type", "rev")));
     }
 

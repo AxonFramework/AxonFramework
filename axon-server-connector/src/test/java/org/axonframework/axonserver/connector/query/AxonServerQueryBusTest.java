@@ -42,7 +42,7 @@ import org.axonframework.lifecycle.ShutdownInProgressException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -698,7 +698,7 @@ class AxonServerQueryBusTest {
         when(localSegment.query(any())).thenAnswer(i -> {
             startProcessingGate.await();
             QueryMessage message = i.getArgument(0);
-            actual.add(message.metaData().get("index"));
+            actual.add(message.metadata().get("index"));
             finishProcessingGate.countDown();
             return CompletableFuture.completedFuture(
                     new GenericQueryResponseMessage(new MessageType("query"), "ok")
@@ -846,7 +846,7 @@ class AxonServerQueryBusTest {
             QueryResponseMessage queryResponse = new GenericQueryResponseMessage(
                     new MessageType("query"),
                     message.payload(),
-                    MetaData.with("response", message.payload().toString())
+                    Metadata.with("response", message.payload().toString())
             );
             return CompletableFuture.completedFuture(queryResponse);
         });

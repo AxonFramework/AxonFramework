@@ -28,7 +28,7 @@ public class EventSchema {
 
     private final String domainEventTable, snapshotTable, globalIndexColumn, timestampColumn, eventIdentifierColumn,
             aggregateIdentifierColumn, sequenceNumberColumn, typeColumn, payloadTypeColumn, payloadRevisionColumn,
-            payloadColumn, metaDataColumn;
+            payloadColumn, metadataColumn;
 
     private final Function<EventSchema, String> domainEventFields, trackedEventFields;
 
@@ -51,7 +51,7 @@ public class EventSchema {
         payloadTypeColumn = builder.payloadTypeColumn;
         payloadRevisionColumn = builder.payloadRevisionColumn;
         payloadColumn = builder.payloadColumn;
-        metaDataColumn = builder.metaDataColumn;
+        metadataColumn = builder.metadataColumn;
         domainEventFields = builder.domainEventFields;
         trackedEventFields = builder.trackedEventFields;
     }
@@ -169,8 +169,8 @@ public class EventSchema {
      *
      * @return the name of the column containing the serialized metadata
      */
-    public String metaDataColumn() {
-        return metaDataColumn;
+    public String metadataColumn() {
+        return metadataColumn;
     }
 
     /**
@@ -208,7 +208,7 @@ public class EventSchema {
         private String payloadTypeColumn = "payloadType";
         private String payloadRevisionColumn = "payloadRevision";
         private String payloadColumn = "payload";
-        private String metaDataColumn = "metaData";
+        private String metadataColumn = "metadata";
 
         private Function<EventSchema, String> domainEventFields = eventSchema ->
                 String.join(", ",
@@ -220,7 +220,7 @@ public class EventSchema {
                             eventSchema.payloadTypeColumn(),
                             eventSchema.payloadRevisionColumn(),
                             eventSchema.payloadColumn(),
-                            eventSchema.metaDataColumn());
+                            eventSchema.metadataColumn());
 
         private Function<EventSchema, String> trackedEventFields = eventSchema ->
                 eventSchema.globalIndexColumn() + ", " + eventSchema.domainEventFields();
@@ -347,13 +347,13 @@ public class EventSchema {
         }
 
         /**
-         * Sets the name of the event metadata column. Defaults to 'metaData'.
+         * Sets the name of the event metadata column. Defaults to 'metadata'.
          *
-         * @param metaDataColumn the name of the metadata column.
+         * @param metadataColumn the name of the metadata column.
          * @return the modified Builder instance
          */
-        public Builder metaDataColumn(String metaDataColumn) {
-            this.metaDataColumn = metaDataColumn;
+        public Builder metadataColumn(String metadataColumn) {
+            this.metadataColumn = metadataColumn;
             return this;
         }
 
@@ -362,7 +362,7 @@ public class EventSchema {
          * to:
          * <p/>
          * {@code "[eventIdentifierColumn], [aggregateIdentifierColumn], [sequenceNumberColumn], [typeColumn],
-         * [timestampColumn], [payloadTypeColumn], [payloadRevisionColumn], [payloadColumn], [metaDataColumn]" }
+         * [timestampColumn], [payloadTypeColumn], [payloadRevisionColumn], [payloadColumn], [metadataColumn]" }
          * <p/>
          *
          * @return the modified Builder instance

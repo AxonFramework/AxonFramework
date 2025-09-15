@@ -40,7 +40,7 @@ import static org.mockito.Mockito.*;
  */
 class GenericMessageTest extends MessageTestSuite<Message> {
 
-    private final Map<String, String> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
+    private final Map<String, String> correlationData = Metadata.from(Collections.singletonMap("foo", "bar"));
 
     private LegacyUnitOfWork<?> unitOfWork;
 
@@ -53,7 +53,7 @@ class GenericMessageTest extends MessageTestSuite<Message> {
 
     @Override
     protected Message buildDefaultMessage() {
-        return new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+        return new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA);
     }
 
     @Override
@@ -71,12 +71,12 @@ class GenericMessageTest extends MessageTestSuite<Message> {
     @Test
     void correlationDataAddedToNewMessage() {
         Message testMessage = new GenericMessage(new MessageType("message"), new Object());
-        assertEquals(correlationData, new HashMap<>(testMessage.metaData()));
+        assertEquals(correlationData, new HashMap<>(testMessage.metadata()));
 
-        MetaData newMetaData = MetaData.from(Collections.singletonMap("what", "ever"));
-        Message testMessageWithMetaData =
-                new GenericMessage(new MessageType("message"), new Object(), newMetaData);
-        assertEquals(newMetaData.mergedWith(correlationData), testMessageWithMetaData.metaData());
+        Metadata newMetadata = Metadata.from(Collections.singletonMap("what", "ever"));
+        Message testMessageWithMetadata =
+                new GenericMessage(new MessageType("message"), new Object(), newMetadata);
+        assertEquals(newMetadata.mergedWith(correlationData), testMessageWithMetadata.metadata());
     }
 
     @Test

@@ -40,7 +40,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken;
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 
@@ -263,7 +263,7 @@ public class AxonServerEventSchedulerTest {
     void reschedule() {
         String token = "12345";
         EventMessage testEvent = new GenericEventMessage(
-                new MessageType("event"), "Updated", MetaData.with("updated", "true")
+                new MessageType("event"), "Updated", Metadata.with("updated", "true")
         );
 
         scheduled.put(token, Event.newBuilder().build());
@@ -276,7 +276,7 @@ public class AxonServerEventSchedulerTest {
     @Test
     void rescheduleWithoutToken() {
         EventMessage testEvent = new GenericEventMessage(
-                new MessageType("event"), "Updated", MetaData.with("updated", "true")
+                new MessageType("event"), "Updated", Metadata.with("updated", "true")
         );
         org.axonframework.eventhandling.scheduling.ScheduleToken token =
                 testSubject.reschedule(null, Duration.ofDays(1), testEvent);

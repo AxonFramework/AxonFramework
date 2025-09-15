@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.CachingSupplier;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;
@@ -47,7 +47,7 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
     private final SerializedObject<Object> data;
     private final SerializedType type;
     private final Class<?> contentType;
-    private final LazyDeserializingObject<MetaData> metaData;
+    private final LazyDeserializingObject<Metadata> metadata;
     private final String eventIdentifier;
     private final Supplier<Instant> timestamp;
 
@@ -73,7 +73,7 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
         data = (SerializedObject<Object>) eventData.getPayload();
         type = data.getType();
         contentType = data.getContentType();
-        metaData = new LazyDeserializingObject<>(eventData.getMetaData(), serializer);
+        metadata = new LazyDeserializingObject<>(eventData.getMetadata(), serializer);
         eventIdentifier = eventData.getEventIdentifier();
         timestamp = CachingSupplier.of(eventData::getTimestamp);
         if (eventData instanceof DomainEventData<?>) {
@@ -97,8 +97,8 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
     @Override
     public <T> IntermediateEventRepresentation upcast(SerializedType outputType, Class<T> expectedRepresentationType,
                                                       Function<T, T> upcastFunction,
-                                                      Function<MetaData, MetaData> metaDataUpcastFunction) {
-        return new UpcastedEventRepresentation<>(outputType, this, upcastFunction, metaDataUpcastFunction,
+                                                      Function<Metadata, Metadata> metadataUpcastFunction) {
+        return new UpcastedEventRepresentation<>(outputType, this, upcastFunction, metadataUpcastFunction,
                                                  expectedRepresentationType, serializer.getConverter());
     }
 
@@ -158,8 +158,8 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
     }
 
     @Override
-    public LazyDeserializingObject<MetaData> getMetaData() {
-        return metaData;
+    public LazyDeserializingObject<Metadata> getMetadata() {
+        return metadata;
     }
 
     @Override

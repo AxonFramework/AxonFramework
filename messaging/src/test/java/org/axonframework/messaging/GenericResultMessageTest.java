@@ -33,7 +33,7 @@ class GenericResultMessageTest extends MessageTestSuite<ResultMessage> {
     @Override
     protected ResultMessage buildDefaultMessage() {
         return new GenericResultMessage(new GenericMessage(
-                TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA
+                TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA
         ));
     }
 

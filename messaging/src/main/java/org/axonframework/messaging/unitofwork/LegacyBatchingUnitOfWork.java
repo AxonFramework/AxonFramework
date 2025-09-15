@@ -100,7 +100,7 @@ public class LegacyBatchingUnitOfWork<T extends Message> extends AbstractLegacyU
                 } else if (result instanceof Message) {
                     resultMessage = new GenericResultMessage(((Message) result).type(),
                                                                result,
-                                                               ((Message) result).metaData());
+                                                               ((Message) result).metadata());
                 } else {
                     resultMessage = new GenericResultMessage(
                             new MessageType(ObjectUtils.nullSafeTypeOf(result)), result

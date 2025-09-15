@@ -26,7 +26,7 @@ import java.lang.annotation.*;
  * the annotated class to the query bus.
  * <p>
  * The annotated method's first parameter is the query handled by that method. Optionally, the query handler may
- * specify a second parameter of type {@link org.axonframework.messaging.MetaData}. The active MetaData will be
+ * specify a second parameter of type {@link org.axonframework.messaging.Metadata}. The active metadata will be
  * passed if that parameter is supplied.
  *
  * @author Marc Gathier

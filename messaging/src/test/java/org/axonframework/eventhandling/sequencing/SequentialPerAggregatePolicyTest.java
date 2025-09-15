@@ -16,9 +16,11 @@
 
 package org.axonframework.eventhandling.sequencing;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
+import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
@@ -34,27 +36,64 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SequentialPerAggregatePolicyTest {
 
+    private final SequentialPerAggregatePolicy testSubject = SequentialPerAggregatePolicy.instance();
+
     @Test
-    void sequentialIdentifier() {
-        // ok, pretty useless, but everything should be tested
-        SequentialPerAggregatePolicy testSubject = new SequentialPerAggregatePolicy();
+    void sameAggregateIdentifierProducesSameSequentialIdentifier() {
+        // given
         String aggregateIdentifier = UUID.randomUUID().toString();
-        Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier), new StubProcessingContext()).orElse(null);
-        Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier), new StubProcessingContext()).orElse(null);
-        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID().toString()), new StubProcessingContext()).orElse(null);
-        Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage(
-                new MessageType("event"), "bla"
-        ), new StubProcessingContext()).orElse(null);
+        EventWithProcessingContext event = eventWithProcessingContext(aggregateIdentifier);
 
+        // when
+        Object id1 = testSubject.getSequenceIdentifierFor(event.event(), event.processingContext()).orElse(null);
+        Object id2 = testSubject.getSequenceIdentifierFor(event.event(), event.processingContext()).orElse(null);
+
+        // then
         assertEquals(id1, id2);
-        assertNotEquals(id1, id3);
-        assertNotEquals(id2, id3);
-        assertNull(id4);
     }
 
-    private DomainEventMessage newStubDomainEvent(String aggregateIdentifier) {
-        return new GenericDomainEventMessage(
-                "aggregateType", aggregateIdentifier, 0L, new MessageType("event"), new Object()
-        );
+    @Test
+    void differentAggregateIdentifiersProduceDifferentSequentialIdentifiers() {
+        // given
+        String aggregateIdentifier1 = UUID.randomUUID().toString();
+        String aggregateIdentifier2 = UUID.randomUUID().toString();
+        EventWithProcessingContext event1 = eventWithProcessingContext(aggregateIdentifier1);
+        EventWithProcessingContext event2 = eventWithProcessingContext(aggregateIdentifier2);
+
+        // when
+        Object id1 = testSubject.getSequenceIdentifierFor(event1.event(), event1.processingContext()).orElse(null);
+        Object id2 = testSubject.getSequenceIdentifierFor(event2.event(), event2.processingContext()).orElse(null);
+
+        // then
+        assertNotEquals(id1, id2);
     }
+
+    @Test
+    void processingContextWithoutAggregateIdentifierReturnsEmpty() {
+        // given
+        StubProcessingContext processingContextWithoutAggregateIdentifierResource = new StubProcessingContext();
+        EventMessage event = new GenericEventMessage(new MessageType("event"), "bla");
+
+        // when
+        Object sequenceIdentifier = testSubject.getSequenceIdentifierFor(
+                event,
+                processingContextWithoutAggregateIdentifierResource
+        ).orElse(null);
+
+        // then
+        assertNull(sequenceIdentifier);
+    }
+
+    @Nonnull
+    private EventWithProcessingContext eventWithProcessingContext(String aggregateIdentifier) {
+        EventMessage event = EventTestUtils.asEventMessage("payload");
+        StubProcessingContext processingContext = new StubProcessingContext();
+        processingContext.putResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, aggregateIdentifier);
+        return new EventWithProcessingContext(event, processingContext);
+    }
+
+    private record EventWithProcessingContext(EventMessage event, StubProcessingContext processingContext) {
+
+    }
+
 }

@@ -30,22 +30,22 @@ import java.util.Set;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class MetaDataBasedTagResolver implements TagResolver {
+public class MetadataBasedTagResolver implements TagResolver {
 
-    private final String metaDataKey;
+    private final String metadataKey;
 
     /**
-     * Constructs a {@code MetaDataBasedTagResolver} using the given metadata key.
+     * Constructs a {@code MetadataBasedTagResolver} using the given metadata key.
      *
-     * @param metaDataKey The key to extract the tag value from the event's metadata.
+     * @param metadataKey The key to extract the tag value from the event's metadata.
      */
-    public MetaDataBasedTagResolver(@Nonnull String metaDataKey) {
-        this.metaDataKey = Objects.requireNonNull(metaDataKey, "MetaDataKey cannot be null");
+    public MetadataBasedTagResolver(@Nonnull String metadataKey) {
+        this.metadataKey = Objects.requireNonNull(metadataKey, "MetadataKey cannot be null");
     }
 
     @Override
     public Set<Tag> resolve(@Nonnull EventMessage event) {
-        var tagValue = event.metaData().get(metaDataKey);
-        return tagValue == null ? Set.of() : Set.of(new Tag(metaDataKey, tagValue));
+        var tagValue = event.metadata().get(metadataKey);
+        return tagValue == null ? Set.of() : Set.of(new Tag(metadataKey, tagValue));
     }
-} 
+}

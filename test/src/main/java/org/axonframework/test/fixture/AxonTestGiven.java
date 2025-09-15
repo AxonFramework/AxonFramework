@@ -23,7 +23,7 @@ import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 
@@ -83,17 +83,17 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     @Override
-    public AxonTestPhase.Given event(@Nonnull Object payload, @Nonnull MetaData metaData) {
-        var eventMessage = toGenericEventMessage(payload, metaData);
+    public AxonTestPhase.Given event(@Nonnull Object payload, @Nonnull Metadata metadata) {
+        var eventMessage = toGenericEventMessage(payload, metadata);
         return events(eventMessage);
     }
 
-    private GenericEventMessage toGenericEventMessage(Object payload, MetaData metaData) {
+    private GenericEventMessage toGenericEventMessage(Object payload, Metadata metadata) {
         var messageType = messageTypeResolver.resolveOrThrow(payload);
         return new GenericEventMessage(
                 messageType,
                 payload,
-                metaData
+                metadata
         );
     }
 
@@ -102,7 +102,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
         var messages = events.stream()
                              .map(e -> e instanceof EventMessage message
                                      ? message
-                                     : toGenericEventMessage(e, MetaData.emptyInstance())
+                                     : toGenericEventMessage(e, Metadata.emptyInstance())
                              ).toArray(EventMessage[]::new);
         return events(messages);
     }
@@ -122,8 +122,8 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     @Override
-    public AxonTestPhase.Given command(@Nonnull Object payload, @Nonnull MetaData metaData) {
-        var commandMessage = toGenericCommandMessage(payload, metaData);
+    public AxonTestPhase.Given command(@Nonnull Object payload, @Nonnull Metadata metadata) {
+        var commandMessage = toGenericCommandMessage(payload, metadata);
         return commands(commandMessage);
     }
 
@@ -132,18 +132,18 @@ class AxonTestGiven implements AxonTestPhase.Given {
         var messages = commands.stream()
                                .map(c -> c instanceof CommandMessage message
                                        ? message
-                                       : toGenericCommandMessage(c, MetaData.emptyInstance())
+                                       : toGenericCommandMessage(c, Metadata.emptyInstance())
                                ).toArray(CommandMessage[]::new);
         return commands(messages);
     }
 
     private GenericCommandMessage toGenericCommandMessage(@Nonnull Object payload,
-                                                          @Nonnull MetaData metaData) {
+                                                          @Nonnull Metadata metadata) {
         var messageType = messageTypeResolver.resolveOrThrow(payload);
         return new GenericCommandMessage(
                 messageType,
                 payload,
-                metaData
+                metadata
         );
     }
 

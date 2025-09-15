@@ -31,7 +31,7 @@ import java.util.Map;
 
 /**
  * Generic implementation of the {@link Message} interface containing the {@link #payload() payload} and
- * {@link #metaData() metadata} in deserialized form.
+ * {@link #metadata() metadata} in deserialized form.
  * <p>
  * If a {@link GenericMessage} is created while a {@link LegacyUnitOfWork} is active it copies over the correlation data
  * of the {@code UnitOfWork} to the created message.
@@ -51,7 +51,7 @@ public class GenericMessage extends AbstractMessage {
 
     private final Object payload;
     private final Class<?> payloadType;
-    private final MetaData metaData;
+    private final Metadata metadata;
 
     private final ConversionCache convertedPayloads;
 
@@ -65,52 +65,52 @@ public class GenericMessage extends AbstractMessage {
      */
     public GenericMessage(@Nonnull MessageType type,
                           @Nullable Object payload) {
-        this(type, payload, MetaData.emptyInstance());
+        this(type, payload, Metadata.emptyInstance());
     }
 
     /**
-     * Constructs a {@code GenericMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
+     * Constructs a {@code GenericMessage} for the given {@code type}, {@code payload}, and {@code metadata}.
      * <p>
-     * The given {@code metaData} is merged with the {@link MetaData} from the correlation data of the current Unit of
+     * The given {@code metadata} is merged with the {@link Metadata} from the correlation data of the current Unit of
      * Work, if present. In case the {@code payload == null}, {@link Void} will be used as the {@code payloadType}.
      *
      * @param type     The {@link MessageType type} for this {@link Message}.
      * @param payload  The payload for this {@link Message}.
-     * @param metaData The metadata for this {@link Message}.
+     * @param metadata The metadata for this {@link Message}.
      */
     public GenericMessage(@Nonnull MessageType type,
                           @Nullable Object payload,
-                          @Nonnull Map<String, String> metaData) {
-        this(type, payload, getDeclaredPayloadType(payload), metaData);
+                          @Nonnull Map<String, String> metadata) {
+        this(type, payload, getDeclaredPayloadType(payload), metadata);
     }
 
     /**
      * Constructs a {@code GenericMessage} for the given {@code type}, {@code payload}, {@code declaredPayloadType}, and
-     * {@code metaData}.
+     * {@code metadata}.
      * <p>
-     * The given {@code metaData} is merged with the MetaData from the correlation data of the current Unit of Work, if
+     * The given {@code metadata} is merged with the Metadata from the correlation data of the current Unit of Work, if
      * present.
      *
      * @param <P>                 The generic type of the expected payload of the resulting object.
      * @param type                The {@link MessageType type} for this {@link Message}.
      * @param payload             The payload of type {@code P} for this {@link Message}.
      * @param declaredPayloadType The declared type of the {@code payload} of this {@link Message}.
-     * @param metaData            The metadata for this {@link Message}.
+     * @param metadata            The metadata for this {@link Message}.
      */
     public <P> GenericMessage(@Nonnull MessageType type,
                               @Nullable P payload,
                               @Nonnull Class<P> declaredPayloadType,
-                              @Nonnull Map<String, ?> metaData) {
+                              @Nonnull Map<String, ?> metadata) {
         this(IdentifierFactory.getInstance().generateIdentifier(),
              type,
              payload,
              declaredPayloadType,
-             CurrentUnitOfWork.correlationData().mergedWith(MetaData.from((Map<String, String>) metaData)));
+             CurrentUnitOfWork.correlationData().mergedWith(Metadata.from((Map<String, String>) metadata)));
     }
 
     /**
      * Constructs a {@code GenericMessage} for the given {@code identifier}, {@code type}, {@code payload}, and
-     * {@code metaData}, intended to reconstruct another {@link Message}.
+     * {@code metadata}, intended to reconstruct another {@link Message}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work. If you in tend to construct a new {@code GenericMessage}, please use
@@ -119,18 +119,18 @@ public class GenericMessage extends AbstractMessage {
      * @param identifier The identifier of this {@link Message}.
      * @param type       The {@link MessageType type} for this {@link Message}.
      * @param payload    The payload for this {@link Message}.
-     * @param metaData   The metadata for this {@link Message}.
+     * @param metadata   The metadata for this {@link Message}.
      */
     public GenericMessage(@Nonnull String identifier,
                           @Nonnull MessageType type,
                           @Nullable Object payload,
-                          @Nonnull Map<String, String> metaData) {
-        this(identifier, type, payload, getDeclaredPayloadType(payload), metaData);
+                          @Nonnull Map<String, String> metadata) {
+        this(identifier, type, payload, getDeclaredPayloadType(payload), metadata);
     }
 
     /**
      * Constructs a {@code GenericMessage} for the given {@code identifier}, {@code type}, {@code payload}, and
-     * {@code metaData}, intended to reconstruct another {@link Message}.
+     * {@code metadata}, intended to reconstruct another {@link Message}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work. If you in tend to construct a new {@code GenericMessage}, please use
@@ -141,26 +141,26 @@ public class GenericMessage extends AbstractMessage {
      * @param type                The {@link MessageType type} for this {@link Message}.
      * @param payload             The payload of type {@code P} for this {@link Message}.
      * @param declaredPayloadType The declared type of the {@code payload} of this {@link Message}.
-     * @param metaData            The metadata for this {@link Message}.
+     * @param metadata            The metadata for this {@link Message}.
      */
     public <P> GenericMessage(@Nonnull String identifier,
                               @Nonnull MessageType type,
                               @Nullable P payload,
                               @Nonnull Class<P> declaredPayloadType,
-                              @Nonnull Map<String, String> metaData) {
+                              @Nonnull Map<String, String> metadata) {
         super(identifier, type);
         this.payload = payload;
         this.payloadType = declaredPayloadType;
-        this.metaData = MetaData.from(metaData);
+        this.metadata = Metadata.from(metadata);
         this.convertedPayloads = new ConversionCache(payload);
     }
 
     private GenericMessage(@Nonnull GenericMessage original,
-                           @Nonnull MetaData metaData) {
+                           @Nonnull Metadata metadata) {
         super(original.identifier(), original.type());
         this.payload = original.payload();
         this.payloadType = original.payloadType();
-        this.metaData = metaData;
+        this.metadata = metadata;
         this.convertedPayloads = new ConversionCache(payload);
     }
 
@@ -178,7 +178,7 @@ public class GenericMessage extends AbstractMessage {
     /**
      * Construct an empty message.
      *
-     * @return A message with {@code null} {@link Message#payload()}, no {@link MetaData}, and a {@link Message#type()}
+     * @return A message with {@code null} {@link Message#payload()}, no {@link Metadata}, and a {@link Message#type()}
      * of {@code "empty"}.
      */
     public static Message emptyMessage() {
@@ -214,14 +214,14 @@ public class GenericMessage extends AbstractMessage {
 
     @Override
     @Nonnull
-    public MetaData metaData() {
-        return this.metaData;
+    public Metadata metadata() {
+        return this.metadata;
     }
 
     @Override
     @Nonnull
-    protected Message withMetaData(MetaData metaData) {
-        return new GenericMessage(this, metaData);
+    protected Message withMetadata(Metadata metadata) {
+        return new GenericMessage(this, metadata);
     }
 
     @Override
@@ -232,6 +232,6 @@ public class GenericMessage extends AbstractMessage {
 
         return ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())
                 ? (Message) this
-                : new GenericMessage(identifier(), type(), convertedPayload, metaData());
+                : new GenericMessage(identifier(), type(), convertedPayload, metadata());
     }
 }

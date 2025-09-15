@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
@@ -168,13 +168,13 @@ class DefaultDeadLetterJdbcConverterTest {
         ResultSet mock = mock(ResultSet.class);
         String timestamp = DateTimeUtils.formatInstant(Instant.now());
         byte[] serializedPayload = eventSerializer.serialize("some-payload", byte[].class).getData();
-        byte[] serializedMetaData = eventSerializer.serialize(MetaData.emptyInstance(), byte[].class).getData();
+        byte[] serializedMetadata = eventSerializer.serialize(Metadata.emptyInstance(), byte[].class).getData();
 
         // Payload mocking
         when(mock.getBytes(schema.payloadColumn())).thenReturn(serializedPayload);
         when(mock.getString(schema.payloadTypeColumn())).thenReturn(String.class.getName());
-        // MetaData mocking
-        when(mock.getBytes(schema.metaDataColumn())).thenReturn(serializedMetaData);
+        // Metadata mocking
+        when(mock.getBytes(schema.metadataColumn())).thenReturn(serializedMetadata);
         // Event Message mocking
         when(mock.getString(schema.eventIdentifierColumn())).thenReturn(UUID.randomUUID().toString());
         when(mock.getString(schema.typeColumn()))
@@ -202,7 +202,7 @@ class DefaultDeadLetterJdbcConverterTest {
         when(mock.getString(schema.sequenceIdentifierColumn())).thenReturn(UUID.randomUUID().toString());
         when(mock.getString(schema.enqueuedAtColumn())).thenReturn(timestamp);
         when(mock.getString(schema.lastTouchedColumn())).thenReturn(timestamp);
-        when(mock.getBytes(schema.diagnosticsColumn())).thenReturn(serializedMetaData);
+        when(mock.getBytes(schema.diagnosticsColumn())).thenReturn(serializedMetadata);
         // Cause mocking
         if (withCause) {
             when(mock.getString(schema.causeTypeColumn())).thenReturn(CAUSE_TYPE);

@@ -32,8 +32,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class MetadataContextGetterTest {
 
     private final EventMessage message = asEventMessage("MyEvent")
-            .andMetaData(Collections.singletonMap("myKeyOne", "myValueTwo"))
-            .andMetaData(Collections.singletonMap("MyKeyTwo", "2"));
+            .andMetadata(Collections.singletonMap("myKeyOne", "myValueTwo"))
+            .andMetadata(Collections.singletonMap("MyKeyTwo", "2"));
 
     @Test
     void shouldReceiveMetadataKeysFromMessage() {

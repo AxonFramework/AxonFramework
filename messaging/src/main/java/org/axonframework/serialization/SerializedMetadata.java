@@ -16,12 +16,12 @@
 
 package org.axonframework.serialization;
 
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.util.Objects;
 
 /**
- * Represents the serialized form of a {@link MetaData} instance.
+ * Represents the serialized form of a {@link Metadata} instance.
  *
  * @param <T> The data type representing the serialized object
  * @author Allard Buijze
@@ -30,32 +30,32 @@ import java.util.Objects;
  * @deprecated By shifting from the {@link Serializer} to the {@link Converter}, this exception becomes obsolete.
  */
 @Deprecated(forRemoval = true, since = "5.0.0")
-public class SerializedMetaData<T> implements SerializedObject<T> {
+public class SerializedMetadata<T> implements SerializedObject<T> {
 
-    private static final String METADATA_CLASS_NAME = MetaData.class.getName();
+    private static final String METADATA_CLASS_NAME = Metadata.class.getName();
 
     private final SimpleSerializedObject<T> delegate;
 
     /**
-     * Construct an instance with given {@code bytes} representing the serialized form of a {@link MetaData}
+     * Construct an instance with given {@code bytes} representing the serialized form of a {@link Metadata}
      * instance.
      *
-     * @param data     data representing the serialized form of a {@link MetaData} instance.
+     * @param data     data representing the serialized form of a {@link Metadata} instance.
      * @param dataType The type of data
      */
-    public SerializedMetaData(T data, Class<T> dataType) {
+    public SerializedMetadata(T data, Class<T> dataType) {
         delegate = new SimpleSerializedObject<>(data, dataType, METADATA_CLASS_NAME, null);
     }
 
     /**
-     * Indicates whether the given {@code serializedObject} represents a serialized form of a MetaData object,
-     * such as the ones created by this class (see {@link #SerializedMetaData(Object, Class)}.
+     * Indicates whether the given {@code serializedObject} represents a serialized form of a Metadata object,
+     * such as the ones created by this class (see {@link #SerializedMetadata(Object, Class)}.
      *
-     * @param serializedObject The object to check for Meta Data
-     * @return {@code true} if the serialized objects represents serialized meta data, otherwise
+     * @param serializedObject The object to check for metadata
+     * @return {@code true} if the serialized objects represents serialized metadata, otherwise
      *         {@code false}.
      */
-    public static boolean isSerializedMetaData(SerializedObject<?> serializedObject) {
+    public static boolean isSerializedMetadata(SerializedObject<?> serializedObject) {
         return serializedObject != null
                 && serializedObject.getType() != null
                 && METADATA_CLASS_NAME.equals(serializedObject.getType().getName());
@@ -84,7 +84,7 @@ public class SerializedMetaData<T> implements SerializedObject<T> {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        SerializedMetaData<?> that = (SerializedMetaData<?>) o;
+        SerializedMetadata<?> that = (SerializedMetadata<?>) o;
         return Objects.equals(delegate, that.delegate);
     }
 

@@ -20,14 +20,14 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * JsonDeserializer implementation that deserializes MetaData instances.
+ * JsonDeserializer implementation that deserializes Metadata instances.
  *
  * @author Allard Buijze
  * @since 2.4.2
@@ -35,7 +35,7 @@ import java.util.Map;
  * TODO #3602 remove
  */
 @Deprecated(forRemoval = true, since = "5.0.0")
-public class MetaDataDeserializer extends JsonDeserializer<MetaData> {
+public class MetadataDeserializer extends JsonDeserializer<Metadata> {
 
     @Override
     public Object deserializeWithType(JsonParser jsonParser, DeserializationContext ctxt, TypeDeserializer typeDeserializer) throws IOException {
@@ -44,11 +44,11 @@ public class MetaDataDeserializer extends JsonDeserializer<MetaData> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public MetaData deserialize(JsonParser jp, DeserializationContext ctxt)
+    public Metadata deserialize(JsonParser jp, DeserializationContext ctxt)
             throws IOException {
         JsonDeserializer<Object> deserializer = ctxt.findRootValueDeserializer(
                 ctxt.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
 
-        return MetaData.from((Map) deserializer.deserialize(jp, ctxt, new HashMap<>()));
+        return Metadata.from((Map) deserializer.deserialize(jp, ctxt, new HashMap<>()));
     }
 }

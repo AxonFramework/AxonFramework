@@ -20,33 +20,33 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 
 /**
- * A {@link RoutingStrategy} implementation that uses the value in the {@link org.axonframework.messaging.MetaData} of a
+ * A {@link RoutingStrategy} implementation that uses the value in the {@link org.axonframework.messaging.Metadata} of a
  * {@link CommandMessage} assigned to a given key.
  * <p>
- * The value's {@code toString()} is used to convert the {@code MetaData} value to a String.
+ * The value's {@code toString()} is used to convert the {@code Metadata} value to a String.
  *
  * @author Allard Buijze
  * @since 2.0.0
  */
-public class MetaDataRoutingStrategy implements RoutingStrategy {
+public class MetadataRoutingStrategy implements RoutingStrategy {
 
-    private final String metaDataKey;
+    private final String metadataKey;
 
     /**
-     * Instantiate a {@code MetaDataRoutingStrategy} based on the fields contained in the give {@code builder}.
+     * Instantiate a {@code MetadataRoutingStrategy} based on the fields contained in the give {@code builder}.
      * <p>
-     * Will assert that the {@code metaDataKey} is not an empty {@link String} or {@code null} and will throw an
+     * Will assert that the {@code metadataKey} is not an empty {@link String} or {@code null} and will throw an
      * {@link AxonConfigurationException} if this is the case.
      *
-     * @param metaDataKey The key in the {@link org.axonframework.messaging.MetaData} to use for routing.
+     * @param metadataKey The key in the {@link org.axonframework.messaging.Metadata} to use for routing.
      */
-    public MetaDataRoutingStrategy(String metaDataKey) {
-        this.metaDataKey = metaDataKey;
+    public MetadataRoutingStrategy(String metadataKey) {
+        this.metadataKey = metadataKey;
     }
 
     @Override
     public String getRoutingKey(@Nonnull CommandMessage command) {
-        Object value = command.metaData().get(metaDataKey);
+        Object value = command.metadata().get(metadataKey);
         return value == null ? null : value.toString();
     }
 }

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -143,15 +143,15 @@ public abstract class CurrentUnitOfWork {
     }
 
     /**
-     * Returns the Correlation Data attached to the current Unit of Work, or an empty {@link MetaData} instance
+     * Returns the Correlation Data attached to the current Unit of Work, or an empty {@link Metadata} instance
      * if no Unit of Work is started.
      *
-     * @return a MetaData instance representing the current Unit of Work's correlation data, or an empty MetaData
+     * @return a Metadata instance representing the current Unit of Work's correlation data, or an empty Metadata
      * instance if no Unit of Work is started.
      * @see LegacyUnitOfWork#getCorrelationData()
      */
-    public static MetaData correlationData() {
-        return CurrentUnitOfWork.map(LegacyUnitOfWork::getCorrelationData).orElse(MetaData.emptyInstance());
+    public static Metadata correlationData() {
+        return CurrentUnitOfWork.map(LegacyUnitOfWork::getCorrelationData).orElse(Metadata.emptyInstance());
     }
 
     private CurrentUnitOfWork() {

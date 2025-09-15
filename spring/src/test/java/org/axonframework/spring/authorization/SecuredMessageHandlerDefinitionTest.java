@@ -43,10 +43,10 @@ class SecuredMessageHandlerDefinitionTest {
     @Test
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void shouldAllowWhenAuthorityMatch() {
-        Map<String, String> metaData = new java.util.HashMap<>();
-        metaData.put("authorities", new SimpleGrantedAuthority("ROLE_aggregate.create").getAuthority());
+        Map<String, String> metadata = new java.util.HashMap<>();
+        metadata.put("authorities", new SimpleGrantedAuthority("ROLE_aggregate.create").getAuthority());
         testSubject.givenNoPriorActivity()
-                   .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER), metaData)
+                   .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER), metadata)
                    .expectEventsMatching(exactSequenceOf(predicate(
                            eventMessage -> eventMessage.payloadType().isAssignableFrom(AggregateCreatedEvent.class)
                    )));
@@ -55,11 +55,11 @@ class SecuredMessageHandlerDefinitionTest {
     @Test
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void shouldDenyWhenAuthorityDoesNotMatch() {
-        Map<String, String> metaData = new java.util.HashMap<>();
-        metaData.put("authorities", new SimpleGrantedAuthority("ROLE_anonymous").getAuthority());
+        Map<String, String> metadata = new java.util.HashMap<>();
+        metadata.put("authorities", new SimpleGrantedAuthority("ROLE_anonymous").getAuthority());
         testSubject.givenNoPriorActivity()
                    .when(new CreateAggregateCommand(TEST_AGGREGATE_IDENTIFIER),
-                         metaData)
+                         metadata)
                    .expectException(UnauthorizedMessageException.class)
                    .expectExceptionMessage(StringStartsWith.startsWith("Unauthorized message"));
     }
@@ -67,10 +67,10 @@ class SecuredMessageHandlerDefinitionTest {
     @Test
     @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
     void shouldAllowUnannotatedMethods() {
-        Map<String, String> metaData = new java.util.HashMap<>();
-        metaData.put("authorities", new SimpleGrantedAuthority("ROLE_anonymous").getAuthority());
+        Map<String, String> metadata = new java.util.HashMap<>();
+        metadata.put("authorities", new SimpleGrantedAuthority("ROLE_anonymous").getAuthority());
         testSubject.given(new AggregateCreatedEvent(TEST_AGGREGATE_IDENTIFIER))
-                   .when(new UpdateAggregateCommand(TEST_AGGREGATE_IDENTIFIER), metaData)
+                   .when(new UpdateAggregateCommand(TEST_AGGREGATE_IDENTIFIER), metadata)
                    .expectEventsMatching(exactSequenceOf(predicate(
                            eventMessage -> eventMessage.payloadType().isAssignableFrom(AggregateUpdatedEvent.class)
                    )));

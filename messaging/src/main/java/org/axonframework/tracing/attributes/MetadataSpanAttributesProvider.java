@@ -36,7 +36,7 @@ public class MetadataSpanAttributesProvider implements SpanAttributesProvider {
     @Override
     public @Nonnull Map<String, String> provideForMessage(@Nonnull Message message) {
         Map<String, String> map = new HashMap<>();
-        message.metaData().forEach((key, value) -> map.put("axon_metadata_" + key, value.toString()));
+        message.metadata().forEach((key, value) -> map.put("axon_metadata_" + key, value.toString()));
         return map;
     }
 }

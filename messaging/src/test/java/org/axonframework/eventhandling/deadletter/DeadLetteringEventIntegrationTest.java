@@ -35,7 +35,7 @@ import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreami
 import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.annotation.MessageIdentifier;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
@@ -172,7 +172,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                 }
                 return Decisions.enqueue(
                         ThrowableCause.truncated(decisionThrowable),
-                        l -> MetaData.with(
+                        l -> Metadata.with(
                                 "retries",
                                 Integer.toString(Integer.parseInt(l.diagnostics().getOrDefault("retries", "0")) + 1)
                         )

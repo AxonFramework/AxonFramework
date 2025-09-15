@@ -101,11 +101,11 @@ public class CommandValidator {
                     );
                 }
                 assertCommandEquality(counter, expectedMessage.payload(), actualItem.payload());
-                if (!expectedMessage.metaData().equals(actualItem.metaData())) {
+                if (!expectedMessage.metadata().equals(actualItem.metadata())) {
                     throw new AxonAssertionError(
-                            "Unexpected Meta Data of command at position " + counter + " (0-based).\n"
-                                    + "Expected <" + expectedMessage.metaData() + ">,\n"
-                                    + " but got <" + actualItem.metaData() + ">."
+                            "Unexpected metadata of command at position " + counter + " (0-based).\n"
+                                    + "Expected <" + expectedMessage.metadata() + ">,\n"
+                                    + " but got <" + actualItem.metadata() + ">."
                     );
                 }
             } else {
