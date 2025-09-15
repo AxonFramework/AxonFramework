@@ -48,8 +48,7 @@ Major API Changes
   results), Command Handlers (one result), and Query Handlers (N results). Added, the `MessageStream` will function as a
   replacement for components like the `DomainEventStream` and `BlockingStream` on the `EventStore`. As such, the
   `MessageStream` changes **a lot** of (public) APIs within Axon Framework. Please check
-  the [Message Stream](#message-stream) section for more details, like an exhaustive list of all the adjusted
-  interfaces.
+  the [Message Stream](#message-stream) section for more details.
 * The API of all infrastructure components is rewritten to be "async native." This means that the
   aforementioned [Unit of Work](#unit-of-work) adjustments flow through most APIs, as well as the use of
   a [Message Stream](#message-stream) to provide a way to support imperative and reactive message handlers. See
@@ -311,13 +310,15 @@ Nonetheless, if you **do** use these operations, it is good to know they've chan
 
 The following classes have undergone changes to accompany this shift:
 
-* The `CommandBus`
-* The `CommandGateway`
-* The `EventStorageEngine`
-* The `EventStore`
-* The `EventProcessors`
+* The `CommandBus` - Read [here](#command-dispatching-and-handling) for more details.
+* The `CommandGateway` - Read [here](#command-dispatching-and-handling) for more details.
+* The `EventStorageEngine` - Read [here](#event-storage) for more details.
+* The `EventStore` - Read [here](#event-store) for more details.
+* The `EventProcessors` - Read [here](#event-processors) for more details.
 * The `Repository`
 * The `StreamableMessageSource`
+* The `QueryBus` - Read [here](#query-dispatching-and-handling) for more details.
+* The `QueryGateway` - Read [here](#query-dispatching-and-handling) for more details.
 
 ## Command Dispatching and Handling
 
@@ -331,7 +332,7 @@ the [Command Dispatcher](#command-dispatcher) section.
 The `CommandBus` has undergone some minor API changes to align with the [Async Native API](#async-native-apis) and ease
 of configuration. The alignment with the Async Native API shows itself in being able to provide the `ProcessingContext`.
 Giving the active `ProcessingContext` is **paramount** if a command should be dispatched as part of a running message
-handling task. For example, if an event handler should dispatch a command (e.g., was with process automations), it is
+handling task. For example, if an event handler should dispatch a command (e.g., as with process automations), it is
 strongly advised to provide the active `ProcessingContext` as part of the dispatch operation.
 
 The `CommandBus` is now fixed to an asynchronous flow, by sporting the
@@ -344,7 +345,7 @@ combined with the new `QualifiedName` (as described [here](#message-type-and-qua
 `String commandName` parameter. This makes it so that subscribe looks like
 `CommandBus#subscribe(QualifiedName, CommandHandler)` i.o. `CommandBus#subscribe(String, MessageHandler<?>)`. On top of
 that, it is now possible to register a single handler for multiple names, through
-`CommandBus#subscribe(List<QualifiedName>, CommandHandler)`. This ensures that registering a Command Handling
+`CommandBus#subscribe(Set<QualifiedName>, CommandHandler)`. This ensures that registering a Command Handling
 Component (read: object with several command handlers in it) can be performed seamlessly. For ease of use, there's thus
 also a `CommandBus#subscribe(CommandHandlingComponent)` operation present. The "old-fashioned" aggregate is, for
 example, a Command Handling Component at heart. With the current handler subscription API, this single class can be
@@ -362,7 +363,7 @@ open [an issue](https://github.com/AxonFramework/AxonFramework/issues) for this.
 The `CommandGateway` has undergone some minor API changes to align with the [Async Native API](#async-native-apis).
 This alignment shows itself in being able to provide the `ProcessingContext`. Giving the active `ProcessingContext` is *
 *paramount** if a command should be dispatched as part of a running message handling task. For example, if an event
-handler should dispatch a command (e.g., was with process automations), it is strongly advised to provide the active
+handler should dispatch a command (e.g., as with process automations), it is strongly advised to provide the active
 `ProcessingContext` as part of the send operation.
 
 For a removal perspective, similarly as with the `CommandBus`, the `CommandCallback` has not returned on this interface.
@@ -1490,12 +1491,71 @@ Context.
 Axon Framework will automatically gather them and set them on their respective infrastructure components. The `Message`
 generic specified on the `MessageHandlerInterceptor` and `MessageDispatchInterceptor` will be taken into account in our
 auto-configuration, ensuring (e.g.) that `MessageDispatchInterceptor<QueryMessage>` beans are **only** used for query
-dispatching components.  
+dispatching components.
+
+## Query Dispatching and Handling
+
+This section describes numerous changes around Query Dispatching and Handling. For a reintroduction to the
+`QueryBus` and `QueryGateway`, check [this](#query-bus) and [this](#query-gateway) section respectively. For the
+newly **recommended** approach to dispatch queries from within another message handling function, please check
+the [Query Dispatcher](#query-dispatcher) section.
+
+### Query Bus
+
+The `QueryBus` has undergone some API changes to align with the [Async Native API](#async-native-apis) and ease
+of configuration. The alignment with the Async Native API shows itself in being able to provide the `ProcessingContext`.
+Giving the active `ProcessingContext` is **paramount** if a query should be dispatched as part of a running message
+handling task. For example, if an event handler should dispatch a query (e.g., as with process automations), it is
+strongly advised to provide the active `ProcessingContext` as part of the dispatch operation.
+
+The dispatch operations now align with the newly introduced [Message Stream](#message-stream). This, for example,
+adjusts the `QueryBus#query` method to return a `MessageStream` of the `QueryResponseMessage` instead of a
+`CompletableFuture`. As the `MessageStream` supports 0, 1, or N responses, this shifts lets the `QueryBus#query` method
+align with whatever query result coming back from query handlers.
+
+Subscribing query handlers has been adjusted to allow easier registration of query handling lambdas. This shift was
+combined with the new `QualifiedName` (as described [here](#message-type-and-qualified-name)) replacing the previous
+`String queryName` parameter. Lastly, the old subscribe operation enforced providing a `Type`, which has been mapped to
+a... TODO - Likely this becomes the ResponseType, but not sure yet...
+Both the query name and the response name/type are combined in a `QueryHandlerName` object.
+This makes it so that subscribe looks like
+`QueryBus#subscribe(QueryHandlerName, QueryHandler)` i.o. `QueryBus#subscribe(String, Type, MessageHandler<?>)`.
+On top of that, it is now possible to register a single handler for multiple names, through
+`QueryBus#subscribe(Set<QueryHandlerName>, QueryHandler)`. This ensures that registering a Query Handling
+Component (read: object with several query handlers in it) can be performed seamlessly. For ease of use, there's thus
+also a `QueryBus#subscribe(QueryHandlingComponent)` operation present.
+
+### Query Gateway
+
+The `QueryGateway` has undergone some minor API changes to align with the [Async Native API](#async-native-apis).
+This alignment shows itself in being able to provide the `ProcessingContext`. Giving the active `ProcessingContext` is *
+*paramount** if a query should be dispatched as part of a running message handling task. For example, if an event
+handler should dispatch a query (e.g., as with process automations), it is strongly advised to provide the active
+`ProcessingContext` as part of the send operation.
+
+On top of that, we have eliminated use of the `ResponseType` **entirely** from the `QueryGateway`, as we feel the
+`ResponseType` is an internal concern; not something to be bothered with when dispatching queries.
+To keep support for querying a single or multiple instances, the gateway now has dedicated methods:
+
+1. `CompletableFuture<R> QueryGateway#query(Object, Class<R>, ProcessingContext)`
+2. `CompletableFuture<List<R>> QueryGateway#queryMany(Object, Class<R>, ProcessingContext)`
+
+This shift is inline with the streaming query (introduced in Axon Framework 4.6), which also does **not** allow you to
+define the `ResponseType`. 
+
+As might be clear, the `QueryGateway` has an entirely new look and feel. If there are any operations we have
+removed/adjusted you miss, or if you have any other suggestions for improvement, please
+construct [an issue](https://github.com/AxonFramework/AxonFramework/issues) for us.
+
+### Query Dispatcher
+
+#TODO
 
 Minor API Changes
 =================
 
-* The `Repository`, just as other components, has been made [async native](#async-native-apis). This means methods return a
+* The `Repository`, just as other components, has been made [async native](#async-native-apis). This means methods
+  return a
   `CompletableFuture` instead of the loaded `Aggregate`. Furthermore, the notion of aggregate was removed from the
   `Repository`, in favor of talking about `ManagedEntity` instances. This makes the `Repository` applicable for
   non-aggregate solutions too.
@@ -1512,7 +1572,8 @@ Minor API Changes
   `AggregateLifecycle#apply` method.
 * The `EventStorageEngine` uses append, source, and streaming conditions, for appending, sourcing, and streaming events,
   as described in the [Event Store](#event-store) section. Furthermore, operations have been made "async-native," as
-  described [here](#async-native-apis). This is marked as a minor API changes since the `EventStorageEngine` should not be
+  described [here](#async-native-apis). This is marked as a minor API changes since the `EventStorageEngine` should not
+  be
   used directly
 * The `RollbackConfiguration` interface and the `rollbackConfiguration()` builder method have been removed from all
   EventProcessor builders. Exceptions need to be handled by an interceptor, or otherwise they are always considered an
@@ -1548,10 +1609,11 @@ Besides the entry and table rename, several columns have been renamed compared t
 7. `DomainEventEntry#metaData` (inherited from `AbstractEventEntry`) is now called `AggregateEventEntry#metadata`.
 
 Furthermore, some of the expectations placed on the fields have adjusted, being:
+
 1. The `payloadRevision`, renamed to `version`, is **not** optional anymore.
 2. The `payload` field no longer has a max column length of 10_000.
 3. The `metadata` field no longer has a max column length of 10_000.
-4. The `aggregateIdentifier` **is** optional right now. 
+4. The `aggregateIdentifier` **is** optional right now.
 5. The `sequenceNumber`, renamed to `aggregateSequenceNumber`, is **not** optional anymore.
 
 Lastly, the sequence generator for the global index (resulting in the event's position in the event store) has been
@@ -1610,53 +1672,53 @@ This section contains five tables:
 
 ### Moved or Renamed Classes
 
-| Axon 4                                                                                                  | Axon 5                                                                            | Module change?                   |
-|---------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|----------------------------------|
-| org.axonframework.common.caching.EhCache3Adapter                                                        | org.axonframework.common.caching.EhCacheAdapter                                   | No                               |
-| org.axonframework.axonserver.connector.util.ExecutorServiceBuilder                                      | org.axonframework.util.ExecutorServiceFactory                                     | Yes. Moved to `axon-messaging`   |
-| org.axonframework.eventsourcing.MultiStreamableMessageSource                                            | org.axonframework.eventhandling.processors.streaming.MultiStreamableMessageSource | No                               |
-| org.axonframework.eventhandling.EventBus                                                                | org.axonframework.eventhandling.EventSink                                         | No                               |
-| org.axonframework.eventhandling.sequencing.MetadataSequencingPolicy                                     | org.axonframework.eventhandling.sequencing.MetadataSequencingPolicy               | No                               |
-| org.axonframework.commandhandling.CommandHandler                                                        | org.axonframework.commandhandling.annotation.CommandHandler                       | No                               |
-| org.axonframework.eventhandling.EventHandler                                                            | org.axonframework.eventhandling.annotations.EventHandler                          | No                               |
-| org.axonframework.queryhandling.QueryHandler                                                            | org.axonframework.queryhandling.annotation.QueryHandler                           | No                               |
-| org.axonframework.config.Configuration                                                                  | org.axonframework.configuration.Configuration                                     | Yes. Moved to `axon-messaging`   |
-| org.axonframework.config.Component                                                                      | org.axonframework.configuration.Component                                         | Yes. Moved to `axon-messaging`   |
-| org.axonframework.config.ConfigurerModule                                                               | org.axonframework.configuration.ConfigurationEnhancer                             | Yes. Moved to `axon-messaging`   |
-| org.axonframework.config.ModuleConfiguration                                                            | org.axonframework.configuration.Module                                            | Yes. Moved to `axon-messaging`   |
-| org.axonframework.config.LifecycleHandler                                                               | org.axonframework.configuration.LifecycleHandler                                  | Yes. Moved to `axon-messaging`   |
-| org.axonframework.config.LifecycleOperations                                                            | org.axonframework.configuration.LifecycleRegistry                                 | Yes. Moved to `axon-messaging`   |
-| org.axonframework.commandhandling.CommandCallback                                                       | org.axonframework.commandhandling.gateway.CommandResult                           | No                               |
-| org.axonframework.commandhandling.callbacks.FutureCallback                                              | org.axonframework.commandhandling.gateway.FutureCommandResult                     | No                               |
-| org.axonframework.modelling.MetaDataAssociationResolver                                                 | org.axonframework.modelling.MetadataAssociationResolver                           | No                               |
-| org.axonframework.modelling.command.Repository                                                          | org.axonframework.modelling.repository.Repository                                 | No                               |
-| org.axonframework.modelling.command.CommandTargetResolver                                               | org.axonframework.modelling.command.EntityIdResolver                              | No                               |
-| org.axonframework.modelling.command.ForwardingMode                                                      | org.axonframework.modelling.command.entity.child.EventTargetMatcher               | No                               |
-| org.axonframework.modelling.command.AggregateMember                                                     | org.axonframework.modelling.entity.annotation.EntityMember                        | No                               |
-| org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory                       | org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel            | No                               |
-| org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityCollectionDefinition  | org.axonframework.modelling.entity.annotation.ListEntityModelDefinition           | No                               |
-| org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityDefinition            | org.axonframework.modelling.entity.annotation.SingleEntityChildModelDefinition    | No                               |
-| org.axonframework.modelling.command.inspection.AbstractChildEntityDefinition                            | org.axonframework.modelling.entity.annotation.AbstractEntityChildModelDefinition  | No                               |
-| org.axonframework.axonserver.connector.ServerConnectorConfigurerModule                                  | org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer            | No                               |
-| org.axonframework.serialization.CannotConvertBetweenTypesException                                      | org.axonframework.serialization.ConversionException                               | No                               |
-| org.axonframework.serialization.json.JacksonSerializer                                                  | org.axonframework.serialization.json.JacksonConverter                             | No                               |
-| org.axonframework.commandhandling.distributed.CommandDispatchException                                  | org.axonframework.commandhandling.CommandDispatchException                        | No                               |
-| org.axonframework.axonserver.connector.command.CommandPriorityCalculator                                | org.axonframework.commandhandling.CommandPriorityCalculator                       | Yes. Moved to `axon-messaging`   |
-| org.axonframework.commandhandling.distribute.MetaDataRoutingStrategy                                    | org.axonframework.commandhandling.MetadataRoutingStrategy                         | Yes. Moved to `axon-messaging`   |
-| org.axonframework.commandhandling.distribute.RoutingStrategy                                            | org.axonframework.commandhandling.RoutingStrategy                                 | Yes. Moved to `axon-messaging`   |
-| org.axonframework.commandhandling.distribute.UnresolvedRoutingKeyPolicy                                 | org.axonframework.commandhandling.UnresolvedRoutingKeyPolicy                      | Yes. Moved to `axon-messaging`   |
-| org.axonframework.commandhandling.distribute.AnnotationRoutingStrategy                                  | org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy            | Yes. Moved to `axon-messaging`   |
-| org.axonframework.serialization.json.JacksonSerializer                                                  | org.axonframework.serialization.json.JacksonConverter                             | No                               |
-| org.axonframework.springboot.SerializerProperties                                                       | org.axonframework.springboot.ConverterProperties                                  | No                               |
-| org.axonframework.springboot.SerializerProperties.SerializerType                                        | org.axonframework.springboot.ConverterProperties.ConverterType                    | No                               |
-| org.axonframework.messaging.InterceptorChain                                                            | org.axonframework.messaging.MessageHandlerInterceptorChain                        | No                               |
-| org.axonframework.messaging.MetaData                                                                    | org.axonframework.messaging.Metadata                                              | No                               |
-| org.axonframework.messaging.annotation.MetaDataValue                                                    | org.axonframework.messaging.annotation.MetadataValue                              | No                               |
-| org.axonframework.serialization.SerializationException                                                  | org.axonframework.serialization.ConversionException                               | No                               |
-| org.axonframework.serialization.avro.AvroSerializer                                                     | org.axonframework.serialization.avro.AvroConverter                                | No                               |
-| org.axonframework.serialization.avro.AvroSerializerStrategy                                             | org.axonframework.serialization.avro.AvroConverterStrategy                        | No                               |
-| org.axonframework.serialization.avro.AvroSerializerStrategyConfig                                       | org.axonframework.serialization.avro.AvroConverterStrategyConfiguration           | No                               |
-| org.axonframework.serialization.avro.SpecificRecordBaseSerializerStrategy                               | org.axonframework.serialization.avro.SpecificRecordBaseConverterStrategy          | No                               |
+| Axon 4                                                                                                 | Axon 5                                                                            | Module change?                 |
+|--------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|--------------------------------|
+| org.axonframework.common.caching.EhCache3Adapter                                                       | org.axonframework.common.caching.EhCacheAdapter                                   | No                             |
+| org.axonframework.axonserver.connector.util.ExecutorServiceBuilder                                     | org.axonframework.util.ExecutorServiceFactory                                     | Yes. Moved to `axon-messaging` |
+| org.axonframework.eventsourcing.MultiStreamableMessageSource                                           | org.axonframework.eventhandling.processors.streaming.MultiStreamableMessageSource | No                             |
+| org.axonframework.eventhandling.EventBus                                                               | org.axonframework.eventhandling.EventSink                                         | No                             |
+| org.axonframework.eventhandling.sequencing.MetadataSequencingPolicy                                    | org.axonframework.eventhandling.sequencing.MetadataSequencingPolicy               | No                             |
+| org.axonframework.commandhandling.CommandHandler                                                       | org.axonframework.commandhandling.annotation.CommandHandler                       | No                             |
+| org.axonframework.eventhandling.EventHandler                                                           | org.axonframework.eventhandling.annotations.EventHandler                          | No                             |
+| org.axonframework.queryhandling.QueryHandler                                                           | org.axonframework.queryhandling.annotation.QueryHandler                           | No                             |
+| org.axonframework.config.Configuration                                                                 | org.axonframework.configuration.Configuration                                     | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.Component                                                                     | org.axonframework.configuration.Component                                         | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ConfigurerModule                                                              | org.axonframework.configuration.ConfigurationEnhancer                             | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ModuleConfiguration                                                           | org.axonframework.configuration.Module                                            | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleHandler                                                              | org.axonframework.configuration.LifecycleHandler                                  | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleOperations                                                           | org.axonframework.configuration.LifecycleRegistry                                 | Yes. Moved to `axon-messaging` |
+| org.axonframework.commandhandling.CommandCallback                                                      | org.axonframework.commandhandling.gateway.CommandResult                           | No                             |
+| org.axonframework.commandhandling.callbacks.FutureCallback                                             | org.axonframework.commandhandling.gateway.FutureCommandResult                     | No                             |
+| org.axonframework.modelling.MetaDataAssociationResolver                                                | org.axonframework.modelling.MetadataAssociationResolver                           | No                             |
+| org.axonframework.modelling.command.Repository                                                         | org.axonframework.modelling.repository.Repository                                 | No                             |
+| org.axonframework.modelling.command.CommandTargetResolver                                              | org.axonframework.modelling.command.EntityIdResolver                              | No                             |
+| org.axonframework.modelling.command.ForwardingMode                                                     | org.axonframework.modelling.command.entity.child.EventTargetMatcher               | No                             |
+| org.axonframework.modelling.command.AggregateMember                                                    | org.axonframework.modelling.entity.annotation.EntityMember                        | No                             |
+| org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory                      | org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel            | No                             |
+| org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityCollectionDefinition | org.axonframework.modelling.entity.annotation.ListEntityModelDefinition           | No                             |
+| org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityDefinition           | org.axonframework.modelling.entity.annotation.SingleEntityChildModelDefinition    | No                             |
+| org.axonframework.modelling.command.inspection.AbstractChildEntityDefinition                           | org.axonframework.modelling.entity.annotation.AbstractEntityChildModelDefinition  | No                             |
+| org.axonframework.axonserver.connector.ServerConnectorConfigurerModule                                 | org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer            | No                             |
+| org.axonframework.serialization.CannotConvertBetweenTypesException                                     | org.axonframework.serialization.ConversionException                               | No                             |
+| org.axonframework.serialization.json.JacksonSerializer                                                 | org.axonframework.serialization.json.JacksonConverter                             | No                             |
+| org.axonframework.commandhandling.distributed.CommandDispatchException                                 | org.axonframework.commandhandling.CommandDispatchException                        | No                             |
+| org.axonframework.axonserver.connector.command.CommandPriorityCalculator                               | org.axonframework.commandhandling.CommandPriorityCalculator                       | Yes. Moved to `axon-messaging` |
+| org.axonframework.commandhandling.distribute.MetaDataRoutingStrategy                                   | org.axonframework.commandhandling.MetadataRoutingStrategy                         | Yes. Moved to `axon-messaging` |
+| org.axonframework.commandhandling.distribute.RoutingStrategy                                           | org.axonframework.commandhandling.RoutingStrategy                                 | Yes. Moved to `axon-messaging` |
+| org.axonframework.commandhandling.distribute.UnresolvedRoutingKeyPolicy                                | org.axonframework.commandhandling.UnresolvedRoutingKeyPolicy                      | Yes. Moved to `axon-messaging` |
+| org.axonframework.commandhandling.distribute.AnnotationRoutingStrategy                                 | org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy            | Yes. Moved to `axon-messaging` |
+| org.axonframework.serialization.json.JacksonSerializer                                                 | org.axonframework.serialization.json.JacksonConverter                             | No                             |
+| org.axonframework.springboot.SerializerProperties                                                      | org.axonframework.springboot.ConverterProperties                                  | No                             |
+| org.axonframework.springboot.SerializerProperties.SerializerType                                       | org.axonframework.springboot.ConverterProperties.ConverterType                    | No                             |
+| org.axonframework.messaging.InterceptorChain                                                           | org.axonframework.messaging.MessageHandlerInterceptorChain                        | No                             |
+| org.axonframework.messaging.MetaData                                                                   | org.axonframework.messaging.Metadata                                              | No                             |
+| org.axonframework.messaging.annotation.MetaDataValue                                                   | org.axonframework.messaging.annotation.MetadataValue                              | No                             |
+| org.axonframework.serialization.SerializationException                                                 | org.axonframework.serialization.ConversionException                               | No                             |
+| org.axonframework.serialization.avro.AvroSerializer                                                    | org.axonframework.serialization.avro.AvroConverter                                | No                             |
+| org.axonframework.serialization.avro.AvroSerializerStrategy                                            | org.axonframework.serialization.avro.AvroConverterStrategy                        | No                             |
+| org.axonframework.serialization.avro.AvroSerializerStrategyConfig                                      | org.axonframework.serialization.avro.AvroConverterStrategyConfiguration           | No                             |
+| org.axonframework.serialization.avro.SpecificRecordBaseSerializerStrategy                              | org.axonframework.serialization.avro.SpecificRecordBaseConverterStrategy          | No                             |
 
 ### Removed Classes
 
@@ -1866,6 +1928,9 @@ This section contains four subsections, called:
 | `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`                                                             | `MessageHandlerInterceptor#interceptOnHandle(M, ProcessingContext, MessageHandlerInterceptorChain<M>)`                 | 
 | `InterceptorChain#proceed()`                                                                                                    | `MessageHandlerInterceptorChain#proceed(M, ProcessingContext)`                                                         | 
 | `QueryBus#subscribe(String, Type, MessageHandler<? super QueryMessage<?, R>>)`                                                  | `QueryBus#subscribe(QualifiedName, QualifiedName, QueryHandler)`                                                       | 
+| `QueryBus#query(QueryMessage)`                                                                                                  | `QueryBus#query(QueryMessage, ProcessingContext)`                                                                      | 
+| `QueryGateway#query(Q, Class<R>)`                                                                                               | `QueryGateway#query(Object, Class<R>, ProcessingContext)`                                                              | 
+| `QueryGateway#query(String, Q, ResponseType<R>)`                                                                                | `QueryGateway#queryMany(Object, Class<R>, ProcessingContext)`                                                          | 
 
 ### Removed Methods and Constructors
 
@@ -1920,17 +1985,19 @@ This section contains four subsections, called:
 
 ### Changed Method return types
 
-| Method                                                                          | Before                         | After                                        |
-|---------------------------------------------------------------------------------|--------------------------------|----------------------------------------------|
-| `CorrelationDataProvider#correlationDataFor()`                                  | `Map<String, String>`          | `Map<String, ?>`                             | 
-| `CommandTargetResolver#resolveTarget`                                           | `VersionedAggregateIdentifier` | `String`                                     |
-| `EventGateway#publish(Object...)`                                               | `void`                         | `CompletableFuture<Void>`                    |
-| `EventGateway#publish(List<?>)`                                                 | `void`                         | `CompletableFuture<Void>`                    |
-| `SequencingPolicy#getSequenceIdentifierFor(List<?>)`                            | `Object`                       | `Optional<Object>`                           |
-| `CommandBus#dispatch(CommandMessage<C>)`                                        | `void`                         | `CompletableFuture<CommandResultMessage<?>>` |
-| `CommandBus#subscribe(String, MessageHandler<? super CommandMessage<?>>)`       | `Registration`                 | `<? extends CommandHandlerRegistry>`         |
-| `CommandGateway#sendAndWait(Object)`                                            | `R`                            | `void`                                       |
-| `MessageDispatchInterceptor#handle(T)`                                          | `T`                            | `MessageStream<?>`                           |
-| `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`             | `Object`                       | `MessageStream<?>`                           |
-| `InterceptorChain#proceed()`                                                    | `Object`                       | `MessageStream<?>`                           |
-| `QueryBus#subscribe(String, Type, MessageHandler<? super QueryMessage<?, R>>)`  | `Registration`                 | `void`                                       |
+| Method                                                                         | Before                                       | After                                        |
+|--------------------------------------------------------------------------------|----------------------------------------------|----------------------------------------------|
+| `CorrelationDataProvider#correlationDataFor()`                                 | `Map<String, String>`                        | `Map<String, ?>`                             | 
+| `CommandTargetResolver#resolveTarget`                                          | `VersionedAggregateIdentifier`               | `String`                                     |
+| `EventGateway#publish(Object...)`                                              | `void`                                       | `CompletableFuture<Void>`                    |
+| `EventGateway#publish(List<?>)`                                                | `void`                                       | `CompletableFuture<Void>`                    |
+| `SequencingPolicy#getSequenceIdentifierFor(List<?>)`                           | `Object`                                     | `Optional<Object>`                           |
+| `CommandBus#dispatch(CommandMessage<C>)`                                       | `void`                                       | `CompletableFuture<CommandResultMessage<?>>` |
+| `CommandBus#subscribe(String, MessageHandler<? super CommandMessage<?>>)`      | `Registration`                               | `<? extends CommandHandlerRegistry>`         |
+| `CommandGateway#sendAndWait(Object)`                                           | `R`                                          | `void`                                       |
+| `MessageDispatchInterceptor#handle(T)`                                         | `T`                                          | `MessageStream<?>`                           |
+| `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`            | `Object`                                     | `MessageStream<?>`                           |
+| `InterceptorChain#proceed()`                                                   | `Object`                                     | `MessageStream<?>`                           |
+| `QueryBus#subscribe(String, Type, MessageHandler<? super QueryMessage<?, R>>)` | `Registration`                               | `void`                                       |
+| `QueryBus#query(QueryMessage<Q, R>)`                                           | `CompletableFuture<QueryResponseMessage<R>>` | `MessageStream<QueryResponseMessage>`        |
+| `QueryGateway#query(String, Q, ResponseType<R>)`                               | `CompletableFuture<R>`                       | `CompletableFuture<List<R>>`                 |
