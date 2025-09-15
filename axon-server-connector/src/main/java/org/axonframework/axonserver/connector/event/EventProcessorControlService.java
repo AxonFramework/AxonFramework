@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.processor;
+package org.axonframework.axonserver.connector.event;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.admin.AdminChannel;
@@ -22,8 +22,10 @@ import io.axoniq.axonserver.connector.control.ControlChannel;
 import io.axoniq.axonserver.connector.control.ProcessorInstructionHandler;
 import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.processors.EventProcessor;
@@ -35,83 +37,62 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toMap;
-import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
- * Service that listens to {@link PlatformOutboundInstruction}s to control {@link EventProcessor}s when for example
- * requested by Axon Server. Will delegate the calls to the {@link AxonServerConnectionManager} for further processing.
+ * Service that listens to {@link PlatformOutboundInstruction PlatformOutboundInstructions} to control
+ * {@link EventProcessor EventProcessors} when requested by Axon Server.
+ * <p>
+ * Will delegate the calls to the {@link AxonServerConnectionManager} for further processing.
  *
  * @author Sara Pellegrini
- * @since 4.0
+ * @author Steven van Beelen
+ * @since 4.0.0
  */
 public class EventProcessorControlService {
 
     private static final Logger logger = LoggerFactory.getLogger(EventProcessorControlService.class);
-    private static final String SUBSCRIBING_EVENT_PROCESSOR_MODE = "Subscribing";
-    private static final String UNKNOWN_EVENT_PROCESSOR_MODE = "Unknown";
 
-    protected final AxonServerConnectionManager axonServerConnectionManager;
-    protected final Configuration eventProcessingConfiguration;
-    protected final String context;
-    protected final Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorConfig;
+    private final AxonServerConnectionManager axonServerConnectionManager;
+    private final Configuration configuration;
+    private final String context;
+    private final Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorConfig;
 
     /**
-     * Initialize a {@code EventProcessorControlService}.
-     * <p>
-     * This service adds processor instruction handlers to the {@link ControlChannel} of the
-     * {@link AxonServerConnectionManager#getDefaultContext() default context}. Doing so ensures operation like the
-     * {@link EventProcessor#start() start} and {@link EventProcessor#shutDown() shutdown} can be triggered through Axon
-     * Server. Furthermore, it sets the configured load balancing strategies} through the {@link AdminChannel}  of the
-     * default context.
-     *
-     * @param axonServerConnectionManager  A {@link AxonServerConnectionManager} from which to retrieve the
-     *                                     {@link ControlChannel} and {@link AdminChannel}.
-     * @param eventProcessingConfiguration The {@link EventProcessor} configuration of this application, used to
-     *                                     retrieve the registered event processors from.
-     * @param axonServerConfiguration      The {@link AxonServerConfiguration} used to retrieve the
-     *                                     {@link AxonServerConnectionManager#getDefaultContext() default context}
-     *                                     from.
-     */
-    public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
-                                        Configuration eventProcessingConfiguration,
-                                        AxonServerConfiguration axonServerConfiguration) {
-        this(axonServerConnectionManager,
-             eventProcessingConfiguration,
-             axonServerConfiguration.getContext(),
-             axonServerConfiguration.getEventhandling().getProcessors());
-    }
-
-    /**
-     * Initialize a {@code EventProcessorControlService}.
+     * Initialize an {@code EventProcessorControlService}.
      * <p>
      * This service adds processor instruction handlers to the {@link ControlChannel} of the given {@code context}.
      * Doing so ensures operation like the {@link EventProcessor#start() start} and
      * {@link EventProcessor#shutDown() shutdown} can be triggered through Axon Server. Furthermore, it sets the
-     * configured load balancing strategies through the {@link AdminChannel}  of the {@code context}.
+     * configured load balancing strategies through the {@link AdminChannel} of the {@code context}.
      *
-     * @param axonServerConnectionManager  A {@link AxonServerConnectionManager} from which to retrieve the
-     *                                     {@link ControlChannel} and {@link AdminChannel}.
-     * @param eventProcessingConfiguration The {@link EventProcessor} configuration of this application, used to
-     *                                     retrieve the registered event processors from.
-     * @param context                      The context of this application instance to retrieve the
-     *                                     {@link ControlChannel} and {@link AdminChannel} for.
-     * @param processorConfig              The processor configuration from the {@link AxonServerConfiguration}, used to
-     *                                     (for example) retrieve the load balancing strategies from.
+     * @param configuration     The {@link EventProcessor} configuration of this application, used to retrieve the
+     *                          registered event processors from.
+     * @param connectionManager A {@link AxonServerConnectionManager} from which to retrieve the {@link ControlChannel}
+     *                          and {@link AdminChannel}.
+     * @param context           The context of this application instance to retrieve the {@link ControlChannel} and
+     *                          {@link AdminChannel} for.
+     * @param processorConfig   The processor configuration from the {@link AxonServerConfiguration}, used to (for
+     *                          example) retrieve the load balancing strategies from.
      */
-    public EventProcessorControlService(AxonServerConnectionManager axonServerConnectionManager,
-                                        Configuration eventProcessingConfiguration,
-                                        String context,
-                                        Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorConfig) {
-        this.axonServerConnectionManager = axonServerConnectionManager;
-        this.eventProcessingConfiguration = eventProcessingConfiguration;
+    public EventProcessorControlService(
+            @Nonnull Configuration configuration,
+            @Nonnull AxonServerConnectionManager connectionManager,
+            @Nonnull String context,
+            @Nonnull Map<String, AxonServerConfiguration.Eventhandling.ProcessorSettings> processorConfig
+    ) {
+        this.axonServerConnectionManager = Objects.requireNonNull(
+                connectionManager, "The Axon Server Connection Manager must not be null."
+        );
+        this.configuration = configuration;
         this.context = context;
-        this.processorConfig = processorConfig;
+        this.processorConfig = Objects.requireNonNull(processorConfig, "The Processor Configuration must not be null.");
     }
 
     /**
@@ -122,19 +103,31 @@ public class EventProcessorControlService {
      * The registration is performed in {@link Phase#INBOUND_EVENT_CONNECTORS} phase, to ensure the event processors
      * this service provides control over have been started.
      */
-    @SuppressWarnings("Duplicates")
     public void start() {
-        if (axonServerConnectionManager == null || eventProcessingConfiguration == null) {
-            return;
-        }
+        Map<String, EventProcessor> eventProcessors = configuration.getComponent(Map.class);
 
-        // TODO #3521
-        @SuppressWarnings("unchecked")
-        Map<String, EventProcessor> eventProcessors = eventProcessingConfiguration.getComponent(Map.class);
         AxonServerConnection connection = axonServerConnectionManager.getConnection(context);
-
         registerInstructionHandlers(connection, eventProcessors);
         setLoadBalancingStrategies(connection, eventProcessors.keySet());
+    }
+
+    private void registerInstructionHandlers(@Nonnull AxonServerConnection connection,
+                                             @Nonnull Map<String, EventProcessor> eventProcessors) {
+        ControlChannel controlChannel = connection.controlChannel();
+        eventProcessors.forEach((name, processor) -> controlChannel.registerEventProcessor(
+                name, infoSupplier(processor), new AxonProcessorInstructionHandler(processor, name)
+        ));
+    }
+
+    @Nonnull
+    private Supplier<EventProcessorInfo> infoSupplier(@Nonnull EventProcessor processor) {
+        if (processor instanceof StreamingEventProcessor streamingProcessor) {
+            return () -> EventProcessorInfoUtils.describeStreaming(streamingProcessor);
+        } else if (processor instanceof SubscribingEventProcessor subscribingProcessor) {
+            return () -> EventProcessorInfoUtils.describeSubscribing(subscribingProcessor);
+        } else {
+            return () -> EventProcessorInfoUtils.describeUnknown(processor);
+        }
     }
 
     private void setLoadBalancingStrategies(AxonServerConnection connection, Set<String> processorNames) {
@@ -146,8 +139,9 @@ public class EventProcessorControlService {
                                .filter(entry -> {
                                    if (!processorNames.contains(entry.getKey())) {
                                        logger.info(
-                                               "Event Processor [{}] is not a registered. Please check the name or register the Event Processor",
-                                               entry.getKey());
+                                               "Event Processor [{}] is not a registered. Please check the name or register the Event Processor.",
+                                               entry.getKey()
+                                       );
                                        return false;
                                    }
                                    return true;
@@ -159,7 +153,8 @@ public class EventProcessorControlService {
             if (!optionalIdentifier.isPresent()) {
                 logger.warn(
                         "Cannot find token store identifier for processor [{}]. Load balancing cannot be configured without this identifier.",
-                        processorName);
+                        processorName
+                );
                 return;
             }
             String tokenStoreIdentifier = optionalIdentifier.get();
@@ -167,8 +162,8 @@ public class EventProcessorControlService {
             adminChannel.loadBalanceEventProcessor(processorName, tokenStoreIdentifier, strategy)
                         .whenComplete((r, e) -> {
                             if (e == null) {
-                                logger.debug("Successfully requested to load balance processor [{}]"
-                                                     + " with strategy [{}].", processorName, strategy);
+                                logger.debug("Successfully requested to load balance processor [{}] with strategy [{}].",
+                                             processorName, strategy);
                                 return;
                             }
                             logger.warn("Requesting to load balance processor [{}] with strategy [{}] failed.",
@@ -193,63 +188,15 @@ public class EventProcessorControlService {
 
     private Optional<String> tokenStoreIdentifierFor(String processorName) {
         // TODO #3521 - Be sure to be able to retrieve processor-specific components from their respective Modules
-        TokenStore tokenStore = eventProcessingConfiguration.getComponent(TokenStore.class);
-        return eventProcessingConfiguration.getComponent(TransactionManager.class)
-                                           .fetchInTransaction(
-                                                   () -> joinAndUnwrap(tokenStore.retrieveStorageIdentifier(null))
-                                           );
+        TokenStore tokenStore = configuration.getComponent(TokenStore.class);
+        return configuration.getComponent(TransactionManager.class)
+                            .fetchInTransaction(tokenStore::retrieveStorageIdentifier);
     }
 
-    private void registerInstructionHandlers(AxonServerConnection connection,
-                                             Map<String, EventProcessor> eventProcessors) {
-        ControlChannel controlChannel = connection.controlChannel();
-        eventProcessors.forEach((name, processor) -> controlChannel.registerEventProcessor(
-                name, infoSupplier(processor), new AxonProcessorInstructionHandler(processor, name)
-        ));
-    }
-
-    /**
-     * Constructs an {@link EventProcessorInfo} for the given {@code processor}. Typically results in a
-     * {@link StreamingEventProcessor} or {@link SubscribingEventProcessor} specific instance.
-     *
-     * @param processor The {@link EventProcessor} to construct a {@link EventProcessorInfo} for.
-     * @return A {@link Supplier} of {@link EventProcessorInfo}, based on the given {@code processor}.
-     */
-    protected Supplier<EventProcessorInfo> infoSupplier(EventProcessor processor) {
-        if (processor instanceof StreamingEventProcessor) {
-            return () -> StreamingEventProcessorInfoMessage.describe((StreamingEventProcessor) processor);
-        } else if (processor instanceof SubscribingEventProcessor) {
-            return () -> subscribingProcessorInfo(processor);
-        } else {
-            return () -> unknownProcessorTypeInfo(processor);
-        }
-    }
-
-    private EventProcessorInfo subscribingProcessorInfo(EventProcessor eventProcessor) {
-        return EventProcessorInfo.newBuilder()
-                                 .setProcessorName(eventProcessor.name())
-                                 .setMode(SUBSCRIBING_EVENT_PROCESSOR_MODE)
-                                 .setIsStreamingProcessor(false)
-                                 .build();
-    }
-
-    private EventProcessorInfo unknownProcessorTypeInfo(EventProcessor eventProcessor) {
-        return EventProcessorInfo.newBuilder()
-                                 .setProcessorName(eventProcessor.name())
-                                 .setMode(UNKNOWN_EVENT_PROCESSOR_MODE)
-                                 .setIsStreamingProcessor(false)
-                                 .build();
-    }
-
-    protected static class AxonProcessorInstructionHandler implements ProcessorInstructionHandler {
-
-        private final EventProcessor processor;
-        private final String name;
-
-        public AxonProcessorInstructionHandler(EventProcessor processor, String name) {
-            this.processor = processor;
-            this.name = name;
-        }
+    protected record AxonProcessorInstructionHandler(
+            EventProcessor processor,
+            String name
+    ) implements ProcessorInstructionHandler {
 
         @Override
         public CompletableFuture<Boolean> releaseSegment(int segmentId) {
@@ -259,11 +206,12 @@ public class EventProcessorControlService {
                                 name);
                     return CompletableFuture.completedFuture(false);
                 } else {
-                    return ((StreamingEventProcessor) processor).releaseSegment(segmentId).thenApply(r -> true);
+                    ((StreamingEventProcessor) processor).releaseSegment(segmentId);
                 }
             } catch (Exception e) {
-                return exceptionallyCompletedFuture(e);
+                return CompletableFuture.failedFuture(e);
             }
+            return CompletableFuture.completedFuture(true);
         }
 
         @Override
@@ -288,7 +236,7 @@ public class EventProcessorControlService {
                             });
                 }
             } catch (Exception e) {
-                return exceptionallyCompletedFuture(e);
+                return CompletableFuture.failedFuture(e);
             }
         }
 
@@ -315,24 +263,28 @@ public class EventProcessorControlService {
                             });
                 }
             } catch (Exception e) {
-                return exceptionallyCompletedFuture(e);
+                return CompletableFuture.failedFuture(e);
             }
         }
 
         @Override
         public CompletableFuture<Void> pauseProcessor() {
-            return processor.shutdown();
+            try {
+                processor.shutDown();
+                return FutureUtils.emptyCompletedFuture();
+            } catch (Exception e) {
+                return CompletableFuture.failedFuture(e);
+            }
         }
 
         @Override
         public CompletableFuture<Void> startProcessor() {
-            return processor.start();
-        }
-
-        private <T> CompletableFuture<T> exceptionallyCompletedFuture(Exception e) {
-            CompletableFuture<T> future = new CompletableFuture<>();
-            future.completeExceptionally(e);
-            return future;
+            try {
+                processor.start();
+                return FutureUtils.emptyCompletedFuture();
+            } catch (Exception e) {
+                return CompletableFuture.failedFuture(e);
+            }
         }
     }
 }
