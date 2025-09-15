@@ -38,7 +38,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.configuration.EntityModule;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +56,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Tags({
+        @Tag("flaky"),
+})
 public class EventProcessingAnnotatedEventSourcedPooledStreamingTest extends AbstractStudentTestSuite {
 
     @Test

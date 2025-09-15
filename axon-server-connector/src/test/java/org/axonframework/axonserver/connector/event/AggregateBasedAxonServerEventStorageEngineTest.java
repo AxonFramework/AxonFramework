@@ -36,6 +36,9 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
+@Tags({
+        @Tag("slow"),
+})
 class AggregateBasedAxonServerEventStorageEngineTest extends
         AggregateBasedStorageEngineTestSuite<AggregateBasedAxonServerEventStorageEngine> {
 

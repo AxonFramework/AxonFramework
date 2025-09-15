@@ -38,6 +38,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Albert Attard (JavaCreed)
  */
 @Testcontainers
+@Tags({
+        @Tag("slow"),
+})
 class MysqlJdbcEventStorageEngineTest {
 
     @Container

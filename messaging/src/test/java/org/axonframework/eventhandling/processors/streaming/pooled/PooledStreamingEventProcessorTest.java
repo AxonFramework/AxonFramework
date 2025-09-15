@@ -79,6 +79,9 @@ import static org.mockito.Mockito.*;
  * @author Mateusz Nowak
  * @author Steven van Beelen
  */
+@Tags({
+        @Tag("flaky"),
+})
 class PooledStreamingEventProcessorTest {
 
     private static final Logger logger = LoggerFactory.getLogger(
