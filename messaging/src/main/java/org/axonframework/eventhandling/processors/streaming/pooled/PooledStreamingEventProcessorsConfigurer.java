@@ -37,8 +37,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
- * A configurer for managing multiple {@link PooledStreamingEventProcessor} instances within an
- * application.
+ * A configurer for managing multiple {@link PooledStreamingEventProcessor} instances within an application.
  * <p>
  * The {@code PooledStreamingEventProcessorsModule} provides a centralized way to configure and register multiple pooled
  * streaming event processors. It acts as a container that manages individual
@@ -46,9 +45,8 @@ import java.util.function.UnaryOperator;
  * processors while enabling processor-specific customizations.
  * <p>
  * The main purpose is to simplify the configuration of multiple event processors by providing shared configuration
- * capabilities such as default {@link TokenStore},
- * {@link org.axonframework.eventstreaming.StreamableEventSource}, and processor settings that apply to all processors
- * unless explicitly overridden.
+ * capabilities such as default {@link TokenStore}, {@link org.axonframework.eventstreaming.StreamableEventSource}, and
+ * processor settings that apply to all processors unless explicitly overridden.
  * <p>
  * The configurer automatically configures default components:
  * <ul>
@@ -97,22 +95,17 @@ public class PooledStreamingEventProcessorsConfigurer {
         componentRegistry(
                 cr -> cr.registerComponent(
                         PooledStreamingEventProcessorModule.Customization.class,
-                        cfg ->
-                                PooledStreamingEventProcessorModule.Customization.noOp().andThen(
-                                        (axonConfig, processorConfig) -> {
-                                            cfg.getOptionalComponent(TokenStore.class)
-                                               .ifPresent(processorConfig::tokenStore);
-                                            cfg.getOptionalComponent(StreamableEventSource.class)
-                                               .ifPresent(processorConfig::eventSource);
-                                            return processorConfig;
-                                        }).andThen(processorsDefaultCustomization)
+                        cfg -> PooledStreamingEventProcessorModule.Customization.noOp().andThen(
+                                (axonConfig, processorConfig) -> {
+                                    cfg.getOptionalComponent(TokenStore.class)
+                                       .ifPresent(processorConfig::tokenStore);
+                                    cfg.getOptionalComponent(StreamableEventSource.class)
+                                       .ifPresent(processorConfig::eventSource);
+                                    return processorConfig;
+                                }).andThen(processorsDefaultCustomization)
                 )
         );
-        moduleBuilders.forEach(moduleBuilder ->
-                                       componentRegistry(cr -> cr.registerModule(
-                                               moduleBuilder.build()
-                                       ))
-        );
+        moduleBuilders.forEach(moduleBuilder -> componentRegistry(cr -> cr.registerModule(moduleBuilder.build())));
     }
 
     /**
