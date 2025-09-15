@@ -456,8 +456,7 @@ public class EventProcessingModule
                 : defaultSequencingPolicy.get();
     }
 
-    @Override
-    public ErrorHandler errorHandler(String processorName) {
+    private ErrorHandler errorHandler(String processorName) {
         validateConfigInitialization();
         return errorHandlers.containsKey(processorName)
                 ? errorHandlers.get(processorName).get()

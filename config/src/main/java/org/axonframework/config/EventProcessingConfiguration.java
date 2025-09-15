@@ -111,14 +111,6 @@ public interface EventProcessingConfiguration {
     SequencingPolicy sequencingPolicy(String processingGroup);
 
     /**
-     * Returns the {@link ErrorHandler} tied to the given {@code processorName}.
-     *
-     * @param processorName a {@link String} specifying a processing group
-     * @return the {@link ErrorHandler} belonging to the given {@code processorName}
-     */
-    ErrorHandler errorHandler(String processorName);
-
-    /**
      * Returns a {@link SagaStore} registered within this configuration.
      *
      * @return a {@link SagaStore} registered within this configuration
