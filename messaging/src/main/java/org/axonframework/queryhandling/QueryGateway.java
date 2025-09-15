@@ -66,26 +66,27 @@ public interface QueryGateway {
                                    @Nullable ProcessingContext context);
 
     /**
-     * Sends given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
-     * from a single source.
+     * Sends given {@code query} over the {@link QueryBus}, expecting multiple responses in the form of
+     * {@code responseType} from a single source.
      * <p>
      * Execution may be asynchronous, depending on the {@code QueryBus} implementation.
      * <p>
      * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
      * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
-     * {@code QueryMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.MetaData}.
+     * {@code QueryMessage} is constructed from that message's payload and {@link org.axonframework.messaging.Metadata}.
+     * The {@link QueryMessage#responseType()} will <b>at all times</b> be a
+     * {@link org.axonframework.messaging.responsetypes.MultipleInstancesResponseType}.
      *
      * @param query        The {@code query} to be sent.
      * @param responseType The {@link ResponseType} used for this query.
+     * @param context      The processing context, if any, to dispatch the given {@code query} in.
      * @param <R>          The response class contained in the given {@code responseType}.
-     * @param <Q>          The query class.
-     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
-     * {@code responseType}.
+     * @return A {@code CompletableFuture} containing a list of query responses of type {@code responseType}.
      */
     @Nonnull
-    <R, Q> CompletableFuture<R> query(@Nonnull Q query,
-                                      @Nonnull ResponseType<R> responseType);
+    <R> CompletableFuture<List<R>> queryMany(@Nonnull Object query,
+                                             @Nonnull Class<R> responseType,
+                                             @Nullable ProcessingContext context);
 
     /**
      * Sends given {@code query} over the {@link QueryBus}, expecting a response as

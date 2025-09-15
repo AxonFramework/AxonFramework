@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
+import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -32,9 +33,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -172,19 +173,110 @@ class DefaultQueryGatewayTest {
         }
     }
 
-    @Test
-    void pointToPointQueryWhenQueryBusThrowsException() throws Exception {
-        Throwable expected = new Throwable("oops");
-        CompletableFuture<QueryResponseMessage> queryResponseCompletableFuture = new CompletableFuture<>();
-        queryResponseCompletableFuture.completeExceptionally(expected);
-        // TODO fix as part of gateway fix
-//        when(queryBus.query(anyMessage(String.class, String.class))).thenReturn(queryResponseCompletableFuture);
+    @Nested
+    class QueryMany {
 
-        CompletableFuture<String> result = testSubject.query("query", String.class);
+        @Test
+        void queryManyInvokesQueryBusWithMultiInstanceResponseType() throws Exception {
+            // given...
+            QueryResponseMessage testResponse = new GenericQueryResponseMessage(RESPONSE_TYPE, RESPONSE_PAYLOAD);
+            when(queryBus.query(any(), eq(null))).thenReturn(MessageStream.fromIterable(List.of(testResponse)));
+            // when...
+            CompletableFuture<List<String>> result = testSubject.queryMany(QUERY_PAYLOAD, String.class, null);
+            // then...
+            assertThat(result).isDone();
+            List<String> resultList = result.get();
+            assertThat(resultList.size()).isEqualTo(1);
+            assertThat(resultList.getFirst()).isEqualTo(RESPONSE_PAYLOAD);
 
-        assertTrue(result.isDone());
-        assertTrue(result.isCompletedExceptionally());
-        assertEquals(expected.getMessage(), result.exceptionally(Throwable::getMessage).get());
+            verify(queryBus).query(messageCaptor.capture(), eq(null));
+
+            QueryMessage resultMessage = messageCaptor.getValue();
+            assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
+            assertThat(resultMessage.payloadType()).isEqualTo(String.class);
+            ResponseType<?> responseType = resultMessage.responseType();
+            assertThat(responseType).isInstanceOf(MultipleInstancesResponseType.class);
+            assertThat(responseType.getExpectedResponseType()).isEqualTo(String.class);
+            assertThat(resultMessage.metadata()).isEqualTo(Metadata.emptyInstance());
+        }
+
+        @Test
+        void queryManyWithMetadataInvokesQueryBusWithMetadata() throws Exception {
+            // given...
+            QueryResponseMessage testResponse = new GenericQueryResponseMessage(RESPONSE_TYPE, RESPONSE_PAYLOAD);
+            when(queryBus.query(any(), eq(null))).thenReturn(MessageStream.fromIterable(List.of(testResponse)));
+            String expectedKey = "key";
+            String expectedValue = "value";
+            Metadata testMetadata = Metadata.with(expectedKey, expectedValue);
+            Message testQuery = new GenericMessage(QUERY_TYPE, QUERY_PAYLOAD, testMetadata);
+            // when...
+            CompletableFuture<List<String>> result = testSubject.queryMany(testQuery, String.class, null);
+            // then...
+            assertThat(result).isDone();
+            List<String> resultList = result.get();
+            assertThat(resultList.size()).isEqualTo(1);
+            assertThat(resultList.getFirst()).isEqualTo(RESPONSE_PAYLOAD);
+
+            verify(queryBus).query(messageCaptor.capture(), eq(null));
+
+            QueryMessage resultMessage = messageCaptor.getValue();
+            assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
+            assertThat(resultMessage.payloadType()).isEqualTo(String.class);
+            ResponseType<?> responseType = resultMessage.responseType();
+            assertThat(responseType).isInstanceOf(MultipleInstancesResponseType.class);
+            assertThat(responseType.getExpectedResponseType()).isEqualTo(String.class);
+            Metadata resultMetadata = resultMessage.metadata();
+            assertThat(resultMetadata).containsKey(expectedKey);
+            assertThat(resultMetadata).containsValue(expectedValue);
+        }
+
+        @Test
+        void queryManyReturningFailedMessageStreamReturnsExceptionalCompletableFuture() {
+            // given...
+            Throwable expected = new Throwable("oops");
+            when(queryBus.query(any(), eq(null))).thenReturn(MessageStream.failed(expected));
+            // when...
+            CompletableFuture<List<String>> result = testSubject.queryMany(QUERY_PAYLOAD, String.class, null);
+            // then...
+            assertThat(result).isDone();
+            assertThat(result).isCompletedExceptionally();
+            assertThat(result.exceptionNow().getMessage()).isEqualTo("oops");
+        }
+
+        @Test
+        void cancellingResultFromQueryManyClosesMessageStreamFromQueryBus() {
+            // given...
+            MessageStream.Single<QueryResponseMessage> testResponseStream =
+                    spy(MessageStream.fromFuture(new CompletableFuture<>()));
+            when(queryBus.query(any(), eq(null))).thenReturn(testResponseStream);
+            // when querying...
+            CompletableFuture<List<String>> result = testSubject.queryMany(QUERY_PAYLOAD, String.class, null);
+            // then...
+            assertThat(result).isNotDone();
+            // when canceling result...
+            result.cancel(true);
+            verify(testResponseStream).close();
+        }
+
+        @Test
+        void queryManyReportsPayloadExtractionExceptions() {
+            // given...
+            when(queryBus.query(any(), eq(null)))
+                    .thenReturn(MessageStream.fromIterable(List.of(
+                            new GenericQueryResponseMessage(RESPONSE_TYPE, RESPONSE_PAYLOAD) {
+                                @Override
+                                public String payload() {
+                                    throw new MockException("Faking conversion problem");
+                                }
+                            }
+                    )));
+            // when...
+            CompletableFuture<List<String>> result = testSubject.queryMany(QUERY_PAYLOAD, String.class, null);
+            // then...
+            assertThat(result).isDone();
+            assertThat(result).isCompletedExceptionally();
+            assertThat(result.exceptionNow().getMessage()).isEqualTo("Faking conversion problem");
+        }
     }
 
     @Test
