@@ -152,6 +152,24 @@ class DefaultQueryGatewayTest {
             result.cancel(true);
             verify(testResponseStream).close();
         }
+
+        @Test
+        void queryReportsPayloadExtractionExceptions() {
+            // given...
+            when(queryBus.query(any(), eq(null)))
+                    .thenReturn(MessageStream.just(new GenericQueryResponseMessage(RESPONSE_TYPE, RESPONSE_PAYLOAD) {
+                        @Override
+                        public String payload() {
+                            throw new MockException("Faking conversion problem");
+                        }
+                    }));
+            // when...
+            CompletableFuture<String> result = testSubject.query(QUERY_PAYLOAD, String.class, null);
+            // then...
+            assertThat(result).isDone();
+            assertThat(result).isCompletedExceptionally();
+            assertThat(result.exceptionNow().getMessage()).isEqualTo("Faking conversion problem");
+        }
     }
 
     @Test
@@ -342,25 +360,6 @@ class DefaultQueryGatewayTest {
 
         assertNull(actual.initialResult().block());
         assertEquals((Long) 0L, actual.updates().count().block());
-    }
-
-    @Test
-    void payloadExtractionProblemsReportedInException() throws ExecutionException, InterruptedException {
-        // TODO fix as part of gateway fix
-//        when(queryBus.query(anyMessage(String.class, String.class)))
-//                .thenReturn(completedFuture(new GenericQueryResponseMessage(
-//                        new MessageType("query"), "test"
-//                ) {
-//                    @Override
-//                    public String payload() {
-//                        throw new MockException("Faking serialization problem");
-//                    }
-//                }));
-
-        CompletableFuture<String> actual = testSubject.query(QUERY_PAYLOAD, String.class, null);
-        assertTrue(actual.isDone());
-        assertTrue(actual.isCompletedExceptionally());
-        assertEquals("Faking serialization problem", actual.exceptionally(Throwable::getMessage).get());
     }
 
     @Test
