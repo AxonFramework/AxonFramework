@@ -17,199 +17,41 @@
 package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.common.caching.Cache;
-import org.axonframework.common.lock.LockFactory;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
-import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
-import org.axonframework.modelling.command.CommandTargetResolver;
-import org.axonframework.modelling.command.LegacyRepository;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
-import java.util.Set;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 
 /**
  * A {@link ConfigurationEnhancer} implementation that will configure an Aggregate with the Axon
  * {@link org.axonframework.configuration.Configuration}.
  *
- * @param <T> The type of Aggregate to configure
+ * @param <T>  The type of Aggregate to configure
+ * @param <ID> The type of Aggregate id to configure
+ *
  * @author Allard Buijze
+ * @author Simon Zambrovski
  * @since 4.6.0
+ * FIXME: rename according to the annotation
  */
-// TODO #3499 Fix as part of referred to issue
-public class SpringAggregateConfigurer<T> implements ConfigurationEnhancer, ApplicationContextAware {
+public class SpringAggregateConfigurer<ID, T> implements ConfigurationEnhancer {
 
     private final Class<T> aggregateType;
-    private final Set<Class<? extends T>> subTypes;
-
-    private String snapshotFilter;
-    private String aggregateRepository;
-    private String snapshotTriggerDefinition;
-    private String cache;
-    private String lockFactory;
-    private String commandTargetResolver;
-    private boolean filterEventsByType;
-    private ApplicationContext applicationContext;
-    private String aggregateFactory;
+    private final Class<ID> idType;
 
     /**
-     * Initializes a {@link ConfigurationEnhancer} for given {@code aggregateType} and possible {@code subTypes}.
+     * Initializes a {@link ConfigurationEnhancer} for given {@code aggregateType} and {@code idType}.
      *
      * @param aggregateType The declared type of the aggregate.
-     * @param subTypes      The possible subtypes of this aggregate.
+     * @param idType        The type of id.
      */
-    public SpringAggregateConfigurer(Class<T> aggregateType, Set<Class<? extends T>> subTypes) {
+    public SpringAggregateConfigurer(Class<T> aggregateType, Class<ID> idType) {
         this.aggregateType = aggregateType;
-        this.subTypes = subTypes;
-    }
-
-    /**
-     * Sets the bean name of the {@link LegacyRepository} to configure for this Aggregate.
-     *
-     * @param aggregateRepository The bean name of the {@link LegacyRepository} for this Aggregate.
-     */
-    public void setRepository(String aggregateRepository) {
-        this.aggregateRepository = aggregateRepository;
-    }
-
-    /**
-     * Sets the bean name of the {@link SnapshotFilter} to configure for this Aggregate.
-     *
-     * @param snapshotFilter The bean name of the {@link SnapshotFilter} to configure for this Aggregate.
-     */
-    public void setSnapshotFilter(String snapshotFilter) {
-        this.snapshotFilter = snapshotFilter;
-    }
-
-    /**
-     * Sets the bean name of the {@link SnapshotTriggerDefinition} to use for this Aggregate.
-     *
-     * @param snapshotTriggerDefinition The bean name of the {@link SnapshotTriggerDefinition} to use for this
-     *                                  Aggregate.
-     */
-    public void setSnapshotTriggerDefinition(String snapshotTriggerDefinition) {
-        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
-    }
-
-    /**
-     * Sets the bean name of the {@link CommandTargetResolver} to use for this Aggregate.
-     *
-     * @param commandTargetResolver The bean name of the {@link CommandTargetResolver} to use for this Aggregate.
-     */
-    public void setCommandTargetResolver(String commandTargetResolver) {
-        this.commandTargetResolver = commandTargetResolver;
-    }
-
-    /**
-     * Indicates whether to enable "filter events by type" for this Aggregate. When {@code true}, only Domain Event
-     * Messages with a "type" that match the Aggregate type will be read. This is useful when multiple aggregates with
-     * different types but equal identifiers share the same event store.  Will be ignored if a Repository is also
-     * configured.
-     *
-     * @param filterEventsByType Whether to enable "filter events by type" for this Aggregate.
-     */
-    public void setFilterEventsByType(boolean filterEventsByType) {
-        this.filterEventsByType = filterEventsByType;
-    }
-
-    /**
-     * Sets the bean name of the {@link Cache} to use for this Aggregate. Will be ignored if a {@link LegacyRepository}
-     * is also configured.
-     *
-     * @param cache The bean name of the {@link Cache} to use for this Aggregate.
-     */
-    public void setCache(String cache) {
-        this.cache = cache;
-    }
-
-    /**
-     * Sets the bean name of the {@link LockFactory} to use for this Aggregate. Will be ignored if a
-     * {@link LegacyRepository} is also configured.
-     *
-     * @param lockFactory The bean name of the {@link LockFactory} to use for this Aggregate.
-     */
-    public void setLockFactory(String lockFactory) {
-        this.lockFactory = lockFactory;
-    }
-
-    /**
-     * Sets the bean name of the {@link AggregateFactory} to use for this Aggregate. Will be ignored if a
-     * {@link LegacyRepository} is also configured.
-     *
-     * @param aggregateFactory The bean name of the AggregateFactory to use for this Aggregate.
-     */
-    public void setAggregateFactory(String aggregateFactory) {
-        this.aggregateFactory = aggregateFactory;
+        this.idType = idType;
     }
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
-//        AggregateConfigurer<T> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(aggregateType)
-//                                                                        .withSubtypes(subTypes);
-        if (snapshotFilter != null) {
-//            aggregateConfigurer.configureSnapshotFilter(
-//                    c -> applicationContext.getBean(snapshotFilter, SnapshotFilter.class)
-//            );
-        }
-        if (aggregateRepository != null) {
-            //noinspection unchecked
-//            aggregateConfigurer.configureRepository(
-//                    c -> applicationContext.getBean(aggregateRepository, LegacyRepository.class)
-//            );
-        } else if (isEntityManagerAnnotationPresent(aggregateType)) {
-//            aggregateConfigurer.configureRepository(
-//                    c -> LegacyGenericJpaRepository.builder(aggregateType)
-//                                                   .parameterResolverFactory(c.parameterResolverFactory())
-//                                                   .handlerDefinition(c.handlerDefinition(aggregateType))
-//                                                   .lockFactory(c.getComponent(
-//                                                           LockFactory.class, () -> NullLockFactory.INSTANCE
-//                                                   ))
-//                                                   .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
-//                                                   .eventBus(c.eventBus())
-//                                                   .repositoryProvider(c::repository)
-//                                                   .spanFactory(c.getComponent(RepositorySpanFactory.class))
-//                                                   .build()
-//            );
-        }
-
-        if (snapshotTriggerDefinition != null) {
-//            aggregateConfigurer.configureSnapshotTrigger(
-//                    c -> applicationContext.getBean(snapshotTriggerDefinition, SnapshotTriggerDefinition.class)
-//            );
-        }
-        if (commandTargetResolver != null) {
-//            aggregateConfigurer.configureCommandTargetResolver(
-//                    c -> applicationContext.getBean(commandTargetResolver, CommandTargetResolver.class)
-//            );
-        }
-        if (cache != null) {
-//            aggregateConfigurer.configureCache(c -> applicationContext.getBean(cache, Cache.class));
-        }
-        if (lockFactory != null) {
-//            aggregateConfigurer.configureLockFactory(c -> applicationContext.getBean(lockFactory, LockFactory.class));
-        }
-        if (aggregateFactory != null) {
-            //noinspection unchecked
-//            aggregateConfigurer.configureAggregateFactory(
-//                    c -> applicationContext.getBean(aggregateFactory, AggregateFactory.class)
-//            );
-        }
-//        aggregateConfigurer.configureFilterEventsByType(c -> filterEventsByType);
-//        configurer.configureAggregate(aggregateConfigurer);
-    }
-
-    private boolean isEntityManagerAnnotationPresent(Class<T> type) {
-        return AnnotationUtils.isAnnotationPresent(type, "javax.persistence.Entity")
-                || AnnotationUtils.isAnnotationPresent(type, "jakarta.persistence.Entity");
-    }
-
-    @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
+        var eventSourcedEntityModule = EventSourcedEntityModule.annotated(this.idType, this.aggregateType);
+        registry.registerModule(eventSourcedEntityModule);
     }
 }

@@ -468,6 +468,12 @@ public class UnitOfWork implements ProcessingLifecycle {
             return applicationContext.component(type, name);
         }
 
+        @Nonnull
+        @Override
+        public <C> C component(@Nonnull Class<C> type) {
+            return applicationContext.component(type);
+        }
+
         @Override
         public String toString() {
             return "UnitOfWorkProcessingContext{"

@@ -20,3 +20,4 @@ org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration
 org.axonframework.springboot.autoconfig.ConverterAutoConfiguration
 org.axonframework.springboot.autoconfig.CBORMapperAutoConfiguration
 org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration
+org.axonframework.springboot.autoconfig.InfrastructureConfiguration

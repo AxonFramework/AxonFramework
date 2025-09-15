@@ -55,6 +55,7 @@ import java.util.List;
         NoOpTransactionAutoConfiguration.class,
         TransactionAutoConfiguration.class
 })
+@Deprecated(forRemoval = true, since = "5.0.0")
 public class InfraConfiguration {
 
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)

@@ -198,7 +198,7 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
         }
 
         @SuppressWarnings({"FieldCanBeLocal", "unused"})
-        @Aggregate(snapshotTriggerDefinition = "snapshotTriggerDefinition", snapshotFilter = "snapshotFilter")
+        @Aggregate
         public static class TestAggregate {
 
             @AggregateIdentifier

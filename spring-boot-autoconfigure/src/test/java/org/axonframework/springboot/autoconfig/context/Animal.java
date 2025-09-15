@@ -23,7 +23,7 @@ import org.axonframework.spring.stereotype.Aggregate;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
-@Aggregate(snapshotTriggerDefinition = "animalSnapshotTriggerDefinition")
+@Aggregate
 public abstract class Animal {
 
     @AggregateIdentifier

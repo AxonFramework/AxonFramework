@@ -33,7 +33,7 @@ import static org.axonframework.modelling.command.AggregateLifecycle.apply;
  *
  * @author Roald Bankras
  */
-@Aggregate
+@Aggregate(idType = UUID.class)
 public class TestAggregate {
 
     @AggregateIdentifier

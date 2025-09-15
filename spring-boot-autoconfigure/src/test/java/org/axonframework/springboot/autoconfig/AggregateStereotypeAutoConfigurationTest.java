@@ -188,12 +188,7 @@ class AggregateStereotypeAutoConfigurationTest {
 
         @SuppressWarnings({"FieldCanBeLocal", "unused"})
         @Aggregate(
-                snapshotTriggerDefinition = "testSnapshotTriggerDefinition",
-                snapshotFilter = "testSnapshotFilter",
-                type = "testType",
-                commandTargetResolver = "testCommandTargetResolver",
-                cache = "testCache",
-                lockFactory = "testLockFactory"
+                type = "testType"
         )
         public static class TestAggregate {
 
@@ -227,13 +222,7 @@ class AggregateStereotypeAutoConfigurationTest {
 
         @SuppressWarnings({"FieldCanBeLocal", "unused"})
         @Aggregate(
-                repository = "testRepository",
-                snapshotTriggerDefinition = "testSnapshotTriggerDefinition",
-                snapshotFilter = "testSnapshotFilter",
-                type = "testTypeWithCustomRepository",
-                commandTargetResolver = "testCommandTargetResolver",
-                cache = "testCache",
-                lockFactory = "testLockFactory"
+                type = "testTypeWithCustomRepository"
         )
         private static class CustomRepoTestAggregate {
 

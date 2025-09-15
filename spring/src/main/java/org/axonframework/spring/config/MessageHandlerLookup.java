@@ -50,7 +50,6 @@ import java.util.stream.Collectors;
  * @author Allard Buijze
  * @since 4.6.0
  */
-// TODO #3498 Fix as part of referred to issue
 public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageHandlerLookup.class);
