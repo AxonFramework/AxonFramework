@@ -1504,6 +1504,14 @@ This section describes numerous changes around Query Dispatching and Handling. F
 newly **recommended** approach to dispatch queries from within another message handling function, please check
 the [Query Dispatcher](#query-dispatcher) section.
 
+> Notice - Scatter-Gather has been removed!
+>
+> We decided to remove the Scatter-Gather query support on the `QueryBus` and `QueryGateway` due to limited use.
+> If you did use Scatter-Gather with success, be sure to reach out! We are more than willing to reintroduce
+> scatter-gather support based on user experience. If so, be sure to leave a comment
+> under [this](https://github.com/AxonFramework/AxonFramework/issues/3689) issue to nudge the Axon Framework team
+> accordingly
+
 ### Query Bus
 
 The `QueryBus` has undergone some API changes to align with the [Async Native API](#async-native-apis) and ease
@@ -1545,7 +1553,7 @@ To keep support for querying a single or multiple instances, the gateway now has
 2. `CompletableFuture<List<R>> QueryGateway#queryMany(Object, Class<R>, ProcessingContext)`
 
 This shift is inline with the streaming query (introduced in Axon Framework 4.6), which also does **not** allow you to
-define the `ResponseType`. 
+define the `ResponseType`.
 
 As might be clear, the `QueryGateway` has an entirely new look and feel. If there are any operations we have
 removed/adjusted you miss, or if you have any other suggestions for improvement, please
@@ -1825,6 +1833,8 @@ This section contains five tables:
 | org.axonframework.queryhandling.registration.FailingDuplicateQueryHandlerResolver        | Redundant class with current handler registration flow                                                                                         |
 | org.axonframework.queryhandling.registration.LoggingDuplicateQueryHandlerResolver        | Redundant class with current handler registration flow                                                                                         |
 | org.axonframework.queryhandling.QuerySubscription                                        | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.QueryInvocationErrorHandler                              | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
+| org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler                       | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
 
 ### Marked for removal Classes
 
@@ -1989,6 +1999,8 @@ This section contains four subsections, called:
 | `org.axonframework.axonserver.connector.AxonServerConfiguration#setEventBlockListingEnabled(boolean)`             | Removed as the `EventCriteria` allow for automated filtering.                                                               |
 | `MessageDispatchInterceptor#handle(List<? extends T>)`                                                            | Removed due to limited usage.                                                                                               |
 | `PropertySequencingPolicy#builder`                                                                                | Use constructor instead. To define fallbackSequencingPolicy use `FallbackSequencingPolicy`.                                 |
+| `QueryBus#scatterGather(QueryMessage<Q, R>, long, TimeUnit)`                                                      | Removed due to limited use (see [Query Dispatching and Handling](#query-dispatching-and-handling)                           |
+| `QueryGateway#scatterGather(Q, ResponseType<R>, long, TimeUnit)`                                                  | Removed due to limited use (see [Query Dispatching and Handling](#query-dispatching-and-handling)                           |
 
 ### Changed Method return types
 

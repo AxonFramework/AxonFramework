@@ -24,14 +24,12 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.grpc.netty.shaded.io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
-import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
-import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.StreamingQueryMessage;
+import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.util.ClasspathResolver;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
@@ -39,12 +37,10 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 
 import java.lang.invoke.MethodHandles;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import static org.axonframework.axonserver.connector.util.ProcessingInstructionHelper.*;
 
@@ -146,8 +142,6 @@ class QueryProcessingTask implements Runnable, FlowControl {
                     } else {
                         directQuery(queryMessage);
                     }
-                } else {
-                    scatterGather(queryMessage);
                 }
             });
         } catch (RuntimeException | OutOfDirectMemoryError e) {
@@ -237,18 +231,6 @@ class QueryProcessingTask implements Runnable, FlowControl {
         } else {
             request(requestedBeforeInit.get());
         }
-    }
-
-    private void scatterGather(QueryMessage originalQueryMessage) {
-        Stream<QueryResponseMessage> result = localSegment.scatterGather(
-                originalQueryMessage,
-                ProcessingInstructionHelper.timeout(queryRequest.getProcessingInstructionsList()),
-                TimeUnit.MILLISECONDS
-        );
-        result.forEach(r -> responseHandler.send(
-                serializer.serializeResponse(r, queryRequest.getMessageIdentifier())
-        ));
-        responseHandler.complete();
     }
 
     private StreamableResponse streamableFluxResult(Publisher<QueryResponseMessage> resultPublisher) {

@@ -18,19 +18,16 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
-import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -47,17 +44,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
-import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
 
 /**
  * Implementation of the QueryBus that dispatches queries to the handlers within the JVM. Any timeouts are ignored by
@@ -80,7 +72,6 @@ public class SimpleQueryBus implements QueryBus {
     private final QueryUpdateEmitter queryUpdateEmitter;
     private final ConcurrentMap<QueryHandlerName, List<QueryHandler>> subscriptions = new ConcurrentHashMap<>();
 
-    private final QueryInvocationErrorHandler errorHandler;
     private final MessageTypeResolver messageTypeResolver;
 
     /**
@@ -98,8 +89,6 @@ public class SimpleQueryBus implements QueryBus {
         this.queryUpdateEmitter =
                 Objects.requireNonNull(queryUpdateEmitter, "The QueryUpdateEmitter must be provided.");
 
-        // TODO I think we can drop this, as it is only used for scatter-gather queries
-        this.errorHandler = LoggingQueryInvocationErrorHandler.builder().build();
         // Replace as this is a gateway concern
         this.messageTypeResolver = new ClassBasedMessageTypeResolver();
     }
@@ -273,47 +262,6 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    public Stream<QueryResponseMessage> scatterGather(@Nonnull QueryMessage query, long timeout,
-                                                      @Nonnull TimeUnit unit) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
-                       () -> "Scatter-Gather query does not support Flux as a return type.");
-        List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> handlers =
-                getHandlersForMessage(query);
-        if (handlers.isEmpty()) {
-            return Stream.empty();
-        }
-
-        long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
-        return handlers
-                .stream()
-                .map(handler -> scatterGatherHandler(query, deadline, handler))
-                .filter(Objects::nonNull);
-    }
-
-    private QueryResponseMessage scatterGatherHandler(
-            QueryMessage q,
-            long deadline,
-            MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> handler
-    ) {
-        long leftTimeout = getRemainingOfDeadline(deadline);
-        ResultMessage resultMessage =
-                invoke(LegacyDefaultUnitOfWork.startAndGet(q),
-                       handler);
-        QueryResponseMessage response = null;
-        if (resultMessage.isExceptional()) {
-            errorHandler.onError(resultMessage.exceptionResult(), q, handler);
-        } else {
-            try {
-                response = ((CompletableFuture<QueryResponseMessage>) resultMessage.payload()).get(leftTimeout,
-                                                                                                   TimeUnit.MILLISECONDS);
-            } catch (Exception e) {
-                errorHandler.onError(e, q, handler);
-            }
-        }
-        return response;
-    }
-
-    @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
             @Nonnull SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
@@ -360,79 +308,6 @@ public class SimpleQueryBus implements QueryBus {
         return queryUpdateEmitter;
     }
 
-    private ResultMessage invoke(LegacyUnitOfWork<QueryMessage> uow,
-                                 MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> handler) {
-        return uow.executeWithResult((ctx) -> {
-            ResponseType<?> responseType = uow.getMessage().responseType();
-            Object queryResponse = handler.handleSync(uow.getMessage(), ctx);
-            if (queryResponse instanceof CompletableFuture) {
-                return ((CompletableFuture<?>) queryResponse).thenCompose(
-                        result -> buildCompletableFuture(responseType, result));
-            } else if (queryResponse instanceof Future) {
-                return CompletableFuture.supplyAsync(() -> {
-                    try {
-                        return asNullableResponseMessage(
-                                responseType.responseMessagePayloadType(),
-                                responseType.convert(((Future<?>) queryResponse).get()));
-                    } catch (InterruptedException | ExecutionException e) {
-                        throw new QueryExecutionException("Error happened while trying to execute query handler", e);
-                    }
-                });
-            }
-            return buildCompletableFuture(responseType, queryResponse);
-        });
-    }
-
-    /**
-     * Creates a QueryResponseMessage for the given {@code result} with a {@code declaredType} as the result type.
-     * Providing both the result type and the result allows the creation of a nullable response message, as the
-     * implementation does not have to check the type itself, which could result in a
-     * {@link java.lang.NullPointerException}. If result already implements QueryResponseMessage, it is returned
-     * directly. Otherwise a new QueryResponseMessage is created with the declared type as the result type and the
-     * result as payload.
-     *
-     * @param declaredType The declared type of the Query Response Message to be created.
-     * @param result       The result of a Query, to be wrapped in a QueryResponseMessage
-     * @param <R>          The type of response expected
-     * @return a QueryResponseMessage for the given {@code result}, or the result itself, if already a
-     * QueryResponseMessage.
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    private <R> QueryResponseMessage asNullableResponseMessage(Class<R> declaredType, Object result) {
-        if (result instanceof QueryResponseMessage) {
-            //noinspection unchecked
-            return (QueryResponseMessage) result;
-        } else if (result instanceof ResultMessage) {
-            //noinspection unchecked
-            ResultMessage resultMessage = (ResultMessage) result;
-            if (resultMessage.isExceptional()) {
-                Throwable cause = resultMessage.exceptionResult();
-                return new GenericQueryResponseMessage(
-                        messageTypeResolver.resolveOrThrow(cause),
-                        cause,
-                        declaredType,
-                        resultMessage.metadata()
-                );
-            }
-            return new GenericQueryResponseMessage(
-                    messageTypeResolver.resolveOrThrow(resultMessage.payload()),
-                    resultMessage.payload(),
-                    resultMessage.metadata()
-            );
-        } else if (result instanceof Message) {
-            //noinspection unchecked
-            Message message = (Message) result;
-            return new GenericQueryResponseMessage(messageTypeResolver.resolveOrThrow(message.payload()),
-                                                   message.payload(),
-                                                   message.metadata());
-        } else {
-            MessageType type = messageTypeResolver.resolveOrThrow(ObjectUtils.nullSafeTypeOf(result));
-            //noinspection unchecked
-            return new GenericQueryResponseMessage(type, (R) result, declaredType);
-        }
-    }
-
     private ResultMessage invokeStreaming(
             StreamingQueryMessage query,
             MessageHandler<? super StreamingQueryMessage, ? extends QueryResponseMessage> handler) {
@@ -472,13 +347,6 @@ public class SimpleQueryBus implements QueryBus {
                                                    message.metadata());
         }
         return new GenericQueryResponseMessage(messageTypeResolver.resolveOrThrow(result), result);
-    }
-
-    private <R> CompletableFuture<QueryResponseMessage> buildCompletableFuture(ResponseType<R> responseType,
-                                                                               Object queryResponse) {
-        return CompletableFuture.completedFuture(asNullableResponseMessage(
-                responseType.responseMessagePayloadType(),
-                responseType.convert(queryResponse)));
     }
 
     @Nonnull
