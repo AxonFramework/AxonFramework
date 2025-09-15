@@ -26,6 +26,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.processors.EventProcessor;
@@ -55,6 +56,7 @@ import static java.util.stream.Collectors.toMap;
  * @author Steven van Beelen
  * @since 4.0.0
  */
+@Internal
 public class EventProcessorControlService {
 
     private static final Logger logger = LoggerFactory.getLogger(EventProcessorControlService.class);
@@ -91,6 +93,7 @@ public class EventProcessorControlService {
                 connectionManager, "The Axon Server Connection Manager must not be null."
         );
         this.configuration = configuration;
+        // TODO #3521 - We should actually know the context of the Event Processor for th is...
         this.context = context;
         this.processorConfig = Objects.requireNonNull(processorConfig, "The Processor Configuration must not be null.");
     }
@@ -104,6 +107,7 @@ public class EventProcessorControlService {
      * this service provides control over have been started.
      */
     public void start() {
+        // TODO #3521 - Can Event Processors only live on the MessagingConfigurer, or in any Module?
         Map<String, EventProcessor> eventProcessors = configuration.getComponent(Map.class);
 
         AxonServerConnection connection = axonServerConnectionManager.getConnection(context);
