@@ -17,8 +17,6 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.commandhandling.CommandPriorityCalculator;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -49,15 +47,14 @@ public class DefaultQueryGateway implements QueryGateway {
     /**
      * Initialize the {@code DefaultQueryGateway} to send queries through the given {@code queryBus}.
      * <p>
-     * The {@link org.axonframework.messaging.QualifiedName names} for
-     * {@link org.axonframework.commandhandling.CommandMessage CommandMessages} are resolved through the given
-     * {@code nameResolver}.
+     * The {@link org.axonframework.messaging.QualifiedName names} for {@link QueryMessage QueryMessages} are resolved
+     * through the given {@code nameResolver}.
      *
      * @param queryBus            The {@link QueryBus} to send queries on.
      * @param messageTypeResolver The {@link MessageTypeResolver} resolving the
      *                            {@link org.axonframework.messaging.QualifiedName names} for
      *                            {@link QueryMessage QueryMessages} being dispatched on the {@code queryBus}.
-     * @param priorityCalculator  The {@link CommandPriorityCalculator} determining the priority of commands. Can be
+     * @param priorityCalculator  The {@link QueryPriorityCalculator} determining the priority of queries. Can be
      *                            omitted.
      */
     public DefaultQueryGateway(@Nonnull QueryBus queryBus,
