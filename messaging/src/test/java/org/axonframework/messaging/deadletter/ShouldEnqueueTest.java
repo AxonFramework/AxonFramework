@@ -18,7 +18,7 @@ package org.axonframework.messaging.deadletter;
 
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -115,9 +115,9 @@ class ShouldEnqueueTest {
     @Test
     void constructorShouldEnqueueWithCauseAndDiagnosticsAllowsEnqueueingWithGivenCauseAndDiagnostics() {
         Throwable testCause = new RuntimeException("just because");
-        MetaData testMetaData = MetaData.with("key", "value");
+        Metadata testMetadata = Metadata.with("key", "value");
 
-        ShouldEnqueue<Message> testSubject = new ShouldEnqueue<>(testCause, letter -> testMetaData);
+        ShouldEnqueue<Message> testSubject = new ShouldEnqueue<>(testCause, letter -> testMetadata);
 
         assertTrue(testSubject.shouldEnqueue());
         Optional<Throwable> resultCause = testSubject.enqueueCause();
@@ -129,15 +129,15 @@ class ShouldEnqueueTest {
         assertEquals(testLetter.cause(), result.cause());
         assertEquals(testLetter.enqueuedAt(), result.enqueuedAt());
         assertEquals(testLetter.lastTouched(), result.lastTouched());
-        assertEquals(testMetaData, result.diagnostics());
+        assertEquals(testMetadata, result.diagnostics());
     }
 
     @Test
     void decisionsRequeueWithCauseAndDiagnosticsAllowsEnqueueingWithGivenCauseAndDiagnostics() {
         Throwable testCause = new RuntimeException("just because");
-        MetaData testMetaData = MetaData.with("key", "value");
+        Metadata testMetadata = Metadata.with("key", "value");
 
-        ShouldEnqueue<Message> testSubject = Decisions.requeue(testCause, letter -> testMetaData);
+        ShouldEnqueue<Message> testSubject = Decisions.requeue(testCause, letter -> testMetadata);
 
         assertTrue(testSubject.shouldEnqueue());
         Optional<Throwable> resultCause = testSubject.enqueueCause();
@@ -149,6 +149,6 @@ class ShouldEnqueueTest {
         assertEquals(testLetter.cause(), result.cause());
         assertEquals(testLetter.enqueuedAt(), result.enqueuedAt());
         assertEquals(testLetter.lastTouched(), result.lastTouched());
-        assertEquals(testMetaData, result.diagnostics());
+        assertEquals(testMetadata, result.diagnostics());
     }
 }

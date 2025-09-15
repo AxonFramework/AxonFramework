@@ -72,13 +72,13 @@ public interface ContinuedGivenState extends WhenState {
     ContinuedGivenState andThenAPublished(Object event);
 
     /**
-     * Indicates that the given {@code event} with given {@code metaData} has been published in the past. This event is sent to the associated
+     * Indicates that the given {@code event} with given {@code metadata} has been published in the past. This event is sent to the associated
      * sagas.
      *
      * @param event The event to publish
-     * @param metaData The metadata to attach to the event
+     * @param metadata The metadata to attach to the event
      * @return an object that allows chaining of more given state
      * @throws Exception if an exception happens when the event is handled
      */
-    ContinuedGivenState andThenAPublished(Object event, Map<String, String> metaData);
+    ContinuedGivenState andThenAPublished(Object event, Map<String, String> metadata);
 }

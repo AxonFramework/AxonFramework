@@ -30,7 +30,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolver;
@@ -223,7 +223,7 @@ public interface FixtureConfiguration<T> {
     /**
      * Register a {@link MessageDispatchInterceptor} for {@link CommandMessage}s which will be invoked before any
      * command is dispatched on the {@link CommandBus} to perform a task specified in the interceptor. For example by
-     * adding {@link MetaData} or throwing an exception based on the command.
+     * adding {@link Metadata} or throwing an exception based on the command.
      *
      * @param commandDispatchInterceptor the {@link MessageDispatchInterceptor} for {@link CommandMessage}s to be added
      *                                   to this fixture's {@link CommandBus}
@@ -329,9 +329,9 @@ public interface FixtureConfiguration<T> {
      * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event store
      * when an aggregate is loaded.
      * <p/>
-     * If an item in the given {@code domainEvents} implements {@link Message}, the payload and {@link MetaData} from
+     * If an item in the given {@code domainEvents} implements {@link Message}, the payload and {@link Metadata} from
      * that {@code Message} are copied into a newly created {@link org.axonframework.eventhandling.DomainEventMessage}.
-     * Otherwise, a {@code DomainEventMessage} with the item as payload and empty {@code MetaData} is created.
+     * Otherwise, a {@code DomainEventMessage} with the item as payload and empty {@code Metadata} is created.
      * <p>
      * Note that transitioning to the returned {@link TestExecutor} will clear any previously defined "given" state to
      * ensure the fixture can run a clean test environment.
@@ -367,9 +367,9 @@ public interface FixtureConfiguration<T> {
      * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event store
      * when an aggregate is loaded.
      * <p/>
-     * If an item in the list implements {@link Message}, the payload and {@link MetaData} from that {@code Message} are
+     * If an item in the list implements {@link Message}, the payload and {@link Metadata} from that {@code Message} are
      * copied into a newly created {@link org.axonframework.eventhandling.DomainEventMessage}. Otherwise, a
-     * {@code DomainEventMessage} with the item as payload and empty {@code MetaData} is created.
+     * {@code DomainEventMessage} with the item as payload and empty {@code Metadata} is created.
      * <p>
      * Note that transitioning to the returned {@link TestExecutor} will clear any previously defined "given" state to
      * ensure the fixture can run a clean test environment.

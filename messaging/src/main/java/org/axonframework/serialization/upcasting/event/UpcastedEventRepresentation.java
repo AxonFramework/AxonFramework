@@ -17,7 +17,7 @@
 package org.axonframework.serialization.upcasting.event;
 
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedObject;
@@ -44,10 +44,10 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
     private final SerializedType outputType;
     private final IntermediateEventRepresentation source;
     private final Function<T, T> upcastFunction;
-    private final Function<MetaData, MetaData> metaDataUpcastFunction;
+    private final Function<Metadata, Metadata> metadataUpcastFunction;
     private final Class<T> requiredType;
     private final Converter converter;
-    private LazyDeserializingObject<MetaData> metaData;
+    private LazyDeserializingObject<Metadata> metadata;
 
     /**
      * Initializes an {@link UpcastedEventRepresentation} from source data and given upcast functions for payload and
@@ -57,18 +57,18 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
      * @param outputType             the output type of the payload data after upcasting
      * @param source                 the intermediate representation that will be upcast
      * @param upcastFunction         the function to upcast the payload data
-     * @param metaDataUpcastFunction the function to upcast the metadata
+     * @param metadataUpcastFunction the function to upcast the metadata
      * @param requiredType           the type that is needed for the upcastFunction
      * @param converter              produces converters to convert the serialized data type if required
      */
     public UpcastedEventRepresentation(SerializedType outputType, IntermediateEventRepresentation source,
                                        Function<T, T> upcastFunction,
-                                       Function<MetaData, MetaData> metaDataUpcastFunction, Class<T> requiredType,
+                                       Function<Metadata, Metadata> metadataUpcastFunction, Class<T> requiredType,
                                        Converter converter) {
         this.outputType = outputType;
         this.source = source;
         this.upcastFunction = upcastFunction;
-        this.metaDataUpcastFunction = metaDataUpcastFunction;
+        this.metadataUpcastFunction = metadataUpcastFunction;
         this.requiredType = requiredType;
         this.converter = converter;
     }
@@ -76,8 +76,8 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
     @Override
     public <S> IntermediateEventRepresentation upcast(SerializedType outputType, Class<S> expectedRepresentationType,
                                                       Function<S, S> upcastFunction,
-                                                      Function<MetaData, MetaData> metaDataUpcastFunction) {
-        return new UpcastedEventRepresentation<>(outputType, this, upcastFunction, metaDataUpcastFunction,
+                                                      Function<Metadata, Metadata> metadataUpcastFunction) {
+        return new UpcastedEventRepresentation<>(outputType, this, upcastFunction, metadataUpcastFunction,
                                                  expectedRepresentationType, converter);
     }
 
@@ -150,11 +150,11 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
     }
 
     @Override
-    public LazyDeserializingObject<MetaData> getMetaData() {
-        if (metaData == null) {
-            metaData = new LazyDeserializingObject<>(metaDataUpcastFunction.apply(source.getMetaData().getObject()));
+    public LazyDeserializingObject<Metadata> getMetadata() {
+        if (metadata == null) {
+            metadata = new LazyDeserializingObject<>(metadataUpcastFunction.apply(source.getMetadata().getObject()));
         }
-        return metaData;
+        return metadata;
     }
 
     @Override

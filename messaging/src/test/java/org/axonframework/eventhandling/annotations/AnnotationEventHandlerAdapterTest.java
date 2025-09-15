@@ -26,10 +26,10 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.annotation.MetadataValue;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
@@ -101,7 +101,7 @@ class AnnotationEventHandlerAdapterTest {
     @Disabled("TODO #3062 - Exception Handler support")
     void wrapExceptionInResultInterceptor() {
         EventMessage testEventMessage =
-                asEventMessage("testing").andMetaData(MetaData.with("key", "value"));
+                asEventMessage("testing").andMetadata(Metadata.with("key", "value"));
         ProcessingContext context = StubProcessingContext.forMessage(testEventMessage);
 
         SomeExceptionHandler annotatedEventListener = new SomeExceptionHandler();
@@ -123,7 +123,7 @@ class AnnotationEventHandlerAdapterTest {
     @Test
     void mismatchingExceptionTypeFromHandlerIgnored() {
         EventMessage testEventMessage =
-                asEventMessage("testing").andMetaData(MetaData.with("key", "value"));
+                asEventMessage("testing").andMetadata(Metadata.with("key", "value"));
         ProcessingContext context = StubProcessingContext.forMessage(testEventMessage);
 
         SomeMismatchingExceptionHandler annotatedEventListener = new SomeMismatchingExceptionHandler();
@@ -212,7 +212,7 @@ class AnnotationEventHandlerAdapterTest {
         }
 
         @ExceptionHandler(resultType = IllegalArgumentException.class)
-        public void handle(@MetaDataValue(value = "key", required = true) String value, Exception e) {
+        public void handle(@MetadataValue(value = "key", required = true) String value, Exception e) {
             throw new RuntimeException(value, e);
         }
     }
@@ -231,7 +231,7 @@ class AnnotationEventHandlerAdapterTest {
         }
 
         @ExceptionHandler
-        public void handle(@MetaDataValue(value = "key", required = true) String value, AxonException e) {
+        public void handle(@MetadataValue(value = "key", required = true) String value, AxonException e) {
             throw new RuntimeException(value, e);
         }
 

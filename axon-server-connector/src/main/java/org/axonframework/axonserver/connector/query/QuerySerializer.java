@@ -24,7 +24,7 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
-import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
+import org.axonframework.axonserver.connector.util.GrpcMetadataConverter;
 import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
 import org.axonframework.axonserver.connector.util.GrpcObjectSerializer;
 import org.axonframework.axonserver.connector.util.GrpcPayloadSerializer;
@@ -81,7 +81,7 @@ public class QuerySerializer {
 
         this.payloadSerializer = new GrpcPayloadSerializer(messageSerializer);
         this.exceptionDetailsSerializer = new GrpcObjectSerializer<>(messageSerializer);
-        this.metadataSerializer = new GrpcMetadataSerializer(new GrpcMetaDataConverter(this.messageSerializer));
+        this.metadataSerializer = new GrpcMetadataSerializer(new GrpcMetadataConverter(this.messageSerializer));
         this.responseTypeSerializer = new GrpcObjectSerializer<>(serializer);
     }
 
@@ -134,7 +134,7 @@ public class QuerySerializer {
                            .addProcessingInstructions(timeout(timeout))
                            .addProcessingInstructions(priority(priority))
                            .addProcessingInstructions(supportsStreaming(stream))
-                           .putAllMetaData(metadataSerializer.apply(queryMessage.metaData()))
+                           .putAllMetaData(metadataSerializer.apply(queryMessage.metadata()))
                            .build();
     }
 
@@ -197,7 +197,7 @@ public class QuerySerializer {
             responseBuilder.setPayload(payloadSerializer.apply(queryResponse));
         }
 
-        return responseBuilder.putAllMetaData(metadataSerializer.apply(queryResponse.metaData()))
+        return responseBuilder.putAllMetaData(metadataSerializer.apply(queryResponse.metadata()))
                               .setMessageIdentifier(queryResponse.identifier())
                               .setRequestIdentifier(requestMessageId)
                               .build();

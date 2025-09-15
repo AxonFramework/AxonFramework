@@ -1142,7 +1142,7 @@ Handling of an event will start when the handling of a previous event has finish
 * `PropertySequencingPolicy`: When configuring this policy, the user is required to provide a property name or property extractor function.
 This implementation provides a flexible solution to set up a custom sequencing policy based on a standard value present in your events.
 Note that this policy only reacts to properties present in the event class.
-* `MetaDataSequencingPolicy`: When configuring this policy, the user is required to provide a `metaDataKey` to be used.
+* `MetadataSequencingPolicy`: When configuring this policy, the user is required to provide a `metaDataKey` to be used.
 This implementation provides a flexible solution to set up a custom sequencing policy based on a standard value present in your events' metadata.
 
 Consider the following snippets when configuring a (custom) `SequencingPolicy`:

@@ -470,11 +470,11 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager {
 
         /**
          * Sets the {@link Serializer} used to de-/serialize the {@code payload},
-         * {@link org.axonframework.messaging.MetaData} and the {@link ScopeDescriptor} into the {@link DeadlineDetails}
+         * {@link org.axonframework.messaging.Metadata} and the {@link ScopeDescriptor} into the {@link DeadlineDetails}
          * as well as the whole {@link DeadlineDetails} itself.
          *
          * @param serializer a {@link Serializer} used to de-/serialize the {@code payload},
-         *                   {@link org.axonframework.messaging.MetaData} and the {@link ScopeDescriptor} into the
+         *                   {@link org.axonframework.messaging.Metadata} and the {@link ScopeDescriptor} into the
          *                   {@link DeadlineDetails}, as well as the whole {@link DeadlineDetails} itself.
          * @return the current Builder instance, for fluent interfacing
          */

@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
-
-import org.axonframework.messaging.Context;
+package org.axonframework.messaging;
 
 /**
  * Utility class to obtain resources used in previous versions of Axon Framework.

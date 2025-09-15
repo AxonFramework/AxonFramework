@@ -25,11 +25,11 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link MetaDataConverter}.
+ * Test class validating the {@link MetadataConverter}.
  *
  * @author Jens Mayer
  */
-class MetaDataConverterTest {
+class MetadataConverterTest {
 
     @Test
     void convertsEmptyMap() {
@@ -37,7 +37,7 @@ class MetaDataConverterTest {
         Map<String, String> source = new HashMap<>();
 
         // When
-        Map<String, MetaDataValue> result = MetaDataConverter.convertGrpcToMetaDataValues(source);
+        Map<String, MetaDataValue> result = MetadataConverter.convertGrpcToMetadataValues(source);
 
         // Then
         assertNotNull(result);
@@ -54,7 +54,7 @@ class MetaDataConverterTest {
         );
 
         // When
-        Map<String, MetaDataValue> result = MetaDataConverter.convertGrpcToMetaDataValues(source);
+        Map<String, MetaDataValue> result = MetadataConverter.convertGrpcToMetadataValues(source);
 
         // Then
         assertNotNull(result);
@@ -74,7 +74,7 @@ class MetaDataConverterTest {
         Map<String, MetaDataValue> source = new HashMap<>();
 
         // When
-        Map<String, String> result = MetaDataConverter.convertMetaDataValuesToGrpc(source);
+        Map<String, String> result = MetadataConverter.convertMetadataValuesToGrpc(source);
 
         // Then
         assertNotNull(result);
@@ -101,7 +101,7 @@ class MetaDataConverterTest {
         );
 
         // When
-        Map<String, String> result = MetaDataConverter.convertMetaDataValuesToGrpc(source);
+        Map<String, String> result = MetadataConverter.convertMetadataValuesToGrpc(source);
 
         // Then
         assertNotNull(result);

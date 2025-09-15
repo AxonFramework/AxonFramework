@@ -203,10 +203,10 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
      */
     @SuppressWarnings("rawtypes")
     public void execute(@Nonnull String serializedDeadlineDetails, String deadlineId) {
-        SimpleSerializedObject<String> serializedDeadlineMetaData = new SimpleSerializedObject<>(
+        SimpleSerializedObject<String> serializedDeadlineMetadata = new SimpleSerializedObject<>(
                 serializedDeadlineDetails, String.class, DeadlineDetails.class.getName(), null
         );
-        DeadlineDetails deadlineDetails = serializer.deserialize(serializedDeadlineMetaData);
+        DeadlineDetails deadlineDetails = serializer.deserialize(serializedDeadlineMetadata);
         GenericDeadlineMessage deadlineMessage = deadlineDetails.asDeadLineMessage(serializer);
         Span span = spanFactory.createExecuteSpan(deadlineDetails.getDeadlineName(),
                                                   deadlineId,
@@ -311,11 +311,11 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager {
 
         /**
          * Sets the {@link Serializer} used to de-/serialize the {@code payload},
-         * {@link org.axonframework.messaging.MetaData} and the {@link ScopeDescriptor} into the {@link DeadlineDetails}
+         * {@link org.axonframework.messaging.Metadata} and the {@link ScopeDescriptor} into the {@link DeadlineDetails}
          * as well as the whole {@link DeadlineDetails} itself.
          *
          * @param serializer a {@link Serializer} used to de-/serialize the {@code payload},
-         *                   {@link org.axonframework.messaging.MetaData} and the {@link ScopeDescriptor} into the
+         *                   {@link org.axonframework.messaging.Metadata} and the {@link ScopeDescriptor} into the
          *                   {@link DeadlineDetails}, as well as the whole {@link DeadlineDetails} itself.
          * @return the current Builder instance, for fluent interfacing
          */

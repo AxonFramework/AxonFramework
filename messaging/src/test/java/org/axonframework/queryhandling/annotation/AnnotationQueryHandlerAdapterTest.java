@@ -18,7 +18,7 @@ package org.axonframework.queryhandling.annotation;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
@@ -253,7 +253,7 @@ class AnnotationQueryHandlerAdapterTest {
     private static class MySecondQueryHandler {
 
         @QueryHandler
-        public String echo(MetaData metaData, String echo) {
+        public String echo(Metadata metadata, String echo) {
             return echo;
         }
     }

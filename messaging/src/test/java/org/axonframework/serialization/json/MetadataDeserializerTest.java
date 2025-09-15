@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MetaDataDeserializerTest {
+class MetadataDeserializerTest {
 
     public static Stream<Arguments> objectMappers() {
         return Stream.of(null,
@@ -45,7 +45,7 @@ class MetaDataDeserializerTest {
     private static ObjectMapper objectMapper(ObjectMapper.DefaultTyping defaultTyping) {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(
-                new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer()));
+                new SimpleModule("Axon-Jackson Module").addDeserializer(Metadata.class, new MetadataDeserializer()));
 
         if (defaultTyping != null) {
             objectMapper.activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(), defaultTyping);
@@ -55,22 +55,22 @@ class MetaDataDeserializerTest {
 
     @MethodSource("objectMappers")
     @ParameterizedTest
-    void metaDataSerializationWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
-        MetaData metaData = new MetaData(Collections.singletonMap("one", "two"));
-        String serializedString = objectMapper.writeValueAsString(metaData);
+    void metadataSerializationWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
+        Metadata metadata = new Metadata(Collections.singletonMap("one", "two"));
+        String serializedString = objectMapper.writeValueAsString(metadata);
 
-        MetaData deserialized = objectMapper.readValue(serializedString, MetaData.class);
+        Metadata deserialized = objectMapper.readValue(serializedString, Metadata.class);
         assertEquals("two", deserialized.get("one"));
         assertEquals(serializedString, objectMapper.writeValueAsString(deserialized));
     }
 
     @MethodSource("objectMappers")
     @ParameterizedTest
-    void emptyMetaDataSerializationWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
-        MetaData metaData1 = new MetaData(new HashMap<>());
-        String emptySerializedString = objectMapper.writeValueAsString(metaData1);
+    void emptyMetadataSerializationWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
+        Metadata metadata1 = new Metadata(new HashMap<>());
+        String emptySerializedString = objectMapper.writeValueAsString(metadata1);
 
-        MetaData deserialized = objectMapper.readValue(emptySerializedString, MetaData.class);
+        Metadata deserialized = objectMapper.readValue(emptySerializedString, Metadata.class);
         assertTrue(deserialized.entrySet().isEmpty());
 
         assertEquals(emptySerializedString, objectMapper.writeValueAsString(deserialized));
@@ -78,10 +78,10 @@ class MetaDataDeserializerTest {
 
     @MethodSource("objectMappers")
     @ParameterizedTest
-    void metaDataContainerWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
-        MetaData metaData = new MetaData(Collections.singletonMap("one", "two"));
+    void metadataContainerWithDefaultTyping(ObjectMapper objectMapper) throws IOException {
+        Metadata metadata = new Metadata(Collections.singletonMap("one", "two"));
 
-        Container container = new Container("a", metaData, 1);
+        Container container = new Container("a", metadata, 1);
         String serializedContainerString = objectMapper.writeValueAsString(container);
 
         Container deserialized = objectMapper.readValue(serializedContainerString, Container.class);
@@ -93,13 +93,13 @@ class MetaDataDeserializerTest {
     public static class Container {
 
         private String a;
-        private MetaData b;
+        private Metadata b;
         private Integer c;
 
         @JsonCreator
         public Container(
                 @JsonProperty("a") String a,
-                @JsonProperty("b") MetaData b,
+                @JsonProperty("b") Metadata b,
                 @JsonProperty("c") Integer c) {
             this.a = a;
             this.b = b;
@@ -114,11 +114,11 @@ class MetaDataDeserializerTest {
             this.a = a;
         }
 
-        public MetaData getB() {
+        public Metadata getB() {
             return b;
         }
 
-        public void setB(MetaData b) {
+        public void setB(Metadata b) {
             this.b = b;
         }
 

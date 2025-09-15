@@ -28,7 +28,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.query.GrpcBackedResponseMessage;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
-import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
+import org.axonframework.axonserver.connector.util.GrpcMetadataConverter;
 import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
 import org.axonframework.axonserver.connector.util.GrpcObjectSerializer;
 import org.axonframework.axonserver.connector.util.GrpcPayloadSerializer;
@@ -87,7 +87,7 @@ public class SubscriptionMessageSerializer {
         this.serializer = serializer;
 
         this.payloadSerializer = new GrpcPayloadSerializer(messageSerializer);
-        this.metadataSerializer = new GrpcMetadataSerializer(new GrpcMetaDataConverter(messageSerializer));
+        this.metadataSerializer = new GrpcMetadataSerializer(new GrpcMetadataConverter(messageSerializer));
         this.responseTypeSerializer = new GrpcObjectSerializer<>(serializer);
         this.exceptionDetailsSerializer = new GrpcObjectSerializer<>(messageSerializer);
     }
@@ -107,7 +107,7 @@ public class SubscriptionMessageSerializer {
                            .setComponentName(configuration.getComponentName())
                            .setPayload(payloadSerializer.apply(subscriptionQueryMessage))
                            .setResponseType(responseTypeSerializer.apply(subscriptionQueryMessage.responseType()))
-                           .putAllMetaData(metadataSerializer.apply(subscriptionQueryMessage.metaData()))
+                           .putAllMetaData(metadataSerializer.apply(subscriptionQueryMessage.metadata()))
                            .build();
     }
 
@@ -150,8 +150,8 @@ public class SubscriptionMessageSerializer {
             updateMessageBuilder.setPayload(payloadSerializer.apply(subscriptionQueryUpdateMessage));
         }
 
-        Map<String, MetaDataValue> metaData = metadataSerializer.apply(subscriptionQueryUpdateMessage.metaData());
-        return updateMessageBuilder.putAllMetaData(metaData)
+        Map<String, MetaDataValue> metadata = metadataSerializer.apply(subscriptionQueryUpdateMessage.metadata());
+        return updateMessageBuilder.putAllMetaData(metadata)
                                    .setMessageIdentifier(subscriptionQueryUpdateMessage.identifier())
                                    .setClientId(configuration.getClientId())
                                    .setComponentName(configuration.getComponentName())

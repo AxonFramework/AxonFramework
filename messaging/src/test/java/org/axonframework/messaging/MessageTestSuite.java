@@ -43,7 +43,7 @@ public abstract class MessageTestSuite<M extends Message> {
     protected static final MessageType TEST_TYPE = new MessageType("message");
     protected static final String TEST_PAYLOAD = "payload";
     protected static final Class<String> TEST_PAYLOAD_TYPE = String.class;
-    protected static final Map<String, String> TEST_META_DATA = Map.of("key", "value");
+    protected static final Map<String, String> TEST_METADATA = Map.of("key", "value");
 
     private static final String STRING_PAYLOAD = "some-string-payload";
     private static final ChainingContentTypeConverter CONVERTER = new ChainingContentTypeConverter();
@@ -95,7 +95,7 @@ public abstract class MessageTestSuite<M extends Message> {
         assertThat(TEST_TYPE).isEqualTo(testSubject.type());
         assertThat(TEST_PAYLOAD).isEqualTo(testSubject.payload());
         assertThat(TEST_PAYLOAD_TYPE).isEqualTo(testSubject.payloadType());
-        assertThat(TEST_META_DATA).isEqualTo(testSubject.metaData());
+        assertThat(TEST_METADATA).isEqualTo(testSubject.metadata());
         validateDefaultMessage(testSubject);
     }
 
@@ -294,28 +294,28 @@ public abstract class MessageTestSuite<M extends Message> {
     }
 
     @Test
-    void andMetaData() {
-        Map<String, String> newMetaData = Map.of("k2", "v3");
-        MetaData expectedMetaData = MetaData.from(TEST_META_DATA).mergedWith(newMetaData);
+    void andMetadata() {
+        Map<String, String> newMetadata = Map.of("k2", "v3");
+        Metadata expectedMetadata = Metadata.from(TEST_METADATA).mergedWith(newMetadata);
 
         M testSubject = buildDefaultMessage();
 
-        Message result = testSubject.andMetaData(newMetaData);
+        Message result = testSubject.andMetadata(newMetadata);
 
         assertThat(testSubject.payload()).isEqualTo(result.payload());
-        assertThat(expectedMetaData).isEqualTo(result.metaData());
+        assertThat(expectedMetadata).isEqualTo(result.metadata());
     }
 
     @Test
-    void withMetaData() {
-        Map<String, String> newMetaData = Map.of("k2", "v3");
+    void withMetadata() {
+        Map<String, String> newMetadata = Map.of("k2", "v3");
 
         M testSubject = buildDefaultMessage();
 
-        Message result = testSubject.withMetaData(newMetaData);
+        Message result = testSubject.withMetadata(newMetadata);
 
         assertThat(testSubject.payload()).isEqualTo(result.payload());
-        assertThat(newMetaData).isEqualTo(result.metaData());
+        assertThat(newMetadata).isEqualTo(result.metadata());
     }
 
     @Test
@@ -333,7 +333,7 @@ public abstract class MessageTestSuite<M extends Message> {
 
         assertThat(testSubject.identifier()).isEqualTo(result.identifier());
         assertThat(testSubject.type()).isEqualTo(result.type());
-        assertThat(testSubject.metaData()).isEqualTo(result.metaData());
+        assertThat(testSubject.metadata()).isEqualTo(result.metadata());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
         assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
         //noinspection unchecked
@@ -355,7 +355,7 @@ public abstract class MessageTestSuite<M extends Message> {
 
         assertThat(testSubject.identifier()).isEqualTo(result.identifier());
         assertThat(testSubject.type()).isEqualTo(result.type());
-        assertThat(testSubject.metaData()).isEqualTo(result.metaData());
+        assertThat(testSubject.metadata()).isEqualTo(result.metadata());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
         assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
         //noinspection unchecked
@@ -377,7 +377,7 @@ public abstract class MessageTestSuite<M extends Message> {
 
         assertThat(testSubject.identifier()).isEqualTo(result.identifier());
         assertThat(testSubject.type()).isEqualTo(result.type());
-        assertThat(testSubject.metaData()).isEqualTo(result.metaData());
+        assertThat(testSubject.metadata()).isEqualTo(result.metadata());
         assertThat(testSubject.payloadType()).isNotEqualTo(result.payloadType());
         assertThat(STRING_PAYLOAD.getBytes()).isEqualTo(result.payload());
         //noinspection unchecked

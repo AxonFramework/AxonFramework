@@ -35,11 +35,11 @@ public interface CommandResultMessage<R> extends ResultMessage {
 
     @Override
     @Nonnull
-    CommandResultMessage<R> withMetaData(@Nonnull Map<String, String> metaData);
+    CommandResultMessage<R> withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    CommandResultMessage<R> andMetaData(@Nonnull Map<String, String> metaData);
+    CommandResultMessage<R> andMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull

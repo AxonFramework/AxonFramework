@@ -102,7 +102,7 @@ public class CorrelationDataInterceptor<M extends Message>
         //noinspection unchecked
         return context == null || !context.containsResource(CORRELATION_DATA)
                 ? chain.proceed(message, context)
-                : chain.proceed((M) message.andMetaData(context.getResource(CORRELATION_DATA)), context);
+                : chain.proceed((M) message.andMetadata(context.getResource(CORRELATION_DATA)), context);
     }
 
     @Override

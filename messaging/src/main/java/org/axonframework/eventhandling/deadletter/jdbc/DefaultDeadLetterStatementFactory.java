@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.serialization.SerializedObject;
@@ -49,7 +49,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * {@code PreparedStatements}. Furthermore, it uses the configurable {@code genericSerializer} to serialize
  * {@link TrackingToken TrackingTokens} in {@link TrackedEventMessage} instances. Lastly, this factory uses the
  * {@code eventSerializer} to serialize the {@link EventMessage#payload() event payload},
- * {@link EventMessage#metaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} of any
+ * {@link EventMessage#metadata() Metadata}, and {@link DeadLetter#diagnostics() diagnostics} of any
  * {@code DeadLetter}.
  * <p>
  * This factory and the {@link DeadLetterJdbcConverter} must use the same {@link Serializer Serializers} and
@@ -136,7 +136,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage> implement
                                 AtomicInteger fieldIndex,
                                 E eventMessage) throws SQLException {
         SerializedObject<byte[]> serializedPayload = eventSerializer.serialize(eventMessage.payload(), byte[].class);
-        SerializedObject<byte[]> serializedMetaData = eventSerializer.serialize(eventMessage.metaData(), byte[].class);
+        SerializedObject<byte[]> serializedMetadata = eventSerializer.serialize(eventMessage.metadata(), byte[].class);
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getClass().getName());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.identifier());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.type().toString());
@@ -144,7 +144,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage> implement
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getName());
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getRevision());
         statement.setBytes(fieldIndex.getAndIncrement(), serializedPayload.getData());
-        statement.setBytes(fieldIndex.getAndIncrement(), serializedMetaData.getData());
+        statement.setBytes(fieldIndex.getAndIncrement(), serializedMetadata.getData());
     }
 
     private void setDomainEventFields(PreparedStatement statement,
@@ -229,7 +229,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage> implement
                                               @Nonnull String letterIdentifier,
                                               Cause cause,
                                               @Nonnull Instant lastTouched,
-                                              MetaData diagnostics) throws SQLException {
+                                              Metadata diagnostics) throws SQLException {
         String sql = "UPDATE " + schema.deadLetterTable() + " SET "
                 + schema.causeTypeColumn() + "=?, "
                 + schema.causeMessageColumn() + "=?, "
@@ -466,11 +466,11 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage> implement
 
         /**
          * Sets the {@link Serializer} to serialize the {@link EventMessage#payload() event payload},
-         * {@link EventMessage#metaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} of the
+         * {@link EventMessage#metadata() Metadata}, and {@link DeadLetter#diagnostics() diagnostics} of the
          * {@link DeadLetter} when storing it to a database.
          *
          * @param eventSerializer The serializer to use for {@link EventMessage#payload() event payload}s,
-         *                        {@link EventMessage#metaData() MetaData} instances, and
+         *                        {@link EventMessage#metadata() Metadata} instances, and
          *                        {@link DeadLetter#diagnostics() diagnostics}.
          * @return The current Builder, for fluent interfacing.
          */

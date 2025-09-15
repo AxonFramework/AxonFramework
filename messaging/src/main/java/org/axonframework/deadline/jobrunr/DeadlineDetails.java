@@ -22,7 +22,7 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -45,7 +45,7 @@ public class DeadlineDetails {
     private String payload;
     private String payloadClass;
     private String payloadRevision;
-    private String metaData;
+    private String metadata;
 
     private DeadlineDetails() {
         //private no-args constructor needed for deserialization
@@ -62,7 +62,7 @@ public class DeadlineDetails {
      * @param payload              The {@link String} with the payload. This can be null.
      * @param payloadClass         The {@link String} which tells what the class of the scope payload is.
      * @param payloadRevision      The {@link String} which tells what the revision of the scope payload is.
-     * @param metaData             The {@link String} containing the metadata about the deadline.
+     * @param metadata             The {@link String} containing the metadata about the deadline.
      */
     @SuppressWarnings("squid:S107")
     DeadlineDetails(@Nonnull String deadlineName,
@@ -72,7 +72,7 @@ public class DeadlineDetails {
                     @Nullable String payload,
                     @Nullable String payloadClass,
                     @Nullable String payloadRevision,
-                    @Nonnull String metaData) {
+                    @Nonnull String metadata) {
         this.deadlineName = deadlineName;
         this.type = type;
         this.scopeDescriptor = scopeDescriptor;
@@ -80,7 +80,7 @@ public class DeadlineDetails {
         this.payload = payload;
         this.payloadClass = payloadClass;
         this.payloadRevision = payloadRevision;
-        this.metaData = metaData;
+        this.metadata = metadata;
     }
 
     /**
@@ -102,7 +102,7 @@ public class DeadlineDetails {
                              @Nonnull Serializer serializer) {
         SerializedObject<String> serializedDescriptor = serializer.serialize(descriptor, String.class);
         SerializedObject<String> serializedPayload = serializer.serialize(message.payload(), String.class);
-        SerializedObject<String> serializedMetaData = serializer.serialize(message.metaData(), String.class);
+        SerializedObject<String> serializedMetadata = serializer.serialize(message.metadata(), String.class);
         DeadlineDetails deadlineDetails = new DeadlineDetails(deadlineName,
                                                               message.type().toString(),
                                                               serializedDescriptor.getData(),
@@ -110,7 +110,7 @@ public class DeadlineDetails {
                                                               serializedPayload.getData(),
                                                               serializedPayload.getType().getName(),
                                                               serializedPayload.getType().getRevision(),
-                                                              serializedMetaData.getData());
+                                                              serializedMetadata.getData());
         SerializedObject<String> serializedDeadlineDetails = serializer.serialize(deadlineDetails, String.class);
         return serializedDeadlineDetails.getData();
     }
@@ -183,8 +183,8 @@ public class DeadlineDetails {
      *
      * @return The {@link String} containing the metadata about the deadline.
      */
-    public String getMetaData() {
-        return metaData;
+    public String getMetadata() {
+        return metadata;
     }
 
     /**
@@ -197,7 +197,7 @@ public class DeadlineDetails {
         return new GenericDeadlineMessage(deadlineName,
                                           MessageType.fromString(type),
                                           getDeserializedPayload(serializer),
-                                          getDeserializedMetaData(serializer));
+                                          getDeserializedMetadata(serializer));
     }
 
     private Object getDeserializedPayload(Serializer serializer) {
@@ -206,10 +206,10 @@ public class DeadlineDetails {
         return serializer.deserialize(serializedDeadlinePayload);
     }
 
-    private MetaData getDeserializedMetaData(Serializer serializer) {
-        SimpleSerializedObject<String> serializedDeadlineMetaData =
-                new SimpleSerializedObject<>(metaData, String.class, MetaData.class.getName(), null);
-        return serializer.deserialize(serializedDeadlineMetaData);
+    private Metadata getDeserializedMetadata(Serializer serializer) {
+        SimpleSerializedObject<String> serializedDeadlineMetadata =
+                new SimpleSerializedObject<>(metadata, String.class, Metadata.class.getName(), null);
+        return serializer.deserialize(serializedDeadlineMetadata);
     }
 
     /**

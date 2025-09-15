@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.Arrays;
@@ -149,30 +149,30 @@ public interface AxonTestPhase {
          * @return The current Given instance, for fluent interfacing.
          */
         default Given event(@Nonnull Object payload) {
-            return event(payload, MetaData.emptyInstance());
+            return event(payload, Metadata.emptyInstance());
         }
 
         /**
-         * Configures a single event with the given {@code payload} and {@code metaData} as part of the "given" state.
+         * Configures a single event with the given {@code payload} and {@code metadata} as part of the "given" state.
          * This event will be published.
          *
          * @param payload  The payload of the event to publish.
-         * @param metaData The metadata to attach to the event.
+         * @param metadata The metadata to attach to the event.
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given event(@Nonnull Object payload, @Nonnull Map<String, String> metaData) {
-            return event(payload, MetaData.from(metaData));
+        default Given event(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+            return event(payload, Metadata.from(metadata));
         }
 
         /**
-         * Configures a single event with the given {@code payload} and {@code metaData} as part of the "given" state.
+         * Configures a single event with the given {@code payload} and {@code metadata} as part of the "given" state.
          * This event will be published.
          *
          * @param payload  The payload of the event to publish.
-         * @param metaData The metadata to attach to the event.
+         * @param metadata The metadata to attach to the event.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given event(@Nonnull Object payload, @Nonnull MetaData metaData);
+        Given event(@Nonnull Object payload, @Nonnull Metadata metadata);
 
         /**
          * Configures the given {@code messages} as events in the "given" state. These events will be published in the
@@ -220,30 +220,30 @@ public interface AxonTestPhase {
          * @return The current Given instance, for fluent interfacing.
          */
         default Given command(@Nonnull Object payload) {
-            return command(payload, MetaData.emptyInstance());
+            return command(payload, Metadata.emptyInstance());
         }
 
         /**
-         * Configures a single command with the given {@code payload} and {@code metaData} as part of the "given" state.
+         * Configures a single command with the given {@code payload} and {@code metadata} as part of the "given" state.
          * This command will be dispatched to corresponding command handlers.
          *
          * @param payload  The payload of the command to dispatch.
-         * @param metaData The metadata to attach to the command.
+         * @param metadata The metadata to attach to the command.
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given command(@Nonnull Object payload, @Nonnull Map<String, String> metaData) {
-            return command(payload, MetaData.from(metaData));
+        default Given command(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+            return command(payload, Metadata.from(metadata));
         }
 
         /**
-         * Configures a single command with the given {@code payload} and {@code metaData} as part of the "given" state.
+         * Configures a single command with the given {@code payload} and {@code metadata} as part of the "given" state.
          * This command will be dispatched to corresponding command handlers.
          *
          * @param payload  The payload of the command to dispatch.
-         * @param metaData The metadata to attach to the command.
+         * @param metadata The metadata to attach to the command.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given command(@Nonnull Object payload, @Nonnull MetaData metaData);
+        Given command(@Nonnull Object payload, @Nonnull Metadata metadata);
 
         /**
          * Configures the given {@code messages} as commands in the "given" state.
@@ -341,47 +341,47 @@ public interface AxonTestPhase {
         }
 
         /**
-         * Dispatches the given {@code payload} command with the provided {@code metaData} to the appropriate command
+         * Dispatches the given {@code payload} command with the provided {@code metadata} to the appropriate command
          * handler and records all activity for result validation.
          *
          * @param payload  The command to execute.
-         * @param metaData The metadata to attach to the command.
+         * @param metadata The metadata to attach to the command.
          * @return The current When instance, for fluent interfacing.
          */
-        default Command command(@Nonnull Object payload, @Nonnull Map<String, String> metaData) {
-            return command(payload, MetaData.from(metaData));
+        default Command command(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+            return command(payload, Metadata.from(metadata));
         }
 
         /**
-         * Dispatches the given {@code payload} command with the provided {@code metaData} to the appropriate command
+         * Dispatches the given {@code payload} command with the provided {@code metadata} to the appropriate command
          * handler and records all activity for result validation.
          *
          * @param payload  The command to execute.
-         * @param metaData The metadata to attach to the command.
+         * @param metadata The metadata to attach to the command.
          * @return The current When instance, for fluent interfacing.
          */
-        Command command(@Nonnull Object payload, @Nonnull MetaData metaData);
+        Command command(@Nonnull Object payload, @Nonnull Metadata metadata);
 
         /**
-         * Publishes the given {@code payload} event with the provided {@code metaData} to the appropriate event handler
+         * Publishes the given {@code payload} event with the provided {@code metadata} to the appropriate event handler
          * and records all activity for result validation. The event will be published with empty metadata.
          *
          * @param payload The command to execute.
          * @return The current When instance, for fluent interfacing.
          */
         default Event event(@Nonnull Object payload) {
-            return event(payload, MetaData.emptyInstance());
+            return event(payload, Metadata.emptyInstance());
         }
 
         /**
-         * Publishes the given {@code payload} event with the provided {@code metaData} to the appropriate event handler
+         * Publishes the given {@code payload} event with the provided {@code metadata} to the appropriate event handler
          * and records all activity for result validation.
          *
          * @param payload  The event to execute.
-         * @param metaData The metadata to attach to the command.
+         * @param metadata The metadata to attach to the command.
          * @return The current When instance, for fluent interfacing.
          */
-        Event event(@Nonnull Object payload, @Nonnull MetaData metaData);
+        Event event(@Nonnull Object payload, @Nonnull Metadata metadata);
 
         /**
          * Publishes the given Event Messages to the appropriate event handlers and records all activity for result

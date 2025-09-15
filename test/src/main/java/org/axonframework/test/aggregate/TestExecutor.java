@@ -54,14 +54,14 @@ public interface TestExecutor<T> {
      * Dispatches the given command and meta-data to the appropriate command handler and records all
      * activity in the fixture for result validation. If the given {@code command} is a {@link
      * org.axonframework.commandhandling.CommandMessage} instance, it will be dispatched as-is, with given
-     * additional {@code metaData}. Any other object will cause the given {@code command} to be wrapped in a
+     * additional {@code metadata}. Any other object will cause the given {@code command} to be wrapped in a
      * {@code CommandMessage} as its payload.
      *
      * @param command  The command to execute
-     * @param metaData The metadata to attach to the
+     * @param metadata The metadata to attach to the
      * @return a ResultValidator that can be used to validate the resulting actions of the command execution
      */
-    ResultValidator<T> when(Object command, Map<String, String> metaData);
+    ResultValidator<T> when(Object command, Map<String, String> metadata);
 
     /**
      * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event

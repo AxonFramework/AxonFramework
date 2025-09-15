@@ -412,20 +412,20 @@ public class SimpleQueryBus implements QueryBus {
                         messageTypeResolver.resolveOrThrow(cause),
                         cause,
                         declaredType,
-                        resultMessage.metaData()
+                        resultMessage.metadata()
                 );
             }
             return new GenericQueryResponseMessage(
                     messageTypeResolver.resolveOrThrow(resultMessage.payload()),
                     resultMessage.payload(),
-                    resultMessage.metaData()
+                    resultMessage.metadata()
             );
         } else if (result instanceof Message) {
             //noinspection unchecked
             Message message = (Message) result;
             return new GenericQueryResponseMessage(messageTypeResolver.resolveOrThrow(message.payload()),
                                                    message.payload(),
-                                                   message.metaData());
+                                                   message.metadata());
         } else {
             MessageType type = messageTypeResolver.resolveOrThrow(ObjectUtils.nullSafeTypeOf(result));
             //noinspection unchecked
@@ -463,13 +463,13 @@ public class SimpleQueryBus implements QueryBus {
             return new GenericQueryResponseMessage(
                     messageTypeResolver.resolveOrThrow(resultMessage.payload()),
                     resultMessage.payload(),
-                    resultMessage.metaData()
+                    resultMessage.metadata()
             );
         }
         if (result instanceof Message message) {
             return new GenericQueryResponseMessage(messageTypeResolver.resolveOrThrow(message.payload()),
                                                    message.payload(),
-                                                   message.metaData());
+                                                   message.metadata());
         }
         return new GenericQueryResponseMessage(messageTypeResolver.resolveOrThrow(result), result);
     }

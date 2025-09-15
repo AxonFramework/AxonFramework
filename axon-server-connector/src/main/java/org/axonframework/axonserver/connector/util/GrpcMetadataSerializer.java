@@ -17,35 +17,35 @@
 package org.axonframework.axonserver.connector.util;
 
 import io.axoniq.axonserver.grpc.MetaDataValue;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Mapping that translates a {@link MetaData} into a map of GRPC {@link MetaDataValue}.
+ * Mapping that translates a {@link Metadata} into a map of GRPC {@link MetaDataValue}.
  *
  * @author Sara Pellegrini
  * @since 4.0
  */
-public class GrpcMetadataSerializer implements Function<MetaData, Map<String, MetaDataValue>> {
+public class GrpcMetadataSerializer implements Function<Metadata, Map<String, MetaDataValue>> {
 
-    private final GrpcMetaDataConverter metaDataConverter;
+    private final GrpcMetadataConverter metadataConverter;
 
     /**
-     * Constructs a {@link GrpcMetadataSerializer} using the given {@code metaDataConverter}.
+     * Constructs a {@link GrpcMetadataSerializer} using the given {@code metadataConverter}.
      *
-     * @param metaDataConverter the {@link GrpcMetaDataConverter} used to convert meta-data fields with
+     * @param metadataConverter the {@link GrpcMetadataConverter} used to convert meta-data fields with
      */
-    public GrpcMetadataSerializer(GrpcMetaDataConverter metaDataConverter) {
-        this.metaDataConverter = metaDataConverter;
+    public GrpcMetadataSerializer(GrpcMetadataConverter metadataConverter) {
+        this.metadataConverter = metadataConverter;
     }
 
     @Override
-    public Map<String, MetaDataValue> apply(MetaData metaData) {
-        Map<String, MetaDataValue> metaDataValueMap = new HashMap<>();
-        metaData.forEach((key, value) -> metaDataValueMap.put(key, metaDataConverter.convertToMetaDataValue(value)));
-        return metaDataValueMap;
+    public Map<String, MetaDataValue> apply(Metadata metadata) {
+        Map<String, MetaDataValue> metadataValueMap = new HashMap<>();
+        metadata.forEach((key, value) -> metadataValueMap.put(key, metadataConverter.convertToMetadataValue(value)));
+        return metadataValueMap;
     }
 }

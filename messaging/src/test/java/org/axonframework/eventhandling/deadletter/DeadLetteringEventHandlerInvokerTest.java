@@ -189,9 +189,9 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        EventMessage eventMessageOne = createDomainEvent("foo", 2);
-        EventMessage eventMessageTwo = createDomainEvent("bar", 2);
-        EventMessage eventMessageThree = createDomainEvent("foo", 3);
+        DomainEventMessage eventMessageOne = createDomainEvent("foo", 2);
+        DomainEventMessage eventMessageTwo = createDomainEvent("bar", 2);
+        DomainEventMessage eventMessageThree = createDomainEvent("foo", 3);
 
         testSubject.handle(eventMessageOne, StubProcessingContext.forMessage(eventMessageOne), Segment.ROOT_SEGMENT);
         testSubject.handle(eventMessageTwo, StubProcessingContext.forMessage(eventMessageTwo), Segment.ROOT_SEGMENT);
@@ -243,9 +243,9 @@ class DeadLetteringEventHandlerInvokerTest {
 
         when(queue.enqueueIfPresent(any(), any())).thenReturn(false);
 
-        testSubject.handle(TEST_EVENT, null, Segment.ROOT_SEGMENT);
+        testSubject.handle(TEST_EVENT, StubProcessingContext.forMessage(TEST_EVENT), Segment.ROOT_SEGMENT);
         testSubject.segmentReleased(Segment.ROOT_SEGMENT);
-        testSubject.handle(nextMessage(TEST_EVENT), null, Segment.ROOT_SEGMENT);
+        testSubject.handle(nextMessage(TEST_EVENT), StubProcessingContext.forMessage(TEST_EVENT), Segment.ROOT_SEGMENT);
 
         verify(queue, times(2)).enqueueIfPresent(eq(TEST_SEQUENCE_ID), any());
 

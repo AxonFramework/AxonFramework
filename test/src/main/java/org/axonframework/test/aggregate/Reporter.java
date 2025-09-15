@@ -85,7 +85,7 @@ public class Reporter {
           .append(">.")
           .append(NEWLINE);
         sb.append("Actual Sequence of events:");
-        if (actualEvents.isEmpty()) { 
+        if (actualEvents.isEmpty()) {
             sb.append(" no events emitted");
         }
         for (Object publishedEvent : actualEvents) {
@@ -99,7 +99,7 @@ public class Reporter {
         throw new AxonAssertionError(sb.toString());
 
     }
-        
+
     /**
      * Reports an error due to an unexpected exception. This means a successful handling was expected, but an exception was
      * thrown by the message handler
@@ -303,7 +303,7 @@ public class Reporter {
      * @param missingEntries    The expected key-value pairs that where not present in the metadata
      * @param additionalEntries Key-value pairs that where present in the metadata but not expected
      */
-    public void reportDifferentMetaData(Class<?> messageType,
+    public void reportDifferentMetadata(Class<?> messageType,
                                         Map<String, String> missingEntries,
                                         Map<String, String> additionalEntries) {
         StringBuilder sb = new StringBuilder("One of the messages contained different metadata than expected");

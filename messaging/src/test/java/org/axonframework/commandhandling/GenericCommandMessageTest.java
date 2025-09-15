@@ -22,7 +22,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,7 +37,7 @@ class GenericCommandMessageTest extends MessageTestSuite<CommandMessage> {
     @Override
     protected CommandMessage buildDefaultMessage() {
         Message delegate =
-                new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA);
+                new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA);
         return new GenericCommandMessage(delegate);
     }
 
@@ -49,7 +49,7 @@ class GenericCommandMessageTest extends MessageTestSuite<CommandMessage> {
     @Test
     void toStringIsAsExpected() {
         String actual = new GenericCommandMessage(TEST_TYPE, "MyPayload")
-                .andMetaData(MetaData.with("key", "value").and("key2", "13"))
+                .andMetadata(Metadata.with("key", "value").and("key2", "13"))
                 .toString();
 
         assertTrue(actual.startsWith("GenericCommandMessage{type={message#0.0.1}, payload={MyPayload}, metadata={"),

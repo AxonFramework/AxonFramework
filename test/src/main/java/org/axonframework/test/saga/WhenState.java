@@ -58,17 +58,17 @@ public interface WhenState {
     FixtureExecutionResult whenPublishingA(Object event);
 
     /**
-     * Use this method to indicate an application is published with given additional {@code metaData},
+     * Use this method to indicate an application is published with given additional {@code metadata},
      * <em>while recording the outcome</em>.
      * <p/>
      * Note that if you inject resources using {@link FixtureConfiguration#registerResource(Object)}, you may need to
      * reset them yourself if they are manipulated by the Saga in the "given" stage of the test.
      *
      * @param event the event to publish
-     * @param metaData The metadata to attach to the event
+     * @param metadata The metadata to attach to the event
      * @return an object allowing you to verify the test results
      */
-    FixtureExecutionResult whenPublishingA(Object event, Map<String, String> metaData);
+    FixtureExecutionResult whenPublishingA(Object event, Map<String, String> metadata);
 
     /**
      * Mimic an elapsed time with no relevant activity for the Saga. If any Events are scheduled to be published within

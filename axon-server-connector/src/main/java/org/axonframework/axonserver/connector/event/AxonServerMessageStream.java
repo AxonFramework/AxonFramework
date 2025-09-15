@@ -24,7 +24,7 @@ import org.axonframework.common.StringUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.LegacyResources;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;

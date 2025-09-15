@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.ThrowableCause;
@@ -52,7 +52,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * from the {@link ResultSet}. Furthermore, it uses the configurable {@code genericSerializer} to deserialize
  * {@link TrackingToken TrackingTokens} for {@link TrackedEventMessage} instances. Lastly, this factory uses the
  * {@code eventSerializer} to deserialize the {@link EventMessage#payload() event payload},
- * {@link EventMessage#metaData() MetaData}, and {@link DeadLetter#diagnostics() diagnostics} for the
+ * {@link EventMessage#metadata() Metadata}, and {@link DeadLetter#diagnostics() diagnostics} for the
  * {@code JdbcDeadLetter} to return.
  *
  * @param <E> An implementation of {@link EventMessage} contained within the {@link JdbcDeadLetter} implementation this
@@ -126,7 +126,7 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
                                                            serializedMessage.identifier(),
                                                            MessageType.fromString(resultSet.getString(schema.typeColumn())),
                                                            serializedMessage.payload(),
-                                                           serializedMessage.metaData(),
+                                                           serializedMessage.metadata(),
                                                            timestampSupplier.get());
         } else {
             eventMessage = new GenericEventMessage(serializedMessage, timestampSupplier);
@@ -142,7 +142,7 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
         if (causeType != null) {
             cause = new ThrowableCause(causeType, resultSet.getString(schema.causeMessageColumn()));
         }
-        MetaData diagnostics = convertToDiagnostics(resultSet);
+        Metadata diagnostics = convertToDiagnostics(resultSet);
 
         //noinspection unchecked
         return new JdbcDeadLetter<>(deadLetterIdentifier,
@@ -157,10 +157,10 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
 
     private SerializedMessage convertToSerializedMessage(ResultSet resultSet) throws SQLException {
         SerializedObject<byte[]> serializedPayload = convertToSerializedPayload(resultSet);
-        SerializedObject<byte[]> serializedMetaData = convertToSerializedMetaData(resultSet);
+        SerializedObject<byte[]> serializedMetadata = convertToSerializedMetadata(resultSet);
         return new SerializedMessage(resultSet.getString(schema.eventIdentifierColumn()),
                                        serializedPayload,
-                                       serializedMetaData,
+                                       serializedMetadata,
                                        eventSerializer);
     }
 
@@ -171,10 +171,10 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
                                             resultSet.getString(schema.payloadRevisionColumn()));
     }
 
-    private SerializedObject<byte[]> convertToSerializedMetaData(ResultSet resultSet) throws SQLException {
-        return new SimpleSerializedObject<>(resultSet.getBytes(schema.metaDataColumn()),
+    private SerializedObject<byte[]> convertToSerializedMetadata(ResultSet resultSet) throws SQLException {
+        return new SimpleSerializedObject<>(resultSet.getBytes(schema.metadataColumn()),
                                             byte[].class,
-                                            MetaData.class.getName(),
+                                            Metadata.class.getName(),
                                             null);
     }
 
@@ -187,11 +187,11 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
         return genericSerializer.deserialize(serializedToken);
     }
 
-    private MetaData convertToDiagnostics(ResultSet resultSet) throws SQLException {
+    private Metadata convertToDiagnostics(ResultSet resultSet) throws SQLException {
         SerializedObject<byte[]> serializedDiagnostics =
                 new SimpleSerializedObject<>(resultSet.getBytes(schema.diagnosticsColumn()),
                                              byte[].class,
-                                             MetaData.class.getName(),
+                                             Metadata.class.getName(),
                                              null);
         return eventSerializer.deserialize(serializedDiagnostics);
     }
@@ -241,11 +241,11 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage>
 
         /**
          * Sets the {@link Serializer} to deserialize {@link EventMessage#payload() event payloads},
-         * {@link EventMessage#metaData() MetaData} instances, and {@link DeadLetter#diagnostics() diagnostics}
+         * {@link EventMessage#metadata() Metadata} instances, and {@link DeadLetter#diagnostics() diagnostics}
          * with.
          *
          * @param eventSerializer The serializer used to deserialize {@link EventMessage#payload() event payloads},
-         *                        {@link EventMessage#metaData() MetaData} instances, and
+         *                        {@link EventMessage#metadata() Metadata} instances, and
          *                        {@link DeadLetter#diagnostics() diagnostics} with.
          * @return The current Builder, for fluent interfacing.
          */

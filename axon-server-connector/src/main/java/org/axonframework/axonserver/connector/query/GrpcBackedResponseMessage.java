@@ -20,11 +20,11 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.ErrorCode;
-import org.axonframework.axonserver.connector.util.GrpcMetaData;
+import org.axonframework.axonserver.connector.util.GrpcMetadata;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;
@@ -48,15 +48,15 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage {
     private final QueryResponse queryResponse;
     private final LazyDeserializingObject<R> serializedPayload;
     private final Throwable exception;
-    private final Supplier<MetaData> metaDataSupplier;
+    private final Supplier<Metadata> metadataSupplier;
     private final MessageType type;
 
     /**
      * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryResponse}, using the provided
-     * {@link Serializer} to be able to retrieve the payload and {@link MetaData} from it.
+     * {@link Serializer} to be able to retrieve the payload and {@link Metadata} from it.
      *
      * @param queryResponse The {@link QueryResponse} which is being wrapped as a {@link QueryResponseMessage}.
-     * @param serializer    The {@link Serializer} used to deserialize the payload and {@link MetaData} from the given
+     * @param serializer    The {@link Serializer} used to deserialize the payload and {@link Metadata} from the given
      *                      {@code queryResponse}.
      */
     public GrpcBackedResponseMessage(QueryResponse queryResponse, Serializer serializer) {
@@ -70,7 +70,7 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage {
                            .convert(queryResponse.getErrorMessage(),
                                     serializedPayload == null ? () -> null : serializedPayload::getObject)
                 : null;
-        this.metaDataSupplier = new GrpcMetaData(queryResponse.getMetaDataMap(), serializer);
+        this.metadataSupplier = new GrpcMetadata(queryResponse.getMetaDataMap(), serializer);
         if (serializedPayload != null) {
             this.type = new MessageType(
                     serializer.classForType(new GrpcSerializedObject(queryResponse.getPayload()).getType())
@@ -85,12 +85,12 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage {
     private GrpcBackedResponseMessage(QueryResponse queryResponse,
                                       LazyDeserializingObject<R> serializedPayload,
                                       Throwable exception,
-                                      Supplier<MetaData> metaDataSupplier,
+                                      Supplier<Metadata> metadataSupplier,
                                       MessageType type) {
         this.queryResponse = queryResponse;
         this.serializedPayload = serializedPayload;
         this.exception = exception;
-        this.metaDataSupplier = metaDataSupplier;
+        this.metadataSupplier = metadataSupplier;
         this.type = type;
     }
 
@@ -108,8 +108,8 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage {
 
     @Override
     @Nonnull
-    public MetaData metaData() {
-        return metaDataSupplier.get();
+    public Metadata metadata() {
+        return metadataSupplier.get();
     }
 
     @Override
@@ -150,18 +150,18 @@ public class GrpcBackedResponseMessage<R> implements QueryResponseMessage {
 
     @Override
     @Nonnull
-    public GrpcBackedResponseMessage<R> withMetaData(@Nonnull Map<String, String> metaData) {
+    public GrpcBackedResponseMessage<R> withMetadata(@Nonnull Map<String, String> metadata) {
         return new GrpcBackedResponseMessage<>(queryResponse,
                                                serializedPayload,
                                                exception,
-                                               () -> MetaData.from(metaData),
+                                               () -> Metadata.from(metadata),
                                                type);
     }
 
     @Override
     @Nonnull
-    public GrpcBackedResponseMessage<R> andMetaData(@Nonnull Map<String, String> metaData) {
-        return withMetaData(metaData().mergedWith(metaData));
+    public GrpcBackedResponseMessage<R> andMetadata(@Nonnull Map<String, String> metadata) {
+        return withMetadata(metadata().mergedWith(metadata));
     }
 
     @Override

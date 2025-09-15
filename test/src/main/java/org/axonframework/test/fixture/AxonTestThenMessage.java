@@ -114,9 +114,9 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
         Iterator<EventMessage> iterator = publishedEvents.iterator();
         for (EventMessage expectedEvent : expectedEvents) {
             EventMessage actualEvent = iterator.next();
-            if (!verifyMetaDataEquality(expectedEvent.payloadType(),
-                                        expectedEvent.metaData(),
-                                        actualEvent.metaData())) {
+            if (!verifyMetadataEquality(expectedEvent.payloadType(),
+                                        expectedEvent.metadata(),
+                                        actualEvent.metadata())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
@@ -241,12 +241,12 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    protected boolean verifyMetaDataEquality(Class<?> eventType,
-                                             Map<String, String> expectedMetaData,
-                                             Map<String, String> actualMetaData) {
-        MapStringEntryMatcher matcher = new MapStringEntryMatcher(expectedMetaData);
-        if (!matcher.matches(actualMetaData)) {
-            reporter.reportDifferentMetaData(eventType,
+    protected boolean verifyMetadataEquality(Class<?> eventType,
+                                             Map<String, String> expectedMetadata,
+                                             Map<String, String> actualMetadata) {
+        MapStringEntryMatcher matcher = new MapStringEntryMatcher(expectedMetadata);
+        if (!matcher.matches(actualMetadata)) {
+            reporter.reportDifferentMetadata(eventType,
                                              matcher.getMissingEntries(),
                                              matcher.getAdditionalEntries());
         }

@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
@@ -54,8 +54,8 @@ public class ContextAwareCommandDispatcher implements CommandDispatcher {
     }
 
     @Override
-    public CommandResult send(@Nonnull Object command, @Nonnull MetaData metaData) {
-        return commandGateway.send(command, metaData, context);
+    public CommandResult send(@Nonnull Object command, @Nonnull Metadata metadata) {
+        return commandGateway.send(command, metadata, context);
     }
 
     @Override

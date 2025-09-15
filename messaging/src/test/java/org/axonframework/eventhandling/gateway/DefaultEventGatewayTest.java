@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -114,7 +114,7 @@ class DefaultEventGatewayTest {
         // given
         var payload = new TestPayload(UUID.randomUUID().toString());
         var eventMessage = new GenericEventMessage(new MessageType("TestPayload"), payload)
-                .withMetaData(MetaData.with("key", "value"));
+                .withMetadata(Metadata.with("key", "value"));
 
         // when
         testSubject.publish(null, eventMessage);

@@ -443,7 +443,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                           original.type(),
                                                           newPayload,
                                                           expectedPayloadType,
-                                                          original.metaData());
+                                                          original.metadata());
         return new GenericQueryResponseMessage(delegate);
     }
 

@@ -21,8 +21,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.annotation.MetadataValue;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.SagaEventHandler;
@@ -41,7 +41,7 @@ import java.util.Objects;
  */
 class FixtureMessageHandlerInterceptorTest {
 
-    private static final String META_DATA_KEY = "key";
+    private static final String METADATA_KEY = "key";
 
     private FixtureConfiguration fixture;
 
@@ -74,7 +74,7 @@ class FixtureMessageHandlerInterceptorTest {
         public @NotNull MessageStream<?> interceptOnHandle(@NotNull EventMessage message,
                                                            @NotNull ProcessingContext context,
                                                            @NotNull MessageHandlerInterceptorChain<EventMessage> interceptorChain) {
-            return interceptorChain.proceed(message.withMetaData(MetaData.with(META_DATA_KEY, value)), context);
+            return interceptorChain.proceed(message.withMetadata(Metadata.with(METADATA_KEY, value)), context);
         }
     }
 
@@ -95,19 +95,19 @@ class FixtureMessageHandlerInterceptorTest {
     private static class StartProcessCommand {
 
         private final String identifier;
-        private final String metaDataValue;
+        private final String metadataValue;
 
-        private StartProcessCommand(String identifier, String metaDataValue) {
+        private StartProcessCommand(String identifier, String metadataValue) {
             this.identifier = identifier;
-            this.metaDataValue = metaDataValue;
+            this.metadataValue = metadataValue;
         }
 
         public String getIdentifier() {
             return identifier;
         }
 
-        public String getMetaDataValue() {
-            return metaDataValue;
+        public String getMetadataValue() {
+            return metadataValue;
         }
 
         @Override
@@ -120,19 +120,19 @@ class FixtureMessageHandlerInterceptorTest {
             }
             StartProcessCommand that = (StartProcessCommand) o;
             return Objects.equals(identifier, that.identifier)
-                    && Objects.equals(metaDataValue, that.metaDataValue);
+                    && Objects.equals(metadataValue, that.metadataValue);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(identifier, metaDataValue);
+            return Objects.hash(identifier, metadataValue);
         }
 
         @Override
         public String toString() {
             return "StartProcessCommand{" +
                     "identifier='" + identifier + '\'' +
-                    ", metaDataValue='" + metaDataValue + '\'' +
+                    ", metadataValue='" + metadataValue + '\'' +
                     '}';
         }
     }
@@ -143,7 +143,7 @@ class FixtureMessageHandlerInterceptorTest {
         @StartSaga
         @SagaEventHandler(associationProperty = "identifier")
         public void on(SagaStartEvent event,
-                       @MetaDataValue(META_DATA_KEY) String value,
+                       @MetadataValue(METADATA_KEY) String value,
                        CommandGateway commandGateway,
                        ProcessingContext context) {
             commandGateway.send(new StartProcessCommand(event.getIdentifier(), value), context);
