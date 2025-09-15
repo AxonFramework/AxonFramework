@@ -29,16 +29,16 @@ import java.util.Optional;
  * aggregates may be processed in different threads.
  *
  * @author Allard Buijze
- * @since 0.3
+ * @since 0.3.0
  */
 public class SequentialPerAggregatePolicy implements SequencingPolicy {
 
     private static final SequentialPerAggregatePolicy INSTANCE = new SequentialPerAggregatePolicy();
 
     /**
-     * Return a singleton instance of the this Sequencing Policy.
+     * Return a singleton instance of the {@code SequentialPerAggregatePolicy}.
      *
-     * @return a singleton SequentialPerAggregatePolicy instance
+     * @return A singleton {@code SequentialPerAggregatePolicy}.
      */
     public static SequentialPerAggregatePolicy instance() {
         return INSTANCE;
