@@ -56,8 +56,13 @@ import static java.util.Objects.isNull;
 import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
 
 /**
- * Implementation of the QueryBus that dispatches queries to the handlers within the JVM. Any timeouts are ignored by
- * this implementation, as handlers are considered to answer immediately.
+ * Implementation of the {@code QueryBus} that dispatches queries (through {@link #query(QueryMessage) dispatches},
+ * {@link #streamingQuery(StreamingQueryMessage)}, or {@link #subscriptionQuery(SubscriptionQueryMessage)}) to the
+ * {@link QueryHandler QueryHandlers} subscribed to that specific query's {@link QualifiedName name} and
+ * {@link ResponseType type} combination.
+ * <p>
+ * Furthermore, it is in charge of invoking the {@link #subscribe(QueryHandlerName, QueryHandler) subscribed}
+ * {@link QueryHandler query handlers} when a query is being dispatched.
  * <p>
  * In case multiple handlers are registered for the same query and response type, the {@link #query(QueryMessage)}
  * method will invoke one of these handlers. Which one is unspecified.
