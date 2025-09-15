@@ -98,7 +98,7 @@ public interface QueryGateway {
      * The given {@code query} is wrapped as the payload of the {@link StreamingQueryMessage} that is eventually posted
      * on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.MetaData}.
+     * {@link org.axonframework.messaging.Metadata}.
      * <p>
      * {@link org.reactivestreams.Publisher} is used for backwards compatibility reason, for clients that don't have
      * Project Reactor on class path. Check <a href="https://docs.axoniq.io/reference-guide/extensions/reactor">Reactor
@@ -127,7 +127,7 @@ public interface QueryGateway {
      * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
      * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.MetaData}.
+     * {@link org.axonframework.messaging.Metadata}.
      *
      * @param query        The {@code query} to be sent.
      * @param responseType The {@link ResponseType} used for this query.
@@ -151,7 +151,7 @@ public interface QueryGateway {
      * The given {@code query} is wrapped as the payload of the {@link SubscriptionQueryMessage} that is eventually
      * posted on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.MetaData}.
+     * {@link org.axonframework.messaging.Metadata}.
      * <p>
      * Note that any {@code null} results, on the initial result or the updates, wil lbe filtered out by the gateway. If
      * you require the {@code null} to be returned for the initial and update results, we suggest using the
@@ -184,7 +184,7 @@ public interface QueryGateway {
      * The given {@code query} is wrapped as the payload of the {@link SubscriptionQueryMessage} that is eventually
      * posted on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.MetaData}.
+     * {@link org.axonframework.messaging.Metadata}.
      * <p>
      * Note that any {@code null} results, on the initial result or the updates, wil lbe filtered out by the gateway. If
      * you require the {@code null} to be returned for the initial and update results, we suggest using the
@@ -215,7 +215,7 @@ public interface QueryGateway {
      * The given {@code query} is wrapped as the payload of the {@link SubscriptionQueryMessage} that is eventually
      * posted on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
      * {@code QueryMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.MetaData}.
+     * {@link org.axonframework.messaging.Metadata}.
      * <p>
      * Note that any {@code null} results, on the initial result or the updates, wil lbe filtered out by the gateway. If
      * you require the {@code null} to be returned for the initial and update results, we suggest using the
