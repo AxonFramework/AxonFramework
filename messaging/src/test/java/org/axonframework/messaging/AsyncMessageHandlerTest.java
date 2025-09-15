@@ -34,7 +34,6 @@ import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.annotation.DefaultParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.DefaultQueryGateway;
@@ -268,9 +267,8 @@ class AsyncMessageHandlerTest {
     }
 
     private void assertQuery() throws Exception {
-        List<Integer> primes = queryGateway.query(new GetKnownPrimes(),
-                                                  ResponseTypes.multipleInstancesOf(Integer.class),
-                                                  null).get();
+        List<Integer> primes = queryGateway.queryMany(new GetKnownPrimes(), Integer.class, null)
+                                           .get();
 
         assertThat(primes).isEqualTo(List.of(2, 3, 5, 7));
     }
