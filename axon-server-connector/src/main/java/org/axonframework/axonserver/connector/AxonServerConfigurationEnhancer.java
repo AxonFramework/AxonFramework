@@ -18,6 +18,7 @@ package org.axonframework.axonserver.connector;
 
 import org.axonframework.axonserver.connector.command.AxonServerCommandBusConnector;
 import org.axonframework.axonserver.connector.event.AxonServerEventStorageEngineFactory;
+import org.axonframework.axonserver.connector.event.EventProcessorControlService;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBusConnector;
 import org.axonframework.common.FutureUtils;
@@ -64,7 +65,8 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                 .registerIfNotPresent(commandBusConnectorDefinition(), SearchScope.ALL)
                 .registerDecorator(CommandBusConnector.class, 0, payloadConvertingConnectorComponentDecorator())
                 .registerDecorator(topologyChangeListenerRegistration())
-                .registerFactory(new AxonServerEventStorageEngineFactory());
+                .registerFactory(new AxonServerEventStorageEngineFactory())
+                .registerIfNotPresent(eventProcessorControlService());
     }
 
     private ComponentDefinition<AxonServerConnectionManager> connectionManagerDefinition() {
@@ -136,6 +138,20 @@ public class AxonServerConfigurationEnhancer implements ConfigurationEnhancer {
                                       );
                                       return FutureUtils.emptyCompletedFuture();
                                   });
+    }
+
+    private static ComponentDefinition<EventProcessorControlService> eventProcessorControlService() {
+        return ComponentDefinition.ofType(EventProcessorControlService.class)
+                                  .withBuilder(c -> {
+                                      AxonServerConfiguration serverConfig =
+                                              c.getComponent(AxonServerConfiguration.class);
+                                      return new EventProcessorControlService(
+                                              c, c.getComponent(AxonServerConnectionManager.class),
+                                              serverConfig.getContext(),
+                                              serverConfig.getEventhandling().getProcessors()
+                                      );
+                                  })
+                                  .onStart(Phase.INSTRUCTION_COMPONENTS, EventProcessorControlService::start);
     }
 
     @Override
