@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.RoutingStrategy;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.Metadata;
@@ -165,5 +166,13 @@ public class DefaultCommandGateway implements CommandGateway {
         return priorityCalculator == null
                 ? OptionalInt.empty()
                 : OptionalInt.of(priorityCalculator.determinePriority(commandMessage));
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("commandBus", commandBus);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("priorityCalculator", priorityCalculator);
+        descriptor.describeProperty("routingKeyResolver", routingKeyResolver);
     }
 }

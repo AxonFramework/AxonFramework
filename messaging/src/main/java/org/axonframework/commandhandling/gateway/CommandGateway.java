@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -37,7 +38,7 @@ import java.util.concurrent.ExecutionException;
  * @see DefaultCommandGateway
  * @since 2.0.0
  */
-public interface CommandGateway {
+public interface CommandGateway extends DescribableComponent {
 
     /**
      * Sends the given {@code command} and returns a {@link CompletableFuture} immediately, without waiting for the
