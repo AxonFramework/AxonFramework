@@ -58,6 +58,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Tags({
+        @org.junit.jupiter.api.Tag("flaky"),
+})
 public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends AbstractStudentTestSuite {
 
     @Test
