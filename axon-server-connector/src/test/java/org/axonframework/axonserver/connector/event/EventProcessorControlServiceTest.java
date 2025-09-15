@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.processor;
+package org.axonframework.axonserver.connector.event;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.admin.AdminChannel;
@@ -65,7 +65,7 @@ class EventProcessorControlServiceTest {
         processorSettings = new HashMap<>();
 
         testSubject = new EventProcessorControlService(
-                connectionManager, /*processingConfiguration*/ null, CONTEXT, processorSettings
+                null, connectionManager, /*processingConfiguration*/  CONTEXT, processorSettings
         );
     }
 
@@ -89,7 +89,7 @@ class EventProcessorControlServiceTest {
     @Test
     void startDoesNothingForNullAxonServerConnectionManager() {
         EventProcessorControlService unusableControlService =
-                new EventProcessorControlService(null, /*processingConfiguration*/null, CONTEXT, processorSettings);
+                new EventProcessorControlService(null, null, /*processingConfiguration*/ CONTEXT, processorSettings);
 
         unusableControlService.start();
 
@@ -99,7 +99,7 @@ class EventProcessorControlServiceTest {
     @Test
     void startDoesNothingForNullEventProcessingConfiguration() {
         EventProcessorControlService unusableControlService =
-                new EventProcessorControlService(null, /*processingConfiguration*/null, CONTEXT, processorSettings);
+                new EventProcessorControlService(null, null, /*processingConfiguration*/ CONTEXT, processorSettings);
 
         unusableControlService.start();
 
