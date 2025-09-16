@@ -255,12 +255,11 @@ public class EventProcessorControlService {
                                 name);
                     return CompletableFuture.completedFuture(false);
                 } else {
-                    ((StreamingEventProcessor) processor).releaseSegment(segmentId);
+                    return ((StreamingEventProcessor) processor).releaseSegment(segmentId).thenApply(r -> true);
                 }
             } catch (Exception e) {
                 return exceptionallyCompletedFuture(e);
             }
-            return CompletableFuture.completedFuture(true);
         }
 
         @Override

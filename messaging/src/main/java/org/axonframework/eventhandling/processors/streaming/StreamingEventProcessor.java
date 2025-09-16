@@ -65,7 +65,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      *
      * @param segmentId the id of the segment to release
      */
-    void releaseSegment(int segmentId);
+    CompletableFuture<Void> releaseSegment(int segmentId);
 
     /**
      * Instructs the processor to release the segment with given {@code segmentId}. This processor will not try to claim
@@ -80,7 +80,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param releaseDuration the amount of time to disregard {@code segmentId} for processing
      * @param unit            the unit of time used to express the {@code releaseDuration}
      */
-    void releaseSegment(int segmentId, long releaseDuration, TimeUnit unit);
+    CompletableFuture<Void> releaseSegment(int segmentId, long releaseDuration, TimeUnit unit);
 
     /**
      * Instructs the processor to claim the segment with given {@code segmentId} and start processing it as soon as

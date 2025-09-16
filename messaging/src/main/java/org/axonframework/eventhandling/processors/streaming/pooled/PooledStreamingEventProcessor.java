@@ -240,16 +240,17 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     }
 
     @Override
-    public void releaseSegment(int segmentId) {
+    public CompletableFuture<Void> releaseSegment(int segmentId) {
         var tokenClaimInterval = this.configuration.tokenClaimInterval();
-        releaseSegment(segmentId, tokenClaimInterval * 2, MILLISECONDS);
+        return releaseSegment(segmentId, tokenClaimInterval * 2, MILLISECONDS);
     }
 
     @Override
-    public void releaseSegment(int segmentId, long releaseDuration, TimeUnit unit) {
+    public CompletableFuture<Void> releaseSegment(int segmentId, long releaseDuration, TimeUnit unit) {
         coordinator.releaseUntil(
                 segmentId, GenericEventMessage.clock.instant().plusMillis(unit.toMillis(releaseDuration))
         );
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Override

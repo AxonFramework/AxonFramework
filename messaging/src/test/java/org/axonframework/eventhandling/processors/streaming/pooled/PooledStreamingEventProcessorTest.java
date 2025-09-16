@@ -498,7 +498,7 @@ class PooledStreamingEventProcessorTest {
             );
 
             // When...
-            testSubject.releaseSegment(testSegmentId);
+            FutureUtils.joinAndUnwrap(testSubject.releaseSegment(testSegmentId));
 
             await().atMost(testTokenClaimInterval + 200, TimeUnit.MILLISECONDS)
                    .untilAsserted(() -> assertNull(testSubject.processingStatus().get(testSegmentId)));
@@ -929,7 +929,7 @@ class PooledStreamingEventProcessorTest {
             );
 
             // when
-            testSubject.releaseSegment(testSegmentId, 180, TimeUnit.SECONDS);
+            FutureUtils.joinAndUnwrap(testSubject.releaseSegment(testSegmentId, 180, TimeUnit.SECONDS));
 
             // then - Assert the MergeTask is done and completed successfully.
             assertWithin(testTokenClaimInterval,
@@ -970,7 +970,7 @@ class PooledStreamingEventProcessorTest {
             );
 
             // when
-            testSubject.releaseSegment(testSegmentId);
+            FutureUtils.joinAndUnwrap(testSubject.releaseSegment(testSegmentId));
 
             await().atMost(testTokenClaimInterval + 200, TimeUnit.MILLISECONDS)
                    .untilAsserted(() -> assertNull(testSubject.processingStatus().get(testSegmentId)));
