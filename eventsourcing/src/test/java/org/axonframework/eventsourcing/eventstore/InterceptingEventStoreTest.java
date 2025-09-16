@@ -55,6 +55,7 @@ class InterceptingEventStoreTest {
 
     private EventStoreTransaction eventStoreTransaction;
     private EventStore eventStore;
+    private ProcessingContext processingContext;
     private AtomicInteger interceptorCounterOne;
     private MessageDispatchInterceptor<Message> interceptorOne;
     private AtomicInteger interceptorCounterTwo;
@@ -66,6 +67,7 @@ class InterceptingEventStoreTest {
     void setUp() {
         eventStoreTransaction = mock(EventStoreTransaction.class);
         eventStore = mock(EventStore.class);
+        processingContext = mock(ProcessingContext.class);
         when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
         //noinspection unchecked
         when(eventStore.publish(any(), any(List.class)))
@@ -203,32 +205,32 @@ class InterceptingEventStoreTest {
     void delegateOpenStreamDirectly() {
         StreamingCondition testCondition = StreamingCondition.startingFrom(TrackingToken.FIRST);
 
-        testSubject.open(testCondition);
+        testSubject.open(testCondition, processingContext);
 
-        verify(eventStore).open(testCondition);
+        verify(eventStore).open(testCondition, processingContext);
     }
 
     @Test
     void delegateFirstTokenDirectly() {
-        testSubject.firstToken();
+        testSubject.firstToken(processingContext);
 
-        verify(eventStore).firstToken();
+        verify(eventStore).firstToken(processingContext);
     }
 
     @Test
     void delegateLatestTokenDirectly() {
-        testSubject.latestToken();
+        testSubject.latestToken(processingContext);
 
-        verify(eventStore).latestToken();
+        verify(eventStore).latestToken(processingContext);
     }
 
     @Test
     void delegateTokenAtDirectly() {
         Instant testInstant = Instant.now();
 
-        testSubject.tokenAt(testInstant);
+        testSubject.tokenAt(testInstant, processingContext);
 
-        verify(eventStore).tokenAt(testInstant);
+        verify(eventStore).tokenAt(testInstant, processingContext);
     }
 
     @Test

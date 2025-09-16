@@ -17,10 +17,12 @@
 package org.axonframework.eventstreaming;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * Interface towards a streamable event source.
@@ -52,8 +54,9 @@ public interface StreamableEventSource<E extends EventMessage> extends TrackingT
      * @param condition The {@link StreamingCondition} defining the
      *                  {@link StreamingCondition#position() starting position} of the stream and
      *                  {@link StreamingCondition#criteria() event criteria} to filter the stream with.
+     * @param context   The current {@link ProcessingContext}, if any.
      * @return An {@link MessageStream event stream} matching the given {@code condition}.
      */
-    MessageStream<E> open(@Nonnull StreamingCondition condition);
+    MessageStream<E> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context);
 
 }

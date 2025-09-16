@@ -17,10 +17,11 @@
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TerminalEventMessage;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
@@ -34,6 +35,7 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SimpleEntry;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,6 +100,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
+                                                             @Nullable ProcessingContext processingContext,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
         if (containsConflicts(condition)) {
             // early failure, since we know conflicts already exist at insert-time
@@ -169,7 +172,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition, @Nullable ProcessingContext processingContext) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
@@ -183,7 +186,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition, @Nullable ProcessingContext processingContext) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
@@ -201,7 +204,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken() {
+    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext processingContext) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation firstToken() is invoked.");
         }
@@ -214,7 +217,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken() {
+    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext processingContext) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation latestToken() is invoked.");
         }
@@ -227,7 +230,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext processingContext) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
         }
@@ -245,7 +248,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                            .map(GlobalSequenceTrackingToken::new)
                            .map(tt -> (TrackingToken) tt)
                            .map(CompletableFuture::completedFuture)
-                           .orElseGet(this::latestToken);
+                           .orElseGet(() -> latestToken(processingContext));
     }
 
     @Override

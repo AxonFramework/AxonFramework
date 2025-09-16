@@ -41,6 +41,7 @@ import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.aUnitOf
 import static org.axonframework.utils.AssertUtils.awaitExceptionalCompletion;
 import static org.axonframework.utils.AssertUtils.awaitSuccessfulCompletion;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * Test class validating the {@link DefaultEventStoreTransaction}.
@@ -57,6 +58,7 @@ class DefaultEventStoreTransactionTest {
             EventCriteria.havingTags(AGGREGATE_ID_TAG);
     private final Context.ResourceKey<EventStoreTransaction> testEventStoreTransactionKey =
             Context.ResourceKey.withLabel("eventStoreTransaction");
+    private final ProcessingContext processingContext = mock(ProcessingContext.class);
     private final InMemoryEventStorageEngine eventStorageEngine = new InMemoryEventStorageEngine();
 
     @Nested
@@ -167,6 +169,7 @@ class DefaultEventStoreTransactionTest {
 
         private ConsistencyMarker appendEventForTag(Tag tag) {
             return eventStorageEngine.appendEvents(AppendCondition.none(),
+                                                   processingContext,
                                                    new GenericTaggedEventMessage<>(
                                                            new GenericEventMessage(
                                                                    new MessageType(String.class), "my payload"

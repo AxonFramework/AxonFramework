@@ -89,7 +89,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                         ? AppendCondition.withCriteria(condition.criteria())
                         : ac.orCriteria(condition.criteria())
         );
-        MessageStream<EventMessage> source = eventStorageEngine.source(condition);
+        MessageStream<EventMessage> source = eventStorageEngine.source(condition, processingContext);
         if (appendCondition.consistencyMarker() != ConsistencyMarker.ORIGIN) {
             return source;
         }
@@ -150,7 +150,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                             });
                     List<TaggedEventMessage<?>> eventQueue = context.getResource(eventQueueKey);
 
-                    return eventStorageEngine.appendEvents(appendCondition, eventQueue)
+                    return eventStorageEngine.appendEvents(appendCondition, processingContext, eventQueue)
                                              .thenAccept(tx -> {
                                                  processingContext.onCommit(c -> doCommit(context, tx));
                                                  processingContext.onError((ctx, p, e) -> tx.rollback());

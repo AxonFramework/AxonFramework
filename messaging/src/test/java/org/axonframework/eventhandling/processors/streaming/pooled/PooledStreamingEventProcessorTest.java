@@ -17,16 +17,16 @@
 package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
-import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.RecordingEventHandlingComponent;
-import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
@@ -34,6 +34,7 @@ import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.axonframework.utils.DelegateScheduledExecutorService;
@@ -90,6 +91,7 @@ class PooledStreamingEventProcessorTest {
     private static final String PROCESSOR_NAME = "test";
 
     private PooledStreamingEventProcessor testSubject;
+    private ProcessingContext processingContext;
     private AsyncInMemoryStreamableEventSource stubMessageSource;
     private InMemoryTokenStore tokenStore;
     private ScheduledExecutorService coordinatorExecutor;
@@ -98,6 +100,7 @@ class PooledStreamingEventProcessorTest {
 
     @BeforeEach
     void setUp() {
+        processingContext = mock(ProcessingContext.class);
         stubMessageSource = spy(new AsyncInMemoryStreamableEventSource());
         tokenStore = spy(new InMemoryTokenStore());
         coordinatorExecutor = spy(new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(2)));
@@ -281,8 +284,8 @@ class PooledStreamingEventProcessorTest {
 
         @Test
         void isErrorWhenOpeningTheStreamFails() {
-            when(stubMessageSource.open(any())).thenThrow(new IllegalStateException("Failed to open the stream"))
-                                               .thenCallRealMethod();
+            when(stubMessageSource.open(any(), any())).thenThrow(new IllegalStateException("Failed to open the stream"))
+                                                      .thenCallRealMethod();
             withTestSubject(List.of());
 
             assertFalse(testSubject.isError());
@@ -1237,7 +1240,7 @@ class PooledStreamingEventProcessorTest {
             );
 
             testSubject.shutDown();
-            testSubject.resetTokens(source -> source.latestToken());
+            testSubject.resetTokens(source -> source.latestToken(processingContext));
             testSubject.start();
 
             assertWithin(
