@@ -109,7 +109,8 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         }
 
         @Override
-        public void shutDown() {
+        public CompletableFuture<Void> shutdown() {
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override

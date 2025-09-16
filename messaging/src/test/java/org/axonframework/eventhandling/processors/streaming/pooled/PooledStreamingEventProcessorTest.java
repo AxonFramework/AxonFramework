@@ -56,7 +56,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -112,7 +111,7 @@ class PooledStreamingEventProcessorTest {
 
     @AfterEach
     void tearDown() {
-        testSubject.shutDown();
+        FutureUtils.joinAndUnwrap(testSubject.shutdown());
         coordinatorExecutor.shutdown();
         workerExecutor.shutdown();
     }
@@ -217,15 +216,15 @@ class PooledStreamingEventProcessorTest {
 
         @Test
         void shutdownProcessorWhichHasNotStartedYetReturnsCompletedFuture() {
-            assertTrue(testSubject.shutdownAsync().isDone());
+            assertTrue(testSubject.shutdown().isDone());
         }
 
         @Test
         void shutdownProcessorAsyncTwiceReturnsSameFuture() {
             startEventProcessor();
 
-            CompletableFuture<Void> resultOne = testSubject.shutdownAsync();
-            CompletableFuture<Void> resultTwo = testSubject.shutdownAsync();
+            CompletableFuture<Void> resultOne = testSubject.shutdown();
+            CompletableFuture<Void> resultTwo = testSubject.shutdown();
 
             assertSame(resultOne, resultTwo);
         }
@@ -244,7 +243,7 @@ class PooledStreamingEventProcessorTest {
 
             assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
 
-            CompletableFuture<Void> shutdownComplete = testSubject.shutdownAsync();
+            CompletableFuture<Void> shutdownComplete = testSubject.shutdown();
             assertThrows(IllegalStateException.class, () -> FutureUtils.joinAndUnwrap(testSubject.start()));
             // Unblock the Worker threads
             latch.countDown();
@@ -707,7 +706,7 @@ class PooledStreamingEventProcessorTest {
 
             assertWithin(1, TimeUnit.SECONDS, () -> assertFalse(testSubject.processingStatus().isEmpty()));
 
-            testSubject.shutdownAsync().get(1, TimeUnit.SECONDS);
+            testSubject.shutdown().get(1, TimeUnit.SECONDS);
             assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(0, testSubject.processingStatus().size()));
 
             assertFalse(coordinatorExecutor.isShutdown());
@@ -1124,7 +1123,7 @@ class PooledStreamingEventProcessorTest {
 //            when(stubEventHandler.supportsReset()).thenReturn(true);
 
             startEventProcessor();
-            testSubject.shutDown();
+            FutureUtils.joinAndUnwrap(testSubject.shutdown());
 
             List<EventMessage> events = createEvents(100);
             events.forEach(stubMessageSource::publishMessage);
@@ -1242,7 +1241,7 @@ class PooledStreamingEventProcessorTest {
                     }
             );
 
-            testSubject.shutDown();
+            FutureUtils.joinAndUnwrap(testSubject.shutdown());
             testSubject.resetTokens(source -> source.latestToken());
             startEventProcessor();
 

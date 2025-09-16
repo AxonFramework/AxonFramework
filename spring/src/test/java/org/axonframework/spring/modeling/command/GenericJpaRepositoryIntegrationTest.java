@@ -96,7 +96,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
 
     @AfterEach
     void tearDown() {
-        eventProcessor.shutDown();
+        FutureUtils.joinAndUnwrap(eventProcessor.shutdown());
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }

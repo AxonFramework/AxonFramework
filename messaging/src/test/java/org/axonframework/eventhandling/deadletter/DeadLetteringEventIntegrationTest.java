@@ -65,7 +65,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -227,7 +226,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     @AfterEach
     void tearDown() {
         boolean executorTerminated = false;
-        CompletableFuture<Void> processorShutdown = streamingProcessor.shutdownAsync();
+        CompletableFuture<Void> processorShutdown = streamingProcessor.shutdown();
         try {
             processorShutdown.get(15, TimeUnit.SECONDS);
             executorTerminated = executor.awaitTermination(50, TimeUnit.MILLISECONDS);

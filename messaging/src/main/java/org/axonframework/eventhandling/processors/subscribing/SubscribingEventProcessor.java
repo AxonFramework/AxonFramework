@@ -199,11 +199,12 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
      * {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS} phase.
      */
     @Override
-    public void shutDown() {
+    public CompletableFuture<Void> shutdown() {
         if (eventBusRegistration != null) {
             eventBusRegistration.cancel();
         }
         eventBusRegistration = null;
+        return FutureUtils.emptyCompletedFuture();
     }
 
     /**

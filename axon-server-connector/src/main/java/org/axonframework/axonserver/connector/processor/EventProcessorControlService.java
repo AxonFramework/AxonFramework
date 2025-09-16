@@ -24,7 +24,6 @@ import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.processors.EventProcessor;
@@ -319,7 +318,7 @@ public class EventProcessorControlService {
 
         @Override
         public CompletableFuture<Void> pauseProcessor() {
-            return processor.shutdownAsync();
+            return processor.shutdown();
         }
 
         @Override

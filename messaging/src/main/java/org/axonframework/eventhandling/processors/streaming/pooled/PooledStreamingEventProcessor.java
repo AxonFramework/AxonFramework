@@ -210,12 +210,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     }
 
     @Override
-    public void shutDown() {
-        shutdownAsync().join();
-    }
-
-    @Override
-    public CompletableFuture<Void> shutdownAsync() {
+    public CompletableFuture<Void> shutdown() {
         logger.info("Stopping PooledStreamingEventProcessor [{}]", name);
         return coordinator.stop();
     }

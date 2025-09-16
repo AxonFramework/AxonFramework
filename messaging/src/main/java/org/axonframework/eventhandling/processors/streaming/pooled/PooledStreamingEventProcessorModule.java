@@ -135,7 +135,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                     return component.start();
                 })
                 .onShutdown(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
-                    return component.shutdownAsync();
+                    return component.shutdown();
                 });
 
         componentRegistry(cr -> cr.registerComponent(processorComponentDefinition));

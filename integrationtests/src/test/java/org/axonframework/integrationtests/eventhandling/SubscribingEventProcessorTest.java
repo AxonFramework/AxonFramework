@@ -108,7 +108,7 @@ class SubscribingEventProcessorTest {
     }
 
     private void shutdownEventProcessor() {
-        FutureUtils.joinAndUnwrap(testSubject.shutdownAsync());
+        FutureUtils.joinAndUnwrap(testSubject.shutdown());
     }
 
     @Disabled("TODO #3098 - Support tracking on the level of batch / Unit of Work")

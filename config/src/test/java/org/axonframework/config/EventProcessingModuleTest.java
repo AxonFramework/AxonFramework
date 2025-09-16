@@ -1417,8 +1417,8 @@ class EventProcessingModuleTest {
         }
 
         @Override
-        public void shutDown() {
-            // noop
+        public CompletableFuture<Void> shutdown() {
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override

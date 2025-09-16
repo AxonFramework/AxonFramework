@@ -88,7 +88,7 @@ class PooledStreamingEventProcessorIntegrationTest {
 
             assertTrue(optionalProcessor.isPresent());
             PooledStreamingEventProcessor processor = optionalProcessor.get();
-            processor.shutDown();
+            FutureUtils.joinAndUnwrap(processor.shutdown());
 
             EventGateway eventGateway = context.getBean(EventGateway.class);
             eventGateway.publish(null, new OriginalEvent("my-text"));
@@ -118,7 +118,7 @@ class PooledStreamingEventProcessorIntegrationTest {
 
             assertTrue(optionalProcessor.isPresent());
             PooledStreamingEventProcessor processor = optionalProcessor.get();
-            processor.shutDown();
+            FutureUtils.joinAndUnwrap(processor.shutdown());
 
             EventGateway eventGateway = context.getBean(EventGateway.class);
 
@@ -150,7 +150,7 @@ class PooledStreamingEventProcessorIntegrationTest {
             assertNotNull(errorLatch);
 
             assertTrue(errorLatch.await(10, TimeUnit.SECONDS));
-            processor.shutDown();
+            FutureUtils.joinAndUnwrap(processor.shutdown());
 
             assertFalse(eventHandlingComponent.hasHandledEventsMoreThanOnce());
         });
