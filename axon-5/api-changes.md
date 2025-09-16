@@ -625,6 +625,21 @@ The `EventProcessingModule` (along with the `EventProcessingConfigurer` and `Eve
 that were implemented by this class) has been removed from the framework. To configure default settings for Event
 Processors and register instances, use the `MessagingConfigurer#eventProcessing` method.
 
+### Processing Group layer removal
+The `ProcessingGroup` layer has been removed from the framework. This layer was used to group Event Handlers to be
+assigned to a single Event Processor.
+The new configuration API just allows you to register Event Handlers directly to an Event Processor with the following
+syntax:
+```java
+EventProcessorModule.pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
+.eventHandlingComponents(components -> components.declarative(eventHandler1).annotated(eventHandler2))
+.notCustomized();
+```
+With this usage the `eventHandler1` and `eventHandler2` will be assigned to the same Event Processor with the name
+`when-student-enrolled-to-max-courses-then-send-notification`.
+It's an equivalent of the `@ProcessingGroup("when-student-enrolled-to-max-courses-then-send-notification")` annotation
+before.
+
 ### TrackingEventProcessor Removal
 
 The `TrackingEventProcessor` has been removed from the framework, with `PooledStreamingEventProcessor` taking over as
