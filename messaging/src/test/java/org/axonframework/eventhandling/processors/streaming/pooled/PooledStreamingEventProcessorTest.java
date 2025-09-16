@@ -1242,7 +1242,7 @@ class PooledStreamingEventProcessorTest {
             );
 
             FutureUtils.joinAndUnwrap(testSubject.shutdown());
-            testSubject.resetTokens(source -> source.latestToken());
+            FutureUtils.joinAndUnwrap(testSubject.resetTokens(source -> source.latestToken()));
             startEventProcessor();
 
             assertWithin(

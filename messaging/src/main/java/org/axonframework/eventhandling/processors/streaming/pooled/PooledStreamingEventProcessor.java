@@ -292,41 +292,42 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     }
 
     @Override
-    public void resetTokens() {
+    public CompletableFuture<Void> resetTokens() {
         var initialToken = configuration.initialToken();
-        resetTokens(initialToken);
+        return resetTokens(initialToken);
     }
 
     @Override
-    public <R> void resetTokens(R resetContext) {
+    public <R> CompletableFuture<Void> resetTokens(R resetContext) {
         var initialToken = configuration.initialToken();
-        resetTokens(initialToken, resetContext);
+        return resetTokens(initialToken, resetContext);
     }
 
     @Override
-    public void resetTokens(
+    public CompletableFuture<Void> resetTokens(
             @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
     ) {
-        resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(eventSource)));
+        return initialTrackingTokenSupplier.apply(eventSource).thenCompose(this::resetTokens);
     }
 
     @Override
-    public <R> void resetTokens(
+    public <R> CompletableFuture<Void> resetTokens(
             @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             R resetContext
     ) {
-        resetTokens(joinAndUnwrap(initialTrackingTokenSupplier.apply(eventSource)), resetContext);
+        return initialTrackingTokenSupplier.apply(eventSource).thenCompose(r -> resetTokens(r, resetContext));
     }
 
     @Override
-    public void resetTokens(@Nonnull TrackingToken startPosition) {
-        resetTokens(startPosition, null);
+    public CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition) {
+        return resetTokens(startPosition, null);
     }
 
     @Override
-    public <R> void resetTokens(@Nonnull TrackingToken startPosition, R resetContext) {
+    public <R> CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition, R resetContext) {
         // TODO #3304 - Integrate event replay logic into Event Handling Component
-        throw new ResetNotSupportedException("TODO #3304 - Integrate event replay logic into Event Handling Component");
+        var exception = new ResetNotSupportedException("TODO #3304 - Integrate event replay logic into Event Handling Component");
+        return CompletableFuture.failedFuture(exception);
 //        Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
 //        Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
 //

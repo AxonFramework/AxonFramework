@@ -158,7 +158,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * logical processor that may be running in the cluster. Failure to do so will cause the reset to fail, as a
      * processor can only reset the tokens if it is able to claim them all.
      */
-    void resetTokens();
+    CompletableFuture<Void> resetTokens();
 
     /**
      * Resets tokens to their initial state. This effectively causes a replay. The given {@code resetContext} will be
@@ -171,7 +171,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param resetContext a {@code R} used to support the reset operation
      * @param <R>          the type of the provided {@code resetContext}
      */
-    <R> void resetTokens(@Nullable R resetContext);
+    <R> CompletableFuture<Void> resetTokens(@Nullable R resetContext);
 
     /**
      * Reset tokens to the position as return by the given {@code initialTrackingTokenSupplier}. This effectively causes
@@ -185,7 +185,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      *
      * @param initialTrackingTokenSupplier a function returning the token representing the position to reset to
      */
-    void resetTokens(
+    CompletableFuture<Void> resetTokens(
             @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier
     );
 
@@ -204,7 +204,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param resetContext                 a {@code R} used to support the reset operation
      * @param <R>                          the type of the provided {@code resetContext}
      */
-    <R> void resetTokens(
+    <R> CompletableFuture<Void> resetTokens(
             @Nonnull Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialTrackingTokenSupplier,
             @Nullable R resetContext
     );
@@ -221,8 +221,8 @@ public interface StreamingEventProcessor extends EventProcessor {
      *
      * @param startPosition the token representing the position to reset the processor to
      */
-    default void resetTokens(@Nonnull TrackingToken startPosition) {
-        resetTokens(startPosition, null);
+    default CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition) {
+        return resetTokens(startPosition, null);
     }
 
     /**
@@ -240,7 +240,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * @param resetContext  a {@code R} used to support the reset operation
      * @param <R>           the type of the provided {@code resetContext}
      */
-    <R> void resetTokens(@Nonnull TrackingToken startPosition, @Nullable R resetContext);
+    <R> CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition, @Nullable R resetContext);
 
     /**
      * Specifies the maximum amount of segments this {@link EventProcessor} can process at the same time.
