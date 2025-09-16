@@ -34,7 +34,9 @@ import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.utils.AsyncInMemoryStreamableEventSource;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.axonframework.utils.MockException;
@@ -67,6 +69,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.eventhandling.EventTestUtils.createEvents;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
@@ -144,10 +147,19 @@ class PooledStreamingEventProcessorTest {
 
     @Test
     void processorOnlyTriesToClaimAvailableSegments() {
-        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0);
-        tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1);
-        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2);
-        tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3);
+        var ctx = createProcessingContext();
+        joinAndUnwrap(
+                tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0, ctx)
+        );
+        joinAndUnwrap(
+        tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1, ctx)
+        );
+        joinAndUnwrap(
+                tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2, ctx)
+        );
+        joinAndUnwrap(
+                tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3, ctx)
+        );
         when(tokenStore.fetchAvailableSegments(testSubject.name()))
                 .thenReturn(Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3)));
 
@@ -461,8 +473,11 @@ class PooledStreamingEventProcessorTest {
 
         @Test
         void tokenStoreReturningSingleNullToken() {
-            tokenStore.initializeTokenSegments(testSubject.name(), 2);
-            tokenStore.storeToken(new GlobalSequenceTrackingToken(0), testSubject.name(), 1);
+            var ctx = createProcessingContext();
+            tokenStore.initializeTokenSegments(testSubject.name(), 2, ctx);
+            joinAndUnwrap(
+                    tokenStore.storeToken(new GlobalSequenceTrackingToken(0), testSubject.name(), 1, ctx)
+            );
 
             testSubject.start();
 
@@ -573,9 +588,9 @@ class PooledStreamingEventProcessorTest {
                    .atMost(Duration.ofSeconds(5))
                    .until(isWaiting::get);
 
-            // As the WorkPackage is blocked, we can verify if the claim is extended, but not stored.
+            // As the WorkPackage is blocked, we can verify if the claim is extended but not stored.
             verify(tokenStore, timeout(5000)).extendClaim(PROCESSOR_NAME, 0);
-            verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+            verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0), any(ProcessingContext.class));
 
             // Unblock the WorkPackage after successful validation
             handleLatch.countDown();
@@ -585,7 +600,7 @@ class PooledStreamingEventProcessorTest {
                    .atMost(Duration.ofSeconds(5))
                    .until(() -> testSubject.processingStatus().get(0).isCaughtUp());
             // Validate the token is stored
-            verify(tokenStore, timeout(5000).atLeastOnce()).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+            verify(tokenStore, timeout(5000).atLeastOnce()).storeToken(any(), eq(PROCESSOR_NAME), eq(0), any(ProcessingContext.class));
         }
 
         @Test
@@ -623,7 +638,7 @@ class PooledStreamingEventProcessorTest {
 
             // As the WorkPackage is blocked, we can verify if the claim is extended, but not stored.
             verify(tokenStore, timeout(5000)).extendClaim(PROCESSOR_NAME, 0);
-            verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0));
+            verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0), any(ProcessingContext.class));
 
             // Although the WorkPackage is waiting, the Coordinator should in the meantime fail with extending the claim.
             // This updates the processing status of the WorkPackage.
@@ -1329,5 +1344,9 @@ class PooledStreamingEventProcessorTest {
                          () -> withTestSubject(List.of(), c -> c.initialSegmentCount(-1)));
         }
     }
-}
 
+    private ProcessingContext createProcessingContext() {
+    return new StubProcessingContext();
+    }
+
+}

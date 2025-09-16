@@ -16,12 +16,14 @@
 
 package org.axonframework.eventhandling.processors.streaming.token.store.inmemory;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToInitializeTokenException;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +32,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import jakarta.annotation.Nonnull;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -50,20 +52,26 @@ public class InMemoryTokenStore implements TokenStore {
     private final String identifier = UUID.randomUUID().toString();
 
     /**
-     * No-arg constructor for the {@link InMemoryTokenStore} which will log a warning on initialization.
+     * No-arg constructor which will log a warning on initialization.
      */
     public InMemoryTokenStore() {
-        logger.warn("An in memory token store is being created.\nThis means the event processor using this token store might process the same events again when the application is restarted.\nIf the use of an in memory token store is intentional, this warning can be ignored.\nIf the tokens should be persisted, use the JPA, JDBC or MongoDB token store instead.");
+        logger.warn(
+                "An in memory token store is being created.\nThis means the event processor using this token store might process the same events again when the application is restarted.\nIf the use of an in memory token store is intentional, this warning can be ignored.\nIf the tokens should be persisted, use the JPA, JDBC or MongoDB token store instead.");
     }
 
     @Override
-    public void initializeTokenSegments(@Nonnull String processorName, int segmentCount)
+    public void initializeTokenSegments(@Nonnull String processorName,
+                                        int segmentCount,
+                                        @Nonnull ProcessingContext processingContext)
             throws UnableToClaimTokenException {
-        initializeTokenSegments(processorName, segmentCount, null);
+        initializeTokenSegments(processorName, segmentCount, null, processingContext);
     }
 
     @Override
-    public void initializeTokenSegments(@Nonnull String processorName, int segmentCount, TrackingToken initialToken)
+    public void initializeTokenSegments(@Nonnull String processorName,
+                                        int segmentCount,
+                                        TrackingToken initialToken,
+                                        @Nonnull ProcessingContext processingContext)
             throws UnableToClaimTokenException {
         if (fetchSegments(processorName).length > 0) {
             throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
@@ -75,12 +83,19 @@ public class InMemoryTokenStore implements TokenStore {
 
     // TODO #3432 - CurrentUnitOfWork is here to mimic transactional behavior, adjust it by mean of ProcessingContext
     @Override
-    public void storeToken(TrackingToken token, @Nonnull String processorName, int segment) {
-        if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().afterCommit(uow -> tokens.put(new ProcessAndSegment(processorName, segment),
-                                                                  getOrDefault(token, NULL_TOKEN)));
+    public CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
+                                              @Nonnull String processorName,
+                                              int segment,
+                                              @Nonnull ProcessingContext processingContext) {
+        if (processingContext.isStarted()) {
+            var future = CompletableFuture.runAsync(() -> tokens.put(
+                    new ProcessAndSegment(processorName, segment),
+                    getOrDefault(token, NULL_TOKEN)));
+            processingContext.onAfterCommit((ctx) -> future);
+            return future;
         } else {
-            tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
+            return CompletableFuture.runAsync(() -> tokens.put(new ProcessAndSegment(processorName, segment),
+                                                               getOrDefault(token, NULL_TOKEN)));
         }
     }
 

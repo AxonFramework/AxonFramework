@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.processors.streaming.token.store.jdbc;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.JdbcException;
@@ -29,6 +31,7 @@ import org.axonframework.eventhandling.processors.streaming.token.store.UnableTo
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToInitializeTokenException;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToRetrieveIdentifierException;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -47,9 +50,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -62,8 +64,8 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * A {@link TokenStore} implementation that uses JDBC to save and load {@link TrackingToken} instances.
  * <p>
  * Before using this store make sure the database contains a table named {@link TokenSchema#tokenTable()} in which to
- * store the tokens. For convenience, this table can be constructed through the {@link
- * JdbcTokenStore#createSchema(TokenTableFactory)} operation.
+ * store the tokens. For convenience, this table can be constructed through the
+ * {@link JdbcTokenStore#createSchema(TokenTableFactory)} operation.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -73,28 +75,13 @@ public class JdbcTokenStore implements TokenStore {
     private static final Logger logger = LoggerFactory.getLogger(JdbcTokenStore.class);
     private static final String CONFIG_TOKEN_ID = "__config";
     private static final int CONFIG_SEGMENT = 0;
-
+    private static final String COUNT_COLUMN_NAME = "segmentCount";
     private final ConnectionProvider connectionProvider;
     private final Serializer serializer;
     private final TokenSchema schema;
     private final TemporalAmount claimTimeout;
     private final String nodeId;
     private final Class<?> contentType;
-    private static final String COUNT_COLUMN_NAME = "segmentCount";
-
-    /**
-     * Instantiate a Builder to be able to create a {@link JdbcTokenStore}.
-     * <p>
-     * The {@code schema} is defaulted to an {@link TokenSchema}, the {@code claimTimeout} to a 10 seconds duration,
-     * {@code nodeId} is defaulted to the name of the managed bean for the runtime system of the Java virtual machine
-     * and the {@code contentType} to a {@code byte[]} {@link Class}. The {@link ConnectionProvider} and
-     * {@link Serializer} are <b>hard requirements</b> and as such should be provided.
-     *
-     * @return a Builder to be able to create a {@link JdbcTokenStore}
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
 
     /**
      * Instantiate a {@link JdbcTokenStore} based on the fields contained in the {@link Builder}.
@@ -116,6 +103,20 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     /**
+     * Instantiate a Builder to be able to create a {@link JdbcTokenStore}.
+     * <p>
+     * The {@code schema} is defaulted to an {@link TokenSchema}, the {@code claimTimeout} to a 10 seconds duration,
+     * {@code nodeId} is defaulted to the name of the managed bean for the runtime system of the Java virtual machine
+     * and the {@code contentType} to a {@code byte[]} {@link Class}. The {@link ConnectionProvider} and
+     * {@link Serializer} are <b>hard requirements</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link JdbcTokenStore}
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
      * Performs the DDL queries to create the schema necessary for this token store implementation.
      *
      * @param schemaFactory factory of the token entry schema
@@ -132,13 +133,18 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public void initializeTokenSegments(@Nonnull String processorName, int segmentCount)
+    public void initializeTokenSegments(@Nonnull String processorName,
+                                        int segmentCount,
+                                        @Nonnull ProcessingContext processingContext)
             throws UnableToClaimTokenException {
-        initializeTokenSegments(processorName, segmentCount, null);
+        initializeTokenSegments(processorName, segmentCount, null, processingContext);
     }
 
     @Override
-    public void initializeTokenSegments(@Nonnull String processorName, int segmentCount, TrackingToken initialToken)
+    public void initializeTokenSegments(@Nonnull String processorName,
+                                        int segmentCount,
+                                        TrackingToken initialToken,
+                                        @Nonnull ProcessingContext processingContext)
             throws UnableToClaimTokenException {
         Connection connection = getConnection();
         try {
@@ -191,21 +197,31 @@ public class JdbcTokenStore implements TokenStore {
         Connection connection = getConnection();
         TrackingToken token;
         try {
-            token = executeQuery(connection, c -> select(connection, CONFIG_TOKEN_ID, CONFIG_SEGMENT, false),
+            token = executeQuery(connection,
+                                 c -> select(connection, CONFIG_TOKEN_ID, CONFIG_SEGMENT, false),
                                  resultSet -> {
                                      if (resultSet.next()) {
                                          return readTokenEntry(resultSet).getToken(serializer);
                                      } else {
                                          return null;
                                      }
-                                 }, e -> new UnableToRetrieveIdentifierException("Exception while attempting to retrieve the config token", e),
+                                 },
+                                 e -> new UnableToRetrieveIdentifierException(
+                                         "Exception while attempting to retrieve the config token",
+                                         e),
                                  false);
             try {
                 if (token == null) {
-                    token = insertTokenEntry(connection, new ConfigToken(Collections.singletonMap("id", UUID.randomUUID().toString())), CONFIG_TOKEN_ID, CONFIG_SEGMENT);
+                    token = insertTokenEntry(connection,
+                                             new ConfigToken(Collections.singletonMap("id",
+                                                                                      UUID.randomUUID().toString())),
+                                             CONFIG_TOKEN_ID,
+                                             CONFIG_SEGMENT);
                 }
             } catch (SQLException e) {
-                throw new UnableToRetrieveIdentifierException("Exception while attempting to initialize the config token. It may have been concurrently initialized.", e);
+                throw new UnableToRetrieveIdentifierException(
+                        "Exception while attempting to initialize the config token. It may have been concurrently initialized.",
+                        e);
             }
         } finally {
             closeQuietly(connection);
@@ -223,39 +239,45 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public void storeToken(TrackingToken token, @Nonnull String processorName, int segment)
+    public CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
+                                              @Nonnull String processorName,
+                                              int segment,
+                                              @Nonnull ProcessingContext processingContext)
             throws UnableToClaimTokenException {
-        Connection connection = getConnection();
-        try {
-            int updatedToken = executeUpdate(
-                    connection,
-                    c -> storeUpdate(connection, token, processorName, segment),
-                    e -> new JdbcException(format(
-                            "Could not store token [%s] for processor [%s] and segment [%d]",
-                            token, processorName, segment
-                    ), e)
-            );
 
-            if (updatedToken == 0) {
-                logger.debug("Could not update token [{}] for processor [{}] and segment [{}]. "
-                                     + "Trying load-then-save approach instead.",
-                             token, processorName, segment);
-                executeQuery(
+        return CompletableFuture.runAsync(() -> {
+            Connection connection = getConnection();
+            try {
+                int updatedToken = executeUpdate(
                         connection,
-                        c -> selectForUpdate(c, processorName, segment),
-                        resultSet -> {
-                            updateToken(connection, resultSet, token, processorName, segment);
-                            return null;
-                        },
+                        c -> storeUpdate(connection, token, processorName, segment),
                         e -> new JdbcException(format(
                                 "Could not store token [%s] for processor [%s] and segment [%d]",
                                 token, processorName, segment
                         ), e)
                 );
+
+                if (updatedToken == 0) {
+                    logger.debug("Could not update token [{}] for processor [{}] and segment [{}]. "
+                                         + "Trying load-then-save approach instead.",
+                                 token, processorName, segment);
+                    executeQuery(
+                            connection,
+                            c -> selectForUpdate(c, processorName, segment),
+                            resultSet -> {
+                                updateToken(connection, resultSet, token, processorName, segment);
+                                return null;
+                            },
+                            e -> new JdbcException(format(
+                                    "Could not store token [%s] for processor [%s] and segment [%d]",
+                                    token, processorName, segment
+                            ), e)
+                    );
+                }
+            } finally {
+                closeQuietly(connection);
             }
-        } finally {
-            closeQuietly(connection);
-        }
+        });
     }
 
     @Override
@@ -382,7 +404,8 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     /**
-     * Returns a {@link PreparedStatement} to select all {@link TokenEntry TokenEntries} for a given processorName from the underlying storage.
+     * Returns a {@link PreparedStatement} to select all {@link TokenEntry TokenEntries} for a given processorName from
+     * the underlying storage.
      *
      * @param connection    the connection to the underlying database
      * @param processorName the name of the processor to fetch the segments for
@@ -455,14 +478,13 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     /**
-     * Returns a {@link PreparedStatement} to select a token entry from the underlying storage, either for updating
-     * or just for reading.
+     * Returns a {@link PreparedStatement} to select a token entry from the underlying storage, either for updating or
+     * just for reading.
      *
      * @param connection    the connection to the underlying database
      * @param processorName the name of the processor to fetch the entry for
      * @param segment       the segment of the processor to fetch the entry for
      * @param forUpdate     whether the returned token should be updatable
-     *
      * @return a {@link PreparedStatement} that will fetch an updatable token entry when executed
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
@@ -503,7 +525,7 @@ public class JdbcTokenStore implements TokenStore {
             if (!entry.claim(nodeId, claimTimeout)) {
                 throw new UnableToClaimTokenException(
                         format("Unable to claim token '%s[%s]'. It is owned by '%s'", entry.getProcessorName(),
-                                entry.getSegment(), entry.getOwner()));
+                               entry.getSegment(), entry.getOwner()));
             }
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -515,13 +537,13 @@ public class JdbcTokenStore implements TokenStore {
                 preparedStatement.setInt(6, segment);
                 if (preparedStatement.executeUpdate() != 1) {
                     throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It has been removed",
-                            processorName, segment));
+                                                                 processorName, segment));
                 }
             }
         } else {
             throw new UnableToClaimTokenException(
                     format("Unable to claim token '%s[%s]'. It has not been initialized yet",
-                            processorName, segment));
+                           processorName, segment));
         }
     }
 
@@ -553,7 +575,7 @@ public class JdbcTokenStore implements TokenStore {
             if (preparedStatement.executeUpdate() != 1) {
                 throw new UnableToClaimTokenException(
                         format("Unable to claim token '%s[%s]'. It has been removed", entry.getProcessorName(),
-                                entry.getSegment()));
+                               entry.getSegment()));
             }
         }
 
@@ -587,22 +609,24 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     /**
-     * Tries loading an existing token owned by a processor with given {@code processorName} and {@code segment}. If such a token entry exists an attempt will
-     * be made to claim the token. If that succeeds the token will be returned. If the token is already owned by another node an {@link
-     * UnableToClaimTokenException} will be thrown.
+     * Tries loading an existing token owned by a processor with given {@code processorName} and {@code segment}. If
+     * such a token entry exists an attempt will be made to claim the token. If that succeeds the token will be
+     * returned. If the token is already owned by another node an {@link UnableToClaimTokenException} will be thrown.
      * <p>
-     * If no such token exists yet, a new token entry will be inserted with a {@code null} token, owned by this node, and this method returns {@code null}.
+     * If no such token exists yet, a new token entry will be inserted with a {@code null} token, owned by this node,
+     * and this method returns {@code null}.
      * <p>
-     * If a token has been claimed, the {@code segment} will be validated by checking the database for the split and merge candidate segments. If a concurrent
-     * split or merge operation has been detected, the calim will be released and an {@link UnableToClaimTokenException} will be thrown.}
+     * If a token has been claimed, the {@code segment} will be validated by checking the database for the split and
+     * merge candidate segments. If a concurrent split or merge operation has been detected, the calim will be released
+     * and an {@link UnableToClaimTokenException} will be thrown.}
      *
      * @param connection    the connection to the underlying database
      * @param resultSet     the updatable result set from a prior select for update query
      * @param processorName the name of the processor to load or insert a token entry for
      * @param segment       the segment of the processor to load or insert a token entry for
      * @return the tracking token of the fetched entry or {@code null} if a new entry was inserted
-     * @throws UnableToClaimTokenException if the token cannot be claimed because another node currently owns the token or if the segment has been split or
-     *                                     merged concurrently
+     * @throws UnableToClaimTokenException if the token cannot be claimed because another node currently owns the token
+     *                                     or if the segment has been split or merged concurrently
      * @throws SQLException                when an exception occurs while loading or inserting the entry
      */
     protected TrackingToken loadToken(Connection connection, ResultSet resultSet, String processorName,
@@ -620,9 +644,9 @@ public class JdbcTokenStore implements TokenStore {
     /**
      * Validate a {@code segment} by checking for the existence of a split or merge candidate segment.
      * <p>
-     * If the segment has been split concurrently, the split segment candidate will be found, indicating that we have claimed an incorrect {@code segment}. If
-     * the segment has been merged concurrently, the merge candidate segment will no longer exist, also indicating that we have claimed an incorrect {@code
-     * segment}.
+     * If the segment has been split concurrently, the split segment candidate will be found, indicating that we have
+     * claimed an incorrect {@code segment}. If the segment has been merged concurrently, the merge candidate segment
+     * will no longer exist, also indicating that we have claimed an incorrect {@code segment}.
      *
      * @param processorName the name of the processor to load or insert a token entry for
      * @param segment       the segment of the processor to load or insert a token entry for
@@ -634,18 +658,20 @@ public class JdbcTokenStore implements TokenStore {
             int mergeableSegmentId = segment.mergeableSegmentId(); //This segment should exist
             executeQuery(connection, c -> selectSegments(c, processorName, splitSegmentId, mergeableSegmentId),
                          r -> containsOneElement(r, processorName, segment.getSegmentId()),
-                         e -> new JdbcException(format("Could not load segments for processor [%s]", processorName), e));
+                         e -> new JdbcException(format("Could not load segments for processor [%s]", processorName),
+                                                e));
         } finally {
             closeQuietly(connection);
         }
     }
 
     /**
-     * Returns a {@link PreparedStatement} for the count of segments that can be found after searching for the {@code splitSegmentId} and {@code mergeableSegmentId}.
+     * Returns a {@link PreparedStatement} for the count of segments that can be found after searching for the
+     * {@code splitSegmentId} and {@code mergeableSegmentId}.
      *
-     * @param connection    the connection to the underlying database
-     * @param processorName the name of the processor to load or insert a token entry for
-     * @param splitSegmentId the id of the split candidate segment
+     * @param connection         the connection to the underlying database
+     * @param processorName      the name of the processor to load or insert a token entry for
+     * @param splitSegmentId     the id of the split candidate segment
      * @param mergeableSegmentId the id of the merge candidate segment
      * @return The PreparedStatement to execute
      * @throws SQLException when an Exception occurs in building the {@link PreparedStatement}
@@ -664,11 +690,12 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     /**
-     * Confirm that the first row of the {@code resultSet} only contains a size of 1, indicating that the desired amount of segments has been found.
+     * Confirm that the first row of the {@code resultSet} only contains a size of 1, indicating that the desired amount
+     * of segments has been found.
      *
-     * @param resultSet the ResultSet returned by the {@code selectSegments} method.
+     * @param resultSet     the ResultSet returned by the {@code selectSegments} method.
      * @param processorName The process name for which a token has been fetched
-     * @param segmentId      The segment we are validating
+     * @param segmentId     The segment we are validating
      * @return true if only a single segment was found
      * @throws SQLException when an exception occurs processing the {@code resultSet}
      */
@@ -676,12 +703,16 @@ public class JdbcTokenStore implements TokenStore {
         resultSet.next();
         int size = resultSet.getInt(COUNT_COLUMN_NAME);
         if (size == 0) {
-            throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It has been merged with another segment",
-                                                         processorName, segmentId));
+            throw new UnableToClaimTokenException(format(
+                    "Unable to claim token '%s[%s]'. It has been merged with another segment",
+                    processorName,
+                    segmentId));
         }
         if (size >= 2) {
-            throw new UnableToClaimTokenException(format("Unable to claim token '%s[%s]'. It has been split into two segments",
-                                                         processorName, segmentId));
+            throw new UnableToClaimTokenException(format(
+                    "Unable to claim token '%s[%s]'. It has been split into two segments",
+                    processorName,
+                    segmentId));
         }
         return true;
     }
@@ -831,7 +862,8 @@ public class JdbcTokenStore implements TokenStore {
         /**
          * Sets the {@link ConnectionProvider} used to provide connections to the underlying database.
          *
-         * @param connectionProvider a {@link ConnectionProvider} used to provide connections to the underlying database
+         * @param connectionProvider a {@link ConnectionProvider} used to provide connections to the underlying
+         *                           database
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder connectionProvider(ConnectionProvider connectionProvider) {
@@ -880,8 +912,8 @@ public class JdbcTokenStore implements TokenStore {
         }
 
         /**
-         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to the name of the managed bean for
-         * the runtime system of the Java virtual machine
+         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to the name of the managed bean for the
+         * runtime system of the Java virtual machine
          *
          * @param nodeId the id as a {@link String} to identify ownership of the tokens
          * @return the current Builder instance, for fluent interfacing

@@ -40,7 +40,7 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * not in charge of one of the two segments, it will try to claim either segment's {@link TrackingToken} and perform the
  * merge then.
  * <p>
- * In either approach, this operation will delete one of the segments and release the claim on the other, so that
+ * In either approach, this operation will delete one of the segments and release the claim on the other so that
  * another thread can proceed with processing it.
  *
  * @author Steven van Beelen
@@ -58,11 +58,11 @@ class MergeTask extends CoordinatorTask {
     private final UnitOfWorkFactory unitOfWorkFactory;
 
     /**
-     * Constructs a {@link MergeTask}.
+     * Constructs a {@code MergeTask}.
      *
      * @param result            The {@link CompletableFuture} to {@link #complete(Boolean, Throwable)} once
      *                          {@link #run()} has finalized.
-     * @param name              The name of the {@link Coordinator} this instruction will be ran in. Used to correctly
+     * @param name              The name of the {@link Coordinator} this instruction will run in. Used to correctly
      *                          deal with the {@code tokenStore}.
      * @param segmentId         The identifier of the {@link Segment} this instruction should merge.
      * @param workPackages      The collection of {@link WorkPackage}s controlled by the {@link Coordinator}. Will be
@@ -157,7 +157,7 @@ class MergeTask extends CoordinatorTask {
                         .create()
                         .executeWithResult(context -> {
                             tokenStore.deleteToken(name, tokenToDelete);
-                            tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId());
+                            tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId(), context);
                             tokenStore.releaseClaim(name, mergedSegment.getSegmentId());
                             return emptyCompletedFuture();
                         })

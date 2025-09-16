@@ -18,10 +18,10 @@ package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.WrappedToken;
@@ -65,7 +65,7 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ProcessUtils.executeUntilTrue;
 
 /**
- * Coordinator for the {@link PooledStreamingEventProcessor}. Uses coordination tasks (separate threads) to starts a
+ * Coordinator for the {@link PooledStreamingEventProcessor}. Uses coordination tasks (separate threads) to start a
  * work package for every {@link TrackingToken} it is able to claim. The tokens for every work package are combined and
  * the lower bound of this combined token is used to open an event stream from a {@link StreamableEventSource}. Events
  * are scheduled one by one to <em>all</em> work packages coordinated by this service.
@@ -106,15 +106,15 @@ class Coordinator {
     private final AtomicReference<RunState> runState;
     private final Map<Integer, Instant> releasesDeadlines = new ConcurrentHashMap<>();
     private final Map<Integer, Integer> releasesLastBackOffSeconds = new ConcurrentHashMap<>();
-    private int errorWaitBackOff = 500;
     private final Queue<CoordinatorTask> coordinatorTasks = new ConcurrentLinkedQueue<>();
     private final AtomicReference<CoordinationTask> coordinationTask = new AtomicReference<>();
+    private int errorWaitBackOff = 500;
 
     /**
-     * Instantiate a Builder to be able to create a {@link Coordinator}. This builder <b>does not</b> validate the
-     * fields. Hence, any fields provided should be validated by the user of the {@link Builder}.
+     * Instantiate a Builder to be able to create a {@code Coordinator}-instance. This builder <b>does not</b> validate
+     * the fields. Hence, any fields provided should be validated by the user of the {@link Builder}.
      *
-     * @return a Builder to be able to create a {@link Coordinator}
+     * @return a Builder to be able to create a {@code Coordinator}-instance
      */
     protected static Builder builder() {
         return new Builder();
@@ -141,9 +141,9 @@ class Coordinator {
         this.eventCriteria = builder.eventCriteria;
     }
 
-    /**
-     * Start the event coordination task of this coordinator. Will shutdown this service immediately if the coordination
-     * task cannot be started.
+   /**
+     * Start the event coordination task of this coordinator. Will shut down this service immediately if the
+     * coordination task cannot be started.
      */
     public void start() {
         RunState newState = this.runState.updateAndGet(RunState::attemptStart);
@@ -311,7 +311,8 @@ class Coordinator {
                                              tokenStore.initializeTokenSegments(
                                                      name,
                                                      initialSegmentCount,
-                                                     joinAndUnwrap(initialToken.apply(eventSource)));
+                                                     joinAndUnwrap(initialToken.apply(eventSource)),
+                                                     context);
                                          }
                                          tokenStoreInitialized.set(true);
                                          return emptyCompletedFuture();
@@ -576,8 +577,8 @@ class Coordinator {
          * Specifies the {@link Function} used to generate the initial {@link TrackingToken}s. Defaults to an automatic
          * replay since the start of the stream.
          * <p>
-         * More specifically, it defaults to a {@link ReplayToken} that starts streaming
-         * from the {@link StreamableEventSource#latestToken() tail} with the replay flag enabled until the
+         * More specifically, it defaults to a {@link ReplayToken} that starts streaming from the
+         * {@link StreamableEventSource#latestToken() tail} with the replay flag enabled until the
          * {@link StreamableEventSource#firstToken() head} at the moment of initialization is reached.
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given

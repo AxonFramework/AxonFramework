@@ -16,14 +16,18 @@
 
 package org.axonframework.eventhandling.processors.streaming.token.store.inmemory;
 
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
+import java.util.List;
+
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
-import java.util.List;
 
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,7 +43,7 @@ class InMemoryTokenStoreTest {
 
     @Test
     void initializeTokens() {
-        testSubject.initializeTokenSegments("test1", 7);
+        testSubject.initializeTokenSegments("test1", 7, createProcessingContext());
 
         int[] actual = testSubject.fetchSegments("test1");
         Arrays.sort(actual);
@@ -53,7 +57,12 @@ class InMemoryTokenStoreTest {
 
     @Test
     void initializeTokensAtGivenPosition() {
-        testSubject.initializeTokenSegments("test1", 7, new GlobalSequenceTrackingToken(10));
+        testSubject.initializeTokenSegments(
+                "test1",
+                7,
+                new GlobalSequenceTrackingToken(10),
+                createProcessingContext()
+        );
 
         int[] actual = testSubject.fetchSegments("test1");
         Arrays.sort(actual);
@@ -66,15 +75,22 @@ class InMemoryTokenStoreTest {
 
     @Test
     void updateToken() {
-        testSubject.initializeTokenSegments("test1", 1);
-        testSubject.storeToken(new GlobalSequenceTrackingToken(1), "test1", 0);
+        var ctx = createProcessingContext();
+        testSubject.initializeTokenSegments("test1", 1, ctx);
+        joinAndUnwrap(
+                testSubject.storeToken(new GlobalSequenceTrackingToken(1), "test1", 0, ctx)
+        );
 
         assertEquals(new GlobalSequenceTrackingToken(1), testSubject.fetchToken("test1", 0));
     }
 
     @Test
     void initializeAtGivenToken() {
-        testSubject.initializeTokenSegments("test1", 2, new GlobalSequenceTrackingToken(1));
+        testSubject.initializeTokenSegments(
+                "test1",
+                2,
+                new GlobalSequenceTrackingToken(1),
+                createProcessingContext());
 
         assertEquals(new GlobalSequenceTrackingToken(1), testSubject.fetchToken("test1", 0));
         assertEquals(new GlobalSequenceTrackingToken(1), testSubject.fetchToken("test1", 1));
@@ -87,13 +103,20 @@ class InMemoryTokenStoreTest {
 
     @Test
     void querySegments() {
-        testSubject.initializeTokenSegments("test", 1);
+        var ctx = createProcessingContext();
+        testSubject.initializeTokenSegments("test", 1, ctx);
 
         assertNull(testSubject.fetchToken("test", 0));
 
-        testSubject.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0);
-        testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1);
-        testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1);
+        joinAndUnwrap(
+                testSubject.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0, ctx)
+        );
+        joinAndUnwrap(
+                testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1, ctx)
+        );
+        joinAndUnwrap(
+                testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1, ctx)
+        );
 
         {
             final int[] segments = testSubject.fetchSegments("proc1");
@@ -111,9 +134,16 @@ class InMemoryTokenStoreTest {
 
     @Test
     void queryAvailableSegments() {
-        testSubject.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0);
-        testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1);
-        testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1);
+        var ctx = createProcessingContext();
+        joinAndUnwrap(
+                testSubject.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0, ctx)
+        );
+        joinAndUnwrap(
+                testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc1", 1, ctx)
+        );
+        joinAndUnwrap(
+                testSubject.storeToken(new GlobalSequenceTrackingToken(2L), "proc2", 1, ctx)
+        );
 
         {
             final List<Segment> segments = testSubject.fetchAvailableSegments("proc1");
@@ -124,11 +154,15 @@ class InMemoryTokenStoreTest {
         {
             final List<Segment> segments = testSubject.fetchAvailableSegments("proc2");
             assertThat(segments.size(), is(1));
-            assertThat(segments.get(0).getSegmentId(), is(1));
+            assertThat(segments.getFirst().getSegmentId(), is(1));
         }
         {
             final List<Segment> segments = testSubject.fetchAvailableSegments("proc3");
             assertThat(segments.size(), is(0));
         }
+    }
+
+    private ProcessingContext createProcessingContext() {
+        return new StubProcessingContext();
     }
 }

@@ -16,15 +16,19 @@
 
 package org.axonframework.eventhandling.processors.streaming.token.store;
 
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
+
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -41,17 +45,20 @@ public interface TokenStore {
      * Initializes the given {@code segmentCount} number of segments for the given {@code processorName} to track its
      * tokens. This method should only be invoked when no tokens have been stored for the given processor, yet.
      * <p>
-     * This method will initialize the tokens, but not claim them. It will create the segments ranging from {@code 0}
+     * This method will initialize the tokens but not claim them. It will create the segments ranging from {@code 0}
      * until {@code segmentCount - 1}.
      * <p>
-     * The exact behavior when this method is called while tokens were already present, is undefined in case the token
+     * The exact behavior when this method is called while tokens were already present is undefined in case the token
      * already present is not owned by the initializing process.
      *
-     * @param processorName The name of the processor to initialize segments for
-     * @param segmentCount  The number of segments to initialize
+     * @param processorName     The name of the processor to initialize segments for
+     * @param segmentCount      The number of segments to initialize
+     * @param processingContext The processing context to use when initializing the segments.
      * @throws UnableToClaimTokenException when a segment has already been created
      */
-    default void initializeTokenSegments(@Nonnull String processorName, int segmentCount)
+    default void initializeTokenSegments(@Nonnull String processorName,
+                                         int segmentCount,
+                                         @Nonnull ProcessingContext processingContext)
             throws UnableToClaimTokenException {
         for (int segment = 0; segment < segmentCount; segment++) {
             fetchToken(processorName, segment);
@@ -66,53 +73,60 @@ public interface TokenStore {
      * This method will store {@code initialToken} for all segments as starting point for processor, but not claim them.
      * It will create the segments ranging from {@code 0} until {@code segmentCount - 1}.
      * <p>
-     * The exact behavior when this method is called while tokens were already present, is undefined in case the token
+     * The exact behavior when this method is called while tokens were already present is undefined in case the token
      * already present is not owned by the initializing process.
      *
-     * @param processorName The name of the processor to initialize segments for
-     * @param segmentCount  The number of segments to initialize
-     * @param initialToken  The initial token which is used as a starting point for processor
+     * @param processorName     The name of the processor to initialize segments for
+     * @param segmentCount      The number of segments to initialize
+     * @param initialToken      The initial token which is used as a starting point for the processor
+     * @param processingContext The processing context to use when initializing the segments
      * @throws UnableToClaimTokenException when a segment has already been created
      */
-    default void initializeTokenSegments(@Nonnull String processorName, int segmentCount,
-                                         @Nullable TrackingToken initialToken)
+    default void initializeTokenSegments(@Nonnull String processorName,
+                                         int segmentCount,
+                                         @Nullable TrackingToken initialToken,
+                                         @Nonnull ProcessingContext processingContext)
             throws UnableToClaimTokenException {
         for (int segment = 0; segment < segmentCount; segment++) {
-            storeToken(initialToken, processorName, segment);
+            joinAndUnwrap(storeToken(initialToken, processorName, segment, processingContext));
             releaseClaim(processorName, segment);
         }
     }
 
     /**
-     * Stores the given {@code token} in the store. The token marks the current position of the process with given
-     * {@code processorName} and {@code segment}. The given {@code token} may be {@code null}.
+     * Asynchronously stores the given {@code token} in the store. The token marks the current position of the process
+     * with given {@code processorName} and {@code segment}. The given {@code token} may be {@code null}.
      * <p/>
      * Any claims made by the current process have their timestamp updated.
      * <p>
      * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
-     * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly initialized.
-     * A TokenStore implementation's ability to do so is exposed by the {@link #requiresExplicitSegmentInitialization()}
-     * method. If that method returns false, this method may implicitly initialize a token and return that token upon
-     * invocation.
+     * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly
+     * initialized. A TokenStore implementation's ability to do so is exposed by the
+     * {@link #requiresExplicitSegmentInitialization()} method. If that method returns false, this method may implicitly
+     * initialize a token and return that token upon invocation.
      *
      * @param token         The token to store for a given process and segment. May be {@code null}.
      * @param processorName The name of the process for which to store the token
      * @param segment       The index of the segment for which to store the token
+     * @param processingContext       The current {@link ProcessingContext}
      * @throws UnableToClaimTokenException when the token being updated has been claimed by another process.
+     * @return CompletableFuture that completes when the token has been stored.
      */
-    void storeToken(@Nullable TrackingToken token, @Nonnull String processorName, int segment)
+    CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
+                                       @Nonnull String processorName,
+                                       int segment,
+                                       @Nonnull ProcessingContext processingContext)
             throws UnableToClaimTokenException;
 
     /**
      * Returns the last stored {@link TrackingToken token} for the given {@code processorName} and {@code segment}.
-     * Returns {@code null} if the stored token for the given process and segment is
-     * {@code null}.
+     * Returns {@code null} if the stored token for the given process and segment is {@code null}.
      * <p>
      * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
-     * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly initialized.
-     * A TokenStore implementation's ability to do so is exposed by the {@link #requiresExplicitSegmentInitialization()}
-     * method. If that method returns false, this method may implicitly initialize a token and return that token upon
-     * invocation.
+     * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly
+     * initialized. A TokenStore implementation's ability to do so is exposed by the
+     * {@link #requiresExplicitSegmentInitialization()} method. If that method returns false, this method may implicitly
+     * initialize a token and return that token upon invocation.
      * <p>
      * The token will be claimed by the current process (JVM instance), preventing access by other instances. To release
      * the claim, use {@link #releaseClaim(String, int)}
@@ -126,22 +140,24 @@ public interface TokenStore {
     TrackingToken fetchToken(@Nonnull String processorName, int segment) throws UnableToClaimTokenException;
 
     /**
-     * Returns the last stored {@link TrackingToken token} for the given {@code processorName} and {@code segment}. Returns {@code null} if the stored token for
-     * the given process and segment is {@code null}.
+     * Returns the last stored {@link TrackingToken token} for the given {@code processorName} and {@code segment}.
+     * Returns {@code null} if the stored token for the given process and segment is {@code null}.
      * <p>
-     * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been initialized with a Token (albeit {@code
-     * null}) yet. In that case, a segment must have been explicitly initialized. A TokenStore implementation's ability to do so is exposed by the {@link
-     * #requiresExplicitSegmentInitialization()} method. If that method returns false, this method may implicitly initialize a token and return that token upon
-     * invocation.
+     * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
+     * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly
+     * initialized. A TokenStore implementation's ability to do so is exposed by the
+     * {@link #requiresExplicitSegmentInitialization()} method. If that method returns false, this method may implicitly
+     * initialize a token and return that token upon invocation.
      * <p>
-     * The token will be claimed by the current process (JVM instance), preventing access by other instances. To release the claim, use {@link
-     * #releaseClaim(String, int)}
+     * The token will be claimed by the current process (JVM instance), preventing access by other instances. To release
+     * the claim, use {@link #releaseClaim(String, int)}
      *
      * @param processorName The process name for which to fetch the token
      * @param segment       The segment for which to fetch the token
      * @return The last stored TrackingToken or {@code null} if the store holds no token for given process and segment
-     * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but they are claimed by another process, or
-     *                                     if the {@code segment has been split or merged concurrently}
+     * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but
+     *                                     they are claimed by another process, or if the
+     *                                     {@code segment has been split or merged concurrently}
      */
     default TrackingToken fetchToken(@Nonnull String processorName, @Nonnull Segment segment)
             throws UnableToClaimTokenException {
@@ -157,8 +173,8 @@ public interface TokenStore {
      * @throws UnableToClaimTokenException if there is no token for given {@code processorName} and {@code segment}, or
      *                                     if it has been claimed by another process.
      * @implSpec By default, this method invokes {@link #fetchToken(String, int)}, which also extends the claim if the
-     * token is held. TokenStore implementations may choose to implement this method if they can provide a more efficient
-     * way of extending this claim.
+     * token is held. TokenStore implementations may choose to implement this method if they can provide a more
+     * efficient way of extending this claim.
      */
     default void extendClaim(@Nonnull String processorName, int segment) throws UnableToClaimTokenException {
         fetchToken(processorName, segment);
@@ -189,8 +205,8 @@ public interface TokenStore {
      * @param processorName The name of the processor to create the segment for
      * @param segment       The identifier of the segment to initialize
      * @throws UnableToInitializeTokenException if a Token already exists
-     * @throws UnsupportedOperationException    if this implementation does not support explicit initialization.
-     *                                          See {@link #requiresExplicitSegmentInitialization()}.
+     * @throws UnsupportedOperationException    if this implementation does not support explicit initialization. See
+     *                                          {@link #requiresExplicitSegmentInitialization()}.
      */
     default void initializeSegment(@Nullable TrackingToken token, @Nonnull String processorName, int segment)
             throws UnableToInitializeTokenException {
@@ -199,13 +215,13 @@ public interface TokenStore {
     }
 
     /**
-     * Deletes the token for the processor with given {@code processorName} and {@code segment}. The token must
-     * be owned by the current node, to be able to delete it.
+     * Deletes the token for the processor with given {@code processorName} and {@code segment}. The token must be owned
+     * by the current node, to be able to delete it.
      * <p>
-     * Implementations should implement this method only when {@link #requiresExplicitSegmentInitialization()} is overridden to
-     * return {@code true}. Deleting tokens using implementations that do not require explicit token initialization is
-     * unsafe, as a claim will automatically recreate the deleted token instance, which may result in concurrency
-     * issues.
+     * Implementations should implement this method only when {@link #requiresExplicitSegmentInitialization()} is
+     * overridden to return {@code true}. Deleting tokens using implementations that do not require explicit token
+     * initialization is unsafe, as a claim will automatically recreate the deleted token instance, which may result in
+     * concurrency issues.
      *
      * @param processorName The name of the processor to remove the token for
      * @param segment       The segment to delete
@@ -218,12 +234,12 @@ public interface TokenStore {
     }
 
     /**
-     * Indicates whether this TokenStore instance requires segments to be explicitly initialized, before any tokens
-     * can be claimed for that segment.
+     * Indicates whether this TokenStore instance requires segments to be explicitly initialized before any tokens can
+     * be claimed for that segment.
      *
      * @return {@code true} if this instance requires tokens to be explicitly initialized, otherwise {@code false}.
-     * @see #initializeTokenSegments(String, int)
-     * @see #initializeTokenSegments(String, int, TrackingToken)
+     * @see #initializeTokenSegments(String, int, ProcessingContext)
+     * @see #initializeTokenSegments(String, int, TrackingToken, ProcessingContext)
      * @see #initializeSegment(TrackingToken, String, int)
      */
     default boolean requiresExplicitSegmentInitialization() {
@@ -242,13 +258,14 @@ public interface TokenStore {
     int[] fetchSegments(@Nonnull String processorName);
 
     /**
-     * Returns a List of known available {@code segments} for a given {@code processorName}. A segment is considered available if it is not claimed by any
-     * other event processor.
+     * Returns a List of known available {@code segments} for a given {@code processorName}. A segment is considered
+     * available if it is not claimed by any other event processor.
      * <p>
-     * The segments returned are segments for which a token has been stored previously and have not been claimed by another processor. When the {@link
-     * TokenStore} is empty, an empty list is returned.
-     *
-     * By default, if this method is not implemented, we will return all segments instead, whether they are available or not.
+     * The segments returned are segments for which a token has been stored previously and have not been claimed by
+     * another processor. When the {@link TokenStore} is empty, an empty list is returned.
+     * <p>
+     * By default, if this method is not implemented, we will return all segments instead, whether they are available or
+     * not.
      *
      * @param processorName the processor's name for which to fetch the segments
      * @return a List of available segment identifiers for the specified {@code processorName}
@@ -262,8 +279,8 @@ public interface TokenStore {
 
     /**
      * Returns a unique identifier that uniquely identifies the storage location of the tokens in this store. Two token
-     * store implementations that share state, must return the same identifier. Two token store implementations that
-     * do not share a location, must return a different identifier (or an empty optional if identifiers are not
+     * store implementations that share state, must return the same identifier. Two token store implementations that do
+     * not share a location, must return a different identifier (or an empty optional if identifiers are not
      * supported).
      * <p>
      * Note that this method may require the implementation to consult its underlying storage. Therefore, a Transaction

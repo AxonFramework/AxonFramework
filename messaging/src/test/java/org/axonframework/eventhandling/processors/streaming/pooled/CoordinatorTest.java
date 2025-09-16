@@ -32,6 +32,7 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -116,7 +117,11 @@ class CoordinatorTest {
         //asserts
         verify(executorService, times(1)).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
         // should be zero since we mock there already is a segment
-        verify(tokenStore, times(0)).initializeTokenSegments(anyString(), anyInt(), any(TrackingToken.class));
+        verify(tokenStore, times(0)).initializeTokenSegments(
+                anyString(),
+                anyInt(),
+                any(TrackingToken.class),
+                any(ProcessingContext.class));
     }
 
     @Test
@@ -134,7 +139,7 @@ class CoordinatorTest {
 
         //asserts
         verify(executorService, times(1)).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
-        verify(tokenStore, times(1)).initializeTokenSegments(anyString(), anyInt(), isNull());
+        verify(tokenStore, times(1)).initializeTokenSegments(anyString(), anyInt(), isNull(), any(ProcessingContext.class));
     }
 
     @Test

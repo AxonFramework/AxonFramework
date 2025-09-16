@@ -241,11 +241,16 @@ class WorkPackageTest {
         assertEquals(expectedToken, TrackingToken.fromContext(processedEvents.getFirst().context()).get());
 
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
-        verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
+        verify(tokenStore).storeToken(
+                tokenCaptor.capture(),
+                eq(PROCESSOR_NAME),
+                eq(segment.getSegmentId()),
+                any(ProcessingContext.class)
+        );
         assertEquals(expectedToken, tokenCaptor.getValue());
 
         assertEquals(1, trackerStatusUpdates.size());
-        OptionalLong resultPosition = trackerStatusUpdates.get(0).getCurrentPosition();
+        OptionalLong resultPosition = trackerStatusUpdates.getFirst().getCurrentPosition();
         assertTrue(resultPosition.isPresent());
         assertEquals(1L, resultPosition.getAsLong());
     }
@@ -308,17 +313,22 @@ class WorkPackageTest {
         var processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
         assertEquals(expectedToken, TrackingToken.fromContext(processedEvents.getFirst().context()).get());
-        // We  need to verify the TokenStore#storeToken operation, otherwise the extendClaim verify will not succeed.
+        // We need to verify the TokenStore#storeToken operation, otherwise the extendClaim verify will not succeed.
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
-        verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
+        verify(tokenStore).storeToken(
+                tokenCaptor.capture(),
+                eq(PROCESSOR_NAME),
+                eq(segment.getSegmentId()),
+                any(ProcessingContext.class)
+        );
         assertEquals(expectedToken, tokenCaptor.getValue());
 
         assertWithin(
                 500, TimeUnit.MILLISECONDS,
                 () -> {
-                    // Consciously trigger the WorkPackage again, to force it through WorkPackage#processEvents.
+                    // Consciously trigger the WorkPackage again to force it through WorkPackage#processEvents.
                     // This should be done inside the assertWithin, as the WorkPackage does not re-trigger itself.
-                    // Furthermore, the test could be to fast to incorporate the extremelyShortClaimExtensionThreshold as a reason to extend the claim too.
+                    // Furthermore, the test could be too fast to incorporate the extremelyShortClaimExtensionThreshold as a reason to extend the claim too.
                     testSubjectWithShortThreshold.scheduleWorker();
                     verify(tokenStore, atLeastOnce()).extendClaim(PROCESSOR_NAME, segment.getSegmentId());
                 }
@@ -357,7 +367,11 @@ class WorkPackageTest {
                     // Furthermore, the test could be to fast to incorporate the extremelyShortClaimExtensionThreshold as a reason to extend the claim too.
                     testSubjectWithShortThreshold.scheduleWorker();
                     verify(tokenStore, atLeastOnce())
-                            .storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
+                            .storeToken(
+                                    tokenCaptor.capture(),
+                                    eq(PROCESSOR_NAME),
+                                    eq(segment.getSegmentId()),
+                                    any(ProcessingContext.class));
                 }
         );
         assertEquals(expectedToken, tokenCaptor.getValue());
@@ -493,7 +507,11 @@ class WorkPackageTest {
         assertEquals(expectedToken, TrackingToken.fromContext(processedEvents.getFirst().context).get());
 
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
-        verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
+        verify(tokenStore).storeToken(
+                tokenCaptor.capture(),
+                eq(PROCESSOR_NAME),
+                eq(segment.getSegmentId()),
+                any(ProcessingContext.class));
         assertEquals(expectedToken, tokenCaptor.getValue());
 
         assertEquals(1, trackerStatusUpdates.size());
@@ -530,7 +548,11 @@ class WorkPackageTest {
                      TrackingToken.fromContext(processedEvents.get(1).context).get());
 
         ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
-        verify(tokenStore).storeToken(tokenCaptor.capture(), eq(PROCESSOR_NAME), eq(segment.getSegmentId()));
+        verify(tokenStore).storeToken(
+                tokenCaptor.capture(),
+                eq(PROCESSOR_NAME),
+                eq(segment.getSegmentId()),
+                any(ProcessingContext.class));
         assertEquals(expectedToken, tokenCaptor.getValue());
 
         assertFalse(trackerStatusUpdates.isEmpty());

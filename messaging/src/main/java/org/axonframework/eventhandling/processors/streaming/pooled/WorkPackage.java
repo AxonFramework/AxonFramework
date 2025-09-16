@@ -112,10 +112,10 @@ class WorkPackage {
     private final AtomicReference<Exception> abortException = new AtomicReference<>();
 
     /**
-     * Instantiate a Builder to be able to create a {@link WorkPackage}. This builder <b>does not</b> validate the
+     * Instantiate a Builder to be able to create a {@code WorkPackage}. This builder <b>does not</b> validate the
      * fields. Hence, any fields provided should be validated by the user of the {@link WorkPackage.Builder}.
      *
-     * @return a Builder to be able to create a {@link WorkPackage}
+     * @return a Builder to be able to create a {@code WorkPackage}
      */
     protected static Builder builder() {
         return new Builder();
@@ -158,7 +158,7 @@ class WorkPackage {
      * PooledStreamingEventProcessor}.
      *
      * @param eventEntries The event entries to schedule for work in this work package.
-     * @return {@code True} if this {@link WorkPackage} scheduled one of the events for execution, otherwise
+     * @return {@code True} if this {@code WorkPackage} scheduled one of the events for execution, otherwise
      * {@code false}.
      */
     public boolean scheduleEvents(List<MessageStream.Entry<? extends EventMessage>> eventEntries) {
@@ -206,7 +206,7 @@ class WorkPackage {
     }
 
     private void assertEqualTokens(List<MessageStream.Entry<? extends EventMessage>> eventEntries) {
-        TrackingToken expectedToken = TrackingToken.fromContext(eventEntries.get(0)).orElse(null);
+        TrackingToken expectedToken = TrackingToken.fromContext(eventEntries.getFirst()).orElse(null);
         Assert.isTrue(
                 eventEntries.stream()
                             .map(entry -> TrackingToken.fromContext(entry).orElse(null))
@@ -223,7 +223,7 @@ class WorkPackage {
      * PooledStreamingEventProcessor}.
      *
      * @param eventEntry The event entry to schedule for work in this work package.
-     * @return {@code True} if this {@link WorkPackage} scheduled the event for execution, otherwise {@code false}.
+     * @return {@code True} if this {@code WorkPackage} scheduled the event for execution, otherwise {@code false}.
      */
     public boolean scheduleEvent(MessageStream.Entry<? extends EventMessage> eventEntry) {
         TrackingToken eventToken = TrackingToken.fromContext(eventEntry).orElse(null);
@@ -255,7 +255,7 @@ class WorkPackage {
     }
 
     /**
-     * Determines whether this {@link WorkPackage} can handle the given {@link MessageStream.Entry}. This method creates
+     * Determines whether this {@code WorkPackage} can handle the given {@link MessageStream.Entry}. This method creates
      * a specialized {@link ProcessingContext} from the event entry to evaluate if the event should be processed by this
      * work package's {@link Segment}.
      * <p>
@@ -310,7 +310,7 @@ class WorkPackage {
     }
 
     /**
-     * Schedule this {@link WorkPackage} to process its batch of scheduled events in a dedicated thread.
+     * Schedule this {@code WorkPackage} to process its batch of scheduled events in a dedicated thread.
      * <p>
      * <b>Threading note:</b> This method is safe to be called by both the {@link Coordinator} threads and {@link
      * WorkPackage} threads of a {@link PooledStreamingEventProcessor}.
@@ -371,9 +371,9 @@ class WorkPackage {
 
                 unitOfWork.onInvocation(ctx -> batchProcessor.process(eventBatch, ctx).asCompletableFuture());
 
-                unitOfWork.runOnPrepareCommit(u -> storeToken(lastConsumedToken));
+                unitOfWork.runOnPrepareCommit(ctx -> storeToken(lastConsumedToken, ctx));
                 unitOfWork.runOnAfterCommit(
-                        u -> {
+                        ctx -> {
                             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
                             batchProcessedCallback.run();
                         }
@@ -389,7 +389,7 @@ class WorkPackage {
                         unitOfWorkFactory
                                 .create()
                                 .executeWithResult(context -> {
-                                    storeToken(lastConsumedToken);
+                                    storeToken(lastConsumedToken, context);
                                     return emptyCompletedFuture();
                                 })
                 );
@@ -419,9 +419,9 @@ class WorkPackage {
         }
     }
 
-    private void storeToken(TrackingToken token) {
+    private void storeToken(TrackingToken token, @Nonnull ProcessingContext processingContext) {
         logger.debug("Work Package [{}]-[{}] will store token [{}].", name, segment.getSegmentId(), token);
-        tokenStore.storeToken(token, name, segment.getSegmentId());
+        joinAndUnwrap(tokenStore.storeToken(token, name, segment.getSegmentId(), processingContext));
         lastStoredToken = token;
         nextClaimExtension.set(now() + claimExtensionThreshold);
     }
