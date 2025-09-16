@@ -27,6 +27,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
@@ -227,7 +228,7 @@ class DefaultConfigurerTest {
                                                                                                     PooledStreamingEventProcessor.class)
                                                      .orElseThrow(RuntimeException::new);
             assertFalse(processor.isRunning());
-            processor.start();
+            FutureUtils.joinAndUnwrap(processor.start());
             assertTrue(processor.isRunning());
         } finally {
             config.shutdown();

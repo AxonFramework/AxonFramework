@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
@@ -1411,8 +1412,8 @@ class EventProcessingModuleTest {
         }
 
         @Override
-        public void start() {
-            // noop
+        public CompletableFuture<Void> start() {
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override

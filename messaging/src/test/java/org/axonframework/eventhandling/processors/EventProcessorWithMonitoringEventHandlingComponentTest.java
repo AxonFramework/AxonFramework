@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.processors;
 
+import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.monitoring.MonitoringEventHandlingComponent;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -102,7 +104,8 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
         }
 
         @Override
-        public void start() {
+        public CompletableFuture<Void> start() {
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override

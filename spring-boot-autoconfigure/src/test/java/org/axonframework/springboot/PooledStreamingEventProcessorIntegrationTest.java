@@ -17,6 +17,7 @@
 package org.axonframework.springboot;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
@@ -91,7 +92,7 @@ class PooledStreamingEventProcessorIntegrationTest {
 
             EventGateway eventGateway = context.getBean(EventGateway.class);
             eventGateway.publish(null, new OriginalEvent("my-text"));
-            processor.start();
+            FutureUtils.joinAndUnwrap(processor.start());
             await().atMost(Duration.ofMillis(500))
                    .until(() -> processor.processingStatus().size() == 1);
 
@@ -124,7 +125,7 @@ class PooledStreamingEventProcessorIntegrationTest {
             for (int i = 0; i < numberOfEvents; i++) {
                 eventGateway.publish(null, new OriginalEvent("Event[" + i + "]"));
             }
-            processor.start();
+            FutureUtils.joinAndUnwrap(processor.start());
 
             // Validating for 15 or more status', as the failing segment might already have failed at this point,
             //  resulting in 15 instead of 16 entries.

@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.eventsourcing.eventstore.benchmark;
 
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.processors.EventProcessor;
@@ -153,7 +154,7 @@ public abstract class AbstractEventStoreBenchmark {
     }
 
     protected void prepareForBenchmark() {
-        eventProcessor.start();
+        FutureUtils.joinAndUnwrap(eventProcessor.start());
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {

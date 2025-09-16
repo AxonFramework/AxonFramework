@@ -22,6 +22,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.EventBus;
@@ -90,7 +91,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
                 List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
                 cfg -> cfg.messageSource(eventBus)
         );
-        eventProcessor.start();
+        FutureUtils.joinAndUnwrap(eventProcessor.start());
     }
 
     @AfterEach

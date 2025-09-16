@@ -40,9 +40,12 @@ public interface EventProcessor {
     String name();
 
     /**
-     * Start processing events.
+     * Initiates a start, providing a {@link CompletableFuture} that completes when the start process is
+     * finished.
+     *
+     * @return a CompletableFuture that completes when the start process is finished.
      */
-    void start();
+    CompletableFuture<Void> start();
 
     /**
      * Stops processing events. Blocks until the shutdown is complete.

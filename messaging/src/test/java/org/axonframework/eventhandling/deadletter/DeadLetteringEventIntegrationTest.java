@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
@@ -64,6 +65,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -244,7 +246,7 @@ public abstract class DeadLetteringEventIntegrationTest {
      * Start this test's {@link StreamingEventProcessor}. This will start event handling.
      */
     protected void startProcessingEvent() {
-        streamingProcessor.start();
+        FutureUtils.joinAndUnwrap(streamingProcessor.start());
     }
 
     /**

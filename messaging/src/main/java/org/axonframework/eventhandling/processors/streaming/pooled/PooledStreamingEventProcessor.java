@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
@@ -202,9 +203,10 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     }
 
     @Override
-    public void start() {
+    public CompletableFuture<Void> start() {
         logger.info("Starting PooledStreamingEventProcessor [{}].", name);
         coordinator.start();
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Override
