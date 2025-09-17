@@ -18,9 +18,7 @@ package org.axonframework.config;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.SubscribableMessageSourceDefinition;
-import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
@@ -29,14 +27,10 @@ import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocati
 import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.sequencing.SequencingPolicy;
-import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
-import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
-import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -44,7 +38,6 @@ import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.monitoring.MessageMonitor;
 
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -100,17 +93,6 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer registerEventHandler(Function<LegacyConfiguration, Object> eventHandlerBuilder);
 
     /**
-     * Registers a {@link Function} that builds the default {@link ListenerInvocationErrorHandler}. Defaults to a
-     * {@link LoggingErrorHandler}.
-     *
-     * @param listenerInvocationErrorHandlerBuilder a {@link Function} that builds the default
-     *                                              {@link ListenerInvocationErrorHandler}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerDefaultListenerInvocationErrorHandler(
-            Function<LegacyConfiguration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder);
-
-    /**
      * Registers a {@link Function} that builds a {@link ListenerInvocationErrorHandler} for the given
      * {@code processingGroup}.
      *
@@ -157,15 +139,6 @@ public interface EventProcessingConfigurer {
     );
 
     /**
-     * Registers a factory that builds the default {@link EventProcessor}. This is the {@link EventProcessorBuilder} to
-     * be used when there is no specific builder for given processor name.
-     *
-     * @param eventProcessorBuilder a {@link Function} that builds an {@link EventProcessor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerEventProcessorFactory(EventProcessorBuilder eventProcessorBuilder);
-
-    /**
      * Registers an {@link EventProcessorBuilder} for the given processor {@code name}.
      *
      * @param name                  a {@link String} specifying the name of the {@link EventProcessor} being registered
@@ -173,25 +146,6 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerEventProcessor(String name, EventProcessorBuilder eventProcessorBuilder);
-
-    /**
-     * Register a {@link Function} that builds a {@link TokenStore} for the given {@code processorName}.
-     *
-     * @param processorName     a {@link String} specifying the name of a event processor
-     * @param tokenStoreBuilder a {@link Function} that builds a {@link TokenStore}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerTokenStore(String processorName,
-                                                 Function<LegacyConfiguration, TokenStore> tokenStoreBuilder);
-
-    /**
-     * Register a {@link Function} that builds a {@link TokenStore} to use as the default in case no explicit token
-     * store was configured for a processor.
-     *
-     * @param tokenStore a {@link Function} that builds a {@link TokenStore}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerTokenStore(Function<LegacyConfiguration, TokenStore> tokenStore);
 
     /**
      * Defaults Event Processors builders to use {@link SubscribingEventProcessor}.
@@ -259,27 +213,6 @@ public interface EventProcessingConfigurer {
                                                                 Function<LegacyConfiguration, SubscribableMessageSource<? extends EventMessage>> messageSource);
 
     /**
-     * Registers a {@link Function} that builds the default {@link ErrorHandler}. Defaults to a
-     * {@link PropagatingErrorHandler}.
-     *
-     * @param errorHandlerBuilder a {@link Function} that builds an {@link ErrorHandler}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerDefaultErrorHandler(
-            Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder
-    );
-
-    /**
-     * Registers a {@link Function} that builds an {@link ErrorHandler} for the given {@code eventProcessorName}.
-     *
-     * @param eventProcessorName  a {@link String} specifying the name of an {@link EventProcessor}
-     * @param errorHandlerBuilder a {@link Function} that builds an {@link ErrorHandler}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerErrorHandler(String eventProcessorName,
-                                                   Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder);
-
-    /**
      * Registers the {@code processingGroup} name to assign Event Handler and Saga beans to when no other, more
      * explicit, rule matches and no {@link ProcessingGroup} annotation is found.
      *
@@ -318,23 +251,6 @@ public interface EventProcessingConfigurer {
      * undefined.
      *
      * @param processingGroup a {@link String} specifying the name of a processing group to assign matching Event
-     *                        Handlers to
-     * @param criteria        a {@link Predicate} defining the criteria for an Event Handler to match
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    default EventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup,
-                                                                     Predicate<Object> criteria) {
-        return assignHandlerInstancesMatching(processingGroup, 0, criteria);
-    }
-
-    /**
-     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
-     * with given {@code name}, with neutral priority (value 0).
-     * <p>
-     * Note that, when beans match multiple criteria for different Processing Groups with equal priority, the outcome is
-     * undefined.
-     *
-     * @param processingGroup a {@link String} specifying the name of a processing group to assign matching Event
      *                        Handlers or Sagas to
      * @param criteria        a {@link Predicate} defining the criteria for an Event Handler or Saga to match
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
@@ -342,24 +258,6 @@ public interface EventProcessingConfigurer {
     default EventProcessingConfigurer assignHandlerTypesMatching(String processingGroup, Predicate<Class<?>> criteria) {
         return assignHandlerTypesMatching(processingGroup, 0, criteria);
     }
-
-    /**
-     * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
-     * with given {@code name}, with given {@code priority}. Rules with higher value of {@code priority} take precedence
-     * over those with a lower value.
-     * <p>
-     * Note that, when beans match multiple criteria for different processing groups with equal priority, the outcome is
-     * undefined.
-     *
-     * @param processingGroup a {@link String} specifying the name of a processing group to assign matching Event
-     *                        Handlers to
-     * @param priority        The priority for this rule
-     * @param criteria        a {@link Predicate} defining the criteria for an Event Handler to match
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup,
-                                                             int priority,
-                                                             Predicate<Object> criteria);
 
     /**
      * Configures a rule to assign Event Handler beans that match the given {@code criteria} to the Processing Group
@@ -439,67 +337,6 @@ public interface EventProcessingConfigurer {
      */
     EventProcessingConfigurer registerSequencingPolicy(String processingGroup,
                                                        Function<LegacyConfiguration, SequencingPolicy> policyBuilder);
-
-    /**
-     * Registers the {@link SequencingPolicy} created by given {@code policyBuilder} to the processing groups for which
-     * no explicit policy is defined (using {@link #registerSequencingPolicy(String, Function)}).
-     * <p>
-     * Defaults to a {@link SequentialPerAggregatePolicy}.
-     *
-     * @param policyBuilder a builder {@link Function} to create the {@link SequencingPolicy} to use
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerDefaultSequencingPolicy(
-            Function<LegacyConfiguration, SequencingPolicy> policyBuilder
-    );
-
-    /**
-     * Registers a builder {@link Function} to create the {@link MessageMonitor} for a {@link EventProcessor} of the
-     * given {@code name}.
-     *
-     * @param eventProcessorName    a {@link String} specifying the name of an {@link EventProcessor}
-     * @param messageMonitorBuilder a builder {@link Function} to create a {@link MessageMonitor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    default EventProcessingConfigurer registerMessageMonitor(String eventProcessorName,
-                                                             Function<LegacyConfiguration, MessageMonitor<Message>> messageMonitorBuilder) {
-        return registerMessageMonitorFactory(
-                eventProcessorName,
-                (configuration, componentType, componentName) -> messageMonitorBuilder.apply(configuration)
-        );
-    }
-
-    /**
-     * Registers the factory to create the {@link MessageMonitor} for a {@link EventProcessor} of the given
-     * {@code name}.
-     *
-     * @param eventProcessorName    a {@link String} specifying the name of an {@link EventProcessor}
-     * @param messageMonitorFactory a {@link MessageMonitorFactory} used to create a {@link MessageMonitor}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerMessageMonitorFactory(String eventProcessorName,
-                                                            MessageMonitorFactory messageMonitorFactory);
-
-    /**
-     * Registers a {@link TransactionManager} for a {@link EventProcessor} of the given {@code name}.
-     *
-     * @param name                      a {@link String} specifying the name of an {@link EventProcessor}
-     * @param transactionManagerBuilder a {@link Function} that builds a {@link TransactionManager}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerTransactionManager(String name,
-                                                         Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder);
-
-    /**
-     * Registers a default {@link TransactionManager} for all {@link EventProcessor}s. The provided
-     * {@code TransactionManager} is used whenever no processor specific {@code TransactionManager} is configured.
-     *
-     * @param transactionManagerBuilder a {@link Function} that builds a {@link TransactionManager}
-     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
-     */
-    EventProcessingConfigurer registerDefaultTransactionManager(
-            Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder
-    );
 
     /**
      * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will

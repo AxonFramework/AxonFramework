@@ -140,7 +140,8 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
 
     private static EventSourcingConfigurer configureProcessorWithDeclarativeEventHandlingComponent(
             EventSourcingConfigurer configurer) {
-        var studentRegisteredCoursesProcessor = EventProcessorModule
+        var studentRegisteredCoursesProcessor =
+                EventProcessorModule
                 .pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
                 .eventHandlingComponents(components -> components.declarative(
                         cfg -> whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()

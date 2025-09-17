@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.processors.subscribing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
@@ -110,10 +109,9 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
                         cfg.getComponent(SubscribingEventProcessorConfiguration.class)
                 ))
                 .onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
-                    processor.start();
-                    return FutureUtils.emptyCompletedFuture();
+                    return processor.start();
                 }).onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, (cfg, processor) -> {
-                    return processor.shutdownAsync();
+                    return processor.shutdown();
                 });
 
         componentRegistry(cr -> cr.registerComponent(processorComponentDefinition));

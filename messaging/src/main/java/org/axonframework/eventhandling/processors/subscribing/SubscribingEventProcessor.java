@@ -36,6 +36,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
@@ -131,13 +132,14 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
      * {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS} phase.
      */
     @Override
-    public void start() {
+    public CompletableFuture<Void> start() {
         if (eventBusRegistration != null) {
             // This event processor has already been started
-            return;
+            return FutureUtils.emptyCompletedFuture();
         }
         eventBusRegistration =
                 messageSource.subscribe(eventMessages -> processingStrategy.handle(eventMessages, this::process));
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Override
@@ -197,11 +199,12 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
      * {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS} phase.
      */
     @Override
-    public void shutDown() {
+    public CompletableFuture<Void> shutdown() {
         if (eventBusRegistration != null) {
             eventBusRegistration.cancel();
         }
         eventBusRegistration = null;
+        return FutureUtils.emptyCompletedFuture();
     }
 
     /**
