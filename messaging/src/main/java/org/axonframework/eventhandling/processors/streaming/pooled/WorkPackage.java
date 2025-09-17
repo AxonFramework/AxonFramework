@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.WrappedToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -606,7 +607,8 @@ class WorkPackage {
         private long claimExtensionThreshold = 5000;
         private Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
         private Clock clock = GenericEventMessage.clock;
-        private Supplier<ProcessingContext> schedulingProcessingContextProvider;
+        private Supplier<ProcessingContext> schedulingProcessingContextProvider = () ->
+                new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
 
         /**
          * The {@code name} of the processor this {@link WorkPackage} processes events for.
