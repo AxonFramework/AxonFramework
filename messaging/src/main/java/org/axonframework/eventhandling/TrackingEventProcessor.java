@@ -411,7 +411,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
     private void processBatch(Segment segment, BlockingStream<TrackedEventMessage<?>> eventStream) throws Exception {
         List<TrackedEventMessage<?>> batch = new ArrayList<>();
         try {
-            TrackingToken lastToken = null;
+            TrackingToken lastToken = TrackingToken.FIRST;
             Collection<Segment> processingSegments = Collections.emptySet();
 
             long processingDeadline = now().toEpochMilli() + eventAvailabilityTimeout;
@@ -456,7 +456,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 }
             }
 
-            if (lastToken == null) {
+            if (lastToken instanceof FirstTrackingToken) {
                 // The token is never updated, so we extend the token claim.
                 checkSegmentCaughtUp(segment, eventStream);
                 transactionManager.executeInTransaction(

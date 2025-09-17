@@ -140,7 +140,7 @@ public final class TrackerStatus implements EventTrackerStatus {
      */
     public static TrackerStatus[] split(Segment segment, TrackingToken trackingToken) {
         Segment[] newSegments = segment.split();
-        TrackingToken tokenAtReset = null;
+        TrackingToken tokenAtReset = TrackingToken.FIRST;
         TrackingToken workingToken = trackingToken;
         TrackingToken[] splitTokens = new TrackingToken[2];
 
@@ -157,7 +157,7 @@ public final class TrackerStatus implements EventTrackerStatus {
             splitTokens[1] = workingToken;
         }
 
-        if (tokenAtReset != null) {
+        if (!(tokenAtReset instanceof FirstTrackingToken)) {
             // We were in a replay; need to re-initialize the replay wrapper.
             splitTokens[0] = ReplayToken.createReplayToken(tokenAtReset, splitTokens[0]);
             splitTokens[1] = ReplayToken.createReplayToken(tokenAtReset, splitTokens[1]);

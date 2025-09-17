@@ -29,7 +29,7 @@ import javax.annotation.Nonnull;
  * @author Milan Savic
  * @since 4.0
  */
-public class GenericResultMessage<R> extends MessageDecorator<R> implements ResultMessage<R> {
+public class gitGenericResultMessage<R> extends MessageDecorator<R> implements ResultMessage<R> {
 
     private static final long serialVersionUID = -9086395619674962782L;
 
