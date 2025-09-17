@@ -71,6 +71,13 @@ public class EventProcessorConfiguration implements DescribableComponent {
     protected List<MessageHandlerInterceptor<EventMessage>> interceptors = new ArrayList<>();
 
     /**
+     * Only defaults, no global components from configuration.
+     */
+    @Internal
+    public EventProcessorConfiguration() {
+    }
+
+    /**
      * Constructs a new {@code EventProcessorConfiguration} with default values.
      *
      * @param configuration The configuration, used to retrieve global default values, like
@@ -78,17 +85,7 @@ public class EventProcessorConfiguration implements DescribableComponent {
      */
     @Internal
     public EventProcessorConfiguration(@Nonnull Configuration configuration) {
-        this(configuration.getComponent(HandlerInterceptorRegistry.class)
-                          .eventInterceptors(configuration));
-    }
-
-    /**
-     * Constructs a new {@code EventProcessorConfiguration} with given {@code interceptors}.
-     *
-     * @param interceptors The default set of interceptors for the event processor under construction
-     */
-    public EventProcessorConfiguration(@Nonnull List<MessageHandlerInterceptor<EventMessage>> interceptors) {
-        this.interceptors = new ArrayList<>(interceptors);
+        this.interceptors = configuration.getComponent(HandlerInterceptorRegistry.class).eventInterceptors(configuration);
     }
 
     /**
@@ -105,6 +102,23 @@ public class EventProcessorConfiguration implements DescribableComponent {
         this.spanFactory = base.spanFactory();
         this.unitOfWorkFactory = base.unitOfWorkFactory();
         this.interceptors = base.interceptors();
+    }
+
+    /**
+     * Constructs a new {@code EventProcessorConfiguration} copying properties from the given configuration.
+     *
+     * @param base The {@code EventProcessorConfiguration} to copy properties from.
+     */
+    @Internal
+    public EventProcessorConfiguration(@Nonnull EventProcessorConfiguration base, Configuration configuration) {
+        Objects.requireNonNull(base, "Base configuration may not be null");
+        assertNonNull(base, "Base configuration may not be null");
+        this.errorHandler = base.errorHandler();
+        this.messageMonitor = base.messageMonitor();
+        this.spanFactory = base.spanFactory();
+        this.unitOfWorkFactory = base.unitOfWorkFactory();
+        this.interceptors = base.interceptors();
+        this.interceptors = configuration.getComponent(HandlerInterceptorRegistry.class).eventInterceptors(configuration);
     }
 
     /**

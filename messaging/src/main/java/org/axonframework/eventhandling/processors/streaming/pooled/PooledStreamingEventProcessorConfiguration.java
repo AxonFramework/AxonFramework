@@ -37,6 +37,8 @@ import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
+import org.axonframework.messaging.ConfigurationApplicationContext;
+import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -108,26 +110,9 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             eventMessage).reportIgnored();
     private Supplier<ProcessingContext> schedulingProcessingContextProvider;
 
-    /**
-     * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with default values.
-     *
-     * @param configuration The configuration, used to retrieve global default values, like
-     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
-     */
     @Internal
-    public PooledStreamingEventProcessorConfiguration(@Nonnull Configuration configuration) {
-        super(configuration);
-    }
-
-    /**
-     * Constructs a new {@code PooledStreamingEventProcessorConfiguration}.
-     * <p>
-     * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * for events. Please use {@link #PooledStreamingEventProcessorConfiguration(Configuration)} when those are desired.
-     */
-    @Internal
-    public PooledStreamingEventProcessorConfiguration() {
-        super(List.of());
+    public PooledStreamingEventProcessorConfiguration(){
+        super();
     }
 
     /**
@@ -139,6 +124,25 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     @Internal
     public PooledStreamingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         super(base);
+        this.schedulingProcessingContextProvider = () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
+    }
+
+    /**
+     * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with default values.
+     *
+     * @param base The {@link EventProcessorConfiguration} to copy properties from.
+     * @param configuration The configuration, used to retrieve global default values, like
+     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
+     */
+    @Internal
+    public PooledStreamingEventProcessorConfiguration(
+            @Nonnull EventProcessorConfiguration base,
+            @Nonnull Configuration configuration
+    ) {
+        super(base, configuration);
+        this.schedulingProcessingContextProvider = () -> new EventSchedulingProcessingContext(
+                new ConfigurationApplicationContext(configuration)
+        );
     }
 
     @Override

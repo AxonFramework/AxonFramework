@@ -59,17 +59,6 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
 
     /**
-     * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values.
-     *
-     * @param configuration The configuration, used to retrieve global default values, like
-     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
-     */
-    @Internal
-    public SubscribingEventProcessorConfiguration(@Nonnull Configuration configuration) {
-        super(configuration);
-    }
-
-    /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration}.
      * <p>
      * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
@@ -77,7 +66,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      */
     @Internal
     public SubscribingEventProcessorConfiguration() {
-        super(List.of());
+        super();
     }
 
     /**
@@ -88,6 +77,18 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     @Internal
     public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         super(base);
+    }
+
+    /**
+     * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values.
+     *
+     * @param configuration The configuration, used to retrieve global default values, like
+     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
+     */
+    @Internal
+    public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base,
+                                                  @Nonnull Configuration configuration) {
+        super(base, configuration);
     }
 
     @Override

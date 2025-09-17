@@ -166,8 +166,9 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                           new SubscribingEventProcessor(
                                   name,
                                   List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                                  cfg -> cfg.messageSource(conf.eventBus())
-                                            .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
+                                  new SubscribingEventProcessorConfiguration()
+                                          .messageSource(conf.eventBus())
+                                          .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
                           )
                   ).assignProcessingGroup(group -> "myProcessor");
 
