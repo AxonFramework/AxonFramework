@@ -148,23 +148,23 @@ public class InterceptingEventStore implements EventStore {
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition) {
-        return delegate.open(condition);
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
+        return delegate.open(condition, context);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken() {
-        return delegate.firstToken();
+    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
+        return delegate.firstToken(context);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken() {
-        return delegate.latestToken();
+    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
+        return delegate.latestToken(context);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
-        return delegate.tokenAt(at);
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+        return delegate.tokenAt(at, context);
     }
 
     @Override
