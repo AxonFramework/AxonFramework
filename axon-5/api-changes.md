@@ -1919,6 +1919,7 @@ This section contains four subsections, called:
 | `org.axonframework.axonserver.connector.AxonServerConfiguration#setEventBlockListingEnabled(boolean)`             | Removed as the `EventCriteria` allow for automated filtering.                                                               |
 | `MessageDispatchInterceptor#handle(List<? extends T>)`                                                            | Removed due to limited usage.                                                                                               |
 | `PropertySequencingPolicy#builder`                                                                                | Use constructor instead. To define fallbackSequencingPolicy use `FallbackSequencingPolicy`.                                 |
+| `EventProcessor#shutdownAsync()`                                                                                  | Use `shutdown` instead. It returns `CompletableFuture<Void>` since the version 5.0.0.                                       |
 
 ### Changed Method return types
 
@@ -1935,3 +1936,7 @@ This section contains four subsections, called:
 | `MessageDispatchInterceptor#handle(T)`                                    | `T`                            | `MessageStream<?>`                           |
 | `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`       | `Object`                       | `MessageStream<?>`                           |
 | `InterceptorChain#proceed()`                                              | `Object`                       | `MessageStream<?>`                           |
+| `EventProcessor#start()`                                                  | `void`                         | `CompletableFuture<Void>`                    |
+| `EventProcessor#shutdown()`                                               | `void`                         | `CompletableFuture<Void>`                    |
+| `StreamingEventProcessor#releaseSegment`                                  | `void`                         | `CompletableFuture<Void>`                    |
+| `StreamingEventProcessor#resetTokens`                                     | `void`                         | `CompletableFuture<Void>`                    |
