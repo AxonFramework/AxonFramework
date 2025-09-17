@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling.processors.streaming.token.store;
 
-import static org.axonframework.common.FutureUtils.joinAndUnwrap;
-
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.processors.EventProcessor;
@@ -30,6 +28,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
  * Describes a component capable of storing and retrieving event tracking tokens. An {@link EventProcessor} that is
@@ -105,12 +105,12 @@ public interface TokenStore {
      * {@link #requiresExplicitSegmentInitialization()} method. If that method returns false, this method may implicitly
      * initialize a token and return that token upon invocation.
      *
-     * @param token         The token to store for a given process and segment. May be {@code null}.
-     * @param processorName The name of the process for which to store the token
-     * @param segment       The index of the segment for which to store the token
-     * @param processingContext       The current {@link ProcessingContext}
-     * @throws UnableToClaimTokenException when the token being updated has been claimed by another process.
+     * @param token             The token to store for a given process and segment. May be {@code null}.
+     * @param processorName     The name of the process for which to store the token
+     * @param segment           The index of the segment for which to store the token
+     * @param processingContext The current {@link ProcessingContext}
      * @return CompletableFuture that completes when the token has been stored.
+     * @throws UnableToClaimTokenException when the token being updated has been claimed by another process.
      */
     CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
                                        @Nonnull String processorName,
@@ -133,11 +133,13 @@ public interface TokenStore {
      *
      * @param processorName The process name for which to fetch the token
      * @param segment       The segment index for which to fetch the token
-     * @return The last stored TrackingToken or {@code null} if the store holds no token for given process and segment
+     * @return CompletableFuture with the last stored TrackingToken or {@code null} if the store holds no token for the
+     * given process and segment. It completes immediately when the token is available.
      * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but
      *                                     they are claimed by another process.
      */
-    TrackingToken fetchToken(@Nonnull String processorName, int segment) throws UnableToClaimTokenException;
+    CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, int segment)
+            throws UnableToClaimTokenException;
 
     /**
      * Returns the last stored {@link TrackingToken token} for the given {@code processorName} and {@code segment}.
@@ -154,12 +156,13 @@ public interface TokenStore {
      *
      * @param processorName The process name for which to fetch the token
      * @param segment       The segment for which to fetch the token
-     * @return The last stored TrackingToken or {@code null} if the store holds no token for given process and segment
+     * @return CompletableFuture with the last stored TrackingToken or {@code null} if the store holds no token for the
+     * given process and segment. It completes immediately when the token is available.
      * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but
      *                                     they are claimed by another process, or if the
      *                                     {@code segment has been split or merged concurrently}
      */
-    default TrackingToken fetchToken(@Nonnull String processorName, @Nonnull Segment segment)
+    default CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, @Nonnull Segment segment)
             throws UnableToClaimTokenException {
         return fetchToken(processorName, segment.getSegmentId());
     }

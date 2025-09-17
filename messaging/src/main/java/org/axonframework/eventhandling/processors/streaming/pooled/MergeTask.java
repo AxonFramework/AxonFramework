@@ -135,11 +135,11 @@ class MergeTask extends CoordinatorTask {
     }
 
     private CompletableFuture<TrackingToken> fetchTokenInUnitOfWork(int segmentId) {
-        return unitOfWorkFactory
+        return joinAndUnwrap(unitOfWorkFactory
                 .create()
                 .executeWithResult(context ->
                                            CompletableFuture.completedFuture(tokenStore.fetchToken(name, segmentId))
-                );
+                ));
     }
 
     private Boolean mergeSegments(Segment thisSegment, TrackingToken thisToken,

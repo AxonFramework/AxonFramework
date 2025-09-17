@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -72,7 +73,7 @@ class SplitTaskTest {
 
         when(workPackage.segment()).thenReturn(testSegmentToSplit);
         when(workPackage.abort(null)).thenReturn(FutureUtils.emptyCompletedFuture());
-        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(testTokenToSplit);
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(completedFuture(testTokenToSplit));
         workPackages.put(SEGMENT_ID, workPackage);
 
         testSubject.run();
@@ -96,7 +97,7 @@ class SplitTaskTest {
         TrackerStatus expectedSplit = expectedTokens[1];
 
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(testSegmentIds);
-        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(testTokenToSplit);
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(completedFuture(testTokenToSplit));
 
         testSubject.run();
 

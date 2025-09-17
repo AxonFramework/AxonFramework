@@ -18,12 +18,16 @@ package org.axonframework.eventhandling.processors.streaming.token.store.inmemor
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+
+import java.util.concurrent.Executor;
+
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToInitializeTokenException;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.quartz.spi.ThreadExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,8 +59,12 @@ public class InMemoryTokenStore implements TokenStore {
      * No-arg constructor which will log a warning on initialization.
      */
     public InMemoryTokenStore() {
-        logger.warn(
-                "An in memory token store is being created.\nThis means the event processor using this token store might process the same events again when the application is restarted.\nIf the use of an in memory token store is intentional, this warning can be ignored.\nIf the tokens should be persisted, use the JPA, JDBC or MongoDB token store instead.");
+        logger.warn("""
+                            An in memory token store is being created.
+                            This means the event processor using this token store might process the same events again when the application is restarted.
+                            If the use of an in memory token store is intentional, this warning can be ignored.
+                            If the tokens should be persisted, use the JPA, JDBC or MongoDB token store instead.
+                            """);
     }
 
     @Override
@@ -100,15 +108,18 @@ public class InMemoryTokenStore implements TokenStore {
     }
 
     @Override
-    public TrackingToken fetchToken(@Nonnull String processorName, int segment) {
-        TrackingToken trackingToken = tokens.get(new ProcessAndSegment(processorName, segment));
-        if (trackingToken == null) {
-            throw new UnableToClaimTokenException(
-                    "No token was initialized for segment " + segment + " for processor " + processorName);
-        } else if (NULL_TOKEN == trackingToken) {
-            return null;
-        }
-        return trackingToken;
+    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, int segment) {
+
+        return CompletableFuture.supplyAsync(() -> {
+            TrackingToken trackingToken = tokens.get(new ProcessAndSegment(processorName, segment));
+            if (trackingToken == null) {
+                throw new UnableToClaimTokenException(
+                        "No token was initialized for segment " + segment + " for processor " + processorName);
+            } else if (NULL_TOKEN == trackingToken) {
+                return null;
+            }
+            return trackingToken;
+        });
     }
 
     @Override

@@ -155,7 +155,7 @@ class PooledStreamingEventProcessorTest {
                 tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 0, ctx)
         );
         joinAndUnwrap(
-        tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1, ctx)
+                tokenStore.storeToken(new GlobalSequenceTrackingToken(2L), "test", 1, ctx)
         );
         joinAndUnwrap(
                 tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 2, ctx)
@@ -432,7 +432,7 @@ class PooledStreamingEventProcessorTest {
             assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
             assertWithin(2, TimeUnit.SECONDS, () -> {
                 long nonNullTokens = IntStream.range(0, 8)
-                                              .mapToObj(i -> tokenStore.fetchToken(PROCESSOR_NAME, i))
+                                              .mapToObj(i -> joinAndUnwrap(tokenStore.fetchToken(PROCESSOR_NAME, i)))
                                               .filter(Objects::nonNull)
                                               .count();
                 assertEquals(8, nonNullTokens);
@@ -466,7 +466,7 @@ class PooledStreamingEventProcessorTest {
             assertWithin(1, TimeUnit.SECONDS, () -> assertEquals(8, testSubject.processingStatus().size()));
             assertWithin(6, TimeUnit.SECONDS, () -> {
                 long lowestToken = IntStream.range(0, 8)
-                                            .mapToObj(i -> tokenStore.fetchToken(testSubject.name(), i))
+                                            .mapToObj(i -> joinAndUnwrap(tokenStore.fetchToken(testSubject.name(), i)))
                                             .mapToLong(token -> token == null ? 0 : token.position().orElse(0))
                                             .min()
                                             .orElse(-1);

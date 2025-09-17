@@ -120,7 +120,9 @@ class SplitTask extends CoordinatorTask {
                 unitOfWorkFactory
                         .create()
                         .executeWithResult(context -> {
-                            TrackingToken tokenToSplit = tokenStore.fetchToken(name, segmentToSplit.getSegmentId());
+                            TrackingToken tokenToSplit = joinAndUnwrap(
+                                    tokenStore.fetchToken(name, segmentToSplit.getSegmentId())
+                            );
                             TrackerStatus[] splitStatuses = TrackerStatus.split(segmentToSplit, tokenToSplit);
                             tokenStore.initializeSegment(
                                     splitStatuses[1].getTrackingToken(),

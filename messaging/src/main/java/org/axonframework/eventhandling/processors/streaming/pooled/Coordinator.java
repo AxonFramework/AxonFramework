@@ -939,8 +939,8 @@ class Coordinator {
                     try {
                         TrackingToken token = joinAndUnwrap(
                                 unitOfWorkFactory.create()
-                                                 .executeWithResult(context -> CompletableFuture.completedFuture(
-                                                         tokenStore.fetchToken(name, segment)))
+                                                 .executeWithResult(context ->
+                                                         tokenStore.fetchToken(name, segment))
                         );
                         newClaims.put(segment, token);
                         logger.info("Processor [{}] claimed the token for segment {}.", name, segmentId);

@@ -69,7 +69,7 @@ class InMemoryTokenStoreTest {
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
 
         for (int segment : actual) {
-            assertEquals(new GlobalSequenceTrackingToken(10), testSubject.fetchToken("test1", segment));
+            assertEquals(new GlobalSequenceTrackingToken(10), joinAndUnwrap(testSubject.fetchToken("test1", segment)));
         }
     }
 
@@ -81,7 +81,7 @@ class InMemoryTokenStoreTest {
                 testSubject.storeToken(new GlobalSequenceTrackingToken(1), "test1", 0, ctx)
         );
 
-        assertEquals(new GlobalSequenceTrackingToken(1), testSubject.fetchToken("test1", 0));
+        assertEquals(new GlobalSequenceTrackingToken(1), joinAndUnwrap(testSubject.fetchToken("test1", 0)));
     }
 
     @Test
@@ -92,13 +92,13 @@ class InMemoryTokenStoreTest {
                 new GlobalSequenceTrackingToken(1),
                 createProcessingContext());
 
-        assertEquals(new GlobalSequenceTrackingToken(1), testSubject.fetchToken("test1", 0));
-        assertEquals(new GlobalSequenceTrackingToken(1), testSubject.fetchToken("test1", 1));
+        assertEquals(new GlobalSequenceTrackingToken(1), joinAndUnwrap(testSubject.fetchToken("test1", 0)));
+        assertEquals(new GlobalSequenceTrackingToken(1), joinAndUnwrap(testSubject.fetchToken("test1", 1)));
     }
 
     @Test
     void initializeTokensWhileAlreadyPresent() {
-        assertThrows(UnableToClaimTokenException.class, () -> testSubject.fetchToken("test1", 1));
+        assertThrows(UnableToClaimTokenException.class, () -> joinAndUnwrap(testSubject.fetchToken("test1", 1)));
     }
 
     @Test
@@ -106,7 +106,7 @@ class InMemoryTokenStoreTest {
         var ctx = createProcessingContext();
         testSubject.initializeTokenSegments("test", 1, ctx);
 
-        assertNull(testSubject.fetchToken("test", 0));
+        assertNull(joinAndUnwrap(testSubject.fetchToken("test", 0)));
 
         joinAndUnwrap(
                 testSubject.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0, ctx)

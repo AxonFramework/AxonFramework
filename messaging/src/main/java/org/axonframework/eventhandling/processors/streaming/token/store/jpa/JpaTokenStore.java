@@ -217,16 +217,21 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public TrackingToken fetchToken(@Nonnull String processorName, int segment) {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
-        return loadToken(processorName, segment, entityManager).getToken(serializer);
+    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, int segment) {
+        return CompletableFuture.supplyAsync(() -> {
+
+            EntityManager entityManager = entityManagerProvider.getEntityManager();
+            return loadToken(processorName, segment, entityManager).getToken(serializer);
+        });
     }
 
     @Override
-    public TrackingToken fetchToken(@Nonnull String processorName, @Nonnull Segment segment)
+    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, @Nonnull Segment segment)
             throws UnableToClaimTokenException {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
-        return loadToken(processorName, segment, entityManager).getToken(serializer);
+        return CompletableFuture.supplyAsync(() -> {
+            EntityManager entityManager = entityManagerProvider.getEntityManager();
+            return loadToken(processorName, segment, entityManager).getToken(serializer);
+        });
     }
 
     @Override
