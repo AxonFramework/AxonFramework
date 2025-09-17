@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.sequencing;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
-import org.axonframework.eventhandling.conversion.EventConverter;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -44,10 +43,9 @@ public class PropertySequencingPolicy<T, K> extends ExtractionSequencingPolicy<T
      */
     public PropertySequencingPolicy(
             @Nonnull Class<T> payloadClass,
-            @Nonnull String propertyName,
-            @Nonnull EventConverter eventConverter
+            @Nonnull String propertyName
     ) {
-        super(payloadClass, extractProperty(payloadClass, propertyName)::getValue, eventConverter);
+        super(payloadClass, extractProperty(payloadClass, propertyName)::getValue);
     }
 
     private static <T> Property<T> extractProperty(@Nonnull Class<T> payloadClass, @Nonnull String propertyName) {
