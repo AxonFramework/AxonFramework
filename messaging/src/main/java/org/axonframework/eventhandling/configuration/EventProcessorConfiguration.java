@@ -71,21 +71,23 @@ public class EventProcessorConfiguration implements DescribableComponent {
     protected List<MessageHandlerInterceptor<EventMessage>> interceptors = new ArrayList<>();
 
     /**
-     * Only defaults, no global components from configuration.
+     * Constructs a new {@code EventProcessorConfiguration} with just default values. Do not retrieve any global default
+     * values.
      */
     @Internal
     public EventProcessorConfiguration() {
     }
 
     /**
-     * Constructs a new {@code EventProcessorConfiguration} with default values.
+     * Constructs a new {@code EventProcessorConfiguration} with default values and retrieve global default values.
      *
      * @param configuration The configuration, used to retrieve global default values, like
      *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
      */
     @Internal
     public EventProcessorConfiguration(@Nonnull Configuration configuration) {
-        this.interceptors = configuration.getComponent(HandlerInterceptorRegistry.class).eventInterceptors(configuration);
+        this.interceptors = configuration.getComponent(HandlerInterceptorRegistry.class)
+                                         .eventInterceptors(configuration);
     }
 
     /**

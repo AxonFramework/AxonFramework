@@ -115,9 +115,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
      * </ul>
      * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
      *
-     * @param name A {@link String} defining this {@link EventProcessor} instance.
-     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual {@link EventMessage}s.
-     * @param configuration The {@link PooledStreamingEventProcessorConfiguration} used to configure a {@code PooledStreamingEventProcessor} instance.
+     * @param name                    A {@link String} defining this {@link EventProcessor} instance.
+     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual
+     *                                {@link EventMessage}s.
+     * @param configuration           The {@link PooledStreamingEventProcessorConfiguration} used to configure a
+     *                                {@code PooledStreamingEventProcessor} instance.
      */
     public PooledStreamingEventProcessor(
             @Nonnull String name,
@@ -295,7 +297,8 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     @Override
     public <R> CompletableFuture<Void> resetTokens(@Nonnull TrackingToken startPosition, R resetContext) {
         // TODO #3304 - Integrate event replay logic into Event Handling Component
-        var exception = new ResetNotSupportedException("TODO #3304 - Integrate event replay logic into Event Handling Component");
+        var exception = new ResetNotSupportedException(
+                "TODO #3304 - Integrate event replay logic into Event Handling Component");
         return CompletableFuture.failedFuture(exception);
 //        Assert.state(supportsReset(), () -> "The handlers assigned to this Processor do not support a reset.");
 //        Assert.state(!isRunning(), () -> "The Processor must be shut down before triggering a reset.");
@@ -361,6 +364,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
                                   segment.getSegmentId(), new TrackerStatus(segment, initialToken)
                           ))
                           .clock(clock)
+                          .schedulingProcessingContextProvider(configuration.schedulingProcessingContextProvider())
                           .build();
     }
 

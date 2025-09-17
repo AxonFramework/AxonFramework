@@ -40,6 +40,7 @@ import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.ConfigurationApplicationContext;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -48,6 +49,7 @@ import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
@@ -110,8 +112,17 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             eventMessage).reportIgnored();
     private Supplier<ProcessingContext> schedulingProcessingContextProvider;
 
+    /**
+     * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with just default values. Do not retrieve any
+     * global default values.
+     * <p>
+     * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
+     * for events. Please use
+     * {@link #PooledStreamingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are
+     * desired.
+     */
     @Internal
-    public PooledStreamingEventProcessorConfiguration(){
+    public PooledStreamingEventProcessorConfiguration() {
         super();
     }
 
@@ -128,9 +139,10 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     }
 
     /**
-     * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with default values.
+     * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with default values and retrieve global
+     * default values.
      *
-     * @param base The {@link EventProcessorConfiguration} to copy properties from.
+     * @param base          The {@link EventProcessorConfiguration} to copy properties from.
      * @param configuration The configuration, used to retrieve global default values, like
      *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
      */
@@ -439,6 +451,26 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         return this;
     }
 
+    /**
+     * Provides a {@link ProcessingContext} used to evaluate whether an event can be scheduled for processing by this
+     * {@link WorkPackage}. The provided {@code ProcessingContext} is enriched with resources from the
+     * {@link MessageStream.Entry} to evaluate whether the event can be handled by this package's {@link Segment}.
+     * Currently, the only usage of the context is for
+     * {@link org.axonframework.eventhandling.EventHandlingComponent#sequenceIdentifierFor(EventMessage,
+     * ProcessingContext)} execution.
+     *
+     * @param schedulingProcessingContextProvider The {@link ProcessingContext} provider.
+     * @return The current Builder instance, for fluent interfacing.
+     */
+    public PooledStreamingEventProcessorConfiguration schedulingProcessingContextProvider(
+            @Nonnull Supplier<ProcessingContext> schedulingProcessingContextProvider
+    ) {
+        Objects.requireNonNull(schedulingProcessingContextProvider,
+                               "schedulingProcessingContextProvider may not be null.");
+        this.schedulingProcessingContextProvider = schedulingProcessingContextProvider;
+        return this;
+    }
+
     @Override
     protected void validate() throws AxonConfigurationException {
         super.validate();
@@ -452,6 +484,10 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
         assertNonNull(
                 workerExecutor,
                 "The Worker ScheduledExecutorService is a hard requirement and should be provided"
+        );
+        assertNonNull(
+                schedulingProcessingContextProvider,
+                "The Scheduling Processing Context Provider is a hard requirement and should be provided"
         );
     }
 
@@ -584,6 +620,16 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
      */
     public Consumer<? super EventMessage> ignoredMessageHandler() {
         return ignoredMessageHandler;
+    }
+
+    /**
+     * Returns the {@link Supplier} providing the {@link ProcessingContext} used to evaluate whether an event can be
+     * scheduled for processing by this {@link WorkPackage}.
+     *
+     * @return The {@link ProcessingContext} provider.
+     */
+    public Supplier<ProcessingContext> schedulingProcessingContextProvider() {
+        return schedulingProcessingContextProvider;
     }
 
     @Override

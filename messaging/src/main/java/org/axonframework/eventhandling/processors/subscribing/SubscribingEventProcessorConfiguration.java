@@ -62,7 +62,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * Constructs a new {@code SubscribingEventProcessorConfiguration}.
      * <p>
      * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * for events. Please use {@link #SubscribingEventProcessorConfiguration(Configuration)} when those are desired.
+     * for events. Please use {@link #SubscribingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are desired.
      */
     @Internal
     public SubscribingEventProcessorConfiguration() {
@@ -80,7 +80,8 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     }
 
     /**
-     * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values.
+     * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values and retrieve global default
+     * values.
      *
      * @param configuration The configuration, used to retrieve global default values, like
      *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.

@@ -749,6 +749,17 @@ class WorkPackage {
             return this;
         }
 
+        /**
+         * Provides a {@link ProcessingContext} used to evaluate whether an event can be scheduled for processing by
+         * this {@link WorkPackage}. The provided {@code ProcessingContext} is enriched with resources from the
+         * {@link MessageStream.Entry} to evaluate whether the event can be handled by this package's {@link Segment}.
+         * Currently, the only usage of the context is for
+         * {@link org.axonframework.eventhandling.EventHandlingComponent#sequenceIdentifierFor(EventMessage,
+         * ProcessingContext)} execution.
+         *
+         * @param schedulingProcessingContextProvider The {@link ProcessingContext} provider.
+         * @return The current Builder instance, for fluent interfacing.
+         */
         Builder schedulingProcessingContextProvider(
                 @Nonnull Supplier<ProcessingContext> schedulingProcessingContextProvider
         ) {

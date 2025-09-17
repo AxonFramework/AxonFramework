@@ -35,10 +35,10 @@ import java.util.function.UnaryOperator;
 
 /**
  * A concrete implementation of the {@link ProcessingContext} interface specifically designed for event scheduling in
- * the {@link WorkPackage}. This implementation allows to retrieve components and manager resources, while disallowing
+ * the {@link WorkPackage}. This implementation allows retrieving components and manage resources while disallowing
  * lifecycle actions. Currently, the only usage of the context is for
- * {@link org.axonframework.eventhandling.EventHandlingComponent#sequenceIdentifierFor(EventMessage, ProcessingContext)
- * execution.}
+ * {@link org.axonframework.eventhandling.EventHandlingComponent#sequenceIdentifierFor(EventMessage, ProcessingContext)}
+ * execution.
  */
 @Internal
 class EventSchedulingProcessingContext implements ProcessingContext {
