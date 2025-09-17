@@ -33,13 +33,13 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 @SuppressWarnings("rawtypes")
 public class PropertySequencingPolicy<T, K> extends ExtractionSequencingPolicy<T, K> {
+
     /**
      * Creates a new instance of the {@link PropertySequencingPolicy}, which extracts the sequence identifier from the
      * event message payload of the given {@code payloadClass} using the given {@code identifierExtractor}.
      *
-     * @param payloadClass             The class of the supported event payloads.
-     * @param propertyName             The name of the property to be extracted as sequence identifier.
-     * @param eventConverter           The converter to use to convert event messages payload to the supported type.
+     * @param payloadClass   The class of the supported event payloads.
+     * @param propertyName   The name of the property to be extracted as sequence identifier.
      */
     public PropertySequencingPolicy(
             @Nonnull Class<T> payloadClass,
