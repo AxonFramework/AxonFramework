@@ -110,7 +110,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             (supportedEvents) -> EventCriteria.havingAnyTag().andBeingOneOfTypes(supportedEvents);
     private Consumer<? super EventMessage> ignoredMessageHandler = eventMessage -> messageMonitor.onMessageIngested(
             eventMessage).reportIgnored();
-    private Supplier<ProcessingContext> schedulingProcessingContextProvider;
+    private Supplier<ProcessingContext> schedulingProcessingContextProvider = () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
 
     /**
      * Constructs a new {@code PooledStreamingEventProcessorConfiguration} with just default values. Do not retrieve any
@@ -135,7 +135,6 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     @Internal
     public PooledStreamingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
         super(base);
-        this.schedulingProcessingContextProvider = () -> new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
     }
 
     /**
