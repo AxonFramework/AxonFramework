@@ -23,6 +23,7 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -260,7 +261,8 @@ public sealed interface EventCriteria
      * @param eventCriteria The {@code EventCriteria} of which one must match.
      * @return An {@code EventCriteria} that matches events that match either of the given {@code EventCriteria}.
      */
-    static EventCriteria either(Collection<EventCriteria> eventCriteria) {
+    static EventCriteria either(@Nonnull Collection<EventCriteria> eventCriteria) {
+        Objects.requireNonNull(eventCriteria, "The eventCriteria cannot be null.");
         return new OrEventCriteria(new HashSet<>(eventCriteria));
     }
 
