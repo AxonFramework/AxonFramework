@@ -88,7 +88,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     @Internal
     public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base,
                                                   @Nonnull Configuration configuration) {
-        super(base, configuration);
+        super(base);
     }
 
     @Override

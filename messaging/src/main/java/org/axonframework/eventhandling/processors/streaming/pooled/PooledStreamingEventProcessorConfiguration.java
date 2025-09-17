@@ -139,7 +139,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
             @Nonnull EventProcessorConfiguration base,
             @Nonnull Configuration configuration
     ) {
-        super(base, configuration);
+        super(base);
         this.schedulingProcessingContextProvider = () -> new EventSchedulingProcessingContext(
                 new ConfigurationApplicationContext(configuration)
         );

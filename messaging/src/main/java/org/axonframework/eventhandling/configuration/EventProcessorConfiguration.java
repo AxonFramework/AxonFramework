@@ -105,23 +105,6 @@ public class EventProcessorConfiguration implements DescribableComponent {
     }
 
     /**
-     * Constructs a new {@code EventProcessorConfiguration} copying properties from the given configuration.
-     *
-     * @param base The {@code EventProcessorConfiguration} to copy properties from.
-     */
-    @Internal
-    public EventProcessorConfiguration(@Nonnull EventProcessorConfiguration base, Configuration configuration) {
-        Objects.requireNonNull(base, "Base configuration may not be null");
-        assertNonNull(base, "Base configuration may not be null");
-        this.errorHandler = base.errorHandler();
-        this.messageMonitor = base.messageMonitor();
-        this.spanFactory = base.spanFactory();
-        this.unitOfWorkFactory = base.unitOfWorkFactory();
-        this.interceptors = base.interceptors();
-        this.interceptors = configuration.getComponent(HandlerInterceptorRegistry.class).eventInterceptors(configuration);
-    }
-
-    /**
      * Sets the {@link ErrorHandler} invoked when an {@link UnitOfWork} throws an exception during processing. Defaults
      * to a {@link PropagatingErrorHandler}.
      *
