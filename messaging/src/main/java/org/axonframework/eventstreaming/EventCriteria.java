@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.QualifiedName;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -252,6 +253,16 @@ public sealed interface EventCriteria
      */
     EventCriteria or(EventCriteria criteria);
 
+
+    /**
+     * Create an {@code EventCriteria} that matches events that match either of the given {@code EventCriteria}.
+     *
+     * @param eventCriteria The {@code EventCriteria} of which one must match.
+     * @return An {@code EventCriteria} that matches events that match either of the given {@code EventCriteria}.
+     */
+    static EventCriteria either(Collection<EventCriteria> eventCriteria) {
+        return new OrEventCriteria(new HashSet<>(eventCriteria));
+    }
 
     /**
      * Create an {@code EventCriteria} that matches events that match either of the given {@code EventCriteria}.
