@@ -59,6 +59,7 @@ class DefaultQueryGatewayTest {
     private DefaultQueryGateway testSubject;
 
     private ArgumentCaptor<QueryMessage> queryCaptor;
+    private ArgumentCaptor<StreamingQueryMessage> streamingQueryCaptor;
 
     @BeforeEach
     void setUp() {
