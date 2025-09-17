@@ -113,17 +113,12 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @Nonnull
     @Override
-    public <R, Q> Publisher<R> streamingQuery(@Nonnull Q query, @Nonnull Class<R> responseType) {
+    public <R> Publisher<R> streamingQuery(@Nonnull Object query,
+                                           @Nonnull Class<R> responseType,
+                                           @Nullable ProcessingContext context) {
         return Mono.fromSupplier(() -> asStreamingQueryMessage(query, responseType))
-                   .flatMapMany(queryMessage -> queryBus.streamingQuery(queryMessage))
-                   .map(m -> (R) m.payload());
-    }
-
-    private <R, Q> StreamingQueryMessage asStreamingQueryMessage(Q query,
-                                                                 Class<R> responseType) {
-        return query instanceof Message
-                ? new GenericStreamingQueryMessage((Message) query, responseType)
-                : new GenericStreamingQueryMessage(messageTypeResolver.resolveOrThrow(query), query, responseType);
+                   .flatMapMany(queryMessage -> queryBus.streamingQuery(queryMessage, context))
+                   .mapNotNull(m -> m.payloadAs(responseType));
     }
 
     @Nonnull
@@ -142,9 +137,15 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     private QueryMessage asQueryMessage(Object query, ResponseType<?> responseType) {
-        return query instanceof Message
-                ? new GenericQueryMessage((Message) query, responseType)
+        return query instanceof Message message
+                ? new GenericQueryMessage(message, responseType)
                 : new GenericQueryMessage(messageTypeResolver.resolveOrThrow(query), query, responseType);
+    }
+
+    private <R> StreamingQueryMessage asStreamingQueryMessage(Object query, Class<R> responseType) {
+        return query instanceof Message message
+                ? new GenericStreamingQueryMessage(message, responseType)
+                : new GenericStreamingQueryMessage(messageTypeResolver.resolveOrThrow(query), query, responseType);
     }
 
     private <Q, I, U> SubscriptionQueryMessage<Q, I, U> asSubscriptionQueryMessage(

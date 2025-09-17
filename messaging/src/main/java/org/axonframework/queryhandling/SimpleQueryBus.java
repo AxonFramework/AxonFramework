@@ -19,24 +19,16 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Signal;
 
 import java.util.List;
 import java.util.Objects;
@@ -44,18 +36,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-import static java.lang.String.format;
-import static java.util.Objects.isNull;
 
 /**
  * Implementation of the {@code QueryBus} that dispatches queries (through
- * {@link #query(QueryMessage, ProcessingContext) dispatches}, {@link #streamingQuery(StreamingQueryMessage)}, or
- * {@link #subscriptionQuery(SubscriptionQueryMessage)}) to the {@link QueryHandler QueryHandlers} subscribed to that
- * specific query's {@link QualifiedName name} and {@link ResponseType type} combination.
+ * {@link #query(QueryMessage, ProcessingContext) dispatches} or {@link #subscriptionQuery(SubscriptionQueryMessage)})
+ * to the {@link QueryHandler QueryHandlers} subscribed to that specific query's {@link QualifiedName name} and
+ * {@link ResponseType type} combination.
  * <p>
  * Furthermore, it is in charge of invoking the {@link #subscribe(QueryHandlerName, QueryHandler) subscribed}
  * {@link QueryHandler query handlers} when a query is being dispatched.
@@ -77,8 +63,6 @@ public class SimpleQueryBus implements QueryBus {
     private final QueryUpdateEmitter queryUpdateEmitter;
     private final ConcurrentMap<QueryHandlerName, List<QueryHandler>> subscriptions = new ConcurrentHashMap<>();
 
-    private final MessageTypeResolver messageTypeResolver;
-
     /**
      * Construct a {@code SimpleQueryBus} with the given {@code unitOfWorkFactory} and {@code queryUpdateEmitter}.
      *
@@ -93,9 +77,6 @@ public class SimpleQueryBus implements QueryBus {
         this.unitOfWorkFactory = Objects.requireNonNull(unitOfWorkFactory, "The UnitOfWorkFactory must be provided.");
         this.queryUpdateEmitter =
                 Objects.requireNonNull(queryUpdateEmitter, "The QueryUpdateEmitter must be provided.");
-
-        // Replace as this is a gateway concern
-        this.messageTypeResolver = new ClassBasedMessageTypeResolver();
     }
 
     @Override
@@ -181,92 +162,6 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    public Publisher<QueryResponseMessage> streamingQuery(StreamingQueryMessage query) {
-        AtomicReference<Throwable> lastError = new AtomicReference<>();
-        return Mono.just(query)
-                   .flatMapMany(q -> Mono.just(q)
-                                         .flatMapMany(this::getStreamingHandlersForMessage)
-                                         .switchIfEmpty(Flux.error(NoHandlerForQueryException.forBus(q)))
-                                         .map(handler -> invokeStreaming(q, handler))
-                                         .flatMap(new CatchLastError(lastError))
-                                         .doOnEach(new ErrorIfComplete(lastError, q))
-                                         .next()
-                                         .flatMapMany(m -> (Publisher) m.payload())
-                   );
-    }
-
-    /**
-     * <p>
-     * The reason for this static class to exist at all is the ability of instantiating {@link SimpleQueryBus} even
-     * without Project Reactor on the classpath.
-     * </p>
-     * <p>
-     * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
-     * inner class). But, inner classes have a reference to an outer class making a single unit together with it. If an
-     * inner or outer class had a method with a parameter that belongs to a library which is not on the classpath,
-     * instantiation would fail.
-     * </p>
-     */
-    private static class CatchLastError implements Function<ResultMessage, Mono<ResultMessage>> {
-
-        private final AtomicReference<Throwable> lastError;
-
-        private CatchLastError(AtomicReference<Throwable> lastError) {
-            this.lastError = lastError;
-        }
-
-        @Override
-        public Mono<ResultMessage> apply(ResultMessage resultMessage) {
-            if (resultMessage.isExceptional()) {
-                lastError.set(resultMessage.exceptionResult());
-                return Mono.empty();
-            }
-            return Mono.just(resultMessage);
-        }
-    }
-
-    /**
-     * <p>
-     * The reason for this static class to exist at all is the ability of instantiating {@link SimpleQueryBus} even
-     * without Project Reactor on the classpath.
-     * </p>
-     * <p>
-     * If we had Project Reactor on the classpath, this class would be replaced with a lambda (which would compile into
-     * inner class). But, inner classes have a reference to an outer class making a single unit together with it. If an
-     * inner or outer class had a method with a parameter that belongs to a library which is not on the classpath,
-     * instantiation would fail.
-     * </p>
-     */
-    private static class ErrorIfComplete implements Consumer<Signal<?>> {
-
-        private final AtomicReference<Throwable> lastError;
-        private final StreamingQueryMessage q;
-
-        private ErrorIfComplete(AtomicReference<Throwable> lastError, StreamingQueryMessage q) {
-            this.lastError = lastError;
-            this.q = q;
-        }
-
-        @Override
-        public void accept(Signal signal) {
-            if (signal.isOnComplete()) {
-                Throwable throwable = lastError.get();
-                if (isNull(throwable)) {
-                    throw noSuitableHandlerException(q);
-                } else {
-                    throw new QueryExecutionException("Error starting stream", throwable);
-                }
-            }
-        }
-    }
-
-    private static NoHandlerForQueryException noSuitableHandlerException(QueryMessage query) {
-        return new NoHandlerForQueryException(format("No suitable handler was found for [%s] with response type [%s]",
-                                                     query.type(),
-                                                     query.responseType()));
-    }
-
-    @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
             @Nonnull SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
@@ -313,47 +208,6 @@ public class SimpleQueryBus implements QueryBus {
         return queryUpdateEmitter;
     }
 
-    private ResultMessage invokeStreaming(
-            StreamingQueryMessage query,
-            MessageHandler<? super StreamingQueryMessage, ? extends QueryResponseMessage> handler) {
-        LegacyDefaultUnitOfWork<StreamingQueryMessage> uow = LegacyDefaultUnitOfWork.startAndGet(query);
-        return uow.executeWithResult((ctx) -> {
-            Object queryResponse = handler.handleSync(uow.getMessage(), ctx);
-            return Flux.from(query.responseType().convert(queryResponse))
-                       .map(this::asResponseMessage);
-        });
-    }
-
-    /**
-     * Creates a QueryResponseMessage for the given {@code result}. If result already implements QueryResponseMessage,
-     * it is returned directly. Otherwise, a new QueryResponseMessage is created with the result as payload.
-     *
-     * @param result The result of a Query, to be wrapped in a QueryResponseMessage
-     * @return a QueryResponseMessage for the given {@code result}, or the result itself, if already a
-     * QueryResponseMessage.
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    private QueryResponseMessage asResponseMessage(Object result) {
-        if (result instanceof QueryResponseMessage qrm) {
-            return qrm;
-        }
-        if (result instanceof ResultMessage resultMessage) {
-            return new GenericQueryResponseMessage(
-                    messageTypeResolver.resolveOrThrow(resultMessage.payload()),
-                    resultMessage.payload(),
-                    resultMessage.metadata()
-            );
-        }
-        if (result instanceof Message message) {
-            return new GenericQueryResponseMessage(messageTypeResolver.resolveOrThrow(message.payload()),
-                                                   message.payload(),
-                                                   message.metadata());
-        }
-        return new GenericQueryResponseMessage(messageTypeResolver.resolveOrThrow(result), result);
-    }
-
     @Nonnull
     private List<QueryHandler> handlersFor(@Nonnull QueryMessage query) {
         ResponseType<?> responseType = query.responseType();
@@ -366,33 +220,6 @@ public class SimpleQueryBus implements QueryBus {
             throw NoHandlerForQueryException.forBus(query);
         }
         return handlers;
-    }
-
-    private List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> getHandlersForMessage(
-            QueryMessage queryMessage
-    ) {
-        return List.of();
-//        ResponseType<?> responseType = queryMessage.responseType();
-//        return oldsubscriptions.computeIfAbsent(queryMessage.type().name(), k -> new CopyOnWriteArrayList<>())
-//                               .stream()
-//                               .collect(groupingBy(
-//                                       querySubscription -> responseType.matchRank(querySubscription.getResponseType()),
-//                                       mapping(Function.identity(), Collectors.toList())
-//                               ))
-//                               .entrySet()
-//                               .stream()
-//                               .filter(entry -> entry.getKey() != ResponseType.NO_MATCH)
-//                               .sorted((entry1, entry2) -> entry2.getKey() - entry1.getKey())
-//                               .map(Map.Entry::getValue)
-//                               .flatMap(Collection::stream)
-//                               .map(QuerySubscription::getQueryHandler)
-//                               .map(queryHandler -> (MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>) queryHandler)
-//                               .collect(Collectors.toList());
-    }
-
-    private Publisher<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> getStreamingHandlersForMessage(
-            StreamingQueryMessage queryMessage) {
-        return Flux.fromIterable(getHandlersForMessage(queryMessage));
     }
 
     @Override

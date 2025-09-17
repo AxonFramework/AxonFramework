@@ -77,9 +77,9 @@ public interface QueryGateway extends DescribableComponent {
      * {@link org.axonframework.messaging.responsetypes.MultipleInstancesResponseType}.
      *
      * @param query        The {@code query} to be sent.
-     * @param responseType The {@link ResponseType} used for this query.
+     * @param responseType A {@code Class} describing the desired response type.
      * @param context      The processing context, if any, to dispatch the given {@code query} in.
-     * @param <R>          The response class contained in the given {@code responseType}.
+     * @param <R>          The generic type of the expected response(s).
      * @return A {@code CompletableFuture} containing a list of query responses of type {@code responseType}.
      */
     @Nonnull
@@ -88,7 +88,7 @@ public interface QueryGateway extends DescribableComponent {
                                              @Nullable ProcessingContext context);
 
     /**
-     * Sends given {@code query} over the {@link QueryBus}, expecting a response as
+     * Sends given {@code query} over the {@link QueryBus}, expecting a response as a
      * {@link org.reactivestreams.Publisher} of {@code responseType}.
      * <p>
      * The {@code query} is sent once the {@code Publisher} is subscribed to. The streaming query allows a client to
@@ -97,25 +97,25 @@ public interface QueryGateway extends DescribableComponent {
      * <p>
      * The given {@code query} is wrapped as the payload of the {@link StreamingQueryMessage} that is eventually posted
      * on the {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
-     * {@code QueryMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.Metadata}.
+     * {@code StreamingQueryMessage} is constructed from that message's payload and
+     * {@link org.axonframework.messaging.Metadata}. The {@link QueryMessage#responseType()} will <b>at all times</b> be
+     * a {@link org.axonframework.messaging.responsetypes.PublisherResponseType}.
      * <p>
      * {@link org.reactivestreams.Publisher} is used for backwards compatibility reason, for clients that don't have
      * Project Reactor on class path. Check <a href="https://docs.axoniq.io/reference-guide/extensions/reactor">Reactor
-     * Extension</a> for native Flux type and more.
-     * <p>
-     * Use {@code Flux.from(publisher)} to convert to Flux stream.
+     * Extension</a> for native Flux type and more. Use {@code Flux.from(publisher)} to convert to Flux stream.
      *
      * @param query        The {@code query} to be sent.
      * @param responseType A {@link java.lang.Class} describing the desired response type.
-     * @param <R>          The response class contained in the given {@code responseType}.
-     * @param <Q>          The query class.
+     * @param context      The processing context, if any, to dispatch the given {@code query} in.
+     * @param <R>          The generic type of the expected response(s).
      * @return A {@link org.reactivestreams.Publisher} streaming the results as dictated by the given
      * {@code responseType}.
      */
     @Nonnull
-    <R, Q> Publisher<R> streamingQuery(@Nonnull Q query,
-                                       @Nonnull Class<R> responseType);
+    <R> Publisher<R> streamingQuery(@Nonnull Object query,
+                                    @Nonnull Class<R> responseType,
+                                    @Nullable ProcessingContext context);
 
     /**
      * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and

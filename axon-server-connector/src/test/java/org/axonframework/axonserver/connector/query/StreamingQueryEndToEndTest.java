@@ -238,10 +238,10 @@ class StreamingQueryEndToEndTest {
 
     private <R> Flux<R> streamingQueryPayloads(StreamingQueryMessage query, Class<R> cls, boolean supportsStreaming) {
         if (supportsStreaming) {
-            return Flux.from(senderQueryBus.streamingQuery(query))
+            return Flux.from(senderQueryBus.streamingQuery(query, null))
                        .map(m -> m.payloadAs(cls));
         }
-        return Flux.from(nonStreamingSenderQueryBus.streamingQuery(query))
+        return Flux.from(nonStreamingSenderQueryBus.streamingQuery(query, null))
                    .map(m -> m.payloadAs(cls));
     }
 

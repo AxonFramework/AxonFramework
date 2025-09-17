@@ -197,7 +197,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     @Override
-    public Publisher<QueryResponseMessage> streamingQuery(StreamingQueryMessage query) {
+    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull StreamingQueryMessage query,
+                                                          @Nullable ProcessingContext context) {
         Span span = spanFactory.createStreamingQuerySpan(query, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             StreamingQueryMessage queryWithContext = spanFactory.propagateContext(query);
@@ -216,7 +217,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                     .map(MessageStream.Entry::message)
                                                     .flatMapMany(intercepted -> {
                                                                      if (shouldRunQueryLocally(intercepted.type().name())) {
-                                                                         return localSegment.streamingQuery(intercepted);
+                                                                         return localSegment.streamingQuery(intercepted, context);
                                                                      }
                                                                      return Mono.just(serializeStreaming(intercepted, priority))
                                                                                 .flatMapMany(queryRequest -> new ResultStreamPublisher<>(
