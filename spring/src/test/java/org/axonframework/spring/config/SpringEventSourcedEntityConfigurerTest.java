@@ -26,13 +26,13 @@ import org.axonframework.configuration.Module;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-class SpringAggregateConfigurerTest {
+class SpringEventSourcedEntityConfigurerTest {
 
     private final ComponentRegistry registry = mock();
 
     @Test
     void detectsAnnotatedEntitiesAndRegisterModules() {
-        var configurer = new SpringAggregateConfigurer<>(MyEntity1.class, MyId1.class);
+        var configurer = new SpringEventSourcedEntityConfigurer<>(MyEntity1.class, MyId1.class);
         configurer.enhance(registry);
 
         var moduleCaptor = ArgumentCaptor.forClass(Module.class);
@@ -47,7 +47,7 @@ class SpringAggregateConfigurerTest {
 
     @Test
     void skipsEntitiesIfNotAnnotated() {
-        var configurer = new SpringAggregateConfigurer<>(MyEntity2.class, MyId1.class);
+        var configurer = new SpringEventSourcedEntityConfigurer<>(MyEntity2.class, MyId1.class);
         configurer.enhance(registry);
         verifyNoMoreInteractions(registry);
     }

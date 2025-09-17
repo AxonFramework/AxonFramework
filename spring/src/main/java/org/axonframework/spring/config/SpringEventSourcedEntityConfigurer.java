@@ -17,6 +17,7 @@
 package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
@@ -31,9 +32,9 @@ import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
  * @author Allard Buijze
  * @author Simon Zambrovski
  * @since 4.6.0
- * FIXME: rename according to the annotation
  */
-public class SpringAggregateConfigurer<ID, T> implements ConfigurationEnhancer {
+@Internal
+public class SpringEventSourcedEntityConfigurer<ID, T> implements ConfigurationEnhancer {
 
     private final Class<T> aggregateType;
     private final Class<ID> idType;
@@ -44,7 +45,7 @@ public class SpringAggregateConfigurer<ID, T> implements ConfigurationEnhancer {
      * @param aggregateType The declared type of the aggregate.
      * @param idType        The type of id.
      */
-    public SpringAggregateConfigurer(Class<T> aggregateType, Class<ID> idType) {
+    public SpringEventSourcedEntityConfigurer(Class<T> aggregateType, Class<ID> idType) {
         this.aggregateType = aggregateType;
         this.idType = idType;
     }

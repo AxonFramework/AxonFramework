@@ -39,16 +39,16 @@ import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
 
 /**
  * A {@link BeanDefinitionRegistryPostProcessor} implementation that scans for Aggregate types and registers a
- * {@link SpringAggregateConfigurer configurer} for each Aggregate found.
+ * {@link SpringEventSourcedEntityConfigurer configurer} for each Aggregate found.
  *
  * @author Allard Buijze
  * @author Simon Zambrovski
  * @since 4.6.0
  * FIXME rename according to annotation.
  */
-public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcessor {
+public class SpringEventSourcedEntityLookup implements BeanDefinitionRegistryPostProcessor {
 
-    private static final Logger logger = LoggerFactory.getLogger(SpringAggregateLookup.class);
+    private static final Logger logger = LoggerFactory.getLogger(SpringEventSourcedEntityLookup.class);
 
     private static final String ID_TYPE_CLASS = "idType";
 
@@ -184,7 +184,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
             Class<?> aggregateType,
             Class<?> idType) {
         BeanDefinitionBuilder beanDefinitionBuilder =
-                BeanDefinitionBuilder.genericBeanDefinition(SpringAggregateConfigurer.class)
+                BeanDefinitionBuilder.genericBeanDefinition(SpringEventSourcedEntityConfigurer.class)
                                      .setRole(BeanDefinition.ROLE_APPLICATION)
                                      .addConstructorArgValue(aggregateType)
                                      .addConstructorArgValue(idType);

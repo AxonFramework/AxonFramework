@@ -17,16 +17,15 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.spring.config.MessageHandlerLookup;
-import org.axonframework.spring.config.SpringAggregateLookup;
+import org.axonframework.spring.config.SpringEventSourcedEntityLookup;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Role;
 
 /**
  * Infrastructure autoconfiguration class for Axon Framework application. Constructs the look-up components, like the
- * {@link MessageHandlerLookup} and {@link SpringAggregateLookup} to find Axon components and register them with the
+ * {@link MessageHandlerLookup} and {@link SpringEventSourcedEntityLookup} to find Axon components and register them with the
  * corresponding configuration enhancers.
  *
  * @author Allard Buijze
@@ -53,7 +52,7 @@ public class InfrastructureConfiguration {
      */
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     @Bean
-    public static SpringAggregateLookup springAggregateLookup() {
-        return new SpringAggregateLookup();
+    public static SpringEventSourcedEntityLookup springEventSourcedEntityLookup() {
+        return new SpringEventSourcedEntityLookup();
     }
 }

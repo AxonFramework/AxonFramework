@@ -19,6 +19,7 @@ package org.axonframework.spring.config;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -51,6 +52,7 @@ import java.util.stream.Collectors;
  * @author Allard Buijze
  * @since 4.6.0
  */
+@Internal
 public class MessageHandlerConfigurer implements ConfigurationEnhancer, ApplicationContextAware {
 
     private final Type type;
@@ -88,6 +90,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                 });
                 break;
             case QUERY:
+                // TODO: register query handler registration as a part of #3364
 //                handlerBeans.forEach(handler -> configurer.registerQueryHandler(c -> applicationContext.getBean(handler)));
                 break;
             case COMMAND:
@@ -138,7 +141,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
      * @param name       name of the bean.
      * @param definition bean definition.
      */
-    public record NamedBeanDefinition(
+    record NamedBeanDefinition(
             @Nonnull String name,
             @Nonnull BeanDefinition definition
     ) {
