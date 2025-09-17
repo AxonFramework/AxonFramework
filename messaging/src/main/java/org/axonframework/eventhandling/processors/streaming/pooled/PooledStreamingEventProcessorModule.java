@@ -25,16 +25,16 @@ import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
-import org.axonframework.eventhandling.monitoring.MonitoringEventHandlingComponent;
-import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceCachingEventHandlingComponent;
-import org.axonframework.eventhandling.tracing.TracingEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
+import org.axonframework.eventhandling.configuration.EventProcessorConfiguration;
 import org.axonframework.eventhandling.configuration.EventProcessorCustomization;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
+import org.axonframework.eventhandling.monitoring.MonitoringEventHandlingComponent;
+import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceCachingEventHandlingComponent;
+import org.axonframework.eventhandling.tracing.TracingEventHandlingComponent;
 import org.axonframework.lifecycle.Phase;
 
 import java.util.List;
@@ -72,7 +72,7 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         implements EventProcessorModule, ModuleBuilder<PooledStreamingEventProcessorModule>,
         EventProcessorModule.EventHandlingPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration>,
         EventProcessorModule.CustomizationPhase<PooledStreamingEventProcessorModule, PooledStreamingEventProcessorConfiguration> {
-    
+
     private final String processorName;
     private List<ComponentBuilder<EventHandlingComponent>> eventHandlingComponentBuilders;
     private ComponentBuilder<PooledStreamingEventProcessorConfiguration> customizedProcessorConfigurationBuilder;
@@ -132,10 +132,10 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
                         cfg.getComponent(PooledStreamingEventProcessorConfiguration.class)
                 ))
                 .onStart(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
-                    component.start();
-                    return FutureUtils.emptyCompletedFuture();
-                }).onShutdown(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
-                    return component.shutdownAsync();
+                    return component.start();
+                })
+                .onShutdown(Phase.INBOUND_EVENT_CONNECTORS, (cfg, component) -> {
+                    return component.shutdown();
                 });
 
         componentRegistry(cr -> cr.registerComponent(processorComponentDefinition));
@@ -145,15 +145,26 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
         for (int i = 0; i < eventHandlingComponentBuilders.size(); i++) {
             var componentBuilder = eventHandlingComponentBuilders.get(i);
             var componentName = processorEventHandlingComponentName(i);
-            componentRegistry(
-                    cr -> cr.registerComponent(
-                            EventHandlingComponent.class,
-                            componentName,
-                            cfg -> {
-                                var component = componentBuilder.build(cfg);
-                                var configuration = cfg.getComponent(PooledStreamingEventProcessorConfiguration.class);
-                                return withDefaultDecoration(component, configuration);
-                            }));
+            componentRegistry(cr -> {
+                cr.registerComponent(EventHandlingComponent.class, componentName,
+                                     cfg -> {
+                                         var component = componentBuilder.build(cfg);
+                                         var configuration = cfg.getComponent(
+                                                 PooledStreamingEventProcessorConfiguration.class
+                                         );
+                                         return withDefaultDecoration(component, configuration);
+                                     });
+                cr.registerDecorator(EventHandlingComponent.class, componentName,
+                                     InterceptingEventHandlingComponent.DECORATION_ORDER,
+                                     (config, name, delegate) -> {
+                                         var configuration =
+                                                 config.getComponent(PooledStreamingEventProcessorConfiguration.class);
+                                         return new InterceptingEventHandlingComponent(
+                                                 configuration.interceptors(),
+                                                 delegate
+                                         );
+                                     });
+            });
         }
     }
 
@@ -183,12 +194,10 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     ) {
         return new TracingEventHandlingComponent(
                 (event) -> configuration.spanFactory().createProcessEventSpan(false, event),
+                // TODO #3595 - Move this monitoring decorator to be placed around **all** other decorators for an EHC.
                 new MonitoringEventHandlingComponent(
                         configuration.messageMonitor(),
-                        new InterceptingEventHandlingComponent(
-                                configuration.interceptors(),
-                                new SequenceCachingEventHandlingComponent(c)
-                        )
+                        new SequenceCachingEventHandlingComponent(c)
                 )
         );
     }
@@ -214,7 +223,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
 
     private static PooledStreamingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
         return new PooledStreamingEventProcessorConfiguration(
-                parentSharedCustomizationOrDefault(cfg).apply(cfg, new EventProcessorConfiguration())
+                parentSharedCustomizationOrDefault(cfg)
+                        .apply(cfg, new EventProcessorConfiguration(cfg))
         );
     }
 

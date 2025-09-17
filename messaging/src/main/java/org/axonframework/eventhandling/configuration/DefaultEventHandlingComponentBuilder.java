@@ -80,8 +80,8 @@ public class DefaultEventHandlingComponentBuilder
         this.component = Objects.requireNonNull(component, "EventHandlingComponent may not be null");
     }
 
-
     @Override
+    @Nonnull
     public EventHandlingComponentBuilder.RequiredEventHandlerPhase sequencingPolicy(
             @Nonnull SequencingPolicy sequencingPolicy
     ) {

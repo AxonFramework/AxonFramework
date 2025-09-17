@@ -34,11 +34,11 @@ public interface QueryResponseMessage extends ResultMessage {
 
     @Override
     @Nonnull
-    QueryResponseMessage withMetaData(@Nonnull Map<String, String> metaData);
+    QueryResponseMessage withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    QueryResponseMessage andMetaData(@Nonnull Map<String, String> additionalMetaData);
+    QueryResponseMessage andMetadata(@Nonnull Map<String, String> additionalMetadata);
 
     @Override
     @Nonnull

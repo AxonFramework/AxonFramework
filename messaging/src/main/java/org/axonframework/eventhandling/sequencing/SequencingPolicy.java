@@ -19,8 +19,10 @@ package org.axonframework.eventhandling.sequencing;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Interface to a policy definition for concurrent processing, for example event handling.
@@ -55,7 +57,9 @@ public interface SequencingPolicy {
      * use another policy, or throw an exception / react in any other way - as appropriate.
      *
      * @param event   The event for which to get the sequencing identifier.
-     * @param context The processing context in which the event is being handled.
+     * @param context The processing context in which the event is being handled. This instance of the
+     *                {@link ProcessingContext} doesn't allow you to register phases actions by for example
+     *                {@link ProcessingContext#on} or retrieving components by {@link ProcessingContext#component}.
      * @return A sequence identifier for the given event, or {@code Optional#empty()} if this policy cannot determine a
      * sequence identifier for the given event.
      */

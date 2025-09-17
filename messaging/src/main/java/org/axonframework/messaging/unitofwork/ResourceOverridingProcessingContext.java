@@ -19,6 +19,7 @@ package org.axonframework.messaging.unitofwork;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -170,6 +171,13 @@ public class ResourceOverridingProcessingContext<R> implements ProcessingContext
     public <T> T getResource(@Nonnull ResourceKey<T> key) {
         //noinspection unchecked
         return this.key.equals(key) ? (T) resource.get() : delegate.getResource(key);
+    }
+
+    @Override
+    public Map<ResourceKey<?>, Object> resources() {
+        var allResources = delegate.resources();
+        allResources.put(key, resource.get());
+        return allResources;
     }
 
     @Override

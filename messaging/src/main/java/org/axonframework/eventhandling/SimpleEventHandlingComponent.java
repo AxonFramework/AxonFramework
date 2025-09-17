@@ -17,8 +17,6 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentBuilder;
-import org.axonframework.eventhandling.configuration.EventHandlingComponentBuilder;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -31,31 +29,26 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * TODO This should be regarded as a playground object to verify the API. Feel free to remove, adjust, or replicate this class to your needs.
+ * Simple implementation of the {@link EventHandlingComponent}, containing a collection of
+ * {@link EventHandler EventHandlers} to invoke on {@link #handle(EventMessage, ProcessingContext)}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
 public class SimpleEventHandlingComponent implements EventHandlingComponent {
 
-    private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers;
-
-    public SimpleEventHandlingComponent() {
-        this.eventHandlers = new ConcurrentHashMap<>();
-    }
+    private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers = new ConcurrentHashMap<>();
 
     @Nonnull
     @Override
     public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                                     @Nonnull ProcessingContext context) {
+                                               @Nonnull ProcessingContext context) {
         QualifiedName name = event.type().qualifiedName();
-        // TODO #3103 - add interceptor knowledge
         List<EventHandler> handlers = eventHandlers.get(name);
         if (handlers == null || handlers.isEmpty()) {
-            // TODO this would benefit from a dedicate exception
-            return MessageStream.failed(new IllegalArgumentException(
-                    "No handler found for event with name [" + name + "]"
-            ));
+            return MessageStream.failed(
+                    new NoHandlerForEventException(name, SimpleEventHandlingComponent.class.getName())
+            );
         }
         MessageStream<Message> result = MessageStream.empty();
         for (var handler : handlers) {
@@ -88,10 +81,5 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
     @Override
     public Set<QualifiedName> supportedEvents() {
         return Set.copyOf(eventHandlers.keySet());
-    }
-
-    @Nonnull
-    public static EventHandlingComponentBuilder.SequencingPolicyPhase builder() {
-        return new DefaultEventHandlingComponentBuilder(new SimpleEventHandlingComponent());
     }
 }

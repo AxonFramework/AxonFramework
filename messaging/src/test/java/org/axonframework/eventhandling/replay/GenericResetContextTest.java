@@ -35,7 +35,7 @@ class GenericResetContextTest extends MessageTestSuite<ResetContext> {
     @Override
     protected ResetContext buildDefaultMessage() {
         return new GenericResetContext(new GenericMessage(
-                TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_META_DATA
+                TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA
         ));
     }
 

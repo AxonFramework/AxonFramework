@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.eventsourcing.eventstore.benchmark;
 
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.processors.EventProcessor;
@@ -153,7 +154,7 @@ public abstract class AbstractEventStoreBenchmark {
     }
 
     protected void prepareForBenchmark() {
-        eventProcessor.start();
+        FutureUtils.joinAndUnwrap(eventProcessor.start());
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -163,7 +164,7 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected void cleanUpAfterBenchmark() {
         executorService.shutdown();
-        eventProcessor.shutDown();
+        FutureUtils.joinAndUnwrap(eventProcessor.shutdown());
         eventStore.shutDown();
         coordinatorExecutor.shutdown();
         workerExecutor.shutdown();
@@ -189,7 +190,7 @@ public abstract class AbstractEventStoreBenchmark {
                         .mapToObj(sequenceNumber -> createDomainEvent(aggregateId, sequenceNumber))
                         .peek(event -> serializer().ifPresent(serializer -> {
                             serializer.serialize(event.payload(), byte[].class);
-                            serializer.serialize(event.metaData(), byte[].class);
+                            serializer.serialize(event.metadata(), byte[].class);
                         })).toArray(EventMessage[]::new);
     }
 

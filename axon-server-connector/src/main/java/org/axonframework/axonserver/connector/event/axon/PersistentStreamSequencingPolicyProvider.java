@@ -48,10 +48,10 @@ public class PersistentStreamSequencingPolicyProvider
     public static final String SEQUENTIAL_PER_AGGREGATE_POLICY = "SequentialPerAggregatePolicy";
 
     /**
-     * A {@link String} constant representing the "meta-data" sequencing policy. The policy utilizes values present in
+     * A {@link String} constant representing the "metadata" sequencing policy. The policy utilizes values present in
      * the metadata of an event to define the sequence identifier.
      */
-    public static final String META_DATA_SEQUENCING_POLICY = "MetaDataSequencingPolicy";
+    public static final String METADATA_SEQUENCING_POLICY = "MetadataSequencingPolicy";
 
     /**
      * A {@link String} constant representing the sequential policy. This means all events are handled sequentially. The
@@ -107,10 +107,10 @@ public class PersistentStreamSequencingPolicyProvider
             return event.identifier();
         }
 
-        if (META_DATA_SEQUENCING_POLICY.equals(sequencingPolicy)) {
+        if (METADATA_SEQUENCING_POLICY.equals(sequencingPolicy)) {
             List<Object> metaDataValues = new LinkedList<>();
             for (String sequencingPolicyParameter : sequencingPolicyParameters) {
-                metaDataValues.add(event.metaData().get(sequencingPolicyParameter));
+                metaDataValues.add(event.metadata().get(sequencingPolicyParameter));
             }
             return metaDataValues;
         }

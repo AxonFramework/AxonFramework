@@ -17,8 +17,9 @@
 package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.Reporter;
@@ -39,12 +40,19 @@ import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.deepEquals;
 
+/**
+ * Abstract implementation of the {@link AxonTestPhase.Then then-phase} of the {@link AxonTestFixture}.
+ *
+ * @param <T> The type of {@link org.axonframework.messaging.Message} validated by this implementation.
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
         implements AxonTestPhase.Then.Message<T> {
 
     protected final Reporter reporter = new Reporter();
 
-    private final Configuration configuration;
+    private final AxonConfiguration configuration;
     private final AxonTestFixture.Customization customization;
     private final RecordingEventSink eventSink;
     private final RecordingCommandBus commandBus;
@@ -52,12 +60,23 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     private final CommandValidator commandValidator;
     protected final Throwable actualException;
 
+    /**
+     * Constructs an {@code AxonTestThenMessage} for the given parameters.
+     *
+     * @param configuration   The configuration which this test fixture phase is based on.
+     * @param customization   Collection of customizations made for this test fixture.
+     * @param commandBus      The recording {@link org.axonframework.commandhandling.CommandBus}, used to capture and
+     *                        validate any commands that have been sent.
+     * @param eventSink       The recording {@link org.axonframework.eventhandling.EventSink}, used to capture and
+     *                        validate any events that have been sent.
+     * @param actualException The exception thrown during the when-phase, potentially {@code null}.
+     */
     public AxonTestThenMessage(
-            Configuration configuration,
-            AxonTestFixture.Customization customization,
-            RecordingCommandBus commandBus,
-            RecordingEventSink eventSink,
-            Throwable actualException
+            @Nonnull AxonConfiguration configuration,
+            @Nonnull AxonTestFixture.Customization customization,
+            @Nonnull RecordingCommandBus commandBus,
+            @Nonnull RecordingEventSink eventSink,
+            @Nullable Throwable actualException
     ) {
         this.configuration = configuration;
         this.customization = customization;
@@ -95,9 +114,9 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
         Iterator<EventMessage> iterator = publishedEvents.iterator();
         for (EventMessage expectedEvent : expectedEvents) {
             EventMessage actualEvent = iterator.next();
-            if (!verifyMetaDataEquality(expectedEvent.payloadType(),
-                                        expectedEvent.metaData(),
-                                        actualEvent.metaData())) {
+            if (!verifyMetadataEquality(expectedEvent.payloadType(),
+                                        expectedEvent.metadata(),
+                                        actualEvent.metadata())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
@@ -222,12 +241,12 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    protected boolean verifyMetaDataEquality(Class<?> eventType,
-                                             Map<String, String> expectedMetaData,
-                                             Map<String, String> actualMetaData) {
-        MapStringEntryMatcher matcher = new MapStringEntryMatcher(expectedMetaData);
-        if (!matcher.matches(actualMetaData)) {
-            reporter.reportDifferentMetaData(eventType,
+    protected boolean verifyMetadataEquality(Class<?> eventType,
+                                             Map<String, String> expectedMetadata,
+                                             Map<String, String> actualMetadata) {
+        MapStringEntryMatcher matcher = new MapStringEntryMatcher(expectedMetadata);
+        if (!matcher.matches(actualMetadata)) {
+            reporter.reportDifferentMetadata(eventType,
                                              matcher.getMissingEntries(),
                                              matcher.getAdditionalEntries());
         }

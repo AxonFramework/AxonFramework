@@ -109,7 +109,7 @@ public abstract class JdbcEventStorageEngineStatements {
         for (EventMessage eventMessage : events) {
             DomainEventMessage event = asDomainEventMessage(eventMessage);
             SerializedObject<?> payload = serializer.serialize(event.payload(), dataType);
-            SerializedObject<?> metaData = serializer.serialize(event.metaData(), dataType);
+            SerializedObject<?> metadata = serializer.serialize(event.metadata(), dataType);
             statement.setString(1, event.identifier());
             statement.setString(2, event.getAggregateIdentifier());
             statement.setLong(3, event.getSequenceNumber());
@@ -118,7 +118,7 @@ public abstract class JdbcEventStorageEngineStatements {
             statement.setString(6, payload.getType().getName());
             statement.setString(7, payload.getType().getRevision());
             statement.setObject(8, payload.getData());
-            statement.setObject(9, metaData.getData());
+            statement.setObject(9, metadata.getData());
             statement.addBatch();
         }
         return statement;
@@ -230,7 +230,7 @@ public abstract class JdbcEventStorageEngineStatements {
                 + schema.snapshotTable() + " (" + schema.domainEventFields() + ") VALUES (?,?,?,?,?,?,?,?,?)";
         PreparedStatement statement = connection.prepareStatement(sql);
         SerializedObject<?> payload = serializer.serialize(snapshot.payload(), dataType);
-        SerializedObject<?> metaData = serializer.serialize(snapshot.metaData(), dataType);
+        SerializedObject<?> metadata = serializer.serialize(snapshot.metadata(), dataType);
         statement.setString(1, snapshot.identifier());
         statement.setString(2, snapshot.getAggregateIdentifier());
         statement.setLong(3, snapshot.getSequenceNumber());
@@ -239,7 +239,7 @@ public abstract class JdbcEventStorageEngineStatements {
         statement.setString(6, payload.getType().getName());
         statement.setString(7, payload.getType().getRevision());
         statement.setObject(8, payload.getData());
-        statement.setObject(9, metaData.getData());
+        statement.setObject(9, metadata.getData());
         return statement;
     }
 

@@ -26,7 +26,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
@@ -66,10 +66,10 @@ class InterceptingCommandBusTest {
     @BeforeEach
     void setUp() {
         mockCommandBus = mock(CommandBus.class);
-        handlerInterceptor1 = spy(new AddMetaDataCountInterceptor<>("handler1", "value"));
-        handlerInterceptor2 = spy(new AddMetaDataCountInterceptor<>("handler2", "value"));
-        dispatchInterceptor1 = spy(new AddMetaDataCountInterceptor<>("dispatch1", "value"));
-        dispatchInterceptor2 = spy(new AddMetaDataCountInterceptor<>("dispatch2", "value"));
+        handlerInterceptor1 = spy(new AddMetadataCountInterceptor<>("handler1", "value"));
+        handlerInterceptor2 = spy(new AddMetadataCountInterceptor<>("handler2", "value"));
+        dispatchInterceptor1 = spy(new AddMetadataCountInterceptor<>("dispatch1", "value"));
+        dispatchInterceptor2 = spy(new AddMetadataCountInterceptor<>("dispatch2", "value"));
 
         testSubject = new InterceptingCommandBus(mockCommandBus,
                                                  List.of(handlerInterceptor1, handlerInterceptor2),
@@ -89,16 +89,16 @@ class InterceptingCommandBusTest {
         verify(mockCommandBus).dispatch(dispatchedMessage.capture(), any());
 
         CommandMessage actualDispatched = dispatchedMessage.getValue();
-        assertEquals(MetaData.from(
+        assertEquals(Metadata.from(
                              Map.of("dispatch1", "value-0",
                                     "dispatch2", "value-1")
                      ),
-                     actualDispatched.metaData(),
+                     actualDispatched.metadata(),
                      "Expected command interceptors to be invoked in registered order");
 
         assertTrue(result.isDone());
         assertEquals(Map.of("dispatch1", "value-1", "dispatch2", "value-0"),
-                     result.get().metaData(),
+                     result.get().metadata(),
                      "Expected result interceptors to be invoked in reverse order");
     }
 
@@ -120,7 +120,7 @@ class InterceptingCommandBusTest {
 
         countingTestSubject.dispatch(firstCommand, StubProcessingContext.forMessage(firstCommand))
                            .get();
-        countingTestSubject.dispatch(secondCommand, StubProcessingContext.forMessage(firstCommand))
+        countingTestSubject.dispatch(secondCommand, StubProcessingContext.forMessage(secondCommand))
                            .get();
 
         assertThat(counter.get()).isEqualTo(2);
@@ -182,16 +182,16 @@ class InterceptingCommandBusTest {
 
         CommandMessage actualHandled = handledMessage.get();
         assertEquals(Map.of("handler1", "value-0", "handler2", "value-1"),
-                     actualHandled.metaData(),
+                     actualHandled.metadata(),
                      "Expected command interceptors to be invoked in registered order");
 
-        assertEquals(MetaData.from(
+        assertEquals(Metadata.from(
                              Map.of(
                                      "handler1", "value-1",
                                      "handler2", "value-0"
                              )
                      ),
-                     result.first().asCompletableFuture().get().message().metaData(),
+                     result.first().asCompletableFuture().get().message().metadata(),
                      "Expected result interceptors to be invoked in reverse order");
     }
 
@@ -269,13 +269,13 @@ class InterceptingCommandBusTest {
 
 
     @SuppressWarnings("unchecked")
-    private static class AddMetaDataCountInterceptor<M extends Message>
+    private static class AddMetadataCountInterceptor<M extends Message>
             implements MessageHandlerInterceptor<M>, MessageDispatchInterceptor<M> {
 
         private final String key;
         private final String value;
 
-        public AddMetaDataCountInterceptor(String key, String prefix) {
+        public AddMetadataCountInterceptor(String key, String prefix) {
             this.key = key;
             this.value = prefix;
         }
@@ -285,10 +285,10 @@ class InterceptingCommandBusTest {
         public MessageStream<?> interceptOnDispatch(@Nonnull M message,
                                                     @Nullable ProcessingContext context,
                                                     @Nonnull MessageDispatchInterceptorChain<M> interceptorChain) {
-            var intercepted = (M) message.andMetaData(Map.of(key, buildValue(message)));
+            var intercepted = (M) message.andMetadata(Map.of(key, buildValue(message)));
             return interceptorChain
                     .proceed(intercepted, context)
-                    .mapMessage(m -> m.andMetaData(Map.of(key, buildValue(m))));
+                    .mapMessage(m -> m.andMetadata(Map.of(key, buildValue(m))));
         }
 
         @Override
@@ -296,14 +296,14 @@ class InterceptingCommandBusTest {
         public MessageStream<?> interceptOnHandle(@Nonnull M message,
                                                   @Nonnull ProcessingContext context,
                                                   @Nonnull MessageHandlerInterceptorChain<M> interceptorChain) {
-            var intercepted = (M) message.andMetaData(Map.of(key, buildValue(message)));
+            var intercepted = (M) message.andMetadata(Map.of(key, buildValue(message)));
             return interceptorChain
                     .proceed(intercepted, context)
-                    .mapMessage(m -> m.andMetaData(Map.of(key, buildValue(m))));
+                    .mapMessage(m -> m.andMetadata(Map.of(key, buildValue(m))));
         }
 
         private String buildValue(Message message) {
-            return value + "-" + message.metaData().size();
+            return value + "-" + message.metadata().size();
         }
     }
 }

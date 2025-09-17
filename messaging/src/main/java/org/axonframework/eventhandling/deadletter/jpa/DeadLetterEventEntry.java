@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.util.Arrays;
@@ -70,7 +70,7 @@ public class DeadLetterEventEntry {
     @Basic
     @Lob
     @Column(length = 10000)
-    private byte[] metaData;
+    private byte[] metadata;
 
     @Basic
     private String aggregateType;
@@ -107,7 +107,7 @@ public class DeadLetterEventEntry {
      * @param payloadType         The payload's type of the message.
      * @param payloadRevision     The payload's revision of the message.
      * @param payload             The serialized payload of the message.
-     * @param metaData            The serialized metadata of the message.
+     * @param metadata            The serialized metadata of the message.
      * @param aggregateType       The aggregate type of the message.
      * @param aggregateIdentifier The aggregate identifier of the message.
      * @param sequenceNumber      The aggregate sequence number of the message.
@@ -121,7 +121,7 @@ public class DeadLetterEventEntry {
                                 String payloadType,
                                 String payloadRevision,
                                 byte[] payload,
-                                byte[] metaData,
+                                byte[] metadata,
                                 String aggregateType,
                                 String aggregateIdentifier,
                                 Long sequenceNumber,
@@ -139,7 +139,7 @@ public class DeadLetterEventEntry {
         this.payloadType = payloadType;
         this.payloadRevision = payloadRevision;
         this.payload = payload;
-        this.metaData = metaData;
+        this.metadata = metadata;
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
@@ -202,8 +202,8 @@ public class DeadLetterEventEntry {
      *
      * @return The original metadata.
      */
-    public SimpleSerializedObject<byte[]> getMetaData() {
-        return new SimpleSerializedObject<>(metaData, byte[].class, MetaData.class.getName(), null);
+    public SimpleSerializedObject<byte[]> getMetadata() {
+        return new SimpleSerializedObject<>(metadata, byte[].class, Metadata.class.getName(), null);
     }
 
     /**
@@ -264,7 +264,7 @@ public class DeadLetterEventEntry {
                 && Objects.equals(payloadType, that.payloadType)
                 && Objects.equals(payloadRevision, that.payloadRevision)
                 && Objects.deepEquals(payload, that.payload)
-                && Objects.deepEquals(metaData, that.metaData)
+                && Objects.deepEquals(metadata, that.metadata)
                 && Objects.equals(aggregateType, that.aggregateType)
                 && Objects.equals(aggregateIdentifier, that.aggregateIdentifier)
                 && Objects.equals(sequenceNumber, that.sequenceNumber)
@@ -281,7 +281,7 @@ public class DeadLetterEventEntry {
                             payloadType,
                             payloadRevision,
                             Arrays.hashCode(payload),
-                            Arrays.hashCode(metaData),
+                            Arrays.hashCode(metadata),
                             aggregateType,
                             aggregateIdentifier,
                             sequenceNumber,
@@ -299,7 +299,7 @@ public class DeadLetterEventEntry {
                 ", payloadType='" + payloadType + '\'' +
                 ", payloadRevision='" + payloadRevision + '\'' +
                 ", payload=" + Arrays.toString(payload) +
-                ", metaData=" + Arrays.toString(metaData) +
+                ", metadata=" + Arrays.toString(metadata) +
                 ", aggregateType='" + aggregateType + '\'' +
                 ", aggregateIdentifier='" + aggregateIdentifier + '\'' +
                 ", sequenceNumber=" + sequenceNumber +

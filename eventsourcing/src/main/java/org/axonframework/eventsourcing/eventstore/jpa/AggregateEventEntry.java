@@ -73,7 +73,7 @@ public class AggregateEventEntry {
     @Lob
     private byte[] payload;
     @Lob
-    private byte[] metaData;
+    private byte[] metadata;
     @Column(nullable = false, unique = true)
     private String identifier;
 
@@ -85,7 +85,7 @@ public class AggregateEventEntry {
      * @param type                    The {@link MessageType#name()} of an {@link EventMessage#type()}.
      * @param version                 The {@link MessageType#version()} of an {@link EventMessage#type()}.
      * @param payload                 The {@link EventMessage#payload()} as a {@code byte[]}.
-     * @param metaData                The {@link EventMessage#metaData()} as a {@code byte[]}.
+     * @param metadata                The {@link EventMessage#metadata()} as a {@code byte[]}.
      * @param timestamp               The time at which the {@link EventMessage} was originally created.
      * @param aggregateType           The type of the aggregate that published this {@link EventMessage}. May be
      *                                {@code null} if the event does not originate from an aggregate.
@@ -98,7 +98,7 @@ public class AggregateEventEntry {
                                @Nonnull String type,
                                @Nonnull String version,
                                @Nonnull byte[] payload,
-                               @Nonnull byte[] metaData,
+                               @Nonnull byte[] metadata,
                                @Nonnull Object timestamp,
                                @Nullable String aggregateType,
                                @Nullable String aggregateIdentifier,
@@ -107,7 +107,7 @@ public class AggregateEventEntry {
         this.type = type;
         this.version = version;
         this.payload = payload;
-        this.metaData = metaData;
+        this.metadata = metadata;
         this.timestamp = timestamp instanceof TemporalAccessor
                 ? formatInstant((TemporalAccessor) timestamp)
                 : timestamp.toString();
@@ -125,7 +125,7 @@ public class AggregateEventEntry {
      * @param type                    The {@link MessageType#name()} of an {@link EventMessage#type()}.
      * @param version                 The {@link MessageType#version()} of an {@link EventMessage#type()}.
      * @param payload                 The {@link EventMessage#payload()} as a {@code byte[]}.
-     * @param metaData                The {@link EventMessage#metaData()} as a {@code byte[]}.
+     * @param metadata                The {@link EventMessage#metadata()} as a {@code byte[]}.
      * @param timestamp               The time at which the {@link EventMessage} was originally created.
      * @param aggregateType           The type of the aggregate that published this {@link EventMessage}. May be
      *                                {@code null} if the event does not originate from an aggregate.
@@ -139,7 +139,7 @@ public class AggregateEventEntry {
                                @Nonnull String type,
                                @Nonnull String version,
                                @Nonnull byte[] payload,
-                               @Nonnull byte[] metaData,
+                               @Nonnull byte[] metadata,
                                @Nonnull String timestamp,
                                @Nullable String aggregateType,
                                @Nullable String aggregateIdentifier,
@@ -149,7 +149,7 @@ public class AggregateEventEntry {
         this.type = type;
         this.version = version;
         this.payload = payload;
-        this.metaData = metaData;
+        this.metadata = metadata;
         this.timestamp = timestamp;
         this.aggregateType = aggregateType;
         this.aggregateIdentifier = aggregateIdentifier;
@@ -213,13 +213,13 @@ public class AggregateEventEntry {
     }
 
     /**
-     * Returns the {@link EventMessage#metaData() metadata} of the stored {@link EventMessage}.
+     * Returns the {@link EventMessage#metadata() metadata} of the stored {@link EventMessage}.
      *
-     * @return The {@link EventMessage#metaData() metadata} of the stored {@link EventMessage}.
+     * @return The {@link EventMessage#metadata() metadata} of the stored {@link EventMessage}.
      */
     @Nonnull
-    public byte[] metaData() {
-        return metaData;
+    public byte[] metadata() {
+        return metadata;
     }
 
     /**

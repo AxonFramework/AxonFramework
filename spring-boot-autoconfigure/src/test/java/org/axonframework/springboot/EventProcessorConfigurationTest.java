@@ -181,46 +181,6 @@ class EventProcessorConfigurationTest {
                 });
     }
 
-    @Test
-    void sequencedDeadLetterQueueCacheCanBeSetViaSpringConfiguration() {
-        new ApplicationContextRunner()
-                .withUserConfiguration(Context.class)
-                .withPropertyValues(
-                        "axon.axonserver.enabled=false",
-                        "axon.eventhandling.processors.first.dlq.enabled=true",
-                        "axon.eventhandling.processors.first.dlq.cache.enabled=true",
-                        "axon.eventhandling.processors.first.dlq.cache.size=10"
-                )
-                .run(context -> {
-                    assertThat(context).hasSingleBean(EventProcessingModule.class);
-                    EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
-
-                    Optional<EventProcessor> eventProcessor = eventProcessingConfig.eventProcessorByProcessingGroup(
-                            "first");
-                    assertTrue(eventProcessor.isPresent());
-                    EventHandlerInvoker eventHandlerInvoker = ReflectionUtils.getMemberValue(
-                            eventProcessor.get().getClass().getDeclaredMethod("eventHandlerInvoker"), eventProcessor.get()
-                    );
-                    assertNotNull(eventHandlerInvoker);
-                    List<EventHandlerInvoker> delegates = ReflectionUtils.getFieldValue(
-                            MultiEventHandlerInvoker.class.getDeclaredField("delegates"), eventHandlerInvoker
-                    );
-                    assertFalse(delegates.isEmpty());
-                    DeadLetteringEventHandlerInvoker deadLetteringInvoker =
-                            ((DeadLetteringEventHandlerInvoker) delegates.get(0));
-                    boolean cacheEnabled = ReflectionUtils.getFieldValue(
-                            DeadLetteringEventHandlerInvoker.class.getDeclaredField("sequenceIdentifierCacheEnabled"),
-                            deadLetteringInvoker
-                    );
-                    assertTrue(cacheEnabled);
-                    int cacheSize = ReflectionUtils.getFieldValue(
-                            DeadLetteringEventHandlerInvoker.class.getDeclaredField("sequenceIdentifierCacheSize"),
-                            deadLetteringInvoker
-                    );
-                    assertEquals(10, cacheSize);
-                });
-    }
-
     @SuppressWarnings("unused")
     @ContextConfiguration
     @EnableAutoConfiguration
@@ -229,7 +189,7 @@ class EventProcessorConfigurationTest {
 
         @Bean
         public SequencingPolicy customPolicy() {
-            return new FullConcurrencyPolicy();
+            return FullConcurrencyPolicy.INSTANCE;
         }
 
         @Bean

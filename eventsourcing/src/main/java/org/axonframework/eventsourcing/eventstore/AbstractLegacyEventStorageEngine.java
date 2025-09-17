@@ -299,10 +299,10 @@ public abstract class AbstractLegacyEventStorageEngine implements LegacyEventSto
 
         /**
          * Sets the {@link Serializer} used to serialize and deserialize the Event Message's payload and
-         * {@link org.axonframework.messaging.MetaData} with.
+         * {@link org.axonframework.messaging.Metadata} with.
          *
          * @param eventSerializer The serializer to serialize the Event Message's payload and
-         *                        {@link org.axonframework.messaging.MetaData} with
+         *                        {@link org.axonframework.messaging.Metadata} with
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder eventSerializer(Serializer eventSerializer) {

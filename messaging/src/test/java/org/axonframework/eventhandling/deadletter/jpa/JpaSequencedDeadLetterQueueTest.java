@@ -27,7 +27,7 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -111,7 +111,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
     protected DeadLetter<EventMessage> generateRequeuedLetter(DeadLetter<EventMessage> original,
                                                                  Instant lastTouched,
                                                                  Throwable requeueCause,
-                                                                 MetaData diagnostics) {
+                                                                 Metadata diagnostics) {
         setAndGetTime(lastTouched);
         return original.withCause(requeueCause).withDiagnostics(diagnostics).markTouched();
     }
@@ -122,7 +122,7 @@ class JpaSequencedDeadLetterQueueTest extends SequencedDeadLetterQueueTest<Event
 
         assertEquals(expected.message().payload(), actual.message().payload());
         assertEquals(expected.message().payloadType(), actual.message().payloadType());
-        assertEquals(expected.message().metaData(), actual.message().metaData());
+        assertEquals(expected.message().metadata(), actual.message().metadata());
         assertEquals(expected.message().identifier(), actual.message().identifier());
         assertEquals(expected.cause(), actual.cause());
         assertEquals(expected.enqueuedAt(), actual.enqueuedAt());

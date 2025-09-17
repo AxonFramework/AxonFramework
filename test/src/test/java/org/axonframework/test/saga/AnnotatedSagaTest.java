@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.CallbackBehavior;
@@ -48,7 +48,7 @@ class AnnotatedSagaTest {
 
     private static <P> EventMessage asEventMessage(P event) {
         return new GenericEventMessage(
-                new GenericMessage(new MessageType(event.getClass()), (P) event),
+                new GenericMessage(new MessageType(event.getClass()), event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -64,14 +64,14 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void fixtureApi_AggregatePublishedEventWithMetaData_NoHistoricActivity() {
+    void fixtureApi_AggregatePublishedEventWithMetadata_NoHistoricActivity() {
         String extraIdentifier = UUID.randomUUID().toString();
-        Map<String, String> metaData = new HashMap<>();
-        metaData.put("extraIdentifier", extraIdentifier);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("extraIdentifier", extraIdentifier);
 
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
-               .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"), metaData)
+               .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"), metadata)
                .expectActiveSagas(1)
                .expectNoScheduledDeadlines()
                .expectAssociationWith("identifier", "id")
@@ -79,13 +79,13 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void fixtureApi_AggregatePublishedHistoricEventWithMetaData() {
+    void fixtureApi_AggregatePublishedHistoricEventWithMetadata() {
         String extraIdentifier = UUID.randomUUID().toString();
-        Map<String, String> metaData = new HashMap<>();
-        metaData.put("extraIdentifier", extraIdentifier);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("extraIdentifier", extraIdentifier);
 
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-        fixture.givenAPublished(new TriggerSagaStartEvent("id"), metaData)
+        fixture.givenAPublished(new TriggerSagaStartEvent("id"), metadata)
                .whenPublishingA(new TriggerSagaStartEvent("id"))
                .expectActiveSagas(1)
                .expectNoScheduledDeadlines()
@@ -93,7 +93,7 @@ class AnnotatedSagaTest {
                .expectAssociationWith("extraIdentifier", extraIdentifier);
     }
 
-    @Disabled("TODO revise after #3103 is finished and Saga support is enabled")
+    @Disabled("TODO revise after Saga support is enabled")
     @Test
     void fixtureApi_NonTransientResourceInjected() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
@@ -132,14 +132,14 @@ class AnnotatedSagaTest {
     }
 
     @Test
-    void fixtureApi_PublishedEventWithMetaData_NoHistoricActivity() {
+    void fixtureApi_PublishedEventWithMetadata_NoHistoricActivity() {
         String extraIdentifier = UUID.randomUUID().toString();
-        Map<String, String> metaData = new HashMap<>();
-        metaData.put("extraIdentifier", extraIdentifier);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("extraIdentifier", extraIdentifier);
 
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
-               .whenPublishingA(new TriggerSagaStartEvent("id"), metaData)
+               .whenPublishingA(new TriggerSagaStartEvent("id"), metadata)
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", "id")
                .expectAssociationWith("extraIdentifier", extraIdentifier)
@@ -249,7 +249,7 @@ class AnnotatedSagaTest {
         String identifier2 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         CallbackBehavior commandHandler = mock(CallbackBehavior.class);
-        when(commandHandler.handle(eq("Say hi!"), isA(MetaData.class))).thenReturn("Hi again!");
+        when(commandHandler.handle(eq("Say hi!"), isA(Metadata.class))).thenReturn("Hi again!");
         fixture.setCallbackBehavior(commandHandler);
 
         fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
@@ -263,7 +263,7 @@ class AnnotatedSagaTest {
                .expectDispatchedCommands("Say hi!", "Hi again!")
                .expectPublishedEventsMatching(noEvents());
 
-        verify(commandHandler, times(2)).handle(isA(Object.class), eq(MetaData.emptyInstance()));
+        verify(commandHandler, times(2)).handle(isA(Object.class), eq(Metadata.emptyInstance()));
     }
 
     @Test

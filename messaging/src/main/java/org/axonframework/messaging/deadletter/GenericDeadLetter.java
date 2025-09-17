@@ -17,7 +17,7 @@
 package org.axonframework.messaging.deadletter;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -47,7 +47,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
     private final Cause cause;
     private final Instant enqueuedAt;
     private final Instant lastTouched;
-    private final MetaData diagnostics;
+    private final Metadata diagnostics;
 
     /**
      * Construct a {@link GenericDeadLetter} with the given {@code sequenceIdentifier} and {@code message}. The
@@ -86,7 +86,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
              cause,
              timeSupplier.get(),
              timeSupplier.get(),
-             MetaData.emptyInstance());
+             Metadata.emptyInstance());
     }
 
     private GenericDeadLetter(GenericDeadLetter<M> delegate, Instant touched) {
@@ -98,7 +98,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
              delegate.diagnostics);
     }
 
-    private GenericDeadLetter(GenericDeadLetter<M> delegate, MetaData diagnostics) {
+    private GenericDeadLetter(GenericDeadLetter<M> delegate, Metadata diagnostics) {
         this(delegate.sequenceIdentifier,
              delegate.message(),
              delegate.cause().orElse(null),
@@ -124,14 +124,14 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
      * @param cause              The cause for the {@code message} to be dead lettered.
      * @param enqueuedAt         The moment this dead letter is enqueued.
      * @param lastTouched        The last time this dead letter was touched.
-     * @param diagnostics        The diagnostic {@link MetaData} of this dead letter.
+     * @param diagnostics        The diagnostic {@link Metadata} of this dead letter.
      */
     public GenericDeadLetter(Object sequenceIdentifier,
                              M message,
                              Cause cause,
                              Instant enqueuedAt,
                              Instant lastTouched,
-                             MetaData diagnostics) {
+                             Metadata diagnostics) {
         this.sequenceIdentifier = sequenceIdentifier;
         this.message = message;
         this.cause = cause;
@@ -161,7 +161,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
     }
 
     @Override
-    public MetaData diagnostics() {
+    public Metadata diagnostics() {
         return diagnostics;
     }
 
@@ -175,7 +175,7 @@ public class GenericDeadLetter<M extends Message> implements DeadLetter<M> {
     }
 
     @Override
-    public DeadLetter<M> withDiagnostics(MetaData diagnostics) {
+    public DeadLetter<M> withDiagnostics(Metadata diagnostics) {
         return new GenericDeadLetter<>(this, diagnostics);
     }
 

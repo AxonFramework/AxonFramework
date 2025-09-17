@@ -38,8 +38,6 @@ import java.util.function.UnaryOperator;
  */
 public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
 
-    private static final Context.ResourceKey<Transaction> TRANSACTION_RESOURCE_KEY =
-            Context.ResourceKey.withLabel("transaction");
     private final TransactionManager transactionManager;
     private final UnitOfWorkFactory delegate;
 
@@ -80,16 +78,17 @@ public class TransactionalUnitOfWorkFactory implements UnitOfWorkFactory {
             @Nonnull UnaryOperator<UnitOfWorkConfiguration> customization
     ) {
         var unitOfWork = delegate.create(identifier, customization);
+        Context.ResourceKey<Transaction> transactionResourceKey = Context.ResourceKey.withLabel("transaction");
         unitOfWork.runOnPreInvocation(ctx -> {
             var transaction = transactionManager.startTransaction();
-            ctx.putResource(TRANSACTION_RESOURCE_KEY, transaction);
+            ctx.putResource(transactionResourceKey, transaction);
         });
         unitOfWork.runOnCommit(ctx -> {
-            var transaction = ctx.getResource(TRANSACTION_RESOURCE_KEY);
+            var transaction = ctx.getResource(transactionResourceKey);
             transaction.commit();
         });
         unitOfWork.onError((ctx, phase, error) -> {
-            var transaction = ctx.getResource(TRANSACTION_RESOURCE_KEY);
+            var transaction = ctx.getResource(transactionResourceKey);
             transaction.rollback();
         });
         return unitOfWork;

@@ -24,13 +24,13 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MetadataValue;
+import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.annotation.MetaDataValue;
-import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
@@ -206,7 +206,11 @@ class AnnotatedEventHandlingComponentTest {
             assertTrue(result.error().isPresent());
             var exception = result.error().get();
             assertInstanceOf(RuntimeException.class, exception);
-            assertEquals("No handler found for event with name [java.lang.Integer]", exception.getMessage());
+            assertEquals(
+                    "No handler found for event with name [java.lang.Integer] in component "
+                            + "[org.axonframework.eventhandling.SimpleEventHandlingComponent]",
+                    exception.getMessage()
+            );
             assertEquals(0, eventHandler.handledCount);
         }
 
@@ -302,14 +306,14 @@ class AnnotatedEventHandlingComponentTest {
         return domainEvent(seq, null);
     }
 
-    private static DomainEventMessage domainEvent(int seq, String sampleMetaData) {
+    private static DomainEventMessage domainEvent(int seq, String sampleMetadata) {
         return new GenericDomainEventMessage(
                 "test",
                 "id",
                 seq,
                 new MessageType(Integer.class),
                 seq,
-                sampleMetaData == null ? MetaData.emptyInstance() : MetaData.with("sampleKey", sampleMetaData)
+                sampleMetadata == null ? Metadata.emptyInstance() : Metadata.with("sampleKey", sampleMetadata)
         );
     }
 
@@ -332,7 +336,7 @@ class AnnotatedEventHandlingComponentTest {
         @EventHandler
         void handle(
                 Integer payload,
-                @MetaDataValue("sampleKey") String metadata,
+                @MetadataValue("sampleKey") String metadata,
                 @SequenceNumber Long sequenceNumber,
                 @SourceId String source,
                 @Timestamp Instant timestamp

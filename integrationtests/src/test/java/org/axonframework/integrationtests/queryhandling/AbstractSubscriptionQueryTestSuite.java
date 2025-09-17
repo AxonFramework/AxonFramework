@@ -596,10 +596,10 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // given
         List<String> interceptedResponse = Arrays.asList("fakeReply1", "fakeReply2");
 //        queryBus.registerDispatchInterceptor((message, context, chain) -> chain.proceed(
-//                message.andMetaData(Collections.singletonMap("key", "value")), context
+//                message.andMetadata(Collections.singletonMap("key", "value")), context
 //        ));
 //        queryBus.registerHandlerInterceptor((message, context, chain) -> {
-//            if (message.metaData().containsKey("key")) {
+//            if (message.metadata().containsKey("key")) {
 //                return MessageStream.fromIterable(
 //                        interceptedResponse.stream()
 //                                           .map(p -> new GenericQueryResponseMessage(new MessageType("response"), p))
@@ -627,9 +627,9 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Disabled("TODO #3488")
     void subscriptionQueryUpdateWithInterceptors() {
         // given
-        Map<String, String> metaData = Collections.singletonMap("key", "value");
+        Map<String, String> metadata = Collections.singletonMap("key", "value");
 //        queryUpdateEmitter.registerDispatchInterceptor(
-//                (message, context, chain) -> chain.proceed(message.andMetaData(metaData), context)
+//                (message, context, chain) -> chain.proceed(message.andMetadata(metadata), context)
 //        );
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
                 new MessageType("chatMessages"), TEST_PAYLOAD,
@@ -645,7 +645,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
         // then
         StepVerifier.create(result.updates())
-                    .expectNextMatches(m -> m.metaData().equals(metaData))
+                    .expectNextMatches(m -> m.metadata().equals(metadata))
                     .verifyComplete();
     }
 

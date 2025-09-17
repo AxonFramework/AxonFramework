@@ -41,7 +41,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageDispatchInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
@@ -351,11 +351,11 @@ public abstract class AbstractDeadlineManagerTestSuite {
                               new DeadlineOccurredEvent(new DeadlinePayload(IDENTIFIER)));
 
         Message aggregateCreatedEvent = publishedMessages.getFirst();
-        assertTrue(aggregateCreatedEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
-        assertEquals(expectedCorrelationData, aggregateCreatedEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        assertTrue(aggregateCreatedEvent.metadata().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, aggregateCreatedEvent.metadata().get(CUSTOM_CORRELATION_DATA_KEY));
         Message deadLineEvent = publishedMessages.get(1);
-        assertTrue(deadLineEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
-        assertEquals(expectedCorrelationData, deadLineEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        assertTrue(deadLineEvent.metadata().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, deadLineEvent.metadata().get(CUSTOM_CORRELATION_DATA_KEY));
     }
 
     @Test
@@ -565,11 +565,11 @@ public abstract class AbstractDeadlineManagerTestSuite {
         assertSagaIs(LIVE);
 
         Message sagaStartingEvent = publishedMessages.get(0);
-        assertTrue(sagaStartingEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
-        assertEquals(expectedCorrelationData, sagaStartingEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        assertTrue(sagaStartingEvent.metadata().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, sagaStartingEvent.metadata().get(CUSTOM_CORRELATION_DATA_KEY));
         Message deadLineOccurredEvent = publishedMessages.get(1);
-        assertTrue(deadLineOccurredEvent.metaData().containsKey(CUSTOM_CORRELATION_DATA_KEY));
-        assertEquals(expectedCorrelationData, deadLineOccurredEvent.metaData().get(CUSTOM_CORRELATION_DATA_KEY));
+        assertTrue(deadLineOccurredEvent.metadata().containsKey(CUSTOM_CORRELATION_DATA_KEY));
+        assertEquals(expectedCorrelationData, deadLineOccurredEvent.metadata().get(CUSTOM_CORRELATION_DATA_KEY));
     }
 
     private void assertPublishedEvents(Object... expectedEvents) {
@@ -1147,7 +1147,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         public @NotNull MessageStream<?> interceptOnDispatch(@NotNull Message message,
                                                              @Nullable ProcessingContext context,
                                                              @NotNull MessageDispatchInterceptorChain<Message> interceptorChain) {
-            return interceptorChain.proceed(message.andMetaData(MetaData.with(CUSTOM_CORRELATION_DATA_KEY, correlationData)), context);
+            return interceptorChain.proceed(message.andMetadata(Metadata.with(CUSTOM_CORRELATION_DATA_KEY, correlationData)), context);
         }
     }
 }

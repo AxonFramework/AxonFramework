@@ -62,12 +62,12 @@ public class MessageAuthorizationHandlerInterceptor<M extends Message> implement
         Set<String> requiredAuthorities = Arrays.stream(annotation.value()).collect(Collectors.toSet());
         try {
             Set<String> messageAuthorities =
-                    Optional.ofNullable(message.metaData().get(METADATA_AUTHORITIES_KEY))
-                            .map(authorityMetaData -> {
+                    Optional.ofNullable(message.metadata().get(METADATA_AUTHORITIES_KEY))
+                            .map(authorityMetadata -> {
                                 if (logger.isDebugEnabled()) {
-                                    logger.debug("Found authorities [{}]", authorityMetaData);
+                                    logger.debug("Found authorities [{}]", authorityMetadata);
                                 }
-                                return new HashSet<>(Arrays.asList(authorityMetaData.split(",")));
+                                return new HashSet<>(Arrays.asList(authorityMetadata.split(",")));
                             })
                             .orElseThrow(() -> new UnauthorizedMessageException(
                                     "No authorities found for message with identifier [" + message.identifier() + "]"

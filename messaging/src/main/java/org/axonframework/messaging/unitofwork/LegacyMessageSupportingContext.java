@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.configuration.ComponentNotFoundException;
 import org.axonframework.messaging.Message;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -98,6 +99,11 @@ public class LegacyMessageSupportingContext implements ProcessingContext {
     public <T> T getResource(@Nonnull ResourceKey<T> key) {
         //noinspection unchecked
         return (T) resources.get(key);
+    }
+
+    @Override
+    public Map<ResourceKey<?>, Object> resources() {
+        return Map.copyOf(resources);
     }
 
     @Override

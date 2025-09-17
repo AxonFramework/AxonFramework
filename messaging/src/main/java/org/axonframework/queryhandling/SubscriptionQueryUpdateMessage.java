@@ -35,11 +35,11 @@ public interface SubscriptionQueryUpdateMessage extends ResultMessage {
 
     @Override
     @Nonnull
-    SubscriptionQueryUpdateMessage withMetaData(@Nonnull Map<String, String> metaData);
+    SubscriptionQueryUpdateMessage withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    SubscriptionQueryUpdateMessage andMetaData(@Nonnull Map<String, String> metaData);
+    SubscriptionQueryUpdateMessage andMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull

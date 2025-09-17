@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
@@ -81,7 +82,7 @@ class WorkPackageTest {
     void setUp() {
         tokenStore = spy(new InMemoryTokenStore());
         executorService = spy(new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(1)));
-        eventFilter = new TestEventFilter();
+        eventFilter = spy(new TestEventFilter());
         batchProcessor = new TestBatchProcessor();
         segment = Segment.ROOT_SEGMENT;
         initialTrackingToken = new GlobalSequenceTrackingToken(0L);
@@ -143,6 +144,30 @@ class WorkPackageTest {
         testSubject.scheduleEvent(testEvent);
 
         assertEquals(expectedToken, testSubject.lastDeliveredToken());
+    }
+
+    @Test
+    void scheduleEventIsFilteredWithContextResourcesFromTheEventEntry() throws Exception {
+        // given
+        TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
+        var aggregateIdentifier = "aggregate-1";
+        Context context = globalTrackingTokenContext(1L).withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, aggregateIdentifier);
+        var testEvent = new SimpleEntry<>(EventTestUtils.asEventMessage("some-event"), context);
+
+        // when
+        testSubject.scheduleEvent(testEvent);
+
+        // then
+        verify(eventFilter).canHandle(any(EventMessage.class), argThat(processingContext -> {
+            // Verify ProcessingContext contains the tracking token from the event entry
+            var trackingTokenAsExpected = TrackingToken.fromContext(processingContext)
+                    .map(expectedToken::equals)
+                    .orElse(false);
+            var aggregateIdentifierAsExpected = aggregateIdentifier.equals(
+                    processingContext.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY)
+            );
+            return trackingTokenAsExpected && aggregateIdentifierAsExpected;
+        }), any(Segment.class));
     }
 
     @Test

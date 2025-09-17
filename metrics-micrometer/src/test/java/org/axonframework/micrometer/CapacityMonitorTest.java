@@ -106,14 +106,14 @@ class CapacityMonitorTest {
                                                                    message -> Tags.of("myPayloadType",
                                                                                       message.payloadType()
                                                                                              .getSimpleName(),
-                                                                                      "myMetaData",
-                                                                                      message.metaData()
+                                                                                      "myMetadata",
+                                                                                      message.metadata()
                                                                                              .get("myMetadataKey")
                                                                                              .toString()));
 
-        EventMessage foo = asEventMessage(1).withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage foo = asEventMessage(1).withMetadata(Collections.singletonMap("myMetadataKey",
                                                                                            "myMetadataValue1"));
-        EventMessage bar = asEventMessage("bar").withMetaData(Collections.singletonMap("myMetadataKey",
+        EventMessage bar = asEventMessage("bar").withMetadata(Collections.singletonMap("myMetadataKey",
                                                                                                "myMetadataValue2"));
         Map<? super Message, MessageMonitor.MonitorCallback> callbacks = testSubject
                 .onMessagesIngested(Arrays.asList(foo, bar));
@@ -131,10 +131,10 @@ class CapacityMonitorTest {
                                  .anyMatch(gauge -> Objects.equals(gauge.getId().getTag("myPayloadType"), "String")));
         assertTrue(capacityGauges.stream()
                                  .anyMatch(gauge -> Objects
-                                         .equals(gauge.getId().getTag("myMetaData"), "myMetadataValue1")));
+                                         .equals(gauge.getId().getTag("myMetadata"), "myMetadataValue1")));
         assertTrue(capacityGauges.stream()
                                  .anyMatch(gauge -> Objects
-                                         .equals(gauge.getId().getTag("myMetaData"), "myMetadataValue2")));
+                                         .equals(gauge.getId().getTag("myMetadata"), "myMetadataValue2")));
     }
 
     private static EventMessage asEventMessage(Object payload) {

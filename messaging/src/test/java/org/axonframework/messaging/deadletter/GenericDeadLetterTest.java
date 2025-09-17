@@ -18,7 +18,7 @@ package org.axonframework.messaging.deadletter;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
@@ -76,7 +76,7 @@ class GenericDeadLetterTest {
         ThrowableCause expectedCause = new ThrowableCause(new RuntimeException("just because"));
         Instant expectedEnqueuedAt = Instant.now();
         Instant expectedLastTouched = Instant.now();
-        MetaData expectedDiagnostics = MetaData.with("key", "value");
+        Metadata expectedDiagnostics = Metadata.with("key", "value");
 
         DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(
                 SEQUENCE_IDENTIFIER, MESSAGE, expectedCause, expectedEnqueuedAt, expectedLastTouched,
@@ -196,8 +196,8 @@ class GenericDeadLetterTest {
         Instant expectedTime = Instant.now();
         GenericDeadLetter.clock = Clock.fixed(expectedTime, ZoneId.systemDefault());
 
-        MetaData originalDiagnostics = MetaData.with("old-key", "old-value");
-        MetaData expectedDiagnostics = MetaData.with("new-key", "new-value");
+        Metadata originalDiagnostics = Metadata.with("old-key", "old-value");
+        Metadata expectedDiagnostics = Metadata.with("new-key", "new-value");
 
         DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(
                 SEQUENCE_IDENTIFIER, MESSAGE, null, expectedTime, expectedTime, originalDiagnostics
@@ -219,8 +219,8 @@ class GenericDeadLetterTest {
         Instant expectedTime = Instant.now();
         GenericDeadLetter.clock = Clock.fixed(expectedTime, ZoneId.systemDefault());
 
-        MetaData originalDiagnostics = MetaData.with("old-key", "old-value");
-        MetaData expectedDiagnostics = MetaData.with("old-key", "old-value").and("new-key", "new-value");
+        Metadata originalDiagnostics = Metadata.with("old-key", "old-value");
+        Metadata expectedDiagnostics = Metadata.with("old-key", "old-value").and("new-key", "new-value");
 
         DeadLetter<EventMessage> testSubject = new GenericDeadLetter<>(
                 SEQUENCE_IDENTIFIER, MESSAGE, null, expectedTime, expectedTime, originalDiagnostics

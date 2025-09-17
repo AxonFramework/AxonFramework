@@ -59,7 +59,7 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
                 schema.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.payloadRevisionColumn() + " VARCHAR(255),\n" +
                 schema.payloadColumn() + " " + serializedDataType() + " NOT NULL,\n" +
-                schema.metaDataColumn() + " " + serializedDataType() + ",\n" +
+                schema.metadataColumn() + " " + serializedDataType() + ",\n" +
                 schema.aggregateTypeColumn() + " VARCHAR(255),\n" +
                 schema.aggregateIdentifierColumn() + " VARCHAR(255),\n" +
                 schema.sequenceNumberColumn() + " BIGINT,\n" +
@@ -111,7 +111,7 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
     /**
      * Returns the SQL to describe the type for serialized data columns.
      * <p>
-     * Used for the {@link DeadLetterSchema#payloadColumn()}, {@link DeadLetterSchema#metaDataColumn()},
+     * Used for the {@link DeadLetterSchema#payloadColumn()}, {@link DeadLetterSchema#metadataColumn()},
      * {@link DeadLetterSchema#tokenColumn()}, and the {@link DeadLetterSchema#diagnosticsColumn()}. Defaults to
      * {@code BLOB}.
      *

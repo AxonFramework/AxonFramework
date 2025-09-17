@@ -29,7 +29,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.serialization.Converter;
@@ -76,7 +76,7 @@ public class JacksonSerializer implements Serializer {
      * result and the {@link ClassLoader} to the ClassLoader of {@code this} class.
      * <p>
      * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
-     * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
+     * {@link MetadataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
      * ChainingContentTypeConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add
      * the {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
      *
@@ -94,7 +94,7 @@ public class JacksonSerializer implements Serializer {
      * result and the {@link ClassLoader} to the ClassLoader of {@code this} class.
      * <p>
      * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
-     * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
+     * {@link MetadataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
      * ChainingContentTypeConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add
      * the {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
      *
@@ -108,7 +108,7 @@ public class JacksonSerializer implements Serializer {
      * Instantiate a {@link JacksonSerializer} based on the fields contained in the {@link Builder}.
      * <p>
      * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
-     * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
+     * {@link MetadataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
      * ChainingContentTypeConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add
      * the {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
      *
@@ -121,7 +121,7 @@ public class JacksonSerializer implements Serializer {
         this.objectMapper = builder.objectMapper;
 
         this.objectMapper.registerModule(
-                new SimpleModule("Axon-Jackson Module").addDeserializer(MetaData.class, new MetaDataDeserializer())
+                new SimpleModule("Axon-Jackson Module").addDeserializer(Metadata.class, new MetadataDeserializer())
         );
         this.objectMapper.registerModule(new JavaTimeModule());
         if (converter instanceof ChainingContentTypeConverter) {
@@ -321,7 +321,7 @@ public class JacksonSerializer implements Serializer {
      * result and the {@link ClassLoader} to the ClassLoader of {@code this} class.
      * <p>
      * Upon instantiation, the ObjectMapper will get two modules registered to it by default, (1) the
-     * {@link MetaDataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
+     * {@link MetadataDeserializer} and the (2) {@link JavaTimeModule}. Lastly, if the provided converter is of type
      * ChainingContentTypeConverter, the {@link JacksonSerializer#registerConverters} is performed to automatically add
      * the {@link JsonNodeToByteArrayConverter} and {@link ByteArrayToJsonNodeConverter}.
      */

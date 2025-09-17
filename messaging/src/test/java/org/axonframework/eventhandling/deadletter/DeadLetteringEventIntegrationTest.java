@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
@@ -35,7 +36,7 @@ import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreami
 import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.annotation.MessageIdentifier;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
@@ -172,7 +173,7 @@ public abstract class DeadLetteringEventIntegrationTest {
                 }
                 return Decisions.enqueue(
                         ThrowableCause.truncated(decisionThrowable),
-                        l -> MetaData.with(
+                        l -> Metadata.with(
                                 "retries",
                                 Integer.toString(Integer.parseInt(l.diagnostics().getOrDefault("retries", "0")) + 1)
                         )
@@ -225,7 +226,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     @AfterEach
     void tearDown() {
         boolean executorTerminated = false;
-        CompletableFuture<Void> processorShutdown = streamingProcessor.shutdownAsync();
+        CompletableFuture<Void> processorShutdown = streamingProcessor.shutdown();
         try {
             processorShutdown.get(15, TimeUnit.SECONDS);
             executorTerminated = executor.awaitTermination(50, TimeUnit.MILLISECONDS);
@@ -244,7 +245,7 @@ public abstract class DeadLetteringEventIntegrationTest {
      * Start this test's {@link StreamingEventProcessor}. This will start event handling.
      */
     protected void startProcessingEvent() {
-        streamingProcessor.start();
+        FutureUtils.joinAndUnwrap(streamingProcessor.start());
     }
 
     /**

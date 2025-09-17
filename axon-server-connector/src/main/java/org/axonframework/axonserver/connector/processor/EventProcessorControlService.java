@@ -24,7 +24,6 @@ import io.axoniq.axonserver.grpc.control.EventProcessorInfo;
 import io.axoniq.axonserver.grpc.control.PlatformOutboundInstruction;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.processors.EventProcessor;
@@ -256,12 +255,11 @@ public class EventProcessorControlService {
                                 name);
                     return CompletableFuture.completedFuture(false);
                 } else {
-                    ((StreamingEventProcessor) processor).releaseSegment(segmentId);
+                    return ((StreamingEventProcessor) processor).releaseSegment(segmentId).thenApply(r -> true);
                 }
             } catch (Exception e) {
                 return exceptionallyCompletedFuture(e);
             }
-            return CompletableFuture.completedFuture(true);
         }
 
         @Override
@@ -319,22 +317,12 @@ public class EventProcessorControlService {
 
         @Override
         public CompletableFuture<Void> pauseProcessor() {
-            try {
-                processor.shutDown();
-                return FutureUtils.emptyCompletedFuture();
-            } catch (Exception e) {
-                return exceptionallyCompletedFuture(e);
-            }
+            return processor.shutdown();
         }
 
         @Override
         public CompletableFuture<Void> startProcessor() {
-            try {
-                processor.start();
-                return FutureUtils.emptyCompletedFuture();
-            } catch (Exception e) {
-                return exceptionallyCompletedFuture(e);
-            }
+            return processor.start();
         }
 
         private <T> CompletableFuture<T> exceptionallyCompletedFuture(Exception e) {

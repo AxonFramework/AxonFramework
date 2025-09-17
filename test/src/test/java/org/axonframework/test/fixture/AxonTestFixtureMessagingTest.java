@@ -17,19 +17,23 @@
 package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.fixture.sampledomain.ChangeStudentNameCommand;
@@ -42,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -151,7 +156,7 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Test
-        void whenCommandWithMetaDataThenSuccessWithTheMetaData() {
+        void whenCommandWithMetadataThenSuccessWithTheMetadata() {
             var configurer = MessagingConfigurer.create();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
@@ -159,14 +164,14 @@ class AxonTestFixtureMessagingTest {
 
             fixture.when()
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"),
-                            MetaData.with("sample", "metaValue"))
+                            Metadata.with("sample", "metaValue"))
                    .then()
                    .success()
                    .resultMessagePayload(new CommandResult("Result name-1", "metaValue"));
         }
 
         @Test
-        void whenCommandWithMetaDataMapThenSuccessWithTheMetaData() {
+        void whenCommandWithMetadataMapThenSuccessWithTheMetadata() {
             var configurer = MessagingConfigurer.create();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
@@ -180,7 +185,7 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Test
-        void whenCommandWithMetaDataMapThenSuccessWithTheMetaDataSatisfies() {
+        void whenCommandWithMetadataMapThenSuccessWithTheMetadataSatisfies() {
             var configurer = MessagingConfigurer.create();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
 
@@ -218,10 +223,10 @@ class AxonTestFixtureMessagingTest {
         void givenEventWhenCommandThenExpectEvents() {
             var configurer = MessagingConfigurer.create();
             var studentEvents = new ArrayList<>();
-            configurer.registerEventSink(c -> (context, events) -> {
+            configurer.registerEventSink(c -> new TestEventSink((context, events) -> {
                 studentEvents.addAll(events);
                 return FutureUtils.emptyCompletedFuture();
-            });
+            }));
             configurer.registerCommandBus(
                     c -> aCommandBus()
                             .subscribe(
@@ -248,7 +253,8 @@ class AxonTestFixtureMessagingTest {
 
         @Nonnull
         private static SimpleCommandBus aCommandBus() {
-            return new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE), Collections.emptyList());
+            return new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE),
+                                        Collections.emptyList());
         }
 
         @Test
@@ -402,13 +408,13 @@ class AxonTestFixtureMessagingTest {
             var configurer = MessagingConfigurer.create();
             AtomicBoolean eventHandled = new AtomicBoolean(false);
             registerChangeStudentNameHandlerReturnsSingle(configurer);
-            configurer.registerEventSink(c -> (context, events) -> {
+            configurer.registerEventSink(c -> new TestEventSink((context, events) -> {
                 if (!eventHandled.getAndSet(true)) {
                     var commandGateway = c.getComponent(CommandGateway.class);
                     commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
                 }
                 return FutureUtils.emptyCompletedFuture();
-            });
+            }));
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -423,13 +429,13 @@ class AxonTestFixtureMessagingTest {
             var configurer = MessagingConfigurer.create();
             AtomicBoolean eventHandled = new AtomicBoolean(false);
             registerChangeStudentNameHandlerReturnsSingle(configurer);
-            configurer.registerEventSink(c -> (context, events) -> {
+            configurer.registerEventSink(c -> new TestEventSink((context, events) -> {
                 if (!eventHandled.getAndSet(true)) {
                     var commandGateway = c.getComponent(CommandGateway.class);
                     commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
                 }
                 return FutureUtils.emptyCompletedFuture();
-            });
+            }));
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -448,9 +454,9 @@ class AxonTestFixtureMessagingTest {
         @Test
         void whenEventHandlerFailsThenException() {
             var configurer = MessagingConfigurer.create();
-            configurer.registerEventSink(
-                    c -> (context, events) -> CompletableFuture.failedFuture(new RuntimeException("Simulated failure"))
-            );
+            configurer.registerEventSink(c -> new TestEventSink(
+                    CompletableFuture.failedFuture(new RuntimeException("Simulated failure"))
+            ));
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -464,7 +470,7 @@ class AxonTestFixtureMessagingTest {
         @Test
         void whenEventHandlerDoesNotFailThenSuccess() {
             var configurer = MessagingConfigurer.create();
-            configurer.registerEventSink(c -> (context, events) -> FutureUtils.emptyCompletedFuture());
+            configurer.registerEventSink(c -> new TestEventSink(FutureUtils.emptyCompletedFuture()));
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -478,7 +484,7 @@ class AxonTestFixtureMessagingTest {
         @Test
         void whenEventsHandlerDoesNotFailThenSuccess() {
             var configurer = MessagingConfigurer.create();
-            configurer.registerEventSink(c -> (context, events) -> FutureUtils.emptyCompletedFuture());
+            configurer.registerEventSink(c -> new TestEventSink(FutureUtils.emptyCompletedFuture()));
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -499,8 +505,8 @@ class AxonTestFixtureMessagingTest {
             @Test
             void ifExpectSuccessButException() {
                 var configurer = MessagingConfigurer.create();
-                configurer.registerEventSink(c -> (context, events) -> CompletableFuture.failedFuture(
-                        new RuntimeException("Simulated failure")
+                configurer.registerEventSink(c -> new TestEventSink(
+                        CompletableFuture.failedFuture(new RuntimeException("Simulated failure"))
                 ));
 
                 var fixture = AxonTestFixture.with(configurer);
@@ -517,7 +523,7 @@ class AxonTestFixtureMessagingTest {
             @Test
             void ifExpectExceptionButSuccess() {
                 var configurer = MessagingConfigurer.create();
-                configurer.registerEventSink(c -> (context, events) -> FutureUtils.emptyCompletedFuture());
+                configurer.registerEventSink(c -> new TestEventSink(FutureUtils.emptyCompletedFuture()));
 
                 var fixture = AxonTestFixture.with(configurer);
 
@@ -535,8 +541,8 @@ class AxonTestFixtureMessagingTest {
             @Test
             void whenEventHandlerFailsThenException() {
                 var configurer = MessagingConfigurer.create();
-                configurer.registerEventSink(c -> (context, events) -> CompletableFuture.failedFuture(
-                        new IllegalStateException("Simulated failure")
+                configurer.registerEventSink(c -> new TestEventSink(
+                        CompletableFuture.failedFuture(new IllegalStateException("Simulated failure"))
                 ));
 
                 var fixture = AxonTestFixture.with(configurer);
@@ -677,7 +683,7 @@ class AxonTestFixtureMessagingTest {
                         new QualifiedName(ChangeStudentNameCommand.class),
                         (command, context) -> {
                             ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.payload();
-                            var metadataSample = (String) command.metaData().get("sample");
+                            var metadataSample = command.metadata().get("sample");
                             var eventSink = c.getComponent(EventSink.class);
                             eventSink.publish(context, studentNameChangedEventMessage(payload.id(), payload.name(), 1));
                             var resultMessage = new GenericCommandResultMessage<>(
@@ -686,5 +692,25 @@ class AxonTestFixtureMessagingTest {
                             return MessageStream.just(resultMessage);
                         })
         ));
+    }
+
+    private record TestEventSink(
+            BiFunction<ProcessingContext, List<EventMessage>, CompletableFuture<Void>> publishFunction
+    ) implements EventSink {
+
+        public TestEventSink(CompletableFuture<Void> publishResult) {
+            this((context, events) -> publishResult);
+        }
+
+        @Override
+        public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                               @Nonnull List<EventMessage> events) {
+            return publishFunction.apply(context, events);
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            throw new UnsupportedOperationException("Unimportant for this test case");
+        }
     }
 }

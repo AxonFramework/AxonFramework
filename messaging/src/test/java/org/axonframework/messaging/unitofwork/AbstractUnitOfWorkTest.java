@@ -20,7 +20,7 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
 import org.axonframework.utils.MockException;
@@ -199,7 +199,7 @@ class AbstractUnitOfWorkTest {
     @Test
     void whenGettingCorrelationMetaThrows_thenCatchExceptions() {
         subject.registerCorrelationDataProvider(new ThrowingCorrelationDataProvider());
-        MetaData correlationData = subject.getCorrelationData();
+        Metadata correlationData = subject.getCorrelationData();
         assertNotNull(correlationData);
     }
 

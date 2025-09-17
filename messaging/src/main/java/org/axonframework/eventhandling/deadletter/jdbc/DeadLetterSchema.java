@@ -45,7 +45,7 @@ public class DeadLetterSchema {
     private final String payloadTypeColumn;
     private final String payloadRevisionColumn;
     private final String payloadColumn;
-    private final String metaDataColumn;
+    private final String metadataColumn;
     private final String aggregateTypeColumn;
     private final String aggregateIdentifierColumn;
     private final String sequenceNumberColumn;
@@ -72,7 +72,7 @@ public class DeadLetterSchema {
                         schema.payloadTypeColumn(),
                         schema.payloadRevisionColumn(),
                         schema.payloadColumn(),
-                        schema.metaDataColumn(),
+                        schema.metadataColumn(),
                         schema.aggregateTypeColumn(),
                         schema.aggregateIdentifierColumn(),
                         schema.sequenceNumberColumn(),
@@ -102,7 +102,7 @@ public class DeadLetterSchema {
         this.payloadTypeColumn = builder.payloadTypeColumn;
         this.payloadRevisionColumn = builder.payloadRevisionColumn;
         this.payloadColumn = builder.payloadColumn;
-        this.metaDataColumn = builder.metaDataColumn;
+        this.metadataColumn = builder.metadataColumn;
         this.aggregateTypeColumn = builder.aggregateTypeColumn;
         this.aggregateIdentifierColumn = builder.aggregateIdentifierColumn;
         this.sequenceNumberColumn = builder.sequenceNumberColumn;
@@ -249,12 +249,12 @@ public class DeadLetterSchema {
     }
 
     /**
-     * Returns the configured {@code metaData} column name.
+     * Returns the configured {@code metadata} column name.
      *
-     * @return The configured {@code metaData} column name.
+     * @return The configured {@code metadata} column name.
      */
-    public String metaDataColumn() {
-        return metaDataColumn;
+    public String metadataColumn() {
+        return metadataColumn;
     }
 
     /**
@@ -386,7 +386,7 @@ public class DeadLetterSchema {
         private String payloadTypeColumn = "payloadType";
         private String payloadRevisionColumn = "payloadRevision";
         private String payloadColumn = "payload";
-        private String metaDataColumn = "metaData";
+        private String metadataColumn = "metadata";
         private String aggregateTypeColumn = "aggregateType";
         private String aggregateIdentifierColumn = "aggregateIdentifier";
         private String sequenceNumberColumn = "sequenceNumber";
@@ -544,14 +544,14 @@ public class DeadLetterSchema {
         }
 
         /**
-         * Sets the name of the {@code metaData} column. Defaults to {@code metaData}.
+         * Sets the name of the {@code metadata} column. Defaults to {@code metadata}.
          *
-         * @param metaDataColumn The name for the {@code metaData} column.
+         * @param metadataColumn The name for the {@code metadata} column.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder metaDataColumn(String metaDataColumn) {
-            assertNonEmpty(metaDataColumn, "The metaDataColumn should be not null or empty");
-            this.metaDataColumn = metaDataColumn;
+        public Builder metadataColumn(String metadataColumn) {
+            assertNonEmpty(metadataColumn, "The metadataColumn should be not null or empty");
+            this.metadataColumn = metadataColumn;
             return this;
         }
 

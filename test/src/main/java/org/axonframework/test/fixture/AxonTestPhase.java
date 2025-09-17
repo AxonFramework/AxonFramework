@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.Arrays;
@@ -119,6 +119,12 @@ public interface AxonTestPhase {
          * @return A {@link When} instance that allows executing the test.
          */
         When when();
+
+        /**
+         * Stops the fixture, releasing any active resources, like registered handlers or pending event processing
+         * tasks.
+         */
+        void stop();
     }
 
     /**
@@ -143,30 +149,30 @@ public interface AxonTestPhase {
          * @return The current Given instance, for fluent interfacing.
          */
         default Given event(@Nonnull Object payload) {
-            return event(payload, MetaData.emptyInstance());
+            return event(payload, Metadata.emptyInstance());
         }
 
         /**
-         * Configures a single event with the given {@code payload} and {@code metaData} as part of the "given" state.
+         * Configures a single event with the given {@code payload} and {@code metadata} as part of the "given" state.
          * This event will be published.
          *
          * @param payload  The payload of the event to publish.
-         * @param metaData The metadata to attach to the event.
+         * @param metadata The metadata to attach to the event.
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given event(@Nonnull Object payload, @Nonnull Map<String, String> metaData) {
-            return event(payload, MetaData.from(metaData));
+        default Given event(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+            return event(payload, Metadata.from(metadata));
         }
 
         /**
-         * Configures a single event with the given {@code payload} and {@code metaData} as part of the "given" state.
+         * Configures a single event with the given {@code payload} and {@code metadata} as part of the "given" state.
          * This event will be published.
          *
          * @param payload  The payload of the event to publish.
-         * @param metaData The metadata to attach to the event.
+         * @param metadata The metadata to attach to the event.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given event(@Nonnull Object payload, @Nonnull MetaData metaData);
+        Given event(@Nonnull Object payload, @Nonnull Metadata metadata);
 
         /**
          * Configures the given {@code messages} as events in the "given" state. These events will be published in the
@@ -214,30 +220,30 @@ public interface AxonTestPhase {
          * @return The current Given instance, for fluent interfacing.
          */
         default Given command(@Nonnull Object payload) {
-            return command(payload, MetaData.emptyInstance());
+            return command(payload, Metadata.emptyInstance());
         }
 
         /**
-         * Configures a single command with the given {@code payload} and {@code metaData} as part of the "given" state.
+         * Configures a single command with the given {@code payload} and {@code metadata} as part of the "given" state.
          * This command will be dispatched to corresponding command handlers.
          *
          * @param payload  The payload of the command to dispatch.
-         * @param metaData The metadata to attach to the command.
+         * @param metadata The metadata to attach to the command.
          * @return The current Given instance, for fluent interfacing.
          */
-        default Given command(@Nonnull Object payload, @Nonnull Map<String, String> metaData) {
-            return command(payload, MetaData.from(metaData));
+        default Given command(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+            return command(payload, Metadata.from(metadata));
         }
 
         /**
-         * Configures a single command with the given {@code payload} and {@code metaData} as part of the "given" state.
+         * Configures a single command with the given {@code payload} and {@code metadata} as part of the "given" state.
          * This command will be dispatched to corresponding command handlers.
          *
          * @param payload  The payload of the command to dispatch.
-         * @param metaData The metadata to attach to the command.
+         * @param metadata The metadata to attach to the command.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given command(@Nonnull Object payload, @Nonnull MetaData metaData);
+        Given command(@Nonnull Object payload, @Nonnull Metadata metadata);
 
         /**
          * Configures the given {@code messages} as commands in the "given" state.
@@ -297,6 +303,9 @@ public interface AxonTestPhase {
      */
     interface When {
 
+        /**
+         * When-phase specific for executing a {@link CommandMessage command}.
+         */
         interface Command {
 
             /**
@@ -307,6 +316,9 @@ public interface AxonTestPhase {
             Then.Command then();
         }
 
+        /**
+         * When-phase specific for publishing an {@link EventMessage event}.
+         */
         interface Event {
 
             /**
@@ -329,47 +341,47 @@ public interface AxonTestPhase {
         }
 
         /**
-         * Dispatches the given {@code payload} command with the provided {@code metaData} to the appropriate command
+         * Dispatches the given {@code payload} command with the provided {@code metadata} to the appropriate command
          * handler and records all activity for result validation.
          *
          * @param payload  The command to execute.
-         * @param metaData The metadata to attach to the command.
+         * @param metadata The metadata to attach to the command.
          * @return The current When instance, for fluent interfacing.
          */
-        default Command command(@Nonnull Object payload, @Nonnull Map<String, String> metaData) {
-            return command(payload, MetaData.from(metaData));
+        default Command command(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+            return command(payload, Metadata.from(metadata));
         }
 
         /**
-         * Dispatches the given {@code payload} command with the provided {@code metaData} to the appropriate command
+         * Dispatches the given {@code payload} command with the provided {@code metadata} to the appropriate command
          * handler and records all activity for result validation.
          *
          * @param payload  The command to execute.
-         * @param metaData The metadata to attach to the command.
+         * @param metadata The metadata to attach to the command.
          * @return The current When instance, for fluent interfacing.
          */
-        Command command(@Nonnull Object payload, @Nonnull MetaData metaData);
+        Command command(@Nonnull Object payload, @Nonnull Metadata metadata);
 
         /**
-         * Publishes the given {@code payload} event with the provided {@code metaData} to the appropriate event handler
+         * Publishes the given {@code payload} event with the provided {@code metadata} to the appropriate event handler
          * and records all activity for result validation. The event will be published with empty metadata.
          *
          * @param payload The command to execute.
          * @return The current When instance, for fluent interfacing.
          */
         default Event event(@Nonnull Object payload) {
-            return event(payload, MetaData.emptyInstance());
+            return event(payload, Metadata.emptyInstance());
         }
 
         /**
-         * Publishes the given {@code payload} event with the provided {@code metaData} to the appropriate event handler
+         * Publishes the given {@code payload} event with the provided {@code metadata} to the appropriate event handler
          * and records all activity for result validation.
          *
          * @param payload  The event to execute.
-         * @param metaData The metadata to attach to the command.
+         * @param metadata The metadata to attach to the command.
          * @return The current When instance, for fluent interfacing.
          */
-        Event event(@Nonnull Object payload, @Nonnull MetaData metaData);
+        Event event(@Nonnull Object payload, @Nonnull Metadata metadata);
 
         /**
          * Publishes the given Event Messages to the appropriate event handlers and records all activity for result
@@ -568,34 +580,6 @@ public interface AxonTestPhase {
             T noCommands();
 
             /**
-             * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
-             * test scenarios within a single test method. The same configuration from the original fixture is reused,
-             * so all components are shared among the invocations.
-             * <p>
-             * Example usage:
-             * <pre>
-             * {@code
-             * fixture.given()
-             *        .event(new AccountCreatedEvent("account-1"))
-             *        .when()
-             *        .command(new WithdrawMoneyCommand("account-1", 50.00))
-             *        .then()
-             *        .events(new MoneyWithdrawnEvent("account-1", 50.00))
-             *        .success()
-             *        .and()  // Return to setup phase with same configuration
-             *        .given() // Start a new scenario
-             *        .event(new AccountCreatedEvent("account-2"))
-             *        .when()
-             *        .command(new WithdrawMoneyCommand("account-2", 30.00))
-             *        .then()
-             *        .events(new MoneyWithdrawnEvent("account-2", 30.00));
-             * }
-             * </pre>
-             *
-             * @return a {@link Setup} instance that allows configuring a new test scenario.
-             */
-
-            /**
              * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
              * should be exactly of that type, subclasses are not accepted.
              * <p>
@@ -631,7 +615,42 @@ public interface AxonTestPhase {
              */
             T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer);
 
+            /**
+             * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
+             * test scenarios within a single test method. The same configuration from the original fixture is reused,
+             * so all components are shared among the invocations.
+             * <p>
+             * Example usage:
+             * <pre>
+             * {@code
+             * fixture.given()
+             *        .event(new AccountCreatedEvent("account-1"))
+             *        .when()
+             *        .command(new WithdrawMoneyCommand("account-1", 50.00))
+             *        .then()
+             *        .events(new MoneyWithdrawnEvent("account-1", 50.00))
+             *        .success()
+             *        .and()  // Return to setup phase with same configuration
+             *        .given() // Start a new scenario
+             *        .event(new AccountCreatedEvent("account-2"))
+             *        .when()
+             *        .command(new WithdrawMoneyCommand("account-2", 30.00))
+             *        .then()
+             *        .events(new MoneyWithdrawnEvent("account-2", 30.00));
+             * }
+             * </pre>
+             *
+             * @return A {@link Setup} instance that allows configuring a new test scenario.
+             */
             Setup and();
+
+            /**
+             * Stops the fixture, releasing any active resources, like registered handlers or pending event processing
+             * tasks.
+             */
+            default void stop() {
+                and().stop();
+            }
         }
     }
 }

@@ -109,7 +109,7 @@ public interface ResultValidator<T> {
      * Expect the command handler to return the given {@code expectedResultMessage} after execution. The actual and
      * expected values are compared using their equals methods.
      * <p>
-     * Comparison is done on message payload and meta data.
+     * Comparison is done on message payload and metadata.
      * </p>
      *
      * @param expectedResultMessage The expected result message of the command execution

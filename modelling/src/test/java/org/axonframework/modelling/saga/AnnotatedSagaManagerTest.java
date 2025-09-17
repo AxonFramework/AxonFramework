@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.replay.ResetNotSupportedException;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.annotation.MetadataValue;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -240,8 +240,8 @@ public class AnnotatedSagaManagerTest {
 
         @SagaEventHandler(associationProperty = "myIdentifier")
         public void handleSpecificMiddleEvent(MiddleEvent event,
-                                              @MetaDataValue(value = "catA", required = true) String category) {
-            // this handler is more specific, but requires meta data that not all events might have
+                                              @MetadataValue(value = "catA", required = true) String category) {
+            // this handler is more specific, but requires metadata that not all events might have
             capturedEvents.add(event);
             specificHandlerInvocations++;
         }

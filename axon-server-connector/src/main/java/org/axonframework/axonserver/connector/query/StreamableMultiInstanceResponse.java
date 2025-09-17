@@ -20,7 +20,7 @@ import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
@@ -122,13 +122,13 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
                                             new MessageType(responseType),
                                             result.next(),
                                             responseType,
-                                            resultMessage.metaData()
+                                            resultMessage.metadata()
             );
         } else {
             delegate = new GenericMessage(new MessageType(responseType),
                                             result.next(),
                                             responseType,
-                                            MetaData.emptyInstance());
+                                            Metadata.emptyInstance());
         }
         GenericQueryResponseMessage message = new GenericQueryResponseMessage(delegate);
         responseHandler.send(serializer.serializeResponse(message, requestId));

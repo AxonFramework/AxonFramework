@@ -38,7 +38,7 @@ Major API Changes
   check the [Unit of Work](#unit-of-work) section for more details if you are facing this predicament.
 * Messages have undergone a number of major changes. Firstly, they now contain a `MessageType`, decoupling a messages (
   business) type from Java's type system. You can find more details on this [here](#message-type-and-qualified-name).
-  Secondly, the `MetaData` of each `Message` now reflects a `Map<String, String>` instead of `Map<String, ?>`, thus
+  Secondly, the `Metadata` of each `Message` now reflects a `Map<String, String>` instead of `Map<String, ?>`, thus
   forcing metadata values to strings. Please read [this](#metadata-with-string-values) section for more details on this
   shift. Other noteworthy adjustments, are the removal of the [static
   `Message` factory methods](#factory-methods-like-genericmessageasmessageobject)
@@ -132,7 +132,7 @@ To conclude, here is a list of changes to take into account concerning the `Unit
    `ProcessingLifecycle#onError` registers an action to be taken on error, while `whenComplete` registers an action to
    performed when after worked as intended. `ProcessingLifecycle#doFinally` registers an operation that is performed on
    success **and** failure of the `ProcessingLifecycle`.
-7. Correlation data management, and thus construction of the initial `MetaData` of any `Message`, is removed entirely.
+7. Correlation data management, and thus construction of the initial `Metadata` of any `Message`, is removed entirely.
    This is inline with the `UnitOfWork` no longer revolving around a `Message`.
 8. The "current" `UnitOfWork` (including the `CurrentUnitOfWork`) is no longer a concept. Instead, all infrastructure
    components will pass along the current context by containing the `ProcessingContext` as a parameter throughout.
@@ -213,10 +213,10 @@ Framework. These factory methods no longer align with the new API, which expects
 consciously. Hence,
 users of the factory methods need to revert to using the constructor of the `Message` implementation instead.
 
-### MetaData with String values
+### Metadata with String values
 
-The `MetaData` class in Axon Framework changed its implementation. Originally, it was a `Map<String, ?>` implementation.
-As of Axon Framework 5, it is a `Map<String, String>`.
+The `Metadata` class (formerly `MetaData`) in Axon Framework changed its implementation. Originally, it was a
+`Map<String, ?>` implementation. As of Axon Framework 5, it is a `Map<String, String>`.
 
 The reason for this shift can be broken down in three main pillars:
 
@@ -235,7 +235,7 @@ the long run.
 We have renamed the "get-styled" getters **all** `Message` implementations by removing "get" from the signature.
 Thus, `Message#getIdentifier()` is now called `Message#identifier()`, `Message#getPayload()` is now called
 `Message#payload()`, `Message#getPayloadType()` is now `Message#payloadType()`, and `Message#getMetaData()` is now
-referred to as `Message#metaData()`. A similar rename occurred for the `EventMessage`, for which we renamed the
+referred to as `Message#metadata()`. A similar rename occurred for the `EventMessage`, for which we renamed the
 `getTimestamp()` method to `timestamp()`. Lastly, the `QueryMessage` and `SubscriptionQueryMessage` have undergone the
 same rename, for `getResponseType()` and `getUpdateResponseType()` respectively.
 
@@ -367,7 +367,7 @@ handler should dispatch a command (e.g., was with process automations), it is st
 
 For a removal perspective, similarly as with the `CommandBus`, the `CommandCallback` has not returned on this interface.
 To deal with successes or failures of command handling, the now default `CompletableFuture` should be consulted instead.
-Furthermore, the `MetaData` adding operations have mostly been removed. The only version left expects the user to deal
+Furthermore, the `Metadata` adding operations have mostly been removed. The only version left expects the user to deal
 with the `CommandResult` manually. Lastly, we dropped the timeout options on the `sendAndWait` operations. Whenever
 needed, adding these yourself around the `CompletableFuture` or `CommandResult` are straightforward. However, as with
 anything, if you feel strongly about certain supported features that have been adjusted, please
@@ -591,8 +591,7 @@ We have introduced an entirely new JPA entry for the `AggregateBasedJpaEventStor
 `AggregateBasedJpaEntry`. This entry has numerous difference compared to the `DomainEventEntry` used by the
 `JpaEventStorageEngine`. For one, the layering of the `DomainEventEntry`, which had four abstract classes and two
 interfaces (marked for removal [here](#removed-classes)) and will not return for the `AggregateBasedJpaEntry`.
-Furthermore,
-next to the class name, resolution in a table rename, several columns have been renamed. Please see
+Furthermore, next to the class name, resolution in a table rename, several columns have been renamed. Please see
 the [Stored Format Changes](#stored-format-changes) section for more details on the actual changes.
 
 Besides the entry, the construction of the storage engine changed slightly as well.
@@ -626,26 +625,37 @@ The `EventProcessingModule` (along with the `EventProcessingConfigurer` and `Eve
 that were implemented by this class) has been removed from the framework. To configure default settings for Event
 Processors and register instances, use the `MessagingConfigurer#eventProcessing` method.
 
+### Processing Group layer removal
+The `ProcessingGroup` layer has been removed from the framework. This layer was used to group Event Handlers to be
+assigned to a single Event Processor.
+The new configuration API just allows you to register Event Handlers directly to an Event Processor with the following
+syntax:
+```java
+EventProcessorModule.pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
+.eventHandlingComponents(components -> components.declarative(eventHandler1).annotated(eventHandler2))
+.notCustomized();
+```
+With this usage the `eventHandler1` and `eventHandler2` will be assigned to the same Event Processor with the name
+`when-student-enrolled-to-max-courses-then-send-notification`.
+It's an equivalent of the `@ProcessingGroup("when-student-enrolled-to-max-courses-then-send-notification")` annotation
+before.
+
 ### TrackingEventProcessor Removal
 
 The `TrackingEventProcessor` has been removed from the framework, with `PooledStreamingEventProcessor` taking over as
-the default streaming event processor.
-The main difference between these processors lies in their threading model, but the benefits of the PooledStreaming
-event processor far outweighed the Tracking one.
+the default streaming event processor. The main difference between these processors lies in their threading model, but
+the benefits of the PooledStreaming event processor far outweighed the Tracking one.
 
 In the `PooledStreamingEventProcessor` there is a much lower IO overhead, and more segments can be processed in parallel
-with the same resources.
-The processor uses one thread pool to read the event stream and another thread pool to process the events, so it reads
-the stream only once regardless of segment count.
-For example, when processing 8 segments on a single instance, instead of reading the event stream 8 times, it now reads
-it once.
-In the contrary, the `TrackingEventProcessor` opens a separate event stream per segment it claims.
+with the same resources. The processor uses one thread pool to read the event stream and another thread pool to process
+the events, so it reads the stream only once regardless of segment count. For example, when processing 8 segments on a
+single instance, instead of reading the event stream 8 times, it now reads it once. In the contrary, the
+`TrackingEventProcessor` opens a separate event stream per segment it claims.
 
 The pooled streaming processor has one limitation: segments process as fast as the slowest segment. However, this minor
 disadvantage is outweighed by the `PooledStreamingEventProcessor` advantages and does not warrant maintaining the
-`TrackingEventProcessor`.
-Users who previously configured `TrackingEventProcessor` instances or used `tracking` mode in Spring Boot configuration
-should migrate to `PooledStreamingEventProcessor`.
+`TrackingEventProcessor`. Users who previously configured `TrackingEventProcessor` instances or used `tracking` mode in
+Spring Boot configuration should migrate to `PooledStreamingEventProcessor`.
 
 ## ApplicationConfigurer and Configuration
 
@@ -705,13 +715,13 @@ Here's an example of how to register a `DefaultCommandGateway` through the `regi
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-            .componentRegistry(registry -> registry.registerComponent(
-                    CommandGateway.class,
-                    config -> new DefaultCommandGateway(
-                            config.getComponent(CommandBus.class),
-                            config.getComponent(MessageTypeResolver.class)
-                    )
-            ));
+                       .componentRegistry(registry -> registry.registerComponent(
+                               CommandGateway.class,
+                               config -> new DefaultCommandGateway(
+                                       config.getComponent(CommandBus.class),
+                                       config.getComponent(MessageTypeResolver.class)
+                               )
+                       ));
     // Further configuration...
 }
 ```
@@ -744,24 +754,24 @@ components **and** decorators:
 ```java
 public static void main(String[] args) {
     EventSourcingConfigurer.create()
-            .componentRegistry(registry -> registry.registerComponent(
-                    ComponentDefinition.ofType(AxonServerConnectionManager.class)
-                            .withInstance(AxonServerConnectionManager.builder()
-                                    /* left out for brevity*/
-                                    .build())
-                            .onStart(
-                                    Phase.INSTRUCTION_COMPONENTS,
-                                    AxonServerConnectionManager::start
-                            )
-            ))
-            .componentRegistry(registry -> registry.registerDecorator(
-                    DecoratorDefinition.forType(DeadlineManager.class)
-                            .with((config, name, delegate) -> /* left out for brevity*/)
-                            .onShutdown(
-                                    Phase.INBOUND_EVENT_CONNECTORS,
-                                    DeadlineManager::shutdown
-                            )
-            ));
+                           .componentRegistry(registry -> registry.registerComponent(
+                                   ComponentDefinition.ofType(AxonServerConnectionManager.class)
+                                                      .withInstance(AxonServerConnectionManager.builder()
+                                                                                               /* left out for brevity*/
+                                                                                               .build())
+                                                      .onStart(
+                                                              Phase.INSTRUCTION_COMPONENTS,
+                                                              AxonServerConnectionManager::start
+                                                      )
+                           ))
+                           .componentRegistry(registry -> registry.registerDecorator(
+                                   DecoratorDefinition.forType(DeadlineManager.class)
+                                                      .with((config, name, delegate) -> /* left out for brevity*/)
+                                                      .onShutdown(
+                                                              Phase.INBOUND_EVENT_CONNECTORS,
+                                                              DeadlineManager::shutdown
+                                                      )
+                           ));
 }
 ```
 
@@ -792,17 +802,17 @@ Here's an example of how we can decorate the `SimpleCommandBus` in with a `Compo
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-            .componentRegistry(registry -> registry.registerComponent(
-                    CommandBus.class, config -> new SimpleCommandBus()
-            ))
-            .componentRegistry(registry -> registry.registerDecorator(
-                    CommandBus.class,
-                    0,
-                    (config, name, delegate) -> new TracingCommandBus(
-                            delegate,
-                            config.getComponent(CommandBusSpanFactory.class)
-                    )
-            ));
+                       .componentRegistry(registry -> registry.registerComponent(
+                               CommandBus.class, config -> new SimpleCommandBus()
+                       ))
+                       .componentRegistry(registry -> registry.registerDecorator(
+                               CommandBus.class,
+                               0,
+                               (config, name, delegate) -> new TracingCommandBus(
+                                       delegate,
+                                       config.getComponent(CommandBusSpanFactory.class)
+                               )
+                       ));
     // Further configuration...
 }
 ```
@@ -830,17 +840,17 @@ present:
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-            .componentRegistry(registry -> registry.registerEnhancer(configurer -> {
-                if (configurer.hasComponent(CommandBus.class)) {
-                    configurer.registerDecorator(
-                            CommandBus.class, 0,
-                            (config, name, delegate) -> new TracingCommandBus(
-                                    delegate,
-                                    config.getComponent(CommandBusSpanFactory.class)
-                            )
-                    );
-                }
-            }));
+                       .componentRegistry(registry -> registry.registerEnhancer(configurer -> {
+                           if (configurer.hasComponent(CommandBus.class)) {
+                               configurer.registerDecorator(
+                                       CommandBus.class, 0,
+                                       (config, name, delegate) -> new TracingCommandBus(
+                                               delegate,
+                                               config.getComponent(CommandBusSpanFactory.class)
+                                       )
+                               );
+                           }
+                       }));
     // Further configuration...
 }
 ```
@@ -879,10 +889,10 @@ Down below is shortened example on how to register a `StatefulCommandHandlingMod
 ```java
 public static void main(String[] args) {
     ModellingConfigurer.create()
-            .registerStatefulCommandHandlingModule(
-                    StatefulCommandHandlingModule.named("my-module")
-                    // Further MODULE configuration...
-            );
+                       .registerStatefulCommandHandlingModule(
+                               StatefulCommandHandlingModule.named("my-module")
+                               // Further MODULE configuration...
+                       );
     // Further configuration...
 }
 ```
@@ -911,16 +921,16 @@ Down below is an example when a factory is **not** invoked:
 public static void main(String[] args) {
     AxonConfiguration configuration =
             MessagingConfigurer.create()
-                    .componentRegistry(registry -> registry.registerComponent(
-                            CommandGateway.class,
-                            config -> new DefaultCommandGateway(
-                                    config.getComponent(CommandBus.class),
-                                    config.getComponent(MessageTypeResolver.class)
-                            )
-                    ))
-                    .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
-                    // Further configuration...
-                    .build();
+                               .componentRegistry(registry -> registry.registerComponent(
+                                       CommandGateway.class,
+                                       config -> new DefaultCommandGateway(
+                                               config.getComponent(CommandBus.class),
+                                               config.getComponent(MessageTypeResolver.class)
+                                       )
+                               ))
+                               .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
+                               // Further configuration...
+                               .build();
 
     // This will invoke the CommandGatewayFactory!
     CommandGateway commandGateway = configuration.getComponent(CommandGateway.class, "some-context");
@@ -933,16 +943,16 @@ However, if we take the above example and invoke `getComponent` with a different
 public static void main(String[] args) {
     AxonConfiguration configuration =
             MessagingConfigurer.create()
-                    .componentRegistry(registry -> registry.registerComponent(
-                            CommandGateway.class,
-                            config -> new DefaultCommandGateway(
-                                    config.getComponent(CommandBus.class),
-                                    config.getComponent(MessageTypeResolver.class)
-                            )
-                    ))
-                    .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
-                    // Further configuration...
-                    .build();
+                               .componentRegistry(registry -> registry.registerComponent(
+                                       CommandGateway.class,
+                                       config -> new DefaultCommandGateway(
+                                               config.getComponent(CommandBus.class),
+                                               config.getComponent(MessageTypeResolver.class)
+                                       )
+                               ))
+                               .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
+                               // Further configuration...
+                               .build();
 
     // This will return the registered DefaultCommandGateway!
     CommandGateway commandGateway = configuration.getComponent(CommandGateway.class);
@@ -969,19 +979,19 @@ delegate to be given. For example the `MessagingConfigurer` has a `componentRegi
 ```java
 public static void main(String[] args) {
     ModellingConfigurer.create()
-            .componentRegistry(componentRegistry -> componentRegistry.registerComponent(
-                    CommandGateway.class,
-                    config -> new DefaultCommandGateway(
-                            config.getComponent(CommandBus.class),
-                            config.getComponent(MessageTypeResolver.class)
-                    )
-            ))
-            .lifecycleRegistry(lifecycleRegistry -> lifecycleRegistry.registerLifecyclePhaseTimeout(
-                    5, TimeUnit.DAYS
-            ))
-            .messaging(messagingConfigurer -> messagingConfigurer.registerEventSink(
-                    config -> new CustomEventSink()
-            ));
+                       .componentRegistry(componentRegistry -> componentRegistry.registerComponent(
+                               CommandGateway.class,
+                               config -> new DefaultCommandGateway(
+                                       config.getComponent(CommandBus.class),
+                                       config.getComponent(MessageTypeResolver.class)
+                               )
+                       ))
+                       .lifecycleRegistry(lifecycleRegistry -> lifecycleRegistry.registerLifecyclePhaseTimeout(
+                               5, TimeUnit.DAYS
+                       ))
+                       .messaging(messagingConfigurer -> messagingConfigurer.registerEventSink(
+                               config -> new CustomEventSink()
+                       ));
     // Further configuration...
 }
 ```
@@ -1402,7 +1412,7 @@ likely nearing end of life (check [this link](https://github.com/x-stream/xstrea
 we deemed it unwise to keep support for XStream. For those using an XML-based format, it is suggested to configure the
 `JacksonConverter` with an `XmlMapper` (from artifact `jackson-dataformat-xml`).
 
-This `Serializer`-to-`Converter` shift goes hand-in-hand with the `MetaData` value switch to `String` (as
+This `Serializer`-to-`Converter` shift goes hand-in-hand with the `Metadata` value switch to `String` (as
 described [here](#metadata-with-string-values)) and the conversion support on the `Message` directly (as
 described [here](#message-conversion--serialization)). The changes on the `Message` directly are more apparent to the
 user and worthwhile to be aware of.
@@ -1472,15 +1482,61 @@ out for guidance.
 
 ### Interceptor Configuration
 
-TODO
+The registration process for interceptors changed as well. Previously, components implemented the
+`MessageDispatchInterceptorSupport` or `MessageHandlerInterceptorSupport` interface to support registration of
+interceptors. This allows interceptor registration during runtime, which made it "the" oddball in configuring components
+for Axon Framework. Furthermore, this approach inclined components to be constructed **before** we could register
+interceptors to them. For example, to register a `MessageDispatchInterceptor` to the `CommandBus` in Axon Framework 4,
+you needed to be sure the `CommandBus` was constructed first.
+
+We felt this solution to be suboptimal and not in line with the overall configuration experience in Axon Framework.
+As such, interceptors should now be registered with
+the [ApplicationConfigurer](#applicationconfigurer-and-configuration). As interceptors are a general messaging concern,
+the operations for registration are present on the `MessagingConfigurer`. Down below is a snippet configuring dispatch
+and handler interceptors, both generically and for specific `Message` types:
+
+```java
+public static void main(String[] args) {
+    MessagingConfigurer.create()
+                       .registerMessageHandlerInterceptor(config -> new BeanValidationInterceptor<>()) // 1
+                       .registerEventHandlerInterceptor(config -> new LoggingInterceptor<>()) // 2
+                       .registerDispatchInterceptor(config -> new LoggingInterceptor<>()) // 3
+                       .registerCommandDispatchInterceptor(config -> new BeanValidationInterceptor<>()); // 4
+    // Further configuration...
+}
+```
+
+1. The `BeanValidationInterceptor` is registered as a **generic** `MessageHandlerInterceptor`. Registering a generic
+   handler interceptor this way ensure it is set on **all** message handling components.
+2. The `LoggingInterceptor` is registered as an `EventMessage` **specific** `MessageHandlerInterceptor`. Registering a
+   `Message`-specific `MessageHandlerInterceptor` ensures it is set only for that type. Thus, in this case, the
+   `LoggingInterceptor` will only be configured for event handling, and not command and query handling.
+3. The `LoggingInterceptor` is registered as a **generic** `MessageDispatchInterceptor`. Registering a generic dispatch
+   interceptor this way ensure it is set on **all** message dispatching components.
+4. The `BeanValidationInterceptor` is registered as an `CommandMessage` **specific** `MessageDispatchInterceptor`.
+   Registering a `Message`-specific `MessageDispatchInterceptor` ensures it is set only for that type. Thus, in this
+   case, the `BeanValidationInterceptor` will only be configured for command dispatching, and not event publication and
+   query dispatching.
+
+As shown, there is no need to interact with the specific message dispatching or handling infrastructure components
+anymore to register interceptors.
+If you would still require this, we recommend to use
+the [decorator](#decorating-components-with-the-componentdecorator-interface) support within the configuration API to
+decorate the specific component.
+
+Lastly, if you are in a Spring Boot environment, you can simply provide your interceptors as beans to the Application
+Context.
+Axon Framework will automatically gather them and set them on their respective infrastructure components. The `Message`
+generic specified on the `MessageHandlerInterceptor` and `MessageDispatchInterceptor` will be taken into account in our
+auto-configuration, ensuring (e.g.) that `MessageDispatchInterceptor<QueryMessage>` beans are **only** used for query
+dispatching components.
 
 Minor API Changes
 =================
 
 * The `Repository`, just as other components, has been made [async native](#async-native-apis). This means methods
-  return a
-  `CompletableFuture` instead of the loaded `Aggregate`. Furthermore, the notion of aggregate was removed from the
-  `Repository`, in favor of talking about `ManagedEntity` instances. This makes the `Repository` applicable for
+  return a `CompletableFuture` instead of the loaded `Aggregate`. Furthermore, the notion of aggregate was removed from
+  the `Repository`, in favor of talking about `ManagedEntity` instances. This makes the `Repository` applicable for
   non-aggregate solutions too.
 * The `EventBus` has been renamed to `EventSink`, with adjusted APIs. All publish methods now expect a `String context`
   to define in which (bounded-)context an event should be published. Furthermore, either the method holding the
@@ -1496,8 +1552,7 @@ Minor API Changes
 * The `EventStorageEngine` uses append, source, and streaming conditions, for appending, sourcing, and streaming events,
   as described in the [Event Store](#event-store) section. Furthermore, operations have been made "async-native," as
   described [here](#async-native-apis). This is marked as a minor API changes since the `EventStorageEngine` should not
-  be
-  used directly
+  be used directly.
 * The `RollbackConfiguration` interface and the `rollbackConfiguration()` builder method have been removed from all
   EventProcessor builders. Exceptions need to be handled by an interceptor, or otherwise they are always considered an
   error.
@@ -1534,12 +1589,13 @@ Besides the entry and table rename, several columns have been renamed compared t
    `AggregateEventEntry#aggregateType`.
 6. `DomainEventEntry#sequenceNumber` (inherited from `AbstractDomainEventEntry`) is now called
    `AggregateEventEntry#aggregateSequenceNumber`.
+7. `DomainEventEntry#metaData` (inherited from `AbstractEventEntry`) is now called `AggregateEventEntry#metadata`.
 
 Furthermore, some of the expectations placed on the fields have adjusted, being:
 
 1. The `payloadRevision`, renamed to `version`, is **not** optional anymore.
 2. The `payload` field no longer has a max column length of 10_000.
-3. The `metaData` field no longer has a max column length of 10_000.
+3. The `metadata` field no longer has a max column length of 10_000.
 4. The `aggregateIdentifier` **is** optional right now.
 5. The `sequenceNumber`, renamed to `aggregateSequenceNumber`, is **not** optional anymore.
 
@@ -1605,6 +1661,7 @@ This section contains five tables:
 | org.axonframework.axonserver.connector.util.ExecutorServiceBuilder                                     | org.axonframework.util.ExecutorServiceFactory                                     | Yes. Moved to `axon-messaging` |
 | org.axonframework.eventsourcing.MultiStreamableMessageSource                                           | org.axonframework.eventhandling.processors.streaming.MultiStreamableMessageSource | No                             |
 | org.axonframework.eventhandling.EventBus                                                               | org.axonframework.eventhandling.EventSink                                         | No                             |
+| org.axonframework.eventhandling.sequencing.MetadataSequencingPolicy                                    | org.axonframework.eventhandling.sequencing.MetadataSequencingPolicy               | No                             |
 | org.axonframework.commandhandling.CommandHandler                                                       | org.axonframework.commandhandling.annotation.CommandHandler                       | No                             |
 | org.axonframework.eventhandling.EventHandler                                                           | org.axonframework.eventhandling.annotations.EventHandler                          | No                             |
 | org.axonframework.queryhandling.QueryHandler                                                           | org.axonframework.queryhandling.annotation.QueryHandler                           | No                             |
@@ -1616,6 +1673,7 @@ This section contains five tables:
 | org.axonframework.config.LifecycleOperations                                                           | org.axonframework.configuration.LifecycleRegistry                                 | Yes. Moved to `axon-messaging` |
 | org.axonframework.commandhandling.CommandCallback                                                      | org.axonframework.commandhandling.gateway.CommandResult                           | No                             |
 | org.axonframework.commandhandling.callbacks.FutureCallback                                             | org.axonframework.commandhandling.gateway.FutureCommandResult                     | No                             |
+| org.axonframework.modelling.MetaDataAssociationResolver                                                | org.axonframework.modelling.MetadataAssociationResolver                           | No                             |
 | org.axonframework.modelling.command.Repository                                                         | org.axonframework.modelling.repository.Repository                                 | No                             |
 | org.axonframework.modelling.command.CommandTargetResolver                                              | org.axonframework.modelling.command.EntityIdResolver                              | No                             |
 | org.axonframework.modelling.command.ForwardingMode                                                     | org.axonframework.modelling.command.entity.child.EventTargetMatcher               | No                             |
@@ -1629,7 +1687,7 @@ This section contains five tables:
 | org.axonframework.serialization.json.JacksonSerializer                                                 | org.axonframework.serialization.json.JacksonConverter                             | No                             |
 | org.axonframework.commandhandling.distributed.CommandDispatchException                                 | org.axonframework.commandhandling.CommandDispatchException                        | No                             |
 | org.axonframework.axonserver.connector.command.CommandPriorityCalculator                               | org.axonframework.commandhandling.CommandPriorityCalculator                       | Yes. Moved to `axon-messaging` |
-| org.axonframework.commandhandling.distribute.MetaDataRoutingStrategy                                   | org.axonframework.commandhandling.MetaDataRoutingStrategy                         | Yes. Moved to `axon-messaging` |
+| org.axonframework.commandhandling.distribute.MetaDataRoutingStrategy                                   | org.axonframework.commandhandling.MetadataRoutingStrategy                         | Yes. Moved to `axon-messaging` |
 | org.axonframework.commandhandling.distribute.RoutingStrategy                                           | org.axonframework.commandhandling.RoutingStrategy                                 | Yes. Moved to `axon-messaging` |
 | org.axonframework.commandhandling.distribute.UnresolvedRoutingKeyPolicy                                | org.axonframework.commandhandling.UnresolvedRoutingKeyPolicy                      | Yes. Moved to `axon-messaging` |
 | org.axonframework.commandhandling.distribute.AnnotationRoutingStrategy                                 | org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy            | Yes. Moved to `axon-messaging` |
@@ -1637,6 +1695,8 @@ This section contains five tables:
 | org.axonframework.springboot.SerializerProperties                                                      | org.axonframework.springboot.ConverterProperties                                  | No                             |
 | org.axonframework.springboot.SerializerProperties.SerializerType                                       | org.axonframework.springboot.ConverterProperties.ConverterType                    | No                             |
 | org.axonframework.messaging.InterceptorChain                                                           | org.axonframework.messaging.MessageHandlerInterceptorChain                        | No                             |
+| org.axonframework.messaging.MetaData                                                                   | org.axonframework.messaging.Metadata                                              | No                             |
+| org.axonframework.messaging.annotation.MetaDataValue                                                   | org.axonframework.messaging.annotation.MetadataValue                              | No                             |
 | org.axonframework.serialization.SerializationException                                                 | org.axonframework.serialization.ConversionException                               | No                             |
 | org.axonframework.serialization.avro.AvroSerializer                                                    | org.axonframework.serialization.avro.AvroConverter                                | No                             |
 | org.axonframework.serialization.avro.AvroSerializerStrategy                                            | org.axonframework.serialization.avro.AvroConverterStrategy                        | No                             |
@@ -1751,16 +1811,17 @@ per class described) approach.
 
 Note that **any**  changes here may have far extending impact on the original class.
 
-| Class      | Before           | After            | Explanation                                                  | 
-|------------|------------------|------------------|--------------------------------------------------------------|
-| `MetaData` | `Map<String, ?>` | `Map<String, ?>` | See the [metadata description](#metadata-with-string-values) |
+| Class      | Before           | After                 | Explanation                                                  | 
+|------------|------------------|-----------------------|--------------------------------------------------------------|
+| `MetaData` | `Map<String, ?>` | `Map<String, String>` | See the [metadata description](#metadata-with-string-values) |
 
 ### Adjusted Constants
 
-| Class               | Constant         | Change  | Why                                   |
-|---------------------|------------------|---------|---------------------------------------|
-| `HandlerAttributes` | `START_PHASE`    | Removed | StartHandler annotation is removed    |
-| `HandlerAttributes` | `SHUTDOWN_PHASE` | Removed | ShutdownHandler annotation is removed |
+| Class               | Constant                    | Change                                | Why                                   |
+|---------------------|-----------------------------|---------------------------------------|---------------------------------------|
+| `HandlerAttributes` | `START_PHASE`               | Removed                               | StartHandler annotation is removed    |
+| `HandlerAttributes` | `SHUTDOWN_PHASE`            | Removed                               | ShutdownHandler annotation is removed |
+| `TagsUtil`          | `META_DATA_TAGGER_FUNCTION` | Renamed to `METADATA_TAGGER_FUNCTION` | Consistent spelling                   |
 
 ## Method Signature Changes
 
@@ -1831,7 +1892,9 @@ This section contains four subsections, called:
 | `Message#getIdentifier()`                                                                                                       | `Message#identifier()`                                                                                                 |
 | `Message#getPayload()`                                                                                                          | `Message#payload()`                                                                                                    |
 | `Message#getPayloadType()`                                                                                                      | `Message#payloadType()`                                                                                                |
-| `Message#getMetaData()`                                                                                                         | `Message#metaData()`                                                                                                   |
+| `Message#getMetaData()`                                                                                                         | `Message#metadata()`                                                                                                   |
+| `Message#andMetaData()`                                                                                                         | `Message#andMetadata()`                                                                                                |
+| `Message#withMetaData()`                                                                                                        | `Message#withMetadata()`                                                                                               |
 | `EventMessage#getTimestamp()`                                                                                                   | `EventMessage#timestamp()`                                                                                             |
 | `QueryMessage#getReponseType()`                                                                                                 | `QueryMessage#responseType()`                                                                                          | 
 | `SubscriptionQueryMessage#getUpdateReponseType()`                                                                               | `SubscriptionQueryMessage#updatesResponseType()`                                                                       | 
@@ -1892,6 +1955,8 @@ This section contains four subsections, called:
 | `org.axonframework.axonserver.connector.AxonServerConfiguration#isEventBlockListingEnabled `                      | Removed as the `EventCriteria` allow for automated filtering.                                                               |
 | `org.axonframework.axonserver.connector.AxonServerConfiguration#setEventBlockListingEnabled(boolean)`             | Removed as the `EventCriteria` allow for automated filtering.                                                               |
 | `MessageDispatchInterceptor#handle(List<? extends T>)`                                                            | Removed due to limited usage.                                                                                               |
+| `PropertySequencingPolicy#builder`                                                                                | Use constructor instead. To define fallbackSequencingPolicy use `FallbackSequencingPolicy`.                                 |
+| `EventProcessor#shutdownAsync()`                                                                                  | Use `shutdown` instead. It returns `CompletableFuture<Void>` since the version 5.0.0.                                       |
 | `org.axonframework.spring.stereotype.Aggregate#repository`                                                        | Conceptually configured on `EventSourcedEntityModule`.                                                                      |
 | `org.axonframework.spring.stereotype.Aggregate#snapshotTriggerDefinition`                                         | Removed and will be replaced as part of #3105.                                                                              |
 | `org.axonframework.spring.stereotype.Aggregate#snapshotFilter`                                                    | Removed and will be replaced as part of #3105.                                                                              |
@@ -1915,3 +1980,7 @@ This section contains four subsections, called:
 | `MessageDispatchInterceptor#handle(T)`                                    | `T`                            | `MessageStream<?>`                           |
 | `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`       | `Object`                       | `MessageStream<?>`                           |
 | `InterceptorChain#proceed()`                                              | `Object`                       | `MessageStream<?>`                           |
+| `EventProcessor#start()`                                                  | `void`                         | `CompletableFuture<Void>`                    |
+| `EventProcessor#shutdown()`                                               | `void`                         | `CompletableFuture<Void>`                    |
+| `StreamingEventProcessor#releaseSegment`                                  | `void`                         | `CompletableFuture<Void>`                    |
+| `StreamingEventProcessor#resetTokens`                                     | `void`                         | `CompletableFuture<Void>`                    |

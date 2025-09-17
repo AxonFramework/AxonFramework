@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @Tags({
         @Tag("slow"),
-        @Tag("flow"),
+        @Tag("flaky"),
 })
 class AxonServerContainerTest {
 

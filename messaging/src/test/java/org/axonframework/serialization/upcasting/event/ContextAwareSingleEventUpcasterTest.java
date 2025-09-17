@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
@@ -76,11 +76,11 @@ class ContextAwareSingleEventUpcasterTest {
         String expectedRevisionNumber = "1";
         String expectedNewString = this.expectedNewString + StubContextAwareSingleEventUpcaster.CONTEXT_FIELD_VALUE;
 
-        MetaData testMetaData = MetaData.with("key", "value");
+        Metadata testMetadata = Metadata.with("key", "value");
 
         DomainEventMessage firstTestEventMessage = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"),
-                new SecondStubEvent(expectedContextEventString, expectedContextEventNumber), testMetaData
+                new SecondStubEvent(expectedContextEventString, expectedContextEventNumber), testMetadata
         );
         EventData<?> firstTestEventData = new TestDomainEventEntry(firstTestEventMessage, serializer);
         InitialEventRepresentation firstTestRepresentation =
@@ -88,7 +88,7 @@ class ContextAwareSingleEventUpcasterTest {
 
         GenericDomainEventMessage secondTestEventMessage = new GenericDomainEventMessage(
                 "test", "aggregateId", 0, new MessageType("event"),
-                new StubDomainEvent("oldName"), testMetaData
+                new StubDomainEvent("oldName"), testMetadata
         );
         EventData<?> secondTestEventData = new TestDomainEventEntry(secondTestEventMessage, serializer);
         InitialEventRepresentation secondTestRepresentation =
@@ -105,7 +105,7 @@ class ContextAwareSingleEventUpcasterTest {
         assertNull(firstEventResult.getType().getRevision());
         assertEquals(firstTestEventData.getEventIdentifier(), firstEventResult.getMessageIdentifier());
         assertEquals(firstTestEventData.getTimestamp(), firstEventResult.getTimestamp());
-        assertEquals(testMetaData, firstEventResult.getMetaData().getObject());
+        assertEquals(testMetadata, firstEventResult.getMetadata().getObject());
         SecondStubEvent contextEvent = serializer.deserialize(firstEventResult.getData());
         assertEquals(expectedContextEventString, contextEvent.getName());
         assertEquals(expectedContextEventNumber, contextEvent.getNumber());
@@ -114,7 +114,7 @@ class ContextAwareSingleEventUpcasterTest {
         assertEquals(expectedRevisionNumber, secondEventResult.getType().getRevision());
         assertEquals(secondTestEventData.getEventIdentifier(), secondEventResult.getMessageIdentifier());
         assertEquals(secondTestEventData.getTimestamp(), secondEventResult.getTimestamp());
-        assertEquals(testMetaData, secondEventResult.getMetaData().getObject());
+        assertEquals(testMetadata, secondEventResult.getMetadata().getObject());
         StubDomainEvent upcastedEvent = serializer.deserialize(secondEventResult.getData());
         assertEquals(expectedNewString, upcastedEvent.getName());
     }

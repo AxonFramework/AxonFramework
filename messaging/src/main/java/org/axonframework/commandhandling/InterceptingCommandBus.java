@@ -19,6 +19,8 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.DecoratorDefinition;
 import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -39,16 +41,35 @@ import static java.util.Objects.requireNonNull;
  * A {@code CommandBus} wrapper that supports both {@link MessageHandlerInterceptor MessageHandlerInterceptors} and
  * {@link MessageDispatchInterceptor MessageDispatchInterceptors}. Actual dispatching and handling of commands is done
  * by a delegate.
+ * <p>
+ * This {@code InterceptingCommandBus} is typically registered as a
+ * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} and automatically kicks in whenever
+ * {@link CommandMessage} specific {@code MessageHandlerInterceptors} or any {@code MessageDispatchInterceptors} are
+ * present.
  *
  * @author Allad Buijze
  * @author Simon Zambrovski
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public class InterceptingCommandBus implements CommandBus {
 
+    /**
+     * The order in which the {@link InterceptingCommandBus} is applied as a
+     * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator} to the {@link CommandBus}.
+     * <p>
+     * As such, any decorator with a lower value will be applied to the delegate, and any higher value will be applied
+     * to the {@code InterceptingCommandBus} itself. Using the same value can either lead to application of the
+     * decorator to the delegate or the {@code InterceptingCommandBus}, depending on the order of registration.
+     * <p>
+     * The order of the {@code InterceptingCommandBus} is set to {@code Integer.MIN_VALUE + 100} to ensure it is applied
+     * very early in the configuration process, but not the earliest to allow for other decorators to be applied.
+     */
+    public static final int DECORATION_ORDER = Integer.MIN_VALUE + 100;
+
     private final CommandBus delegate;
     private final List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors;
-    private final List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors;
+    private final List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors;
     private final InterceptingDispatcher interceptingDispatcher;
 
     /**
@@ -65,7 +86,7 @@ public class InterceptingCommandBus implements CommandBus {
     public InterceptingCommandBus(
             @Nonnull CommandBus delegate,
             @Nonnull List<MessageHandlerInterceptor<CommandMessage>> handlerInterceptors,
-            @Nonnull List<MessageDispatchInterceptor<? super Message>> dispatchInterceptors
+            @Nonnull List<MessageDispatchInterceptor<? super CommandMessage>> dispatchInterceptors
     ) {
         this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
         this.handlerInterceptors = new ArrayList<>(
@@ -74,7 +95,7 @@ public class InterceptingCommandBus implements CommandBus {
         this.dispatchInterceptors = new ArrayList<>(
                 requireNonNull(dispatchInterceptors, "The dispatch interceptors must not be null.")
         );
-        this.interceptingDispatcher = new InterceptingDispatcher(dispatchInterceptors, this::dispatchMessage);
+        this.interceptingDispatcher = new InterceptingDispatcher(dispatchInterceptors, this::dispatchCommand);
     }
 
     @Override
@@ -90,9 +111,13 @@ public class InterceptingCommandBus implements CommandBus {
         return interceptingDispatcher.interceptAndDispatch(command, processingContext);
     }
 
-    private MessageStream<?> dispatchMessage(@Nonnull Message message,
+    private MessageStream<?> dispatchCommand(@Nonnull Message message,
                                              @Nullable ProcessingContext processingContext) {
-        return MessageStream.fromFuture(delegate.dispatch((CommandMessage) message, processingContext));
+        if (!(message instanceof CommandMessage command)) {
+            // The compiler should avoid this from happening.
+            throw new IllegalArgumentException("Unsupported message implementation: " + message);
+        }
+        return MessageStream.fromFuture(delegate.dispatch(command, processingContext));
     }
 
     @Override
@@ -123,20 +148,20 @@ public class InterceptingCommandBus implements CommandBus {
 
     private static class InterceptingDispatcher {
 
-        private final DefaultMessageDispatchInterceptorChain<Message> interceptorChain;
+        private final DefaultMessageDispatchInterceptorChain<? super CommandMessage> interceptorChain;
 
         private InterceptingDispatcher(
-                List<MessageDispatchInterceptor<? super Message>> interceptors,
-                BiFunction<? super Message, ProcessingContext, MessageStream<?>> dispatcher
+                List<MessageDispatchInterceptor<? super CommandMessage>> interceptors,
+                BiFunction<? super CommandMessage, ProcessingContext, MessageStream<?>> dispatcher
         ) {
             this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, dispatcher);
         }
 
         private CompletableFuture<CommandResultMessage<?>> interceptAndDispatch(
-                @Nonnull CommandMessage message,
-                @Nullable ProcessingContext processingContext
+                @Nonnull CommandMessage command,
+                @Nullable ProcessingContext context
         ) {
-            return interceptorChain.proceed(message, processingContext)
+            return interceptorChain.proceed(command, context)
                                    .first()
                                    .<CommandResultMessage<?>>cast()
                                    .asCompletableFuture()
