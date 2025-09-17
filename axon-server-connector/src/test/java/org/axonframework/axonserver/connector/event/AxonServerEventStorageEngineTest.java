@@ -41,6 +41,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Steven van Beelen
  */
 @Testcontainers
+@Tags({
+        @Tag("slow"),
+})
 class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServerEventStorageEngine> {
 
     private static final String CONTEXT = "default";
