@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
@@ -111,7 +112,8 @@ public abstract class AbstractEventStoreBenchmark {
         this.eventProcessor = new PooledStreamingEventProcessor(
                 "benchmark",
                 List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                cfg -> cfg.eventSource(new LegacyStreamableEventSource<>(eventStore))
+                new PooledStreamingEventProcessorConfiguration()
+                        .eventSource(new LegacyStreamableEventSource<>(eventStore))
                         .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
                         .tokenStore(new InMemoryTokenStore())
                         .coordinatorExecutor(coordinatorExecutor)

@@ -19,6 +19,7 @@ package org.axonframework.config;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.jupiter.api.*;
@@ -104,7 +105,8 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                           new SubscribingEventProcessor(
                                   name,
                                   List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                                  cfg -> cfg.messageSource(conf.eventBus())
+                                  new SubscribingEventProcessorConfiguration()
+                                          .messageSource(conf.eventBus())
                                           .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
                           )
                   );
@@ -132,8 +134,9 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                           new SubscribingEventProcessor(
                                   name,
                                   List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                                  cfg -> cfg.messageSource(conf.eventBus())
-                                            .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
+                                  new SubscribingEventProcessorConfiguration()
+                                          .messageSource(conf.eventBus())
+                                          .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
                           )
                   )
                   .assignProcessingGroup("processor1", "myProcessor")
