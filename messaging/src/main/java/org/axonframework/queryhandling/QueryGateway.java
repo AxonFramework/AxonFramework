@@ -79,9 +79,9 @@ public interface QueryGateway extends DescribableComponent {
      * {@link org.axonframework.messaging.responsetypes.MultipleInstancesResponseType}.
      *
      * @param query        The {@code query} to be sent.
-     * @param responseType The {@link ResponseType} used for this query.
+     * @param responseType A {@code Class} describing the desired response type.
      * @param context      The processing context, if any, to dispatch the given {@code query} in.
-     * @param <R>          The response class contained in the given {@code responseType}.
+     * @param <R>          The generic type of the expected response(s).
      * @return A {@code CompletableFuture} containing a list of query responses of type {@code responseType}.
      */
     @Nonnull
