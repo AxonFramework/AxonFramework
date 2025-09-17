@@ -24,6 +24,8 @@ import org.axonframework.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
 
+import java.util.List;
+
 @EventSourcedEntity
 public class StudentMentorAssignment {
 
@@ -56,11 +58,12 @@ public class StudentMentorAssignment {
     @EventCriteriaBuilder
     public static EventCriteria resolveCriteria(StudentMentorModelIdentifier id) {
         return EventCriteria.either(
-                EventCriteria.havingTags(new Tag("Student", id.menteeId()))
-                             .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName()),
-                EventCriteria.havingTags(new Tag("Student", id.mentorId()))
-                             .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
-
+                List.of(
+                        EventCriteria.havingTags(new Tag("Student", id.menteeId()))
+                                     .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName()),
+                        EventCriteria.havingTags(new Tag("Student", id.mentorId()))
+                                     .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
+                )
         );
     }
 }
