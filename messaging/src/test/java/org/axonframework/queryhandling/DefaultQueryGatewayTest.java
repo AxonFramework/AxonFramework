@@ -58,7 +58,6 @@ class DefaultQueryGatewayTest {
     private DefaultQueryGateway testSubject;
 
     private ArgumentCaptor<QueryMessage> messageCaptor;
-    private QueryResponseMessage answer;
 
     @BeforeEach
     void setUp() {
@@ -67,7 +66,6 @@ class DefaultQueryGatewayTest {
         testSubject = new DefaultQueryGateway(queryBus, new ClassBasedMessageTypeResolver(), null);
 
         messageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
-        answer = new GenericQueryResponseMessage(RESPONSE_TYPE, RESPONSE_PAYLOAD);
     }
 
     @Nested
