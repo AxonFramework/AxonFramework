@@ -60,7 +60,7 @@ class DefaultQueryGatewayTest {
 
     private DefaultQueryGateway testSubject;
 
-    private ArgumentCaptor<QueryMessage> messageCaptor;
+    private ArgumentCaptor<QueryMessage> queryCaptor;
     private QueryResponseMessage answer;
 
     @BeforeEach
@@ -69,7 +69,7 @@ class DefaultQueryGatewayTest {
 
         testSubject = new DefaultQueryGateway(queryBus, new ClassBasedMessageTypeResolver(), null);
 
-        messageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
+        queryCaptor = ArgumentCaptor.forClass(QueryMessage.class);
         answer = new GenericQueryResponseMessage(RESPONSE_TYPE, RESPONSE_PAYLOAD);
     }
 
@@ -87,9 +87,9 @@ class DefaultQueryGatewayTest {
             assertThat(result).isDone();
             assertThat(result.get()).isEqualTo(RESPONSE_PAYLOAD);
 
-            verify(queryBus).query(messageCaptor.capture(), eq(null));
+            verify(queryBus).query(queryCaptor.capture(), eq(null));
 
-            QueryMessage resultMessage = messageCaptor.getValue();
+            QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
             ResponseType<?> responseType = resultMessage.responseType();
@@ -113,9 +113,9 @@ class DefaultQueryGatewayTest {
             assertThat(result).isDone();
             assertThat(result.get()).isEqualTo(RESPONSE_PAYLOAD);
 
-            verify(queryBus).query(messageCaptor.capture(), eq(null));
+            verify(queryBus).query(queryCaptor.capture(), eq(null));
 
-            QueryMessage resultMessage = messageCaptor.getValue();
+            QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
             ResponseType<?> responseType = resultMessage.responseType();
@@ -189,9 +189,9 @@ class DefaultQueryGatewayTest {
             assertThat(resultList.size()).isEqualTo(1);
             assertThat(resultList.getFirst()).isEqualTo(RESPONSE_PAYLOAD);
 
-            verify(queryBus).query(messageCaptor.capture(), eq(null));
+            verify(queryBus).query(queryCaptor.capture(), eq(null));
 
-            QueryMessage resultMessage = messageCaptor.getValue();
+            QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
             ResponseType<?> responseType = resultMessage.responseType();
@@ -217,9 +217,9 @@ class DefaultQueryGatewayTest {
             assertThat(resultList.size()).isEqualTo(1);
             assertThat(resultList.getFirst()).isEqualTo(RESPONSE_PAYLOAD);
 
-            verify(queryBus).query(messageCaptor.capture(), eq(null));
+            verify(queryBus).query(queryCaptor.capture(), eq(null));
 
-            QueryMessage resultMessage = messageCaptor.getValue();
+            QueryMessage resultMessage = queryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
             ResponseType<?> responseType = resultMessage.responseType();
