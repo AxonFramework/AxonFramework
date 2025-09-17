@@ -28,6 +28,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
+@Deprecated(since = "5.0.0", forRemoval = true)
 public @interface ProcessingGroup {
 
     /**

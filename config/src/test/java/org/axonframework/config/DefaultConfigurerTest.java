@@ -27,7 +27,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.common.FutureUtils;
 import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
@@ -128,111 +127,6 @@ class DefaultConfigurerTest {
         assertEquals(LegacyEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config, AggregateConfiguration.class, AxonIQConsoleModule.class);
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void defaultConfigurationWithPooledStreamingProcessorConfigurationInMainConfig() {
-        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
-        configurer.eventProcessing().registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
-        LegacyConfiguration config = configurer.registerComponent(
-                                                       PooledStreamingProcessorConfiguration.class,
-                                                       c -> (config1, builder) -> builder.workerExecutor(
-                                                           Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker")))
-                                               )
-                                               .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                                               .start();
-        try {
-            PooledStreamingEventProcessor processor = config.eventProcessingConfiguration()
-                                                     .eventProcessor(getClass().getPackage().getName(),
-                                                                     PooledStreamingEventProcessor.class).orElseThrow(
-                            RuntimeException::new);
-            assertRetryingWithin(Duration.ofSeconds(5),
-                                 () -> assertEquals(2,
-                                                    config.getComponent(TokenStore.class)
-                                                          .fetchSegments(processor.name()).length));
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void defaultConfigurationWithPooledStreamingProcessorExplicitlyConfigured() {
-        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
-        String processorName = "myProcessor";
-        configurer.eventProcessing()
-                  .registerPooledStreamingEventProcessor(processorName,
-                                                  LegacyConfiguration::eventStore,
-                                                  (config, builder) -> builder.workerExecutor(
-                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
-                  .byDefaultAssignTo(processorName)
-                  .registerDefaultSequencingPolicy(c -> FullConcurrencyPolicy.INSTANCE)
-                  .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
-        LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                                               .start();
-        try {
-            PooledStreamingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(processorName,
-                                                                                                    PooledStreamingEventProcessor.class)
-                                                     .orElseThrow(RuntimeException::new);
-            assertRetryingWithin(Duration.ofSeconds(5),
-                                 () -> assertEquals(2,
-                                                    config.getComponent(TokenStore.class)
-                                                          .fetchSegments(processor.name()).length));
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    void defaultConfigurationWithPooledStreamingProcessorAutoStartDisabledDoesNotComplainAtShutdown() {
-        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
-        String processorName = "myProcessor";
-        configurer.eventProcessing()
-                  .registerPooledStreamingEventProcessor(processorName,
-                                                  LegacyConfiguration::eventStore,
-                                                  (config, builder) -> builder.workerExecutor(
-                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
-                  .byDefaultAssignTo(processorName)
-                  .registerDefaultSequencingPolicy(c -> FullConcurrencyPolicy.INSTANCE)
-                  .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
-        LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                                               .start();
-
-        PooledStreamingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(processorName,
-                                                                                                PooledStreamingEventProcessor.class)
-                                                 .orElseThrow(RuntimeException::new);
-        try {
-            assertFalse(processor.isRunning());
-        } finally {
-            assertDoesNotThrow(config::shutdown);
-        }
-    }
-
-    @Test
-    void defaultConfigurationWithPooledStreamingProcessorAutoStartDisabled() {
-        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
-        String processorName = "myProcessor";
-        configurer.eventProcessing()
-                  .registerPooledStreamingEventProcessor(processorName,
-                                                  LegacyConfiguration::eventStore,
-                                                  (config, builder) -> builder.workerExecutor(
-                                                      Executors.newScheduledThreadPool(2, new AxonThreadFactory("Worker - " + processorName))))
-                  .byDefaultAssignTo(processorName)
-                  .registerDefaultSequencingPolicy(c -> FullConcurrencyPolicy.INSTANCE)
-                  .registerEventHandler(c -> (EventMessageHandler) (event, ctx) -> null);
-        LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                                               .start();
-        try {
-            PooledStreamingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(processorName,
-                                                                                                    PooledStreamingEventProcessor.class)
-                                                     .orElseThrow(RuntimeException::new);
-            assertFalse(processor.isRunning());
-            FutureUtils.joinAndUnwrap(processor.start());
-            assertTrue(processor.isRunning());
-        } finally {
-            config.shutdown();
-        }
     }
 
     @Test

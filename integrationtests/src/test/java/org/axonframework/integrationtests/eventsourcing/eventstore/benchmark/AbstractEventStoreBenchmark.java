@@ -164,7 +164,7 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected void cleanUpAfterBenchmark() {
         executorService.shutdown();
-        eventProcessor.shutdown();
+        FutureUtils.joinAndUnwrap(eventProcessor.shutdown());
         eventStore.shutDown();
         coordinatorExecutor.shutdown();
         workerExecutor.shutdown();
