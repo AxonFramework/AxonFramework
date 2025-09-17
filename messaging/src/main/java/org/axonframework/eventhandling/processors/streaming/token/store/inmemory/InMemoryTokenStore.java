@@ -39,6 +39,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -123,8 +124,9 @@ public class InMemoryTokenStore implements TokenStore {
     }
 
     @Override
-    public void releaseClaim(@Nonnull String processorName, int segment) {
+    public CompletableFuture<Void> releaseClaim(@Nonnull String processorName, int segment) {
         // no-op, the in-memory implementation isn't accessible by multiple processes
+        return completedFuture(null);
     }
 
     @Override

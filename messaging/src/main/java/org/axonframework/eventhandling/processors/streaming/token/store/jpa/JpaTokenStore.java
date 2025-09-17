@@ -171,16 +171,18 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public void releaseClaim(@Nonnull String processorName, int segment) {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
+    public CompletableFuture<Void> releaseClaim(@Nonnull String processorName, int segment) {
+        return CompletableFuture.runAsync(() -> {
+            EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-        entityManager.createQuery(
-                             "UPDATE TokenEntry te SET te.owner = null " +
-                                     "WHERE te.owner = :owner AND te.processorName = :processorName " +
-                                     "AND te.segment = :segment")
-                     .setParameter(PROCESSOR_NAME_PARAM, processorName).setParameter(SEGMENT_PARAM, segment)
-                     .setParameter(OWNER_PARAM, nodeId)
-                     .executeUpdate();
+            entityManager.createQuery(
+                                 "UPDATE TokenEntry te SET te.owner = null " +
+                                         "WHERE te.owner = :owner AND te.processorName = :processorName " +
+                                         "AND te.segment = :segment")
+                         .setParameter(PROCESSOR_NAME_PARAM, processorName).setParameter(SEGMENT_PARAM, segment)
+                         .setParameter(OWNER_PARAM, nodeId)
+                         .executeUpdate();
+        });
     }
 
     @Override
@@ -235,23 +237,28 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public void extendClaim(@Nonnull String processorName, int segment) throws UnableToClaimTokenException {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
-        int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
-                                                        "WHERE te.processorName = :processorName " +
-                                                        "AND te.segment = :segment " +
-                                                        "AND te.owner = :owner")
-                                   .setParameter(PROCESSOR_NAME_PARAM, processorName)
-                                   .setParameter(SEGMENT_PARAM, segment)
-                                   .setParameter(OWNER_PARAM, nodeId)
-                                   .setParameter("timestamp", formatInstant(clock.instant()))
-                                   .executeUpdate();
+    public CompletableFuture<Void> extendClaim(@Nonnull String processorName, int segment)
+            throws UnableToClaimTokenException {
+        return CompletableFuture.runAsync(() -> {
+            EntityManager
+                    entityManager = entityManagerProvider.getEntityManager();
+            int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
+                                                            "WHERE te.processorName = :processorName " +
+                                                            "AND te.segment = :segment " +
+                                                            "AND te.owner = :owner")
+                                       .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                       .setParameter(SEGMENT_PARAM, segment)
+                                       .setParameter(OWNER_PARAM, nodeId)
+                                       .setParameter("timestamp", formatInstant(clock.instant()))
+                                       .executeUpdate();
 
-        if (updates == 0) {
-            throw new UnableToClaimTokenException("Unable to extend the claim on token for processor '" +
-                                                          processorName + "[" + segment + "]'. It is either claimed " +
-                                                          "by another process, or there is no such token.");
-        }
+            if (updates == 0) {
+                throw new UnableToClaimTokenException("Unable to extend the claim on token for processor '" +
+                                                              processorName + "[" + segment
+                                                              + "]'. It is either claimed " +
+                                                              "by another process, or there is no such token.");
+            }
+        });
     }
 
     @Override

@@ -231,7 +231,7 @@ class JpaTokenStoreTest {
                 .getResultList();
         assertEquals(1, tokens.size());
         assertNotNull(tokens.getFirst().getOwner());
-        jpaTokenStore.releaseClaim("test", 0);
+        joinAndUnwrap(jpaTokenStore.releaseClaim("test", 0));
 
         entityManager.flush();
         entityManager.clear();
@@ -326,7 +326,7 @@ class JpaTokenStoreTest {
         {
             final List<Segment> segments = concurrentJpaTokenStore.fetchAvailableSegments("proc1");
             assertThat(segments.size(), is(0));
-            jpaTokenStore.releaseClaim("proc1", 0);
+            joinAndUnwrap(jpaTokenStore.releaseClaim("proc1", 0));
             entityManager.flush();
             entityManager.clear();
             final List<Segment> segmentsAfterRelease = concurrentJpaTokenStore.fetchAvailableSegments("proc1");
@@ -335,7 +335,7 @@ class JpaTokenStoreTest {
         {
             final List<Segment> segments = concurrentJpaTokenStore.fetchAvailableSegments("proc2");
             assertThat(segments.size(), is(0));
-            jpaTokenStore.releaseClaim("proc2", 0);
+            joinAndUnwrap(jpaTokenStore.releaseClaim("proc2", 0));
             entityManager.flush();
             entityManager.clear();
             final List<Segment> segmentsAfterRelease = concurrentJpaTokenStore.fetchAvailableSegments("proc2");
@@ -407,7 +407,7 @@ class JpaTokenStoreTest {
         joinAndUnwrap(jpaTokenStore.fetchToken("processor", 0));
 
         try {
-            stealingJpaTokenStore.extendClaim("processor", 0);
+            joinAndUnwrap(stealingJpaTokenStore.extendClaim("processor", 0));
             fail("Expected claim extension to fail");
         } catch (UnableToClaimTokenException e) {
             // expected

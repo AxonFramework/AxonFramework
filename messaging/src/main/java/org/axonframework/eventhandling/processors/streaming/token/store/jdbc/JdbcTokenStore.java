@@ -315,18 +315,20 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public void releaseClaim(@Nonnull String processorName, int segment) {
-        Connection connection = getConnection();
-        try {
-            executeUpdates(connection, e -> {
-                               throw new JdbcException(
-                                       format("Could not load token for processor [%s] and segment " + "[%d]",
-                                              processorName, segment), e);
-                           },
-                           c -> releaseClaim(c, processorName, segment));
-        } finally {
-            closeQuietly(connection);
-        }
+    public CompletableFuture<Void> releaseClaim(@Nonnull String processorName, int segment) {
+        return CompletableFuture.runAsync(()-> {
+            Connection connection = getConnection();
+            try {
+                executeUpdates(connection, e -> {
+                                   throw new JdbcException(
+                                           format("Could not load token for processor [%s] and segment " + "[%d]",
+                                                  processorName, segment), e);
+                               },
+                               c -> releaseClaim(c, processorName, segment));
+            } finally {
+                closeQuietly(connection);
+            }
+        });
     }
 
     @Override

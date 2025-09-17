@@ -264,14 +264,14 @@ class JdbcTokenStoreTest {
         transactionManager.executeInTransaction(() -> {
             final List<Segment> segments = concurrentTokenStore.fetchAvailableSegments("proc1");
             assertThat(segments.size(), is(0));
-            tokenStore.releaseClaim("proc1", 0);
+            joinAndUnwrap(tokenStore.releaseClaim("proc1", 0));
             final List<Segment> segmentsAfterRelease = concurrentTokenStore.fetchAvailableSegments("proc1");
             assertThat(segmentsAfterRelease.size(), is(1));
         });
         transactionManager.executeInTransaction(() -> {
             final List<Segment> segments = concurrentTokenStore.fetchAvailableSegments("proc2");
             assertThat(segments.size(), is(1));
-            tokenStore.releaseClaim("proc2", 1);
+            joinAndUnwrap(tokenStore.releaseClaim("proc2", 1));
             final List<Segment> segmentsAfterRelease = concurrentTokenStore.fetchAvailableSegments("proc2");
             assertThat(segmentsAfterRelease.size(), is(2));
         });
