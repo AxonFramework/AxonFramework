@@ -292,7 +292,7 @@ class SimpleQueryBusTest {
         }
 
         @Test
-        void querySingleWithTransaction() throws Exception {
+        void directQuerySingleWithTransaction() throws Exception {
             // given...
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", SINGLE_STRING_RESPONSE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
@@ -308,7 +308,7 @@ class SimpleQueryBusTest {
         }
 
         @Test
-        void queryMultipleWithTransaction() throws Exception {
+        void directQueryMultipleWithTransaction() throws Exception {
             // given...
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", MULTI_STRING_RESPONSE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, MULTI_RESPONSE_HANDLER);
