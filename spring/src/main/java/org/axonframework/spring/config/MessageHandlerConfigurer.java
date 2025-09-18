@@ -77,7 +77,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
             case EVENT:
                 groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
                     var eventHandlingModuleBuilder = EventProcessorModule
-                            .pooledStreaming(packageName)
+                            .pooledStreaming(packageName + ".EventProcessor")
                             .eventHandlingComponents(phase -> {
                                 EventHandlingComponentsConfigurer.AdditionalComponentPhase resultOfRegistration = null;
                                 for (NamedBeanDefinition namedBeanDefinition : beanDefs) {
@@ -96,7 +96,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
             case COMMAND:
                 groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
                     var commandHandlingModuleBuilder = CommandHandlingModule
-                            .named(packageName)
+                            .named(packageName + ".CommandHandling")
                             .commandHandlers();
                     beanDefs.forEach(namedBeanDefinition -> {
                         commandHandlingModuleBuilder
@@ -124,15 +124,18 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         return handlerBeansRefs.stream()
                                .map(name -> new NamedBeanDefinition(name, beanFactory.getBeanDefinition(name)))
                                .collect(Collectors.groupingBy(nbd -> {
-                                   String className = nbd.definition().getBeanClassName();
-                                   if (className == null && nbd.definition() instanceof AbstractBeanDefinition) {
-                                       Class<?> beanClass = ((AbstractBeanDefinition) nbd.definition()).getBeanClass();
-                                       className = beanClass.getName();
-                                   }
-                                   return (className != null && className.contains("."))
-                                           ? className.substring(0, className.lastIndexOf('.'))
-                                           : "default";
-                               }));
+                                                                  String className = nbd.definition().getBeanClassName();
+                                                                  if (className == null
+                                                                          && nbd.definition() instanceof AbstractBeanDefinition abstractDefinition) {
+                                                                      if (abstractDefinition.hasBeanClass()) {
+                                                                          className = abstractDefinition.getBeanClass().getName();
+                                                                      }
+                                                                  }
+                                                                  return (className != null && className.contains(".")) ?
+                                                                          className.substring(0, className.lastIndexOf('.'))
+                                                                          : "default";
+                                                              }
+                               ));
     }
 
     /**
