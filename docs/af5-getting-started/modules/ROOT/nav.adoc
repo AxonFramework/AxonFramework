@@ -6,3 +6,4 @@
 * xref:configure-axon-server.adoc[]
 * xref:implement-stateless-event-handler.adoc
 * xref:implement-stateful-event-handler.adoc[]
+* xref:implement-read-model.adoc[]

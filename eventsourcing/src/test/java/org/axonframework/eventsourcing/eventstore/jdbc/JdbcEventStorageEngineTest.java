@@ -67,6 +67,9 @@ import static org.mockito.Mockito.*;
  */
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 @Testcontainers
+@Tags({
+        @Tag("slow"),
+})
 class JdbcEventStorageEngineTest
         extends BatchingEventStorageEngineTest<LegacyJdbcEventStorageEngine, LegacyJdbcEventStorageEngine.Builder> {
 

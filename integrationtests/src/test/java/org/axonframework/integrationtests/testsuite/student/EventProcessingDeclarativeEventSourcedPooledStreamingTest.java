@@ -58,6 +58,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Tags({
+        @org.junit.jupiter.api.Tag("flaky"),
+})
 public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends AbstractStudentTestSuite {
 
     @Test
@@ -137,7 +140,8 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
 
     private static EventSourcingConfigurer configureProcessorWithDeclarativeEventHandlingComponent(
             EventSourcingConfigurer configurer) {
-        var studentRegisteredCoursesProcessor = EventProcessorModule
+        var studentRegisteredCoursesProcessor =
+                EventProcessorModule
                 .pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
                 .eventHandlingComponents(components -> components.declarative(
                         cfg -> whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation()

@@ -92,7 +92,7 @@ public class PooledStreamingEventProcessorConfiguration extends EventProcessorCo
     private ScheduledExecutorService workerExecutor;
     private int initialSegmentCount = 16;
     private Function<TrackingTokenSource, CompletableFuture<TrackingToken>> initialToken =
-            es -> es.firstToken().thenApply(ReplayToken::createReplayToken);
+            es -> es.firstToken(null).thenApply(ReplayToken::createReplayToken);
 
     private long tokenClaimInterval = 5000;
     private MaxSegmentProvider maxSegmentProvider = MaxSegmentProvider.maxShort();

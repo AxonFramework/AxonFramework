@@ -625,6 +625,21 @@ The `EventProcessingModule` (along with the `EventProcessingConfigurer` and `Eve
 that were implemented by this class) has been removed from the framework. To configure default settings for Event
 Processors and register instances, use the `MessagingConfigurer#eventProcessing` method.
 
+### Processing Group layer removal
+The `ProcessingGroup` layer has been removed from the framework. This layer was used to group Event Handlers to be
+assigned to a single Event Processor.
+The new configuration API just allows you to register Event Handlers directly to an Event Processor with the following
+syntax:
+```java
+EventProcessorModule.pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
+.eventHandlingComponents(components -> components.declarative(eventHandler1).annotated(eventHandler2))
+.notCustomized();
+```
+With this usage the `eventHandler1` and `eventHandler2` will be assigned to the same Event Processor with the name
+`when-student-enrolled-to-max-courses-then-send-notification`.
+It's an equivalent of the `@ProcessingGroup("when-student-enrolled-to-max-courses-then-send-notification")` annotation
+before.
+
 ### TrackingEventProcessor Removal
 
 The `TrackingEventProcessor` has been removed from the framework, with `PooledStreamingEventProcessor` taking over as
@@ -1927,20 +1942,25 @@ This section contains four subsections, called:
 | `org.axonframework.axonserver.connector.AxonServerConfiguration#setEventBlockListingEnabled(boolean)`             | Removed as the `EventCriteria` allow for automated filtering.                                                               |
 | `MessageDispatchInterceptor#handle(List<? extends T>)`                                                            | Removed due to limited usage.                                                                                               |
 | `PropertySequencingPolicy#builder`                                                                                | Use constructor instead. To define fallbackSequencingPolicy use `FallbackSequencingPolicy`.                                 |
+| `EventProcessor#shutdownAsync()`                                                                                  | Use `shutdown` instead. It returns `CompletableFuture<Void>` since the version 5.0.0.                                       |
 
 ### Changed Method return types
 
-| Method                                                                          | Before                         | After                                        |
-|---------------------------------------------------------------------------------|--------------------------------|----------------------------------------------|
-| `CorrelationDataProvider#correlationDataFor()`                                  | `Map<String, String>`          | `Map<String, ?>`                             | 
-| `CommandTargetResolver#resolveTarget`                                           | `VersionedAggregateIdentifier` | `String`                                     |
-| `EventGateway#publish(Object...)`                                               | `void`                         | `CompletableFuture<Void>`                    |
-| `EventGateway#publish(List<?>)`                                                 | `void`                         | `CompletableFuture<Void>`                    |
-| `SequencingPolicy#getSequenceIdentifierFor(List<?>)`                            | `Object`                       | `Optional<Object>`                           |
-| `CommandBus#dispatch(CommandMessage<C>)`                                        | `void`                         | `CompletableFuture<CommandResultMessage<?>>` |
-| `CommandBus#subscribe(String, MessageHandler<? super CommandMessage<?>>)`       | `Registration`                 | `<? extends CommandHandlerRegistry>`         |
-| `CommandGateway#sendAndWait(Object)`                                            | `R`                            | `void`                                       |
-| `MessageDispatchInterceptor#handle(T)`                                          | `T`                            | `MessageStream<?>`                           |
-| `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`             | `Object`                       | `MessageStream<?>`                           |
-| `InterceptorChain#proceed()`                                                    | `Object`                       | `MessageStream<?>`                           |
-| `QueryBus#subscribe(String, Type, MessageHandler<? super QueryMessage<?, R>>)`  | `Registration`                 | `void`                                       |
+| Method                                                                         | Before                         | After                                        |
+|--------------------------------------------------------------------------------|--------------------------------|----------------------------------------------|
+| `CorrelationDataProvider#correlationDataFor()`                                 | `Map<String, String>`          | `Map<String, ?>`                             | 
+| `CommandTargetResolver#resolveTarget`                                          | `VersionedAggregateIdentifier` | `String`                                     |
+| `EventGateway#publish(Object...)`                                              | `void`                         | `CompletableFuture<Void>`                    |
+| `EventGateway#publish(List<?>)`                                                | `void`                         | `CompletableFuture<Void>`                    |
+| `SequencingPolicy#getSequenceIdentifierFor(List<?>)`                           | `Object`                       | `Optional<Object>`                           |
+| `CommandBus#dispatch(CommandMessage<C>)`                                       | `void`                         | `CompletableFuture<CommandResultMessage<?>>` |
+| `CommandBus#subscribe(String, MessageHandler<? super CommandMessage<?>>)`      | `Registration`                 | `<? extends CommandHandlerRegistry>`         |
+| `CommandGateway#sendAndWait(Object)`                                           | `R`                            | `void`                                       |
+| `MessageDispatchInterceptor#handle(T)`                                         | `T`                            | `MessageStream<?>`                           |
+| `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`            | `Object`                       | `MessageStream<?>`                           |
+| `InterceptorChain#proceed()`                                                   | `Object`                       | `MessageStream<?>`                           |
+| `EventProcessor#start()`                                                       | `void`                         | `CompletableFuture<Void>`                    |
+| `EventProcessor#shutdown()`                                                    | `void`                         | `CompletableFuture<Void>`                    |
+| `StreamingEventProcessor#releaseSegment`                                       | `void`                         | `CompletableFuture<Void>`                    |
+| `StreamingEventProcessor#resetTokens`                                          | `void`                         | `CompletableFuture<Void>`                    |
+| `QueryBus#subscribe(String, Type, MessageHandler<? super QueryMessage<?, R>>)` | `Registration`                 | `void`                                       |
