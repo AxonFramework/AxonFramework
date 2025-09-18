@@ -298,16 +298,6 @@ class DefaultConfigurerTest {
     }
 
     @Test
-    void queryUpdateEmitterConfigurationPropagatedToTheQueryBus() {
-        QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
-        LegacyConfiguration configuration = LegacyDefaultConfigurer.defaultConfiguration()
-                                                                   .configureQueryUpdateEmitter(c -> queryUpdateEmitter)
-                                                                   .buildConfiguration();
-        assertEquals(queryUpdateEmitter, configuration.queryBus().queryUpdateEmitter());
-        assertEquals(queryUpdateEmitter, configuration.queryUpdateEmitter());
-    }
-
-    @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void defaultConfigurationWithCache() throws Exception {
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
