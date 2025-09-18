@@ -200,8 +200,9 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
 
     private void configureCommandHandlers(ComponentRegistry registry) {
         groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
+            var moduleName = "CommandHandling[" + packageName + "]";
             var commandHandlingModuleBuilder = CommandHandlingModule
-                    .named(packageName)
+                    .named(moduleName)
                     .commandHandlers();
             beanDefs.forEach(namedBeanDefinition -> {
                 commandHandlingModuleBuilder
