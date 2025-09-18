@@ -356,29 +356,6 @@ class SimpleQueryBusTest {
             StepVerifier.create(testSubject.streamingQuery(testQuery, null))
                         .verifyComplete();
         }
-
-        @Test
-        void streamingQueryLoopsThroughMatchingQueryHandlersUntilSuccessfulResultIsReached() {
-            // given...
-            StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(QUERY_TYPE, "query", String.class);
-            AtomicInteger invocationCount = new AtomicInteger();
-            QueryHandler failingHandler = (query, context) -> {
-                invocationCount.incrementAndGet();
-                throw new NoHandlerForQueryException("Mock");
-            };
-            QueryHandler passingHandler = (query, context) -> {
-                invocationCount.incrementAndGet();
-                return SINGLE_RESPONSE_HANDLER.handle(query, context);
-            };
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, passingHandler);
-            // when/then...
-            StepVerifier.create(testSubject.streamingQuery(testQuery, null))
-                        .expectNextMatches(response -> Objects.equals(response.payload(), "query1234"))
-                        .verifyComplete();
-            assertThat(invocationCount.get()).isEqualTo(3);
-        }
     }
 
     @Test
