@@ -62,7 +62,7 @@ public class AxonHandlerConfigurationTest {
     @Test
     void messageRoutedToCorrectMethod() throws Exception {
         assertEquals("Command: info", commandGateway.sendAndWait("info", String.class));
-        assertEquals("Query: info", queryGateway.query("info", String.class).get());
+        assertEquals("Query: info", queryGateway.query("info", String.class, null).get());
     }
 
     @SuppressWarnings("unused")

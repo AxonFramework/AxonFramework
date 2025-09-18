@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -37,7 +38,7 @@ import java.util.concurrent.ExecutionException;
  * @see DefaultCommandGateway
  * @since 2.0.0
  */
-public interface CommandGateway {
+public interface CommandGateway extends DescribableComponent {
 
     /**
      * Sends the given {@code command} and returns a {@link CompletableFuture} immediately, without waiting for the
@@ -55,17 +56,17 @@ public interface CommandGateway {
      * {@code CommandMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.Metadata}.
      *
-     * @param command      The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
-     * @param context      The processing context, if any, to dispatch the given {@code command} in.
-     * @param expectedType The expected result type.
-     * @param <R>          The generic type of the expected response.
+     * @param command    The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
+     * @param context    The processing context, if any, to dispatch the given {@code command} in.
+     * @param resultType The class representing the type of the expected command result.
+     * @param <R>        The generic type of the expected response.
      * @return A {@link CompletableFuture} that will be resolved successfully or exceptionally based on the eventual
      * command execution result.
      */
     default <R> CompletableFuture<R> send(@Nonnull Object command,
                                           @Nullable ProcessingContext context,
-                                          @Nonnull Class<R> expectedType) {
-        return send(command, context).resultAs(expectedType);
+                                          @Nonnull Class<R> resultType) {
+        return send(command, context).resultAs(resultType);
     }
 
     /**

@@ -16,15 +16,15 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.util.concurrent.Queues;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -37,7 +37,7 @@ import java.util.stream.Stream;
  * on the {@link QualifiedName} present in the {@link QueryMessage#type() query's type} and the {@code QualifiedName}
  * resulting from the {@link QueryMessage#responseType() response type}.
  * <p>
- * Hence, queries dispatched (through either {@link #query(QueryMessage)},
+ * Hence, queries dispatched (through either {@link #query(QueryMessage, ProcessingContext)},
  * {@link #streamingQuery(StreamingQueryMessage)}, {@link #scatterGather(QueryMessage, long, TimeUnit)}, and
  * {@link #subscriptionQuery(SubscriptionQueryMessage)}) match a subscribed query handler based on "query name" and
  * "query response name."
@@ -51,20 +51,28 @@ import java.util.stream.Stream;
 public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableComponent {
 
     /**
-     * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s queryName and
-     * responseType. This method returns all values returned by the Query Handler as a Collection. This may or may not
-     * be the exact collection as defined in the Query Handler.
+     * Dispatch the given {@code query} to a {@link QueryHandler}
+     * {@link #subscribe(QueryHandlerName, QueryHandler) subscribed} to the given {@code query}'s
+     * {@link MessageType#qualifiedName() query name} and {@link QueryMessage#responseType()}.
      * <p>
-     * If the Query Handler defines a single return object (i.e. not a collection or array), that object is returned as
-     * the sole entry in a singleton collection.
+     * The resulting {@link MessageStream} will contain 0, 1, or N {@link QueryResponseMessage QueryResponseMessages},
+     * depending on the {@code QueryHandler} that handled the given {@code query}.
      * <p>
-     * When no handlers are available that can answer the given {@code query}, the returned CompletableFuture will be
-     * completed with a {@link NoHandlerForQueryException}.
+     * As several {@code QueryHandlers} can be registered for the same query name and response name, this method will
+     * loop through them (in insert order) until one has a suitable return valuable. A suitable response is any value or
+     * user exception returned from a {@code QueryHandler} When no handlers are available that can answer the given
+     * {@code query}, the returned {@link MessageStream} will have {@link MessageStream#failed(Throwable) failed} with a
+     * {@link NoHandlerForQueryException}.
      *
-     * @param query the query
-     * @return a CompletableFuture that resolves when the response is available
+     * @param query   The query to dispatch.
+     * @param context The processing context under which the query is being published (can be {@code null}).
+     * @return A message stream containing either 0, 1, or N {@link QueryResponseMessage QueryResponseMessages}.
+     * @throws NoHandlerForQueryException When no {@link QueryHandler} is registered for the given {@code query}'s
+     *                                    {@link MessageType#qualifiedName() query name} and
+     *                                    {@link QueryMessage#responseType()}.
      */
-    CompletableFuture<QueryResponseMessage> query(@Nonnull QueryMessage query);
+    @Nonnull
+    MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context);
 
     /**
      * Builds a {@link Publisher} of responses to the given {@code query}. The actual query is not dispatched until
@@ -149,27 +157,10 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * @param <U>              the incremental response types of the query
      * @return query result containing initial result and incremental updates
      */
-    default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage<Q, I, U> query, int updateBufferSize
-    ) {
-        return new SubscriptionQueryResult<>() {
-
-            @Override
-            public Mono<QueryResponseMessage> initialResult() {
-                return Mono.fromFuture(() -> query(query));
-            }
-
-            @Override
-            public Flux<SubscriptionQueryUpdateMessage> updates() {
-                return Flux.empty();
-            }
-
-            @Override
-            public boolean cancel() {
-                return true;
-            }
-        };
-    }
+    <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
+            @Nonnull SubscriptionQueryMessage<Q, I, U> query,
+            int updateBufferSize
+    );
 
     /**
      * Gets the {@link QueryUpdateEmitter} associated with this {@link QueryBus}.
