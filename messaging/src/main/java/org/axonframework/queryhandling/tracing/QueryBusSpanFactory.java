@@ -60,25 +60,6 @@ public interface QueryBusSpanFactory {
                                                   SubscriptionQueryMessage<?, ?, ?> queryMessage);
 
     /**
-     * Creates a span for a scatter-gather query.
-     *
-     * @param queryMessage The query message being handled.
-     * @param distributed  Whether the query is from a distributed source.
-     * @return The span for the handling of the scatter-gather query.
-     */
-    Span createScatterGatherSpan(QueryMessage queryMessage, boolean distributed);
-
-    /**
-     * Creates a span for one of the handlers of a scatter-gather query. There can be multiple for the same within one
-     * application. The handler index is used to distinguish between them.
-     *
-     * @param queryMessage The query message being handled.
-     * @param handlerIndex The index of the handler. Starts at 0.
-     * @return The span for the handling of the scatter-gather query.
-     */
-    Span createScatterGatherHandlerSpan(QueryMessage queryMessage, int handlerIndex);
-
-    /**
      * Creates a span for a streaming query.
      *
      * @param queryMessage The query message being dispatched.

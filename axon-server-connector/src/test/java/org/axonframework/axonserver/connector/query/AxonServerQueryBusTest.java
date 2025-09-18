@@ -44,7 +44,6 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
@@ -58,6 +57,7 @@ import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.tracing.TestSpanFactory;
@@ -84,13 +84,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.optionalInstanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -402,46 +400,6 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void scatterGather() {
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("query"), "Hello, World", instanceOf(String.class)
-        );
-
-        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(stubResponse("<string>1</string>"),
-                                                                              stubResponse("<string>2</string>"),
-                                                                              stubResponse("<string>3</string>")));
-
-        assertEquals(3, testSubject.scatterGather(testQuery, 12, TimeUnit.SECONDS).count());
-
-        verify(targetContextResolver).resolveContext(testQuery);
-        //noinspection resource
-        verify(mockQueryChannel).query(argThat(
-                r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
-                        && -1 == ProcessingInstructionHelper.numberOfResults(r.getProcessingInstructionsList())));
-        await().atMost(Duration.ofSeconds(3)).untilAsserted(() -> {
-            spanFactory.verifySpanCompleted("QueryBus.scatterGatherQueryDistributed", testQuery);
-            spanFactory.verifySpanPropagated("QueryBus.scatterGatherQueryDistributed", testQuery);
-        });
-    }
-
-    @Test
-    void scatterGatherCloseStreamDoesNotThrowExceptionOnCloseMethod() {
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("query"), "Hello, World", instanceOf(String.class)
-        );
-
-        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(stubResponse("<string>1</string>"),
-                                                                              stubResponse("<string>2</string>"),
-                                                                              stubResponse("<string>3</string>")));
-
-        Stream<QueryResponseMessage> stream = testSubject.scatterGather(testQuery,
-                                                                                12,
-                                                                                TimeUnit.SECONDS);
-        assertEquals(3, stream.count());
-        stream.close();
-    }
-
-    @Test
     void streamingFluxQuery() {
         StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
                 new MessageType("query"), "Hello, World", String.class
@@ -515,24 +473,6 @@ class AxonServerQueryBusTest {
     }
 
     @Test
-    void queryForOptionalWillRequestInstanceOfFromRemoteDestination() {
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("query"), "Hello, World", optionalInstanceOf(String.class)
-        );
-
-        Stream<QueryResponseMessage> actual =
-                testSubject.scatterGather(testQuery, 12, TimeUnit.SECONDS);
-        // not really interested in the result
-        actual.close();
-
-        verify(targetContextResolver).resolveContext(testQuery);
-        //noinspection resource
-        verify(mockQueryChannel).query(argThat(
-                r -> r.getResponseType().getType().equals(InstanceResponseType.class.getName())
-        ));
-    }
-
-    @Test
     void dispatchInterceptor() {
         List<Object> results = new LinkedList<>();
         testSubject.registerDispatchInterceptor((message, context, chain) -> {
@@ -578,23 +518,6 @@ class AxonServerQueryBusTest {
 //        result.join();
 
         assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
-    }
-
-    @Test
-    void afterShutdownDispatchingAnShutdownInProgressExceptionOnScatterGatherInvocation() {
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("query"), "some-query", instanceOf(String.class)
-        );
-
-        assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
-
-        assertWithin(
-                50, TimeUnit.MILLISECONDS,
-                () -> assertThrows(
-                        ShutdownInProgressException.class,
-                        () -> testSubject.scatterGather(testQuery, 1, TimeUnit.SECONDS)
-                )
-        );
     }
 
     @Test

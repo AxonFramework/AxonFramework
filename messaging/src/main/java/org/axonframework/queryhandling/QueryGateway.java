@@ -27,8 +27,6 @@ import reactor.util.concurrent.Queues;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 /**
  * Interface towards the Query Handling components of an application.
@@ -118,32 +116,6 @@ public interface QueryGateway extends DescribableComponent {
     @Nonnull
     <R, Q> Publisher<R> streamingQuery(@Nonnull Q query,
                                        @Nonnull Class<R> responseType);
-
-    /**
-     * Sends given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
-     * from several sources.
-     * <p>
-     * The stream is completed when a {@code timeout} occurs or when all results are received. Execution may be
-     * asynchronous, depending on the {@code QueryBus} implementation.
-     * <p>
-     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
-     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
-     * {@code QueryMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.Metadata}.
-     *
-     * @param query        The {@code query} to be sent.
-     * @param responseType The {@link ResponseType} used for this query.
-     * @param timeout      A timeout of {@code long} for the query.
-     * @param timeUnit     The selected {@link java.util.concurrent.TimeUnit} for the given {@code timeout}.
-     * @param <R>          The response class contained in the given {@code responseType}.
-     * @param <Q>          The query class.
-     * @return A stream of results.
-     */
-    @Nonnull
-    <R, Q> Stream<R> scatterGather(@Nonnull Q query,
-                                   @Nonnull ResponseType<R> responseType,
-                                   long timeout,
-                                   @Nonnull TimeUnit timeUnit);
 
     /**
      * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and
