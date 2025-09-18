@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.RoutingStrategy;
@@ -57,6 +58,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
@@ -113,18 +115,22 @@ class MessagingConfigurationDefaultsTest {
                 .isInstanceOf(DefaultDispatchInterceptorRegistry.class);
         assertThat(resultConfig.getComponent(HandlerInterceptorRegistry.class))
                 .isInstanceOf(DefaultHandlerInterceptorRegistry.class);
-        // The specific CommandGateway-implementation registered by default may be overridden by the serviceloader-mechanism.
-        // So we just check if _any_ CommandGateway has been added to the configuration.
-        assertTrue(resultConfig.hasComponent(CommandGateway.class));
         assertInstanceOf(TransactionalUnitOfWorkFactory.class, resultConfig.getComponent(UnitOfWorkFactory.class));
         // Intercepting at all times, since we have a MessageOriginProvider that leads to the CorrelationDataInterceptor
         assertInstanceOf(InterceptingCommandBus.class, resultConfig.getComponent(CommandBus.class));
+        assertEquals(CommandPriorityCalculator.defaultCalculator(),
+                     resultConfig.getComponent(CommandPriorityCalculator.class));
         assertInstanceOf(AnnotationRoutingStrategy.class, resultConfig.getComponent(RoutingStrategy.class));
+        // The specific CommandGateway-implementation registered by default may be overridden by the serviceloader-mechanism.
+        // So we just check if _any_ CommandGateway has been added to the configuration.
+        assertTrue(resultConfig.hasComponent(CommandGateway.class));
         assertInstanceOf(DefaultEventGateway.class, resultConfig.getComponent(EventGateway.class));
         assertInstanceOf(SimpleEventBus.class, resultConfig.getComponent(EventBus.class));
-        assertInstanceOf(DefaultQueryGateway.class, resultConfig.getComponent(QueryGateway.class));
         assertInstanceOf(SimpleQueryBus.class, resultConfig.getComponent(QueryBus.class));
         assertInstanceOf(SimpleQueryUpdateEmitter.class, resultConfig.getComponent(QueryUpdateEmitter.class));
+        assertEquals(QueryPriorityCalculator.defaultCalculator(),
+                     resultConfig.getComponent(QueryPriorityCalculator.class));
+        assertInstanceOf(DefaultQueryGateway.class, resultConfig.getComponent(QueryGateway.class));
     }
 
     @Test

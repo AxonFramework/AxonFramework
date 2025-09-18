@@ -19,8 +19,10 @@ package org.axonframework.config;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
@@ -35,17 +37,17 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.deadline.SimpleDeadlineManager;
-import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
-import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
-import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
+import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
+import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
+import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
+import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
@@ -81,16 +83,14 @@ import org.axonframework.modelling.saga.SagaManagerSpanFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.DefaultQueryUpdateEmitterSpanFactory;
+import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryBusSpanFactory;
-import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -211,7 +211,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         components.put(
                 QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter)
         );
-        components.put(QueryGateway.class, new Component<>(config, "queryGateway", this::defaultQueryGateway));
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
         components.put(ScopeAwareProvider.class,
@@ -343,18 +342,12 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      */
     protected CommandGateway defaultCommandGateway(LegacyConfiguration config) {
         return defaultComponent(CommandGateway.class, config)
-                .orElseGet(() -> new DefaultCommandGateway(config.commandBus(), messageTypeResolver));
-    }
-
-    /**
-     * Returns a {@link DefaultQueryGateway} that will use the configuration's {@link QueryBus} to dispatch queries.
-     *
-     * @param config The configuration that supplies the query bus.
-     * @return The default query gateway.
-     */
-    protected QueryGateway defaultQueryGateway(LegacyConfiguration config) {
-        return defaultComponent(QueryGateway.class, config)
-                .orElseGet(() -> DefaultQueryGateway.builder().queryBus(config.queryBus()).build());
+                .orElseGet(() -> new DefaultCommandGateway(
+                        config.commandBus(),
+                        messageTypeResolver,
+                        CommandPriorityCalculator.defaultCalculator(),
+                        new AnnotationRoutingStrategy()
+                ));
     }
 
     /**
@@ -367,8 +360,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         return defaultComponent(QueryBus.class, config)
                 .orElseGet(() -> {
                     SimpleQueryBus queryBus = SimpleQueryBus.builder()
-                                                            .messageMonitor(config.messageMonitor(SimpleQueryBus.class,
-                                                                                                  "queryBus"))
                                                             .transactionManager(config.getComponent(
                                                                     TransactionManager.class,
                                                                     NoTransactionManager::instance
@@ -379,9 +370,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                                                                                                             .build()
                                                             ))
                                                             .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                                                            .spanFactory(config.getComponent(QueryBusSpanFactory.class))
                                                             .build();
-                    queryBus.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
                     return queryBus;
                 });
     }
