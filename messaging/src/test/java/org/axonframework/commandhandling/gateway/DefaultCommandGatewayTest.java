@@ -17,17 +17,23 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -35,18 +41,24 @@ import static org.mockito.Mockito.*;
  * Test class validating the {@link DefaultCommandGateway}.
  *
  * @author Allard Buijze
- * @author Nakul Mishra
  */
 class DefaultCommandGatewayTest {
 
-    private DefaultCommandGateway testSubject;
+    private static final MessageTypeResolver TEST_MESSAGE_NAME_RESOLVER =
+            payloadType -> Optional.of(new MessageType(payloadType.getSimpleName()));
+
     private CommandBus mockCommandBus;
-    private static final MessageTypeResolver TEST_MESSAGE_NAME_RESOLVER = payloadType -> Optional.of(new MessageType(payloadType.getSimpleName()));
+
+    private DefaultCommandGateway testSubject;
 
     @BeforeEach
     void setUp() {
         mockCommandBus = mock(CommandBus.class);
-        testSubject = new DefaultCommandGateway(mockCommandBus, TEST_MESSAGE_NAME_RESOLVER);
+
+        testSubject = new DefaultCommandGateway(mockCommandBus,
+                                                TEST_MESSAGE_NAME_RESOLVER,
+                                                CommandPriorityCalculator.defaultCalculator(),
+                                                new AnnotationRoutingStrategy());
     }
 
     @Test
@@ -56,7 +68,13 @@ class DefaultCommandGatewayTest {
         ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
-        verify(mockCommandBus).dispatch(argThat(m -> m.payload().equals(payload)), isNull());
+        verify(mockCommandBus).dispatch(
+                argThat(m -> {
+                    Object resultPayload = m.payload();
+                    return resultPayload != null && resultPayload.equals(payload);
+                }),
+                isNull()
+        );
         assertEquals("OK", result.getResultMessage().get().payload());
     }
 
@@ -66,7 +84,13 @@ class DefaultCommandGatewayTest {
                                      any())).thenAnswer(i -> CompletableFuture.failedFuture(new MockException()));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
-        verify(mockCommandBus).dispatch(argThat(m -> m.payload().equals(payload)), isNull());
+        verify(mockCommandBus).dispatch(
+                argThat(m -> {
+                    Object resultPayload = m.payload();
+                    return resultPayload != null && resultPayload.equals(payload);
+                }),
+                isNull()
+        );
         assertTrue(result.getResultMessage().isCompletedExceptionally());
     }
 
@@ -77,7 +101,13 @@ class DefaultCommandGatewayTest {
         ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
-        verify(mockCommandBus).dispatch(argThat(m -> m.payload().equals(payload)), isNull());
+        verify(mockCommandBus).dispatch(
+                argThat(m -> {
+                    Object resultPayload = m.payload();
+                    return resultPayload != null && resultPayload.equals(payload);
+                }),
+                isNull()
+        );
         assertTrue(result.getResultMessage().isCompletedExceptionally());
     }
 
@@ -107,12 +137,23 @@ class DefaultCommandGatewayTest {
 
         // when
         TestPayload payload = new TestPayload();
-        var testCommand =
-                new GenericCommandMessage(new MessageType("command"), payload);
+        CommandMessage testCommand = new GenericCommandMessage(
+                new MessageType("command"), payload, Metadata.emptyInstance(), "routingKey", 42
+        );
+
         CommandResult result = testSubject.send(testCommand, null);
 
         // then
-        verify(mockCommandBus).dispatch(argThat(m -> m.equals(testCommand)), isNull());
+        ArgumentCaptor<CommandMessage> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
+        verify(mockCommandBus).dispatch(commandCaptor.capture(), isNull());
+        CommandMessage resultCommand = commandCaptor.getValue();
+        assertThat(testCommand.identifier()).isEqualTo(resultCommand.identifier());
+        assertThat(testCommand.type()).isEqualTo(resultCommand.type());
+        assertThat(testCommand.payload()).isEqualTo(resultCommand.payload());
+        assertThat(testCommand.payloadType()).isEqualTo(resultCommand.payloadType());
+        assertThat(testCommand.metadata()).isEqualTo(resultCommand.metadata());
+        assertThat(testCommand.routingKey()).isEqualTo(resultCommand.routingKey());
+        assertThat(testCommand.priority()).isEqualTo(resultCommand.priority());
         assertEquals("OK", result.getResultMessage().get().payload());
     }
 

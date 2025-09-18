@@ -21,9 +21,11 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.transaction.Transaction;
@@ -31,8 +33,6 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -50,7 +50,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.*;
+import static org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils.transactionalUnitOfWorkFactory;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -77,7 +77,10 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
         transactionManager = new EntityManagerTransactionManager(entityManager);
 
         commandBus = new SimpleCommandBus(transactionalUnitOfWorkFactory(transactionManager), Collections.emptyList());
-        commandGateway = new DefaultCommandGateway(commandBus, new ClassBasedMessageTypeResolver());
+        commandGateway = new DefaultCommandGateway(commandBus,
+                                                   new ClassBasedMessageTypeResolver(),
+                                                   CommandPriorityCalculator.defaultCalculator(),
+                                                   new AnnotationRoutingStrategy());
 
         Set<Class<? extends ParentAggregate>> subtypes =
                 new HashSet<>(asList(Child1Aggregate.class, Child2Aggregate.class));

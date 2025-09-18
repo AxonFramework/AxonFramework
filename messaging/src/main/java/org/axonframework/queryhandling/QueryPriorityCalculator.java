@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.query;
+package org.axonframework.queryhandling;
 
-import org.axonframework.queryhandling.QueryMessage;
+import jakarta.annotation.Nonnull;
 
 /**
- * Calculate the priority of {@link QueryMessage} based on its content. Higher value means higher priority.
+ * Calculate the priority of {@link QueryMessage} based on its content.
+ * <p>
+ * Higher value means higher priority.
  *
  * @author Marc Gathier
- * @since 4.0
+ * @since 4.0.0
  */
 @FunctionalInterface
 public interface QueryPriorityCalculator {
@@ -33,14 +35,15 @@ public interface QueryPriorityCalculator {
      * @param query a {@link QueryMessage} to prioritize
      * @return an {@code int} defining the priority of the given {@code query}
      */
-    int determinePriority(QueryMessage query);
+    int determinePriority(@Nonnull QueryMessage query);
 
     /**
-     * Returns a default implementation of the {@link QueryPriorityCalculator}, always returning priority {@code 0}.
+     * Returns a default implementation of the {@code QueryPriorityCalculator}, always returning priority {@code 0}.
      *
-     * @return a lambda taking in a {@link QueryMessage} to prioritize to the default of priority {@code 0}
+     * @return A lambda taking in a {@link QueryMessage} to prioritize to the default of priority {@code 0}.
      */
-    static QueryPriorityCalculator defaultQueryPriorityCalculator() {
+    @Nonnull
+    static QueryPriorityCalculator defaultCalculator() {
         return query -> 0;
     }
 }
