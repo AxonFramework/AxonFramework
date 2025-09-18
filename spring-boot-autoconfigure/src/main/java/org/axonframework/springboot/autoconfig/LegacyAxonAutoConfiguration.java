@@ -117,7 +117,7 @@ public class LegacyAxonAutoConfiguration {
                             );
                             config.onShutdown(workerExecutor::shutdown);
                             return builder.workerExecutor(workerExecutor)
-                                          .initialSegmentCount(initialSegmentCount(settings, 16))
+                                          .initialSegmentCount(initialSegmentCount(settings))
                                           .tokenClaimInterval(tokenClaimIntervalMillis(settings))
                                           .batchSize(settings.getBatchSize());
                         }
@@ -157,8 +157,8 @@ public class LegacyAxonAutoConfiguration {
         });
     }
 
-    private int initialSegmentCount(EventProcessorProperties.ProcessorSettings settings, int defaultCount) {
-        return settings.getInitialSegmentCount() != null ? settings.getInitialSegmentCount() : defaultCount;
+    private int initialSegmentCount(EventProcessorProperties.ProcessorSettings settings) {
+        return settings.getInitialSegmentCount();
     }
 
     private long tokenClaimIntervalMillis(EventProcessorProperties.ProcessorSettings settings) {

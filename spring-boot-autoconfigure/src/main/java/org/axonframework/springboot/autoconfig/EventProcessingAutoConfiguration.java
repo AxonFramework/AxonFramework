@@ -16,17 +16,21 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.config.EventProcessingConfiguration;
-import org.axonframework.config.EventProcessingModule;
+import org.axonframework.spring.config.EventProcessorSettings;
+import org.axonframework.springboot.EventProcessorProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
- * Auto configuration for {@link EventProcessingModule}.
+ * Auto configuration for event processors.
  *
  * @author Milan Savic
+ * @author Simon Zambrovski
  * @since 4.0
  */
 @AutoConfiguration
@@ -38,11 +42,22 @@ import org.springframework.context.annotation.Bean;
         "org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration",
         "org.axonframework.springboot.autoconfig.CBORMapperAutoConfiguration",
 })
+@EnableConfigurationProperties(EventProcessorProperties.class)
 public class EventProcessingAutoConfiguration {
 
+    /**
+     * Constructs event processing settings.
+     *
+     * @param properties event processor properties.
+     * @return event processor settings keyed by processor name.
+     */
     @Bean
-    @ConditionalOnMissingBean({EventProcessingModule.class, EventProcessingConfiguration.class})
-    public EventProcessingModule eventProcessingModule() {
-        return new EventProcessingModule();
+    public Map<String, EventProcessorSettings> eventProcessorSettings(EventProcessorProperties properties) {
+        return properties.getProcessors().entrySet().stream().collect(
+                Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                )
+        );
     }
 }

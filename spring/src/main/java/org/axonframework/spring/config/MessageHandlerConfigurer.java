@@ -17,8 +17,11 @@
 package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentRegistry;
@@ -26,7 +29,9 @@ import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
+import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.queryhandling.QueryMessage;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -37,7 +42,11 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static java.lang.String.format;
 
 /**
  * An implementation of a {@link ConfigurationEnhancer} that will register a list of beans as handlers for a specific
@@ -75,35 +84,14 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     public void enhance(@Nonnull ComponentRegistry registry) {
         switch (type) {
             case EVENT:
-                groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
-                    var eventHandlingModuleBuilder = EventProcessorModule
-                            .pooledStreaming(packageName)
-                            .eventHandlingComponents(phase -> {
-                                EventHandlingComponentsConfigurer.AdditionalComponentPhase resultOfRegistration = null;
-                                for (NamedBeanDefinition namedBeanDefinition : beanDefs) {
-                                    resultOfRegistration = phase.annotated(this.createComponentBuilder(
-                                            namedBeanDefinition));
-                                }
-                                return resultOfRegistration;
-                            });
-                    registry.registerModule(eventHandlingModuleBuilder.notCustomized());
-                });
+                configureEventHandlers(registry);
                 break;
             case QUERY:
                 // TODO: register query handler registration as a part of #3364
 //                handlerBeans.forEach(handler -> configurer.registerQueryHandler(c -> applicationContext.getBean(handler)));
                 break;
             case COMMAND:
-                groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
-                    var commandHandlingModuleBuilder = CommandHandlingModule
-                            .named(packageName)
-                            .commandHandlers();
-                    beanDefs.forEach(namedBeanDefinition -> {
-                        commandHandlingModuleBuilder
-                                .annotatedCommandHandlingComponent(this.createComponentBuilder(namedBeanDefinition));
-                    });
-                    registry.registerModule(commandHandlingModuleBuilder.build());
-                });
+                configureCommandHandlers(registry);
                 break;
         }
     }
@@ -112,6 +100,122 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
+
+    private void configureEventHandlers(ComponentRegistry registry) {
+
+        groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
+
+            Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> componentRegistration = (phase) -> {
+                EventHandlingComponentsConfigurer.AdditionalComponentPhase resultOfRegistration = null;
+                for (NamedBeanDefinition namedBeanDefinition : beanDefs) {
+                    resultOfRegistration = phase.annotated(this.createComponentBuilder(namedBeanDefinition));
+                }
+                return resultOfRegistration;
+            };
+
+            EventProcessorModule module;
+            EventProcessorSettings settings = resolve(packageName);
+            if (settings == null) {
+                module = EventProcessorModule
+                        .pooledStreaming(packageName)
+                        .eventHandlingComponents(componentRegistration)
+                        .notCustomized();
+            } else {
+                switch (settings.getProcessorMode()) {
+                    case POOLED -> {
+                        var moduleSettings = (EventProcessorSettings.PooledEventProcessorSettings) settings;
+                        module = EventProcessorModule
+                                .pooledStreaming(packageName)
+                                .eventHandlingComponents(componentRegistration)
+                                .customized((c, pooledStreamConfiguration) -> {
+                                    // worker executor
+                                    var workerExecutor = Executors.newScheduledThreadPool(
+                                            moduleSettings.getThreadCount(),
+                                            new AxonThreadFactory("WorkPackage[" + packageName + "]")
+                                    );
+                                    // FIXME -> can we shut down the executor if the application shuts down?
+
+                                    var config = pooledStreamConfiguration
+                                            .workerExecutor(workerExecutor)
+                                            .tokenClaimInterval(moduleSettings.getTokenClaimIntervalInMillis())
+                                            .batchSize(moduleSettings.getBatchSize())
+                                            .initialSegmentCount(moduleSettings.getInitialSegmentCount())
+                                            ;
+                                    if (moduleSettings.getSource() != null) {
+                                        //noinspection unchecked
+                                        config = config.eventSource(getTypedBeanByName(
+                                                moduleSettings.getSource(),
+                                                StreamableEventSource.class,
+                                                "Invalid event source [%s] configured for Pooled Streaming Event Processor ["
+                                                        + packageName
+                                                        + "]."
+                                        ));
+                                    }
+                                    return config;
+                                });
+                    }
+                    case SUBSCRIBING -> {
+                        var moduleSettings = (EventProcessorSettings.SubscribingEventProcessorSettings) settings;
+                        module = EventProcessorModule
+                                .subscribing(packageName)
+                                .eventHandlingComponents(componentRegistration)
+                                .customized((c, subscribingConfiguration) -> {
+                                    var config = subscribingConfiguration;
+                                    if (moduleSettings.getSource() != null) {
+                                        //noinspection unchecked
+                                        config = config.messageSource(getTypedBeanByName(
+                                                moduleSettings.getSource(),
+                                                SubscribableMessageSource.class,
+                                                "Invalid message source [%s] configured for Subscribing Event Processor ["
+                                                        + packageName
+                                                        + "]."
+                                        ));
+                                    }
+                                    return config;
+                                });
+                    }
+                    default -> throw new IllegalStateException(
+                            "Unsupported event handling mode: " + settings.getProcessorMode()
+                                    + " for package "
+                                    + packageName);
+                }
+            }
+            registry.registerModule(module);
+        });
+    }
+
+    private void configureCommandHandlers(ComponentRegistry registry) {
+        groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
+            var commandHandlingModuleBuilder = CommandHandlingModule
+                    .named(packageName)
+                    .commandHandlers();
+            beanDefs.forEach(namedBeanDefinition -> {
+                commandHandlingModuleBuilder
+                        .annotatedCommandHandlingComponent(this.createComponentBuilder(namedBeanDefinition));
+            });
+            registry.registerModule(commandHandlingModuleBuilder.build());
+        });
+    }
+
+    @Nonnull
+    private <T> T getTypedBeanByName(@Nonnull String name, @Nonnull Class<T> clazz, @Nonnull String message) {
+        var object = applicationContext.getBean(name);
+        if (clazz.isAssignableFrom(object.getClass())) {
+            //noinspection unchecked
+            return (T) object;
+        }
+        throw new AxonConfigurationException(format(
+                message + " The expected bean should be of type %s, but it was %s.",
+                name, clazz.getSimpleName(), object.getClass().getSimpleName()
+        ));
+    }
+
+    @Nullable
+    private EventProcessorSettings resolve(@Nonnull String packageName) {
+        Map<String, EventProcessorSettings> allSettings = applicationContext.getBeansOfType(EventProcessorSettings.class);
+        return allSettings.get(packageName);
+    }
+
 
     private ComponentBuilder<Object> createComponentBuilder(@Nonnull NamedBeanDefinition namedBeanDefinition) {
         return (c) -> applicationContext.getBean(namedBeanDefinition.name());
