@@ -83,7 +83,7 @@ public class SimpleEventStore implements EventStore {
             for (EventMessage event : events) {
                 taggedEvents.add(tagEvents(event));
             }
-            return eventStorageEngine.appendEvents(none, taggedEvents)
+            return eventStorageEngine.appendEvents(none, context, taggedEvents)
                                      .thenApply(EventStorageEngine.AppendTransaction::commit)
                                      .thenApply(marker -> null);
         } else {
@@ -107,23 +107,23 @@ public class SimpleEventStore implements EventStore {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken() {
-        return eventStorageEngine.firstToken();
+    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
+        return eventStorageEngine.firstToken(context);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken() {
-        return eventStorageEngine.latestToken();
+    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
+        return eventStorageEngine.latestToken(context);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
-        return eventStorageEngine.tokenAt(at);
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+        return eventStorageEngine.tokenAt(at, context);
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition) {
-        return eventStorageEngine.stream(condition);
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
+        return eventStorageEngine.stream(condition, context);
     }
 
     @Override

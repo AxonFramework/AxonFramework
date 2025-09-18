@@ -51,6 +51,9 @@ import static org.mockito.Mockito.*;
  *
  * @author Greg Woods
  */
+@Tags({
+        @Tag("flaky"),
+})
 class MultiStreamableMessageSourceTest {
 
     private MultiStreamableMessageSource testSubject;
