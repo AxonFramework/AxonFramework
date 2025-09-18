@@ -42,7 +42,7 @@ class GenericStreamingQueryMessageTest extends MessageTestSuite<StreamingQueryMe
     protected StreamingQueryMessage buildDefaultMessage() {
         Message delegate =
                 new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA);
-        return new GenericStreamingQueryMessage(delegate, TEST_RESPONSE_TYPE);
+        return new GenericStreamingQueryMessage(delegate, String.class);
     }
 
     @Override

@@ -260,25 +260,25 @@ class AxonServerQueryBusTest {
 
         @Test
         void streamingQueryWhenLocalHandlerIsPresent() {
-            when(localSegment.streamingQuery(testStreamingQuery)).thenReturn(Flux.just(
+            when(localSegment.streamingQuery(testStreamingQuery, null)).thenReturn(Flux.just(
                     new GenericQueryResponseMessage(new MessageType("query"), "ok")
             ));
 
-            StepVerifier.create(Flux.from(testSubject.streamingQuery(testStreamingQuery))
+            StepVerifier.create(Flux.from(testSubject.streamingQuery(testStreamingQuery, null))
                                     .map(Message::payload))
                         .expectNext("ok")
                         .verifyComplete();
 
-            verify(localSegment).streamingQuery(testStreamingQuery);
+            verify(localSegment).streamingQuery(testStreamingQuery, null);
             verify(mockQueryChannel, never()).query(any());
         }
 
         @Test
         void streamingQueryWhenRegistrationIsCancel() {
             registration.cancel();
-            testSubject.streamingQuery(testStreamingQuery);
+            testSubject.streamingQuery(testStreamingQuery, null);
 
-            verify(localSegment, never()).streamingQuery(testStreamingQuery);
+            verify(localSegment, never()).streamingQuery(testStreamingQuery, null);
         }
     }
 
@@ -412,13 +412,13 @@ class AxonServerQueryBusTest {
         //noinspection unchecked
         when(mockQueryChannel.query(any())).thenReturn(stubResultStream);
 
-        StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery))
+        StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery, null))
                                 .map(Message::payload))
                     .expectNext("1", "2", "3")
                     .verifyComplete();
 
         verify(targetContextResolver).resolveContext(testQuery);
-        verify(localSegment, never()).streamingQuery(testQuery);
+        verify(localSegment, never()).streamingQuery(testQuery, null);
         //noinspection resource
         verify(mockQueryChannel).query(argThat(
                 r -> r.getPayload().getData().toStringUtf8().equals("<string>Hello, World</string>")
@@ -438,7 +438,7 @@ class AxonServerQueryBusTest {
 
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(new RuntimeException("oops")));
 
-        StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery))
+        StepVerifier.create(Flux.from(testSubject.streamingQuery(testQuery, null))
                                 .map(Message::payload))
                     .verifyErrorMatches(t -> t instanceof RuntimeException && "oops".equals(t.getMessage()));
 
@@ -462,7 +462,7 @@ class AxonServerQueryBusTest {
 
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>());
 
-        StepVerifier.create(testSubject.streamingQuery(testQuery))
+        StepVerifier.create(testSubject.streamingQuery(testQuery, null))
                     .verifyComplete();
 
         verify(targetContextResolver).resolveContext(testQuery);

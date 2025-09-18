@@ -51,6 +51,7 @@ public abstract class MessageStreamUtils {
         return Flux.create(emitter -> {
             FluxStreamAdapter<M> fluxTask = new FluxStreamAdapter<>(source, emitter);
             emitter.onRequest(i -> fluxTask.process());
+            emitter.onCancel(source::close);
             source.onAvailable(fluxTask::process);
         });
     }

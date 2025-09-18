@@ -44,7 +44,7 @@ import static java.util.Arrays.asList;
  * @author Milan Savic
  * @author Stefan Dragisic
  */
-@Disabled("TODO #3488")
+@Disabled("TODO #3488 - Reintroduce as part of AnnotationQueryHandlerAdapter changes")
 class StreamingQueryTest {
 
     private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
@@ -70,11 +70,11 @@ class StreamingQueryTest {
     }
 
     private <R> Flux<R> streamingQueryPayloads(StreamingQueryMessage testQuery, Class<R> cls) {
-        return streamingQuery(testQuery).map(m -> m.payloadAs(cls));
+        return streamingQuery(testQuery).mapNotNull(m -> m.payloadAs(cls));
     }
 
     private Flux<QueryResponseMessage> streamingQuery(StreamingQueryMessage testQuery) {
-        return Flux.from(queryBus.streamingQuery(testQuery));
+        return Flux.from(queryBus.streamingQuery(testQuery, null));
     }
 
     @Test
