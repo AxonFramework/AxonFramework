@@ -627,15 +627,26 @@ that were implemented by this class) has been removed from the framework. To con
 Processors and register instances, use the `MessagingConfigurer#eventProcessing` method.
 
 ### Processing Group layer removal
+
 The `ProcessingGroup` layer has been removed from the framework. This layer was used to group Event Handlers to be
 assigned to a single Event Processor.
 The new configuration API just allows you to register Event Handlers directly to an Event Processor with the following
 syntax:
+
 ```java
 EventProcessorModule.pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
-.eventHandlingComponents(components -> components.declarative(eventHandler1).annotated(eventHandler2))
-.notCustomized();
+.
+
+eventHandlingComponents(components ->components.
+
+declarative(eventHandler1).
+
+annotated(eventHandler2))
+        .
+
+notCustomized();
 ```
+
 With this usage the `eventHandler1` and `eventHandler2` will be assigned to the same Event Processor with the name
 `when-student-enrolled-to-max-courses-then-send-notification`.
 It's an equivalent of the `@ProcessingGroup("when-student-enrolled-to-max-courses-then-send-notification")` annotation
@@ -1532,17 +1543,39 @@ adjusts the `QueryBus#query` method to return a `MessageStream` of the `QueryRes
 `CompletableFuture`. As the `MessageStream` supports 0, 1, or N responses, this shifts lets the `QueryBus#query` method
 align with whatever query result coming back from query handlers.
 
+#### Subscribing Query Handlers
+
 Subscribing query handlers has been adjusted to allow easier registration of query handling lambdas. This shift was
 combined with the new `QualifiedName` (as described [here](#message-type-and-qualified-name)) replacing the previous
-`String queryName` parameter. Lastly, the old subscribe operation enforced providing a `Type`, which has been mapped to
-a... TODO - Likely this becomes the ResponseType, but not sure yet...
-Both the query name and the response name/type are combined in a `QueryHandlerName` object.
-This makes it so that subscribe looks like
-`QueryBus#subscribe(QueryHandlerName, QueryHandler)` i.o. `QueryBus#subscribe(String, Type, MessageHandler<?>)`.
-On top of that, it is now possible to register a single handler for multiple names, through
-`QueryBus#subscribe(Set<QueryHandlerName>, QueryHandler)`. This ensures that registering a Query Handling
-Component (read: object with several query handlers in it) can be performed seamlessly. For ease of use, there's thus
-also a `QueryBus#subscribe(QueryHandlingComponent)` operation present.
+`String queryName` parameter. Lastly, the old subscribe operation enforced providing a `Type`, which has been replaced
+by a `QualifiedName` for the query response. Both the query name and the response name are combined in a
+`QueryHandlerName` object. This makes it so that subscribe looks like
+`QueryBus#subscribe(QueryHandlerName, QueryHandler)` i.o. `QueryBus#subscribe(String, Type, MessageHandler<?>)`. On top
+of that, it is now possible to register a single handler for multiple names, through
+`QueryBus#subscribe(Set<QueryHandlerName>, QueryHandler)`. This ensures that registering a Query Handling Component (
+read: object with several query handlers in it) can be performed seamlessly. For ease of use, there's thus also a
+`QueryBus#subscribe(QueryHandlingComponent)` operation present.
+
+Now a note on `QueryHandler` uniqueness within a JVM.
+
+In Axon Framework 4 you were able to register multiple Query Handlers for the same query name and response name.
+This had to do with the scatter-gather query, that would hit multiple query handlers to gather the responses.
+Since we decided to remove scatter-gather entirely, there's no necessity to being able to register multiple handlers
+for the same combination anymore.
+
+On top of that, Axon Framework 4 be "smart about" selecting a Query Handler that best fit the expected `ResponseType`.
+As Query Handler registration is no longer based on a the `ResponeType`/`Type`, we lose the capability to, for
+example, let a single-response query favor a single-response query handler. Or, for a multiple-response query to favor
+a
+multiple-response query handler, while a query handler was registered for both single and multiple responses.
+
+However, we view losing this capability as a benefit, as (1) it led to complex code and (2) led to unclarity in use,
+as we have noticed over the years. As a consequence, the local `QueryBus` will now throw a
+DuplicateQueryHandlerSubscriptionException` whenever a `QueryHandler` for an already existing query name and response
+name is being registered.
+
+As with any change, if you feel strongly about the previous solution, be sure to reach out to use. We would love to
+hear your use case to deduce the best way forward.
 
 ### Query Gateway
 
@@ -1560,7 +1593,7 @@ To keep support for querying a single or multiple instances, the gateway now has
 2. `CompletableFuture<List<R>> QueryGateway#queryMany(Object, Class<R>, ProcessingContext)`
 
 This shift is inline with the streaming query (introduced in Axon Framework 4.6), which also does **not** allow you to
-define the `ResponseType`. 
+define the `ResponseType`.
 
 As might be clear, the `QueryGateway` has an entirely new look and feel. If there are any operations we have
 removed/adjusted you miss, or if you have any other suggestions for improvement, please
