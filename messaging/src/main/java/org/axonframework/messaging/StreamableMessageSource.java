@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventstreaming.TrackingTokenSource;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -72,17 +73,17 @@ public interface StreamableMessageSource<M extends Message> extends TrackingToke
     }
 
     @Override
-    default CompletableFuture<TrackingToken> firstToken() {
+    default CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(createHeadToken());
     }
 
     @Override
-    default CompletableFuture<TrackingToken> latestToken() {
+    default CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(createTailToken());
     }
 
     @Override
-    default CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+    default CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(createTokenAt(at));
     }
 

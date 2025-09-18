@@ -43,7 +43,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -75,7 +74,7 @@ public class SimpleQueryBus implements QueryBus {
 
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final QueryUpdateEmitter queryUpdateEmitter;
-    private final ConcurrentMap<QueryHandlerName, List<QueryHandler>> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<QueryHandlerName, QueryHandler> subscriptions = new ConcurrentHashMap<>();
 
     private final MessageTypeResolver messageTypeResolver;
 
@@ -101,20 +100,10 @@ public class SimpleQueryBus implements QueryBus {
     @Override
     public QueryBus subscribe(@Nonnull QueryHandlerName handlerName, @Nonnull QueryHandler queryHandler) {
         logger.debug("Subscribing query handler for name [{}].", handlerName);
-        subscriptions.compute(handlerName, (n, handlers) -> {
-            if (handlers == null) {
-                handlers = new CopyOnWriteArrayList<>();
-            } else {
-                logger.warn(
-                        "A duplicate query handler was found for query [{}] and response [{}}]. "
-                                + "This is only valid for scatter-gather queries. "
-                                + "Other queries will only use one of these handlers.",
-                        handlerName.queryName(), handlerName.responseName()
-                );
-            }
-            handlers.add(queryHandler);
-            return handlers;
-        });
+        QueryHandler existingHandler = subscriptions.putIfAbsent(handlerName, queryHandler);
+        if (existingHandler != null && existingHandler != queryHandler) {
+            throw new DuplicateQueryHandlerSubscriptionException(handlerName, existingHandler, queryHandler);
+        }
         return this;
     }
 
@@ -125,15 +114,11 @@ public class SimpleQueryBus implements QueryBus {
             logger.debug("Dispatching direct-query for query name [{}] and response [{}].",
                          query.type().name(), query.responseType());
         }
-
         try {
-            for (QueryHandler handler : handlersFor(query)) {
-                MessageStream<QueryResponseMessage> responseStream = handle(query, handler).get();
-                if (containsResponseOrUserException(responseStream)) {
-                    return responseStream;
-                }
-            }
-            return MessageStream.empty().cast();
+            MessageStream<QueryResponseMessage> responseStream = handle(query, handlerFor(query)).get();
+            return containsResponseOrUserException(responseStream)
+                    ? responseStream
+                    : MessageStream.empty().cast();
         } catch (Exception e) {
             return MessageStream.failed(e);
         }
@@ -354,20 +339,6 @@ public class SimpleQueryBus implements QueryBus {
         return new GenericQueryResponseMessage(messageTypeResolver.resolveOrThrow(result), result);
     }
 
-    @Nonnull
-    private List<QueryHandler> handlersFor(@Nonnull QueryMessage query) {
-        ResponseType<?> responseType = query.responseType();
-        QueryHandlerName handlerName = new QueryHandlerName(
-                query.type().qualifiedName(),
-                new QualifiedName(responseType.getExpectedResponseType())
-        );
-        List<QueryHandler> handlers = subscriptions.get(handlerName);
-        if (handlers == null || handlers.isEmpty()) {
-            throw NoHandlerForQueryException.forBus(query);
-        }
-        return handlers;
-    }
-
     private List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> getHandlersForMessage(
             QueryMessage queryMessage
     ) {
@@ -393,6 +364,19 @@ public class SimpleQueryBus implements QueryBus {
     private Publisher<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> getStreamingHandlersForMessage(
             StreamingQueryMessage queryMessage) {
         return Flux.fromIterable(getHandlersForMessage(queryMessage));
+    }
+
+    @Nonnull
+    private QueryHandler handlerFor(@Nonnull QueryMessage query) {
+        ResponseType<?> responseType = query.responseType();
+        QueryHandlerName handlerName = new QueryHandlerName(
+                query.type().qualifiedName(),
+                new QualifiedName(responseType.getExpectedResponseType())
+        );
+        if (!subscriptions.containsKey(handlerName)) {
+            throw NoHandlerForQueryException.forBus(query);
+        }
+        return subscriptions.get(handlerName);
     }
 
     @Override

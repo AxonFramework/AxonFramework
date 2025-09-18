@@ -17,6 +17,7 @@
 package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
@@ -69,22 +70,22 @@ public class RecordingEventStore extends RecordingEventSink implements EventStor
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition) {
-        return eventStore.open(condition);
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
+        return eventStore.open(condition, context);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken() {
-        return eventStore.firstToken();
+    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
+        return eventStore.firstToken(context);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken() {
-        return eventStore.latestToken();
+    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
+        return eventStore.latestToken(context);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
-        return eventStore.tokenAt(at);
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
+        return eventStore.tokenAt(at, context);
     }
 }

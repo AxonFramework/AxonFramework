@@ -15,7 +15,6 @@
  */
 package org.axonframework.queryhandling;
 
-import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -40,10 +39,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 import static org.junit.jupiter.api.Assertions.*;
@@ -100,43 +100,40 @@ class SimpleQueryBusTest {
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
             // then...
             testSubject.describeTo(testDescriptor);
-            Map<QueryHandlerName, List<QueryHandler>> subscriptions = testDescriptor.getProperty("subscriptions");
-            assertEquals(1, subscriptions.size());
-            assertEquals(1, subscriptions.values().iterator().next().size());
-            // when second subscription of same names...
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
-            // then...
-            testSubject.describeTo(testDescriptor);
-            subscriptions = testDescriptor.getProperty("subscriptions");
-            assertEquals(1, subscriptions.size());
-            assertEquals(2, subscriptions.values().iterator().next().size());
-            // when third subscription of different names...
+            Map<QueryHandlerName, QueryHandler> subscriptions = testDescriptor.getProperty("subscriptions");
+            assertThat(subscriptions.size()).isEqualTo(1);
+            assertThat(subscriptions).containsValue(SINGLE_RESPONSE_HANDLER);
+            // when second subscription with different query  name...
             testSubject.subscribe(new QualifiedName("test2"), RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
             // then...
             testSubject.describeTo(testDescriptor);
             subscriptions = testDescriptor.getProperty("subscriptions");
-            assertEquals(2, subscriptions.size());
+            assertThat(subscriptions.size()).isEqualTo(2);
+            assertThat(subscriptions).containsValue(SINGLE_RESPONSE_HANDLER);
+            // when third subscription with different response name...
+            testSubject.subscribe(QUERY_NAME, new QualifiedName(Integer.class), SINGLE_RESPONSE_HANDLER);
+            // then...
+            testSubject.describeTo(testDescriptor);
+            subscriptions = testDescriptor.getProperty("subscriptions");
+            assertThat(subscriptions.size()).isEqualTo(3);
         }
 
         @Test
-        void subscribingSameHandlerTwiceInvokedOnce() {
+        void subscribingSameHandlerTwiceDoesNotThrowDuplicateQueryHandlerSubscriptionException() {
             // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", SINGLE_STRING_RESPONSE);
-            AtomicInteger invocationCount = new AtomicInteger();
-            QueryHandler handler = (query, context) -> {
-                invocationCount.incrementAndGet();
-                return SINGLE_RESPONSE_HANDLER.handle(query, context);
-            };
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, handler);
-            // when...
-            Optional<Object> optionalResult = testSubject.query(testQuery, null)
-                                                         .next()
-                                                         .map(entry -> entry.message().payload());
-            // then...
-            assertThat(optionalResult).isPresent();
-            assertThat(optionalResult.get()).isEqualTo("query1234");
-            assertThat(invocationCount.get()).isEqualTo(1);
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            // when/then...
+            assertDoesNotThrow(() -> testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER));
+        }
+
+        @Test
+        void subscribingDifferentHandlerForSameNamesThrowsDuplicateQueryHandlerSubscriptionException() {
+            // given...
+            QueryHandler testHandler = (query, context) -> MessageStream.empty().cast();
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            // when/then...
+            assertThatThrownBy(() -> testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, testHandler))
+                    .isInstanceOf(DuplicateQueryHandlerSubscriptionException.class);
         }
     }
 
@@ -223,34 +220,7 @@ class SimpleQueryBusTest {
         }
 
         @Test
-        void directQueryLoopsThroughMatchingQueryHandlersUntilSuccessfulResultIsReached() {
-            // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", SINGLE_STRING_RESPONSE);
-            AtomicInteger invocationCount = new AtomicInteger();
-            QueryHandler failingHandler = (query, context) -> {
-                invocationCount.incrementAndGet();
-                throw new NoHandlerForQueryException("Mock");
-            };
-            QueryHandler passingHandler = (query, context) -> {
-                invocationCount.incrementAndGet();
-                return SINGLE_RESPONSE_HANDLER.handle(query, context);
-            };
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, passingHandler);
-            // when...
-            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
-            // then...
-            assertThat(result.hasNextAvailable()).isTrue();
-            Optional<MessageStream.Entry<QueryResponseMessage>> nextResponse = result.next();
-            assertThat(nextResponse).isPresent();
-            assertThat(nextResponse.get().message().payload()).isEqualTo("query1234");
-            assertThat(result.isCompleted()).isTrue();
-            assertThat(invocationCount.get()).isEqualTo(3);
-        }
-
-        @Test
-        void directQueryForMultiResponsesWithSingleResponseHandlerOnlyReturnsSingleHandlerResponse() {
+        void directQueryForMultiResponsesWithSingleResponseHandlerReturnsSingleResponse() {
             // given...
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", MULTI_STRING_RESPONSE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
@@ -264,11 +234,9 @@ class SimpleQueryBusTest {
         }
 
         @Test
-        @Disabled("TODO #3488 - Requires that we DO store if the subscribed QueryHandler returns a single or multi response")
-        void directQueryForMultiResponsesWithSingleAndMultiResponseHandlerReturnsMultiHandlerResponse() {
+        void directQueryForMultiResponsesWithMultiResponseHandlerReturnsMultipleResponses() {
             // given...
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", MULTI_STRING_RESPONSE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, MULTI_RESPONSE_HANDLER);
             // when...
             MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);

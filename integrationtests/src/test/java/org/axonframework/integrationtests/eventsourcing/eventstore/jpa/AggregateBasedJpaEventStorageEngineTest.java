@@ -39,6 +39,7 @@ import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -103,6 +104,11 @@ class AggregateBasedJpaEventStorageEngineTest
     }
 
     @Override
+    protected ProcessingContext processingContext() {
+        return null;
+    }
+
+    @Override
     protected long globalSequenceOfEvent(long position) {
         return position;
     }
@@ -121,7 +127,7 @@ class AggregateBasedJpaEventStorageEngineTest
     void sourcingFromNonGapAwareTrackingTokenShouldThrowException() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(5)))
+                () -> testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(5)), processingContext())
         );
     }
 
@@ -165,7 +171,7 @@ class AggregateBasedJpaEventStorageEngineTest
                      .executeUpdate();
         transaction.commit();
 
-        testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())))
+        testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(0, Collections.emptySet())), processingContext())
                    .reduce(
                            new ArrayList<TrackingToken>(), (tokens, entry) -> {
                                Optional<TrackingToken> optionalToken = TrackingToken.fromContext(entry);
@@ -270,7 +276,7 @@ class AggregateBasedJpaEventStorageEngineTest
         GapAwareTrackingToken startPosition = GapAwareTrackingToken.newInstance(secondLastEventIndex, gaps);
 
         MessageStream<EventMessage> eventStream =
-                gapConfigTestSubject.stream(StreamingCondition.startingFrom(startPosition));
+                gapConfigTestSubject.stream(StreamingCondition.startingFrom(startPosition), processingContext());
         assertThat(eventStream.hasNextAvailable()).isTrue();
         TrackingToken token = eventStream.next()
                                          .flatMap(TrackingToken::fromContext)
@@ -289,10 +295,10 @@ class AggregateBasedJpaEventStorageEngineTest
         transaction.commit();
     }
 
-    private static void appendCommitAndWait(AggregateBasedJpaEventStorageEngine subject,
-                                            AppendCondition condition,
-                                            TaggedEventMessage<?>... events) {
-        subject.appendEvents(condition, events)
+    private void appendCommitAndWait(AggregateBasedJpaEventStorageEngine subject,
+                                     AppendCondition condition,
+                                     TaggedEventMessage<?>... events) {
+        subject.appendEvents(condition, processingContext(), events)
                .thenCompose(EventStorageEngine.AppendTransaction::commit)
                .join();
     }
