@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -36,7 +36,6 @@ import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -48,8 +47,6 @@ import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
-
-import java.util.Collections;
 
 import static org.axonframework.commandhandling.CommandBusTestUtils.aCommandBus;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
@@ -81,7 +78,7 @@ class CommandHandlerInterceptorTest {
         commandGateway = new DefaultCommandGateway(commandBus,
                                                    nameResolver,
                                                    CommandPriorityCalculator.defaultCalculator(),
-                                                   null);
+                                                   new AnnotationRoutingStrategy());
         commandBus.subscribe(AggregateAnnotationCommandHandler.<MyAggregate>builder()
                                                               .aggregateType(MyAggregate.class)
                                                               .repository(myAggregateRepository)

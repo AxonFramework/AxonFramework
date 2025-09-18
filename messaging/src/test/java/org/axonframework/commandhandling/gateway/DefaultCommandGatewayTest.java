@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.utils.MockException;
@@ -54,7 +55,7 @@ class DefaultCommandGatewayTest {
         testSubject = new DefaultCommandGateway(mockCommandBus,
                                                 TEST_MESSAGE_NAME_RESOLVER,
                                                 CommandPriorityCalculator.defaultCalculator(),
-                                                null);
+                                                new AnnotationRoutingStrategy());
     }
 
     @Test

@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -79,7 +80,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
         commandGateway = new DefaultCommandGateway(commandBus,
                                                    new ClassBasedMessageTypeResolver(),
                                                    CommandPriorityCalculator.defaultCalculator(),
-                                                   null);
+                                                   new AnnotationRoutingStrategy());
 
         Set<Class<? extends ParentAggregate>> subtypes =
                 new HashSet<>(asList(Child1Aggregate.class, Child2Aggregate.class));

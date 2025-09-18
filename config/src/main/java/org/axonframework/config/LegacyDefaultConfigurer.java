@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
@@ -342,7 +343,10 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     protected CommandGateway defaultCommandGateway(LegacyConfiguration config) {
         return defaultComponent(CommandGateway.class, config)
                 .orElseGet(() -> new DefaultCommandGateway(
-                        config.commandBus(), messageTypeResolver, CommandPriorityCalculator.defaultCalculator(), null
+                        config.commandBus(),
+                        messageTypeResolver,
+                        CommandPriorityCalculator.defaultCalculator(),
+                        new AnnotationRoutingStrategy()
                 ));
     }
 

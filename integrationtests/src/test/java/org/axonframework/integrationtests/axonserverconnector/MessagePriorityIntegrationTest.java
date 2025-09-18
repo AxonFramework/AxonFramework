@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.DistributedCommandBusConfiguration;
@@ -119,7 +120,7 @@ class MessagePriorityIntegrationTest {
         commandGateway = new DefaultCommandGateway(commandBus,
                                                    new ClassBasedMessageTypeResolver(),
                                                    commandPriorityCalculator,
-                                                   null);
+                                                   new AnnotationRoutingStrategy());
     }
 
     @AfterEach

@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -65,7 +66,7 @@ class AsyncMessageHandlerTest {
     private final CommandGateway commandGateway = new DefaultCommandGateway(commandBus,
                                                                             new ClassBasedMessageTypeResolver(),
                                                                             CommandPriorityCalculator.defaultCalculator(),
-                                                                            null);
+                                                                            new AnnotationRoutingStrategy());
     private final QueryBus queryBus = SimpleQueryBus.builder().build();
     private final QueryGateway queryGateway = new DefaultQueryGateway(queryBus,
                                                                       new ClassBasedMessageTypeResolver(),
