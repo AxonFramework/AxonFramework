@@ -239,7 +239,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      * Instantiate a Builder to be able to create an {@link AxonServerQueryBus}.
      * <p>
      * The {@link QueryPriorityCalculator} is defaulted to
-     * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()}, the {@link TargetContextResolver} defaults to a
+     * {@link QueryPriorityCalculator#defaultCalculator()}, the {@link TargetContextResolver} defaults to a
      * lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
      * {@link ExecutorServiceFactory} creates a {@link ThreadPoolExecutor} with {@link BlockingQueue} and a poolsize
      * provided by the {@link AxonServerConfiguration}.<br/>
@@ -549,7 +549,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      * Builder class to instantiate an {@link AxonServerQueryBus}.
      * <p>
      * The {@link QueryPriorityCalculator} is defaulted to
-     * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()} and the {@link TargetContextResolver} defaults
+     * {@link QueryPriorityCalculator#defaultCalculator()} and the {@link TargetContextResolver} defaults
      * to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context.<br/>
      * The {@code queryExecutorServiceBuilder} builds an {@link ExecutorService} based on a given
      * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
@@ -572,7 +572,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         private QueryUpdateEmitter updateEmitter;
         private Serializer messageSerializer;
         private Serializer genericSerializer;
-        private QueryPriorityCalculator priorityCalculator = QueryPriorityCalculator.defaultQueryPriorityCalculator();
+        private QueryPriorityCalculator priorityCalculator = QueryPriorityCalculator.defaultCalculator();
         private TargetContextResolver<? super QueryMessage> targetContextResolver =
                 q -> configuration.getContext();
         private BiFunction<AxonServerConfiguration, BlockingQueue<Runnable>, ExecutorService> queryExecutorServiceBuilder =
@@ -683,7 +683,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         /**
          * Sets the {@link QueryPriorityCalculator} used to deduce the priority of an incoming query among other
          * queries, to give precedence over high(er) valued queries for example. Defaults to a
-         * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()}.
+         * {@link QueryPriorityCalculator#defaultCalculator()}.
          *
          * @param priorityCalculator a {@link QueryPriorityCalculator} used to deduce the priority of an incoming query
          *                           among other queries
