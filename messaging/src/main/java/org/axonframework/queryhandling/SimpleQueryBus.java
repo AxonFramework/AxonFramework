@@ -30,12 +30,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Implementation of the {@code QueryBus} that dispatches queries (through
@@ -61,7 +59,7 @@ public class SimpleQueryBus implements QueryBus {
 
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final QueryUpdateEmitter queryUpdateEmitter;
-    private final ConcurrentMap<QueryHandlerName, List<QueryHandler>> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<QueryHandlerName, QueryHandler> subscriptions = new ConcurrentHashMap<>();
 
     /**
      * Construct a {@code SimpleQueryBus} with the given {@code unitOfWorkFactory} and {@code queryUpdateEmitter}.
@@ -82,20 +80,10 @@ public class SimpleQueryBus implements QueryBus {
     @Override
     public QueryBus subscribe(@Nonnull QueryHandlerName handlerName, @Nonnull QueryHandler queryHandler) {
         logger.debug("Subscribing query handler for name [{}].", handlerName);
-        subscriptions.compute(handlerName, (n, handlers) -> {
-            if (handlers == null) {
-                handlers = new CopyOnWriteArrayList<>();
-            } else {
-                logger.warn(
-                        "A duplicate query handler was found for query [{}] and response [{}}]. "
-                                + "This is only valid for scatter-gather queries. "
-                                + "Other queries will only use one of these handlers.",
-                        handlerName.queryName(), handlerName.responseName()
-                );
-            }
-            handlers.add(queryHandler);
-            return handlers;
-        });
+        QueryHandler existingHandler = subscriptions.putIfAbsent(handlerName, queryHandler);
+        if (existingHandler != null && existingHandler != queryHandler) {
+            throw new DuplicateQueryHandlerSubscriptionException(handlerName, existingHandler, queryHandler);
+        }
         return this;
     }
 
@@ -106,15 +94,11 @@ public class SimpleQueryBus implements QueryBus {
             logger.debug("Dispatching direct-query for query name [{}] and response [{}].",
                          query.type().name(), query.responseType());
         }
-
         try {
-            for (QueryHandler handler : handlersFor(query)) {
-                MessageStream<QueryResponseMessage> responseStream = handle(query, handler).get();
-                if (containsResponseOrUserException(responseStream)) {
-                    return responseStream;
-                }
-            }
-            return MessageStream.empty().cast();
+            MessageStream<QueryResponseMessage> responseStream = handle(query, handlerFor(query)).get();
+            return containsResponseOrUserException(responseStream)
+                    ? responseStream
+                    : MessageStream.empty().cast();
         } catch (Exception e) {
             return MessageStream.failed(e);
         }
@@ -209,17 +193,16 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Nonnull
-    private List<QueryHandler> handlersFor(@Nonnull QueryMessage query) {
+    private QueryHandler handlerFor(@Nonnull QueryMessage query) {
         ResponseType<?> responseType = query.responseType();
         QueryHandlerName handlerName = new QueryHandlerName(
                 query.type().qualifiedName(),
                 new QualifiedName(responseType.getExpectedResponseType())
         );
-        List<QueryHandler> handlers = subscriptions.get(handlerName);
-        if (handlers == null || handlers.isEmpty()) {
+        if (!subscriptions.containsKey(handlerName)) {
             throw NoHandlerForQueryException.forBus(query);
         }
-        return handlers;
+        return subscriptions.get(handlerName);
     }
 
     @Override

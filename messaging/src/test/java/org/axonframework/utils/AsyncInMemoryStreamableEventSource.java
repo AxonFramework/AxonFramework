@@ -17,11 +17,12 @@
 package org.axonframework.utils;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
@@ -29,6 +30,7 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SimpleEntry;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -112,7 +114,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
         AsyncMessageStream stream = new AsyncMessageStream(condition);
         openStreams.add(stream);
         onOpen.run();
@@ -120,12 +122,12 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken() {
+    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken() {
+    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? null
@@ -134,7 +136,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
         return eventStorage.entrySet()
                            .stream()
                            .filter(positionToEventEntry -> {
@@ -148,7 +150,7 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
                            .map(GlobalSequenceTrackingToken::new)
                            .map(tt -> (TrackingToken) tt)
                            .map(CompletableFuture::completedFuture)
-                           .orElseGet(this::firstToken);
+                           .orElseGet(() -> firstToken(context));
     }
 
     /**

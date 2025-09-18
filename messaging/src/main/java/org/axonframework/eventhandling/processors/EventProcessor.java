@@ -40,14 +40,12 @@ public interface EventProcessor {
     String name();
 
     /**
-     * Start processing events.
+     * Initiates a start, providing a {@link CompletableFuture} that completes when the start process is
+     * finished.
+     *
+     * @return a CompletableFuture that completes when the start process is finished.
      */
-    void start();
-
-    /**
-     * Stops processing events. Blocks until the shutdown is complete.
-     */
-    void shutDown();
+    CompletableFuture<Void> start();
 
     /**
      * Indicates whether this processor is currently running (i.e. consuming events from its message source).
@@ -60,7 +58,7 @@ public interface EventProcessor {
      * Indicates whether the processor has been shut down due to an error. In such case, the processor has forcefully
      * shut down, as it wasn't able to automatically recover.
      * <p>
-     * Note that this method returns {@code false} when the processor was stopped using {@link #shutDown()}.
+     * Note that this method returns {@code false} when the processor was stopped using {@link #shutdown()}.
      *
      * @return {@code true} when paused due to an error, otherwise {@code false}
      */
@@ -72,7 +70,5 @@ public interface EventProcessor {
      *
      * @return a CompletableFuture that completes when the shutdown process is finished.
      */
-    default CompletableFuture<Void> shutdownAsync() {
-        return CompletableFuture.runAsync(this::shutDown);
-    }
+    CompletableFuture<Void> shutdown();
 }

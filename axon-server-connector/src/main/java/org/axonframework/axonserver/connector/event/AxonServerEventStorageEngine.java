@@ -24,9 +24,10 @@ import io.axoniq.axonserver.grpc.event.dcb.SourceEventsResponse;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsResponse;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
@@ -39,6 +40,7 @@ import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,6 +79,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
 
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
+                                                             @Nullable ProcessingContext context,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
         if (events.isEmpty()) {
             return CompletableFuture.completedFuture(EmptyAppendTransaction.INSTANCE);
@@ -99,7 +102,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition) {
+    public MessageStream<EventMessage> source(@Nonnull SourcingCondition condition, @Nullable ProcessingContext context) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
@@ -110,7 +113,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition) {
+    public MessageStream<EventMessage> stream(@Nonnull StreamingCondition condition, @Nullable ProcessingContext context) {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
@@ -121,7 +124,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> firstToken() {
+    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation firstToken() is invoked.");
         }
@@ -131,7 +134,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> latestToken() {
+    public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation latestToken() is invoked.");
         }
@@ -141,7 +144,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at, @Nullable ProcessingContext context) {
         if (logger.isDebugEnabled()) {
             logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
         }

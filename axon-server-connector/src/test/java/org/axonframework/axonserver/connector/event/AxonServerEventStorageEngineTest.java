@@ -23,6 +23,7 @@ import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.serialization.ChainingContentTypeConverter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
@@ -41,6 +42,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Steven van Beelen
  */
 @Testcontainers
+@Tags({
+        @Tag("slow"),
+})
 class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServerEventStorageEngine> {
 
     private static final String CONTEXT = "default";
@@ -74,6 +78,11 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
                                                            AxonServerContainerUtils.DCB_CONTEXT);
         EventConverter eventConverter = new DelegatingEventConverter(new ChainingContentTypeConverter());
         return new AxonServerEventStorageEngine(connection, eventConverter);
+    }
+
+    @Override
+    protected ProcessingContext processingContext() {
+        return null;
     }
 
     @Test
