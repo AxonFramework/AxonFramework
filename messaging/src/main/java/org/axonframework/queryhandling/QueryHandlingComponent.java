@@ -29,7 +29,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface QueryHandlingComponent extends QueryHandler, QueryHandlerRegistry {
+public interface QueryHandlingComponent extends QueryHandler {
 
     /**
      * All supported {@link QueryMessage queries}, referenced through a {@link QualifiedName}.

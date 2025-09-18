@@ -26,6 +26,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryHandlerRegistry;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
@@ -39,7 +40,10 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class QueryModelComponent implements EventHandlingComponent, QueryHandlingComponent {
+public class QueryModelComponent implements
+        EventHandlingComponent,
+        QueryHandlingComponent,
+        QueryHandlerRegistry<QueryModelComponent> {
 
     private final SimpleEventHandlingComponent eventComponent;
     private final SimpleQueryHandlingComponent queryComponent;
@@ -76,14 +80,14 @@ public class QueryModelComponent implements EventHandlingComponent, QueryHandlin
     @Nonnull
     @Override
     public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
-                                                         @Nonnull ProcessingContext context) {
+                                                      @Nonnull ProcessingContext context) {
         return queryComponent.handle(query, context);
     }
 
     @Nonnull
     @Override
     public MessageStream.Empty<Message> handle(@Nonnull EventMessage event,
-                                                     @Nonnull ProcessingContext context) {
+                                               @Nonnull ProcessingContext context) {
         return eventComponent.handle(event, context);
     }
 }

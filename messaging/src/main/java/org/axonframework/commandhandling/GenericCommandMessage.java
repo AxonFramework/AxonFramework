@@ -28,6 +28,7 @@ import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -170,6 +171,16 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
                                                convertedPayload,
                                                delegate.metadata());
         return new GenericCommandMessage(converted, routingKey, priority);
+    }
+
+    @Override
+    protected void describeTo(StringBuilder stringBuilder) {
+        super.describeTo(stringBuilder);
+        stringBuilder.append(", routingKey='")
+                     .append(routingKey().orElse("null"))
+                     .append("', priority='")
+                     .append(priority().orElse(0))
+                     .append("'");
     }
 
     @Override

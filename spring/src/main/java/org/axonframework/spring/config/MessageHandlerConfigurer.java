@@ -118,10 +118,11 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
             };
 
             EventProcessorModule module;
+            String processorName = "EventProcessor[" + packageName + "]";
             EventProcessorSettings settings = resolve(packageName);
             if (settings == null) {
                 module = EventProcessorModule
-                        .pooledStreaming(packageName)
+                        .pooledStreaming(processorName)
                         .eventHandlingComponents(componentRegistration)
                         .notCustomized();
             } else {
@@ -130,7 +131,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                         var moduleSettings = (EventProcessorSettings.PooledEventProcessorSettings) settings;
                         String executorName = "WorkPackage[" + packageName + "]";
                         module = EventProcessorModule
-                                .pooledStreaming(packageName)
+                                .pooledStreaming(processorName)
                                 .eventHandlingComponents(componentRegistration)
                                 .customized((c, pooledStreamConfiguration) -> {
                                     // worker executor
@@ -170,7 +171,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                     case SUBSCRIBING -> {
                         var moduleSettings = (EventProcessorSettings.SubscribingEventProcessorSettings) settings;
                         module = EventProcessorModule
-                                .subscribing(packageName)
+                                .subscribing(processorName)
                                 .eventHandlingComponents(componentRegistration)
                                 .customized((c, subscribingConfiguration) -> {
                                     var config = subscribingConfiguration;

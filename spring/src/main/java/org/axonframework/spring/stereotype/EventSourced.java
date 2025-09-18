@@ -51,7 +51,7 @@ import java.lang.annotation.Target;
 @Component
 @Scope("prototype")
 @EventSourcedEntity
-public @interface Aggregate {
+public @interface EventSourced {
 
     /**
      * Get the String representation of the entity's type. Optional. This defaults to the simple name of the annotated

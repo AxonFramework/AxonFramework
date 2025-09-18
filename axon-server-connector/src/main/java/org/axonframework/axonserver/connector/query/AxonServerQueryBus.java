@@ -59,11 +59,12 @@ import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
@@ -227,7 +228,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      * Instantiate a Builder to be able to create an {@link AxonServerQueryBus}.
      * <p>
      * The {@link QueryPriorityCalculator} is defaulted to
-     * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()}, the {@link TargetContextResolver} defaults to a
+     * {@link QueryPriorityCalculator#defaultCalculator()}, the {@link TargetContextResolver} defaults to a
      * lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
      * {@link ExecutorServiceFactory} creates a {@link ThreadPoolExecutor} with {@link BlockingQueue} and a poolsize
      * provided by the {@link AxonServerConfiguration}.<br/>
@@ -542,7 +543,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<QueryMessage> interceptor) {
-        return localSegment.registerHandlerInterceptor(interceptor);
+        return null;
     }
 
     public @Nonnull
@@ -584,7 +585,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      * Builder class to instantiate an {@link AxonServerQueryBus}.
      * <p>
      * The {@link QueryPriorityCalculator} is defaulted to
-     * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()} and the {@link TargetContextResolver} defaults
+     * {@link QueryPriorityCalculator#defaultCalculator()} and the {@link TargetContextResolver} defaults
      * to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context.<br/>
      * The {@code queryExecutorServiceBuilder} builds an {@link ExecutorService} based on a given
      * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
@@ -607,7 +608,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         private QueryUpdateEmitter updateEmitter;
         private Serializer messageSerializer;
         private Serializer genericSerializer;
-        private QueryPriorityCalculator priorityCalculator = QueryPriorityCalculator.defaultQueryPriorityCalculator();
+        private QueryPriorityCalculator priorityCalculator = QueryPriorityCalculator.defaultCalculator();
         private TargetContextResolver<? super QueryMessage> targetContextResolver =
                 q -> configuration.getContext();
         private BiFunction<AxonServerConfiguration, BlockingQueue<Runnable>, ExecutorService> queryExecutorServiceBuilder =
@@ -718,7 +719,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         /**
          * Sets the {@link QueryPriorityCalculator} used to deduce the priority of an incoming query among other
          * queries, to give precedence over high(er) valued queries for example. Defaults to a
-         * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()}.
+         * {@link QueryPriorityCalculator#defaultCalculator()}.
          *
          * @param priorityCalculator a {@link QueryPriorityCalculator} used to deduce the priority of an incoming query
          *                           among other queries

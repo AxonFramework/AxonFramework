@@ -20,17 +20,19 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.utils.InMemoryStreamableEventSource;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * Tests for the {@link LegacyStreamableEventSource} class, which it's an adapter for the deprecated
@@ -41,14 +43,9 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class LegacyStreamableEventSourceTest {
 
-    private InMemoryStreamableEventSource legacyEventSource;
-    private LegacyStreamableEventSource<TrackedEventMessage> testSubject;
-
-    @BeforeEach
-    void beforeEach() {
-        legacyEventSource = new InMemoryStreamableEventSource();
-        testSubject = new LegacyStreamableEventSource<>(legacyEventSource);
-    }
+    private InMemoryStreamableEventSource legacyEventSource = new InMemoryStreamableEventSource();
+    private LegacyStreamableEventSource<TrackedEventMessage> testSubject = new LegacyStreamableEventSource<>(legacyEventSource);
+    private ProcessingContext processingContext = mock(ProcessingContext.class);
 
     @Nested
     class ConstructorTest {
@@ -56,7 +53,8 @@ class LegacyStreamableEventSourceTest {
         @Test
         void doNotSupportEventCriteriaOtherThanAny() {
             assertThatThrownBy(() -> testSubject.open(
-                    StreamingCondition.conditionFor(firstToken(), EventCriteria.havingTags("tag1", "tag2"))))
+                    StreamingCondition.conditionFor(firstToken(), EventCriteria.havingTags("tag1", "tag2")),
+                    processingContext))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining(
                             "Only AnyEvent criteria is supported in this legacy adapter, but received: TagFilteredEventCriteria[tags=[Tag[key=tag1, value=tag2]]]");
@@ -75,14 +73,14 @@ class LegacyStreamableEventSourceTest {
         @Test
         void firstTokenShouldBeSameAsInDelegate() {
             var expected = legacyEventSource.createHeadToken();
-            var actual = testSubject.firstToken().join();
+            var actual = testSubject.firstToken(processingContext).join();
             assertThat(actual).isEqualTo(expected);
         }
 
         @Test
         void latestTokenShouldBeSameAsInDelegate() {
             var expected = legacyEventSource.createTailToken();
-            var actual = testSubject.latestToken().join();
+            var actual = testSubject.latestToken(processingContext).join();
             assertThat(actual).isEqualTo(expected);
         }
     }
@@ -94,7 +92,7 @@ class LegacyStreamableEventSourceTest {
 
         @BeforeEach
         void beforeEach() {
-            messageStream = testSubject.open(StreamingCondition.startingFrom(firstToken()));
+            messageStream = testSubject.open(StreamingCondition.startingFrom(firstToken()), processingContext);
         }
 
         @AfterEach

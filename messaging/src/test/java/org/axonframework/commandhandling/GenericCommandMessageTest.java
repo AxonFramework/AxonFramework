@@ -48,14 +48,16 @@ class GenericCommandMessageTest extends MessageTestSuite<CommandMessage> {
 
     @Test
     void toStringIsAsExpected() {
-        String actual = new GenericCommandMessage(TEST_TYPE, "MyPayload")
-                .andMetadata(Metadata.with("key", "value").and("key2", "13"))
-                .toString();
+        String actual = new GenericCommandMessage(
+                TEST_TYPE, "MyPayload", Metadata.with("key", "value").and("key2", "13"), "routingKey", 42
+        ).toString();
 
         assertTrue(actual.startsWith("GenericCommandMessage{type={message#0.0.1}, payload={MyPayload}, metadata={"),
                    "Wrong output: " + actual);
         assertTrue(actual.contains("'key'->'value'"), "Wrong output: " + actual);
         assertTrue(actual.contains("'key2'->'13'"), "Wrong output: " + actual);
-        assertEquals(163, actual.length(), "Wrong output: " + actual);
+        assertTrue(actual.contains(", routingKey='routingKey'"), "Wrong output: " + actual);
+        assertTrue(actual.contains(", priority='42'"), "Wrong output: " + actual);
+        assertEquals(203, actual.length(), "Wrong output: " + actual);
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling;
+package org.axonframework.queryhandling.interceptors;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
@@ -23,6 +23,8 @@ import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryMessage;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 

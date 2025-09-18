@@ -76,9 +76,9 @@ class MessageHandlerConfigurerTest {
         assertThat(registeredModules).hasSize(3);
         assertThat(registeredModules).allMatch(module -> module instanceof CommandHandlingModule);
         assertThat(registeredModules.stream().map(Module::name)).containsExactlyInAnyOrder(
-                "my.command.packaging",
-                "my.command.packaging.custom",
-                "default"
+                "my.command.packaging.CommandHandling",
+                "my.command.packaging.custom.CommandHandling",
+                "default.CommandHandling"
         );
     }
 
@@ -110,9 +110,9 @@ class MessageHandlerConfigurerTest {
         assertThat(registeredModules).hasSize(3);
         assertThat(registeredModules).allMatch(module -> module instanceof PooledStreamingEventProcessorModule);
         assertThat(registeredModules.stream().map(Module::name)).containsExactlyInAnyOrder(
-                "my.event.packaging",
-                "my.event.packaging.custom",
-                "default"
+                "my.event.packaging.EventProcessor",
+                "my.event.packaging.custom.EventProcessor",
+                "default.EventProcessor"
         );
     }
 
@@ -137,7 +137,7 @@ class MessageHandlerConfigurerTest {
         configurer.enhance(registry);
 
         /*
-        TODO -> activate as soon as QueryHandlers are in place
+        TODO -> activate as soon as QueryHandlers are in place, as part of #3358
         var moduleCaptor = ArgumentCaptor.forClass(org.axonframework.configuration.Module.class);
         Mockito.verify(registry, times(3)).registerModule(moduleCaptor.capture());
 
