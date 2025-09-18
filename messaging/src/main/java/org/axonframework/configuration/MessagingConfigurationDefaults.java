@@ -232,6 +232,10 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         );
     }
 
+    private static RoutingStrategy defaultRoutingStrategy(Configuration config) {
+        return new AnnotationRoutingStrategy();
+    }
+
     private static CommandGateway defaultCommandGateway(Configuration config) {
         return new DefaultCommandGateway(
                 config.getComponent(CommandBus.class),
@@ -295,10 +299,6 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     private static QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
         return SimpleQueryUpdateEmitter.builder().build();
-    }
-
-    private static RoutingStrategy defaultRoutingStrategy(Configuration config) {
-        return new AnnotationRoutingStrategy();
     }
 
     private static void registerDecorators(@Nonnull ComponentRegistry registry) {
