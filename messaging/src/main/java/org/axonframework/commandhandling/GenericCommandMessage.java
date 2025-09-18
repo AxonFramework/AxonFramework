@@ -176,11 +176,11 @@ public class GenericCommandMessage extends MessageDecorator implements CommandMe
     @Override
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
-        stringBuilder.append(", routingKey={")
+        stringBuilder.append(", routingKey='")
                      .append(routingKey().orElse("null"))
-                     .append("}, priority={")
+                     .append("', priority='")
                      .append(priority().orElse(0))
-                     .append("}");
+                     .append("'");
     }
 
     @Override
