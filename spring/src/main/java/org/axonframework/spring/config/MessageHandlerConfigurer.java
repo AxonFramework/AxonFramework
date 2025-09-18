@@ -123,19 +123,22 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         var beanFactory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
         return handlerBeansRefs.stream()
                                .map(name -> new NamedBeanDefinition(name, beanFactory.getBeanDefinition(name)))
-                               .collect(Collectors.groupingBy(nbd -> {
-                                                                  String className = nbd.definition().getBeanClassName();
-                                                                  if (className == null
-                                                                          && nbd.definition() instanceof AbstractBeanDefinition abstractDefinition) {
-                                                                      if (abstractDefinition.hasBeanClass()) {
-                                                                          className = abstractDefinition.getBeanClass().getName();
-                                                                      }
-                                                                  }
-                                                                  return (className != null && className.contains(".")) ?
-                                                                          className.substring(0, className.lastIndexOf('.'))
-                                                                          : "default";
-                                                              }
-                               ));
+                               .collect(Collectors.groupingBy(
+                                                nbd -> {
+                                                    String className = nbd.definition().getBeanClassName();
+                                                    if (className == null) {
+                                                        if (nbd.definition() instanceof AbstractBeanDefinition abstractBeanDefinition) {
+                                                            if (abstractBeanDefinition.hasBeanClass()) {
+                                                                className = abstractBeanDefinition.getBeanClass().getName();
+                                                            }
+                                                        }
+                                                    }
+                                                    return (className != null && className.contains("."))
+                                                            ? className.substring(0, className.lastIndexOf('.'))
+                                                            : "default";
+                                                }
+                                        )
+                               );
     }
 
     /**
