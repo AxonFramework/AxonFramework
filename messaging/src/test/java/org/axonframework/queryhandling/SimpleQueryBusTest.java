@@ -16,6 +16,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.common.TypeReference;
+import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Message;
@@ -33,19 +34,21 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 import static org.junit.jupiter.api.Assertions.*;
@@ -225,34 +228,7 @@ class SimpleQueryBusTest {
         }
 
         @Test
-        void directQueryLoopsThroughMatchingQueryHandlersUntilSuccessfulResultIsReached() {
-            // given...
-            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", SINGLE_STRING_RESPONSE);
-            AtomicInteger invocationCount = new AtomicInteger();
-            QueryHandler failingHandler = (query, context) -> {
-                invocationCount.incrementAndGet();
-                throw new NoHandlerForQueryException("Mock");
-            };
-            QueryHandler passingHandler = (query, context) -> {
-                invocationCount.incrementAndGet();
-                return SINGLE_RESPONSE_HANDLER.handle(query, context);
-            };
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, passingHandler);
-            // when...
-            MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
-            // then...
-            assertThat(result.hasNextAvailable()).isTrue();
-            Optional<MessageStream.Entry<QueryResponseMessage>> nextResponse = result.next();
-            assertThat(nextResponse).isPresent();
-            assertThat(nextResponse.get().message().payload()).isEqualTo("query1234");
-            assertThat(result.isCompleted()).isTrue();
-            assertThat(invocationCount.get()).isEqualTo(3);
-        }
-
-        @Test
-        void directQueryForMultiResponsesWithSingleResponseHandlerOnlyReturnsSingleHandlerResponse() {
+        void directQueryForMultiResponsesWithSingleResponseHandlerReturnsSingleResponse() {
             // given...
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", MULTI_STRING_RESPONSE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
@@ -266,11 +242,9 @@ class SimpleQueryBusTest {
         }
 
         @Test
-        @Disabled("TODO #3488 - Requires that we DO store if the subscribed QueryHandler returns a single or multi response")
-        void directQueryForMultiResponsesWithSingleAndMultiResponseHandlerReturnsMultiHandlerResponse() {
+        void directQueryForMultiResponsesWithMultiResponseHandlerReturnsMultipleResponses() {
             // given...
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", MULTI_STRING_RESPONSE);
-            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, MULTI_RESPONSE_HANDLER);
             // when...
             MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
