@@ -28,9 +28,11 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
+import org.reactivestreams.Publisher;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -40,6 +42,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -320,6 +323,97 @@ class SimpleQueryBusTest {
             assertTrue(completedResult.contains("query5678"));
             verify(transactionManager).startTransaction();
             verify(testTransaction).commit();
+        }
+    }
+
+    @Nested
+    class StreamingQuery {
+
+        @Test
+        void streamingQueryIsLazy() {
+            // given...
+            AtomicBoolean invoked = new AtomicBoolean(false);
+            StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(QUERY_TYPE, "query", String.class);
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> {
+                invoked.set(true);
+                QueryResponseMessage response =
+                        new GenericQueryResponseMessage(RESPONSE_TYPE, query.payload() + "1234");
+                return MessageStream.just(response);
+            });
+            // when...
+            Publisher<QueryResponseMessage> result = testSubject.streamingQuery(testQuery, null);
+            // then...
+            assertThat(invoked).isFalse();
+            StepVerifier.create(result)
+                        .expectNextMatches(response -> Objects.equals(response.payload(), "query1234"))
+                        .verifyComplete();
+            assertThat(invoked).isTrue();
+        }
+
+        @Test
+        void streamingQueryForUnknownQueryNameAndResponseNameReturnsFailedNoHandlerForQueryExceptionPublisherStream() {
+            // given...
+            StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(QUERY_TYPE, "query", String.class);
+            // when/then...
+            StepVerifier.create(testSubject.streamingQuery(testQuery, null))
+                        .expectError(NoHandlerForQueryException.class)
+                        .verify();
+        }
+
+        @Test
+        void streamingQueryReturnsPublisherWithSingleEntry() {
+            // given...
+            StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(QUERY_TYPE, "query", String.class);
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            // when/then...
+            StepVerifier.create(testSubject.streamingQuery(testQuery, null))
+                        .expectNextMatches(response -> Objects.equals(response.payload(), "query1234"))
+                        .verifyComplete();
+        }
+
+        @Test
+        void streamingQueryReturnsFailedPublisherFromFailingStreamResultQueryHandler() {
+            // given...
+            StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(QUERY_TYPE, "query", String.class);
+            QueryHandler failingHandler = (query, context) -> MessageStream.failed(new MockException("Mock"));
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
+            // when/then...
+            StepVerifier.create(testSubject.streamingQuery(testQuery, null))
+                        .verifyErrorMatches(throwable -> throwable instanceof MockException mockException
+                                && mockException.getMessage().equals("Mock"));
+        }
+
+        @Test
+        void streamingQueryResultsInEmptyMessageStream() {
+            // given...
+            StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(QUERY_TYPE, "query", String.class);
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
+            // when/then...
+            StepVerifier.create(testSubject.streamingQuery(testQuery, null))
+                        .verifyComplete();
+        }
+
+        @Test
+        void streamingQueryLoopsThroughMatchingQueryHandlersUntilSuccessfulResultIsReached() {
+            // given...
+            StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(QUERY_TYPE, "query", String.class);
+            AtomicInteger invocationCount = new AtomicInteger();
+            QueryHandler failingHandler = (query, context) -> {
+                invocationCount.incrementAndGet();
+                throw new NoHandlerForQueryException("Mock");
+            };
+            QueryHandler passingHandler = (query, context) -> {
+                invocationCount.incrementAndGet();
+                return SINGLE_RESPONSE_HANDLER.handle(query, context);
+            };
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, passingHandler);
+            // when/then...
+            StepVerifier.create(testSubject.streamingQuery(testQuery, null))
+                        .expectNextMatches(response -> Objects.equals(response.payload(), "query1234"))
+                        .verifyComplete();
+            assertThat(invocationCount.get()).isEqualTo(3);
         }
     }
 

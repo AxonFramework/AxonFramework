@@ -94,7 +94,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      */
     default Publisher<QueryResponseMessage> streamingQuery(@Nonnull StreamingQueryMessage query,
                                                            @Nullable ProcessingContext context) {
-        return Mono.just(query(query, context))
+        return Mono.fromSupplier(() -> query(query, context))
                    .flatMapMany(MessageStream::asFlux)
                    .map(MessageStream.Entry::message);
     }
