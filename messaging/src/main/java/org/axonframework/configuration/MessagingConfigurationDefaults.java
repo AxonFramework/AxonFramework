@@ -97,9 +97,10 @@ import java.util.concurrent.CompletableFuture;
  *     <li>Registers a {@link AnnotationRoutingStrategy} for class {@link RoutingStrategy}</li>
  *     <li>Registers a {@link DefaultEventGateway} for class {@link EventGateway}</li>
  *     <li>Registers a {@link SimpleEventBus} for class {@link EventBus}</li>
- *     <li>Registers a {@link DefaultQueryGateway} for class {@link QueryGateway}</li>
  *     <li>Registers a {@link SimpleQueryBus} for class {@link QueryBus}</li>
  *     <li>Registers a {@link SimpleQueryUpdateEmitter} for class {@link QueryUpdateEmitter}</li>
+ *     <li>Registers a {@link QueryPriorityCalculator#defaultCalculator()} for class {@link QueryPriorityCalculator}</li>
+ *     <li>Registers a {@link DefaultQueryGateway} for class {@link QueryGateway}</li>
  * </ul>
  * <p>
  * Furthermore, this enhancer will decorate the:
@@ -158,16 +159,20 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                                       MessagingConfigurationDefaults::defaultDispatchInterceptorRegistry)
                 .registerIfNotPresent(HandlerInterceptorRegistry.class,
                                       MessagingConfigurationDefaults::defaultHandlerInterceptorRegistry)
-                .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(CommandBus.class, MessagingConfigurationDefaults::defaultCommandBus)
+                .registerIfNotPresent(CommandPriorityCalculator.class,
+                                      c -> CommandPriorityCalculator.defaultCalculator())
+                .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(RoutingStrategy.class, MessagingConfigurationDefaults::defaultRoutingStrategy)
                 .registerIfNotPresent(EventGateway.class, MessagingConfigurationDefaults::defaultEventGateway)
                 .registerIfNotPresent(EventSink.class, MessagingConfigurationDefaults::defaultEventSink)
                 .registerIfNotPresent(EventBus.class, MessagingConfigurationDefaults::defaultEventBus)
-                .registerIfNotPresent(QueryGateway.class, MessagingConfigurationDefaults::defaultQueryGateway)
                 .registerIfNotPresent(QueryBus.class, MessagingConfigurationDefaults::defaultQueryBus)
                 .registerIfNotPresent(QueryUpdateEmitter.class,
-                                      MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
+                                      MessagingConfigurationDefaults::defaultQueryUpdateEmitter)
+                .registerIfNotPresent(QueryPriorityCalculator.class,
+                                      c -> QueryPriorityCalculator.defaultCalculator())
+                .registerIfNotPresent(QueryGateway.class, MessagingConfigurationDefaults::defaultQueryGateway);
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(Configuration config) {
@@ -269,7 +274,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         return new DefaultQueryGateway(
                 config.getComponent(QueryBus.class),
                 config.getComponent(MessageTypeResolver.class),
-                config.getOptionalComponent(QueryPriorityCalculator.class).orElse(null)
+                config.getComponent(QueryPriorityCalculator.class)
         );
     }
 

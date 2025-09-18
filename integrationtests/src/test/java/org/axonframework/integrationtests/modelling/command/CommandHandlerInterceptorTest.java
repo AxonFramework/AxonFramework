@@ -18,6 +18,7 @@ package org.axonframework.integrationtests.modelling.command;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
@@ -77,7 +78,10 @@ class CommandHandlerInterceptorTest {
                                                                                            .build();
         CommandBus commandBus = aCommandBus();
         MessageTypeResolver nameResolver = new ClassBasedMessageTypeResolver();
-        commandGateway = new DefaultCommandGateway(commandBus, nameResolver);
+        commandGateway = new DefaultCommandGateway(commandBus,
+                                                   nameResolver,
+                                                   CommandPriorityCalculator.defaultCalculator(),
+                                                   null);
         commandBus.subscribe(AggregateAnnotationCommandHandler.<MyAggregate>builder()
                                                               .aggregateType(MyAggregate.class)
                                                               .repository(myAggregateRepository)

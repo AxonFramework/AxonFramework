@@ -19,6 +19,7 @@ package org.axonframework.config;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -340,7 +341,9 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      */
     protected CommandGateway defaultCommandGateway(LegacyConfiguration config) {
         return defaultComponent(CommandGateway.class, config)
-                .orElseGet(() -> new DefaultCommandGateway(config.commandBus(), messageTypeResolver));
+                .orElseGet(() -> new DefaultCommandGateway(
+                        config.commandBus(), messageTypeResolver, CommandPriorityCalculator.defaultCalculator(), null
+                ));
     }
 
     /**

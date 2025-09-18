@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.messaging.MessageType;
@@ -39,14 +40,21 @@ import static org.mockito.Mockito.*;
  */
 class DefaultCommandGatewayTest {
 
-    private DefaultCommandGateway testSubject;
+    private static final MessageTypeResolver TEST_MESSAGE_NAME_RESOLVER =
+            payloadType -> Optional.of(new MessageType(payloadType.getSimpleName()));
+
     private CommandBus mockCommandBus;
-    private static final MessageTypeResolver TEST_MESSAGE_NAME_RESOLVER = payloadType -> Optional.of(new MessageType(payloadType.getSimpleName()));
+
+    private DefaultCommandGateway testSubject;
 
     @BeforeEach
     void setUp() {
         mockCommandBus = mock(CommandBus.class);
-        testSubject = new DefaultCommandGateway(mockCommandBus, TEST_MESSAGE_NAME_RESOLVER);
+
+        testSubject = new DefaultCommandGateway(mockCommandBus,
+                                                TEST_MESSAGE_NAME_RESOLVER,
+                                                CommandPriorityCalculator.defaultCalculator(),
+                                                null);
     }
 
     @Test

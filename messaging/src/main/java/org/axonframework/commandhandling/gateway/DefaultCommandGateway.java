@@ -59,35 +59,17 @@ public class DefaultCommandGateway implements CommandGateway {
      *                            {@link org.axonframework.messaging.QualifiedName names} for
      *                            {@link org.axonframework.commandhandling.CommandMessage CommandMessages} being
      *                            dispatched on the {@code commandBus}.
-     */
-    public DefaultCommandGateway(@Nonnull CommandBus commandBus,
-                                 @Nonnull MessageTypeResolver messageTypeResolver) {
-        this(commandBus, messageTypeResolver, null, null);
-    }
-
-    /**
-     * Initialize the {@code DefaultCommandGateway} to send commands through given {@code commandBus}.
-     * <p>
-     * The {@link org.axonframework.messaging.QualifiedName names} for
-     * {@link org.axonframework.commandhandling.CommandMessage CommandMessages} are resolved through the given
-     * {@code nameResolver}.
-     *
-     * @param commandBus          The {@link CommandBus} to send commands on.
-     * @param messageTypeResolver The {@link MessageTypeResolver} resolving the
-     *                            {@link org.axonframework.messaging.QualifiedName names} for
-     *                            {@link org.axonframework.commandhandling.CommandMessage CommandMessages} being
-     *                            dispatched on the {@code commandBus}.
      * @param priorityCalculator  The {@link CommandPriorityCalculator} determining the priority of commands. Can be
      *                            omitted.
      * @param routingKeyResolver  The {@link RoutingStrategy} determining the routing key for commands. Can be omitted.
      */
     public DefaultCommandGateway(@Nonnull CommandBus commandBus,
                                  @Nonnull MessageTypeResolver messageTypeResolver,
-                                 @Nullable CommandPriorityCalculator priorityCalculator,
+                                 @Nonnull CommandPriorityCalculator priorityCalculator,
                                  @Nullable RoutingStrategy routingKeyResolver) {
         this.commandBus = requireNonNull(commandBus, "The commandBus may not be null.");
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The messageTypeResolver may not be null.");
-        this.priorityCalculator = priorityCalculator;
+        this.priorityCalculator = requireNonNull(priorityCalculator, "The CommandPriorityCalculator may not be null.");
         this.routingKeyResolver = routingKeyResolver;
     }
 

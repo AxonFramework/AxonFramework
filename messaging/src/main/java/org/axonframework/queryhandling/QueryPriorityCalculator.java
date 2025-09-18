@@ -19,7 +19,9 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 
 /**
- * Calculate the priority of {@link QueryMessage} based on its content. Higher value means higher priority.
+ * Calculate the priority of {@link QueryMessage} based on its content.
+ * <p>
+ * Higher value means higher priority.
  *
  * @author Marc Gathier
  * @since 4.0.0
@@ -36,12 +38,12 @@ public interface QueryPriorityCalculator {
     int determinePriority(@Nonnull QueryMessage query);
 
     /**
-     * Returns a default implementation of the {@link QueryPriorityCalculator}, always returning priority {@code 0}.
+     * Returns a default implementation of the {@code QueryPriorityCalculator}, always returning priority {@code 0}.
      *
-     * @return a lambda taking in a {@link QueryMessage} to prioritize to the default of priority {@code 0}
+     * @return A lambda taking in a {@link QueryMessage} to prioritize to the default of priority {@code 0}.
      */
     @Nonnull
-    static QueryPriorityCalculator defaultQueryPriorityCalculator() {
+    static QueryPriorityCalculator defaultCalculator() {
         return query -> 0;
     }
 }

@@ -20,6 +20,7 @@ import org.awaitility.Awaitility;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
@@ -40,6 +41,7 @@ import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
@@ -60,11 +62,14 @@ class AsyncMessageHandlerTest {
     private static final ParameterResolverFactory PARAMETER_RESOLVER_FACTORY = new DefaultParameterResolverFactory();
 
     private final CommandBus commandBus = CommandBusTestUtils.aCommandBus();
-    private final CommandGateway commandGateway =
-            new DefaultCommandGateway(commandBus, new ClassBasedMessageTypeResolver());
+    private final CommandGateway commandGateway = new DefaultCommandGateway(commandBus,
+                                                                            new ClassBasedMessageTypeResolver(),
+                                                                            CommandPriorityCalculator.defaultCalculator(),
+                                                                            null);
     private final QueryBus queryBus = SimpleQueryBus.builder().build();
-    private final QueryGateway queryGateway =
-            new DefaultQueryGateway(queryBus, new ClassBasedMessageTypeResolver(), null);
+    private final QueryGateway queryGateway = new DefaultQueryGateway(queryBus,
+                                                                      new ClassBasedMessageTypeResolver(),
+                                                                      QueryPriorityCalculator.defaultCalculator());
     private final EventBus eventBus = SimpleEventBus.builder()
                                                     .build();  // TODO #3392 - Replace for actual EventSink implementation.
     private final AtomicBoolean eventHandlerCalled = new AtomicBoolean();

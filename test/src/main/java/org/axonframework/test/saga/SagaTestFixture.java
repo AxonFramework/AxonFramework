@@ -17,6 +17,7 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.deadline.DeadlineMessage;
@@ -139,7 +140,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(commandBus);
         registeredResources.add(eventScheduler);
         registeredResources.add(deadlineManager);
-        registeredResources.add(new DefaultCommandGateway(commandBus, new ClassBasedMessageTypeResolver()));
+        registeredResources.add(new DefaultCommandGateway(
+                commandBus, new ClassBasedMessageTypeResolver(), CommandPriorityCalculator.defaultCalculator(), null
+        ));
 
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(
                 sagaStore,
