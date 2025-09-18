@@ -54,16 +54,16 @@ public class DefaultQueryGateway implements QueryGateway {
      * @param messageTypeResolver The {@link MessageTypeResolver} resolving the
      *                            {@link org.axonframework.messaging.QualifiedName names} for
      *                            {@link QueryMessage QueryMessages} being dispatched on the {@code queryBus}.
-     * @param priorityCalculator  The {@link QueryPriorityCalculator} determining the priority of queries. Can be
-     *                            omitted.
+     * @param priorityCalculator  The {@link QueryPriorityCalculator} determining the priority of queries.
      */
     public DefaultQueryGateway(@Nonnull QueryBus queryBus,
                                @Nonnull MessageTypeResolver messageTypeResolver,
-                               @Nullable QueryPriorityCalculator priorityCalculator) {
+                               @Nonnull QueryPriorityCalculator priorityCalculator) {
         this.queryBus = Objects.requireNonNull(queryBus, "The QueryBus must not be null.");
         this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver,
                                                           "The MessageTypeResolver must not be null.");
-        this.priorityCalculator = priorityCalculator;
+        this.priorityCalculator = Objects.requireNonNull(priorityCalculator,
+                                                         "The QueryPriorityCalculator must not be null.");
     }
 
     @Nonnull

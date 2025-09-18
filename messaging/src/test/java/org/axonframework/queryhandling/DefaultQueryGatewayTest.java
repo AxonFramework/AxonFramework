@@ -58,7 +58,9 @@ class DefaultQueryGatewayTest {
     void setUp() {
         queryBus = mock(QueryBus.class);
 
-        testSubject = new DefaultQueryGateway(queryBus, new ClassBasedMessageTypeResolver(), null);
+        testSubject = new DefaultQueryGateway(queryBus,
+                                              new ClassBasedMessageTypeResolver(),
+                                              QueryPriorityCalculator.defaultCalculator());
 
         answer = new GenericQueryResponseMessage(new MessageType("query"), "answer");
     }
