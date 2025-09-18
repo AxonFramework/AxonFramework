@@ -144,7 +144,7 @@ public class SimpleQueryBus implements QueryBus {
                     return responseStream;
                 }
             }
-            return MessageStream.failed(NoHandlerForQueryException.forBus(query));
+            return MessageStream.empty().cast();
         } catch (Exception e) {
             return MessageStream.failed(e);
         }

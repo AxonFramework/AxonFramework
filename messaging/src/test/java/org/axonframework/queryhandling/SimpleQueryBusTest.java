@@ -228,6 +228,7 @@ class SimpleQueryBusTest {
             MessageStream<QueryResponseMessage> result = testSubject.query(testQuery, null);
             // then...
             assertThat(result.isCompleted()).isTrue();
+            assertThat(result.error()).isNotPresent();
             assertThat(result.hasNextAvailable()).isFalse();
         }
 
