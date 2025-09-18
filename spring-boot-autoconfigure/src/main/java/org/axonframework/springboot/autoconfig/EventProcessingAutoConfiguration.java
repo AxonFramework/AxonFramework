@@ -19,7 +19,6 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.spring.config.EventProcessorSettings;
 import org.axonframework.springboot.EventProcessorProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
@@ -34,14 +33,6 @@ import java.util.stream.Collectors;
  * @since 4.0
  */
 @AutoConfiguration
-@AutoConfigureAfter(name = {
-        "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
-        "org.axonframework.springboot.autoconfig.JpaAutoConfiguration",
-        "org.axonframework.springboot.autoconfig.JdbcAutoConfiguration",
-        "org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration",
-        "org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration",
-        "org.axonframework.springboot.autoconfig.CBORMapperAutoConfiguration",
-})
 @EnableConfigurationProperties(EventProcessorProperties.class)
 public class EventProcessingAutoConfiguration {
 

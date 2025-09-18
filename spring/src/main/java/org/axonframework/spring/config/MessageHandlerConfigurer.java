@@ -30,6 +30,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventstreaming.StreamableEventSource;
+import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.queryhandling.QueryMessage;
@@ -42,11 +43,14 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
 
 /**
  * An implementation of a {@link ConfigurationEnhancer} that will register a list of beans as handlers for a specific
@@ -124,23 +128,18 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                 switch (settings.getProcessorMode()) {
                     case POOLED -> {
                         var moduleSettings = (EventProcessorSettings.PooledEventProcessorSettings) settings;
+                        String executorName = "WorkPackage[" + packageName + "]";
                         module = EventProcessorModule
                                 .pooledStreaming(packageName)
                                 .eventHandlingComponents(componentRegistration)
                                 .customized((c, pooledStreamConfiguration) -> {
                                     // worker executor
-                                    var workerExecutor = Executors.newScheduledThreadPool(
-                                            moduleSettings.getThreadCount(),
-                                            new AxonThreadFactory("WorkPackage[" + packageName + "]")
-                                    );
-                                    // FIXME -> can we shut down the executor if the application shuts down?
-
+                                    var workerExecutor = c.getComponent(ScheduledExecutorService.class, executorName);
                                     var config = pooledStreamConfiguration
                                             .workerExecutor(workerExecutor)
                                             .tokenClaimInterval(moduleSettings.getTokenClaimIntervalInMillis())
                                             .batchSize(moduleSettings.getBatchSize())
-                                            .initialSegmentCount(moduleSettings.getInitialSegmentCount())
-                                            ;
+                                            .initialSegmentCount(moduleSettings.getInitialSegmentCount());
                                     if (moduleSettings.getSource() != null) {
                                         //noinspection unchecked
                                         config = config.eventSource(getTypedBeanByName(
@@ -152,7 +151,21 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                                         ));
                                     }
                                     return config;
-                                });
+                                }).componentRegistry(
+                                        (cr) -> cr.registerComponent(
+                                                ofTypeAndName(
+                                                        ScheduledExecutorService.class,
+                                                        executorName
+                                                ).withInstance(Executors.newScheduledThreadPool(
+                                                                       moduleSettings.getThreadCount(),
+                                                                       new AxonThreadFactory(executorName)
+                                                               )
+                                                ).onShutdown(Phase.OUTBOUND_EVENT_CONNECTORS,
+                                                             ExecutorService::shutdown
+                                                )
+
+                                        )
+                                );
                     }
                     case SUBSCRIBING -> {
                         var moduleSettings = (EventProcessorSettings.SubscribingEventProcessorSettings) settings;
