@@ -181,7 +181,6 @@ class SimpleQueryBusTest {
 
         @Test
         void directQueryReturnsFailedMessageStreamFromThrowingQueryHandler() {
-            // TODO fix this test OR impl, as it thinks we are dealing with an ExecutionException.
             // given...
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", SINGLE_STRING_RESPONSE);
             QueryHandler failingHandler = (query, context) -> {
