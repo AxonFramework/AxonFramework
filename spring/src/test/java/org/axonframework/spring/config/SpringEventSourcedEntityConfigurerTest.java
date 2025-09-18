@@ -24,6 +24,7 @@ import org.mockito.*;
 import org.axonframework.configuration.Module;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class SpringEventSourcedEntityConfigurerTest {
@@ -48,7 +49,7 @@ class SpringEventSourcedEntityConfigurerTest {
     @Test
     void skipsEntitiesIfNotAnnotated() {
         var configurer = new SpringEventSourcedEntityConfigurer<>(MyEntity2.class, MyId1.class);
-        configurer.enhance(registry);
+        assertThrows(IllegalArgumentException.class, () -> configurer.enhance(registry));
         verifyNoMoreInteractions(registry);
     }
 
