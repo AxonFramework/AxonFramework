@@ -20,13 +20,13 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
-import org.axonframework.spring.stereotype.Aggregate;
+import org.axonframework.spring.stereotype.EventSourced;
 
 import java.util.Random;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
-@Aggregate
+@EventSourced
 public class Dog extends Animal {
 
     // Field present to have the Cat aggregate differ in structure from the Dog for snapshot testing.

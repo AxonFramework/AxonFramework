@@ -19,7 +19,8 @@ package org.axonframework.spring.config;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.spring.stereotype.Aggregate;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.spring.stereotype.EventSourced;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -46,6 +47,7 @@ import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
  * @since 4.6.0
  * FIXME rename according to annotation.
  */
+@Internal
 public class SpringEventSourcedEntityLookup implements BeanDefinitionRegistryPostProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringEventSourcedEntityLookup.class);
@@ -61,7 +63,7 @@ public class SpringEventSourcedEntityLookup implements BeanDefinitionRegistryPos
      * @return A hierarchy model with subtypes for each declared main Aggregate.
      */
     @SuppressWarnings("unchecked")
-    public static <A> Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> buildAggregateHierarchy(
+    static <A> Map<SpringAggregate<? super A>, Map<Class<? extends A>, String>> buildAggregateHierarchy(
             ListableBeanFactory beanFactory,
             String[] aggregatePrototypes
     ) {
@@ -112,7 +114,7 @@ public class SpringEventSourcedEntityLookup implements BeanDefinitionRegistryPos
         Class<? super A> topAnnotated = top;
         while (!Object.class.equals(top) && !Object.class.equals(top.getSuperclass())) {
             top = top.getSuperclass();
-            if (top.isAnnotationPresent(Aggregate.class)) {
+            if (top.isAnnotationPresent(EventSourced.class)) {
                 topAnnotated = top;
             }
         }
@@ -126,7 +128,7 @@ public class SpringEventSourcedEntityLookup implements BeanDefinitionRegistryPos
             return;
         }
 
-        String[] aggregateBeans = beanFactory.getBeanNamesForAnnotation(Aggregate.class);
+        String[] aggregateBeans = beanFactory.getBeanNamesForAnnotation(EventSourced.class);
 
         Map<SpringAggregate<? super Object>, Map<Class<?>, String>> hierarchy =
                 buildAggregateHierarchy(beanFactory, aggregateBeans);
@@ -144,7 +146,7 @@ public class SpringEventSourcedEntityLookup implements BeanDefinitionRegistryPos
             }
 
             if (hasSubtypesOrIsPrototype(aggregateSubtypes, beanFactory, aggregatePrototype) && aggregateType != null) {
-                AnnotationUtils.findAnnotationAttributes(aggregateType, Aggregate.class)
+                AnnotationUtils.findAnnotationAttributes(aggregateType, EventSourced.class)
                                .map(props -> buildAggregateBeanDefinition(
                                        aggregateType,
                                        (Class<?>) Objects.requireNonNull(props.get(ID_TYPE_CLASS),
@@ -159,7 +161,7 @@ public class SpringEventSourcedEntityLookup implements BeanDefinitionRegistryPos
 
     /**
      * When there are subtypes present we are dealing with a polymorphic aggregate. In those cases the root class should
-     * be {@code abstract}, causing Spring to <b>not</b> add the {@link Aggregate} class to the
+     * be {@code abstract}, causing Spring to <b>not</b> add the {@link EventSourced} class to the
      * {@link org.springframework.context.ApplicationContext}. Due to this, there is no {@link BeanDefinition} present
      * to begin with. As such, we skip the {@link BeanDefinition#isPrototype()} check whenever there are subtypes. If
      * there are <b>no</b> subtypes, the {@code aggregatePrototype} is expected to reference a prototype
@@ -202,7 +204,7 @@ public class SpringEventSourcedEntityLookup implements BeanDefinitionRegistryPos
      *
      * @param <T> type of the underlying aggregate class.
      */
-    public static class SpringAggregate<T> {
+    static class SpringAggregate<T> {
 
         private final String beanName;
         private final Class<T> classType;
