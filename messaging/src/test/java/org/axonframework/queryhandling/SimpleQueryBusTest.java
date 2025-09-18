@@ -76,9 +76,6 @@ class SimpleQueryBusTest {
     private static final ResponseType<String> SINGLE_STRING_RESPONSE = instanceOf(String.class);
     private static final ResponseType<List<String>> MULTI_STRING_RESPONSE = multipleInstancesOf(String.class);
 
-    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
-    };
-
     private SimpleQueryBus testSubject;
 
     private TransactionManager transactionManager;
