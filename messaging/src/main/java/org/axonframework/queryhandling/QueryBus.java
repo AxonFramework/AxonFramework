@@ -25,6 +25,9 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
+
 /**
  * The mechanism that dispatches {@link QueryMessage queries} to their appropriate {@link QueryHandler query handler}.
  * <p>
@@ -91,6 +94,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      *                                    {@link MessageType#qualifiedName() query name} and
      *                                    {@link QueryMessage#responseType()}.
      */
+    @Nonnull
     default Publisher<QueryResponseMessage> streamingQuery(@Nonnull StreamingQueryMessage query,
                                                            @Nullable ProcessingContext context) {
         return Mono.fromSupplier(() -> query(query, context))
@@ -117,16 +121,35 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      *                         made
      * @return query result containing initial result and incremental updates
      */
+    @Nonnull
     SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage query,
-            @Nullable ProcessingContext context,
-            int updateBufferSize
-    );
+            @Nonnull SubscriptionQueryMessage query, @Nullable ProcessingContext context, int updateBufferSize);
+
+    // TODO JavaDoc
+    @Nonnull
+    CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                       @Nonnull SubscriptionQueryUpdateMessage update,
+                                       @Nullable ProcessingContext context);
+
+    // TODO JavaDoc
 
     /**
-     * Gets the {@link QueryUpdateEmitter} associated with this {@link QueryBus}.
+     * Completes subscription queries matching given filter.
      *
-     * @return the associated {@link QueryUpdateEmitter}
+     * @param filter predicate on subscription query message used to filter subscription queries
      */
-    QueryUpdateEmitter queryUpdateEmitter();
+    CompletableFuture<Void> completeSubscription(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                 @Nullable ProcessingContext context);
+
+    // TODO JavaDoc
+
+    /**
+     * Completes with an error subscription queries matching given filter.
+     *
+     * @param filter predicate on subscription query message used to filter subscription queries
+     * @param cause  the cause of an error
+     */
+    CompletableFuture<Void> completeSubscriptionExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                              @Nonnull Throwable cause,
+                                                              @Nullable ProcessingContext context);
 }

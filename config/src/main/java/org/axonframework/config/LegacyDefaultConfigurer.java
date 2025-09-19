@@ -203,9 +203,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
         components.put(LegacyEventStore.class, new Component<>(config, "eventStore", LegacyConfiguration::eventStore));
         components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
-        components.put(
-                QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter)
-        );
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
         components.put(ScopeAwareProvider.class,
@@ -343,22 +340,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                         CommandPriorityCalculator.defaultCalculator(),
                         new AnnotationRoutingStrategy()
                 ));
-    }
-
-    /**
-     * Provides the default QueryUpdateEmitter implementation. Subclasses may override this method to provide their own
-     * default.
-     *
-     * @param config The configuration based on which the component is initialized
-     * @return The default QueryUpdateEmitter to use
-     */
-    protected QueryUpdateEmitter defaultQueryUpdateEmitter(LegacyConfiguration config) {
-        return defaultComponent(QueryUpdateEmitter.class, config)
-                .orElseGet(() -> {
-                    MessageMonitor<? super SubscriptionQueryUpdateMessage> updateMessageMonitor =
-                            config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
-                    return new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver());
-                });
     }
 
     /**

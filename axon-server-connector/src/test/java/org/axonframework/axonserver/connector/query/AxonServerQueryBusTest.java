@@ -130,9 +130,7 @@ class AxonServerQueryBusTest {
                                         .axonServerConnectionManager(axonServerConnectionManager)
                                         .configuration(configuration)
                                         .localSegment(localSegment)
-                                        .updateEmitter(
-                                                new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver())
-                                        )
+                                        .updateEmitter(null)
                                         .messageSerializer(serializer)
                                         .genericSerializer(serializer)
                                         .targetContextResolver(targetContextResolver)
@@ -226,7 +224,7 @@ class AxonServerQueryBusTest {
                                             .configuration(configuration)
                                             .localSegment(localSegment)
                                             .updateEmitter(
-                                                    new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver())
+                                                    null
                                             )
                                             .messageSerializer(serializer)
                                             .genericSerializer(serializer)
@@ -597,7 +595,7 @@ class AxonServerQueryBusTest {
                                         .configuration(configuration)
                                         .localSegment(localSegment)
                                         .updateEmitter(
-                                                new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver())
+                                                null
                                         )
                                         .messageSerializer(serializer)
                                         .genericSerializer(serializer)
@@ -704,7 +702,7 @@ class AxonServerQueryBusTest {
                                   .axonServerConnectionManager(axonServerConnectionManager)
                                   .configuration(configuration)
                                   .localSegment(localSegment)
-                                  .updateEmitter(new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver()))
+                                  .updateEmitter(null)
                                   .messageSerializer(serializer)
                                   .genericSerializer(serializer)
                                   .targetContextResolver(targetContextResolver)
@@ -734,7 +732,7 @@ class AxonServerQueryBusTest {
                                   .axonServerConnectionManager(axonServerConnectionManager)
                                   .configuration(configuration)
                                   .localSegment(localSegment)
-                                  .updateEmitter(new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver()))
+                                  .updateEmitter(null)
                                   .messageSerializer(serializer)
                                   .genericSerializer(serializer)
                                   .targetContextResolver(targetContextResolver)

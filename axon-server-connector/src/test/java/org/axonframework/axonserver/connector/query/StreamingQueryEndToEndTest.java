@@ -135,13 +135,12 @@ class StreamingQueryEndToEndTest {
     }
 
     private AxonServerQueryBus axonServerQueryBus(QueryBus localSegment, String axonServerAddress) {
-        QueryUpdateEmitter emitter = new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver());
         Serializer serializer = JacksonSerializer.defaultSerializer();
         return AxonServerQueryBus.builder()
                                  .localSegment(localSegment)
                                  .configuration(configuration(axonServerAddress))
                                  .axonServerConnectionManager(connectionManager(axonServerAddress))
-                                 .updateEmitter(emitter)
+                                 .updateEmitter(null)
                                  .genericSerializer(serializer)
                                  .messageSerializer(serializer)
                                  .build();

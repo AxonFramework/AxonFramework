@@ -21,18 +21,14 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -48,25 +44,33 @@ import java.util.function.Predicate;
  */
 public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
+    // TODO use logger on debug level for clarity
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryUpdateEmitter.class);
-
-    private static final String QUERY_UPDATE_TASKS_RESOURCE_KEY = "/update-tasks";
 
     private final ConcurrentMap<SubscriptionQueryMessage, SinkWrapper<SubscriptionQueryUpdateMessage>> updateHandlers =
             new ConcurrentHashMap<>();
+
     private final MessageTypeResolver messageTypeResolver;
+    private final QueryBus queryBus;
+    private final ProcessingContext context;
 
     /**
      * Construct a {@code SimpleQueryUpdateEmitter} with the given {@code messageTypeResolver} to construct
-     * {@link SubscriptionQueryUpdateMessage update messages} for {@link #emit(Predicate, Object)} invocations.
+     * {@link SubscriptionQueryUpdateMessage update messages} for {@link #emit(Class, Predicate, Object)} invocations.
      *
      * @param messageTypeResolver The {@link org.axonframework.messaging.MessageType} resolver used to construct
      *                            {@link SubscriptionQueryUpdateMessage update messages} for
-     *                            {@link #emit(Predicate, Object)} invocations
+     *                            {@link #emit(Class, Predicate, Object)} invocations
+     * @param queryBus
+     * @param context
      */
-    public SimpleQueryUpdateEmitter(@Nonnull MessageTypeResolver messageTypeResolver) {
+    public SimpleQueryUpdateEmitter(@Nonnull MessageTypeResolver messageTypeResolver,
+                                    @Nonnull QueryBus queryBus,
+                                    @Nonnull ProcessingContext context) {
         this.messageTypeResolver =
                 Objects.requireNonNull(messageTypeResolver, "The MessageTypeResolver must not be null.");
+        this.queryBus = Objects.requireNonNull(queryBus, "The QueryBus must not be null.");
+        this.context = Objects.requireNonNull(context, "The ProcessingContext must not be null.");
     }
 
     @Nonnull
@@ -97,44 +101,16 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     @Override
     public <Q> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter, @Nullable Object update) {
-        if (update == null) {
-            return;
-        }
-        emit(queryType, filter, asUpdateMessage(update));
-    }
-
-    @Override
-    public <Q> void emit(@Nonnull Class<Q> queryType,
-                         @Nonnull Predicate<? super Q> filter,
-                         @Nonnull SubscriptionQueryUpdateMessage update) {
-        Predicate<SubscriptionQueryMessage> messageFilter = m -> {
-            QualifiedName queryName = messageTypeResolver.resolveOrThrow(queryType).qualifiedName();
-            return queryName.equals(m.type().qualifiedName()) && filter.test(m.payloadAs(queryType));
-        };
-        emit(messageFilter, update);
-    }
-
-    @Override
-    public void emit(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter, @Nullable Object update) {
-        if (update == null) {
-            return;
-        }
-        emit(queryName, filter, asUpdateMessage(update));
+        queryBus.emitUpdate(concretePayloadTypeFilter(queryType, filter), asUpdateMessage(update), context);
     }
 
     @Override
     public void emit(@Nonnull QualifiedName queryName,
                      @Nonnull Predicate<Object> filter,
-                     @Nonnull SubscriptionQueryUpdateMessage update) {
-        emit(m -> queryName.equals(m.type().qualifiedName()) && filter.test(m.payload()), update);
-    }
-
-    @Override
-    public void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nullable Object update) {
-        if (update == null) {
-            return;
-        }
-        emit(filter, asUpdateMessage(update));
+                     @Nullable Object update) {
+        Predicate<SubscriptionQueryMessage> messageFilter =
+                message -> queryName.equals(message.type().qualifiedName()) && filter.test(message.payload());
+        queryBus.emitUpdate(messageFilter, asUpdateMessage(update), context);
     }
 
     private SubscriptionQueryUpdateMessage asUpdateMessage(Object update) {
@@ -147,122 +123,23 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter,
-                     @Nonnull SubscriptionQueryUpdateMessage update) {
-        runOnAfterCommitOrNow(() -> doEmit(filter, update));
-    }
-
-    private void doEmit(Predicate<SubscriptionQueryMessage> filter,
-                        SubscriptionQueryUpdateMessage update) {
-        updateHandlers.entrySet()
-                      .stream()
-                      .filter(entry -> {
-                          QualifiedName expectedUpdateName =
-                                  new QualifiedName(entry.getKey().updatesResponseType().getExpectedResponseType());
-                          return update.type().qualifiedName()
-                                       .equals(expectedUpdateName);
-                      })
-                      .filter(entry -> filter.test(entry.getKey()))
-                      .forEach(entry -> doEmit(entry.getKey(), entry.getValue(), update));
+    public <Q> void complete(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter) {
+        queryBus.completeSubscription(concretePayloadTypeFilter(queryType, filter), context);
     }
 
     @Override
-    public void complete(@Nonnull Predicate<SubscriptionQueryMessage> filter) {
-        runOnAfterCommitOrNow(() -> doComplete(filter));
+    public <Q> void completeExceptionally(@Nonnull Class<Q> queryType,
+                                          @Nonnull Predicate<? super Q> filter,
+                                          @Nonnull Throwable cause) {
+        queryBus.completeSubscriptionExceptionally(concretePayloadTypeFilter(queryType, filter), cause, context);
     }
 
-    @Override
-    public void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter,
-                                      @Nonnull Throwable cause) {
-        runOnAfterCommitOrNow(() -> doCompleteExceptionally(filter, cause));
-    }
-
-
-    private void doEmit(SubscriptionQueryMessage query,
-                        SinkWrapper<SubscriptionQueryUpdateMessage> updateHandler,
-                        SubscriptionQueryUpdateMessage update) {
-        try {
-            updateHandler.next(update);
-        } catch (Exception e) {
-            logger.info("An error occurred while trying to emit an update to a query '{}'. " +
-                                "The subscription will be cancelled. Exception summary: {}",
-                        query.type(), e.toString());
-            updateHandlers.remove(query);
-            emitError(query, e, updateHandler);
-        }
-    }
-
-    private void doComplete(Predicate<SubscriptionQueryMessage> filter) {
-        updateHandlers.keySet()
-                      .stream()
-                      .filter(filter)
-                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                .ifPresent(updateHandler -> {
-                                                    try {
-                                                        updateHandler.complete();
-                                                    } catch (Exception e) {
-                                                        emitError(query, e, updateHandler);
-                                                    }
-                                                }));
-    }
-
-    private void emitError(SubscriptionQueryMessage query, Throwable cause,
-                           SinkWrapper<?> updateHandler) {
-        try {
-            updateHandler.error(cause);
-        } catch (Exception e) {
-            logger.error("An error happened while trying to inform update handler about the error. Query: {}",
-                         query);
-        }
-    }
-
-    private void doCompleteExceptionally(Predicate<SubscriptionQueryMessage> filter, Throwable cause) {
-        updateHandlers.keySet()
-                      .stream()
-                      .filter(filter)
-                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                .ifPresent(updateHandler -> emitError(query, cause, updateHandler)));
-    }
-
-    /**
-     * Either runs the provided {@link Runnable} immediately or adds it to a {@link List} as a resource to the current
-     * {@link LegacyUnitOfWork} if {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}.
-     * This is done to ensure any emitter calls made from a message handling function are executed in the
-     * {@link LegacyUnitOfWork.Phase#AFTER_COMMIT} phase.
-     * <p>
-     * The latter check requires the current UnitOfWork's phase to be {@link LegacyUnitOfWork.Phase#STARTED}. This is
-     * done to allow users to circumvent their {@code queryUpdateTask} being handled in the AFTER_COMMIT phase. They can
-     * do this by retrieving the current UnitOfWork and performing any of the {@link QueryUpdateEmitter} calls in a
-     * different phase.
-     *
-     * @param queryUpdateTask a {@link Runnable} to be ran immediately or as a resource if
-     *                        {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}
-     */
-    private void runOnAfterCommitOrNow(Runnable queryUpdateTask) {
-        if (inStartedPhaseOfUnitOfWork()) {
-            LegacyUnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-            unitOfWork.getOrComputeResource(
-                    this.toString() + QUERY_UPDATE_TASKS_RESOURCE_KEY,
-                    resourceKey -> {
-                        List<Runnable> queryUpdateTasks = new ArrayList<>();
-                        unitOfWork.afterCommit(uow -> queryUpdateTasks.forEach(Runnable::run));
-                        return queryUpdateTasks;
-                    }
-            ).add(queryUpdateTask);
-        } else {
-            queryUpdateTask.run();
-        }
-    }
-
-    /**
-     * Return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if the phase is
-     * {@link LegacyUnitOfWork.Phase#STARTED}, otherwise {@code false}.
-     *
-     * @return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if the phase is
-     * {@link LegacyUnitOfWork.Phase#STARTED}, otherwise {@code false}.
-     */
-    private boolean inStartedPhaseOfUnitOfWork() {
-        return CurrentUnitOfWork.isStarted() && LegacyUnitOfWork.Phase.STARTED.equals(CurrentUnitOfWork.get().phase());
+    private <Q> Predicate<SubscriptionQueryMessage> concretePayloadTypeFilter(@Nonnull Class<Q> queryType,
+                                                                              @Nonnull Predicate<? super Q> filter) {
+        return message -> {
+            QualifiedName queryName = messageTypeResolver.resolveOrThrow(queryType).qualifiedName();
+            return queryName.equals(message.type().qualifiedName()) && filter.test(message.payloadAs(queryType));
+        };
     }
 
     @Override

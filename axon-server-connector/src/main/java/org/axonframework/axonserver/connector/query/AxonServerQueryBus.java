@@ -112,6 +112,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
@@ -493,9 +494,30 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         }
     }
 
+    @Nonnull
     @Override
-    public QueryUpdateEmitter queryUpdateEmitter() {
-        return updateEmitter;
+    public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                              @Nonnull SubscriptionQueryUpdateMessage update,
+                                              @Nullable ProcessingContext context) {
+        // TODO #3488 implement as part of AxonServerQueryBus implementation
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Void> completeSubscription(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                        @Nullable ProcessingContext context) {
+        // TODO #3488 implement as part of AxonServerQueryBus implementation
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Void> completeSubscriptionExceptionally(
+            @Nonnull Predicate<SubscriptionQueryMessage> filter,
+            @Nonnull Throwable cause,
+            @Nullable ProcessingContext context
+    ) {
+        // TODO #3488 implement as part of AxonServerQueryBus implementation
+        return null;
     }
 
     @Override

@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.RoutingStrategy;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.annotation.CommandDispatcherParameterResolverFactory;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -46,6 +47,7 @@ import org.axonframework.messaging.ConfigurationApplicationContext;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.configuration.reflection.ParameterResolverFactoryUtils;
 import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -67,6 +69,7 @@ import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.QueryUpdateEmitterParameterResolverFactory;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Converter;
@@ -167,11 +170,13 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                 .registerIfNotPresent(EventSink.class, MessagingConfigurationDefaults::defaultEventSink)
                 .registerIfNotPresent(EventBus.class, MessagingConfigurationDefaults::defaultEventBus)
                 .registerIfNotPresent(QueryBus.class, MessagingConfigurationDefaults::defaultQueryBus)
-                .registerIfNotPresent(QueryUpdateEmitter.class,
-                                      MessagingConfigurationDefaults::defaultQueryUpdateEmitter)
                 .registerIfNotPresent(QueryPriorityCalculator.class,
                                       c -> QueryPriorityCalculator.defaultCalculator())
                 .registerIfNotPresent(QueryGateway.class, MessagingConfigurationDefaults::defaultQueryGateway);
+
+        ParameterResolverFactoryUtils.registerToComponentRegistry(
+                registry, config -> new QueryUpdateEmitterParameterResolverFactory()
+        );
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(Configuration config) {
@@ -282,14 +287,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static QueryBus defaultQueryBus(Configuration config) {
-        return new SimpleQueryBus(
-                config.getComponent(UnitOfWorkFactory.class),
-                config.getComponent(QueryUpdateEmitter.class)
-        );
-    }
-
-    private static QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
-        return new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver());
+        return new SimpleQueryBus(config.getComponent(UnitOfWorkFactory.class));
     }
 
     private static void registerDecorators(@Nonnull ComponentRegistry registry) {

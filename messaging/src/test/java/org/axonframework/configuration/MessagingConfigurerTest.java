@@ -202,16 +202,6 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     }
 
     @Test
-    void registerQueryUpdateEmitterOverridesDefault() {
-        QueryUpdateEmitter expected = new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver());
-
-        Configuration result = testSubject.registerQueryUpdateEmitter(c -> expected)
-                                          .build();
-
-        assertEquals(expected, result.getComponent(QueryUpdateEmitter.class));
-    }
-
-    @Test
     void registerCorrelationDataProviderMakesProviderRetrievableThroughProviderRegistry() {
         CorrelationDataProvider provider = mock(CorrelationDataProvider.class);
 
