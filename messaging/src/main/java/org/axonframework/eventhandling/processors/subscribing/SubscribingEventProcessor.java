@@ -75,33 +75,6 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
 
      * @param name A {@link String} defining this {@link EventProcessor} instance.
      * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual {@link EventMessage}s.
-     * @param customization The function that allows to customize default {@link SubscribingEventProcessor} used to configure a {@code SubscribingEventProcessor} instance.
-     */
-    public SubscribingEventProcessor(
-            @Nonnull String name,
-            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
-            @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> customization
-    ) {
-        this(
-                Objects.requireNonNull(name, "Name may not be null"),
-                Objects.requireNonNull(eventHandlingComponents, "EventHandlingComponents may not be null"),
-                Objects.requireNonNull(customization, "Customization may not be null")
-                       .apply(new SubscribingEventProcessorConfiguration())
-        );
-    }
-
-    /**
-     * Instantiate a {@code SubscribingEventProcessor} with given {@code name}, {@code eventHandlingComponents} and
-     * based on the fields contained in the {@link SubscribingEventProcessorConfiguration}.
-     * <p>
-     * Will assert the following for their presence in the configuration, prior to constructing this processor:
-     * <ul>
-     *     <li>A {@link SubscribableMessageSource}.</li>
-     * </ul>
-     * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
-
-     * @param name A {@link String} defining this {@link EventProcessor} instance.
-     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual {@link EventMessage}s.
      * @param configuration The {@link SubscribingEventProcessorConfiguration} used to configure a {@code SubscribingEventProcessor} instance.
      */
     public SubscribingEventProcessor(

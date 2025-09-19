@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
@@ -799,12 +800,14 @@ public class EventProcessingModule
         return new SubscribingEventProcessor(
                 name,
                 List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                c -> c.errorHandler(errorHandler(name))
-                      .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
-                      .messageSource(messageSource)
-                      .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
-                      .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name), simpleUnitOfWorkFactory))
-                      .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
+                new SubscribingEventProcessorConfiguration()
+                        .errorHandler(errorHandler(name))
+                        .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
+                        .messageSource(messageSource)
+                        .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
+                        .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name),
+                                                                              simpleUnitOfWorkFactory))
+                        .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
         );
     }
 
