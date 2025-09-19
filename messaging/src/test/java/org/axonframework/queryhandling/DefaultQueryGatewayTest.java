@@ -371,7 +371,7 @@ class DefaultQueryGatewayTest {
         @Test
         void subscriptionQuery() {
             when(queryBus.subscriptionQuery(any(), any(), anyInt()))
-                    .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
+                    .thenReturn(new DefaultSubscriptionQueryResult<>(MessageStream.empty().cast(), Flux.empty(), () -> true));
 
             testSubject.subscriptionQuery("subscription", String.class, String.class, null);
 
@@ -396,7 +396,7 @@ class DefaultQueryGatewayTest {
             String expectedMetadataValue = "value";
 
             when(queryBus.subscriptionQuery(any(), any(), anyInt()))
-                    .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
+                    .thenReturn(new DefaultSubscriptionQueryResult<>(MessageStream.empty().cast(), Flux.empty(), () -> true));
 
 
             Message testQuery = new GenericMessage(
@@ -429,7 +429,7 @@ class DefaultQueryGatewayTest {
             );
             when(queryBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
                     .thenReturn(new DefaultSubscriptionQueryResult<>(
-                            Mono.just(testResponse),
+                            MessageStream.just(testResponse),
                             Flux.empty(),
                             () -> true
                     ));
@@ -450,7 +450,7 @@ class DefaultQueryGatewayTest {
             );
             when(queryBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
                     .thenReturn(new DefaultSubscriptionQueryResult<>(
-                            Mono.just(testQuery),
+                            MessageStream.just(testQuery),
                             Flux.empty(),
                             () -> true
                     ));
@@ -468,7 +468,7 @@ class DefaultQueryGatewayTest {
             );
             when(queryBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), eq(null), anyInt()))
                     .thenReturn(new DefaultSubscriptionQueryResult<>(
-                            Mono.empty(),
+                            MessageStream.empty().cast(),
                             Flux.just(testQuery),
                             () -> true
                     ));

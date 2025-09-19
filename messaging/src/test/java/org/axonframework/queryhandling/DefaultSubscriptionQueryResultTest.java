@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class DefaultSubscriptionQueryResultTest {
         AtomicBoolean errorConsumed = new AtomicBoolean(false);
 
         DefaultSubscriptionQueryResult<Object, Object> testSubject = new DefaultSubscriptionQueryResult<>(
-                Mono.error(new RuntimeException("oops")),
+                /*Mono.error(new RuntimeException("oops"))*/null,
                 Flux.empty(),
                 () -> {
                     canceled.set(true);
@@ -65,7 +65,7 @@ class DefaultSubscriptionQueryResultTest {
         AtomicBoolean errorConsumed = new AtomicBoolean(false);
 
         DefaultSubscriptionQueryResult<Object, Object> testSubject = new DefaultSubscriptionQueryResult<>(
-                Mono.just("some-initial-result"),
+                /*Mono.just("some-initial-result")*/null,
                 Flux.error(new RuntimeException("oops")),
                 () -> {
                     canceled.set(true);
@@ -90,7 +90,7 @@ class DefaultSubscriptionQueryResultTest {
         AtomicBoolean errorConsumed = new AtomicBoolean(false);
 
         DefaultSubscriptionQueryResult<Object, Object> testSubject = new DefaultSubscriptionQueryResult<>(
-                Mono.just("some-initial-result"),
+                /*Mono.just("some-initial-result")*/null,
                 Flux.just("some-update"),
                 () -> {
                     canceled.set(true);
@@ -116,7 +116,7 @@ class DefaultSubscriptionQueryResultTest {
         AtomicBoolean errorConsumed = new AtomicBoolean(false);
 
         DefaultSubscriptionQueryResult<Object, Object> testSubject = new DefaultSubscriptionQueryResult<>(
-                Mono.just("some-initial-result"),
+                /*Mono.just("some-initial-result")*/null,
                 Flux.just("some-update"),
                 () -> {
                     canceled.set(true);

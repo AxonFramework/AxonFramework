@@ -187,11 +187,11 @@ public class DefaultQueryGateway implements QueryGateway {
             Class<I> initialResponseType,
             Class<U> updateResponseType
     ) {
+        result.initialResult()
+              .mapNotNull(response -> response.payloadAs(initialResponseType))
+              .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e);
         return new DefaultSubscriptionQueryResult<>(
-                result.initialResult()
-                      .filter(initialResult -> Objects.nonNull(initialResult.payload()))
-                      .mapNotNull(t -> t.payloadAs(initialResponseType))
-                      .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
+                null,
                 result.updates()
                       .filter(update -> Objects.nonNull(update.payload()))
                       .mapNotNull(t -> t.payloadAs(updateResponseType)),

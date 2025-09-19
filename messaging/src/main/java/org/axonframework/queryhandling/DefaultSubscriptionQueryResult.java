@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package org.axonframework.queryhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageStream;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -30,7 +32,7 @@ import reactor.core.publisher.Mono;
  */
 public class DefaultSubscriptionQueryResult<I, U> implements SubscriptionQueryResult<I, U> {
 
-    private final Mono<I> initialResult;
+    private final MessageStream<QueryResponseMessage> initialResponses;
     private final Flux<U> updates;
     private final Registration registrationDelegate;
 
@@ -41,15 +43,17 @@ public class DefaultSubscriptionQueryResult<I, U> implements SubscriptionQueryRe
      * @param updates              flux representing incremental updates
      * @param registrationDelegate delegate which cancels the registration of this result
      */
-    public DefaultSubscriptionQueryResult(Mono<I> initialResult, Flux<U> updates, Registration registrationDelegate) {
-        this.initialResult = initialResult;
+    public DefaultSubscriptionQueryResult(@Nonnull MessageStream<QueryResponseMessage> initialResponses,
+                                          @Nonnull Flux<U> updates,
+                                          @Nonnull Registration registrationDelegate) {
+        this.initialResponses = initialResponses;
         this.updates = updates;
         this.registrationDelegate = registrationDelegate;
     }
 
     @Override
     public Mono<I> initialResult() {
-        return initialResult;
+        return initialResponses.asFlux().then(Mono.empty());
     }
 
     @Override

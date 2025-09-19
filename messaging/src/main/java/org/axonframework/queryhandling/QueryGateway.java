@@ -117,10 +117,11 @@ public interface QueryGateway extends DescribableComponent {
                                     @Nullable ProcessingContext context);
 
     @Nonnull
-    default <R> SubscriptionQueryResult<R, R> subscriptionQuery(@Nonnull Object query,
+    default <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
                                                                 @Nonnull Class<R> responseType,
                                                                 @Nullable ProcessingContext context) {
-        return subscriptionQuery(query, responseType, responseType, context, Queues.SMALL_BUFFER_SIZE);
+        // TODO combine initial and updates accordingly
+        return subscriptionQuery(query, responseType, responseType, context, Queues.SMALL_BUFFER_SIZE).updates();
     }
 
     /**
