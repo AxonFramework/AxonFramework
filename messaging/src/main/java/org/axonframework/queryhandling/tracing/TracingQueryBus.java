@@ -16,7 +16,7 @@
 
 package org.axonframework.queryhandling.tracing;
 
-// TODO 3488 - Introduce tracing logic here.
+// TODO 3594 - Introduce tracing logic here.
 public class TracingQueryBus {
 
     /*
@@ -39,7 +39,7 @@ public class TracingQueryBus {
             LegacyDefaultUnitOfWork<StreamingQueryMessage> uow = LegacyDefaultUnitOfWork.startAndGet(query);
             return uow.executeWithResult((ctx) -> {
                 /*
-                // TODO #3488 - Reintegrate, and construct chain only once!
+                // TODO 3594 - Reintegrate, and construct chain only once!
                 QueryHandler queryHandler = new QueryHandler() {
                     @Nonnull
                     @Override
