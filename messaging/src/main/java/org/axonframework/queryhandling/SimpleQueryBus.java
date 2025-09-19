@@ -154,7 +154,7 @@ public class SimpleQueryBus implements QueryBus {
     ) {
         assertSubQueryResponseTypes(query);
         if (queryUpdateEmitter.queryUpdateHandlerRegistered(query)) {
-            throw new IllegalArgumentException("There is already a subscription with the given message identifier");
+            throw new SubscriptionQueryAlreadyRegisteredException(query.identifier());
         }
         Mono<QueryResponseMessage> initialResult = null;
         // TODO #3488 - Fix once implementing subscription queries
