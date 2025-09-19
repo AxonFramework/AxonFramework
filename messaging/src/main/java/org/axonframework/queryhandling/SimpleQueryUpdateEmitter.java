@@ -56,7 +56,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  *
  * @author Milan Savic
  * @author Stefan Dragisic
- * @since 4.0
+ * @author Steven van Beelen
+ * @since 4.0.0
  */
 public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
@@ -67,7 +68,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     private final MessageMonitor<? super SubscriptionQueryUpdateMessage> updateMessageMonitor;
     private final QueryUpdateEmitterSpanFactory spanFactory;
 
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, SinkWrapper<?>> updateHandlers =
+    private final ConcurrentMap<SubscriptionQueryMessage, SinkWrapper<?>> updateHandlers =
             new ConcurrentHashMap<>();
     private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> dispatchInterceptors =
             new CopyOnWriteArrayList<>();
@@ -96,15 +97,15 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage<?, ?, ?> query) {
+    public boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage query) {
         return updateHandlers.keySet()
                              .stream()
                              .anyMatch(m -> m.identifier().equals(query.identifier()));
     }
 
     @Override
-    public <U> UpdateHandlerRegistration registerUpdateHandler(@Nonnull SubscriptionQueryMessage<?, ?, ?> query,
-                                                               int updateBufferSize) {
+    public UpdateHandlerRegistration registerUpdateHandler(@Nonnull SubscriptionQueryMessage query,
+                                                           int updateBufferSize) {
         Sinks.Many<SubscriptionQueryUpdateMessage> sink = Sinks.many().replay().limit(updateBufferSize);
         SinksManyWrapper<SubscriptionQueryUpdateMessage> sinksManyWrapper = new SinksManyWrapper<>(sink);
 
@@ -122,8 +123,8 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                         @Nonnull SubscriptionQueryUpdateMessage update) {
+    public void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                     @Nonnull SubscriptionQueryUpdateMessage update) {
         SubscriptionQueryUpdateMessage updateMessage = spanFactory.propagateContext(update);
         Span span = spanFactory.createUpdateScheduleEmitSpan(updateMessage);
         span.run(() -> {
@@ -148,12 +149,12 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public void complete(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
+    public void complete(@Nonnull Predicate<SubscriptionQueryMessage> filter) {
         runOnAfterCommitOrNow(() -> doComplete(filter));
     }
 
     @Override
-    public void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, ?>> filter,
+    public void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                                       @Nonnull Throwable cause) {
         runOnAfterCommitOrNow(() -> doCompleteExceptionally(filter, cause));
     }
@@ -165,18 +166,17 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         return () -> dispatchInterceptors.remove(interceptor);
     }
 
-    @SuppressWarnings("unchecked")
-    private <U> void doEmit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                            SubscriptionQueryUpdateMessage update) {
+    private void doEmit(Predicate<SubscriptionQueryMessage> filter,
+                        SubscriptionQueryUpdateMessage update) {
         updateHandlers.keySet()
                       .stream()
                       .filter(payloadMatchesQueryResponseType(update.payloadType()))
-                      .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
+                      .filter(filter::test)
                       .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
                                                 .ifPresent(uh -> doEmit(query, uh, update)));
     }
 
-    private Predicate<SubscriptionQueryMessage<?, ?, ?>> payloadMatchesQueryResponseType(Class<?> payloadType) {
+    private Predicate<SubscriptionQueryMessage> payloadMatchesQueryResponseType(Class<?> payloadType) {
         return sqm -> {
             if (sqm.updatesResponseType() instanceof MultipleInstancesResponseType) {
                 return payloadType.isArray() || Iterable.class.isAssignableFrom(payloadType);
@@ -192,7 +192,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @SuppressWarnings("unchecked")
-    private void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
+    private void doEmit(SubscriptionQueryMessage query, SinkWrapper<?> updateHandler,
                         SubscriptionQueryUpdateMessage update) {
         MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
         try {
@@ -208,7 +208,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         }
     }
 
-    private void doComplete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
+    private void doComplete(Predicate<SubscriptionQueryMessage> filter) {
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
@@ -222,7 +222,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                                                 }));
     }
 
-    private void emitError(SubscriptionQueryMessage<?, ?, ?> query, Throwable cause,
+    private void emitError(SubscriptionQueryMessage query, Throwable cause,
                            SinkWrapper<?> updateHandler) {
         try {
             updateHandler.error(cause);
@@ -232,7 +232,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         }
     }
 
-    private void doCompleteExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
+    private void doCompleteExceptionally(Predicate<SubscriptionQueryMessage> filter, Throwable cause) {
         updateHandlers.keySet()
                       .stream()
                       .filter(filter)
@@ -282,7 +282,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
-    public Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
+    public Set<SubscriptionQueryMessage> activeSubscriptions() {
         return Collections.unmodifiableSet(updateHandlers.keySet());
     }
 

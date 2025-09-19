@@ -57,7 +57,7 @@ class SimpleQueryUpdateEmitterTest {
 
     @Test
     void completingRegistrationOldApi() {
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
@@ -74,7 +74,7 @@ class SimpleQueryUpdateEmitterTest {
 
     @Test
     void concurrentUpdateEmitting() {
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
@@ -94,7 +94,7 @@ class SimpleQueryUpdateEmitterTest {
 
     @Test
     void concurrentUpdateEmitting_WithBackpressure() {
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
@@ -114,7 +114,7 @@ class SimpleQueryUpdateEmitterTest {
 
     @Test
     void cancelingRegistrationDoesNotCompleteFluxOfUpdatesOldApi() {
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
@@ -131,7 +131,7 @@ class SimpleQueryUpdateEmitterTest {
 
     @Test
     void completingRegistration() {
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
@@ -152,7 +152,7 @@ class SimpleQueryUpdateEmitterTest {
 
     @Test
     void queryUpdateEmitterIsTraced() {
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
@@ -176,7 +176,7 @@ class SimpleQueryUpdateEmitterTest {
 
     @Test
     void differentUpdateAreDisambiguatedAndWrongTypesAreFilteredBasedOnQueryTypes() {
-        SubscriptionQueryMessage<String, List<String>, Integer> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 multipleInstancesOf(String.class), instanceOf(Integer.class)
         );
@@ -198,7 +198,7 @@ class SimpleQueryUpdateEmitterTest {
 
     @Test
     void updateResponseTypeFilteringWorksForMultipleInstanceOfWithArrayAndList() {
-        SubscriptionQueryMessage<String, List<String>, List<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 multipleInstancesOf(String.class), multipleInstancesOf(String.class)
         );
@@ -227,7 +227,7 @@ class SimpleQueryUpdateEmitterTest {
 
     @Test
     void updateResponseTypeFilteringWorksForOptionalInstanceOf() {
-        SubscriptionQueryMessage<String, List<String>, Optional<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 multipleInstancesOf(String.class), optionalInstanceOf(String.class)
         );
@@ -256,7 +256,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     @SuppressWarnings("unchecked")
     void updateResponseTypeFilteringWorksForPublisherOf() {
-        SubscriptionQueryMessage<String, List<String>, Publisher<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 multipleInstancesOf(String.class), publisherOf(String.class)
         );
@@ -312,7 +312,7 @@ class SimpleQueryUpdateEmitterTest {
 
     @Test
     void multipleInstanceUpdatesAreDelivered() {
-        SubscriptionQueryMessage<String, List<String>, List<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 multipleInstancesOf(String.class), multipleInstancesOf(String.class)
         );
@@ -334,7 +334,7 @@ class SimpleQueryUpdateEmitterTest {
 
     @Test
     void optionalUpdatesAreDelivered() {
-        SubscriptionQueryMessage<String, Optional<String>, Optional<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 optionalInstanceOf(String.class), optionalInstanceOf(String.class)
         );
@@ -356,7 +356,7 @@ class SimpleQueryUpdateEmitterTest {
 
     @Test
     void cancelingRegistrationDoesNotCompleteFluxOfUpdates() {
-        SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
                 new MessageType("chatMessages"), "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );

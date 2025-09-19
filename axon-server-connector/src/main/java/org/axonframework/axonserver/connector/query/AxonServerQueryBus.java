@@ -464,11 +464,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         Span span = spanFactory.createSubscriptionQuerySpan(query, true).start();
         try (SpanScope unused = span.makeCurrent()) {
 
-            SubscriptionQueryMessage<Q, I, U> interceptedQuery = new DefaultMessageDispatchInterceptorChain<>(
+            SubscriptionQueryMessage interceptedQuery = new DefaultMessageDispatchInterceptorChain<>(
                     dispatchInterceptors)
                     .proceed(spanFactory.propagateContext(spanFactory.propagateContext(query)), null)
                     .first()
-                    .<SubscriptionQueryMessage<Q, I, U>>cast()
+                    .<SubscriptionQueryMessage>cast()
                     .asMono()
                     .map(MessageStream.Entry::message)
                     .block(); // TODO reintegrate as part of #3079

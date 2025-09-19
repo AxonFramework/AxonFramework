@@ -53,7 +53,7 @@ public class AxonServerSubscriptionQueryResult
      * Instantiate a {@link AxonServerSubscriptionQueryResult} which will emit its initial response and the updates of
      * the subscription query.
      */
-    public AxonServerSubscriptionQueryResult(final SubscriptionQueryMessage<?, ?, ?> queryMessage,
+    public AxonServerSubscriptionQueryResult(final SubscriptionQueryMessage queryMessage,
                                              final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
                                              final SubscriptionMessageSerializer subscriptionSerializer,
                                              final QueryBusSpanFactory spanFactory,
@@ -101,7 +101,7 @@ public class AxonServerSubscriptionQueryResult
         this.result = result;
     }
 
-    private void publishQueryUpdate(final SubscriptionQueryMessage<?, ?, ?> queryMessage,
+    private void publishQueryUpdate(final SubscriptionQueryMessage queryMessage,
                                     SubscriptionMessageSerializer subscriptionSerializer, QueryBusSpanFactory spanFactory,
                                     FluxSink<SubscriptionQueryUpdateMessage> fluxSink, QueryUpdate next) {
         SubscriptionQueryUpdateMessage message = subscriptionSerializer.deserialize(next);

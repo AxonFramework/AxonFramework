@@ -101,14 +101,14 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void subscriptionQueryWithMultipleResponses() {
-        SubscriptionQueryMessage<String, List<String>, String> testQuery = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("myQueryWithMultipleResponses"), "criteria",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
         Mono<List<String>> response = queryBus.subscriptionQuery(testQuery)
                                               .initialResult()
-                                              .map(m -> m.payloadAs(LIST_OF_STRINGS));
+                                              .mapNotNull(m -> m.payloadAs(LIST_OF_STRINGS));
 
         StepVerifier.create(response)
                     .expectNext(asList("Response1", "Response2"))
@@ -117,14 +117,14 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void subscriptionQueryWithSingleResponse() {
-        SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("myQueryWithSingleResponse"), "criteria",
                 instanceOf(String.class), instanceOf(String.class)
         );
 
         Mono<String> response = queryBus.subscriptionQuery(testQuery)
                                         .initialResult()
-                                        .map(m -> m.payloadAs(String.class));
+                                        .mapNotNull(m -> m.payloadAs(String.class));
 
         StepVerifier.create(response)
                     .expectNext("Response")
@@ -150,14 +150,14 @@ class FutureAsResponseTypeToQueryHandlersTest {
 
     @Test
     void futureSubscriptionQueryWithMultipleResponses() {
-        SubscriptionQueryMessage<String, List<String>, String> testQuery = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("myQueryFutureWithMultipleResponses"), "criteria",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
         Mono<List<String>> response = queryBus.subscriptionQuery(testQuery)
                                               .initialResult()
-                                              .map(m -> m.payloadAs(LIST_OF_STRINGS));
+                                              .mapNotNull(m -> m.payloadAs(LIST_OF_STRINGS));
 
         StepVerifier.create(response)
                     .expectNext(asList("Response1", "Response2"))

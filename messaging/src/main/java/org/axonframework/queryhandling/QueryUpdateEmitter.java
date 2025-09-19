@@ -32,15 +32,14 @@ import java.util.function.Predicate;
 /**
  * Component which informs subscription queries about updates, errors and when there are no more updates.
  * <p>
- * If any of the emitter functions in this interface are called from a message handling function (e.g. an {@link
- * EventHandler} annotated function), then that call will automatically be tied into the
- * lifecycle of the current {@link LegacyUnitOfWork} to ensure correct order of
- * execution.
+ * If any of the emitter functions in this interface are called from a message handling function (e.g. an
+ * {@link EventHandler} annotated function), then that call will automatically be tied into the lifecycle of the current
+ * {@link LegacyUnitOfWork} to ensure correct order of execution.
  * <p>
- * Added, implementations of this class should thus respect any current UnitOfWork in the {@link
- * LegacyUnitOfWork.Phase#STARTED} phase for any of the emitting functions. If this is
- * the case then the emitter call action should be performed during the {@link LegacyUnitOfWork.Phase#AFTER_COMMIT}.
- * Otherwise the operation can be executed immediately.
+ * Added, implementations of this class should thus respect any current UnitOfWork in the
+ * {@link LegacyUnitOfWork.Phase#STARTED} phase for any of the emitting functions. If this is the case then the emitter
+ * call action should be performed during the {@link LegacyUnitOfWork.Phase#AFTER_COMMIT}. Otherwise the operation can
+ * be executed immediately.
  *
  * @author Milan Savic
  * @since 3.3
@@ -53,21 +52,20 @@ public interface QueryUpdateEmitter {
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      * @param update incremental update message
-     * @param <U>    the type of the update
      */
-    <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                  @Nonnull SubscriptionQueryUpdateMessage update);
+    void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+              @Nonnull SubscriptionQueryUpdateMessage update);
 
     /**
-     * Emits given incremental update to subscription queries matching given filter. If an {@code update} is {@code
-     * null}, emit will be skipped. In order to send nullable updates, use {@link #emit(Class, Predicate,
-     * SubscriptionQueryUpdateMessage)} or {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods.
+     * Emits given incremental update to subscription queries matching given filter. If an {@code update} is
+     * {@code null}, emit will be skipped. In order to send nullable updates, use
+     * {@link #emit(Class, Predicate, SubscriptionQueryUpdateMessage)} or
+     * {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods.
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      * @param update incremental update
-     * @param <U>    the type of the update
      */
-    default <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter, @Nullable U update) {
+    default void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nullable Object update) {
         if (update != null) {
             emit(filter, asUpdateMessage(update));
         }
@@ -113,21 +111,21 @@ public interface QueryUpdateEmitter {
      * @param filter    predicate on query payload used to filter subscription queries
      * @param update    incremental update message
      * @param <Q>       the type of the query
-     * @param <U>       the type of the update
      */
     @SuppressWarnings("unchecked")
-    default <Q, U> void emit(@Nonnull Class<Q> queryType,
-                             @Nonnull Predicate<? super Q> filter,
-                             @Nonnull SubscriptionQueryUpdateMessage update) {
-        Predicate<SubscriptionQueryMessage<?, ?, U>> sqmFilter =
+    default <Q> void emit(@Nonnull Class<Q> queryType,
+                          @Nonnull Predicate<? super Q> filter,
+                          @Nonnull SubscriptionQueryUpdateMessage update) {
+        Predicate<SubscriptionQueryMessage> sqmFilter =
                 m -> queryType.isAssignableFrom(m.payloadType()) && filter.test((Q) m.payload());
         emit(sqmFilter, update);
     }
 
     /**
      * Emits given incremental update to subscription queries matching given query type and filter. If an {@code update}
-     * is {@code null}, emit will be skipped. In order to send nullable updates, use {@link #emit(Class, Predicate,
-     * SubscriptionQueryUpdateMessage)} or {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods.
+     * is {@code null}, emit will be skipped. In order to send nullable updates, use
+     * {@link #emit(Class, Predicate, SubscriptionQueryUpdateMessage)} or
+     * {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods.
      *
      * @param queryType the type of the query
      * @param filter    predicate on query payload used to filter subscription queries
@@ -146,7 +144,7 @@ public interface QueryUpdateEmitter {
      *
      * @param filter predicate on subscription query message used to filter subscription queries
      */
-    void complete(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, ?>> filter);
+    void complete(@Nonnull Predicate<SubscriptionQueryMessage> filter);
 
     /**
      * Completes subscription queries matching given query type and filter.
@@ -157,7 +155,7 @@ public interface QueryUpdateEmitter {
      */
     @SuppressWarnings("unchecked")
     default <Q> void complete(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter) {
-        Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
+        Predicate<SubscriptionQueryMessage> sqmFilter =
                 m -> queryType.isAssignableFrom(m.payloadType()) && filter.test((Q) m.payload());
         complete(sqmFilter);
     }
@@ -168,7 +166,7 @@ public interface QueryUpdateEmitter {
      * @param filter predicate on subscription query message used to filter subscription queries
      * @param cause  the cause of an error
      */
-    void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, @Nonnull Throwable cause);
+    void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nonnull Throwable cause);
 
     /**
      * Completes with an error subscription queries matching given query type and filter
@@ -181,7 +179,7 @@ public interface QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     default <Q> void completeExceptionally(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter,
                                            @Nonnull Throwable cause) {
-        Predicate<SubscriptionQueryMessage<?, ?, ?>> sqmFilter =
+        Predicate<SubscriptionQueryMessage> sqmFilter =
                 m -> queryType.isAssignableFrom(m.payloadType()) && filter.test((Q) m.payload());
         completeExceptionally(sqmFilter, cause);
     }
@@ -192,7 +190,7 @@ public interface QueryUpdateEmitter {
      * @param query the subscription query for which we have registered the update handler
      * @return {@code true} if there is an update handler registered for given {@code query}, {@code false} otherwise
      */
-    boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage<?, ?, ?> query);
+    boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage query);
 
     /**
      * Registers an Update Handler for given {@code query} with given {@code updateBufferSize}.
@@ -200,11 +198,10 @@ public interface QueryUpdateEmitter {
      * @param query            the subscription query for which we register an Update Handler
      * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux} is
      *                         made
-     * @param <U>              the incremental response types of the query
      * @return the object which contains updates and a registration which can be used to cancel them
      */
-    <U> UpdateHandlerRegistration registerUpdateHandler(@Nonnull SubscriptionQueryMessage<?, ?, ?> query,
-                                                           int updateBufferSize);
+    UpdateHandlerRegistration registerUpdateHandler(@Nonnull SubscriptionQueryMessage query,
+                                                    int updateBufferSize);
 
     /**
      * Provides the set of running subscription queries. If there are changes to subscriptions they will be reflected in
@@ -212,7 +209,7 @@ public interface QueryUpdateEmitter {
      *
      * @return the set of running subscription queries
      */
-    default Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
+    default Set<SubscriptionQueryMessage> activeSubscriptions() {
         return Collections.emptySet();
     }
 }

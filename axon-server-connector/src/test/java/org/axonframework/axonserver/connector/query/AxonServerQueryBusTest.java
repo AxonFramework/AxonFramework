@@ -526,7 +526,7 @@ class AxonServerQueryBusTest {
                 .thenReturn(new SimpleSubscriptionQueryResult(
                         "<string>Hello world</string>", stubUpdate("Not a valid XML object")
                 ));
-        GenericSubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+        GenericSubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("test"), "Say hi",
                 instanceOf(String.class), instanceOf(String.class)
         );
@@ -552,7 +552,7 @@ class AxonServerQueryBusTest {
                 .thenReturn(new SimpleSubscriptionQueryResult(
                         "Not a valid XML object", stubUpdate("<string>Hello world</string>")
                 ));
-        GenericSubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+        GenericSubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("test"), "Say hi",
                 instanceOf(String.class), instanceOf(String.class)
         );
@@ -574,7 +574,7 @@ class AxonServerQueryBusTest {
 
     @Test
     void afterShutdownDispatchingAnShutdownInProgressExceptionOnSubscriptionQueryInvocation() {
-        SubscriptionQueryMessage<String, String, String> testSubscriptionQuery = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage testSubscriptionQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("query"), "some-query",
                 instanceOf(String.class), instanceOf(String.class)
         );
@@ -666,7 +666,7 @@ class AxonServerQueryBusTest {
 
     @Test
     void subscriptionQueryRequestsPermitsBasedOnBufferSize() {
-        SubscriptionQueryMessage<Object, Object, Object> testQuery = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("test"), "test", instanceOf(Object.class), instanceOf(Object.class)
         );
         when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
@@ -679,7 +679,7 @@ class AxonServerQueryBusTest {
 
     @Test
     void subscriptionQueryUpdateBufferSizeIsNEverLowerThan32() {
-        SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("test"), "test", instanceOf(String.class), instanceOf(String.class)
         );
         when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
