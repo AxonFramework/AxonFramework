@@ -358,85 +358,89 @@ class SimpleQueryBusTest {
         }
     }
 
-    @Test
-    @Disabled("TODO #3488 - Pick up together with subscription query implementation")
-    void subscriptionQueryReportsExceptionInInitialResult() {
+    @Nested
+    class SubscriptionQuery {
+
+        @Test
+        @Disabled("TODO #3488 - Pick up together with subscription query implementation")
+        void subscriptionQueryReportsExceptionInInitialResult() {
 //        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> {
 //            throw new MockException();
 //        });
 
-        SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType(String.class), "test", instanceOf(String.class), instanceOf(String.class)
-        );
-        SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result =
-                testSubject.subscriptionQuery(testQuery);
-        Mono<QueryResponseMessage> initialResult = result.initialResult();
-        //noinspection ConstantConditions
-        assertFalse(initialResult.map(r -> false).onErrorReturn(MockException.class::isInstance, true).block(),
-                    "Exception by handler should be reported in result, not on Mono");
-        //noinspection ConstantConditions
-        assertTrue(initialResult.block().isExceptional());
-    }
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    new MessageType(String.class), "test", instanceOf(String.class), instanceOf(String.class)
+            );
+            SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result =
+                    testSubject.subscriptionQuery(testQuery, null, 1);
+            Mono<QueryResponseMessage> initialResult = result.initialResult();
+            //noinspection ConstantConditions
+            assertFalse(initialResult.map(r -> false).onErrorReturn(MockException.class::isInstance, true).block(),
+                        "Exception by handler should be reported in result, not on Mono");
+            //noinspection ConstantConditions
+            assertTrue(initialResult.block().isExceptional());
+        }
 
-    @Disabled("TODO together with #3079")
-    @Test
-    void subscriptionQueryIncreasingProjection() throws InterruptedException {
-        CountDownLatch ten = new CountDownLatch(1);
-        CountDownLatch hundred = new CountDownLatch(1);
-        CountDownLatch thousand = new CountDownLatch(1);
-        final AtomicLong value = new AtomicLong();
+        @Disabled("TODO together with #3079")
+        @Test
+        void subscriptionQueryIncreasingProjection() throws InterruptedException {
+            CountDownLatch ten = new CountDownLatch(1);
+            CountDownLatch hundred = new CountDownLatch(1);
+            CountDownLatch thousand = new CountDownLatch(1);
+            final AtomicLong value = new AtomicLong();
 //        testSubject.subscribe("queryName", Long.class, (q, ctx) -> value.get());
-        QueryUpdateEmitter updateEmitter = testSubject.queryUpdateEmitter();
-        Disposable disposable = Flux.interval(Duration.ofMillis(0), Duration.ofMillis(3))
-                                    .doOnNext(next -> {
-                                        if (next == 10L) {
-                                            ten.countDown();
-                                        }
-                                        if (next == 100L) {
-                                            hundred.countDown();
-                                        }
-                                        if (next == 1000L) {
-                                            thousand.countDown();
-                                        }
-                                        value.set(next);
-                                        updateEmitter.emit(query -> "queryName".equals(query.type().name()), next);
-                                    })
-                                    .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.type()
-                                                                                                                .name())))
-                                    .subscribe();
+            QueryUpdateEmitter updateEmitter = testSubject.queryUpdateEmitter();
+            Disposable disposable = Flux.interval(Duration.ofMillis(0), Duration.ofMillis(3))
+                                        .doOnNext(next -> {
+                                            if (next == 10L) {
+                                                ten.countDown();
+                                            }
+                                            if (next == 100L) {
+                                                hundred.countDown();
+                                            }
+                                            if (next == 1000L) {
+                                                thousand.countDown();
+                                            }
+                                            value.set(next);
+                                            updateEmitter.emit(query -> "queryName".equals(query.type().name()), next);
+                                        })
+                                        .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.type()
+                                                                                                                    .name())))
+                                        .subscribe();
 
 
-        SubscriptionQueryMessage<String, Long, Long> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType("queryName"), "test",
-                instanceOf(Long.class), instanceOf(Long.class)
-        );
-        SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result =
-                testSubject.subscriptionQuery(testQuery);
-        Mono<QueryResponseMessage> initialResult = result.initialResult();
-        ten.await();
-        Long firstInitialResult = Objects.requireNonNull(initialResult.block()).payloadAs(Long.class);
-        hundred.await();
-        Long fistUpdate = Objects.requireNonNull(result.updates().next().block()).payloadAs(Long.class);
-        thousand.await();
-        Long anotherInitialResult = Objects.requireNonNull(initialResult.block()).payloadAs(Long.class);
-        assertTrue(fistUpdate <= firstInitialResult + 1);
-        assertTrue(firstInitialResult <= anotherInitialResult);
-        disposable.dispose();
-    }
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    new MessageType("queryName"), "test",
+                    instanceOf(Long.class), instanceOf(Long.class)
+            );
+            SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result =
+                    testSubject.subscriptionQuery(testQuery, null, 1);
+            Mono<QueryResponseMessage> initialResult = result.initialResult();
+            ten.await();
+            Long firstInitialResult = Objects.requireNonNull(initialResult.block()).payloadAs(Long.class);
+            hundred.await();
+            Long fistUpdate = Objects.requireNonNull(result.updates().next().block()).payloadAs(Long.class);
+            thousand.await();
+            Long anotherInitialResult = Objects.requireNonNull(initialResult.block()).payloadAs(Long.class);
+            assertTrue(fistUpdate <= firstInitialResult + 1);
+            assertTrue(firstInitialResult <= anotherInitialResult);
+            disposable.dispose();
+        }
 
-    @Test
-    @Disabled("TODO #3488 - Pick up together with subscription query implementation")
-    void onSubscriptionQueryCancelTheActiveSubscriptionIsRemovedFromTheEmitterIfFluxIsNotSubscribed() {
+        @Test
+        @Disabled("TODO #3488 - Pick up together with subscription query implementation")
+        void onSubscriptionQueryCancelTheActiveSubscriptionIsRemovedFromTheEmitterIfFluxIsNotSubscribed() {
 //        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> q.payload() + "1234");
 
-        SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType(String.class), "test", instanceOf(String.class), instanceOf(String.class)
-        );
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    new MessageType(String.class), "test", instanceOf(String.class), instanceOf(String.class)
+            );
 
-        SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result =
-                testSubject.subscriptionQuery(testQuery);
+            SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result =
+                    testSubject.subscriptionQuery(testQuery, null, 1);
 
-        result.cancel();
-        assertEquals(0, testSubject.queryUpdateEmitter().activeSubscriptions().size());
+            result.cancel();
+            assertEquals(0, testSubject.queryUpdateEmitter().activeSubscriptions().size());
+        }
     }
 }

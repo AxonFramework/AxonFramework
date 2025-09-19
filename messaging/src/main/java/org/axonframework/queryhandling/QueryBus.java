@@ -24,7 +24,6 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
-import reactor.util.concurrent.Queues;
 
 /**
  * The mechanism that dispatches {@link QueryMessage queries} to their appropriate {@link QueryHandler query handler}.
@@ -36,8 +35,8 @@ import reactor.util.concurrent.Queues;
  * <p>
  * Hence, queries dispatched (through either {@link #query(QueryMessage, ProcessingContext)},
  * {@link #streamingQuery(StreamingQueryMessage, ProcessingContext)}, and
- * {@link #subscriptionQuery(SubscriptionQueryMessage)}) match a subscribed query handler based on "query name" and
- * "query response name."
+ * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)}) match a subscribed query handler based
+ * on "query name" and "query response name."
  * <p>
  * There may be multiple handlers for each query- and response-name combination.
  *
@@ -111,44 +110,16 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * <p>
      * If there is an error during emitting an update, subscription is cancelled causing further emits not reaching the
      * destination.
-     * <p>
-     * The buffer size which accumulates the updates (not to be missed) is {@link Queues#SMALL_BUFFER_SIZE}.
      *
-     * @param query the query
-     * @param <Q>   the payload type of the query
-     * @param <I>   the response type of the query
-     * @param <U>   the incremental response types of the query
-     * @return query result containing initial result and incremental updates
-     */
-    default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage<Q, I, U> query
-    ) {
-        return subscriptionQuery(query, Queues.SMALL_BUFFER_SIZE);
-    }
-
-    /**
-     * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
-     * queryName/initialResponseType/updateResponseType. The result is lazily created and there will be no execution of
-     * the query handler before there is a subscription to the initial result. In order not to miss updates, the query
-     * bus will queue all updates which happen after the subscription query is done and once the subscription to the
-     * flux is made, these updates will be emitted.
-     * <p>
-     * If there is an error during retrieving or consuming initial result, stream for incremental updates is NOT
-     * interrupted.
-     * <p>
-     * If there is an error during emitting an update, subscription is cancelled causing further emits not reaching the
-     * destination.
-     *
-     * @param query            the query
+     * @param query            The subscription query to dispatch.
+     * @param context          The processing context under which the query is being published (can be {@code null}).
      * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux} is
      *                         made
-     * @param <Q>              the payload type of the query
-     * @param <I>              the response type of the query
-     * @param <U>              the incremental response types of the query
      * @return query result containing initial result and incremental updates
      */
-    <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage<Q, I, U> query,
+    SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
+            @Nonnull SubscriptionQueryMessage query,
+            @Nullable ProcessingContext context,
             int updateBufferSize
     );
 

@@ -532,7 +532,7 @@ class AxonServerQueryBusTest {
         );
 
         SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> queryResult =
-                testSubject.subscriptionQuery(testQuery);
+                testSubject.subscriptionQuery(testQuery, null, 50);
 
         Mono<QueryResponseMessage> initialResult = queryResult.initialResult();
         Flux<SubscriptionQueryUpdateMessage> updates = queryResult.updates();
@@ -558,7 +558,7 @@ class AxonServerQueryBusTest {
         );
 
         SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> queryResult =
-                testSubject.subscriptionQuery(testQuery);
+                testSubject.subscriptionQuery(testQuery, null, 50);
 
         Mono<QueryResponseMessage> initialResult = queryResult.initialResult();
         Flux<SubscriptionQueryUpdateMessage> updates = queryResult.updates();
@@ -582,7 +582,7 @@ class AxonServerQueryBusTest {
         assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
 
         assertThrows(ShutdownInProgressException.class,
-                     () -> testSubject.subscriptionQuery(testSubscriptionQuery));
+                     () -> testSubject.subscriptionQuery(testSubscriptionQuery, null, 50));
     }
 
     @Test
@@ -672,7 +672,7 @@ class AxonServerQueryBusTest {
         when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
                 .thenReturn(new SimpleSubscriptionQueryResult("result"));
 
-        testSubject.subscriptionQuery(testQuery, 124);
+        testSubject.subscriptionQuery(testQuery, null, 124);
 
         verify(mockQueryChannel).subscriptionQuery(any(), any(), eq(124), eq(15));
     }
@@ -685,7 +685,7 @@ class AxonServerQueryBusTest {
         when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
                 .thenReturn(new SimpleSubscriptionQueryResult("result"));
 
-        testSubject.subscriptionQuery(testQuery, 31);
+        testSubject.subscriptionQuery(testQuery, null, 31);
 
         verify(mockQueryChannel).subscriptionQuery(any(), any(), eq(32), eq(4));
     }

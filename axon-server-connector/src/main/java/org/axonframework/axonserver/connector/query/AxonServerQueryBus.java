@@ -449,8 +449,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     @Override
-    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage<Q, I, U> query,
+    public SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
+            @Nonnull SubscriptionQueryMessage query,
+            @Nullable ProcessingContext context,
             int updateBufferSize
     ) {
         Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),

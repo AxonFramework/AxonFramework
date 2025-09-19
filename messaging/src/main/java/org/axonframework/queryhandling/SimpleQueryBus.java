@@ -68,7 +68,8 @@ public class SimpleQueryBus implements QueryBus {
      *                           {@link org.axonframework.messaging.unitofwork.UnitOfWork units of work} to dispatch and
      *                           handle queries in.
      * @param queryUpdateEmitter The query update emitter used to register update handlers for
-     *                           {@link #subscriptionQuery(SubscriptionQueryMessage, int) subscription queries}.
+     *                           {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)
+     *                           subscription queries}.
      */
     public SimpleQueryBus(@Nonnull UnitOfWorkFactory unitOfWorkFactory,
                           @Nonnull QueryUpdateEmitter queryUpdateEmitter) {
@@ -146,8 +147,9 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Override
-    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage<Q, I, U> query,
+    public SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
+            @Nonnull SubscriptionQueryMessage query,
+            @Nullable ProcessingContext context,
             int updateBufferSize
     ) {
         assertSubQueryResponseTypes(query);
@@ -168,7 +170,7 @@ public class SimpleQueryBus implements QueryBus {
         return getSubscriptionQueryResult(initialResult, updateHandlerRegistration);
     }
 
-    private <Q, I, U> void assertSubQueryResponseTypes(SubscriptionQueryMessage<Q, I, U> query) {
+    private void assertSubQueryResponseTypes(SubscriptionQueryMessage query) {
         Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
                        () -> "Subscription Query query does not support Flux as a return type.");
         Assert.isFalse(Publisher.class.isAssignableFrom(query.updatesResponseType().getExpectedResponseType()),

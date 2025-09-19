@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -365,122 +364,125 @@ class DefaultQueryGatewayTest {
         }
     }
 
-    @Test
-    void subscriptionQuery() {
-        when(queryBus.subscriptionQuery(any(), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
-
-        testSubject.subscriptionQuery("subscription", instanceOf(String.class), instanceOf(String.class));
-
-        //noinspection unchecked
-        ArgumentCaptor<SubscriptionQueryMessage<String, String, String>> queryMessageCaptor =
-                ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
-
-        verify(queryBus).subscriptionQuery(queryMessageCaptor.capture(), anyInt());
-
-        SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
-        assertEquals("subscription", result.payload());
-        assertEquals(String.class, result.payloadType());
-        assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
-        assertEquals(String.class, result.responseType().getExpectedResponseType());
-        assertTrue(InstanceResponseType.class.isAssignableFrom(result.updatesResponseType().getClass()));
-        assertEquals(String.class, result.updatesResponseType().getExpectedResponseType());
-        assertEquals(Metadata.emptyInstance(), result.metadata());
-    }
-
-    @Test
-    void subscriptionQueryWithMetadata() {
-        String expectedMetadataKey = "key";
-        String expectedMetadataValue = "value";
-
-        when(queryBus.subscriptionQuery(any(), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
+    @Nested
+    class SubscriptionQuery {
 
 
-        Message testQuery = new GenericMessage(
-                QUERY_TYPE, "subscription",
-                Metadata.with(expectedMetadataKey, expectedMetadataValue)
-        );
-        testSubject.subscriptionQuery(testQuery, instanceOf(String.class), instanceOf(String.class));
+        @Test
+        void subscriptionQuery() {
+            when(queryBus.subscriptionQuery(any(), any(), anyInt()))
+                    .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
-        //noinspection unchecked
-        ArgumentCaptor<SubscriptionQueryMessage<String, String, String>> queryMessageCaptor =
-                ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
+            testSubject.subscriptionQuery("subscription", String.class, String.class, null);
 
-        verify(queryBus).subscriptionQuery(queryMessageCaptor.capture(), anyInt());
+            ArgumentCaptor<SubscriptionQueryMessage> queryMessageCaptor =
+                    ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
 
-        SubscriptionQueryMessage<String, String, String> result = queryMessageCaptor.getValue();
-        assertEquals("subscription", result.payload());
-        assertEquals(String.class, result.payloadType());
-        assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
-        assertEquals(String.class, result.responseType().getExpectedResponseType());
-        assertTrue(InstanceResponseType.class.isAssignableFrom(result.updatesResponseType().getClass()));
-        assertEquals(String.class, result.updatesResponseType().getExpectedResponseType());
-        Metadata resultMetadata = result.metadata();
-        assertTrue(resultMetadata.containsKey(expectedMetadataKey));
-        assertTrue(resultMetadata.containsValue(expectedMetadataValue));
-    }
+            verify(queryBus).subscriptionQuery(queryMessageCaptor.capture(), eq(null), anyInt());
 
-    @Test
-    void exceptionInInitialResultOfSubscriptionQueryReportedInMono() {
-        QueryResponseMessage testResponse = new GenericQueryResponseMessage(
-                QUERY_TYPE, new MockException(), String.class
-        );
-        when(queryBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(
-                        Mono.just(testResponse),
-                        Flux.empty(),
-                        () -> true
-                ));
+            SubscriptionQueryMessage result = queryMessageCaptor.getValue();
+            assertEquals("subscription", result.payload());
+            assertEquals(String.class, result.payloadType());
+            assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
+            assertEquals(String.class, result.responseType().getExpectedResponseType());
+            assertTrue(InstanceResponseType.class.isAssignableFrom(result.updatesResponseType().getClass()));
+            assertEquals(String.class, result.updatesResponseType().getExpectedResponseType());
+            assertEquals(Metadata.emptyInstance(), result.metadata());
+        }
 
-        SubscriptionQueryResult<String, String> actual =
-                testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
-        //noinspection NullableInLambdaInTransform
-        assertEquals(
-                MockException.class,
-                actual.initialResult().map(i -> null).onErrorResume(e -> Mono.just(e.getClass())).block()
-        );
-    }
+        @Test
+        void subscriptionQueryWithMetadata() {
+            String expectedMetadataKey = "key";
+            String expectedMetadataValue = "value";
 
-    @Test
-    void nullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
-        QueryResponseMessage testQuery = new GenericQueryResponseMessage(
-                QUERY_TYPE, (String) null, String.class
-        );
-        when(queryBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(
-                        Mono.just(testQuery),
-                        Flux.empty(),
-                        () -> true
-                ));
+            when(queryBus.subscriptionQuery(any(), any(), anyInt()))
+                    .thenReturn(new DefaultSubscriptionQueryResult<>(Mono.empty(), Flux.empty(), () -> true));
 
-        SubscriptionQueryResult<String, String> actual =
-                testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
 
-        assertNull(actual.initialResult().block());
-    }
+            Message testQuery = new GenericMessage(
+                    QUERY_TYPE, "subscription",
+                    Metadata.with(expectedMetadataKey, expectedMetadataValue)
+            );
+            testSubject.subscriptionQuery(testQuery, String.class, String.class, null);
 
-    @Test
-    void nullUpdatesOfSubscriptionQuerySkipped() {
-        SubscriptionQueryUpdateMessage testQuery = new GenericSubscriptionQueryUpdateMessage(
-                QUERY_TYPE, null, String.class
-        );
-        when(queryBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), anyInt()))
-                .thenReturn(new DefaultSubscriptionQueryResult<>(
-                        Mono.empty(),
-                        Flux.just(testQuery),
-                        () -> true
-                ));
+            ArgumentCaptor<SubscriptionQueryMessage> queryMessageCaptor =
+                    ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
 
-        SubscriptionQueryResult<String, String> actual =
-                testSubject.subscriptionQuery("Test", instanceOf(String.class), instanceOf(String.class));
+            verify(queryBus).subscriptionQuery(queryMessageCaptor.capture(), eq(null), anyInt());
 
-        assertNull(actual.initialResult().block());
-        assertEquals((Long) 0L, actual.updates().count().block());
-    }
+            SubscriptionQueryMessage result = queryMessageCaptor.getValue();
+            assertEquals("subscription", result.payload());
+            assertEquals(String.class, result.payloadType());
+            assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
+            assertEquals(String.class, result.responseType().getExpectedResponseType());
+            assertTrue(InstanceResponseType.class.isAssignableFrom(result.updatesResponseType().getClass()));
+            assertEquals(String.class, result.updatesResponseType().getExpectedResponseType());
+            Metadata resultMetadata = result.metadata();
+            assertTrue(resultMetadata.containsKey(expectedMetadataKey));
+            assertTrue(resultMetadata.containsValue(expectedMetadataValue));
+        }
 
-    @SuppressWarnings({"SameParameterValue", "unused"})
-    private <Q, R> SubscriptionQueryMessage<Q, R, R> anySubscriptionMessage(Class<Q> queryType, Class<R> responseType) {
-        return any();
+        @Test
+        void exceptionInInitialResultOfSubscriptionQueryReportedInMono() {
+            QueryResponseMessage testResponse = new GenericQueryResponseMessage(
+                    QUERY_TYPE, new MockException(), String.class
+            );
+            when(queryBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
+                    .thenReturn(new DefaultSubscriptionQueryResult<>(
+                            Mono.just(testResponse),
+                            Flux.empty(),
+                            () -> true
+                    ));
+
+            SubscriptionQueryResult<String, String> actual =
+                    testSubject.subscriptionQuery("Test", String.class, String.class, null);
+            //noinspection NullableInLambdaInTransform
+            assertEquals(
+                    MockException.class,
+                    actual.initialResult().map(i -> null).onErrorResume(e -> Mono.just(e.getClass())).block()
+            );
+        }
+
+        @Test
+        void nullInitialResultOfSubscriptionQueryReportedAsEmptyMono() {
+            QueryResponseMessage testQuery = new GenericQueryResponseMessage(
+                    QUERY_TYPE, (String) null, String.class
+            );
+            when(queryBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), any(), anyInt()))
+                    .thenReturn(new DefaultSubscriptionQueryResult<>(
+                            Mono.just(testQuery),
+                            Flux.empty(),
+                            () -> true
+                    ));
+
+            SubscriptionQueryResult<String, String> actual =
+                    testSubject.subscriptionQuery("Test", String.class, String.class, null);
+
+            assertNull(actual.initialResult().block());
+        }
+
+        @Test
+        void nullUpdatesOfSubscriptionQuerySkipped() {
+            SubscriptionQueryUpdateMessage testQuery = new GenericSubscriptionQueryUpdateMessage(
+                    QUERY_TYPE, null, String.class
+            );
+            when(queryBus.subscriptionQuery(anySubscriptionMessage(String.class, String.class), eq(null), anyInt()))
+                    .thenReturn(new DefaultSubscriptionQueryResult<>(
+                            Mono.empty(),
+                            Flux.just(testQuery),
+                            () -> true
+                    ));
+
+            SubscriptionQueryResult<String, String> actual =
+                    testSubject.subscriptionQuery("Test", String.class, String.class, null);
+
+            assertNull(actual.initialResult().block());
+            assertEquals((Long) 0L, actual.updates().count().block());
+        }
+
+        @SuppressWarnings({"SameParameterValue", "unused"})
+        private <Q, R> SubscriptionQueryMessage anySubscriptionMessage(Class<Q> queryType, Class<R> responseType) {
+            return any();
+        }
     }
 }
