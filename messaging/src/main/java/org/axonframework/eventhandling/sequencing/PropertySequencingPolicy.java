@@ -42,7 +42,7 @@ public class PropertySequencingPolicy<T, K> extends ExtractionSequencingPolicy<T
      * @param propertyName   The name of the property to be extracted as sequence identifier.
      */
     public PropertySequencingPolicy(
-            @Nonnull Class<T> payloadClass,
+            @Nonnull Class<T> payloadClass, // TODO: There is a problem with payload class parameter! I don't want to write it as a String...
             @Nonnull String propertyName
     ) {
         super(payloadClass, extractProperty(payloadClass, propertyName)::getValue);

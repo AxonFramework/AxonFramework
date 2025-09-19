@@ -84,12 +84,17 @@ public class SequencingPolicyEventMessageHandlingMember<T>
                     );
                 }
             } else {
-                // Find constructor that matches parameter count
+                // Find constructor that matches the total parameters needed
                 Constructor<?>[] constructors = policyType.getDeclaredConstructors();
                 Constructor<?> matchingConstructor = null;
 
                 for (Constructor<?> constructor : constructors) {
-                    if (constructor.getParameterCount() == parameters.length) {
+                    // Count non-Class parameters (which need to be provided as strings)
+                    long nonClassParameterCount = java.util.Arrays.stream(constructor.getParameterTypes())
+                            .filter(type -> type != Class.class)
+                            .count();
+
+                    if (nonClassParameterCount == parameters.length) {
                         matchingConstructor = constructor;
                         break;
                     }
@@ -98,13 +103,13 @@ public class SequencingPolicyEventMessageHandlingMember<T>
                 if (matchingConstructor == null) {
                     throw new UnsupportedHandlerException(
                             "No constructor found for SequencingPolicy " + policyType.getName() +
-                                    " with " + parameters.length + " parameters",
+                                    " that matches " + parameters.length + " string parameters (excluding Class parameters)",
                             original.unwrap(Member.class).orElse(null)
                     );
                 }
 
                 // Parse parameters and invoke constructor
-                Object[] parsedParameters = parseParameters(matchingConstructor.getParameterTypes(), parameters);
+                Object[] parsedParameters = parseParameters(matchingConstructor.getParameterTypes(), parameters, original);
                 matchingConstructor.setAccessible(true);
                 return (org.axonframework.eventhandling.sequencing.SequencingPolicy)
                         matchingConstructor.newInstance(parsedParameters);
@@ -117,14 +122,27 @@ public class SequencingPolicyEventMessageHandlingMember<T>
         }
     }
 
-    private Object[] parseParameters(Class<?>[] parameterTypes, String[] stringParameters) {
-        Object[] parsedParameters = new Object[stringParameters.length];
+    private Object[] parseParameters(Class<?>[] parameterTypes, String[] stringParameters, MessageHandlingMember<T> original) {
+        Object[] parsedParameters = new Object[parameterTypes.length];
+        int stringParameterIndex = 0;
 
-        for (int i = 0; i < stringParameters.length; i++) {
-            String stringValue = stringParameters[i];
+        for (int i = 0; i < parameterTypes.length; i++) {
             Class<?> targetType = parameterTypes[i];
 
-            parsedParameters[i] = parseParameter(stringValue, targetType);
+            if (targetType == Class.class) {
+                // Use the payload type from the MessageHandlingMember
+                parsedParameters[i] = original.payloadType();
+            } else {
+                // Parse from string parameters
+                if (stringParameterIndex >= stringParameters.length) {
+                    throw new IllegalArgumentException(
+                            "Not enough string parameters provided. Expected parameter for type: " + targetType.getName()
+                    );
+                }
+                String stringValue = stringParameters[stringParameterIndex];
+                parsedParameters[i] = parseParameter(stringValue, targetType);
+                stringParameterIndex++;
+            }
         }
 
         return parsedParameters;
@@ -152,10 +170,16 @@ public class SequencingPolicyEventMessageHandlingMember<T>
                 throw new IllegalArgumentException("Character parameter must be exactly one character");
             }
             return stringValue.charAt(0);
+        } else if (targetType == Class.class) {
+            try {
+                return Class.forName(stringValue);
+            } catch (ClassNotFoundException e) {
+                throw new IllegalArgumentException("Cannot find class: " + stringValue, e);
+            }
         } else {
             throw new UnsupportedOperationException(
                     "Unsupported parameter type: " + targetType.getName() +
-                            ". Only primitives and String are supported."
+                            ". Only primitives, String, and Class are supported."
             );
         }
     }
