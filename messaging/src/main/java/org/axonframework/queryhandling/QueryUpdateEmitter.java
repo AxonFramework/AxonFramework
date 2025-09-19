@@ -19,10 +19,8 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotation.Internal;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeNotResolvedException;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -66,104 +64,117 @@ public interface QueryUpdateEmitter {
     UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query, int updateBufferSize);
 
     /**
-     * Emits incremental update (as return value of provided update function) to subscription queries matching given
-     * filter.
+     * Emits given incremental {@code update} to subscription queries matching the given {@code queryType} and given
+     * {@code filter}.
+     * <p>
+     * If an {@code update} is {@code null}, emit will be skipped. In order to send nullable updates, use
+     * {@link #emit(Class, Predicate, SubscriptionQueryUpdateMessage)} or
+     * {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods instead.
      *
-     * @param filter predicate on subscription query message used to filter subscription queries
-     * @param update incremental update message
+     * @param queryType The type of the {@link SubscriptionQueryMessage} to filter on.
+     * @param filter    A predicate testing the {@link SubscriptionQueryMessage#payload()}, converted to the given
+     *                  {@code queryType} to filter on.
+     * @param update    The incremental update to emit for
+     *                  {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription
+     *                  queries} matching the given {@code filter}.
+     * @param <Q>       The type of the {@link SubscriptionQueryMessage} to filter on.
+     * @throws MessageTypeNotResolvedException                     If the given {@code queryType} has no known
+     *                                                             {@link org.axonframework.messaging.MessageType}
+     *                                                             equivalent required to filter the
+     *                                                             {@link SubscriptionQueryMessage#payload()}.
+     * @throws org.axonframework.serialization.ConversionException If the {@link SubscriptionQueryMessage#payload()}
+     *                                                             could not be converted to the given {@code queryType}
+     *                                                             to perform the given {@code filter}. Will only occur
+     *                                                             if a {@link org.axonframework.messaging.MessageType}
+     *                                                             could be found for the given {@code queryType}.
      */
-    void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+    <Q> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter, @Nullable Object update);
+
+    /**
+     * Emits given incremental {@code update} message to subscription queries matching the given {@code queryType} and
+     * given {@code filter}.
+     *
+     * @param queryType The type of the {@link SubscriptionQueryMessage} to filter on.
+     * @param filter    A predicate testing the {@link SubscriptionQueryMessage#payload()}, converted to the given
+     *                  {@code queryType} to filter on.
+     * @param update    The incremental update {@link SubscriptionQueryUpdateMessage} to emit for
+     *                  {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription
+     *                  queries} matching the given {@code filter}.
+     * @param <Q>       The type of the {@link SubscriptionQueryMessage} to filter on.
+     * @throws MessageTypeNotResolvedException                     If the given {@code queryType} has no known
+     *                                                             {@link org.axonframework.messaging.MessageType}
+     *                                                             equivalent required to filter the
+     *                                                             {@link SubscriptionQueryMessage#payload()}.
+     * @throws org.axonframework.serialization.ConversionException If the {@link SubscriptionQueryMessage#payload()}
+     *                                                             could not be converted to the given {@code queryType}
+     *                                                             to perform the given {@code filter}. Will only occur
+     *                                                             if a {@link org.axonframework.messaging.MessageType}
+     *                                                             could be found for the given {@code queryType}.
+     */
+    <Q> void emit(@Nonnull Class<Q> queryType,
+                  @Nonnull Predicate<? super Q> filter,
+                  @Nonnull SubscriptionQueryUpdateMessage update);
+
+    /**
+     * Emits given incremental {@code update} to subscription queries matching the given {@code queryName} and given
+     * {@code filter}.
+     * <p>
+     * If an {@code update} is {@code null}, emit will be skipped. In order to send nullable updates, use
+     * {@link #emit(Class, Predicate, SubscriptionQueryUpdateMessage)} or
+     * {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods instead.
+     *
+     * @param queryName The qualified name of the {@link SubscriptionQueryMessage#type()} to filter on.
+     * @param filter    A predicate testing the {@link SubscriptionQueryMessage#payload()} as is to the given
+     *                  {@code queryType} to filter on.
+     * @param update    The incremental update to emit for
+     *                  {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription
+     *                  queries} matching the given {@code filter}.
+     */
+    void emit(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter, @Nullable Object update);
+
+    /**
+     * Emits given incremental {@code update} message to subscription queries matching the given {@code queryName} and
+     * given {@code filter}.
+     *
+     * @param queryName The qualified name of the {@link SubscriptionQueryMessage#type()} to filter on.
+     * @param filter    A predicate testing the {@link SubscriptionQueryMessage#payload()} as is to the given
+     *                  {@code queryType} to filter on.
+     * @param update    The incremental update {@link SubscriptionQueryUpdateMessage} to emit for
+     *                  {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription
+     *                  queries} matching the given {@code filter}.
+     */
+    void emit(@Nonnull QualifiedName queryName,
+              @Nonnull Predicate<Object> filter,
               @Nonnull SubscriptionQueryUpdateMessage update);
 
     /**
-     * Emits given incremental update to subscription queries matching given filter. If an {@code update} is
-     * {@code null}, emit will be skipped. In order to send nullable updates, use
+     * Emits given incremental {@code update} to subscription queries matching given {@code filter}.
+     * <p>
+     * If an {@code update} is {@code null}, emit will be skipped. In order to send nullable updates, use
      * {@link #emit(Class, Predicate, SubscriptionQueryUpdateMessage)} or
-     * {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods.
+     * {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods instead.
      *
-     * @param filter predicate on subscription query message used to filter subscription queries
-     * @param update incremental update
+     * @param filter The predicate filtering for matching {@link SubscriptionQueryMessage} that have been
+     *               {@link #subscribe(SubscriptionQueryMessage, int) subscribed} with this {@code QueryUpdateEmitter}.
+     *               subscription query message used to filter subscription queries
+     * @param update The incremental update to emit for
+     *               {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription
+     *               queries} matching the given {@code filter}.
      */
-    default void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nullable Object update) {
-        if (update != null) {
-            emit(filter, asUpdateMessage(update));
-        }
-    }
+    void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nullable Object update);
 
     /**
-     * Creates {@link GenericSubscriptionQueryUpdateMessage} from provided {@code payload} which represents incremental
-     * update. The provided {@code payload} may not be {@code null}.
+     * Emits incremental update (as return value of provided update function) to subscription queries matching given
+     * filter.
      *
-     * @param payload incremental update
-     * @return created a {@link SubscriptionQueryUpdateMessage} with the given {@code payload}.
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
+     * @param filter The predicate filtering for matching {@link SubscriptionQueryMessage} that have been
+     *               {@link #subscribe(SubscriptionQueryMessage, int) subscribed} with this {@code QueryUpdateEmitter}.
+     *               subscription query message used to filter subscription queries
+     * @param update The incremental update {@link SubscriptionQueryUpdateMessage} to emit for
+     *               {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription
+     *               queries} matching the given {@code filter}.
      */
-    @Deprecated
-    private static SubscriptionQueryUpdateMessage asUpdateMessage(Object payload) {
-        if (payload instanceof SubscriptionQueryUpdateMessage squm) {
-            return squm;
-        }
-        if (payload instanceof ResultMessage resultMessage) {
-            if (resultMessage.isExceptional()) {
-                Throwable cause = resultMessage.exceptionResult();
-                return new GenericSubscriptionQueryUpdateMessage(
-                        new MessageType(cause.getClass()),
-                        cause,
-                        resultMessage.payloadType(),
-                        resultMessage.metadata()
-                );
-            }
-            return new GenericSubscriptionQueryUpdateMessage(resultMessage);
-        }
-        if (payload instanceof Message message) {
-            return new GenericSubscriptionQueryUpdateMessage(message);
-        }
-        // TODO #3085 use MessageNameResolver below
-        return new GenericSubscriptionQueryUpdateMessage(new MessageType(payload.getClass()), payload);
-    }
-
-    /**
-     * Emits given incremental update to subscription queries matching given query type and filter.
-     *
-     * @param queryType the type of the query
-     * @param filter    predicate on query payload used to filter subscription queries
-     * @param update    incremental update message
-     * @param <Q>       the type of the query
-     */
-    @SuppressWarnings("unchecked")
-    default <Q> void emit(@Nonnull Class<Q> queryType,
-                          @Nonnull Predicate<? super Q> filter,
-                          @Nonnull SubscriptionQueryUpdateMessage update) {
-        Predicate<SubscriptionQueryMessage> sqmFilter =
-                m -> queryType.isAssignableFrom(m.payloadType()) && filter.test((Q) m.payload());
-        emit(sqmFilter, update);
-    }
-
-    /**
-     * Emits given incremental update to subscription queries matching given query type and filter. If an {@code update}
-     * is {@code null}, emit will be skipped. In order to send nullable updates, use
-     * {@link #emit(Class, Predicate, SubscriptionQueryUpdateMessage)} or
-     * {@link #emit(Predicate, SubscriptionQueryUpdateMessage)} methods.
-     *
-     * @param queryType the type of the query
-     * @param filter    predicate on query payload used to filter subscription queries
-     * @param update    incremental update
-     * @param <Q>       the type of the query
-     * @param <U>       the type of the update
-     */
-    default <Q, U> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter, @Nullable U update) {
-        if (update != null) {
-            emit(queryType, filter, asUpdateMessage(update));
-        }
-    }
-
-    /**
-     * Completes subscription queries matching given filter.
-     *
-     * @param filter predicate on subscription query message used to filter subscription queries
-     */
-    void complete(@Nonnull Predicate<SubscriptionQueryMessage> filter);
+    void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nonnull SubscriptionQueryUpdateMessage update);
 
     /**
      * Completes subscription queries matching given query type and filter.
@@ -180,12 +191,11 @@ public interface QueryUpdateEmitter {
     }
 
     /**
-     * Completes with an error subscription queries matching given filter.
+     * Completes subscription queries matching given filter.
      *
      * @param filter predicate on subscription query message used to filter subscription queries
-     * @param cause  the cause of an error
      */
-    void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nonnull Throwable cause);
+    void complete(@Nonnull Predicate<SubscriptionQueryMessage> filter);
 
     /**
      * Completes with an error subscription queries matching given query type and filter
@@ -196,12 +206,21 @@ public interface QueryUpdateEmitter {
      * @param <Q>       the type of the query
      */
     @SuppressWarnings("unchecked")
-    default <Q> void completeExceptionally(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter,
+    default <Q> void completeExceptionally(@Nonnull Class<Q> queryType,
+                                           @Nonnull Predicate<? super Q> filter,
                                            @Nonnull Throwable cause) {
         Predicate<SubscriptionQueryMessage> sqmFilter =
                 m -> queryType.isAssignableFrom(m.payloadType()) && filter.test((Q) m.payload());
         completeExceptionally(sqmFilter, cause);
     }
+
+    /**
+     * Completes with an error subscription queries matching given filter.
+     *
+     * @param filter predicate on subscription query message used to filter subscription queries
+     * @param cause  the cause of an error
+     */
+    void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nonnull Throwable cause);
 
     /**
      * Provides the set of running subscription queries. If there are changes to subscriptions they will be reflected in

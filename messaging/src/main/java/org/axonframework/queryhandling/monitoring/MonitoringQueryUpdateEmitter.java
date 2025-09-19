@@ -17,6 +17,8 @@
 package org.axonframework.queryhandling.monitoring;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SinkWrapper;
@@ -53,6 +55,39 @@ public class MonitoringQueryUpdateEmitter implements QueryUpdateEmitter {
         this.monitor = Objects.requireNonNull(monitor, "The MessageMonitor must not be null.");
     }
 
+    @Nonnull
+    @Override
+    public UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
+        return null;
+    }
+
+    @Override
+    public <Q> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter, @Nullable Object update) {
+
+    }
+
+    @Override
+    public <Q> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter,
+                         @Nonnull SubscriptionQueryUpdateMessage update) {
+
+    }
+
+    @Override
+    public void emit(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter, @Nullable Object update) {
+
+    }
+
+    @Override
+    public void emit(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter,
+                     @Nonnull SubscriptionQueryUpdateMessage update) {
+
+    }
+
+    @Override
+    public void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nullable Object update) {
+
+    }
+
     @Override
     public void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                      @Nonnull SubscriptionQueryUpdateMessage update) {
@@ -84,12 +119,5 @@ public class MonitoringQueryUpdateEmitter implements QueryUpdateEmitter {
     @Override
     public void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nonnull Throwable cause) {
 
-    }
-
-    @Nonnull
-    @Override
-    public UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query,
-                                   int updateBufferSize) {
-        return null;
     }
 }

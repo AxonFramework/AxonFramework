@@ -96,9 +96,74 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Override
+    public <Q> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter, @Nullable Object update) {
+        if (update == null) {
+            return;
+        }
+        emit(queryType, filter, asUpdateMessage(update));
+    }
+
+    @Override
+    public <Q> void emit(@Nonnull Class<Q> queryType,
+                         @Nonnull Predicate<? super Q> filter,
+                         @Nonnull SubscriptionQueryUpdateMessage update) {
+        Predicate<SubscriptionQueryMessage> messageFilter = m -> {
+            QualifiedName queryName = messageTypeResolver.resolveOrThrow(queryType).qualifiedName();
+            return queryName.equals(m.type().qualifiedName()) && filter.test(m.payloadAs(queryType));
+        };
+        emit(messageFilter, update);
+    }
+
+    @Override
+    public void emit(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter, @Nullable Object update) {
+        if (update == null) {
+            return;
+        }
+        emit(queryName, filter, asUpdateMessage(update));
+    }
+
+    @Override
+    public void emit(@Nonnull QualifiedName queryName,
+                     @Nonnull Predicate<Object> filter,
+                     @Nonnull SubscriptionQueryUpdateMessage update) {
+        emit(m -> queryName.equals(m.type().qualifiedName()) && filter.test(m.payload()), update);
+    }
+
+    @Override
+    public void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nullable Object update) {
+        if (update == null) {
+            return;
+        }
+        emit(filter, asUpdateMessage(update));
+    }
+
+    private SubscriptionQueryUpdateMessage asUpdateMessage(Object update) {
+        if (update instanceof SubscriptionQueryUpdateMessage updateMessage) {
+            return updateMessage;
+        }
+        return update instanceof Message updateMessage
+                ? new GenericSubscriptionQueryUpdateMessage(updateMessage)
+                : new GenericSubscriptionQueryUpdateMessage(messageTypeResolver.resolveOrThrow(update), update);
+    }
+
+    @Override
     public void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                      @Nonnull SubscriptionQueryUpdateMessage update) {
         runOnAfterCommitOrNow(() -> doEmit(filter, update));
+    }
+
+    private void doEmit(Predicate<SubscriptionQueryMessage> filter,
+                        SubscriptionQueryUpdateMessage update) {
+        updateHandlers.entrySet()
+                      .stream()
+                      .filter(entry -> {
+                          QualifiedName expectedUpdateName =
+                                  new QualifiedName(entry.getKey().updatesResponseType().getExpectedResponseType());
+                          return update.type().qualifiedName()
+                                       .equals(expectedUpdateName);
+                      })
+                      .filter(entry -> filter.test(entry.getKey()))
+                      .forEach(entry -> doEmit(entry.getKey(), entry.getValue(), update));
     }
 
     @Override
@@ -112,36 +177,12 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         runOnAfterCommitOrNow(() -> doCompleteExceptionally(filter, cause));
     }
 
-    private void doEmit(Predicate<SubscriptionQueryMessage> filter,
-                        SubscriptionQueryUpdateMessage update) {
-        updateHandlers.keySet()
-                      .stream()
-                      .filter(payloadMatchesQueryResponseType(update.payloadType()))
-                      .filter(filter::test)
-                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                .ifPresent(uh -> doEmit(query, uh, update)));
-    }
 
-    private Predicate<SubscriptionQueryMessage> payloadMatchesQueryResponseType(Class<?> payloadType) {
-        return sqm -> {
-            if (sqm.updatesResponseType() instanceof MultipleInstancesResponseType) {
-                return payloadType.isArray() || Iterable.class.isAssignableFrom(payloadType);
-            }
-            if (sqm.updatesResponseType() instanceof OptionalResponseType) {
-                return Optional.class.isAssignableFrom(payloadType);
-            }
-            if (sqm.updatesResponseType() instanceof PublisherResponseType) {
-                return Publisher.class.isAssignableFrom(payloadType);
-            }
-            return sqm.updatesResponseType().getExpectedResponseType().isAssignableFrom(payloadType);
-        };
-    }
-
-    @SuppressWarnings("unchecked")
-    private void doEmit(SubscriptionQueryMessage query, SinkWrapper<?> updateHandler,
+    private void doEmit(SubscriptionQueryMessage query,
+                        SinkWrapper<SubscriptionQueryUpdateMessage> updateHandler,
                         SubscriptionQueryUpdateMessage update) {
         try {
-            ((SinkWrapper<SubscriptionQueryUpdateMessage>) updateHandler).next(update);
+            updateHandler.next(update);
         } catch (Exception e) {
             logger.info("An error occurred while trying to emit an update to a query '{}'. " +
                                 "The subscription will be cancelled. Exception summary: {}",

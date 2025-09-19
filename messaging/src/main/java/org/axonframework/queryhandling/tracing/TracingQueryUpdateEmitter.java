@@ -17,6 +17,8 @@
 package org.axonframework.queryhandling.tracing;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -52,6 +54,39 @@ public class TracingQueryUpdateEmitter implements QueryUpdateEmitter {
         this.spanFactory = Objects.requireNonNull(spanFactory, "The QueryUpdateEmitterSpanFactory must not be null.");
     }
 
+    @Nonnull
+    @Override
+    public UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
+        return null;
+    }
+
+    @Override
+    public <Q> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter, @Nullable Object update) {
+
+    }
+
+    @Override
+    public <Q> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter,
+                         @Nonnull SubscriptionQueryUpdateMessage update) {
+
+    }
+
+    @Override
+    public void emit(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter, @Nullable Object update) {
+
+    }
+
+    @Override
+    public void emit(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter,
+                     @Nonnull SubscriptionQueryUpdateMessage update) {
+
+    }
+
+    @Override
+    public void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nullable Object update) {
+
+    }
+
     @Override
     public void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                      @Nonnull SubscriptionQueryUpdateMessage update) {
@@ -72,12 +107,5 @@ public class TracingQueryUpdateEmitter implements QueryUpdateEmitter {
     @Override
     public void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter, @Nonnull Throwable cause) {
 
-    }
-
-    @Nonnull
-    @Override
-    public UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query,
-                                   int updateBufferSize) {
-        return null;
     }
 }
