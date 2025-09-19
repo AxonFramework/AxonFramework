@@ -35,7 +35,7 @@ public class QueryBusTestUtils {
     public static QueryBus aQueryBus() {
         return new SimpleQueryBus(
                 UnitOfWorkTestUtils.SIMPLE_FACTORY,
-                SimpleQueryUpdateEmitter.builder().build()
+                new SimpleQueryUpdateEmitter()
         );
     }
 

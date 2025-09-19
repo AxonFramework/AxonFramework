@@ -17,22 +17,12 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.OptionalResponseType;
 import org.axonframework.messaging.responsetypes.PublisherResponseType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
-import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
-import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
-import org.axonframework.queryhandling.tracing.QueryUpdateEmitterSpanFactory;
-import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.Span;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,10 +36,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
-
-import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of {@link QueryUpdateEmitter} that uses Project Reactor to implement Update Handlers.
@@ -65,36 +52,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     private static final String QUERY_UPDATE_TASKS_RESOURCE_KEY = "/update-tasks";
 
-    private final MessageMonitor<? super SubscriptionQueryUpdateMessage> updateMessageMonitor;
-    private final QueryUpdateEmitterSpanFactory spanFactory;
-
-    private final ConcurrentMap<SubscriptionQueryMessage, SinkWrapper<?>> updateHandlers =
-            new ConcurrentHashMap<>();
-    private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> dispatchInterceptors =
-            new CopyOnWriteArrayList<>();
-
-    /**
-     * Instantiate a {@link SimpleQueryUpdateEmitter} based on the fields contained in the {@link Builder}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@link SimpleQueryUpdateEmitter} instance
-     */
-    protected SimpleQueryUpdateEmitter(Builder builder) {
-        builder.validate();
-        this.updateMessageMonitor = builder.updateMessageMonitor;
-        this.spanFactory = builder.spanFactory;
-    }
-
-    /**
-     * Instantiate a Builder to be able to create a {@link SimpleQueryUpdateEmitter}.
-     * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link QueryBusSpanFactory}
-     * defaults to a {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}.
-     *
-     * @return a Builder to be able to create a {@link SimpleQueryUpdateEmitter}
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
+    private final ConcurrentMap<SubscriptionQueryMessage, SinkWrapper<?>> updateHandlers = new ConcurrentHashMap<>();
 
     @Override
     public boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage query) {
@@ -125,27 +83,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @Override
     public void emit(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                      @Nonnull SubscriptionQueryUpdateMessage update) {
-        SubscriptionQueryUpdateMessage updateMessage = spanFactory.propagateContext(update);
-        Span span = spanFactory.createUpdateScheduleEmitSpan(updateMessage);
-        span.run(() -> {
-            Span doEmitSpan = spanFactory.createUpdateEmitSpan(updateMessage);
-            runOnAfterCommitOrNow(doEmitSpan.wrapRunnable(
-                    () -> doEmit(filter, intercept(spanFactory.propagateContext(updateMessage)))));
-        });
-    }
-
-    private SubscriptionQueryUpdateMessage intercept(SubscriptionQueryUpdateMessage message) {
-        /*
-        // TODO #3488 - Reintegrate, and construct chain only once!
-        return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
-                .proceed(message, null)
-                .first()
-                .<SubscriptionQueryUpdateMessage<U>>cast()
-                .asMono()
-                .map(MessageStream.Entry::message)
-                .block();
-         */
-        return message;
+        runOnAfterCommitOrNow(() -> doEmit(filter, update));
     }
 
     @Override
@@ -157,13 +95,6 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     public void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                                       @Nonnull Throwable cause) {
         runOnAfterCommitOrNow(() -> doCompleteExceptionally(filter, cause));
-    }
-
-    public @Nonnull
-    Registration registerDispatchInterceptor(
-            @Nonnull MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage> interceptor) {
-        dispatchInterceptors.add(interceptor);
-        return () -> dispatchInterceptors.remove(interceptor);
     }
 
     private void doEmit(Predicate<SubscriptionQueryMessage> filter,
@@ -194,15 +125,12 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @SuppressWarnings("unchecked")
     private void doEmit(SubscriptionQueryMessage query, SinkWrapper<?> updateHandler,
                         SubscriptionQueryUpdateMessage update) {
-        MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
         try {
             ((SinkWrapper<SubscriptionQueryUpdateMessage>) updateHandler).next(update);
-            monitorCallback.reportSuccess();
         } catch (Exception e) {
             logger.info("An error occurred while trying to emit an update to a query '{}'. " +
                                 "The subscription will be cancelled. Exception summary: {}",
                         query.type(), e.toString());
-            monitorCallback.reportFailure(e);
             updateHandlers.remove(query);
             emitError(query, e, updateHandler);
         }
@@ -284,69 +212,5 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @Override
     public Set<SubscriptionQueryMessage> activeSubscriptions() {
         return Collections.unmodifiableSet(updateHandlers.keySet());
-    }
-
-    /**
-     * Builder class to instantiate a {@link SimpleQueryUpdateEmitter}.
-     * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link QueryBusSpanFactory}
-     * defaults to a {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}.
-     */
-    public static class Builder {
-
-        private MessageMonitor<? super SubscriptionQueryUpdateMessage> updateMessageMonitor =
-                NoOpMessageMonitor.INSTANCE;
-        private QueryUpdateEmitterSpanFactory spanFactory = DefaultQueryUpdateEmitterSpanFactory
-                .builder()
-                .spanFactory(NoOpSpanFactory.INSTANCE)
-                .build();
-
-        /**
-         * Sets the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s being processed.
-         * Defaults to a {@link NoOpMessageMonitor}.
-         *
-         * @param updateMessageMonitor the {@link MessageMonitor} used to monitor
-         *                             {@link SubscriptionQueryUpdateMessage}s being processed
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder updateMessageMonitor(
-                @Nonnull MessageMonitor<? super SubscriptionQueryUpdateMessage> updateMessageMonitor) {
-            assertNonNull(updateMessageMonitor, "MessageMonitor may not be null");
-            this.updateMessageMonitor = updateMessageMonitor;
-            return this;
-        }
-
-        /**
-         * Sets the {@link QueryUpdateEmitterSpanFactory} implementation to use for providing tracing capabilities.
-         * Defaults to a {@link DefaultQueryUpdateEmitterSpanFactory} backed by a {@link NoOpSpanFactory} by default,
-         * which provides no tracing capabilities.
-         *
-         * @param spanFactory The {@link QueryUpdateEmitterSpanFactory} implementation.
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder spanFactory(@Nonnull QueryUpdateEmitterSpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = spanFactory;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link SimpleQueryUpdateEmitter} as specified through this Builder.
-         *
-         * @return a {@link SimpleQueryUpdateEmitter} as specified through this Builder
-         */
-        public SimpleQueryUpdateEmitter build() {
-            return new SimpleQueryUpdateEmitter(this);
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        protected void validate() throws AxonConfigurationException {
-            // Method kept for overriding
-        }
     }
 }

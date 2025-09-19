@@ -18,31 +18,33 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * Component which informs subscription queries about updates, errors and when there are no more updates.
+ * Component which informs
+ * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries} about
+ * updates, errors and when there are no more updates.
  * <p>
  * If any of the emitter functions in this interface are called from a message handling function (e.g. an
- * {@link EventHandler} annotated function), then that call will automatically be tied into the lifecycle of the current
- * {@link LegacyUnitOfWork} to ensure correct order of execution.
+ * {@link org.axonframework.eventhandling.EventHandler}), then that call will automatically be tied into the lifecycle
+ * of the {@link ProcessingContext} to ensure correct order of execution.
  * <p>
- * Added, implementations of this class should thus respect any current UnitOfWork in the
+ * Added, implementations of this class should respect any current UnitOfWork in the
  * {@link LegacyUnitOfWork.Phase#STARTED} phase for any of the emitting functions. If this is the case then the emitter
  * call action should be performed during the {@link LegacyUnitOfWork.Phase#AFTER_COMMIT}. Otherwise the operation can
  * be executed immediately.
  *
  * @author Milan Savic
- * @since 3.3
+ * @since 3.3.0
  */
 public interface QueryUpdateEmitter {
 

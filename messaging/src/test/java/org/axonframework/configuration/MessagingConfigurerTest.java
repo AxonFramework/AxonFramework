@@ -203,7 +203,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
     @Test
     void registerQueryUpdateEmitterOverridesDefault() {
-        QueryUpdateEmitter expected = SimpleQueryUpdateEmitter.builder().build();
+        QueryUpdateEmitter expected = new SimpleQueryUpdateEmitter();
 
         Configuration result = testSubject.registerQueryUpdateEmitter(c -> expected)
                                           .build();

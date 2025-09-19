@@ -88,7 +88,7 @@ class SimpleQueryBusTest {
         UnitOfWorkFactory unitOfWorkFactory =
                 new TransactionalUnitOfWorkFactory(transactionManager, UnitOfWorkTestUtils.SIMPLE_FACTORY);
 
-        testSubject = new SimpleQueryBus(unitOfWorkFactory, SimpleQueryUpdateEmitter.builder().build());
+        testSubject = new SimpleQueryBus(unitOfWorkFactory, new SimpleQueryUpdateEmitter());
     }
 
     @Nested

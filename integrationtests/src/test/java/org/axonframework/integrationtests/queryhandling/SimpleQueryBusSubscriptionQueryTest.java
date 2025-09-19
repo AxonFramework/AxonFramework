@@ -32,7 +32,7 @@ import org.junit.jupiter.api.*;
 @Disabled("TODO #3488")
 public class SimpleQueryBusSubscriptionQueryTest extends AbstractSubscriptionQueryTestSuite {
 
-    private final SimpleQueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder().build();
+    private final SimpleQueryUpdateEmitter queryUpdateEmitter = new SimpleQueryUpdateEmitter();
     private final SimpleQueryBus queryBus = new SimpleQueryBus(UnitOfWorkTestUtils.SIMPLE_FACTORY, queryUpdateEmitter);
 
     @Override

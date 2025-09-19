@@ -29,7 +29,6 @@ import reactor.test.StepVerifier;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,9 +50,7 @@ class SimpleQueryUpdateEmitterTest {
             .builder()
             .spanFactory(spanFactory)
             .build();
-    private final SimpleQueryUpdateEmitter testSubject = SimpleQueryUpdateEmitter.builder()
-                                                                                 .spanFactory(queryBusSpanFactory)
-                                                                                 .build();
+    private final SimpleQueryUpdateEmitter testSubject = new SimpleQueryUpdateEmitter();
 
     @Test
     void completingRegistrationOldApi() {
@@ -67,7 +64,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::payload))
+        StepVerifier.create(result.updates().map(Message::payload))
                     .expectNext("some-awesome-text")
                     .verifyComplete();
     }
@@ -86,7 +83,7 @@ class SimpleQueryUpdateEmitterTest {
             executors.submit(() -> testSubject.emit(q -> true, "Update"));
         }
         executors.shutdown();
-        StepVerifier.create(registration.getUpdates())
+        StepVerifier.create(registration.updates())
                     .expectNextCount(100)
                     .then(() -> testSubject.complete(q -> true))
                     .verifyComplete();
@@ -106,7 +103,7 @@ class SimpleQueryUpdateEmitterTest {
             executors.submit(() -> testSubject.emit(q -> true, "Update"));
         }
         executors.shutdown();
-        StepVerifier.create(registration.getUpdates())
+        StepVerifier.create(registration.updates())
                     .expectNextCount(100)
                     .then(() -> testSubject.complete(q -> true))
                     .verifyComplete();
@@ -122,9 +119,9 @@ class SimpleQueryUpdateEmitterTest {
         UpdateHandlerRegistration result = testSubject.registerUpdateHandler(queryMessage, 1024);
 
         testSubject.emit(any -> true, "some-awesome-text");
-        result.getRegistration().cancel();
+        result.registration().cancel();
 
-        StepVerifier.create(result.getUpdates().map(Message::payload))
+        StepVerifier.create(result.updates().map(Message::payload))
                     .expectNext("some-awesome-text")
                     .verifyTimeout(Duration.ofMillis(500));
     }
@@ -141,11 +138,11 @@ class SimpleQueryUpdateEmitterTest {
                 1024
         );
 
-        result.getUpdates().subscribe();
+        result.updates().subscribe();
         testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::payload))
+        StepVerifier.create(result.updates().map(Message::payload))
                     .expectNext("some-awesome-text")
                     .verifyComplete();
     }
@@ -162,7 +159,7 @@ class SimpleQueryUpdateEmitterTest {
                 1024
         );
 
-        result.getUpdates().subscribe();
+        result.updates().subscribe();
         testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
 
@@ -186,12 +183,12 @@ class SimpleQueryUpdateEmitterTest {
                 1024
         );
 
-        result.getUpdates().subscribe();
+        result.updates().subscribe();
         testSubject.emit(any -> true, "some-awesome-text");
         testSubject.emit(any -> true, 1234);
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::payload))
+        StepVerifier.create(result.updates().map(Message::payload))
                     .expectNext(1234)
                     .verifyComplete();
     }
@@ -208,7 +205,7 @@ class SimpleQueryUpdateEmitterTest {
                 1024
         );
 
-        result.getUpdates().subscribe();
+        result.updates().subscribe();
         testSubject.emit(any -> true, "some-awesome-text");
         testSubject.emit(any -> true, 1234);
         testSubject.emit(any -> true, Optional.of("optional-payload"));
@@ -219,7 +216,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, Mono.just("mono-item"));
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::payload))
+        StepVerifier.create(result.updates().map(Message::payload))
                     .expectNextMatches(actual -> equalTo(new String[]{"array-item-1", "array-item-2"}).matches(actual))
                     .expectNextMatches(actual -> equalTo(Arrays.asList("list-item-1", "list-item-2")).matches(actual))
                     .verifyComplete();
@@ -237,7 +234,7 @@ class SimpleQueryUpdateEmitterTest {
                 1024
         );
 
-        result.getUpdates().subscribe();
+        result.updates().subscribe();
         testSubject.emit(any -> true, "some-awesome-text");
         testSubject.emit(any -> true, 1234);
         testSubject.emit(any -> true, Optional.of("optional-payload"));
@@ -248,7 +245,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, Mono.just("mono-item"));
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::payload))
+        StepVerifier.create(result.updates().map(Message::payload))
                     .expectNext(Optional.of("optional-payload"), Optional.empty())
                     .verifyComplete();
     }
@@ -266,7 +263,7 @@ class SimpleQueryUpdateEmitterTest {
                 1024
         );
 
-        result.getUpdates().subscribe();
+        result.updates().subscribe();
         testSubject.emit(any -> true, "some-awesome-text");
         testSubject.emit(any -> true, 1234);
         testSubject.emit(any -> true, Optional.of("optional-payload"));
@@ -278,7 +275,7 @@ class SimpleQueryUpdateEmitterTest {
         testSubject.emit(any -> true, Mono.empty());
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::payload))
+        StepVerifier.create(result.updates().map(Message::payload))
                     .expectNextMatches(publisher -> {
                         try {
                             StepVerifier.create((Publisher<String>) publisher)
@@ -322,12 +319,12 @@ class SimpleQueryUpdateEmitterTest {
                 1024
         );
 
-        result.getUpdates().subscribe();
+        result.updates().subscribe();
         testSubject.emit(any -> true, Arrays.asList("text1", "text2"));
         testSubject.emit(any -> true, Arrays.asList("text3", "text4"));
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::payload))
+        StepVerifier.create(result.updates().map(Message::payload))
                     .expectNext(Arrays.asList("text1", "text2"), Arrays.asList("text3", "text4"))
                     .verifyComplete();
     }
@@ -344,12 +341,12 @@ class SimpleQueryUpdateEmitterTest {
                 1024
         );
 
-        result.getUpdates().subscribe();
+        result.updates().subscribe();
         testSubject.emit(any -> true, Optional.of("text1"));
         testSubject.emit(any -> true, Optional.of("text2"));
         result.complete();
 
-        StepVerifier.create(result.getUpdates().map(Message::payload))
+        StepVerifier.create(result.updates().map(Message::payload))
                     .expectNext(Optional.of("text1"), Optional.of("text2"))
                     .verifyComplete();
     }
@@ -366,11 +363,11 @@ class SimpleQueryUpdateEmitterTest {
                 1024
         );
 
-        result.getUpdates().subscribe();
+        result.updates().subscribe();
         testSubject.emit(any -> true, "some-awesome-text");
-        result.getRegistration().cancel();
+        result.registration().cancel();
 
-        StepVerifier.create(result.getUpdates().map(Message::payload))
+        StepVerifier.create(result.updates().map(Message::payload))
                     .expectNext("some-awesome-text")
                     .verifyTimeout(Duration.ofMillis(500));
     }

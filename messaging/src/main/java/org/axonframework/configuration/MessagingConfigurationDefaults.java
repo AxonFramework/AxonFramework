@@ -289,7 +289,7 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
-        return SimpleQueryUpdateEmitter.builder().build();
+        return new SimpleQueryUpdateEmitter();
     }
 
     private static void registerDecorators(@Nonnull ComponentRegistry registry) {
