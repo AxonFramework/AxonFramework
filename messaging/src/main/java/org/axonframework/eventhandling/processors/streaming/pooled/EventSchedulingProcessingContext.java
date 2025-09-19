@@ -39,6 +39,9 @@ import java.util.function.UnaryOperator;
  * lifecycle actions. Currently, the only usage of the context is for
  * {@link org.axonframework.eventhandling.EventHandlingComponent#sequenceIdentifierFor(EventMessage, ProcessingContext)}
  * execution.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
  */
 @Internal
 class EventSchedulingProcessingContext implements ProcessingContext {
