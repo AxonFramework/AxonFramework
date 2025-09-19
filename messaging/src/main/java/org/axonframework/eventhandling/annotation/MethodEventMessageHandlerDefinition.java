@@ -55,7 +55,7 @@ public class MethodEventMessageHandlerDefinition implements HandlerEnhancerDefin
         public MethodEventMessageHandlingMember(MessageHandlingMember<T> original) {
             super(original);
 
-            if (!original.unwrap(Method.class).isPresent()) {
+            if (original.unwrap(Method.class).isEmpty()) {
                 throw new UnsupportedHandlerException(
                         "@EventHandler annotation can only be put on methods.",
                         original.unwrap(Member.class).orElse(null)

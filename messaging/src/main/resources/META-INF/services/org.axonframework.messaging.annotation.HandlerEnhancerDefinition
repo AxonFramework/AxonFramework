@@ -19,3 +19,4 @@ org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition
 org.axonframework.eventhandling.replay.annotations.ReplayAwareMessageHandlerWrapper
 org.axonframework.messaging.annotation.MessageHandlerInterceptorDefinition
 org.axonframework.queryhandling.annotation.MethodQueryMessageHandlerDefinition
+org.axonframework.eventhandling.annotation.MethodEventMessageHandlerDefinition
