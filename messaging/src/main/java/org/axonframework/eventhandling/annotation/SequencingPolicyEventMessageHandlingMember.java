@@ -70,21 +70,18 @@ public class SequencingPolicyEventMessageHandlingMember<T>
 
         try {
             if (parameters.length == 0) {
-                // Try no-arg constructor first
+                // Try no-arg constructor (including private ones)
                 try {
-                    return policyType.getDeclaredConstructor().newInstance();
+                    Constructor<? extends org.axonframework.eventhandling.sequencing.SequencingPolicy> constructor =
+                            policyType.getDeclaredConstructor();
+                    constructor.setAccessible(true);
+                    return constructor.newInstance();
                 } catch (NoSuchMethodException e) {
-                    // If no no-arg constructor, try singleton INSTANCE field
-                    try {
-                        return (org.axonframework.eventhandling.sequencing.SequencingPolicy)
-                                policyType.getField("INSTANCE").get(null);
-                    } catch (Exception ex) {
-                        throw new UnsupportedHandlerException(
-                                "SequencingPolicy " + policyType.getName() +
-                                " must have either a no-arg constructor or a static INSTANCE field",
-                                original.unwrap(Member.class).orElse(null)
-                        );
-                    }
+                    throw new UnsupportedHandlerException(
+                            "SequencingPolicy " + policyType.getName() +
+                            " must have a no-arg constructor",
+                            original.unwrap(Member.class).orElse(null)
+                    );
                 }
             } else {
                 // Find constructor that matches parameter count
@@ -108,6 +105,7 @@ public class SequencingPolicyEventMessageHandlingMember<T>
 
                 // Parse parameters and invoke constructor
                 Object[] parsedParameters = parseParameters(matchingConstructor.getParameterTypes(), parameters);
+                matchingConstructor.setAccessible(true);
                 return (org.axonframework.eventhandling.sequencing.SequencingPolicy)
                         matchingConstructor.newInstance(parsedParameters);
             }
