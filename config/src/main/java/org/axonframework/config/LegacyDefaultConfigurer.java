@@ -357,7 +357,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                 .orElseGet(() -> {
                     MessageMonitor<? super SubscriptionQueryUpdateMessage> updateMessageMonitor =
                             config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
-                    return new SimpleQueryUpdateEmitter();
+                    return new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver());
                 });
     }
 

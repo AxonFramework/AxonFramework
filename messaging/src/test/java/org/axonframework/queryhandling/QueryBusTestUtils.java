@@ -17,6 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 
 /**
@@ -35,7 +36,7 @@ public class QueryBusTestUtils {
     public static QueryBus aQueryBus() {
         return new SimpleQueryBus(
                 UnitOfWorkTestUtils.SIMPLE_FACTORY,
-                new SimpleQueryUpdateEmitter()
+                new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver())
         );
     }
 

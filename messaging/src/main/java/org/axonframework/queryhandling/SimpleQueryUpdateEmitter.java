@@ -17,13 +17,12 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Registration;
-import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
-import org.axonframework.messaging.responsetypes.OptionalResponseType;
-import org.axonframework.messaging.responsetypes.PublisherResponseType;
+import jakarta.annotation.Nullable;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -32,6 +31,7 @@ import reactor.core.publisher.Sinks;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,7 +52,22 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     private static final String QUERY_UPDATE_TASKS_RESOURCE_KEY = "/update-tasks";
 
-    private final ConcurrentMap<SubscriptionQueryMessage, SinkWrapper<?>> updateHandlers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<SubscriptionQueryMessage, SinkWrapper<SubscriptionQueryUpdateMessage>> updateHandlers =
+            new ConcurrentHashMap<>();
+    private final MessageTypeResolver messageTypeResolver;
+
+    /**
+     * Construct a {@code SimpleQueryUpdateEmitter} with the given {@code messageTypeResolver} to construct
+     * {@link SubscriptionQueryUpdateMessage update messages} for {@link #emit(Predicate, Object)} invocations.
+     *
+     * @param messageTypeResolver The {@link org.axonframework.messaging.MessageType} resolver used to construct
+     *                            {@link SubscriptionQueryUpdateMessage update messages} for
+     *                            {@link #emit(Predicate, Object)} invocations
+     */
+    public SimpleQueryUpdateEmitter(@Nonnull MessageTypeResolver messageTypeResolver) {
+        this.messageTypeResolver =
+                Objects.requireNonNull(messageTypeResolver, "The MessageTypeResolver must not be null.");
+    }
 
     @Nonnull
     @Override

@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -88,7 +89,8 @@ class SimpleQueryBusTest {
         UnitOfWorkFactory unitOfWorkFactory =
                 new TransactionalUnitOfWorkFactory(transactionManager, UnitOfWorkTestUtils.SIMPLE_FACTORY);
 
-        testSubject = new SimpleQueryBus(unitOfWorkFactory, new SimpleQueryUpdateEmitter());
+        testSubject = new SimpleQueryBus(unitOfWorkFactory,
+                                         new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver()));
     }
 
     @Nested

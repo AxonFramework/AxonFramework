@@ -39,6 +39,7 @@ import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageType;
@@ -129,7 +130,9 @@ class AxonServerQueryBusTest {
                                         .axonServerConnectionManager(axonServerConnectionManager)
                                         .configuration(configuration)
                                         .localSegment(localSegment)
-                                        .updateEmitter(new SimpleQueryUpdateEmitter())
+                                        .updateEmitter(
+                                                new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver())
+                                        )
                                         .messageSerializer(serializer)
                                         .genericSerializer(serializer)
                                         .targetContextResolver(targetContextResolver)
@@ -222,7 +225,9 @@ class AxonServerQueryBusTest {
                                             .axonServerConnectionManager(axonServerConnectionManager)
                                             .configuration(configuration)
                                             .localSegment(localSegment)
-                                            .updateEmitter(new SimpleQueryUpdateEmitter())
+                                            .updateEmitter(
+                                                    new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver())
+                                            )
                                             .messageSerializer(serializer)
                                             .genericSerializer(serializer)
                                             .targetContextResolver(targetContextResolver)
@@ -591,7 +596,9 @@ class AxonServerQueryBusTest {
                                         .axonServerConnectionManager(axonServerConnectionManager)
                                         .configuration(configuration)
                                         .localSegment(localSegment)
-                                        .updateEmitter(new SimpleQueryUpdateEmitter())
+                                        .updateEmitter(
+                                                new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver())
+                                        )
                                         .messageSerializer(serializer)
                                         .genericSerializer(serializer)
                                         .targetContextResolver(targetContextResolver)
@@ -697,7 +704,7 @@ class AxonServerQueryBusTest {
                                   .axonServerConnectionManager(axonServerConnectionManager)
                                   .configuration(configuration)
                                   .localSegment(localSegment)
-                                  .updateEmitter(new SimpleQueryUpdateEmitter())
+                                  .updateEmitter(new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver()))
                                   .messageSerializer(serializer)
                                   .genericSerializer(serializer)
                                   .targetContextResolver(targetContextResolver)
@@ -727,7 +734,7 @@ class AxonServerQueryBusTest {
                                   .axonServerConnectionManager(axonServerConnectionManager)
                                   .configuration(configuration)
                                   .localSegment(localSegment)
-                                  .updateEmitter(new SimpleQueryUpdateEmitter())
+                                  .updateEmitter(new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver()))
                                   .messageSerializer(serializer)
                                   .genericSerializer(serializer)
                                   .targetContextResolver(targetContextResolver)

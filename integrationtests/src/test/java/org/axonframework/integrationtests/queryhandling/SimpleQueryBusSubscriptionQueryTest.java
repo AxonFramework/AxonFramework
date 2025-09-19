@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
@@ -32,7 +33,8 @@ import org.junit.jupiter.api.*;
 @Disabled("TODO #3488")
 public class SimpleQueryBusSubscriptionQueryTest extends AbstractSubscriptionQueryTestSuite {
 
-    private final SimpleQueryUpdateEmitter queryUpdateEmitter = new SimpleQueryUpdateEmitter();
+    private final SimpleQueryUpdateEmitter queryUpdateEmitter =
+            new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver());
     private final SimpleQueryBus queryBus = new SimpleQueryBus(UnitOfWorkTestUtils.SIMPLE_FACTORY, queryUpdateEmitter);
 
     @Override

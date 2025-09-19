@@ -16,6 +16,7 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
@@ -50,7 +51,8 @@ class SimpleQueryUpdateEmitterTest {
             .builder()
             .spanFactory(spanFactory)
             .build();
-    private final SimpleQueryUpdateEmitter testSubject = new SimpleQueryUpdateEmitter();
+    private final SimpleQueryUpdateEmitter testSubject =
+            new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver());
 
     @Test
     void completingRegistrationOldApi() {

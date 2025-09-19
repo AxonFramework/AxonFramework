@@ -21,6 +21,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
 import org.axonframework.common.TypeReference;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -134,7 +135,7 @@ class StreamingQueryEndToEndTest {
     }
 
     private AxonServerQueryBus axonServerQueryBus(QueryBus localSegment, String axonServerAddress) {
-        QueryUpdateEmitter emitter = new SimpleQueryUpdateEmitter();
+        QueryUpdateEmitter emitter = new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver());
         Serializer serializer = JacksonSerializer.defaultSerializer();
         return AxonServerQueryBus.builder()
                                  .localSegment(localSegment)
