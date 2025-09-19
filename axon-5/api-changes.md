@@ -1749,6 +1749,7 @@ This section contains five tables:
 | org.axonframework.serialization.avro.AvroSerializerStrategy                                            | org.axonframework.serialization.avro.AvroConverterStrategy                        | No                             |
 | org.axonframework.serialization.avro.AvroSerializerStrategyConfig                                      | org.axonframework.serialization.avro.AvroConverterStrategyConfiguration           | No                             |
 | org.axonframework.serialization.avro.SpecificRecordBaseSerializerStrategy                              | org.axonframework.serialization.avro.SpecificRecordBaseConverterStrategy          | No                             |
+| org.axonframework.queryhandling.UpdateHandlerRegistration                                              | org.axonframework.queryhandling.UpdateHandler                                     | No                             |
 
 ### Removed Classes
 
@@ -1963,6 +1964,8 @@ This section contains four subsections, called:
 | `QueryBus#query(QueryMessage)`                                                                                                  | `QueryBus#query(QueryMessage, ProcessingContext)`                                                                      | 
 | `QueryGateway#query(Q, Class<R>)`                                                                                               | `QueryGateway#query(Object, Class<R>, ProcessingContext)`                                                              | 
 | `QueryGateway#query(String, Q, ResponseType<R>)`                                                                                | `QueryGateway#queryMany(Object, Class<R>, ProcessingContext)`                                                          | 
+| `QueryUpdateEmitter#registerUpdateHandler(SubscriptionQueryMessage, int)`                                                       | `QueryUpdateEmitter#subscribeUpdateHandler(SubscriptionQueryMessage, int)`                                             | 
+| `UpdateHandlerRegistration#getUpdates()`                                                                                        | `UpdateHandler#updates()`                                                                                              | 
 
 ### Removed Methods and Constructors
 
@@ -2017,6 +2020,8 @@ This section contains four subsections, called:
 | `EventProcessor#shutdownAsync()`                                                                                  | Use `shutdown` instead. It returns `CompletableFuture<Void>` since the version 5.0.0.                                       |
 | `QueryBus#scatterGather(QueryMessage<Q, R>, long, TimeUnit)`                                                      | Removed due to limited use (see [Query Dispatching and Handling](#query-dispatching-and-handling)                           |
 | `QueryGateway#scatterGather(Q, ResponseType<R>, long, TimeUnit)`                                                  | Removed due to limited use (see [Query Dispatching and Handling](#query-dispatching-and-handling)                           |
+| `QueryUpdateEmitter#queryUpdateHandlerRegistered(SubscriptionQueryMessage)`                                       | Moved duplicate handler registration into `QueryUpdateEmitter#subscribeUpdateHandler` method.                               |
+| `UpdateHandlerRegistration#getRegistration()`                                                                     | Replaced for `UpdateHandler#cancel()`                                                                                       |
 
 ### Changed Method return types
 

@@ -54,30 +54,30 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     private final ConcurrentMap<SubscriptionQueryMessage, SinkWrapper<?>> updateHandlers = new ConcurrentHashMap<>();
 
+    @Nonnull
     @Override
-    public boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage query) {
-        return updateHandlers.keySet()
-                             .stream()
-                             .anyMatch(m -> m.identifier().equals(query.identifier()));
-    }
+    public UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query,
+                                   int updateBufferSize) {
+        if (hasHandlerFor(query.identifier())) {
+            throw new SubscriptionQueryAlreadyRegisteredException(query.identifier());
+        }
 
-    @Override
-    public UpdateHandlerRegistration registerUpdateHandler(@Nonnull SubscriptionQueryMessage query,
-                                                           int updateBufferSize) {
-        Sinks.Many<SubscriptionQueryUpdateMessage> sink = Sinks.many().replay().limit(updateBufferSize);
+        Sinks.Many<SubscriptionQueryUpdateMessage> sink = Sinks.many()
+                                                               .replay()
+                                                               .limit(updateBufferSize);
         SinksManyWrapper<SubscriptionQueryUpdateMessage> sinksManyWrapper = new SinksManyWrapper<>(sink);
 
         Runnable removeHandler = () -> updateHandlers.remove(query);
-        Registration registration = () -> {
-            removeHandler.run();
-            return true;
-        };
 
         updateHandlers.put(query, sinksManyWrapper);
         Flux<SubscriptionQueryUpdateMessage> updateMessageFlux = sink.asFlux()
                                                                      .doOnCancel(removeHandler)
                                                                      .doOnTerminate(removeHandler);
-        return new UpdateHandlerRegistration(registration, updateMessageFlux, sinksManyWrapper::complete);
+        return new UpdateHandler(updateMessageFlux, removeHandler, sinksManyWrapper::complete);
+    }
+
+    private boolean hasHandlerFor(String queryId) {
+        return updateHandlers.keySet().stream().anyMatch(m -> m.identifier().equals(queryId));
     }
 
     @Override

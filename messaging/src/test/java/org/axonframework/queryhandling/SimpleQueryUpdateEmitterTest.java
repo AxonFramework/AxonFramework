@@ -59,7 +59,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(queryMessage, 1024);
+        UpdateHandler result = testSubject.subscribe(queryMessage, 1024);
 
         testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
@@ -76,7 +76,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration registration = testSubject.registerUpdateHandler(queryMessage, 128);
+        UpdateHandler registration = testSubject.subscribe(queryMessage, 128);
 
         ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (int i = 0; i < 100; i++) {
@@ -96,7 +96,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration registration = testSubject.registerUpdateHandler(queryMessage, 128);
+        UpdateHandler registration = testSubject.subscribe(queryMessage, 128);
 
         ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (int i = 0; i < 100; i++) {
@@ -116,10 +116,10 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(queryMessage, 1024);
+        UpdateHandler result = testSubject.subscribe(queryMessage, 1024);
 
         testSubject.emit(any -> true, "some-awesome-text");
-        result.registration().cancel();
+        result.cancel();
 
         StepVerifier.create(result.updates().map(Message::payload))
                     .expectNext("some-awesome-text")
@@ -133,7 +133,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
+        UpdateHandler result = testSubject.subscribe(
                 queryMessage,
                 1024
         );
@@ -154,7 +154,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
+        UpdateHandler result = testSubject.subscribe(
                 queryMessage,
                 1024
         );
@@ -178,7 +178,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(Integer.class)
         );
 
-        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
+        UpdateHandler result = testSubject.subscribe(
                 queryMessage,
                 1024
         );
@@ -200,7 +200,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), multipleInstancesOf(String.class)
         );
 
-        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
+        UpdateHandler result = testSubject.subscribe(
                 queryMessage,
                 1024
         );
@@ -229,7 +229,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), optionalInstanceOf(String.class)
         );
 
-        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
+        UpdateHandler result = testSubject.subscribe(
                 queryMessage,
                 1024
         );
@@ -258,7 +258,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), publisherOf(String.class)
         );
 
-        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
+        UpdateHandler result = testSubject.subscribe(
                 queryMessage,
                 1024
         );
@@ -314,7 +314,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), multipleInstancesOf(String.class)
         );
 
-        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
+        UpdateHandler result = testSubject.subscribe(
                 queryMessage,
                 1024
         );
@@ -336,7 +336,7 @@ class SimpleQueryUpdateEmitterTest {
                 optionalInstanceOf(String.class), optionalInstanceOf(String.class)
         );
 
-        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
+        UpdateHandler result = testSubject.subscribe(
                 queryMessage,
                 1024
         );
@@ -358,14 +358,14 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandlerRegistration result = testSubject.registerUpdateHandler(
+        UpdateHandler result = testSubject.subscribe(
                 queryMessage,
                 1024
         );
 
         result.updates().subscribe();
         testSubject.emit(any -> true, "some-awesome-text");
-        result.registration().cancel();
+        result.cancel();
 
         StepVerifier.create(result.updates().map(Message::payload))
                     .expectNext("some-awesome-text")

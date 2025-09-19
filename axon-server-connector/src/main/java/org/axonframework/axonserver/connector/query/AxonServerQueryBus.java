@@ -73,7 +73,6 @@ import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.UpdateHandlerRegistration;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
@@ -113,8 +112,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
@@ -1030,10 +1027,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         @Override
         public io.axoniq.axonserver.connector.Registration registerSubscriptionQuery(SubscriptionQuery query,
                                                                                      UpdateHandler sendUpdate) {
-            UpdateHandlerRegistration updateHandler =
-                    updateEmitter.registerUpdateHandler(subscriptionSerializer.deserialize(query), 1024);
+            org.axonframework.queryhandling.UpdateHandler updateHandler =
+                    updateEmitter.subscribe(subscriptionSerializer.deserialize(query), 1024);
 
-            updateHandler.getUpdates()
+            updateHandler.updates()
                          .doOnError(e -> {
                              ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
                              String errorCode = ErrorCode.getQueryExecutionErrorCode(e).errorCode();
@@ -1049,7 +1046,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                          .subscribe(sendUpdate::sendUpdate);
 
             return () -> {
-                updateHandler.getRegistration().cancel();
+                updateHandler.cancel();
                 return FutureUtils.emptyCompletedFuture();
             };
         }

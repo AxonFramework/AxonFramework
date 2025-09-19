@@ -22,7 +22,7 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SinkWrapper;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.UpdateHandlerRegistration;
+import org.axonframework.queryhandling.UpdateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,14 +86,10 @@ public class MonitoringQueryUpdateEmitter implements QueryUpdateEmitter {
 
     }
 
+    @Nonnull
     @Override
-    public boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage query) {
-        return false;
-    }
-
-    @Override
-    public UpdateHandlerRegistration registerUpdateHandler(@Nonnull SubscriptionQueryMessage query,
-                                                           int updateBufferSize) {
+    public UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query,
+                                   int updateBufferSize) {
         return null;
     }
 }

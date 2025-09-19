@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -47,6 +48,22 @@ import java.util.function.Predicate;
  * @since 3.3.0
  */
 public interface QueryUpdateEmitter {
+
+    /**
+     * Subscribes the given {@code query} with the given {@code updateBufferSize}, resulting in an {@link UpdateHandler}
+     * providing a {@link reactor.core.publisher.Flux} to the emitted updates.
+     *
+     * @param query            The subscription query for which we register an update handler.
+     * @param updateBufferSize The size of buffer that accumulates updates before a subscription to the
+     *                         {@link UpdateHandler#updates()} is made.
+     * @return The update handler containing the {@link reactor.core.publisher.Flux} of emitted updates, as well as
+     * {@link UpdateHandler#cancel()} and {@link UpdateHandler#complete()} hooks.
+     * @throws SubscriptionQueryAlreadyRegisteredException Whenever an update handler was already registered for the
+     *                                                     given {@code query}.
+     */
+    @Internal
+    @Nonnull
+    UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query, int updateBufferSize);
 
     /**
      * Emits incremental update (as return value of provided update function) to subscription queries matching given
@@ -185,25 +202,6 @@ public interface QueryUpdateEmitter {
                 m -> queryType.isAssignableFrom(m.payloadType()) && filter.test((Q) m.payload());
         completeExceptionally(sqmFilter, cause);
     }
-
-    /**
-     * Checks whether there is a query update handler for a given {@code query}.
-     *
-     * @param query the subscription query for which we have registered the update handler
-     * @return {@code true} if there is an update handler registered for given {@code query}, {@code false} otherwise
-     */
-    boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage query);
-
-    /**
-     * Registers an Update Handler for given {@code query} with given {@code updateBufferSize}.
-     *
-     * @param query            the subscription query for which we register an Update Handler
-     * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux} is
-     *                         made
-     * @return the object which contains updates and a registration which can be used to cancel them
-     */
-    UpdateHandlerRegistration registerUpdateHandler(@Nonnull SubscriptionQueryMessage query,
-                                                    int updateBufferSize);
 
     /**
      * Provides the set of running subscription queries. If there are changes to subscriptions they will be reflected in

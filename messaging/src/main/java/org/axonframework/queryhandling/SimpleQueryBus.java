@@ -28,7 +28,6 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -153,10 +152,9 @@ public class SimpleQueryBus implements QueryBus {
             int updateBufferSize
     ) {
         assertSubQueryResponseTypes(query);
-        if (queryUpdateEmitter.queryUpdateHandlerRegistered(query)) {
-            throw new SubscriptionQueryAlreadyRegisteredException(query.identifier());
-        }
-        Mono<QueryResponseMessage> initialResult = null;
+        MessageStream<QueryResponseMessage> initialStream = query(query, context);
+
+
         // TODO #3488 - Fix once implementing subscription queries
 //        Mono<QueryResponseMessage> initialResult = Mono.fromFuture(() -> query(query))
 //                                                       .doOnError(error -> logger.error(
