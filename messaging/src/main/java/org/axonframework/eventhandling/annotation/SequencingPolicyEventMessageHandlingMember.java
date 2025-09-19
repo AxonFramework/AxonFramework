@@ -26,8 +26,8 @@ import java.lang.reflect.Member;
 import java.util.Optional;
 
 /**
- * Implementation of {@link EventHandlingMember} that wraps handlers annotated with {@link SequencingPolicy}.
- * This member creates and holds an instance of the sequencing policy specified in the annotation.
+ * Implementation of {@link EventHandlingMember} that wraps handlers annotated with {@link SequencingPolicy}. This
+ * member creates and holds an instance of the sequencing policy specified in the annotation.
  *
  * @param <T> The type of entity to which the message handler will delegate the actual handling of the message
  * @author Mateusz Nowak
@@ -47,7 +47,7 @@ public class SequencingPolicyEventMessageHandlingMember<T>
      * @param policyAnnotation The {@link SequencingPolicy} annotation containing policy configuration
      */
     public SequencingPolicyEventMessageHandlingMember(MessageHandlingMember<T> original,
-                                                       SequencingPolicy policyAnnotation) {
+                                                      SequencingPolicy policyAnnotation) {
         super(original);
         this.sequencingPolicy = createSequencingPolicy(policyAnnotation, original);
     }
@@ -57,8 +57,8 @@ public class SequencingPolicyEventMessageHandlingMember<T>
      *
      * @return An {@link Optional} containing the sequencing policy
      */
-    public Optional<org.axonframework.eventhandling.sequencing.SequencingPolicy> getSequencingPolicy() {
-        return Optional.of(sequencingPolicy);
+    public org.axonframework.eventhandling.sequencing.SequencingPolicy sequencingPolicy() {
+        return sequencingPolicy;
     }
 
     private org.axonframework.eventhandling.sequencing.SequencingPolicy createSequencingPolicy(
@@ -79,7 +79,7 @@ public class SequencingPolicyEventMessageHandlingMember<T>
                 } catch (NoSuchMethodException e) {
                     throw new UnsupportedHandlerException(
                             "SequencingPolicy " + policyType.getName() +
-                            " must have a no-arg constructor",
+                                    " must have a no-arg constructor",
                             original.unwrap(Member.class).orElse(null)
                     );
                 }
@@ -98,7 +98,7 @@ public class SequencingPolicyEventMessageHandlingMember<T>
                 if (matchingConstructor == null) {
                     throw new UnsupportedHandlerException(
                             "No constructor found for SequencingPolicy " + policyType.getName() +
-                            " with " + parameters.length + " parameters",
+                                    " with " + parameters.length + " parameters",
                             original.unwrap(Member.class).orElse(null)
                     );
                 }
@@ -155,7 +155,7 @@ public class SequencingPolicyEventMessageHandlingMember<T>
         } else {
             throw new UnsupportedOperationException(
                     "Unsupported parameter type: " + targetType.getName() +
-                    ". Only primitives and String are supported."
+                            ". Only primitives and String are supported."
             );
         }
     }
