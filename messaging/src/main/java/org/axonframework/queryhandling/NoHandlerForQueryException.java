@@ -15,18 +15,58 @@
  */
 package org.axonframework.queryhandling;
 
-import org.axonframework.common.AxonNonTransientException;
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.AxonException;
 
 import static java.lang.String.format;
 
 /**
- * Exception indicating a query for a single result was executed, but no handlers were found that could provide an
- * answer.
+ * Exception indicating this instance has no {@link QueryHandler} for a given {@link QueryMessage}.
  *
  * @author Marc Gathier
- * @since 3.1
+ * @since 3.1.0
  */
-public class NoHandlerForQueryException extends AxonNonTransientException {
+public class NoHandlerForQueryException extends AxonException {
+
+    /**
+     * Constructs a {@code NoHandlerForQueryException} with a message describing the given {@link QueryMessage},
+     * specific for {@link QueryBus QueryBuses}.
+     *
+     * @param query The {@link QueryMessage query} for which no handler was found.
+     * @return A {@code NoHandlerForQueryException} with a message describing the given {@link QueryMessage}, specific
+     * for {@link QueryBus QueryBuses}.
+     */
+    public static NoHandlerForQueryException forBus(@Nonnull QueryMessage query) {
+        return new NoHandlerForQueryException(format(
+                "No matching handler is available to handle query of type [%s] with expected response type [%s]. "
+                        + "To find a matching handler, note that the query handler's name should match the query's name "
+                        + "and the response should match the handler's response.",
+                query.type(),
+                query.responseType()
+        ));
+    }
+
+    /**
+     * Constructs a {@code NoHandlerForQueryException} with a message describing the given {@link QueryMessage},
+     * specific for {@link QueryHandlingComponent QueryHandlingComponents}.
+     * <p>
+     * This factory method specifies in its message that missing parameters could be the culprit of finding a matching
+     * handler.
+     *
+     * @param query The {@link QueryMessage query} for which no handler was found.
+     * @return A {@code NoHandlerForQueryException} with a message describing the given {@link QueryMessage}, specific
+     * for {@link QueryHandlingComponent QueryHandlingComponents}.
+     */
+    public static NoHandlerForQueryException forHandlingComponent(@Nonnull QueryMessage query) {
+        return new NoHandlerForQueryException(format(
+                "No matching handler is available to handle query of type [%s] with expected response type [%s]. "
+                        + "To find a matching handler, note that the query handler's name should match the query's name, "
+                        + "the response, and all the parameters on the query handling method should be resolvable. "
+                        + "It is thus recommended to validate the name, response type, and parameters.",
+                query.type(),
+                query.responseType()
+        ));
+    }
 
     /**
      * Initialize this exception with the given {@code message}.
@@ -35,22 +75,5 @@ public class NoHandlerForQueryException extends AxonNonTransientException {
      */
     public NoHandlerForQueryException(String message) {
         super(message);
-    }
-
-    /**
-     * Initialize this exception with a message describing the given {@link QueryMessage}. This constructor specifies in
-     * its message that missing parameters could be the culprit of finding a matching handler.
-     *
-     * @param query the {@link QueryMessage query} for which no handler was found
-     */
-    public NoHandlerForQueryException(QueryMessage query) {
-        super(format(
-                "No matching handler is available to handle query [%s] with response type [%s]. "
-                        + "To find a matching handler, note that the query handler's name should match the query's name, "
-                        + "the response, and all the parameters on the query handling method should be resolvable. "
-                        + "It is thus recommended to validate the name, response type, and parameters.",
-                query.type(),
-                query.responseType()
-        ));
     }
 }

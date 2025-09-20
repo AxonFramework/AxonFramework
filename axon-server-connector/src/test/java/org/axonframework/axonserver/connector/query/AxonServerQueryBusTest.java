@@ -152,7 +152,7 @@ class AxonServerQueryBusTest {
         when(mockQueryChannel.registerQueryHandler(any(), any()))
                 .thenReturn(FutureUtils::emptyCompletedFuture);
 
-        when(localSegment.subscribe(any(), any(), any())).thenReturn(() -> true);
+//        when(localSegment.subscribe(any(String.class), any(), any())).thenReturn(() -> true);
     }
 
     @AfterEach

@@ -16,40 +16,35 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.common.AxonNonTransientException;
-import org.axonframework.messaging.MessageHandler;
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
 
 /**
- * Exception indicating a duplicate Command Handler was subscribed whilst this behavior is purposefully guarded
- * against.
+ * Exception indicating a duplicate {@link CommandHandler} was subscribed.
  *
  * @author Steven van Beelen
  * @since 4.2.0
  */
-public class DuplicateCommandHandlerSubscriptionException extends AxonNonTransientException {
+public class DuplicateCommandHandlerSubscriptionException extends RuntimeException {
 
     /**
-     * Initialize a duplicate command handler subscription exception using the given {@code initialHandler} and
+     * Initialize a duplicate {@link CommandHandler} subscription exception using the given {@code initialHandler} and
      * {@code duplicateHandler} to form a specific message.
      *
      * @param name             The name of the command for which the duplicate was detected.
-     * @param initialHandler   the initial {@link MessageHandler} for which a duplicate was encountered.
-     * @param duplicateHandler The duplicated {@link MessageHandler}.
+     * @param initialHandler   the initial {@link CommandHandler} for which a duplicate was encountered.
+     * @param duplicateHandler The duplicated {@link CommandHandler}.
      */
-    public DuplicateCommandHandlerSubscriptionException(QualifiedName name,
-                                                        CommandHandler initialHandler,
-                                                        CommandHandler duplicateHandler) {
-        this(String.format("Duplicate subscription for command [%s] detected. Registration of handler [%s] "
-                                   + " conflicts with previously registered handler [%s].",
-                           name,
-                           initialHandler,
-                           duplicateHandler
-        ));
+    public DuplicateCommandHandlerSubscriptionException(@Nonnull QualifiedName name,
+                                                        @Nonnull CommandHandler initialHandler,
+                                                        @Nonnull CommandHandler duplicateHandler) {
+        this(String.format("Duplicate subscription for command [%s] detected. "
+                                   + "Registration of handler [%s]  conflicts with previously registered handler [%s].",
+                           name, initialHandler, duplicateHandler));
     }
 
     /**
-     * Initializes a duplicate command handler subscription exception using the given {@code message}.
+     * Initializes a {@code DuplicateCommandHandlerSubscriptionException} using the given {@code message}.
      *
      * @param message The message describing the exception.
      */

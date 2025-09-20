@@ -83,18 +83,14 @@ import org.axonframework.modelling.saga.SagaManagerSpanFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
-import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
-import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.tracing.QueryUpdateEmitterSpanFactory;
-import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryUpdateEmitterSpanFactory;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
@@ -207,7 +203,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
         components.put(LegacyEventStore.class, new Component<>(config, "eventStore", LegacyConfiguration::eventStore));
         components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
-        components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
         components.put(
                 QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter)
         );
@@ -348,31 +343,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                         CommandPriorityCalculator.defaultCalculator(),
                         new AnnotationRoutingStrategy()
                 ));
-    }
-
-    /**
-     * Provides the default QueryBus implementations. Subclasses may override this method to provide their own default.
-     *
-     * @param config The configuration based on which the component is initialized.
-     * @return The default QueryBus to use.
-     */
-    protected QueryBus defaultQueryBus(LegacyConfiguration config) {
-        return defaultComponent(QueryBus.class, config)
-                .orElseGet(() -> {
-                    SimpleQueryBus queryBus = SimpleQueryBus.builder()
-                                                            .transactionManager(config.getComponent(
-                                                                    TransactionManager.class,
-                                                                    NoTransactionManager::instance
-                                                            ))
-                                                            .errorHandler(config.getComponent(
-                                                                    QueryInvocationErrorHandler.class,
-                                                                    () -> LoggingQueryInvocationErrorHandler.builder()
-                                                                                                            .build()
-                                                            ))
-                                                            .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                                                            .build();
-                    return queryBus;
-                });
     }
 
     /**

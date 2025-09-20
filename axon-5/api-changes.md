@@ -1774,6 +1774,13 @@ This section contains five tables:
 | org.axonframework.messaging.interceptors.TransactionManagingInterceptor                  | Replaced by the `UnitOfWorkFactory` constructing transaction-aware UoWs.                                                                       |
 | org.axonframework.messaging.MessageDispatchInterceptorSupport                            | See [here](#message-handler-interceptors-and-dispatch-interceptors)                                                                            |
 | org.axonframework.messaging.MessageHandlerInterceptorSupport                             | See [here](#message-handler-interceptors-and-dispatch-interceptors)                                                                            |
+| org.axonframework.queryhandling.QueryHandlerAdapter                                      | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution             | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolver               | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.registration.DuplicateQueryHandlerSubscriptionException  | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.registration.FailingDuplicateQueryHandlerResolver        | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.registration.LoggingDuplicateQueryHandlerResolver        | Redundant class with current handler registration flow                                                                                         |
+| org.axonframework.queryhandling.QuerySubscription                                        | Redundant class with current handler registration flow                                                                                         |
 
 ### Marked for removal Classes
 
@@ -1883,6 +1890,7 @@ This section contains four subsections, called:
 | `MessageDispatchInterceptor#handle(T)`                                                                                          | `MessageDispatchInterceptor#interceptOnDispatch(M, ProcessingContext, MessageDispatchInterceptorChain<M>)`             | 
 | `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`                                                             | `MessageHandlerInterceptor#interceptOnHandle(M, ProcessingContext, MessageHandlerInterceptorChain<M>)`                 | 
 | `InterceptorChain#proceed()`                                                                                                    | `MessageHandlerInterceptorChain#proceed(M, ProcessingContext)`                                                         | 
+| `QueryBus#subscribe(String, Type, MessageHandler<? super QueryMessage<?, R>>)`                                                  | `QueryBus#subscribe(QualifiedName, QualifiedName, QueryHandler)`                                                       | 
 
 ### Removed Methods and Constructors
 
@@ -1938,20 +1946,21 @@ This section contains four subsections, called:
 
 ### Changed Method return types
 
-| Method                                                                    | Before                         | After                                        |
-|---------------------------------------------------------------------------|--------------------------------|----------------------------------------------|
-| `CorrelationDataProvider#correlationDataFor()`                            | `Map<String, String>`          | `Map<String, ?>`                             | 
-| `CommandTargetResolver#resolveTarget`                                     | `VersionedAggregateIdentifier` | `String`                                     |
-| `EventGateway#publish(Object...)`                                         | `void`                         | `CompletableFuture<Void>`                    |
-| `EventGateway#publish(List<?>)`                                           | `void`                         | `CompletableFuture<Void>`                    |
-| `SequencingPolicy#getSequenceIdentifierFor(List<?>)`                      | `Object`                       | `Optional<Object>`                           |
-| `CommandBus#dispatch(CommandMessage<C>)`                                  | `void`                         | `CompletableFuture<CommandResultMessage<?>>` |
-| `CommandBus#subscribe(String, MessageHandler<? super CommandMessage<?>>)` | `Registration`                 | `<? extends CommandHandlerRegistry>`         |
-| `CommandGateway#sendAndWait(Object)`                                      | `R`                            | `void`                                       |
-| `MessageDispatchInterceptor#handle(T)`                                    | `T`                            | `MessageStream<?>`                           |
-| `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`       | `Object`                       | `MessageStream<?>`                           |
-| `InterceptorChain#proceed()`                                              | `Object`                       | `MessageStream<?>`                           |
-| `EventProcessor#start()`                                                  | `void`                         | `CompletableFuture<Void>`                    |
-| `EventProcessor#shutdown()`                                               | `void`                         | `CompletableFuture<Void>`                    |
-| `StreamingEventProcessor#releaseSegment`                                  | `void`                         | `CompletableFuture<Void>`                    |
-| `StreamingEventProcessor#resetTokens`                                     | `void`                         | `CompletableFuture<Void>`                    |
+| Method                                                                         | Before                         | After                                        |
+|--------------------------------------------------------------------------------|--------------------------------|----------------------------------------------|
+| `CorrelationDataProvider#correlationDataFor()`                                 | `Map<String, String>`          | `Map<String, ?>`                             | 
+| `CommandTargetResolver#resolveTarget`                                          | `VersionedAggregateIdentifier` | `String`                                     |
+| `EventGateway#publish(Object...)`                                              | `void`                         | `CompletableFuture<Void>`                    |
+| `EventGateway#publish(List<?>)`                                                | `void`                         | `CompletableFuture<Void>`                    |
+| `SequencingPolicy#getSequenceIdentifierFor(List<?>)`                           | `Object`                       | `Optional<Object>`                           |
+| `CommandBus#dispatch(CommandMessage<C>)`                                       | `void`                         | `CompletableFuture<CommandResultMessage<?>>` |
+| `CommandBus#subscribe(String, MessageHandler<? super CommandMessage<?>>)`      | `Registration`                 | `<? extends CommandHandlerRegistry>`         |
+| `CommandGateway#sendAndWait(Object)`                                           | `R`                            | `void`                                       |
+| `MessageDispatchInterceptor#handle(T)`                                         | `T`                            | `MessageStream<?>`                           |
+| `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`            | `Object`                       | `MessageStream<?>`                           |
+| `InterceptorChain#proceed()`                                                   | `Object`                       | `MessageStream<?>`                           |
+| `EventProcessor#start()`                                                       | `void`                         | `CompletableFuture<Void>`                    |
+| `EventProcessor#shutdown()`                                                    | `void`                         | `CompletableFuture<Void>`                    |
+| `StreamingEventProcessor#releaseSegment`                                       | `void`                         | `CompletableFuture<Void>`                    |
+| `StreamingEventProcessor#resetTokens`                                          | `void`                         | `CompletableFuture<Void>`                    |
+| `QueryBus#subscribe(String, Type, MessageHandler<? super QueryMessage<?, R>>)` | `Registration`                 | `void`                                       |

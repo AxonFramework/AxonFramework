@@ -27,13 +27,8 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryHandlerAdapter;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-
-import java.util.Collection;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Adapter that turns any {@link QueryHandler @QueryHandler} annotated bean into a {@link MessageHandler}
@@ -43,7 +38,8 @@ import java.util.stream.Collectors;
  * @author Marc Gathier
  * @since 3.1
  */
-public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, MessageHandler<QueryMessage, QueryResponseMessage> {
+// TODO #3488 - Update to AnnotatedQueryHandlingComponent, aligned with AnnotatedCommandHandlingComponent
+public class AnnotationQueryHandlerAdapter<T> implements MessageHandler<QueryMessage, QueryResponseMessage> {
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
@@ -88,23 +84,23 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
         this.target = target;
     }
 
-    @Override
     public Registration subscribe(@Nonnull QueryBus queryBus) {
-        Collection<Registration> registrations = model.getHandlers(target.getClass())
-                                                      .map(handler -> handler.unwrap(QueryHandlingMember.class))
-                                                      .filter(Optional::isPresent)
-                                                      .map(Optional::get)
-                                                      .map(queryHandler -> queryBus.subscribe(
-                                                              queryHandler.getQueryName(),
-                                                              queryHandler.getResultType(),
-                                                              this
-                                                      ))
-                                                      .collect(Collectors.toList());
+//        Collection<Registration> registrations = model.getHandlers(target.getClass())
+//                                                      .map(handler -> handler.unwrap(QueryHandlingMember.class))
+//                                                      .filter(Optional::isPresent)
+//                                                      .map(Optional::get)
+//                                                      .map(queryHandler -> queryBus.subscribe(
+//                                                              queryHandler.getQueryName(),
+//                                                              queryHandler.getResultType(),
+//                                                              this
+//                                                      ))
+//                                                      .collect(Collectors.toList());
 
-        return () -> registrations.stream()
-                                  .map(Registration::cancel)
-                                  .reduce(Boolean::logicalOr)
-                                  .orElse(false);
+//        return () -> registrations.stream()
+//                                  .map(Registration::cancel)
+//                                  .reduce(Boolean::logicalOr)
+//                                  .orElse(false);
+        return () -> true;
     }
 
     @Override
@@ -113,7 +109,7 @@ public class AnnotationQueryHandlerAdapter<T> implements QueryHandlerAdapter, Me
                 model.getHandlers(target.getClass())
                      .filter(m -> m.canHandle(message, context))
                      .findFirst()
-                     .orElseThrow(() -> new NoHandlerForQueryException(message));
+                     .orElseThrow(() -> NoHandlerForQueryException.forHandlingComponent(message));
 
         return model.chainedInterceptor(target.getClass())
                     .handleSync(message, context, target, handler);

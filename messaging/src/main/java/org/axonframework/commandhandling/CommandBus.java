@@ -30,9 +30,11 @@ import java.util.concurrent.CompletableFuture;
  * The mechanism that dispatches {@link CommandMessage commands} to their appropriate
  * {@link CommandHandler command handler}.
  * <p>
- * Command handlers can {@link #subscribe(QualifiedName, CommandHandler) subscribe} and unsubscribe to specific commands
- * on the command bus. A command being {@link #dispatch(CommandMessage, ProcessingContext) dispatched} matches a command
- * handler based on the {@link QualifiedName} present in the {@link CommandMessage#type() command's type}.
+ * Command handlers can {@link #subscribe(QualifiedName, CommandHandler) subscribed} to the command bus to handle
+ * commands matching the {@link QualifiedName} in the {@link CommandMessage#type() command type}.
+ * <p>
+ * Hence, commands {@link #dispatch(CommandMessage, ProcessingContext) dispatched} matches a command handler based on
+ * "command name."
  * <p>
  * Only a <em>single</em> handler may be subscribed for a given command name at any time.
  *
