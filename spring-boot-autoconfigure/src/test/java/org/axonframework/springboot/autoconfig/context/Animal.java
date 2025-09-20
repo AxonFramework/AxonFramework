@@ -19,11 +19,11 @@ package org.axonframework.springboot.autoconfig.context;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.spring.stereotype.Aggregate;
+import org.axonframework.spring.stereotype.EventSourced;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 
-@Aggregate(snapshotTriggerDefinition = "animalSnapshotTriggerDefinition")
+@EventSourced
 public abstract class Animal {
 
     @AggregateIdentifier

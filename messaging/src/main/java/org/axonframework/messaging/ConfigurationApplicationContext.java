@@ -49,4 +49,10 @@ public class ConfigurationApplicationContext implements ApplicationContext {
     public <C> C component(@Nonnull Class<C> type, @Nullable String name) {
         return configuration.getComponent(type, name);
     }
+
+    @Nonnull
+    @Override
+    public <C> C component(@Nonnull Class<C> type) {
+        return configuration.getComponent(type);
+    }
 }

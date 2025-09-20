@@ -23,7 +23,7 @@ import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.modelling.command.LegacyRepository;
-import org.axonframework.spring.stereotype.Aggregate;
+import org.axonframework.spring.stereotype.EventSourced;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -174,7 +174,7 @@ class RepositoryWiringTest {
     @Configuration
     static class SingleAggregateContext {
 
-        @Aggregate
+        @EventSourced
         static class AggregateOne {
 
             public AggregateOne() {
@@ -199,21 +199,21 @@ class RepositoryWiringTest {
     @Configuration
     static class SeveralAggregatesContext {
 
-        @Aggregate
+        @EventSourced
         static class AggregateOne {
 
             public AggregateOne() {
             }
         }
 
-        @Aggregate
+        @EventSourced
         static class AggregateTwo {
 
             public AggregateTwo() {
             }
         }
 
-        @Aggregate
+        @EventSourced
         static class AggregateThree {
 
             public AggregateThree() {
@@ -283,7 +283,7 @@ class RepositoryWiringTest {
     static class StateStoredAggregateContext {
 
         @Entity
-        @Aggregate
+        @EventSourced
         static class StateStoredAggregate {
 
             @SuppressWarnings("unused") @Id

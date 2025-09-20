@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.eventsourcing.context;
 
-import org.axonframework.spring.stereotype.Aggregate;
+import org.axonframework.spring.stereotype.EventSourced;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -24,11 +24,11 @@ import org.springframework.context.ApplicationContextAware;
 import jakarta.annotation.Nonnull;
 
 /**
- * Plain aggregate wired through Spring with the {@link Aggregate} annotation.
+ * Plain aggregate wired through Spring with the {@link EventSourced} annotation.
  *
  * @author Allard Buijze
  */
-@Aggregate
+@EventSourced
 public class SpringWiredAggregate implements ApplicationContextAware {
 
     private transient ApplicationContext context;

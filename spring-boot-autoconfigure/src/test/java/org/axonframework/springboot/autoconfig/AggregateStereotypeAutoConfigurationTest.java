@@ -39,7 +39,7 @@ import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
-import org.axonframework.spring.stereotype.Aggregate;
+import org.axonframework.spring.stereotype.EventSourced;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating whether the {@link Aggregate} stereotype annotation with the configurable bean names sets an
+ * Test class validating whether the {@link EventSourced} stereotype annotation with the configurable bean names sets an
  * Aggregate correctly.
  *
  * @author Steven van Beelen
@@ -113,7 +113,7 @@ class AggregateStereotypeAutoConfigurationTest {
     }
 
     /**
-     * By configuring a custom {@link LegacyRepository} through the {@link Aggregate} stereotype, you remove the bean
+     * By configuring a custom {@link LegacyRepository} through the {@link EventSourced} stereotype, you remove the bean
      * definitions of the {@link SnapshotTriggerDefinition}, {@link Cache}, and the {@link LockFactory}. This holds as
      * the framework directly configures these components on the {@code Repository}. This test also asserts that the
      * {@link SnapshotFilter} is <b>not</b> invoked, since the {@code SnapshotTriggerDefinition} is no longer defined on
@@ -187,13 +187,8 @@ class AggregateStereotypeAutoConfigurationTest {
     static class TestContext {
 
         @SuppressWarnings({"FieldCanBeLocal", "unused"})
-        @Aggregate(
-                snapshotTriggerDefinition = "testSnapshotTriggerDefinition",
-                snapshotFilter = "testSnapshotFilter",
-                type = "testType",
-                commandTargetResolver = "testCommandTargetResolver",
-                cache = "testCache",
-                lockFactory = "testLockFactory"
+        @EventSourced(
+                type = "testType"
         )
         public static class TestAggregate {
 
@@ -226,14 +221,8 @@ class AggregateStereotypeAutoConfigurationTest {
         }
 
         @SuppressWarnings({"FieldCanBeLocal", "unused"})
-        @Aggregate(
-                repository = "testRepository",
-                snapshotTriggerDefinition = "testSnapshotTriggerDefinition",
-                snapshotFilter = "testSnapshotFilter",
-                type = "testTypeWithCustomRepository",
-                commandTargetResolver = "testCommandTargetResolver",
-                cache = "testCache",
-                lockFactory = "testLockFactory"
+        @EventSourced(
+                type = "testTypeWithCustomRepository"
         )
         private static class CustomRepoTestAggregate {
 
@@ -267,7 +256,7 @@ class AggregateStereotypeAutoConfigurationTest {
 
         @SuppressWarnings("unused")
         @Entity(name = "simpleAggregate")
-        @Aggregate
+        @EventSourced
         private static class SimpleStateStoredAggregate {
 
             @Id

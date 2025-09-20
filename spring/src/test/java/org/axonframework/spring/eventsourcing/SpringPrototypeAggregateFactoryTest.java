@@ -22,7 +22,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.spring.config.SpringAggregateLookup;
+import org.axonframework.spring.config.SpringEventSourcedEntityLookup;
 import org.axonframework.spring.eventsourcing.context.SpringWiredAggregate;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -95,8 +95,8 @@ class SpringPrototypeAggregateFactoryTest {
          * Copied to keep this test Spring Boot agnostic.
          */
         @Bean
-        public static SpringAggregateLookup springAggregateLookup() {
-            return new SpringAggregateLookup();
+        public static SpringEventSourcedEntityLookup springAggregateLookup() {
+            return new SpringEventSourcedEntityLookup();
         }
 
 //        @Bean

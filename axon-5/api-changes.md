@@ -1343,6 +1343,26 @@ exceptions, you will need to change your code. The following table shows the cha
 |------------------------------------------------------------------------|-------------------------------------------------------------------|
 | `org.axonframework.modelling.command.AggregateEntityNotFoundException` | `org.axonframework.modelling.entity.ChildEntityNotFoundException` |
 
+### Spring Configuration
+
+AF5 fosters auto-detection and auto-configuration of entities, command and message handlers in Spring environment. The
+`@Aggregate` annotation
+is still used as a Spring meta-annotation for a prototype scoped component and now is additionally is meta-annotated
+with `@EventSourcedEntity` (
+replicating all its attributes.) This effectively means that you only need to put the `@Aggegate` annotation to your
+entity and the remaining
+configuration will be executed by Spring Auto-Configuration. The following attributes are available:
+
+| Attribute                    | Type                                                   | Description                                                                                      |
+|------------------------------|--------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| `type`                       | `String`                                               | Defines the type of the entity. If not provided, defaults to the simple class name.              |
+| `idType`                     | `Class<?>`                                             | Defines the type of the identity of the entity. If not provided, defaults to `java.lang.String`. |
+| `tagKey`                     | `String`                                               | See `EventSourcedEntity#tagKey`                                                                  |
+| `concreteTypes`              | `Class<?>[]`                                           | See `EventSourcedEntity#concreteTypes`                                                           |
+| `criteriaResolverDefinition` | `Class<? extends CriteriaResolverDefinition>`          | See `EventSourcedEntity#criteriaResolverDefinition`                                              |
+| `entityFactoryDefinition`    | `Class<? extends EventSourcedEntityFactoryDefinition>` | See `EventSourcedEntity#entityFactoryDefinition`                                                 |
+| `entityIdResolverDefinition` | `Class<? extends EntityIdResolverDefinition>`          | See `EventSourcedEntity#entityIdResolverDefinition`.                                             |
+
 ## Test Fixtures
 
 The `axon-test` module of Axon Framework has historically provided two different test fixtures:
@@ -1774,6 +1794,8 @@ This section contains five tables:
 | org.axonframework.messaging.interceptors.TransactionManagingInterceptor                  | Replaced by the `UnitOfWorkFactory` constructing transaction-aware UoWs.                                                                       |
 | org.axonframework.messaging.MessageDispatchInterceptorSupport                            | See [here](#message-handler-interceptors-and-dispatch-interceptors)                                                                            |
 | org.axonframework.messaging.MessageHandlerInterceptorSupport                             | See [here](#message-handler-interceptors-and-dispatch-interceptors)                                                                            |
+| org.axonframework.messaging.MessageHandlerInterceptorSupport                             | See [here](#message-handler-interceptors-and-dispatch-interceptors)                                                                            |
+| org.axonframework.springboot.autoconfig.InfraConfiguration                               | Removed in favour of `InfrastructureConfiguration`                                                                                             | 
 
 ### Marked for removal Classes
 
@@ -1935,6 +1957,13 @@ This section contains four subsections, called:
 | `MessageDispatchInterceptor#handle(List<? extends T>)`                                                            | Removed due to limited usage.                                                                                               |
 | `PropertySequencingPolicy#builder`                                                                                | Use constructor instead. To define fallbackSequencingPolicy use `FallbackSequencingPolicy`.                                 |
 | `EventProcessor#shutdownAsync()`                                                                                  | Use `shutdown` instead. It returns `CompletableFuture<Void>` since the version 5.0.0.                                       |
+| `org.axonframework.spring.stereotype.Aggregate#repository`                                                        | Conceptually configured on `EventSourcedEntityModule`.                                                                      |
+| `org.axonframework.spring.stereotype.Aggregate#snapshotTriggerDefinition`                                         | Removed and will be replaced as part of #3105.                                                                              |
+| `org.axonframework.spring.stereotype.Aggregate#snapshotFilter`                                                    | Removed and will be replaced as part of #3105.                                                                              |
+| `org.axonframework.spring.stereotype.Aggregate#commandTargetResolver`                                             | Conceptually moved to `CommandHandlingComponent`.                                                                           |
+| `org.axonframework.spring.stereotype.Aggregate#filterEventsByType`                                                | Removed as not needed.                                                                                                      |
+| `org.axonframework.spring.stereotype.Aggregate#cache`                                                             | Conceptually configured on `EventSourcedEntityModule`.                                                                      |
+| `org.axonframework.spring.stereotype.Aggregate#lockFactory`                                                       | Conceptually configured on `EventSourcedEntityModule`.                                                                      |
 
 ### Changed Method return types
 
