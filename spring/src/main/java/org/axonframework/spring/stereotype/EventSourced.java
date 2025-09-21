@@ -68,7 +68,6 @@ public @interface EventSourced {
      */
     Class<?> idType() default String.class;
 
-
     /**
      * The tag name to use when resolving the {@link EventCriteria} for the entity. If empty, the simple name of the
      * entity class will be used.
