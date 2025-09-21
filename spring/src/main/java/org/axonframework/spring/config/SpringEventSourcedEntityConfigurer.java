@@ -45,7 +45,7 @@ public class SpringEventSourcedEntityConfigurer<ID, T> implements ConfigurationE
      * @param aggregateType The declared type of the aggregate.
      * @param idType        The type of id.
      */
-    public SpringEventSourcedEntityConfigurer(Class<T> aggregateType, Class<ID> idType) {
+    public SpringEventSourcedEntityConfigurer(@Nonnull Class<T> aggregateType, @Nonnull Class<ID> idType) {
         this.aggregateType = aggregateType;
         this.idType = idType;
     }
