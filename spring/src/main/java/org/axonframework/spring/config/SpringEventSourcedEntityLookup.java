@@ -45,7 +45,6 @@ import static org.axonframework.common.StringUtils.lowerCaseFirstCharacterOf;
  * @author Allard Buijze
  * @author Simon Zambrovski
  * @since 4.6.0
- * FIXME rename according to annotation.
  */
 @Internal
 public class SpringEventSourcedEntityLookup implements BeanDefinitionRegistryPostProcessor {
