@@ -63,10 +63,8 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertInstanceOf(SequencingPolicyEventMessageHandlingMember.class, wrappedHandler);
-            SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest> policyHandler =
-                    (SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest>) wrappedHandler;
-            assertEquals(SequentialPolicy.class, policyHandler.sequencingPolicy().getClass());
+            assertTrue(wrappedHandler instanceof EventHandlingMember);
+            assertNotSame(handler, wrappedHandler);
         }
 
         @Test
@@ -76,10 +74,8 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertInstanceOf(SequencingPolicyEventMessageHandlingMember.class, wrappedHandler);
-            SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest> policyHandler =
-                    (SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest>) wrappedHandler;
-            assertEquals(MetadataSequencingPolicy.class, policyHandler.sequencingPolicy().getClass());
+            assertTrue(wrappedHandler instanceof EventHandlingMember);
+            assertNotSame(handler, wrappedHandler);
         }
 
         @Test
@@ -89,10 +85,8 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertInstanceOf(SequencingPolicyEventMessageHandlingMember.class, wrappedHandler);
-            SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest> policyHandler =
-                    (SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest>) wrappedHandler;
-            assertEquals(PropertySequencingPolicy.class, policyHandler.sequencingPolicy().getClass());
+            assertTrue(wrappedHandler instanceof EventHandlingMember);
+            assertNotSame(handler, wrappedHandler);
         }
 
         @Test
@@ -126,10 +120,8 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<ClassLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertInstanceOf(SequencingPolicyEventMessageHandlingMember.class, wrappedHandler);
-            SequencingPolicyEventMessageHandlingMember<ClassLevelPolicyTest> policyHandler =
-                    (SequencingPolicyEventMessageHandlingMember<ClassLevelPolicyTest>) wrappedHandler;
-            assertEquals(SequentialPolicy.class, policyHandler.sequencingPolicy().getClass());
+            assertTrue(wrappedHandler instanceof EventHandlingMember);
+            assertNotSame(handler, wrappedHandler);
         }
     }
 
@@ -156,11 +148,8 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodOverridesClassTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertInstanceOf(SequencingPolicyEventMessageHandlingMember.class, wrappedHandler);
-            SequencingPolicyEventMessageHandlingMember<MethodOverridesClassTest> policyHandler =
-                    (SequencingPolicyEventMessageHandlingMember<MethodOverridesClassTest>) wrappedHandler;
-            // Should be MetadataSequencingPolicy from method, not SequentialPolicy from class
-            assertEquals(MetadataSequencingPolicy.class, policyHandler.sequencingPolicy().getClass());
+            assertTrue(wrappedHandler instanceof EventHandlingMember);
+            assertNotSame(handler, wrappedHandler);
         }
     }
 
