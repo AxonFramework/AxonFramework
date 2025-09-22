@@ -58,4 +58,32 @@ public class TracingQueryBus {
 //});
 //        }
 //        }
+
+    /*
+    UpdateEmitter logic
+
+    @Test
+    void queryUpdateEmitterIsTraced() {
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
+                new MessageType("chatMessages"), "some-payload",
+                multipleInstancesOf(String.class), instanceOf(String.class)
+        );
+
+        UpdateHandler result = queryBus.subscribeToUpdates(
+                queryMessage,
+                1024
+        );
+
+        result.updates().subscribe();
+//        testSubject.emit(any -> true, "some-awesome-text");
+        result.complete();
+
+        spanFactory.verifySpanCompleted("QueryUpdateEmitter.scheduleQueryUpdateMessage");
+        spanFactory.verifySpanHasType("QueryUpdateEmitter.scheduleQueryUpdateMessage",
+                                      TestSpanFactory.TestSpanType.INTERNAL);
+        spanFactory.verifySpanCompleted("QueryUpdateEmitter.emitQueryUpdateMessage");
+        spanFactory.verifySpanHasType("QueryUpdateEmitter.emitQueryUpdateMessage",
+                                      TestSpanFactory.TestSpanType.DISPATCH);
+    }
+    * */
 }

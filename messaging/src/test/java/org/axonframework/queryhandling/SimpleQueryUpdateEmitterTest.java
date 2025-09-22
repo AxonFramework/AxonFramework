@@ -17,23 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
-import org.axonframework.queryhandling.tracing.QueryUpdateEmitterSpanFactory;
-import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
-import org.reactivestreams.Publisher;
-import reactor.test.StepVerifier;
-
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import static org.axonframework.messaging.responsetypes.ResponseTypes.*;
-import static org.hamcrest.CoreMatchers.equalTo;
 
 /**
  * Test class validating the {@link SimpleQueryUpdateEmitter}.
@@ -44,333 +28,133 @@ import static org.hamcrest.CoreMatchers.equalTo;
  */
 class SimpleQueryUpdateEmitterTest {
 
-    private final TestSpanFactory spanFactory = new TestSpanFactory();
-    private final QueryUpdateEmitterSpanFactory queryBusSpanFactory = DefaultQueryUpdateEmitterSpanFactory
-            .builder()
-            .spanFactory(spanFactory)
-            .build();
-    private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
-    // TODO make test objects per test case or make a generic usable ProcessingContext every time
-    private final SimpleQueryUpdateEmitter testSubject =
-            new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver(), queryBus, null);
+    private QueryBus queryBus = QueryBusTestUtils.aQueryBus();
+    private SimpleQueryUpdateEmitter testSubject;
 
-    @Test
-    void completingRegistrationOldApi() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                multipleInstancesOf(String.class), instanceOf(String.class)
-        );
-
-        UpdateHandler result = queryBus.subscribeToUpdates(queryMessage, 1024);
-
-//        testSubject.emit(any -> true, "some-awesome-text");
-        result.complete();
-
-        StepVerifier.create(result.updates().map(Message::payload))
-                    .expectNext("some-awesome-text")
-                    .verifyComplete();
+    @BeforeEach
+    void setUp() {
+        queryBus = QueryBusTestUtils.aQueryBus();
+        testSubject = new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver(), queryBus, null);
     }
 
-    @Test
-    void concurrentUpdateEmitting() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                multipleInstancesOf(String.class), instanceOf(String.class)
-        );
+    @Nested
+    class Construction {
 
-        UpdateHandler registration = queryBus.subscribeToUpdates(queryMessage, 128);
+        @Test
+        void throwsNullPointerExceptionForNullMessageTypeResolver() {
 
-        ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        for (int i = 0; i < 100; i++) {
-//            executors.submit(() -> testSubject.emit(q -> true, "Update"));
         }
-        executors.shutdown();
-        StepVerifier.create(registration.updates())
-                    .expectNextCount(100)
-//                    .then(() -> testSubject.complete(q -> true))
-                    .verifyComplete();
-    }
 
-    @Test
-    void concurrentUpdateEmitting_WithBackpressure() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                multipleInstancesOf(String.class), instanceOf(String.class)
-        );
+        @Test
+        void throwsNullPointerExceptionForNullQueryBus() {
 
-        UpdateHandler registration = queryBus.subscribeToUpdates(queryMessage, 128);
-
-        ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        for (int i = 0; i < 100; i++) {
-//            executors.submit(() -> testSubject.emit(q -> true, "Update"));
         }
-        executors.shutdown();
-        StepVerifier.create(registration.updates())
-                    .expectNextCount(100)
-//                    .then(() -> testSubject.complete(q -> true))
-                    .verifyComplete();
+
+        @Test
+        void throwsNullPointerExceptionForNullApplicationContext() {
+
+        }
     }
 
-    @Test
-    void cancelingRegistrationDoesNotCompleteFluxOfUpdatesOldApi() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                multipleInstancesOf(String.class), instanceOf(String.class)
-        );
+    @Nested
+    class EmittingUpdates {
 
-        UpdateHandler result = queryBus.subscribeToUpdates(queryMessage, 1024);
+        @Test
+        void emitForQueryType() {
 
-//        testSubject.emit(any -> true, "some-awesome-text");
-        result.cancel();
+        }
 
-        StepVerifier.create(result.updates().map(Message::payload))
-                    .expectNext("some-awesome-text")
-                    .verifyTimeout(Duration.ofMillis(500));
+        @Test
+        void emitForQueryTypeAndFilter() {
+
+        }
+
+        @Test
+        void emitForQueryTypeThrowsMessageTypeNotResolvedException() {
+
+        }
+
+        @Test
+        void emitForQueryTypeThrowsConversionException() {
+
+        }
+
+        @Test
+        void emitForQueryName() {
+
+        }
+
+        @Test
+        void emitForQueryNameAndGivenFilter() {
+
+        }
     }
 
-    @Test
-    void completingRegistration() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                multipleInstancesOf(String.class), instanceOf(String.class)
-        );
+    @Nested
+    class Complete {
 
-        UpdateHandler result = queryBus.subscribeToUpdates(
-                queryMessage,
-                1024
-        );
+        @Test
+        void completeForQueryType() {
 
-        result.updates().subscribe();
-//        testSubject.emit(any -> true, "some-awesome-text");
-        result.complete();
+        }
 
-        StepVerifier.create(result.updates().map(Message::payload))
-                    .expectNext("some-awesome-text")
-                    .verifyComplete();
+        @Test
+        void completeForQueryTypeAndFilter() {
+
+        }
+
+        @Test
+        void completeForQueryTypeThrowsMessageTypeNotResolvedException() {
+
+        }
+
+        @Test
+        void completeForQueryTypeThrowsConversionException() {
+
+        }
+
+        @Test
+        void completeForQueryName() {
+
+        }
+
+        @Test
+        void completeForQueryNameAndGivenFilter() {
+
+        }
     }
 
-    @Test
-    void queryUpdateEmitterIsTraced() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                multipleInstancesOf(String.class), instanceOf(String.class)
-        );
+    @Nested
+    class CompleteExceptionally {
 
-        UpdateHandler result = queryBus.subscribeToUpdates(
-                queryMessage,
-                1024
-        );
+        @Test
+        void completeExceptionallyForQueryType() {
 
-        result.updates().subscribe();
-//        testSubject.emit(any -> true, "some-awesome-text");
-        result.complete();
+        }
 
-        spanFactory.verifySpanCompleted("QueryUpdateEmitter.scheduleQueryUpdateMessage");
-        spanFactory.verifySpanHasType("QueryUpdateEmitter.scheduleQueryUpdateMessage",
-                                      TestSpanFactory.TestSpanType.INTERNAL);
-        spanFactory.verifySpanCompleted("QueryUpdateEmitter.emitQueryUpdateMessage");
-        spanFactory.verifySpanHasType("QueryUpdateEmitter.emitQueryUpdateMessage",
-                                      TestSpanFactory.TestSpanType.DISPATCH);
-    }
+        @Test
+        void completeExceptionallyForQueryTypeAndFilter() {
 
-    @Test
-    void differentUpdateAreDisambiguatedAndWrongTypesAreFilteredBasedOnQueryTypes() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                multipleInstancesOf(String.class), instanceOf(Integer.class)
-        );
+        }
 
-        UpdateHandler result = queryBus.subscribeToUpdates(
-                queryMessage,
-                1024
-        );
+        @Test
+        void completeExceptionallyForQueryTypeThrowsMessageTypeNotResolvedException() {
 
-        result.updates().subscribe();
-//        testSubject.emit(any -> true, "some-awesome-text");
-//        testSubject.emit(any -> true, 1234);
-        result.complete();
+        }
 
-        StepVerifier.create(result.updates().map(Message::payload))
-                    .expectNext(1234)
-                    .verifyComplete();
-    }
+        @Test
+        void completeExceptionallyForQueryTypeThrowsConversionException() {
 
-    @Test
-    void updateResponseTypeFilteringWorksForMultipleInstanceOfWithArrayAndList() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                multipleInstancesOf(String.class), multipleInstancesOf(String.class)
-        );
+        }
 
-        UpdateHandler result = queryBus.subscribeToUpdates(
-                queryMessage,
-                1024
-        );
+        @Test
+        void completeExceptionallyForQueryName() {
 
-        result.updates().subscribe();
-//        testSubject.emit(any -> true, "some-awesome-text");
-//        testSubject.emit(any -> true, 1234);
-//        testSubject.emit(any -> true, Optional.of("optional-payload"));
-//        testSubject.emit(any -> true, Optional.empty());
-//        testSubject.emit(any -> true, new String[]{"array-item-1", "array-item-2"});
-//        testSubject.emit(any -> true, Arrays.asList("list-item-1", "list-item-2"));
-//        testSubject.emit(any -> true, Flux.just("flux-item-1", "flux-item-2"));
-//        testSubject.emit(any -> true, Mono.just("mono-item"));
-        result.complete();
+        }
 
-        StepVerifier.create(result.updates().map(Message::payload))
-                    .expectNextMatches(actual -> equalTo(new String[]{"array-item-1", "array-item-2"}).matches(actual))
-                    .expectNextMatches(actual -> equalTo(Arrays.asList("list-item-1", "list-item-2")).matches(actual))
-                    .verifyComplete();
-    }
+        @Test
+        void completeExceptionallyForQueryNameAndGivenFilter() {
 
-    @Test
-    void updateResponseTypeFilteringWorksForOptionalInstanceOf() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                multipleInstancesOf(String.class), optionalInstanceOf(String.class)
-        );
-
-        UpdateHandler result = queryBus.subscribeToUpdates(
-                queryMessage,
-                1024
-        );
-
-        result.updates().subscribe();
-//        testSubject.emit(any -> true, "some-awesome-text");
-//        testSubject.emit(any -> true, 1234);
-//        testSubject.emit(any -> true, Optional.of("optional-payload"));
-//        testSubject.emit(any -> true, Optional.empty());
-//        testSubject.emit(any -> true, new String[]{"array-item-1", "array-item-2"});
-//        testSubject.emit(any -> true, Arrays.asList("list-item-1", "list-item-2"));
-//        testSubject.emit(any -> true, Flux.just("flux-item-1", "flux-item-2"));
-//        testSubject.emit(any -> true, Mono.just("mono-item"));
-        result.complete();
-
-        StepVerifier.create(result.updates().map(Message::payload))
-                    .expectNext(Optional.of("optional-payload"), Optional.empty())
-                    .verifyComplete();
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    void updateResponseTypeFilteringWorksForPublisherOf() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                multipleInstancesOf(String.class), publisherOf(String.class)
-        );
-
-        UpdateHandler result = queryBus.subscribeToUpdates(
-                queryMessage,
-                1024
-        );
-
-        result.updates().subscribe();
-//        testSubject.emit(any -> true, "some-awesome-text");
-//        testSubject.emit(any -> true, 1234);
-//        testSubject.emit(any -> true, Optional.of("optional-payload"));
-//        testSubject.emit(any -> true, Optional.empty());
-//        testSubject.emit(any -> true, new String[]{"array-item-1", "array-item-2"});
-//        testSubject.emit(any -> true, Arrays.asList("list-item-1", "list-item-2"));
-//        testSubject.emit(any -> true, Flux.just("flux-item-1", "flux-item-2"));
-//        testSubject.emit(any -> true, Mono.just("mono-item"));
-//        testSubject.emit(any -> true, Mono.empty());
-        result.complete();
-
-        StepVerifier.create(result.updates().map(Message::payload))
-                    .expectNextMatches(publisher -> {
-                        try {
-                            StepVerifier.create((Publisher<String>) publisher)
-                                        .expectNext("flux-item-1", "flux-item-2")
-                                        .verifyComplete();
-                        } catch (Exception e) {
-                            return false;
-                        }
-                        return true;
-                    })
-                    .expectNextMatches(publisher -> {
-                        try {
-                            StepVerifier.create((Publisher<String>) publisher)
-                                        .expectNext("mono-item").verifyComplete();
-                        } catch (Exception e) {
-                            return false;
-                        }
-                        return true;
-                    })
-                    .expectNextMatches(publisher -> {
-                        try {
-                            StepVerifier.create((Publisher<String>) publisher)
-                                        .verifyComplete();
-                        } catch (Exception e) {
-                            return false;
-                        }
-                        return true;
-                    })
-                    .verifyComplete();
-    }
-
-    @Test
-    void multipleInstanceUpdatesAreDelivered() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                multipleInstancesOf(String.class), multipleInstancesOf(String.class)
-        );
-
-        UpdateHandler result = queryBus.subscribeToUpdates(
-                queryMessage,
-                1024
-        );
-
-        result.updates().subscribe();
-//        testSubject.emit(any -> true, Arrays.asList("text1", "text2"));
-//        testSubject.emit(any -> true, Arrays.asList("text3", "text4"));
-        result.complete();
-
-        StepVerifier.create(result.updates().map(Message::payload))
-                    .expectNext(Arrays.asList("text1", "text2"), Arrays.asList("text3", "text4"))
-                    .verifyComplete();
-    }
-
-    @Test
-    void optionalUpdatesAreDelivered() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                optionalInstanceOf(String.class), optionalInstanceOf(String.class)
-        );
-
-        UpdateHandler result = queryBus.subscribeToUpdates(
-                queryMessage,
-                1024
-        );
-
-        result.updates().subscribe();
-//        testSubject.emit(any -> true, Optional.of("text1"));
-//        testSubject.emit(any -> true, Optional.of("text2"));
-        result.complete();
-
-        StepVerifier.create(result.updates().map(Message::payload))
-                    .expectNext(Optional.of("text1"), Optional.of("text2"))
-                    .verifyComplete();
-    }
-
-    @Test
-    void cancelingRegistrationDoesNotCompleteFluxOfUpdates() {
-        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
-                new MessageType("chatMessages"), "some-payload",
-                multipleInstancesOf(String.class), instanceOf(String.class)
-        );
-
-        UpdateHandler result = queryBus.subscribeToUpdates(
-                queryMessage,
-                1024
-        );
-
-        result.updates().subscribe();
-//        testSubject.emit(any -> true, "some-awesome-text");
-        result.cancel();
-
-        StepVerifier.create(result.updates().map(Message::payload))
-                    .expectNext("some-awesome-text")
-                    .verifyTimeout(Duration.ofMillis(500));
+        }
     }
 }
