@@ -88,7 +88,17 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
     @Override
     public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
         var qualifiedName = event.type().qualifiedName();
+        List<EventHandler> handlers = eventHandlers.get(qualifiedName);
 
-        return EventHandlingComponent.super.sequenceIdentifierFor(event, context);
+        if (handlers == null || handlers.isEmpty()) {
+            return EventHandlingComponent.super.sequenceIdentifierFor(event, context);
+        }
+
+        return handlers.stream()
+                .filter(EventHandlingComponent.class::isInstance)
+                .map(EventHandlingComponent.class::cast)
+                .findFirst()
+                .map(component -> component.sequenceIdentifierFor(event, context))
+                .orElse(EventHandlingComponent.super.sequenceIdentifierFor(event, context));
     }
 }

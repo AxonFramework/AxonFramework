@@ -61,6 +61,11 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
      * applied (full concurrency). Override this method to provide custom sequencing behavior, such as handling events
      * for the same aggregate sequentially. Or use a {@link SequenceOverridingEventHandlingComponent} if you cannot
      * inherit from a certain {@code EventHandlingComponent} implementation.
+     * <p>
+     * <b>Important:</b> All {@link EventHandler EventHandlers} for the same {@link org.axonframework.messaging.QualifiedName}
+     * within a single {@code EventHandlingComponent} must return the same sequence identifier for a given event.
+     * Mixing different sequence identifiers within the scope of a single {@code EventHandlingComponent} is not supported
+     * and may lead to undefined behavior.
      *
      * @param event   The event for which to get the sequencing identifier.
      * @param context The processing context in which the event is being handled.
