@@ -1627,9 +1627,9 @@ As might be clear, the `QueryGateway` has an entirely new look and feel. If ther
 removed/adjusted you miss, or if you have any other suggestions for improvement, please
 construct [an issue](https://github.com/AxonFramework/AxonFramework/issues) for us.
 
-### Query Dispatcher
+### Subscription Queries and the Query Update Emitter
 
-#TODO
+- Mention that we no longer match on the ResponseType and the returned update type for the user. We just take the filter given by a user.
 
 Minor API Changes
 =================

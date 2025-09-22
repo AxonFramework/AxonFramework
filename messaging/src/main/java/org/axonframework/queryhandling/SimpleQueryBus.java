@@ -228,12 +228,6 @@ public class SimpleQueryBus implements QueryBus {
                             SubscriptionQueryUpdateMessage update) {
         updateHandlers.entrySet()
                       .stream()
-                      .filter(entry -> {
-                          QualifiedName expectedUpdateName =
-                                  new QualifiedName(entry.getKey().updatesResponseType().getExpectedResponseType());
-                          return update.type().qualifiedName()
-                                       .equals(expectedUpdateName);
-                      })
                       .filter(entry -> filter.test(entry.getKey()))
                       .forEach(entry -> {
                           SubscriptionQueryMessage query = entry.getKey();
