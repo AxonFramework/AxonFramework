@@ -63,7 +63,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertTrue(wrappedHandler instanceof EventHandlingMember);
+            assertInstanceOf(EventHandlingMember.class, wrappedHandler);
             assertNotSame(handler, wrappedHandler);
         }
 
@@ -74,7 +74,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertTrue(wrappedHandler instanceof EventHandlingMember);
+            assertInstanceOf(EventHandlingMember.class, wrappedHandler);
             assertNotSame(handler, wrappedHandler);
         }
 
@@ -85,7 +85,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertTrue(wrappedHandler instanceof EventHandlingMember);
+            assertInstanceOf(EventHandlingMember.class, wrappedHandler);
             assertNotSame(handler, wrappedHandler);
         }
 
@@ -120,7 +120,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<ClassLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertTrue(wrappedHandler instanceof EventHandlingMember);
+            assertInstanceOf(EventHandlingMember.class, wrappedHandler);
             assertNotSame(handler, wrappedHandler);
         }
     }
@@ -148,17 +148,14 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodOverridesClassTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertTrue(wrappedHandler instanceof EventHandlingMember);
+            assertInstanceOf(EventHandlingMember.class, wrappedHandler);
             assertNotSame(handler, wrappedHandler);
         }
     }
 
-    // TODO This local static function should be replaced with a dedicated interface that converts types.
-    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
     private static MessageStream<?> returnTypeConverter(Object result) {
         return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
-
 
     private <T> MessageHandlingMember<T> createHandler(Class<T> targetClass, String methodName, Class<?>... parameterTypes) {
         try {

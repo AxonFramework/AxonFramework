@@ -25,6 +25,7 @@ import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Optional;
 import jakarta.annotation.Nonnull;
 
@@ -40,25 +41,15 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
         return original.unwrap(Method.class)
-                       .map(method -> {
-                           // Check method-level annotation first
-                           SequencingPolicy methodAnnotation = method.getAnnotation(SequencingPolicy.class);
-                           if (methodAnnotation != null) {
-                               return (MessageHandlingMember<T>)
-                                       new SequencingPolicyEventMessageHandlingMember<>(original, methodAnnotation);
-                           }
-
-                           // Check class-level annotation
-                           SequencingPolicy classAnnotation = method.getDeclaringClass()
-                                   .getAnnotation(SequencingPolicy.class);
-                           if (classAnnotation != null) {
-                               return (MessageHandlingMember<T>)
-                                       new SequencingPolicyEventMessageHandlingMember<>(original, classAnnotation);
-                           }
-
-                           return original;
-                       })
+                       .map(method -> findSequencingPolicy(method)
+                               .map(annotation -> (MessageHandlingMember<T>) new SequencingPolicyEventMessageHandlingMember<>(original, annotation))
+                               .orElse(original))
                        .orElse(original);
+    }
+
+    private Optional<SequencingPolicy> findSequencingPolicy(Method method) {
+        return Optional.ofNullable(method.getAnnotation(SequencingPolicy.class))
+                       .or(() -> Optional.ofNullable(method.getDeclaringClass().getAnnotation(SequencingPolicy.class)));
     }
 
     private static class SequencingPolicyEventMessageHandlingMember<T>
@@ -68,7 +59,7 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
         private final org.axonframework.eventhandling.sequencing.SequencingPolicy sequencingPolicy;
 
         /**
-         * Constructs a new {@link SequencingPolicyEventMessageHandlingMember} by wrapping the given {@code original}
+         * Constructs a new SequencingPolicyEventMessageHandlingMember by wrapping the given {@code original}
          * handler and creating a sequencing policy instance from the {@link SequencingPolicy} annotation.
          *
          * @param original         The original message handling member to wrap
@@ -83,7 +74,7 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
         /**
          * Returns the sequencing policy instance created from the annotation.
          *
-         * @return An {@link Optional} containing the sequencing policy
+         * @return The sequencing policy
          */
         public org.axonframework.eventhandling.sequencing.SequencingPolicy sequencingPolicy() {
             return sequencingPolicy;
@@ -93,65 +84,13 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
                 SequencingPolicy annotation,
                 MessageHandlingMember<T> original
         ) {
-            Class<? extends org.axonframework.eventhandling.sequencing.SequencingPolicy> policyType = annotation.type();
-            String[] parameters = annotation.parameters();
+            var policyType = annotation.type();
+            var parameters = annotation.parameters();
 
             try {
-                if (parameters.length == 0) {
-                    // Try no-arg constructor (including private ones)
-                    try {
-                        Constructor<? extends org.axonframework.eventhandling.sequencing.SequencingPolicy> constructor =
-                                policyType.getDeclaredConstructor();
-                        constructor.setAccessible(true);
-                        return constructor.newInstance();
-                    } catch (NoSuchMethodException e) {
-                        throw new UnsupportedHandlerException(
-                                "SequencingPolicy " + policyType.getName() +
-                                        " must have a no-arg constructor",
-                                original.unwrap(Member.class).orElse(null)
-                        );
-                    }
-                } else {
-                    // Find constructor that matches the total parameters needed
-                    Constructor<?>[] constructors = policyType.getDeclaredConstructors();
-                    Constructor<?> matchingConstructor = null;
-
-                    for (Constructor<?> constructor : constructors) {
-                        Class<?>[] paramTypes = constructor.getParameterTypes();
-
-                        // Check if constructor has Class parameter as first parameter
-                        boolean hasClassAsFirstParam = paramTypes.length > 0 && paramTypes[0] == Class.class;
-
-                        // Count non-Class parameters (which need to be provided as strings)
-                        long nonClassParameterCount;
-                        if (hasClassAsFirstParam) {
-                            // If first parameter is Class, count remaining parameters
-                            nonClassParameterCount = paramTypes.length - 1;
-                        } else {
-                            // No Class parameter, count all parameters
-                            nonClassParameterCount = paramTypes.length;
-                        }
-
-                        if (nonClassParameterCount == parameters.length) {
-                            matchingConstructor = constructor;
-                            break;
-                        }
-                    }
-
-                    if (matchingConstructor == null) {
-                        throw new UnsupportedHandlerException(
-                                "No constructor found for SequencingPolicy " + policyType.getName() +
-                                        " that matches " + parameters.length + " string parameters (excluding Class parameters)",
-                                original.unwrap(Member.class).orElse(null)
-                        );
-                    }
-
-                    // Parse parameters and invoke constructor
-                    Object[] parsedParameters = parseParameters(matchingConstructor.getParameterTypes(), parameters, original);
-                    matchingConstructor.setAccessible(true);
-                    return (org.axonframework.eventhandling.sequencing.SequencingPolicy)
-                            matchingConstructor.newInstance(parsedParameters);
-                }
+                return parameters.length == 0
+                    ? createNoArgPolicy(policyType, original)
+                    : createParameterizedPolicy(policyType, parameters, original);
             } catch (Exception e) {
                 throw new UnsupportedHandlerException(
                         "Failed to create SequencingPolicy instance: " + e.getMessage(),
@@ -160,15 +99,62 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
             }
         }
 
+        private org.axonframework.eventhandling.sequencing.SequencingPolicy createNoArgPolicy(
+                Class<? extends org.axonframework.eventhandling.sequencing.SequencingPolicy> policyType,
+                MessageHandlingMember<T> original
+        ) throws Exception {
+            try {
+                var constructor = policyType.getDeclaredConstructor();
+                constructor.setAccessible(true);
+                return constructor.newInstance();
+            } catch (NoSuchMethodException e) {
+                throw new UnsupportedHandlerException(
+                        "SequencingPolicy " + policyType.getName() + " must have a no-arg constructor",
+                        original.unwrap(Member.class).orElse(null)
+                );
+            }
+        }
+
+        private org.axonframework.eventhandling.sequencing.SequencingPolicy createParameterizedPolicy(
+                Class<? extends org.axonframework.eventhandling.sequencing.SequencingPolicy> policyType,
+                String[] parameters,
+                MessageHandlingMember<T> original
+        ) throws Exception {
+            var matchingConstructor = findMatchingConstructor(policyType, parameters.length, original);
+            var parsedParameters = parseParameters(matchingConstructor.getParameterTypes(), parameters, original);
+            matchingConstructor.setAccessible(true);
+            return (org.axonframework.eventhandling.sequencing.SequencingPolicy) matchingConstructor.newInstance(parsedParameters);
+        }
+
+        private Constructor<?> findMatchingConstructor(
+                Class<? extends org.axonframework.eventhandling.sequencing.SequencingPolicy> policyType,
+                int parameterCount,
+                MessageHandlingMember<T> original
+        ) {
+            return Arrays.stream(policyType.getDeclaredConstructors())
+                         .filter(constructor -> countNonClassParameters(constructor) == parameterCount)
+                         .findFirst()
+                         .orElseThrow(() -> new UnsupportedHandlerException(
+                                 "No constructor found for SequencingPolicy " + policyType.getName() +
+                                         " that matches " + parameterCount + " string parameters (excluding Class parameters)",
+                                 original.unwrap(Member.class).orElse(null)
+                         ));
+        }
+
+        private long countNonClassParameters(Constructor<?> constructor) {
+            var paramTypes = constructor.getParameterTypes();
+            var hasClassAsFirstParam = paramTypes.length > 0 && paramTypes[0] == Class.class;
+            return hasClassAsFirstParam ? paramTypes.length - 1 : paramTypes.length;
+        }
+
         private Object[] parseParameters(Class<?>[] parameterTypes, String[] stringParameters, MessageHandlingMember<T> original) {
-            Object[] parsedParameters = new Object[parameterTypes.length];
-            int stringParameterIndex = 0;
+            var parsedParameters = new Object[parameterTypes.length];
+            var stringParameterIndex = 0;
 
             for (int i = 0; i < parameterTypes.length; i++) {
-                Class<?> targetType = parameterTypes[i];
+                var targetType = parameterTypes[i];
 
                 if (targetType == Class.class) {
-                    // Class parameter must be first parameter - use the payload type from the MessageHandlingMember
                     if (i != 0) {
                         throw new IllegalArgumentException(
                                 "Class parameter must be the first parameter in constructor. Found at position: " + i
@@ -176,13 +162,12 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
                     }
                     parsedParameters[i] = original.payloadType();
                 } else {
-                    // Parse from string parameters
                     if (stringParameterIndex >= stringParameters.length) {
                         throw new IllegalArgumentException(
                                 "Not enough string parameters provided. Expected parameter for type: " + targetType.getName()
                         );
                     }
-                    String stringValue = stringParameters[stringParameterIndex];
+                    var stringValue = stringParameters[stringParameterIndex];
                     parsedParameters[i] = parseParameter(stringValue, targetType);
                     stringParameterIndex++;
                 }
@@ -192,38 +177,36 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
         }
 
         private Object parseParameter(String stringValue, Class<?> targetType) {
-            if (targetType == String.class) {
-                return stringValue;
-            } else if (targetType == int.class || targetType == Integer.class) {
-                return Integer.parseInt(stringValue);
-            } else if (targetType == long.class || targetType == Long.class) {
-                return Long.parseLong(stringValue);
-            } else if (targetType == double.class || targetType == Double.class) {
-                return Double.parseDouble(stringValue);
-            } else if (targetType == float.class || targetType == Float.class) {
-                return Float.parseFloat(stringValue);
-            } else if (targetType == boolean.class || targetType == Boolean.class) {
-                return Boolean.parseBoolean(stringValue);
-            } else if (targetType == byte.class || targetType == Byte.class) {
-                return Byte.parseByte(stringValue);
-            } else if (targetType == short.class || targetType == Short.class) {
-                return Short.parseShort(stringValue);
-            } else if (targetType == char.class || targetType == Character.class) {
-                if (stringValue.length() != 1) {
-                    throw new IllegalArgumentException("Character parameter must be exactly one character");
-                }
-                return stringValue.charAt(0);
-            } else if (targetType == Class.class) {
-                try {
-                    return Class.forName(stringValue);
-                } catch (ClassNotFoundException e) {
-                    throw new IllegalArgumentException("Cannot find class: " + stringValue, e);
-                }
-            } else {
-                throw new UnsupportedOperationException(
+            return switch (targetType.getName()) {
+                case "java.lang.String" -> stringValue;
+                case "int", "java.lang.Integer" -> Integer.parseInt(stringValue);
+                case "long", "java.lang.Long" -> Long.parseLong(stringValue);
+                case "double", "java.lang.Double" -> Double.parseDouble(stringValue);
+                case "float", "java.lang.Float" -> Float.parseFloat(stringValue);
+                case "boolean", "java.lang.Boolean" -> Boolean.parseBoolean(stringValue);
+                case "byte", "java.lang.Byte" -> Byte.parseByte(stringValue);
+                case "short", "java.lang.Short" -> Short.parseShort(stringValue);
+                case "char", "java.lang.Character" -> parseCharacter(stringValue);
+                case "java.lang.Class" -> parseClass(stringValue);
+                default -> throw new UnsupportedOperationException(
                         "Unsupported parameter type: " + targetType.getName() +
                                 ". Only primitives, String, and Class are supported."
                 );
+            };
+        }
+
+        private char parseCharacter(String stringValue) {
+            if (stringValue.length() != 1) {
+                throw new IllegalArgumentException("Character parameter must be exactly one character");
+            }
+            return stringValue.charAt(0);
+        }
+
+        private Class<?> parseClass(String stringValue) {
+            try {
+                return Class.forName(stringValue);
+            } catch (ClassNotFoundException e) {
+                throw new IllegalArgumentException("Cannot find class: " + stringValue, e);
             }
         }
     }
