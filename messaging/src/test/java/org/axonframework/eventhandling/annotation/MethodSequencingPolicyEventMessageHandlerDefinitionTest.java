@@ -61,35 +61,61 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
 
         @Test
         void methodWithSequentialPolicyAnnotation() {
-            SequencingPolicyEventMessageHandlingMember<?> handler = sequencingPolicyHandler("sequentialPolicyMethod");
-            assertNotNull(handler.sequencingPolicy());
-            assertEquals(SequentialPolicy.class, handler.sequencingPolicy().getClass());
+            MessageHandlingMember<MethodLevelPolicyTest> handler = createHandler(
+                    MethodLevelPolicyTest.class, "sequentialPolicyMethod", String.class
+            );
+            MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
+
+            assertTrue(wrappedHandler instanceof SequencingPolicyEventMessageHandlingMember);
+            SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest> policyHandler =
+                    (SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest>) wrappedHandler;
+            assertEquals(SequentialPolicy.class, policyHandler.sequencingPolicy().getClass());
         }
 
         @Test
         void methodWithMetadataPolicyAnnotation() {
-            SequencingPolicyEventMessageHandlingMember<?> handler = sequencingPolicyHandlerForTestEvent("metadataPolicyMethod");
-            assertNotNull(handler.sequencingPolicy());
-            assertEquals(MetadataSequencingPolicy.class, handler.sequencingPolicy().getClass());
+            MessageHandlingMember<MethodLevelPolicyTest> handler = createHandler(
+                    MethodLevelPolicyTest.class, "metadataPolicyMethod", TestEvent.class
+            );
+            MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
+
+            assertTrue(wrappedHandler instanceof SequencingPolicyEventMessageHandlingMember);
+            SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest> policyHandler =
+                    (SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest>) wrappedHandler;
+            assertEquals(MetadataSequencingPolicy.class, policyHandler.sequencingPolicy().getClass());
         }
 
         @Test
         void methodWithPropertyPolicyAnnotation() {
-            SequencingPolicyEventMessageHandlingMember<?> handler = sequencingPolicyHandlerForTestEvent("propertyPolicyMethod");
-            assertNotNull(handler.sequencingPolicy());
-            assertEquals(PropertySequencingPolicy.class, handler.sequencingPolicy().getClass());
+            MessageHandlingMember<MethodLevelPolicyTest> handler = createHandler(
+                    MethodLevelPolicyTest.class, "propertyPolicyMethod", TestEvent.class
+            );
+            MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
+
+            assertTrue(wrappedHandler instanceof SequencingPolicyEventMessageHandlingMember);
+            SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest> policyHandler =
+                    (SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest>) wrappedHandler;
+            assertEquals(PropertySequencingPolicy.class, policyHandler.sequencingPolicy().getClass());
         }
 
         @Test
         void methodWithInvalidParameterCount() {
-            assertThrows(UnsupportedHandlerException.class,
-                    () -> sequencingPolicyHandlerForTestEvent("invalidParameterCountMethod"));
+            assertThrows(UnsupportedHandlerException.class, () -> {
+                MessageHandlingMember<MethodLevelPolicyTest> handler = createHandler(
+                        MethodLevelPolicyTest.class, "invalidParameterCountMethod", TestEvent.class
+                );
+                testSubject.wrapHandler(handler);
+            });
         }
 
         @Test
         void methodWithCustomPolicyWithInvalidClassPosition() {
-            assertThrows(UnsupportedHandlerException.class,
-                    () -> sequencingPolicyHandlerForTestEvent("invalidClassPositionMethod"));
+            assertThrows(UnsupportedHandlerException.class, () -> {
+                MessageHandlingMember<MethodLevelPolicyTest> handler = createHandler(
+                        MethodLevelPolicyTest.class, "invalidClassPositionMethod", TestEvent.class
+                );
+                testSubject.wrapHandler(handler);
+            });
         }
     }
 
@@ -115,11 +141,9 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
 
         @Test
         void methodWithoutAnnotationNotWrapped() {
-            MessageHandlingMember<MethodSequencingPolicyEventMessageHandlerDefinitionTest> handler =
-                    createHandler(MethodSequencingPolicyEventMessageHandlerDefinitionTest.class,
-                            "methodWithoutAnnotation", String.class);
-            MessageHandlingMember<MethodSequencingPolicyEventMessageHandlerDefinitionTest> wrappedHandler =
-                    testSubject.wrapHandler(handler);
+            MessageHandlingMember<NoAnnotationTest> handler =
+                    createHandler(NoAnnotationTest.class, "methodWithoutAnnotation", String.class);
+            MessageHandlingMember<NoAnnotationTest> wrappedHandler = testSubject.wrapHandler(handler);
 
             assertSame(handler, wrappedHandler);
         }
@@ -149,35 +173,6 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
         return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
 
-    private SequencingPolicyEventMessageHandlingMember<MethodSequencingPolicyEventMessageHandlerDefinitionTest>
-            sequencingPolicyHandler(String methodName) {
-        MessageHandlingMember<MethodSequencingPolicyEventMessageHandlerDefinitionTest> handler =
-                createHandler(MethodSequencingPolicyEventMessageHandlerDefinitionTest.class, methodName, String.class);
-        MessageHandlingMember<MethodSequencingPolicyEventMessageHandlerDefinitionTest> wrappedHandler =
-                testSubject.wrapHandler(handler);
-
-        assertTrue(wrappedHandler instanceof SequencingPolicyEventMessageHandlingMember,
-                "Method should be wrapped with SequencingPolicyEventMessageHandlingMember");
-
-        //noinspection unchecked
-        return (SequencingPolicyEventMessageHandlingMember<MethodSequencingPolicyEventMessageHandlerDefinitionTest>)
-                wrappedHandler;
-    }
-
-    private SequencingPolicyEventMessageHandlingMember<MethodSequencingPolicyEventMessageHandlerDefinitionTest>
-            sequencingPolicyHandlerForTestEvent(String methodName) {
-        MessageHandlingMember<MethodSequencingPolicyEventMessageHandlerDefinitionTest> handler =
-                createHandler(MethodSequencingPolicyEventMessageHandlerDefinitionTest.class, methodName, TestEvent.class);
-        MessageHandlingMember<MethodSequencingPolicyEventMessageHandlerDefinitionTest> wrappedHandler =
-                testSubject.wrapHandler(handler);
-
-        assertTrue(wrappedHandler instanceof SequencingPolicyEventMessageHandlingMember,
-                "Method should be wrapped with SequencingPolicyEventMessageHandlingMember");
-
-        //noinspection unchecked
-        return (SequencingPolicyEventMessageHandlingMember<MethodSequencingPolicyEventMessageHandlerDefinitionTest>)
-                wrappedHandler;
-    }
 
     private <T> MessageHandlingMember<T> createHandler(Class<T> targetClass, String methodName, Class<?>... parameterTypes) {
         try {
@@ -192,40 +187,45 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
         }
     }
 
-    // Test methods for method-level annotations
-    @SuppressWarnings("unused")
-    @EventHandler
-    @SequencingPolicy(type = SequentialPolicy.class)
-    private void sequentialPolicyMethod(String payload) {
+    // Test class for method-level annotations
+    static class MethodLevelPolicyTest {
+        @SuppressWarnings("unused")
+        @EventHandler
+        @SequencingPolicy(type = SequentialPolicy.class)
+        void sequentialPolicyMethod(String payload) {
+        }
+
+        @SuppressWarnings("unused")
+        @EventHandler
+        @SequencingPolicy(type = MetadataSequencingPolicy.class, parameters = {"userId"})
+        void metadataPolicyMethod(TestEvent payload) {
+        }
+
+        @SuppressWarnings("unused")
+        @EventHandler
+        @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"aggregateId"})
+        void propertyPolicyMethod(TestEvent payload) {
+        }
+
+        @SuppressWarnings("unused")
+        @EventHandler
+        @SequencingPolicy(type = MetadataSequencingPolicy.class, parameters = {"param1", "param2", "param3"})
+        void invalidParameterCountMethod(TestEvent payload) {
+        }
+
+        @SuppressWarnings("unused")
+        @EventHandler
+        @SequencingPolicy(type = InvalidClassPositionPolicy.class, parameters = {"someParameter"})
+        void invalidClassPositionMethod(TestEvent payload) {
+        }
     }
 
-    @SuppressWarnings("unused")
-    @EventHandler
-    @SequencingPolicy(type = MetadataSequencingPolicy.class, parameters = {"userId"})
-    private void metadataPolicyMethod(TestEvent payload) {
-    }
-
-    @SuppressWarnings("unused")
-    @EventHandler
-    @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"aggregateId"})
-    private void propertyPolicyMethod(TestEvent payload) {
-    }
-
-    @SuppressWarnings("unused")
-    @EventHandler
-    @SequencingPolicy(type = MetadataSequencingPolicy.class, parameters = {"param1", "param2", "param3"})
-    private void invalidParameterCountMethod(TestEvent payload) {
-    }
-
-    @SuppressWarnings("unused")
-    @EventHandler
-    @SequencingPolicy(type = InvalidClassPositionPolicy.class, parameters = {"someParameter"})
-    private void invalidClassPositionMethod(TestEvent payload) {
-    }
-
-    @SuppressWarnings("unused")
-    @EventHandler
-    private void methodWithoutAnnotation(String payload) {
+    // Test class for no annotation
+    static class NoAnnotationTest {
+        @SuppressWarnings("unused")
+        @EventHandler
+        void methodWithoutAnnotation(String payload) {
+        }
     }
 
     // Test event record with properties for PropertySequencingPolicy
