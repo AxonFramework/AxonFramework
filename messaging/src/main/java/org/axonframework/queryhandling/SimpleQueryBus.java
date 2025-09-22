@@ -46,11 +46,15 @@ import java.util.function.Predicate;
  * {@link QueryHandler QueryHandlers} subscribed to that specific query's {@link QualifiedName name} and
  * {@link ResponseType type} combination.
  * <p>
+ * Allows fine-grained control over
+ * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries} through
+ * {@link #subscribeToUpdates(SubscriptionQueryMessage, int)},
+ * {@link #emitUpdate(Predicate, SubscriptionQueryUpdateMessage, ProcessingContext)},
+ * {@link #completeSubscriptions(Predicate, ProcessingContext)}, and
+ * {@link #completeSubscriptionsExceptionally(Predicate, Throwable, ProcessingContext)}.
+ * <p>
  * Furthermore, it is in charge of invoking the {@link #subscribe(QueryHandlerName, QueryHandler) subscribed}
  * {@link QueryHandler query handlers} when a query is being dispatched.
- * <p>
- * In case multiple handlers are registered for the same query and response type, the
- * {@link #query(QueryMessage, ProcessingContext)} method will invoke one of these handlers. Which one is unspecified.
  *
  * @author Marc Gathier
  * @author Allard Buijze
@@ -154,15 +158,13 @@ public class SimpleQueryBus implements QueryBus {
         if (hasHandlerFor(query.identifier())) {
             throw new SubscriptionQueryAlreadyRegisteredException(query.identifier());
         }
-
+        Runnable removeHandler = () -> updateHandlers.remove(query);
         Sinks.Many<SubscriptionQueryUpdateMessage> sink = Sinks.many()
                                                                .replay()
                                                                .limit(updateBufferSize);
         SinksManyWrapper<SubscriptionQueryUpdateMessage> sinksManyWrapper = new SinksManyWrapper<>(sink);
-
-        Runnable removeHandler = () -> updateHandlers.remove(query);
-
         updateHandlers.put(query, sinksManyWrapper);
+
         Flux<SubscriptionQueryUpdateMessage> updateMessageFlux = sink.asFlux()
                                                                      .doOnCancel(removeHandler)
                                                                      .doOnTerminate(removeHandler);
@@ -191,11 +193,11 @@ public class SimpleQueryBus implements QueryBus {
     public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                                               @Nonnull SubscriptionQueryUpdateMessage update,
                                               @Nullable ProcessingContext context) {
-        return runAfterCommitOrImmediately(context, () -> doEmit(filter, update));
+        return runAfterCommitOrImmediately(context, () -> emitUpdate(filter, update));
     }
 
-    private void doEmit(Predicate<SubscriptionQueryMessage> filter,
-                        SubscriptionQueryUpdateMessage update) {
+    private void emitUpdate(Predicate<SubscriptionQueryMessage> filter,
+                            SubscriptionQueryUpdateMessage update) {
         updateHandlers.entrySet()
                       .stream()
                       .filter(entry -> {
@@ -224,10 +226,10 @@ public class SimpleQueryBus implements QueryBus {
     @Override
     public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                                                          @Nullable ProcessingContext context) {
-        return runAfterCommitOrImmediately(context, () -> doComplete(filter));
+        return runAfterCommitOrImmediately(context, () -> completeSubscriptions(filter));
     }
 
-    private void doComplete(Predicate<SubscriptionQueryMessage> filter) {
+    private void completeSubscriptions(Predicate<SubscriptionQueryMessage> filter) {
         updateHandlers.entrySet()
                       .stream()
                       .filter(entry -> filter.test(entry.getKey()))
@@ -248,7 +250,14 @@ public class SimpleQueryBus implements QueryBus {
             @Nonnull Throwable cause,
             @Nullable ProcessingContext context
     ) {
-        return runAfterCommitOrImmediately(context, () -> doCompleteExceptionally(filter, cause));
+        return runAfterCommitOrImmediately(context, () -> completeSubscriptionsExceptionally(filter, cause));
+    }
+
+    private void completeSubscriptionsExceptionally(Predicate<SubscriptionQueryMessage> filter, Throwable cause) {
+        updateHandlers.entrySet()
+                      .stream()
+                      .filter(entry -> filter.test(entry.getKey()))
+                      .forEach(entry -> emitError(entry.getValue(), cause, entry.getKey()));
     }
 
     @Nonnull
@@ -258,9 +267,9 @@ public class SimpleQueryBus implements QueryBus {
             context.computeResourceIfAbsent(
                            UPDATE_TASKS_KEY,
                            () -> {
-                               List<Runnable> queryUpdateTasks = new ArrayList<>();
-                               context.runOnAfterCommit(c -> queryUpdateTasks.forEach(Runnable::run));
-                               return queryUpdateTasks;
+                               List<Runnable> subscriptionQueryTask = new ArrayList<>();
+                               context.runOnAfterCommit(c -> subscriptionQueryTask.forEach(Runnable::run));
+                               return subscriptionQueryTask;
                            }
                    )
                    .add(updateTask);
@@ -270,18 +279,14 @@ public class SimpleQueryBus implements QueryBus {
         return FutureUtils.emptyCompletedFuture();
     }
 
-    private void doCompleteExceptionally(Predicate<SubscriptionQueryMessage> filter, Throwable cause) {
-        updateHandlers.entrySet()
-                      .stream()
-                      .filter(entry -> filter.test(entry.getKey()))
-                      .forEach(entry -> emitError(entry.getValue(), cause, entry.getKey()));
-    }
-
-    private void emitError(SinkWrapper<?> updateHandler, Throwable cause, SubscriptionQueryMessage query) {
+    private void emitError(SinkWrapper<?> updateHandler,
+                           Throwable cause,
+                           SubscriptionQueryMessage query) {
         try {
             updateHandler.error(cause);
         } catch (Exception e) {
-            logger.error("An error happened while trying to inform update handler about the error. Query: {}", query);
+            logger.error("An error happened while trying to inform an update handler about the error. Query: {}",
+                         query);
         }
     }
 
