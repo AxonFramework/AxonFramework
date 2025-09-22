@@ -17,11 +17,8 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.common.Registration;
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
@@ -32,8 +29,7 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
-import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolver;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,12 +37,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Signal;
 
-import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,19 +50,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
 
 /**
- * Implementation of the QueryBus that dispatches queries to the handlers within the JVM. Any timeouts are ignored by
- * this implementation, as handlers are considered to answer immediately.
+ * Implementation of the {@code QueryBus} that dispatches queries (through {@link #query(QueryMessage)},
+ * {@link #streamingQuery(StreamingQueryMessage)}, or {@link #subscriptionQuery(SubscriptionQueryMessage)}) to the
+ * {@link QueryHandler QueryHandlers} subscribed to that specific query's {@link QualifiedName name} and
+ * {@link ResponseType type} combination.
+ * <p>
+ * Furthermore, it is in charge of invoking the {@link #subscribe(QueryHandlerName, QueryHandler) subscribed}
+ * {@link QueryHandler query handlers} when a query is being dispatched.
  * <p>
  * In case multiple handlers are registered for the same query and response type, the {@link #query(QueryMessage)}
  * method will invoke one of these handlers. Which one is unspecified.
@@ -79,82 +72,48 @@ import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
  * @author Allard Buijze
  * @author Steven van Beelen
  * @author Milan Savic
- * @since 3.1
+ * @since 3.1.0
  */
 public class SimpleQueryBus implements QueryBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryBus.class);
 
-    private final ConcurrentMap<String, List<QuerySubscription<?>>> subscriptions = new ConcurrentHashMap<>();
-    private final DuplicateQueryHandlerResolver duplicateQueryHandlerResolver;
+    private final UnitOfWorkFactory unitOfWorkFactory;
+    private final QueryUpdateEmitter queryUpdateEmitter;
+    private final ConcurrentMap<QueryHandlerName, QueryHandler> subscriptions = new ConcurrentHashMap<>();
+
     private final QueryInvocationErrorHandler errorHandler;
     private final MessageTypeResolver messageTypeResolver;
 
-    private final QueryUpdateEmitter queryUpdateEmitter;
-
     /**
-     * Instantiate a {@link SimpleQueryBus} based on the fields contained in the {@link Builder}.
+     * Construct a {@code SimpleQueryBus} with the given {@code unitOfWorkFactory} and {@code queryUpdateEmitter}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link SimpleQueryBus} instance
+     * @param unitOfWorkFactory  The factory constructing
+     *                           {@link org.axonframework.messaging.unitofwork.UnitOfWork units of work} to dispatch and
+     *                           handle queries in.
+     * @param queryUpdateEmitter The query update emitter used to register update handlers for
+     *                           {@link #subscriptionQuery(SubscriptionQueryMessage, int) subscription queries}.
      */
-    protected SimpleQueryBus(Builder builder) {
-        builder.validate();
-        this.errorHandler = builder.errorHandler;
-        // TODO #3488 - Replace for TransactionalUnitOfWorkFactory
-//        if (builder.transactionManager != NoTransactionManager.INSTANCE) {
-//            registerHandlerInterceptor(new TransactionManagingInterceptor<>(builder.transactionManager));
-//        }
-        this.queryUpdateEmitter = builder.queryUpdateEmitter;
-        this.duplicateQueryHandlerResolver = builder.duplicateQueryHandlerResolver;
-        this.messageTypeResolver = builder.messageTypeResolver;
-    }
+    public SimpleQueryBus(@Nonnull UnitOfWorkFactory unitOfWorkFactory,
+                          @Nonnull QueryUpdateEmitter queryUpdateEmitter) {
+        this.unitOfWorkFactory = Objects.requireNonNull(unitOfWorkFactory, "The UnitOfWorkFactory must be provided.");
+        this.queryUpdateEmitter =
+                Objects.requireNonNull(queryUpdateEmitter, "The QueryUpdateEmitter must be provided.");
 
-    /**
-     * Instantiate a Builder to be able to create a {@link SimpleQueryBus}.
-     * <p>
-     * {@link TransactionManager} to {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to
-     * {@link LoggingQueryInvocationErrorHandler}, and {@link QueryUpdateEmitter} to
-     * {@link SimpleQueryUpdateEmitter}.
-     *
-     * @return a Builder to be able to create a {@link SimpleQueryBus}
-     */
-    public static Builder builder() {
-        return new Builder();
+        // TODO I think we can drop this, as it is only used for scatter-gather queries
+        this.errorHandler = LoggingQueryInvocationErrorHandler.builder().build();
+        // Replace as this is a gateway concern
+        this.messageTypeResolver = new ClassBasedMessageTypeResolver();
     }
 
     @Override
-    public Registration subscribe(@Nonnull String queryName,
-                                  @Nonnull Type responseType,
-                                  @Nonnull MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> handler) {
-        QuerySubscription<?> querySubscription = new QuerySubscription<>(responseType, handler);
-        List<QuerySubscription<?>> handlers =
-                subscriptions.computeIfAbsent(queryName, k -> new CopyOnWriteArrayList<>());
-        if (handlers.contains(querySubscription)) {
-            return () -> unsubscribe(queryName, querySubscription);
+    public QueryBus subscribe(@Nonnull QueryHandlerName handlerName, @Nonnull QueryHandler queryHandler) {
+        logger.debug("Subscribing query handler for name [{}].", handlerName);
+        QueryHandler existingHandler = subscriptions.putIfAbsent(handlerName, queryHandler);
+        if (existingHandler != null && existingHandler != queryHandler) {
+            throw new DuplicateQueryHandlerSubscriptionException(handlerName, existingHandler, queryHandler);
         }
-        List<QuerySubscription<?>> existingHandlers = handlers.stream()
-                                                              .filter(q -> q.getResponseType().equals(responseType))
-                                                              .collect(Collectors.toList());
-        if (existingHandlers.isEmpty()) {
-            handlers.add(querySubscription);
-        } else {
-            List<QuerySubscription<?>> resolvedHandlers =
-                    duplicateQueryHandlerResolver.resolve(queryName, responseType, existingHandlers, querySubscription);
-            subscriptions.put(queryName, resolvedHandlers);
-        }
-
-        return () -> unsubscribe(queryName, querySubscription);
-    }
-
-    private <R> boolean unsubscribe(String queryName, QuerySubscription<R> querySubscription) {
-        subscriptions.computeIfPresent(queryName, (key, handlers) -> {
-            handlers.remove(querySubscription);
-            if (handlers.isEmpty()) {
-                return null;
-            }
-            return handlers;
-        });
-        return true;
+        return this;
     }
 
     @Override
@@ -173,7 +132,7 @@ public class SimpleQueryBus implements QueryBus {
         try {
             ResponseType<?> responseType = query.responseType();
             if (handlers.isEmpty()) {
-                throw noHandlerException(query);
+//                throw noHandlerException(query);
             }
             Iterator<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> handlerIterator = handlers.iterator();
             boolean invocationSuccess = false;
@@ -219,7 +178,7 @@ public class SimpleQueryBus implements QueryBus {
         return Mono.just(query)
                    .flatMapMany(q -> Mono.just(q)
                                          .flatMapMany(this::getStreamingHandlersForMessage)
-                                         .switchIfEmpty(Flux.error(noHandlerException(q)))
+                                         .switchIfEmpty(Flux.error(NoHandlerForQueryException.forBus(q)))
                                          .map(handler -> invokeStreaming(q, handler))
                                          .flatMap(new CatchLastError(lastError))
                                          .doOnEach(new ErrorIfComplete(lastError, q))
@@ -291,12 +250,6 @@ public class SimpleQueryBus implements QueryBus {
                 }
             }
         }
-    }
-
-    private NoHandlerForQueryException noHandlerException(QueryMessage query) {
-        return new NoHandlerForQueryException(format("No handler found for [%s] with response type [%s]",
-                                                     query.type(),
-                                                     query.responseType()));
     }
 
     private static NoHandlerForQueryException noSuitableHandlerException(QueryMessage query) {
@@ -513,34 +466,26 @@ public class SimpleQueryBus implements QueryBus {
                 responseType.convert(queryResponse)));
     }
 
-    /**
-     * Returns the subscriptions for this query bus. While the returned map is unmodifiable, it may or may not reflect
-     * changes made to the subscriptions after the call was made.
-     *
-     * @return the subscriptions for this query bus
-     */
-    protected Map<String, Collection<QuerySubscription<?>>> getSubscriptions() {
-        return Collections.unmodifiableMap(subscriptions);
-    }
-
     private List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> getHandlersForMessage(
-            QueryMessage queryMessage) {
-        ResponseType<?> responseType = queryMessage.responseType();
-        return subscriptions.computeIfAbsent(queryMessage.type().name(), k -> new CopyOnWriteArrayList<>())
-                            .stream()
-                            .collect(groupingBy(
-                                    querySubscription -> responseType.matchRank(querySubscription.getResponseType()),
-                                    mapping(Function.identity(), Collectors.toList())
-                            ))
-                            .entrySet()
-                            .stream()
-                            .filter(entry -> entry.getKey() != ResponseType.NO_MATCH)
-                            .sorted((entry1, entry2) -> entry2.getKey() - entry1.getKey())
-                            .map(Map.Entry::getValue)
-                            .flatMap(Collection::stream)
-                            .map(QuerySubscription::getQueryHandler)
-                            .map(queryHandler -> (MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>) queryHandler)
-                            .collect(Collectors.toList());
+            QueryMessage queryMessage
+    ) {
+        return List.of();
+//        ResponseType<?> responseType = queryMessage.responseType();
+//        return oldsubscriptions.computeIfAbsent(queryMessage.type().name(), k -> new CopyOnWriteArrayList<>())
+//                               .stream()
+//                               .collect(groupingBy(
+//                                       querySubscription -> responseType.matchRank(querySubscription.getResponseType()),
+//                                       mapping(Function.identity(), Collectors.toList())
+//                               ))
+//                               .entrySet()
+//                               .stream()
+//                               .filter(entry -> entry.getKey() != ResponseType.NO_MATCH)
+//                               .sorted((entry1, entry2) -> entry2.getKey() - entry1.getKey())
+//                               .map(Map.Entry::getValue)
+//                               .flatMap(Collection::stream)
+//                               .map(QuerySubscription::getQueryHandler)
+//                               .map(queryHandler -> (MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>) queryHandler)
+//                               .collect(Collectors.toList());
     }
 
     private Publisher<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> getStreamingHandlersForMessage(
@@ -548,112 +493,23 @@ public class SimpleQueryBus implements QueryBus {
         return Flux.fromIterable(getHandlersForMessage(queryMessage));
     }
 
-    /**
-     * Builder class to instantiate a {@link SimpleQueryBus}.
-     * <p>
-     * {@link TransactionManager} to {@link NoTransactionManager}, {@link QueryInvocationErrorHandler} to
-     * {@link LoggingQueryInvocationErrorHandler}, the {@link QueryUpdateEmitter} to {@link SimpleQueryUpdateEmitter}
-     */
-    public static class Builder {
-
-        private TransactionManager transactionManager = NoTransactionManager.instance();
-        private QueryInvocationErrorHandler errorHandler = LoggingQueryInvocationErrorHandler.builder()
-                                                                                             .logger(logger)
-                                                                                             .build();
-        private DuplicateQueryHandlerResolver duplicateQueryHandlerResolver = DuplicateQueryHandlerResolution.logAndAccept();
-        private QueryUpdateEmitter queryUpdateEmitter = SimpleQueryUpdateEmitter.builder()
-                                                                                .build();
-        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
-
-        /**
-         * Sets the duplicate query handler resolver. This determines which registrations are added to the query bus
-         * when multiple handlers are detected for the same query.
-         * <p>
-         * {@link DuplicateQueryHandlerResolution} contains good examples on this and will most of the time suffice. The
-         * bus defaults to {@link DuplicateQueryHandlerResolution#logAndAccept()}.
-         *
-         * @param duplicateQueryHandlerResolver The {@link} DuplicateQueryHandlerResolver to use when multiple
-         *                                      registrations are detected
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder duplicateQueryHandlerResolver(DuplicateQueryHandlerResolver duplicateQueryHandlerResolver) {
-            assertNonNull(duplicateQueryHandlerResolver, "DuplicateQueryHandlerResolver may not be null");
-            this.duplicateQueryHandlerResolver = duplicateQueryHandlerResolver;
-            return this;
+    @Nonnull
+    private QueryHandler handlerFor(@Nonnull QueryMessage query) {
+        ResponseType<?> responseType = query.responseType();
+        QueryHandlerName handlerName = new QueryHandlerName(
+                query.type().qualifiedName(),
+                new QualifiedName(responseType.getExpectedResponseType())
+        );
+        if (!subscriptions.containsKey(handlerName)) {
+            throw NoHandlerForQueryException.forBus(query);
         }
+        return subscriptions.get(handlerName);
+    }
 
-        /**
-         * Sets the {@link TransactionManager} used to manage the query handling transactions. Defaults to a
-         * {@link NoTransactionManager}.
-         *
-         * @param transactionManager a {@link TransactionManager} used to manage the query handling transactions
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder transactionManager(@Nonnull TransactionManager transactionManager) {
-            assertNonNull(transactionManager, "TransactionManager may not be null");
-            this.transactionManager = transactionManager;
-            return this;
-        }
-
-        /**
-         * Sets the {@link QueryInvocationErrorHandler} to handle exceptions during query handler invocation. Defaults
-         * to a {@link LoggingQueryInvocationErrorHandler} using this instance it's {@link Logger}.
-         *
-         * @param errorHandler a {@link QueryInvocationErrorHandler} to handle exceptions during query handler
-         *                     invocation
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder errorHandler(@Nonnull QueryInvocationErrorHandler errorHandler) {
-            assertNonNull(errorHandler, "QueryInvocationErrorHandler may not be null");
-            this.errorHandler = errorHandler;
-            return this;
-        }
-
-        /**
-         * Sets the {@link QueryUpdateEmitter} used to emits updates for the
-         * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage)}. Defaults to a
-         * {@link SimpleQueryUpdateEmitter}.
-         *
-         * @param queryUpdateEmitter the {@link QueryUpdateEmitter} used to emits updates for the
-         *                           {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage)}
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder queryUpdateEmitter(@Nonnull QueryUpdateEmitter queryUpdateEmitter) {
-            assertNonNull(queryUpdateEmitter, "QueryUpdateEmitter may not be null");
-            this.queryUpdateEmitter = queryUpdateEmitter;
-            return this;
-        }
-
-        /**
-         * Sets the {@link MessageTypeResolver} to be used in order to resolve QualifiedName for published Event
-         * messages. If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
-         *
-         * @param messageTypeResolver which provides QualifiedName for Event messages
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {
-            assertNonNull(messageTypeResolver, "MessageNameResolver may not be null");
-            this.messageTypeResolver = messageTypeResolver;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link SimpleQueryBus} as specified through this Builder.
-         *
-         * @return a {@link SimpleQueryBus} as specified through this Builder
-         */
-        public SimpleQueryBus build() {
-            return new SimpleQueryBus(this);
-        }
-
-        /**
-         * Validate whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        protected void validate() throws AxonConfigurationException {
-            // Method kept for overriding
-        }
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("unitOfWorkFactory", unitOfWorkFactory);
+        descriptor.describeProperty("queryUpdateEmitter", queryUpdateEmitter);
+        descriptor.describeProperty("subscriptions", subscriptions);
     }
 }

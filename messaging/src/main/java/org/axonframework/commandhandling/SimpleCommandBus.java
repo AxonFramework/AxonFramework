@@ -83,7 +83,7 @@ public class SimpleCommandBus implements CommandBus {
     @Override
     public SimpleCommandBus subscribe(@Nonnull QualifiedName name, @Nonnull CommandHandler commandHandler) {
         CommandHandler handler = requireNonNull(commandHandler, "Given command handler cannot be null.");
-        logger.debug("Subscribing command with name [{}].", name);
+        logger.debug("Subscribing command handler with name [{}].", name);
         var existingHandler =
                 subscriptions.putIfAbsent(requireNonNull(name, "The command name cannot be null."), handler);
 

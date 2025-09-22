@@ -37,7 +37,7 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 @AutoConfiguration
 @ConditionalOnBean(EntityManagerFactory.class)
 @ConditionalOnMissingBean({LegacyEventStorageEngine.class, EventBus.class, LegacyEventStore.class})
-@AutoConfigureAfter({AxonServerBusAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
+@AutoConfigureAfter({HibernateJpaAutoConfiguration.class})
 @AutoConfigureBefore(LegacyAxonAutoConfiguration.class)
 @RegisterDefaultEntities(packages = {
         "org.axonframework.eventsourcing.eventstore.jpa"

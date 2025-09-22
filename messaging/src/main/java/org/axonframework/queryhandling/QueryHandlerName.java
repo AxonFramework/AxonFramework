@@ -16,25 +16,23 @@
 
 package org.axonframework.queryhandling;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.QualifiedName;
 
-import java.util.Set;
-
 /**
- * Interface describing a group of {@code QueryHandlers} belonging to a single component.
- * <p>
- * As such, it allows registration of {@code QueryHandlers} through the {@code QueryHandlerRegistry}. Besides handling
- * and registration, it specifies which {@link #supportedQueries() queries} it supports.
+ * A combination of two {@link QualifiedName QualifiedNames}, one for the query handled by a {@link QueryHandler} and
+ * another one specifying the name of the response returned by a {@code QueryHandler}.
  *
+ * @param queryName    The name of the query a {@link QueryHandler} handlers.
+ * @param responseName The name of the response a {@link QueryHandler} returns.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface QueryHandlingComponent extends QueryHandler {
+@Internal
+public record QueryHandlerName(
+        @Nonnull QualifiedName queryName,
+        @Nonnull QualifiedName responseName
+) {
 
-    /**
-     * All supported {@link QueryMessage queries}, referenced through a {@link QualifiedName}.
-     *
-     * @return All supported {@link QueryMessage queries}, referenced through a {@link QualifiedName}.
-     */
-    Set<QueryHandlerName> supportedQueries();
 }

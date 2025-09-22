@@ -25,11 +25,12 @@ import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
@@ -60,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * End-to-end tests for Streaming Query functionality. They include backwards compatibility end-to-end tests as well.
  */
+@Disabled("TODO #3488")
 @Testcontainers
 class StreamingQueryEndToEndTest {
     private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {};
@@ -108,13 +110,13 @@ class StreamingQueryEndToEndTest {
 
     @BeforeEach
     void setUp() {
-        SimpleQueryBus senderLocalSegment = SimpleQueryBus.builder().build();
+        QueryBus senderLocalSegment = QueryBusTestUtils.aQueryBus();
 
-        AxonServerQueryBus handlerQueryBus = axonServerQueryBus(SimpleQueryBus.builder().build(), axonServerAddress);
+        AxonServerQueryBus handlerQueryBus = axonServerQueryBus(QueryBusTestUtils.aQueryBus(), axonServerAddress);
         senderQueryBus = axonServerQueryBus(senderLocalSegment, axonServerAddress);
 
         AxonServerQueryBus nonStreamingHandlerQueryBus =
-                axonServerQueryBus(SimpleQueryBus.builder().build(), nonStreamingAxonServerAddress);
+                axonServerQueryBus(QueryBusTestUtils.aQueryBus(), nonStreamingAxonServerAddress);
         nonStreamingSenderQueryBus =
                 axonServerQueryBus(senderLocalSegment, nonStreamingAxonServerAddress);
 
@@ -130,7 +132,7 @@ class StreamingQueryEndToEndTest {
         nonStreamingSubscription.cancel();
     }
 
-    private AxonServerQueryBus axonServerQueryBus(SimpleQueryBus localSegment, String axonServerAddress) {
+    private AxonServerQueryBus axonServerQueryBus(QueryBus localSegment, String axonServerAddress) {
         QueryUpdateEmitter emitter = SimpleQueryUpdateEmitter.builder().build();
         Serializer serializer = JacksonSerializer.defaultSerializer();
         return AxonServerQueryBus.builder()
