@@ -89,10 +89,20 @@ public class SequencingPolicyEventMessageHandlingMember<T>
                 Constructor<?> matchingConstructor = null;
 
                 for (Constructor<?> constructor : constructors) {
+                    Class<?>[] paramTypes = constructor.getParameterTypes();
+
+                    // Check if constructor has Class parameter as first parameter
+                    boolean hasClassAsFirstParam = paramTypes.length > 0 && paramTypes[0] == Class.class;
+
                     // Count non-Class parameters (which need to be provided as strings)
-                    long nonClassParameterCount = java.util.Arrays.stream(constructor.getParameterTypes())
-                            .filter(type -> type != Class.class)
-                            .count();
+                    long nonClassParameterCount;
+                    if (hasClassAsFirstParam) {
+                        // If first parameter is Class, count remaining parameters
+                        nonClassParameterCount = paramTypes.length - 1;
+                    } else {
+                        // No Class parameter, count all parameters
+                        nonClassParameterCount = paramTypes.length;
+                    }
 
                     if (nonClassParameterCount == parameters.length) {
                         matchingConstructor = constructor;
@@ -130,7 +140,12 @@ public class SequencingPolicyEventMessageHandlingMember<T>
             Class<?> targetType = parameterTypes[i];
 
             if (targetType == Class.class) {
-                // Use the payload type from the MessageHandlingMember
+                // Class parameter must be first parameter - use the payload type from the MessageHandlingMember
+                if (i != 0) {
+                    throw new IllegalArgumentException(
+                            "Class parameter must be the first parameter in constructor. Found at position: " + i
+                    );
+                }
                 parsedParameters[i] = original.payloadType();
             } else {
                 // Parse from string parameters

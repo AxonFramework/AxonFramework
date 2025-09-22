@@ -85,6 +85,12 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             assertThrows(UnsupportedHandlerException.class,
                     () -> sequencingPolicyHandlerForTestEvent("invalidParameterCountMethod"));
         }
+
+        @Test
+        void methodWithCustomPolicyWithInvalidClassPosition() {
+            assertThrows(UnsupportedHandlerException.class,
+                    () -> sequencingPolicyHandlerForTestEvent("invalidClassPositionMethod"));
+        }
     }
 
     @Nested
@@ -213,11 +219,31 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
 
     @SuppressWarnings("unused")
     @EventHandler
+    @SequencingPolicy(type = InvalidClassPositionPolicy.class, parameters = {"someParameter"})
+    private void invalidClassPositionMethod(TestEvent payload) {
+    }
+
+    @SuppressWarnings("unused")
+    @EventHandler
     private void methodWithoutAnnotation(String payload) {
     }
 
     // Test event record with properties for PropertySequencingPolicy
     public record TestEvent(String aggregateId, String eventType, long timestamp) {
+    }
+
+    // Test policy with Class parameter in wrong position (should fail)
+    static class InvalidClassPositionPolicy implements org.axonframework.eventhandling.sequencing.SequencingPolicy {
+        public InvalidClassPositionPolicy(String parameter, Class<?> payloadClass) {
+            // Class parameter is not first - this should cause an error
+        }
+
+        @Override
+        public java.util.Optional<Object> getSequenceIdentifierFor(
+                org.axonframework.eventhandling.EventMessage event,
+                org.axonframework.messaging.unitofwork.ProcessingContext context) {
+            return java.util.Optional.of("test");
+        }
     }
 
     // Test class with class-level annotation
