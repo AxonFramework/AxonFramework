@@ -19,7 +19,6 @@ package org.axonframework.eventhandling.annotations;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Message;
@@ -232,6 +231,25 @@ class AnnotatedEventHandlingComponentTest {
             assertFalse(eventHandler.objectHandlerInvoked);
             assertEquals(1, eventHandler.handledCount);
         }
+
+        @Test
+        void invokesHandlerWithCustomName() {
+            // given
+            var eventHandler = new HandlingNamedEventHandler();
+            var eventHandlingComponent = annotatedEventHandlingComponent(eventHandler);
+            var event = new GenericEventMessage(
+                    new MessageType("CustomEventName"),
+                    123
+            );
+
+            // when
+            var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
+
+            // then
+            assertSuccessfulStream(result);
+            assertEquals(1, eventHandler.handledNamed);
+            assertEquals(0, eventHandler.handledNotNamed);
+        }
     }
 
     @Nested
@@ -339,10 +357,7 @@ class AnnotatedEventHandlingComponentTest {
     }
 
     private static EventMessage eventMessage(int seq, String sampleMetadata) {
-        return new GenericDomainEventMessage(
-                AGGREGATE_TYPE,
-                AGGREGATE_IDENTIFIER,
-                seq,
+        return new GenericEventMessage(
                 new MessageType(Integer.class),
                 seq,
                 sampleMetadata == null ? Metadata.emptyInstance() : Metadata.with("sampleKey", sampleMetadata)
@@ -398,6 +413,24 @@ class AnnotatedEventHandlingComponentTest {
         void handle(String event) {
             this.handledCount++;
         }
+    }
+
+    private static class HandlingNamedEventHandler {
+
+        private int handledNamed = 0;
+        private int handledNotNamed = 0;
+
+        @EventHandler(eventName = "CustomEventName")
+        void handleNamed() {
+            handledNamed++;
+        }
+
+
+        @EventHandler
+        void handleNotNamed() {
+            handledNotNamed++;
+        }
+
     }
 
     @Nonnull
