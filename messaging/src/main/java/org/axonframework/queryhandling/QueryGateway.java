@@ -80,7 +80,6 @@ public interface QueryGateway extends DescribableComponent {
      * @param <R>          The generic type of the expected response(s).
      * @return A {@code CompletableFuture} containing a list of query responses of type {@code responseType}.
      */
-    // TODO switch from CompletableFuture<List<R>> to Stream<R>
     @Nonnull
     <R> CompletableFuture<List<R>> queryMany(@Nonnull Object query,
                                              @Nonnull Class<R> responseType,
