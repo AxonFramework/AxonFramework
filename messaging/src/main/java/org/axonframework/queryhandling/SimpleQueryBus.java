@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Implementation of the {@code QueryBus} that dispatches queries (through
- * {@link #query(QueryMessage, ProcessingContext) dispatches} or {@link #subscriptionQuery(SubscriptionQueryMessage)})
+ * {@link #query(QueryMessage, ProcessingContext)} or {@link #subscriptionQuery(SubscriptionQueryMessage)})
  * to the {@link QueryHandler QueryHandlers} subscribed to that specific query's {@link QualifiedName name} and
  * {@link ResponseType type} combination.
  * <p>
