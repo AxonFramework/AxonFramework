@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -557,7 +558,7 @@ class SimpleQueryBusTest {
     class SubscribeToUpdates {
 
         @Test
-        void subscribingSubscriptionQueryTwiceThrowsSubscriptionQueryAlreadyRegisteredException() {
+        void subscribeToUpdatesForSameQueryTwiceThrowsSubscriptionQueryAlreadyRegisteredException() {
             // given...
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                     QUERY_TYPE, QUERY_PAYLOAD, SINGLE_STRING_RESPONSE, SINGLE_STRING_RESPONSE
@@ -566,6 +567,42 @@ class SimpleQueryBusTest {
             // when/then...
             assertThatThrownBy(() -> testSubject.subscribeToUpdates(testQuery, Queues.SMALL_BUFFER_SIZE))
                     .isInstanceOf(SubscriptionQueryAlreadyRegisteredException.class);
+        }
+
+        @Test
+        void completingUpdateHandlerFromSubscribeToUpdatesCompletesUpdates() {
+            // given...
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, QUERY_PAYLOAD, SINGLE_STRING_RESPONSE, SINGLE_STRING_RESPONSE
+            );
+            SubscriptionQueryUpdateMessage updateMessage =
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, UPDATE_PAYLOAD);
+            UpdateHandler result = testSubject.subscribeToUpdates(testQuery, Queues.SMALL_BUFFER_SIZE);
+            testSubject.emitUpdate(query -> true, updateMessage, null).join();
+            // when...
+            result.complete();
+            // then...
+            StepVerifier.create(result.updates().mapNotNull(Message::payload))
+                        .expectNext(UPDATE_PAYLOAD)
+                        .verifyComplete();
+        }
+
+        @Test
+        void cancelingUpdateHandlerFromSubscribeToUpdatesDoesNotCompleteButTimesOutUpdates() {
+            // given...
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, QUERY_PAYLOAD, SINGLE_STRING_RESPONSE, SINGLE_STRING_RESPONSE
+            );
+            SubscriptionQueryUpdateMessage updateMessage =
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, UPDATE_PAYLOAD);
+            UpdateHandler result = testSubject.subscribeToUpdates(testQuery, Queues.SMALL_BUFFER_SIZE);
+            testSubject.emitUpdate(query -> true, updateMessage, null).join();
+            // when...
+            result.cancel();
+            // then...
+            StepVerifier.create(result.updates().mapNotNull(Message::payload))
+                        .expectNext(UPDATE_PAYLOAD)
+                        .verifyTimeout(Duration.ofMillis(500));
         }
     }
 

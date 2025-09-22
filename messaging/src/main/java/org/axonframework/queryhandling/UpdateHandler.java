@@ -24,7 +24,7 @@ import reactor.core.publisher.Flux;
 import java.util.Objects;
 
 /**
- * The update handler resulting from {@link QueryUpdateEmitter#subscribe(SubscriptionQueryMessage, int)}.
+ * The update handler resulting from {@link QueryBus#subscribeToUpdates(SubscriptionQueryMessage, int)}.
  * <p>
  * Contains a {@link Flux} with {@link #updates()} and a {@link Registration} to be cancelled when we're no longer
  * interested in updates.
@@ -41,9 +41,11 @@ public final class UpdateHandler {
     private final Runnable completeHandler;
 
     /**
+     * Constructs an {@code UpdateHandler} for the given {@code updates}, {@code cancelRegistration}, and
+     * {@code completeHandler}.
+     *
      * @param updates            The {@code Flux} of updates from this update handler.
-     * @param cancelRegistration Used to cancel the registration of this {@code UpdateHandler} on
-     *                           {@link #cancel()}.
+     * @param cancelRegistration Used to cancel the registration of this {@code UpdateHandler} on {@link #cancel()}.
      * @param completeHandler    Used to complete this {@code UpdateHandler} on {@link #complete()}.
      *
      */
@@ -78,8 +80,8 @@ public final class UpdateHandler {
      * Completes the {@link #updates()}.
      * <p>
      * The consumer can use this method to indicate it is no longer interested in updates. This operation automatically
-     * {@link #cancel() cancels the registration} to ensure updates that have not been subscribed to do not
-     * linger in the {@link QueryUpdateEmitter}.
+     * {@link #cancel() cancels the registration} to ensure updates that have not been subscribed to do not linger in
+     * the {@link QueryUpdateEmitter}.
      */
     public void complete() {
         completeHandler.run();
