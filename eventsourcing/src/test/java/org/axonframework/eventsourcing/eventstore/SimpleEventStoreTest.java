@@ -31,9 +31,11 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
@@ -60,6 +62,7 @@ import static org.mockito.Mockito.*;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@ExtendWith(MockitoExtension.class)
 class SimpleEventStoreTest {
 
     private EventStorageEngine mockStorageEngine = mock(EventStorageEngine.class);
@@ -80,10 +83,9 @@ class SimpleEventStoreTest {
     class DelegatingToStorageEngine {
 
         @Test
-        void openStreamDelegatesConditionToStorageEngine() {
+        void openStreamDelegatesConditionToStorageEngine(@Mock MessageStream<EventMessage> expectedStream) {
             // given
             StreamingCondition condition = aStreamingCondition();
-            MessageStream<EventMessage> expectedStream = mock(MessageStream.class);
             when(mockStorageEngine.stream(condition, processingContext)).thenReturn(expectedStream);
 
             // when
@@ -143,12 +145,13 @@ class SimpleEventStoreTest {
 
         @Test
         void appendingWithoutReadMustUseInfinityConsistencyMarker() throws Exception {
-            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(42);
 
             UnitOfWork unitOfWork = aUnitOfWork();
             when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList())).thenReturn(completedFuture(mockAppendTransaction));
-            when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
+            when(mockAppendTransaction.commit(any(ProcessingContext.class))).thenReturn(completedFuture(null));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class))).thenReturn(completedFuture(markerAfterCommit));
             var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
                 transaction.appendEvent(createEvent(0));
@@ -164,13 +167,14 @@ class SimpleEventStoreTest {
 
         @Test
         void appendingAfterReadsUpdatesTheAppendCondition() throws Exception {
-            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(42);
 
             UnitOfWork unitOfWork = aUnitOfWork();
             when(mockStorageEngine.source(any(), any(ProcessingContext.class))).thenReturn(messageStreamOf(10));
             when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList())).thenReturn(completedFuture(mockAppendTransaction));
-            when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
+            when(mockAppendTransaction.commit(any(ProcessingContext.class))).thenReturn(completedFuture(null));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class))).thenReturn(completedFuture(markerAfterCommit));
 
             var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
@@ -200,7 +204,7 @@ class SimpleEventStoreTest {
         @MethodSource("generateRandomNumbers")
         void readingMultipleTimesShouldKeepTheConsistencyMarkerAtTheSmallestPosition(int size1, int size2, int size3)
                 throws Exception {
-            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(101);
 
             UnitOfWork unitOfWork = aUnitOfWork();
@@ -208,7 +212,8 @@ class SimpleEventStoreTest {
                                                                                .thenReturn(messageStreamOf(size2))
                                                                                .thenReturn(messageStreamOf(size3));
             when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList())).thenReturn(completedFuture(mockAppendTransaction));
-            when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
+            when(mockAppendTransaction.commit(any(ProcessingContext.class))).thenReturn(completedFuture(null));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class))).thenReturn(completedFuture(markerAfterCommit));
             var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
                 var firstStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));
@@ -235,8 +240,9 @@ class SimpleEventStoreTest {
 
         @Test
         void publishUsesTheGivenContextToInvokeTheTransactionInCompletingTheReturnedFutureImmediately() {
-            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
-            when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit(any(ProcessingContext.class))).thenReturn(completedFuture(null));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class))).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
             when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList())).thenReturn(completedFuture(mockAppendTransaction));
 
             EventMessage testEventZero = createEvent(0);
@@ -256,16 +262,15 @@ class SimpleEventStoreTest {
         }
 
         @Test
-        void publishInvokeEventStorageEngineRightAwayWithAppendConditionNone() {
+        void publishInvokeEventStorageEngineRightAwayWithAppendConditionNone(@Captor ArgumentCaptor<List<TaggedEventMessage<?>>> eventCaptor) {
             // given...
-            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
-            when(mockAppendTransaction.commit()).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            EventStorageEngine.AppendTransaction<String> mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit(any())).thenReturn(completedFuture("anything"));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class))).thenReturn(completedFuture(mock(ConsistencyMarker.class)));
             when(mockStorageEngine.appendEvents(any(), isNull(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
             Tag testTag = new Tag("id", "value");
             when(tagResolver.resolve(any())).thenReturn(Set.of(testTag));
             EventMessage testEvent = createEvent(0);
-            //noinspection unchecked
-            ArgumentCaptor<List<TaggedEventMessage<?>>> eventCaptor = ArgumentCaptor.forClass(List.class);
 
             // when...
             CompletableFuture<Void> result = testSubject.publish(null, testEvent);

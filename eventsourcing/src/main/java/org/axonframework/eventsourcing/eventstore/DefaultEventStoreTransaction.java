@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -151,20 +152,24 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                     List<TaggedEventMessage<?>> eventQueue = context.getResource(eventQueueKey);
 
                     return eventStorageEngine.appendEvents(appendCondition, processingContext, eventQueue)
+                                             .thenApply(DefaultEventStoreTransaction::castTransaction)
                                              .thenAccept(tx -> {
-                                                 processingContext.onCommit(c -> doCommit(context, tx));
-                                                 processingContext.onError((ctx, p, e) -> tx.rollback());
+                                                 processingContext.onCommit(c -> tx.commit(c)
+                                                     .thenAccept(v -> processingContext.onAfterCommit(c2 -> doAfterCommit(c2, tx, v)))
+                                                 );
+                                                 processingContext.onError((c, p, e) -> tx.rollback(c));
                                              });
                 }
         );
     }
 
-    private CompletableFuture<ConsistencyMarker> doCommit(ProcessingContext commitContext,
-                                                          EventStorageEngine.AppendTransaction tx) {
-        return tx.commit()
+    private <R> CompletableFuture<ConsistencyMarker> doAfterCommit(ProcessingContext context,
+                                                                   EventStorageEngine.AppendTransaction<R> tx,
+                                                                   R commitResult) {
+        return tx.afterCommit(commitResult, context)
                  .whenComplete((position, exception) -> {
                      if (position != null) {
-                         commitContext.updateResource(
+                         context.updateResource(
                                  appendPositionKey,
                                  other -> position.upperBound(requireNonNullElse(other, ConsistencyMarker.ORIGIN)));
                      }
@@ -179,5 +184,10 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     @Override
     public ConsistencyMarker appendPosition() {
         return getOrDefault(processingContext.getResource(appendPositionKey), ConsistencyMarker.ORIGIN);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static AppendTransaction<Object> castTransaction(AppendTransaction<?> at) {
+        return (AppendTransaction<Object>) at;
     }
 }
