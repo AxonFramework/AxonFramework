@@ -17,8 +17,11 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.sequencing.HierarchicalSequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventhandling.processors.streaming.segmenting.SequenceOverridingEventHandlingComponent;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -56,24 +59,16 @@ public interface EventHandlingComponent extends EventHandler, EventHandlerRegist
     /**
      * Returns the sequence identifier for the given {@code event}. When two events have the same sequence identifier
      * (as defined by their equals method), they will be executed sequentially.
-     * <p>
-     * The default implementation returns the event's identifier, which effectively means no specific sequencing is
-     * applied (full concurrency). Override this method to provide custom sequencing behavior, such as handling events
-     * for the same aggregate sequentially. Or use a {@link SequenceOverridingEventHandlingComponent} if you cannot
-     * inherit from a certain {@code EventHandlingComponent} implementation.
-     * <p>
-     * <b>Important:</b> All {@link EventHandler EventHandlers} for the same {@link org.axonframework.messaging.QualifiedName}
-     * within a single {@code EventHandlingComponent} must return the same sequence identifier for a given event.
-     * Mixing different sequence identifiers within the scope of a single {@code EventHandlingComponent} is not supported
-     * and may lead to undefined behavior.
+     * <b>Important:</b> All {@link EventHandler EventHandlers} for the same
+     * {@link org.axonframework.messaging.QualifiedName}
+     * within a single {@code EventHandlingComponent} must return the same sequence identifier for a given event. Mixing
+     * different sequence identifiers within the scope of a single {@code EventHandlingComponent} is not supported and
+     * may lead to undefined behavior.
      *
      * @param event   The event for which to get the sequencing identifier.
      * @param context The processing context in which the event is being handled.
      * @return A sequence identifier for the given event.
      */
     @Nonnull
-    default Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
-        //noinspection OptionalGetWithoutIsPresent - it's safe because SequentialPolicy always returns a value.
-        return SequentialPolicy.INSTANCE.getSequenceIdentifierFor(event, context).get();
-    }
+    Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context);
 }

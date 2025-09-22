@@ -54,7 +54,7 @@ class AnnotatedEventHandlingComponentSequencePolicyTest {
     class NoSequencingPolicyAnnotations {
 
         @Test
-        void should_use_delegate_sequencing_when_no_policy_annotation() {
+        void should_use_default_sequencing_when_no_policy_annotation() {
             // given
             var eventHandler = new EventHandlerWithoutPolicy();
             var component = annotatedEventHandlingComponent(eventHandler);
@@ -65,7 +65,7 @@ class AnnotatedEventHandlingComponentSequencePolicyTest {
             var sequenceIdentifier = component.sequenceIdentifierFor(event, context);
 
             // then
-            assertThat(sequenceIdentifier).isEqualTo(FULL_SEQUENTIAL_POLICY);
+            assertThat(sequenceIdentifier).isEqualTo(AGGREGATE_IDENTIFIER);
         }
 
         private static class EventHandlerWithoutPolicy {

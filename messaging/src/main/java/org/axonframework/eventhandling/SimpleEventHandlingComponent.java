@@ -17,12 +17,15 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.sequencing.HierarchicalSequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequencingPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -38,7 +41,31 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class SimpleEventHandlingComponent implements EventHandlingComponent {
 
+    private static final SequencingPolicy DEFAULT_SEQUENCING_POLICY = new HierarchicalSequencingPolicy(
+            SequentialPerAggregatePolicy.instance(),
+            SequentialPolicy.INSTANCE
+    );
+
     private final ConcurrentHashMap<QualifiedName, List<EventHandler>> eventHandlers = new ConcurrentHashMap<>();
+    private final SequencingPolicy sequencingPolicy;
+
+    /**
+     * Initializes a {@code SimpleEventHandlingComponent} with no {@link EventHandler}s and default
+     * {@link org.axonframework.eventhandling.sequencing.SequentialPolicy}.
+     */
+    public SimpleEventHandlingComponent() {
+        this.sequencingPolicy = DEFAULT_SEQUENCING_POLICY;
+    }
+
+    /**
+     * Initializes a {@code SimpleEventHandlingComponent} with no {@link EventHandler}s and the given
+     * {@code sequencingPolicy}.
+     *
+     * @param sequencingPolicy the {@link SequencingPolicy} to use for sequencing events.
+     */
+    public SimpleEventHandlingComponent(SequencingPolicy sequencingPolicy) {
+        this.sequencingPolicy = sequencingPolicy;
+    }
 
     @Nonnull
     @Override
@@ -84,6 +111,29 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
         return Set.copyOf(eventHandlers.keySet());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The implementation automatically chooses the appropriate sequencing policy based on the event context:
+     * <ul>
+     *     <li>If the aggregate identifier is present in the {@link ProcessingContext} (i.e., the event is an aggregate
+     *         event), it uses {@link SequentialPerAggregatePolicy} to ensure events for the same aggregate are
+     *         processed sequentially while allowing concurrent processing of events from different aggregates.</li>
+     *     <li>If no aggregate identifier is present (i.e., the event is not an aggregate event), it uses
+     *         {@link SequentialPolicy} which ensures all events are processed sequentially (no concurrency) as the
+     *         safest default option.</li>
+     * </ul>
+     * <p>
+     * Override this method to provide custom sequencing behavior. Or use a
+     * {@link org.axonframework.eventhandling.processors.streaming.segmenting.SequenceOverridingEventHandlingComponent} if you cannot inherit from a certain
+     * {@code EventHandlingComponent} implementation.
+     * <p>
+     *
+     * @param event   The event for which to get the sequencing identifier.
+     * @param context The processing context in which the event is being handled.
+     * @return
+     */
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Nonnull
     @Override
     public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
@@ -91,14 +141,14 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
         List<EventHandler> handlers = eventHandlers.get(qualifiedName);
 
         if (handlers == null || handlers.isEmpty()) {
-            return EventHandlingComponent.super.sequenceIdentifierFor(event, context);
+            return sequencingPolicy.getSequenceIdentifierFor(event, context).get();
         }
 
         return handlers.stream()
-                .filter(EventHandlingComponent.class::isInstance)
-                .map(EventHandlingComponent.class::cast)
-                .findFirst()
-                .map(component -> component.sequenceIdentifierFor(event, context))
-                .orElse(EventHandlingComponent.super.sequenceIdentifierFor(event, context));
+                       .filter(EventHandlingComponent.class::isInstance)
+                       .map(EventHandlingComponent.class::cast)
+                       .findFirst()
+                       .map(component -> component.sequenceIdentifierFor(event, context))
+                       .orElse(sequencingPolicy.getSequenceIdentifierFor(event, context).get());
     }
 }

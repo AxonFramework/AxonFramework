@@ -310,7 +310,19 @@ class AnnotatedEventHandlingComponentTest {
     class SequenceIdentifierFor {
 
         @Test
-        void returnsDefaultSequenceIdentifier() {
+        void defaultSequencingPolicyIsFullSequentialIfAggregateIdentifierNotInProcessingContext() {
+            // given
+            var event = eventMessage(0);
+
+            // when
+            var sequenceIdentifier = eventHandlingComponent.sequenceIdentifierFor(event, new StubProcessingContext());
+
+            // then
+            assertThat(sequenceIdentifier).isEqualTo(FULL_SEQUENTIAL_POLICY);
+        }
+
+        @Test
+        void defaultSequencingPolicyIsSequentialPerAggregateIfAggregateIdentifierIsPresentInProcessingContext() {
             // given
             var event = eventMessage(0);
 
@@ -318,7 +330,7 @@ class AnnotatedEventHandlingComponentTest {
             var sequenceIdentifier = eventHandlingComponent.sequenceIdentifierFor(event, messageProcessingContext(event));
 
             // then
-            assertThat(sequenceIdentifier).isEqualTo(FULL_SEQUENTIAL_POLICY);
+            assertThat(sequenceIdentifier).isEqualTo("id");
         }
     }
 
