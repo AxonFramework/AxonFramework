@@ -73,6 +73,7 @@ import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
+import org.axonframework.queryhandling.UpdateHandler;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
@@ -446,6 +447,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         return new GenericQueryResponseMessage(delegate);
     }
 
+    @Nonnull
     @Override
     public SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
             @Nonnull SubscriptionQueryMessage query,
@@ -492,6 +494,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                     spanFactory,
                     span);
         }
+    }
+
+    @Nonnull
+    @Override
+    public UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
+        // TODO #3488 implement as part of AxonServerQueryBus implementation
+        return null;
     }
 
     @Nonnull
@@ -1050,7 +1059,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         public io.axoniq.axonserver.connector.Registration registerSubscriptionQuery(SubscriptionQuery query,
                                                                                      UpdateHandler sendUpdate) {
             org.axonframework.queryhandling.UpdateHandler updateHandler =
-                    updateEmitter.subscribe(subscriptionSerializer.deserialize(query), 1024);
+                    localSegment.subscribe(subscriptionSerializer.deserialize(query), 1024);
 
             updateHandler.updates()
                          .doOnError(e -> {

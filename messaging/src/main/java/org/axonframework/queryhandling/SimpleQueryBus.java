@@ -177,7 +177,7 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Nonnull
-    private UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query,
+    public UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query,
                                     int updateBufferSize) {
         if (hasHandlerFor(query.identifier())) {
             throw new SubscriptionQueryAlreadyRegisteredException(query.identifier());

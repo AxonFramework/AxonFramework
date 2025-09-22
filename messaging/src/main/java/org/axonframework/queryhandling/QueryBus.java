@@ -17,6 +17,7 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -123,7 +124,26 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      */
     @Nonnull
     SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage query, @Nullable ProcessingContext context, int updateBufferSize);
+            @Nonnull SubscriptionQueryMessage query,
+            @Nullable ProcessingContext context,
+            int updateBufferSize
+    );
+
+        /**
+     * Subscribes the given {@code query} with the given {@code updateBufferSize}, resulting in an {@link UpdateHandler}
+     * providing a {@link reactor.core.publisher.Flux} to the emitted updates.
+     *
+     * @param query            The subscription query for which we register an update handler.
+     * @param updateBufferSize The size of buffer that accumulates updates before a subscription to the
+     *                         {@link UpdateHandler#updates()} is made.
+     * @return The update handler containing the {@link reactor.core.publisher.Flux} of emitted updates, as well as
+     * {@link UpdateHandler#cancel()} and {@link UpdateHandler#complete()} hooks.
+     * @throws SubscriptionQueryAlreadyRegisteredException Whenever an update handler was already registered for the
+     *                                                     given {@code query}.
+     */
+    @Internal
+    @Nonnull
+    UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query, int updateBufferSize);
 
     // TODO JavaDoc
     @Nonnull

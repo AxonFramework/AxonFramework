@@ -2085,6 +2085,7 @@ This section contains four subsections, called:
 | `QueryGateway#scatterGather(Q, ResponseType<R>, long, TimeUnit)`                                                  | Removed due to limited use (see [Query Dispatching and Handling](#query-dispatching-and-handling)                           |
 | `QueryUpdateEmitter#queryUpdateHandlerRegistered(SubscriptionQueryMessage)`                                       | Moved duplicate handler registration into `QueryUpdateEmitter#subscribeUpdateHandler` method.                               |
 | `UpdateHandlerRegistration#getRegistration()`                                                                     | Replaced for `UpdateHandler#cancel()`                                                                                       |
+| `QueryUpdateEmitter#activeSubscriptions()`                                                                        | Removed due to limited use (see [Query Dispatching and Handling](#query-dispatching-and-handling)                           |
 
 ### Changed Method return types
 

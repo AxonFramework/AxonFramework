@@ -24,18 +24,17 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Sinks;
 
-import java.util.Collections;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 
+import static java.util.Objects.requireNonNull;
+
 /**
- * Implementation of {@link QueryUpdateEmitter} that uses Project Reactor to implement Update Handlers.
+ * Simple implementation of the {@link QueryUpdateEmitter}, delegating operations to a {@link QueryBus} for emitting
+ * updates, completing subscription queries, and completing subscription queries exceptionally.
+ * <p>
+ * Uses the {@link ProcessingContext} given during construction of the {@code SimpleQueryUpdateEmitter} to perform all
+ * operations in the expected lifecycle order.
  *
  * @author Milan Savic
  * @author Stefan Dragisic
@@ -44,73 +43,63 @@ import java.util.function.Predicate;
  */
 public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
-    // TODO use logger on debug level for clarity
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryUpdateEmitter.class);
-
-    private final ConcurrentMap<SubscriptionQueryMessage, SinkWrapper<SubscriptionQueryUpdateMessage>> updateHandlers =
-            new ConcurrentHashMap<>();
 
     private final MessageTypeResolver messageTypeResolver;
     private final QueryBus queryBus;
     private final ProcessingContext context;
 
     /**
-     * Construct a {@code SimpleQueryUpdateEmitter} with the given {@code messageTypeResolver} to construct
-     * {@link SubscriptionQueryUpdateMessage update messages} for {@link #emit(Class, Predicate, Object)} invocations.
+     * Construct a {@code SimpleQueryUpdateEmitter} with the given {@code messageTypeResolver}, {@code queryBus}, and
+     * {@code context}.
+     * <p>
+     * The {@code messageTypeResolver} is used to construct {@link SubscriptionQueryUpdateMessage update messages} for
+     * {@link #emit(Class, Predicate, Object)} invocations. Any {@link #emit(Class, Predicate, Object)} or
+     * {@link #emit(QualifiedName, Predicate, Object)} is delegated to
+     * {@link QueryBus#emitUpdate(Predicate, SubscriptionQueryUpdateMessage, ProcessingContext)}. Similarly,
+     * {@link #complete(Class, Predicate)}/{@link #complete(QualifiedName, Predicate)} and
+     * {@link #completeExceptionally(Class, Predicate, Throwable)}/{@link #completeExceptionally(QualifiedName,
+     * Predicate, Throwable)} are respectively delegated to
+     * {@link QueryBus#completeSubscription(Predicate, ProcessingContext)} and
+     * {@link QueryBus#completeSubscriptionExceptionally(Predicate, Throwable, ProcessingContext)}.
      *
      * @param messageTypeResolver The {@link org.axonframework.messaging.MessageType} resolver used to construct
      *                            {@link SubscriptionQueryUpdateMessage update messages} for
      *                            {@link #emit(Class, Predicate, Object)} invocations
-     * @param queryBus
-     * @param context
+     * @param queryBus            The {@code QueryBus} to delegate the {@link #emit(Class, Predicate, Object)},
+     *                            {@link #complete(Class, Predicate)}, and
+     *                            {@link #completeExceptionally(Class, Predicate, Throwable)} invocations to.
+     * @param context             The {@code ProcessingContext} within which updates are emitted, subscription query are
+     *                            completed, and subscription queries are completed exceptionally in.
      */
     public SimpleQueryUpdateEmitter(@Nonnull MessageTypeResolver messageTypeResolver,
                                     @Nonnull QueryBus queryBus,
                                     @Nonnull ProcessingContext context) {
-        this.messageTypeResolver =
-                Objects.requireNonNull(messageTypeResolver, "The MessageTypeResolver must not be null.");
-        this.queryBus = Objects.requireNonNull(queryBus, "The QueryBus must not be null.");
-        this.context = Objects.requireNonNull(context, "The ProcessingContext must not be null.");
+        this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver must not be null.");
+        this.queryBus = requireNonNull(queryBus, "The QueryBus must not be null.");
+        this.context = requireNonNull(context, "The ProcessingContext must not be null.");
     }
 
-    @Nonnull
     @Override
-    public UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query,
-                                   int updateBufferSize) {
-        if (hasHandlerFor(query.identifier())) {
-            throw new SubscriptionQueryAlreadyRegisteredException(query.identifier());
+    public <Q> void emit(@Nonnull Class<Q> queryType,
+                         @Nonnull Predicate<? super Q> filter,
+                         @Nullable Object update) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Emitting update [{}] for query of type [{}].", update, queryType);
         }
-
-        Sinks.Many<SubscriptionQueryUpdateMessage> sink = Sinks.many()
-                                                               .replay()
-                                                               .limit(updateBufferSize);
-        SinksManyWrapper<SubscriptionQueryUpdateMessage> sinksManyWrapper = new SinksManyWrapper<>(sink);
-
-        Runnable removeHandler = () -> updateHandlers.remove(query);
-
-        updateHandlers.put(query, sinksManyWrapper);
-        Flux<SubscriptionQueryUpdateMessage> updateMessageFlux = sink.asFlux()
-                                                                     .doOnCancel(removeHandler)
-                                                                     .doOnTerminate(removeHandler);
-        return new UpdateHandler(updateMessageFlux, removeHandler, sinksManyWrapper::complete);
-    }
-
-    private boolean hasHandlerFor(String queryId) {
-        return updateHandlers.keySet().stream().anyMatch(m -> m.identifier().equals(queryId));
-    }
-
-    @Override
-    public <Q> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter, @Nullable Object update) {
-        queryBus.emitUpdate(concretePayloadTypeFilter(queryType, filter), asUpdateMessage(update), context);
+        queryBus.emitUpdate(concretePayloadTypeFilter(queryType, filter), asUpdateMessage(update), context)
+                .join();
     }
 
     @Override
     public void emit(@Nonnull QualifiedName queryName,
                      @Nonnull Predicate<Object> filter,
                      @Nullable Object update) {
-        Predicate<SubscriptionQueryMessage> messageFilter =
-                message -> queryName.equals(message.type().qualifiedName()) && filter.test(message.payload());
-        queryBus.emitUpdate(messageFilter, asUpdateMessage(update), context);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Emitting update [{}] for query with name [{}].", update, queryName);
+        }
+        queryBus.emitUpdate(queryNameFilter(queryName, filter), asUpdateMessage(update), context)
+                .join();
     }
 
     private SubscriptionQueryUpdateMessage asUpdateMessage(Object update) {
@@ -124,14 +113,48 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     @Override
     public <Q> void complete(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter) {
-        queryBus.completeSubscription(concretePayloadTypeFilter(queryType, filter), context);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Completing subscription queries of type [{}].", queryType);
+        }
+        queryBus.completeSubscription(concretePayloadTypeFilter(queryType, filter), context)
+                .join();
+    }
+
+    @Override
+    public void complete(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Completing subscription queries with name [{}].", queryName);
+        }
+        queryBus.completeSubscription(queryNameFilter(queryName, filter), context)
+                .join();
     }
 
     @Override
     public <Q> void completeExceptionally(@Nonnull Class<Q> queryType,
                                           @Nonnull Predicate<? super Q> filter,
                                           @Nonnull Throwable cause) {
-        queryBus.completeSubscriptionExceptionally(concretePayloadTypeFilter(queryType, filter), cause, context);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Completing subscription queries of type [{}] exceptionally.", queryType, cause);
+        }
+        queryBus.completeSubscriptionExceptionally(concretePayloadTypeFilter(queryType, filter), cause, context)
+                .join();
+    }
+
+    @Override
+    public void completeExceptionally(@Nonnull QualifiedName queryName,
+                                      @Nonnull Predicate<Object> filter,
+                                      @Nonnull Throwable cause) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Completing subscription queries with name [{}] exceptionally.", queryName, cause);
+        }
+        queryBus.completeSubscriptionExceptionally(queryNameFilter(queryName, filter), cause, context)
+                .join();
+    }
+
+    @Nonnull
+    private static Predicate<SubscriptionQueryMessage> queryNameFilter(@Nonnull QualifiedName queryName,
+                                                                       @Nonnull Predicate<Object> filter) {
+        return message -> queryName.equals(message.type().qualifiedName()) && filter.test(message.payload());
     }
 
     private <Q> Predicate<SubscriptionQueryMessage> concretePayloadTypeFilter(@Nonnull Class<Q> queryType,
@@ -140,10 +163,5 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
             QualifiedName queryName = messageTypeResolver.resolveOrThrow(queryType).qualifiedName();
             return queryName.equals(message.type().qualifiedName()) && filter.test(message.payloadAs(queryType));
         };
-    }
-
-    @Override
-    public Set<SubscriptionQueryMessage> activeSubscriptions() {
-        return Collections.unmodifiableSet(updateHandlers.keySet());
     }
 }
