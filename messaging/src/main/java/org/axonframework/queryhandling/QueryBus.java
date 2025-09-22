@@ -17,7 +17,6 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
@@ -124,32 +123,9 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * @return query result containing initial result and incremental updates
      */
     @Nonnull
-    default SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage query,
-            @Nullable ProcessingContext context,
-            int updateBufferSize
-    ) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
-                       () -> "Subscription Query query does not support Flux as a return type.");
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.updatesResponseType().getExpectedResponseType()),
-                       () -> "Subscription Query query does not support Flux as an update type.");
-
-        MessageStream<QueryResponseMessage> initialStream = query(query, context);
-        // TODO #3488 - Fix once implementing subscription queries
-//        Mono<QueryResponseMessage> initialResult = Mono.fromFuture(() -> query(query))
-//                                                       .doOnError(error -> logger.error(
-//                                                               "An error happened while trying to report an initial result. Query: {}",
-//                                                               query,
-//                                                               error
-//                                                       ));
-        UpdateHandler updateHandler = subscribeToUpdates(query, updateBufferSize);
-        return new DefaultSubscriptionQueryResult<>(initialStream,
-                                                    updateHandler.updates(),
-                                                    () -> {
-                                                        updateHandler.complete();
-                                                        return true;
-                                                    });
-    }
+    SubscriptionQueryResponseMessages subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+                                                        @Nullable ProcessingContext context,
+                                                        int updateBufferSize);
 
     /**
      * Subscribes the given {@code query} with the given {@code updateBufferSize}, resulting in an {@link UpdateHandler}

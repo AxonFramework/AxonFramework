@@ -449,7 +449,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     @Nonnull
     @Override
-    public SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
+    public SubscriptionQueryResponseMessages subscriptionQuery(
             @Nonnull SubscriptionQueryMessage query,
             @Nullable ProcessingContext context,
             int updateBufferSize

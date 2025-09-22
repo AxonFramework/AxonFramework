@@ -17,6 +17,7 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context.ResourceKey;
@@ -26,6 +27,7 @@ import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -150,6 +152,29 @@ public class SimpleQueryBus implements QueryBus {
                 || responseStream.error()
                                  .map(e -> !(e instanceof NoHandlerForQueryException))
                                  .orElse(false);
+    }
+
+    @Nonnull
+    @Override
+    public SubscriptionQueryResponseMessages subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+                                                               @Nullable ProcessingContext context,
+                                                               int updateBufferSize) {
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
+                       () -> "Subscription Query query does not support Flux as a return type.");
+        Assert.isFalse(Publisher.class.isAssignableFrom(query.updatesResponseType().getExpectedResponseType()),
+                       () -> "Subscription Query query does not support Flux as an update type.");
+
+        Flux<QueryResponseMessage> initialStream =
+                Flux.from(query(query, context).asFlux().map(MessageStream.Entry::message))
+                    .doOnError(error -> logger.error(
+                            "An error happened while trying to report an initial result. Query: {}",
+                            query, error
+                    ));
+        UpdateHandler updateHandler = subscribeToUpdates(query, updateBufferSize);
+
+        return new GenericSubscriptionQueryResponseMessages(initialStream,
+                                                            updateHandler.updates(),
+                                                            updateHandler::complete);
     }
 
     @Nonnull

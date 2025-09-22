@@ -39,7 +39,6 @@ import org.axonframework.axonserver.connector.util.ProcessingInstructionHelper;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.lifecycle.ShutdownInProgressException;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageType;
@@ -53,10 +52,9 @@ import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.queryhandling.SubscriptionQueryResponseMessages;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
@@ -65,7 +63,6 @@ import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -534,12 +531,11 @@ class AxonServerQueryBusTest {
                 instanceOf(String.class), instanceOf(String.class)
         );
 
-        SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> queryResult =
-                testSubject.subscriptionQuery(testQuery, null, 50);
+        SubscriptionQueryResponseMessages queryResult = testSubject.subscriptionQuery(testQuery, null, 50);
 
-        Mono<QueryResponseMessage> initialResult = queryResult.initialResult();
+        Flux<QueryResponseMessage> initialResult = queryResult.initialResult();
         Flux<SubscriptionQueryUpdateMessage> updates = queryResult.updates();
-        queryResult.cancel();
+        queryResult.close();
 
         StepVerifier.create(initialResult)
                     .expectNextMatches(r -> r.payload().equals("Hello world"))
@@ -560,12 +556,11 @@ class AxonServerQueryBusTest {
                 instanceOf(String.class), instanceOf(String.class)
         );
 
-        SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> queryResult =
-                testSubject.subscriptionQuery(testQuery, null, 50);
+        SubscriptionQueryResponseMessages queryResult = testSubject.subscriptionQuery(testQuery, null, 50);
 
-        Mono<QueryResponseMessage> initialResult = queryResult.initialResult();
+        Flux<QueryResponseMessage> initialResult = queryResult.initialResult();
         Flux<SubscriptionQueryUpdateMessage> updates = queryResult.updates();
-        queryResult.cancel();
+        queryResult.close();
 
         StepVerifier.create(initialResult.map(Message::payload))
                     .verifyError();

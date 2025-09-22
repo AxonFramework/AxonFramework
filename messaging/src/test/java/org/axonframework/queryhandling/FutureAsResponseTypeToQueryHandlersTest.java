@@ -23,7 +23,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.junit.jupiter.api.*;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
@@ -106,7 +106,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        Mono<List<String>> response = queryBus.subscriptionQuery(testQuery, null, 50)
+        Flux<List<String>> response = queryBus.subscriptionQuery(testQuery, null, 50)
                                               .initialResult()
                                               .mapNotNull(m -> m.payloadAs(LIST_OF_STRINGS));
 
@@ -122,7 +122,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
                 instanceOf(String.class), instanceOf(String.class)
         );
 
-        Mono<String> response = queryBus.subscriptionQuery(testQuery, null, 50)
+        Flux<String> response = queryBus.subscriptionQuery(testQuery, null, 50)
                                         .initialResult()
                                         .mapNotNull(m -> m.payloadAs(String.class));
 
@@ -155,7 +155,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        Mono<List<String>> response = queryBus.subscriptionQuery(testQuery, null, 50)
+        Flux<List<String>> response = queryBus.subscriptionQuery(testQuery, null, 50)
                                               .initialResult()
                                               .mapNotNull(m -> m.payloadAs(LIST_OF_STRINGS));
 
