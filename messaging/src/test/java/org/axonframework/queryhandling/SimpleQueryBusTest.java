@@ -359,6 +359,31 @@ class SimpleQueryBusTest {
     class SubscriptionQuery {
 
         @Test
+        void subscriptionQueryInitialResultIsLazy() {
+            // given...
+            AtomicBoolean invoked = new AtomicBoolean(false);
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, QUERY_PAYLOAD, SINGLE_STRING_RESPONSE, SINGLE_STRING_RESPONSE
+            );
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> {
+                invoked.set(true);
+                QueryResponseMessage response =
+                        new GenericQueryResponseMessage(RESPONSE_TYPE, query.payload() + "1234");
+                return MessageStream.just(response);
+            });
+            // when...
+            SubscriptionQueryResponseMessages result =
+                    testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
+            Flux<QueryResponseMessage> initialResult = result.initialResult();
+            // then...
+            assertThat(invoked).isFalse();
+            StepVerifier.create(initialResult)
+                        .expectNextMatches(response -> Objects.equals(response.payload(), "query1234"))
+                        .verifyComplete();
+            assertThat(invoked).isTrue();
+        }
+
+        @Test
         void subscriptionQueryReportsExceptionInInitialResult() {
             // given...
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(

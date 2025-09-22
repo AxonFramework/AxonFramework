@@ -31,6 +31,7 @@ import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
 import java.util.ArrayList;
@@ -165,7 +166,9 @@ public class SimpleQueryBus implements QueryBus {
                        () -> "Subscription Query query does not support Flux as an update type.");
 
         Flux<QueryResponseMessage> initialStream =
-                Flux.from(query(query, context).asFlux().map(MessageStream.Entry::message))
+                Mono.fromSupplier(() -> query(query, context))
+                    .flatMapMany(MessageStream::asFlux)
+                    .map(MessageStream.Entry::message)
                     .doOnError(error -> logger.error(
                             "An error happened while trying to report an initial result. Query: {}",
                             query, error
