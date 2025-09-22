@@ -17,11 +17,12 @@
 package org.axonframework.axonserver.connector.query.subscription;
 
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
+import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.event.util.GrpcExceptionParser;
 import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.queryhandling.SubscriptionQueryResponse;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.tracing.Span;
 import org.slf4j.Logger;
@@ -31,7 +32,7 @@ import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 
 /**
- * A {@link SubscriptionQueryResult} that emits initial response and update when subscription query response message is
+ * A {@link SubscriptionQueryResponse} that emits initial response and update when subscription query response message is
  * received.
  *
  * @author Sara Pellegrini
@@ -40,24 +41,24 @@ import reactor.core.publisher.Mono;
  * @author Allard Buijze
  * @since 4.0
  */
-public class AxonServerSubscriptionQueryResult
-        implements SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> {
+public class AxonServerSubscriptionQueryResponse
+        implements SubscriptionQueryResponse<QueryResponseMessage, SubscriptionQueryUpdateMessage> {
 
-    private final Logger logger = LoggerFactory.getLogger(AxonServerSubscriptionQueryResult.class);
+    private final Logger logger = LoggerFactory.getLogger(AxonServerSubscriptionQueryResponse.class);
 
     private final Mono<QueryResponseMessage> initialResult;
     private final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result;
     private final Flux<SubscriptionQueryUpdateMessage> updates;
 
     /**
-     * Instantiate a {@link AxonServerSubscriptionQueryResult} which will emit its initial response and the updates of
+     * Instantiate a {@link AxonServerSubscriptionQueryResponse} which will emit its initial response and the updates of
      * the subscription query.
      */
-    public AxonServerSubscriptionQueryResult(final SubscriptionQueryMessage queryMessage,
-                                             final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
-                                             final SubscriptionMessageSerializer subscriptionSerializer,
-                                             final QueryBusSpanFactory spanFactory,
-                                             final Span parentSpan) {
+    public AxonServerSubscriptionQueryResponse(final SubscriptionQueryMessage queryMessage,
+                                               final io.axoniq.axonserver.connector.query.SubscriptionQueryResult result,
+                                               final SubscriptionMessageSerializer subscriptionSerializer,
+                                               final QueryBusSpanFactory spanFactory,
+                                               final Span parentSpan) {
         updates = Flux.<SubscriptionQueryUpdateMessage>create(fluxSink -> {
             fluxSink.onRequest(count -> {
                 for (int i = 0; i < count; i++) {
@@ -117,11 +118,13 @@ public class AxonServerSubscriptionQueryResult
         }
     }
 
+    @Nonnull
     @Override
-    public Mono<QueryResponseMessage> initialResult() {
-        return initialResult;
+    public Flux<QueryResponseMessage> initialResult() {
+        return Flux.from(initialResult);
     }
 
+    @Nonnull
     @Override
     public Flux<SubscriptionQueryUpdateMessage> updates() {
         return updates;

@@ -16,20 +16,27 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link DefaultSubscriptionQueryResult}.
+ * Test class validating the {@link GenericSubscriptionQueryResponse} and partially the
+ * {@link GenericSubscriptionQueryResponseMessages}.
  *
  * @author Steven van Beelen
  */
-class DefaultSubscriptionQueryResultTest {
+class GenericSubscriptionQueryResponseTest {
+
+    private static final MessageType INITIAL_TYPE = new MessageType("query");
+    private static final MessageType UPDATE_TYPE = new MessageType("update");
+    private static final String INITIAL_PAYLOAD = "some-initial-result";
+    private static final String UPDATE_PAYLOAD = "some-update";
 
     @Test
     void handleInvokesErrorConsumerOnExceptionInTheInitialResult() {
@@ -38,14 +45,13 @@ class DefaultSubscriptionQueryResultTest {
         AtomicBoolean updateConsumed = new AtomicBoolean(false);
         AtomicBoolean errorConsumed = new AtomicBoolean(false);
 
-        DefaultSubscriptionQueryResult<Object, Object> testSubject = new DefaultSubscriptionQueryResult<>(
-                /*Mono.error(new RuntimeException("oops"))*/null,
+        SubscriptionQueryResponseMessages testResponseMessage = new GenericSubscriptionQueryResponseMessages(
+                Flux.error(new RuntimeException("oops")),
                 Flux.empty(),
-                () -> {
-                    canceled.set(true);
-                    return true;
-                }
+                () -> canceled.set(true)
         );
+        SubscriptionQueryResponse<Object, Object> testSubject =
+                new GenericSubscriptionQueryResponse<>(testResponseMessage, Message::payload, Message::payload);
 
         testSubject.handle(initialResult -> initialResultConsumed.set(true),
                            update -> updateConsumed.set(true),
@@ -64,14 +70,13 @@ class DefaultSubscriptionQueryResultTest {
         AtomicBoolean updateConsumed = new AtomicBoolean(false);
         AtomicBoolean errorConsumed = new AtomicBoolean(false);
 
-        DefaultSubscriptionQueryResult<Object, Object> testSubject = new DefaultSubscriptionQueryResult<>(
-                /*Mono.just("some-initial-result")*/null,
+        SubscriptionQueryResponseMessages testResponseMessage = new GenericSubscriptionQueryResponseMessages(
+                Flux.just(new GenericQueryResponseMessage(INITIAL_TYPE, INITIAL_PAYLOAD)),
                 Flux.error(new RuntimeException("oops")),
-                () -> {
-                    canceled.set(true);
-                    return true;
-                }
+                () -> canceled.set(true)
         );
+        SubscriptionQueryResponse<Object, Object> testSubject =
+                new GenericSubscriptionQueryResponse<>(testResponseMessage, Message::payload, Message::payload);
 
         testSubject.handle(initialResult -> initialResultConsumed.set(true),
                            update -> updateConsumed.set(true),
@@ -89,14 +94,13 @@ class DefaultSubscriptionQueryResultTest {
         AtomicBoolean updateConsumed = new AtomicBoolean(false);
         AtomicBoolean errorConsumed = new AtomicBoolean(false);
 
-        DefaultSubscriptionQueryResult<Object, Object> testSubject = new DefaultSubscriptionQueryResult<>(
-                /*Mono.just("some-initial-result")*/null,
-                Flux.just("some-update"),
-                () -> {
-                    canceled.set(true);
-                    return true;
-                }
+        SubscriptionQueryResponseMessages testResponseMessage = new GenericSubscriptionQueryResponseMessages(
+                Flux.just(new GenericQueryResponseMessage(INITIAL_TYPE, INITIAL_PAYLOAD)),
+                Flux.just(new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, UPDATE_PAYLOAD)),
+                () -> canceled.set(true)
         );
+        SubscriptionQueryResponse<Object, Object> testSubject =
+                new GenericSubscriptionQueryResponse<>(testResponseMessage, Message::payload, Message::payload);
 
         testSubject.handle(initialResult -> {
                                throw new RuntimeException("oops");
@@ -115,14 +119,13 @@ class DefaultSubscriptionQueryResultTest {
         AtomicBoolean initialResultConsumed = new AtomicBoolean(false);
         AtomicBoolean errorConsumed = new AtomicBoolean(false);
 
-        DefaultSubscriptionQueryResult<Object, Object> testSubject = new DefaultSubscriptionQueryResult<>(
-                /*Mono.just("some-initial-result")*/null,
-                Flux.just("some-update"),
-                () -> {
-                    canceled.set(true);
-                    return true;
-                }
+        SubscriptionQueryResponseMessages testResponseMessage = new GenericSubscriptionQueryResponseMessages(
+                Flux.just(new GenericQueryResponseMessage(INITIAL_TYPE, INITIAL_PAYLOAD)),
+                Flux.just(new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, UPDATE_PAYLOAD)),
+                () -> canceled.set(true)
         );
+        SubscriptionQueryResponse<Object, Object> testSubject =
+                new GenericSubscriptionQueryResponse<>(testResponseMessage, Message::payload, Message::payload);
 
         testSubject.handle(initialResult -> initialResultConsumed.set(true),
                            update -> {

@@ -35,7 +35,6 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerRegistration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.TargetContextResolver;
-import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.PriorityTaskSchedulers;
@@ -71,7 +70,7 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.queryhandling.SubscriptionQueryResponseMessages;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.UpdateHandler;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
@@ -488,12 +487,14 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                        Math.max(32, updateBufferSize),
                                                        Math.max(4, updateBufferSize >> 3)
                                                );
-            return new AxonServerSubscriptionQueryResult(
-                    interceptedQuery,
-                    result,
-                    subscriptionSerializer,
-                    spanFactory,
-                    span);
+            // TODO #3488 Pick up when picking up AxonServerQueryBus
+//            return new AxonServerSubscriptionQueryResult(
+//                    interceptedQuery,
+//                    result,
+//                    subscriptionSerializer,
+//                    spanFactory,
+//                    span);
+            return null;
         }
     }
 
