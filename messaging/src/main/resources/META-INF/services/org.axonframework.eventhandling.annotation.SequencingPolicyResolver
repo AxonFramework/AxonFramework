@@ -1,8 +1,0 @@
-# Default SequencingPolicyResolver implementations for Axon Framework
-# These resolvers handle the built-in sequencing policy annotations
-
-# Handles direct @SequencingPolicy annotations on methods and classes
-org.axonframework.eventhandling.annotation.DirectSequencingPolicyResolver
-
-# Handles @SequencingByProperty meta-annotations
-org.axonframework.eventhandling.annotation.SequencingByPropertyResolver

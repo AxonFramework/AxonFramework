@@ -171,22 +171,6 @@ class AnnotatedEventHandlingComponentSequencePolicyTest {
             assertThat(sequenceIdentifier).isEqualTo(AGGREGATE_IDENTIFIER);
         }
 
-        @Test
-        void should_use_sequencing_by_property_meta_annotation_when_annotated_on_class() {
-            // given
-            var eventHandler = new SequencingByPropertyEventHandler();
-            var component = annotatedEventHandlingComponent(eventHandler);
-            var eventPayload = new OrderEvent("order456", "item789");
-            var event = eventMessage(eventPayload);
-            var context = messageProcessingContext(event);
-
-            // when
-            var sequenceIdentifier = component.sequenceIdentifierFor(event, context);
-
-            // then
-            assertThat(sequenceIdentifier).isEqualTo("order456");
-        }
-
         @SequencingPolicy(type = SequentialPolicy.class)
         private static class SequentialPolicyEventHandler {
 
@@ -224,14 +208,6 @@ class AnnotatedEventHandlingComponentSequencePolicyTest {
 
             @EventHandler
             void handle(String event) {
-            }
-        }
-
-        @SequencingByProperty("orderId")
-        private static class SequencingByPropertyEventHandler {
-
-            @EventHandler
-            void handle(OrderEvent event) {
             }
         }
     }
@@ -316,22 +292,6 @@ class AnnotatedEventHandlingComponentSequencePolicyTest {
             assertThat(sequenceIdentifier).isEqualTo(AGGREGATE_IDENTIFIER);
         }
 
-        @Test
-        void should_use_sequencing_by_property_meta_annotation_when_annotated_on_method() {
-            // given
-            var eventHandler = new MethodLevelSequencingByPropertyEventHandler();
-            var component = annotatedEventHandlingComponent(eventHandler);
-            var eventPayload = new CustomerEvent("customer789", "Jane Doe");
-            var event = eventMessage(eventPayload);
-            var context = messageProcessingContext(event);
-
-            // when
-            var sequenceIdentifier = component.sequenceIdentifierFor(event, context);
-
-            // then
-            assertThat(sequenceIdentifier).isEqualTo("customer789");
-        }
-
         private static class MethodLevelSequentialPolicyEventHandler {
 
             @EventHandler
@@ -369,14 +329,6 @@ class AnnotatedEventHandlingComponentSequencePolicyTest {
             @EventHandler
             @SequencingPolicy(type = SequentialPerAggregatePolicy.class)
             void handle(String event) {
-            }
-        }
-
-        private static class MethodLevelSequencingByPropertyEventHandler {
-
-            @EventHandler
-            @SequencingByProperty("customerId")
-            void handle(CustomerEvent event) {
             }
         }
     }
