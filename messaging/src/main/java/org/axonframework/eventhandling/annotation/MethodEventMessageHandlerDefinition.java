@@ -83,7 +83,7 @@ public class MethodEventMessageHandlerDefinition implements HandlerEnhancerDefin
 
         @Override
         public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
-            return super.canHandle(message, context) && eventName.equals(message.type().name());
+            return super.canHandle(message, context) && (message instanceof EventMessage || eventName.equals(message.type().name()));
         }
 
         @Override
