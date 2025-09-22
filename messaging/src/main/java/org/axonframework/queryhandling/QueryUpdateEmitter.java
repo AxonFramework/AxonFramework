@@ -138,7 +138,7 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      * @param queryType The type of the {@link SubscriptionQueryMessage} to filter on.
      * @param filter    A predicate testing the {@link SubscriptionQueryMessage#payload()}, converted to the given
      *                  {@code queryType} to filter on.
-     * @param cause     The cause of an error leading to exceptionally complete a subscription query.
+     * @param cause     The cause of an error leading to exceptionally complete subscription queries.
      * @param <Q>       The type of the {@link SubscriptionQueryMessage} to filter on.
      * @throws MessageTypeNotResolvedException                     If the given {@code queryType} has no known
      *                                                             {@link org.axonframework.messaging.MessageType}
@@ -160,7 +160,7 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      * @param queryName The qualified name of the {@link SubscriptionQueryMessage#type()} to filter on.
      * @param filter    A predicate testing the {@link SubscriptionQueryMessage#payload()} as is to the given
      *                  {@code queryType} to filter on.
-     * @param cause     The cause of an error leading to exceptionally complete a subscription query.
+     * @param cause     The cause of an error leading to exceptionally complete subscription queries.
      */
     void completeExceptionally(@Nonnull QualifiedName queryName,
                                @Nonnull Predicate<Object> filter,
