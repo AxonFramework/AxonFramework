@@ -195,6 +195,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         return null;
     }
 
+    @Nonnull
     @Override
     public Publisher<QueryResponseMessage> streamingQuery(@Nonnull StreamingQueryMessage query,
                                                           @Nullable ProcessingContext context) {
