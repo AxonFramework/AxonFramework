@@ -59,25 +59,14 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
 
     /**
-     * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values.
-     *
-     * @param configuration The configuration, used to retrieve global default values, like
-     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
-     */
-    @Internal
-    public SubscribingEventProcessorConfiguration(@Nonnull Configuration configuration) {
-        super(configuration);
-    }
-
-    /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration}.
      * <p>
      * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * for events. Please use {@link #SubscribingEventProcessorConfiguration(Configuration)} when those are desired.
+     * for events. Please use {@link #SubscribingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are desired.
      */
     @Internal
     public SubscribingEventProcessorConfiguration() {
-        super(List.of());
+        super();
     }
 
     /**
@@ -87,6 +76,19 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      */
     @Internal
     public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base) {
+        super(base);
+    }
+
+    /**
+     * Constructs a new {@code SubscribingEventProcessorConfiguration} with default values and retrieve global default
+     * values.
+     *
+     * @param configuration The configuration, used to retrieve global default values, like
+     *                      {@link MessageHandlerInterceptor MessageHandlerInterceptors}, from.
+     */
+    @Internal
+    public SubscribingEventProcessorConfiguration(@Nonnull EventProcessorConfiguration base,
+                                                  @Nonnull Configuration configuration) {
         super(base);
     }
 

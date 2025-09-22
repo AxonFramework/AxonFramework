@@ -200,7 +200,8 @@ public class SubscribingEventProcessorModule extends BaseModule<SubscribingEvent
     private static SubscribingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
         return new SubscribingEventProcessorConfiguration(
                 parentSharedCustomizationOrDefault(cfg)
-                        .apply(cfg, new EventProcessorConfiguration(cfg))
+                        .apply(cfg, new EventProcessorConfiguration(cfg)),
+                cfg
         );
     }
 
