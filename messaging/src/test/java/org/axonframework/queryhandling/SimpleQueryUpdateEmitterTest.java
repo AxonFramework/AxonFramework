@@ -24,8 +24,6 @@ import org.axonframework.queryhandling.tracing.QueryUpdateEmitterSpanFactory;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -63,7 +61,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandler result = queryBus.subscribe(queryMessage, 1024);
+        UpdateHandler result = queryBus.subscribeToUpdates(queryMessage, 1024);
 
 //        testSubject.emit(any -> true, "some-awesome-text");
         result.complete();
@@ -80,7 +78,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandler registration = queryBus.subscribe(queryMessage, 128);
+        UpdateHandler registration = queryBus.subscribeToUpdates(queryMessage, 128);
 
         ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (int i = 0; i < 100; i++) {
@@ -100,7 +98,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandler registration = queryBus.subscribe(queryMessage, 128);
+        UpdateHandler registration = queryBus.subscribeToUpdates(queryMessage, 128);
 
         ExecutorService executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (int i = 0; i < 100; i++) {
@@ -120,7 +118,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandler result = queryBus.subscribe(queryMessage, 1024);
+        UpdateHandler result = queryBus.subscribeToUpdates(queryMessage, 1024);
 
 //        testSubject.emit(any -> true, "some-awesome-text");
         result.cancel();
@@ -137,7 +135,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandler result = queryBus.subscribe(
+        UpdateHandler result = queryBus.subscribeToUpdates(
                 queryMessage,
                 1024
         );
@@ -158,7 +156,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandler result = queryBus.subscribe(
+        UpdateHandler result = queryBus.subscribeToUpdates(
                 queryMessage,
                 1024
         );
@@ -182,7 +180,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(Integer.class)
         );
 
-        UpdateHandler result = queryBus.subscribe(
+        UpdateHandler result = queryBus.subscribeToUpdates(
                 queryMessage,
                 1024
         );
@@ -204,7 +202,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), multipleInstancesOf(String.class)
         );
 
-        UpdateHandler result = queryBus.subscribe(
+        UpdateHandler result = queryBus.subscribeToUpdates(
                 queryMessage,
                 1024
         );
@@ -233,7 +231,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), optionalInstanceOf(String.class)
         );
 
-        UpdateHandler result = queryBus.subscribe(
+        UpdateHandler result = queryBus.subscribeToUpdates(
                 queryMessage,
                 1024
         );
@@ -262,7 +260,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), publisherOf(String.class)
         );
 
-        UpdateHandler result = queryBus.subscribe(
+        UpdateHandler result = queryBus.subscribeToUpdates(
                 queryMessage,
                 1024
         );
@@ -318,7 +316,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), multipleInstancesOf(String.class)
         );
 
-        UpdateHandler result = queryBus.subscribe(
+        UpdateHandler result = queryBus.subscribeToUpdates(
                 queryMessage,
                 1024
         );
@@ -340,7 +338,7 @@ class SimpleQueryUpdateEmitterTest {
                 optionalInstanceOf(String.class), optionalInstanceOf(String.class)
         );
 
-        UpdateHandler result = queryBus.subscribe(
+        UpdateHandler result = queryBus.subscribeToUpdates(
                 queryMessage,
                 1024
         );
@@ -362,7 +360,7 @@ class SimpleQueryUpdateEmitterTest {
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
-        UpdateHandler result = queryBus.subscribe(
+        UpdateHandler result = queryBus.subscribeToUpdates(
                 queryMessage,
                 1024
         );

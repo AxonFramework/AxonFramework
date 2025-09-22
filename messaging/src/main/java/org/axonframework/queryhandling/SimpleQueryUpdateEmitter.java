@@ -61,8 +61,8 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
      * {@link #complete(Class, Predicate)}/{@link #complete(QualifiedName, Predicate)} and
      * {@link #completeExceptionally(Class, Predicate, Throwable)}/{@link #completeExceptionally(QualifiedName,
      * Predicate, Throwable)} are respectively delegated to
-     * {@link QueryBus#completeSubscription(Predicate, ProcessingContext)} and
-     * {@link QueryBus#completeSubscriptionExceptionally(Predicate, Throwable, ProcessingContext)}.
+     * {@link QueryBus#completeSubscriptions(Predicate, ProcessingContext)} and
+     * {@link QueryBus#completeSubscriptionsExceptionally(Predicate, Throwable, ProcessingContext)}.
      *
      * @param messageTypeResolver The {@link org.axonframework.messaging.MessageType} resolver used to construct
      *                            {@link SubscriptionQueryUpdateMessage update messages} for
@@ -117,7 +117,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         if (logger.isDebugEnabled()) {
             logger.debug("Completing subscription queries of type [{}].", queryType);
         }
-        queryBus.completeSubscription(concretePayloadTypeFilter(queryType, filter), context)
+        queryBus.completeSubscriptions(concretePayloadTypeFilter(queryType, filter), context)
                 .join();
     }
 
@@ -126,7 +126,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         if (logger.isDebugEnabled()) {
             logger.debug("Completing subscription queries with name [{}].", queryName);
         }
-        queryBus.completeSubscription(queryNameFilter(queryName, filter), context)
+        queryBus.completeSubscriptions(queryNameFilter(queryName, filter), context)
                 .join();
     }
 
@@ -137,7 +137,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         if (logger.isDebugEnabled()) {
             logger.debug("Completing subscription queries of type [{}] exceptionally.", queryType, cause);
         }
-        queryBus.completeSubscriptionExceptionally(concretePayloadTypeFilter(queryType, filter), cause, context)
+        queryBus.completeSubscriptionsExceptionally(concretePayloadTypeFilter(queryType, filter), cause, context)
                 .join();
     }
 
@@ -148,7 +148,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         if (logger.isDebugEnabled()) {
             logger.debug("Completing subscription queries with name [{}] exceptionally.", queryName, cause);
         }
-        queryBus.completeSubscriptionExceptionally(queryNameFilter(queryName, filter), cause, context)
+        queryBus.completeSubscriptionsExceptionally(queryNameFilter(queryName, filter), cause, context)
                 .join();
     }
 

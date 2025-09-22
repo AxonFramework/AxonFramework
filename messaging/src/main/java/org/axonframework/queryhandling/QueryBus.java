@@ -129,9 +129,13 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
             int updateBufferSize
     );
 
-        /**
+    /**
      * Subscribes the given {@code query} with the given {@code updateBufferSize}, resulting in an {@link UpdateHandler}
      * providing a {@link reactor.core.publisher.Flux} to the emitted updates.
+     * <p>
+     * Can be used directly instead when fine-grained control of update handlers is required. If using the
+     * {@link UpdateHandler} directly is not mandatory for your use case, we strongly recommend using
+     * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)} instead.
      *
      * @param query            The subscription query for which we register an update handler.
      * @param updateBufferSize The size of buffer that accumulates updates before a subscription to the
@@ -143,33 +147,65 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      */
     @Internal
     @Nonnull
-    UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query, int updateBufferSize);
+    UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize);
 
-    // TODO JavaDoc
+    /**
+     * Emits the given {@code update} to
+     * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries}
+     * matching the given {@code filter}.
+     *
+     * @param filter  A predicate filtering on {@link SubscriptionQueryMessage SubscriptionQueryMessages}. The
+     *                {@code update} will only be sent to subscription queries matching this filter.
+     * @param update  The incremental update to emit for
+     *                {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription
+     *                queries} matching the given {@code filter}.
+     * @param context The processing context under which the update is being emitted (can be {@code null}).
+     * @return A future completing whenever the update has been emitted.
+     */
     @Nonnull
     CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
                                        @Nonnull SubscriptionQueryUpdateMessage update,
                                        @Nullable ProcessingContext context);
 
-    // TODO JavaDoc
+    /**
+     * Completes
+     * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries}
+     * matching the given {@code filter}.
+     * <p>
+     * To be used whenever there are no subsequent update to
+     * {@link #emitUpdate(Predicate, SubscriptionQueryUpdateMessage, ProcessingContext) emit} left.
+     *
+     * @param filter  A predicate filtering on {@link SubscriptionQueryMessage SubscriptionQueryMessages}. Subscription
+     *                queries matching this filter will be completed.
+     * @param context The processing context within which to complete subscription queries (can be {@code null}).
+     * @return A future completing whenever all matching
+     * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries} have
+     * been completed.
+     */
+    @Nonnull
+    CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                  @Nullable ProcessingContext context);
 
     /**
-     * Completes subscription queries matching given filter.
+     * Completes
+     * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries}
+     * matching the given {@code filter} exceptionally with the given {@code cause}.
+     * <p>
+     * To be used whenever
+     * {@link #emitUpdate(Predicate, SubscriptionQueryUpdateMessage, ProcessingContext) emitting updates} should be
+     * stopped due to some exception.
      *
-     * @param filter predicate on subscription query message used to filter subscription queries
+     * @param filter  A predicate filtering on {@link SubscriptionQueryMessage SubscriptionQueryMessages}. Subscription
+     *                queries matching this filter will be completed exceptionally.
+     * @param cause   the cause of an error
+     * @param context The processing context within which to complete subscription queries exceptionally (can be
+     *                {@code null}).
+     * @return A future completing whenever all matching
+     * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries} have
+     * been completed exceptionally.
      */
-    CompletableFuture<Void> completeSubscription(@Nonnull Predicate<SubscriptionQueryMessage> filter,
-                                                 @Nullable ProcessingContext context);
-
-    // TODO JavaDoc
-
-    /**
-     * Completes with an error subscription queries matching given filter.
-     *
-     * @param filter predicate on subscription query message used to filter subscription queries
-     * @param cause  the cause of an error
-     */
-    CompletableFuture<Void> completeSubscriptionExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter,
-                                                              @Nonnull Throwable cause,
-                                                              @Nullable ProcessingContext context);
+    @Nonnull
+    CompletableFuture<Void> completeSubscriptionsExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                               @Nonnull Throwable cause,
+                                                               @Nullable ProcessingContext context);
 }

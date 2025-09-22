@@ -167,7 +167,7 @@ public class SimpleQueryBus implements QueryBus {
 //                                                               query,
 //                                                               error
 //                                                       ));
-        UpdateHandler updateHandler = subscribe(query, updateBufferSize);
+        UpdateHandler updateHandler = subscribeToUpdates(query, updateBufferSize);
         return new DefaultSubscriptionQueryResult<>(initialStream,
                                                     updateHandler.updates(),
                                                     () -> {
@@ -177,8 +177,8 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Nonnull
-    public UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query,
-                                    int updateBufferSize) {
+    public UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
+                                            int updateBufferSize) {
         if (hasHandlerFor(query.identifier())) {
             throw new SubscriptionQueryAlreadyRegisteredException(query.identifier());
         }
@@ -256,9 +256,10 @@ public class SimpleQueryBus implements QueryBus {
                       });
     }
 
+    @Nonnull
     @Override
-    public CompletableFuture<Void> completeSubscription(@Nonnull Predicate<SubscriptionQueryMessage> filter,
-                                                        @Nullable ProcessingContext context) {
+    public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                         @Nullable ProcessingContext context) {
         return runAfterCommitOrImmediately(context, () -> doComplete(filter));
     }
 
@@ -276,8 +277,9 @@ public class SimpleQueryBus implements QueryBus {
                       });
     }
 
+    @Nonnull
     @Override
-    public CompletableFuture<Void> completeSubscriptionExceptionally(
+    public CompletableFuture<Void> completeSubscriptionsExceptionally(
             @Nonnull Predicate<SubscriptionQueryMessage> filter,
             @Nonnull Throwable cause,
             @Nullable ProcessingContext context

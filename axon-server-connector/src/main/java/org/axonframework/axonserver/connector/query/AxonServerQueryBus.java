@@ -498,7 +498,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     @Nonnull
     @Override
-    public UpdateHandler subscribe(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
+    public UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
         // TODO #3488 implement as part of AxonServerQueryBus implementation
         return null;
     }
@@ -512,15 +512,17 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         return null;
     }
 
+    @Nonnull
     @Override
-    public CompletableFuture<Void> completeSubscription(@Nonnull Predicate<SubscriptionQueryMessage> filter,
-                                                        @Nullable ProcessingContext context) {
+    public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                         @Nullable ProcessingContext context) {
         // TODO #3488 implement as part of AxonServerQueryBus implementation
         return null;
     }
 
+    @Nonnull
     @Override
-    public CompletableFuture<Void> completeSubscriptionExceptionally(
+    public CompletableFuture<Void> completeSubscriptionsExceptionally(
             @Nonnull Predicate<SubscriptionQueryMessage> filter,
             @Nonnull Throwable cause,
             @Nullable ProcessingContext context
@@ -1059,7 +1061,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         public io.axoniq.axonserver.connector.Registration registerSubscriptionQuery(SubscriptionQuery query,
                                                                                      UpdateHandler sendUpdate) {
             org.axonframework.queryhandling.UpdateHandler updateHandler =
-                    localSegment.subscribe(subscriptionSerializer.deserialize(query), 1024);
+                    localSegment.subscribeToUpdates(subscriptionSerializer.deserialize(query), 1024);
 
             updateHandler.updates()
                          .doOnError(e -> {
