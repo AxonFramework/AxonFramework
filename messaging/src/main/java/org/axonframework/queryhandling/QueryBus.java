@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 /**
  * The mechanism that dispatches {@link QueryMessage queries} to their appropriate {@link QueryHandler query handler}.
  * <p>
- * Query handlers can {@link #subscribe(QueryHandlerName, QueryHandler) subscribed} to the query bus to handle queries
+ * Query handlers can {@link #subscribe(QueryHandlerName, QueryHandler) subscribe} to the query bus to handle queries
  * matching the {@link QueryHandlerName#queryName()} and {@link QueryHandlerName#responseName()}. Matching is done based
  * on the {@link QualifiedName} present in the {@link QueryMessage#type() query's type} and the {@code QualifiedName}
  * resulting from the {@link QueryMessage#responseType() response type}.

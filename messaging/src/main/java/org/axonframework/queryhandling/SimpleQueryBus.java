@@ -46,7 +46,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -61,7 +60,7 @@ import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
 
 /**
  * Implementation of the {@code QueryBus} that dispatches queries (through
- * {@link #query(QueryMessage, ProcessingContext) dispatches}, {@link #streamingQuery(StreamingQueryMessage)}, or
+ * {@link #query(QueryMessage, ProcessingContext)}, {@link #streamingQuery(StreamingQueryMessage)}, or
  * {@link #subscriptionQuery(SubscriptionQueryMessage)}) to the {@link QueryHandler QueryHandlers} subscribed to that
  * specific query's {@link QualifiedName name} and {@link ResponseType type} combination.
  * <p>
