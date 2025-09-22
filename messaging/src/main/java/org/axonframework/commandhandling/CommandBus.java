@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
  * Command handlers can {@link #subscribe(QualifiedName, CommandHandler) subscribe} to the command bus to handle
  * commands matching the {@link QualifiedName} in the {@link CommandMessage#type() command type}.
  * <p>
- * Hence, commands {@link #dispatch(CommandMessage, ProcessingContext) dispatched} matches a command handler based on
+ * Hence, commands {@link #dispatch(CommandMessage, ProcessingContext) dispatched} match a command handler based on
  * "command name."
  * <p>
  * Only a <em>single</em> handler may be subscribed for a given command name at any time.
