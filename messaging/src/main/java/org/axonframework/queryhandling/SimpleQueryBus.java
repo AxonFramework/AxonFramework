@@ -17,7 +17,6 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context.ResourceKey;
@@ -27,7 +26,6 @@ import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -43,8 +41,9 @@ import java.util.function.Predicate;
 
 /**
  * Implementation of the {@code QueryBus} that dispatches queries (through
- * {@link #query(QueryMessage, ProcessingContext)} or {@link #subscriptionQuery(SubscriptionQueryMessage)})
- * to the {@link QueryHandler QueryHandlers} subscribed to that specific query's {@link QualifiedName name} and
+ * {@link #query(QueryMessage, ProcessingContext)} or
+ * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)}) to the
+ * {@link QueryHandler QueryHandlers} subscribed to that specific query's {@link QualifiedName name} and
  * {@link ResponseType type} combination.
  * <p>
  * Furthermore, it is in charge of invoking the {@link #subscribe(QueryHandlerName, QueryHandler) subscribed}
@@ -73,9 +72,9 @@ public class SimpleQueryBus implements QueryBus {
     /**
      * Construct a {@code SimpleQueryBus} with the given {@code unitOfWorkFactory} and {@code queryUpdateEmitter}.
      *
-     * @param unitOfWorkFactory  The factory constructing
-     *                           {@link org.axonframework.messaging.unitofwork.UnitOfWork units of work} to dispatch and
-     *                           handle queries in.
+     * @param unitOfWorkFactory The factory constructing
+     *                          {@link org.axonframework.messaging.unitofwork.UnitOfWork units of work} to dispatch and
+     *                          handle queries in.
      */
     public SimpleQueryBus(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
         this.unitOfWorkFactory = Objects.requireNonNull(unitOfWorkFactory, "The UnitOfWorkFactory must be provided.");
@@ -150,33 +149,6 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     @Nonnull
-    @Override
-    public SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage query,
-            @Nullable ProcessingContext context,
-            int updateBufferSize
-    ) {
-        assertSubQueryResponseTypes(query);
-        MessageStream<QueryResponseMessage> initialStream = query(query, context);
-
-
-        // TODO #3488 - Fix once implementing subscription queries
-//        Mono<QueryResponseMessage> initialResult = Mono.fromFuture(() -> query(query))
-//                                                       .doOnError(error -> logger.error(
-//                                                               "An error happened while trying to report an initial result. Query: {}",
-//                                                               query,
-//                                                               error
-//                                                       ));
-        UpdateHandler updateHandler = subscribeToUpdates(query, updateBufferSize);
-        return new DefaultSubscriptionQueryResult<>(initialStream,
-                                                    updateHandler.updates(),
-                                                    () -> {
-                                                        updateHandler.complete();
-                                                        return true;
-                                                    });
-    }
-
-    @Nonnull
     public UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query,
                                             int updateBufferSize) {
         if (hasHandlerFor(query.identifier())) {
@@ -199,14 +171,6 @@ public class SimpleQueryBus implements QueryBus {
 
     private boolean hasHandlerFor(String queryId) {
         return updateHandlers.keySet().stream().anyMatch(m -> m.identifier().equals(queryId));
-    }
-
-
-    private void assertSubQueryResponseTypes(SubscriptionQueryMessage query) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
-                       () -> "Subscription Query query does not support Flux as a return type.");
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.updatesResponseType().getExpectedResponseType()),
-                       () -> "Subscription Query query does not support Flux as an update type.");
     }
 
     @Nonnull
