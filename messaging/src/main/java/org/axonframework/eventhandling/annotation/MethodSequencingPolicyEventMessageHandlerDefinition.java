@@ -26,28 +26,53 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Optional;
 import jakarta.annotation.Nonnull;
 
 /**
- * Definition of handlers that are annotated with {@link SequencingPolicy}. These handlers are wrapped with a
- * {@link SequencingPolicyEventMessageHandlingMember} that provides access to the configured sequencing policy.
+ * Definition of handlers that are annotated with sequencing policy annotations.
+ * These handlers are wrapped with a {@link SequencingPolicyEventMessageHandlingMember} that provides access
+ * to the configured sequencing policy.
+ * <p>
+ * This implementation uses a {@link SequencingPolicyResolver} to handle different types of sequencing
+ * policy annotations in an extensible way. By default, resolvers are discovered using {@link java.util.ServiceLoader}
+ * from {@code META-INF/services/org.axonframework.eventhandling.annotation.SequencingPolicyResolver}.
+ * New annotation types can be supported by implementing {@link SequencingPolicyResolver} and registering
+ * it as a service without modifying this class.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 public class MethodSequencingPolicyEventMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
+    private final SequencingPolicyResolver resolver;
+
+    /**
+     * Creates a new {@link MethodSequencingPolicyEventMessageHandlerDefinition} using the default
+     * resolver chain that supports all built-in sequencing policy annotations.
+     * <p>
+     * The resolvers are discovered using {@link java.util.ServiceLoader} which allows for
+     * extensible registration of custom {@link SequencingPolicyResolver} implementations.
+     */
+    public MethodSequencingPolicyEventMessageHandlerDefinition() {
+        this(SequencingPolicyResolverFactory.createDefaultResolver());
+    }
+
+    /**
+     * Creates a new {@link MethodSequencingPolicyEventMessageHandlerDefinition} using the specified
+     * resolver. This constructor allows for customization of the sequencing policy resolution logic.
+     *
+     * @param resolver The {@link SequencingPolicyResolver} to use for resolving sequencing policies
+     */
+    public MethodSequencingPolicyEventMessageHandlerDefinition(SequencingPolicyResolver resolver) {
+        this.resolver = resolver;
+    }
+
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
         return original.unwrap(Method.class)
-                       .flatMap(method -> findSequencingPolicy(method).map(annotation -> (MessageHandlingMember<T>) new SequencingPolicyEventMessageHandlingMember<>(original, annotation)))
+                       .flatMap(resolver::resolve)
+                       .map(annotation -> (MessageHandlingMember<T>) new SequencingPolicyEventMessageHandlingMember<>(original, annotation))
                        .orElse(original);
-    }
-
-    private Optional<SequencingPolicy> findSequencingPolicy(Method method) {
-        return Optional.ofNullable(method.getAnnotation(SequencingPolicy.class))
-                       .or(() -> Optional.ofNullable(method.getDeclaringClass().getAnnotation(SequencingPolicy.class)));
     }
 
     public static class SequencingPolicyEventMessageHandlingMember<T>
