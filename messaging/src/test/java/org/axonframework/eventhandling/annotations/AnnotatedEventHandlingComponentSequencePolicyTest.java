@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.sequencing.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.sequencing.MetadataSequencingPolicy;
 import org.axonframework.eventhandling.sequencing.PropertySequencingPolicy;
 import org.axonframework.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.MessageType;
@@ -155,6 +156,21 @@ class AnnotatedEventHandlingComponentSequencePolicyTest {
             assertThat(sequenceIdentifier).isEqualTo("order123");
         }
 
+        @Test
+        void should_use_sequential_per_aggregate_policy_when_annotated_on_class() {
+            // given
+            var eventHandler = new SequentialPerAggregatePolicyEventHandler();
+            var component = annotatedEventHandlingComponent(eventHandler);
+            var event = eventMessage("test-event");
+            var context = messageProcessingContext(event);
+
+            // when
+            var sequenceIdentifier = component.sequenceIdentifierFor(event, context);
+
+            // then
+            assertThat(sequenceIdentifier).isEqualTo(AGGREGATE_IDENTIFIER);
+        }
+
         @SequencingPolicy(type = SequentialPolicy.class)
         private static class SequentialPolicyEventHandler {
 
@@ -184,6 +200,14 @@ class AnnotatedEventHandlingComponentSequencePolicyTest {
 
             @EventHandler
             void handle(OrderEvent event) {
+            }
+        }
+
+        @SequencingPolicy(type = SequentialPerAggregatePolicy.class)
+        private static class SequentialPerAggregatePolicyEventHandler {
+
+            @EventHandler
+            void handle(String event) {
             }
         }
     }
@@ -253,6 +277,21 @@ class AnnotatedEventHandlingComponentSequencePolicyTest {
             assertThat(sequenceIdentifier).isEqualTo("customer456");
         }
 
+        @Test
+        void should_use_sequential_per_aggregate_policy_when_annotated_on_method() {
+            // given
+            var eventHandler = new MethodLevelSequentialPerAggregatePolicyEventHandler();
+            var component = annotatedEventHandlingComponent(eventHandler);
+            var event = eventMessage("test-event");
+            var context = messageProcessingContext(event);
+
+            // when
+            var sequenceIdentifier = component.sequenceIdentifierFor(event, context);
+
+            // then
+            assertThat(sequenceIdentifier).isEqualTo(AGGREGATE_IDENTIFIER);
+        }
+
         private static class MethodLevelSequentialPolicyEventHandler {
 
             @EventHandler
@@ -282,6 +321,14 @@ class AnnotatedEventHandlingComponentSequencePolicyTest {
             @EventHandler
             @SequencingPolicy(type = PropertySequencingPolicy.class, parameters = {"customerId"})
             void handle(CustomerEvent event) {
+            }
+        }
+
+        private static class MethodLevelSequentialPerAggregatePolicyEventHandler {
+
+            @EventHandler
+            @SequencingPolicy(type = SequentialPerAggregatePolicy.class)
+            void handle(String event) {
             }
         }
     }
