@@ -31,9 +31,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class SimpleQueryHandlingComponent implements QueryHandlingComponent {
+public class SimpleQueryHandlingComponent
+        implements QueryHandlingComponent, QueryHandlerRegistry<SimpleQueryHandlingComponent> {
 
-    private final ConcurrentHashMap<QualifiedName, QueryHandler> queryHandlers;
+    private final ConcurrentHashMap<QueryHandlerName, QueryHandler> queryHandlers;
 
     public SimpleQueryHandlingComponent() {
         this.queryHandlers = new ConcurrentHashMap<>();
@@ -42,10 +43,12 @@ public class SimpleQueryHandlingComponent implements QueryHandlingComponent {
     @Nonnull
     @Override
     public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
-                                                         @Nonnull ProcessingContext context) {
+                                                      @Nonnull ProcessingContext context) {
         QualifiedName name = query.type().qualifiedName();
-        // TODO #3488 add interceptor knowledge
-        QueryHandler handler = queryHandlers.get(name);
+        QueryHandlerName handlerName = new QueryHandlerName(
+                name, new QualifiedName(query.responseType().getExpectedResponseType())
+        );
+        QueryHandler handler = queryHandlers.get(handlerName);
         if (handler == null) {
             // TODO #3488 this would benefit from a dedicate exception
             return MessageStream.failed(new IllegalArgumentException(
@@ -56,20 +59,20 @@ public class SimpleQueryHandlingComponent implements QueryHandlingComponent {
     }
 
     @Override
-    public SimpleQueryHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
+    public SimpleQueryHandlingComponent subscribe(@Nonnull Set<QueryHandlerName> names,
                                                   @Nonnull QueryHandler handler) {
         names.forEach(name -> queryHandlers.put(name, Objects.requireNonNull(handler, "TODO")));
         return this;
     }
 
     @Override
-    public SimpleQueryHandlingComponent subscribe(@Nonnull QualifiedName name,
+    public SimpleQueryHandlingComponent subscribe(@Nonnull QueryHandlerName queryName,
                                                   @Nonnull QueryHandler handler) {
-        return subscribe(Set.of(name), handler);
+        return subscribe(Set.of(queryName), handler);
     }
 
     @Override
-    public Set<QualifiedName> supportedQueries() {
+    public Set<QueryHandlerName> supportedQueries() {
         return Set.copyOf(queryHandlers.keySet());
     }
 }

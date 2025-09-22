@@ -46,6 +46,7 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.StringUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
@@ -59,19 +60,20 @@ import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryBusSpanFactory;
+import org.axonframework.queryhandling.QueryHandlerName;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.UpdateHandlerRegistration;
+import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
+import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
@@ -138,7 +140,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     private final AxonServerConnectionManager axonServerConnectionManager;
     private final AxonServerConfiguration configuration;
     private final QueryUpdateEmitter updateEmitter;
-    private final SimpleQueryBus localSegment;
+    private final QueryBus localSegment;
     private final QuerySerializer serializer;
     private final SubscriptionMessageSerializer subscriptionSerializer;
     private final QueryPriorityCalculator priorityCalculator;
@@ -186,6 +188,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     @Override
+    public QueryBus subscribe(@Nonnull QueryHandlerName handlerName,
+                              @Nonnull org.axonframework.queryhandling.QueryHandler queryHandler) {
+        // TODO #3488 - Pick up when replacing the AxonServerQueryBus
+        return null;
+    }
+
+    @Override
     public Publisher<QueryResponseMessage> streamingQuery(StreamingQueryMessage query) {
         Span span = spanFactory.createStreamingQuerySpan(query, true).start();
         try (SpanScope unused = span.makeCurrent()) {
@@ -227,7 +236,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      * Instantiate a Builder to be able to create an {@link AxonServerQueryBus}.
      * <p>
      * The {@link QueryPriorityCalculator} is defaulted to
-     * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()}, the {@link TargetContextResolver} defaults to a
+     * {@link QueryPriorityCalculator#defaultCalculator()}, the {@link TargetContextResolver} defaults to a
      * lambda returning the {@link AxonServerConfiguration#getContext()} as the context. The
      * {@link ExecutorServiceFactory} creates a {@link ThreadPoolExecutor} with {@link BlockingQueue} and a poolsize
      * provided by the {@link AxonServerConfiguration}.<br/>
@@ -249,12 +258,13 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         shutdownLatch.initialize();
     }
 
-    @Override
+    // TODO #3488 - Pick up when replacing the AxonServerQueryBus
     public Registration subscribe(
             @Nonnull String queryName,
             @Nonnull Type responseType,
             @Nonnull MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> handler) {
-        Registration localRegistration = localSegment.subscribe(queryName, responseType, handler);
+//        Registration localRegistration = localSegment.subscribe(queryName, responseType, handler);
+        Registration localRegistration = () -> true;
         QueryDefinition queryDefinition = new QueryDefinition(queryName, responseType);
         io.axoniq.axonserver.connector.Registration serverRegistration =
                 axonServerConnectionManager.getConnection(context)
@@ -340,6 +350,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     private QueryRequest serializeStreaming(QueryMessage query, int priority) {
         return serialize(query, true, priority);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        // TODO #3488 Implement as part of Axon Server Query Bus implementation
     }
 
     /**
@@ -542,7 +557,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     public Registration registerHandlerInterceptor(
             @Nonnull MessageHandlerInterceptor<QueryMessage> interceptor) {
-        return localSegment.registerHandlerInterceptor(interceptor);
+        return null;
     }
 
     public @Nonnull
@@ -584,7 +599,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
      * Builder class to instantiate an {@link AxonServerQueryBus}.
      * <p>
      * The {@link QueryPriorityCalculator} is defaulted to
-     * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()} and the {@link TargetContextResolver} defaults
+     * {@link QueryPriorityCalculator#defaultCalculator()} and the {@link TargetContextResolver} defaults
      * to a lambda returning the {@link AxonServerConfiguration#getContext()} as the context.<br/>
      * The {@code queryExecutorServiceBuilder} builds an {@link ExecutorService} based on a given
      * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
@@ -603,11 +618,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         private AxonServerConnectionManager axonServerConnectionManager;
         private AxonServerConfiguration configuration;
-        private SimpleQueryBus localSegment;
+        private QueryBus localSegment;
         private QueryUpdateEmitter updateEmitter;
         private Serializer messageSerializer;
         private Serializer genericSerializer;
-        private QueryPriorityCalculator priorityCalculator = QueryPriorityCalculator.defaultQueryPriorityCalculator();
+        private QueryPriorityCalculator priorityCalculator = QueryPriorityCalculator.defaultCalculator();
         private TargetContextResolver<? super QueryMessage> targetContextResolver =
                 q -> configuration.getContext();
         private BiFunction<AxonServerConfiguration, BlockingQueue<Runnable>, ExecutorService> queryExecutorServiceBuilder =
@@ -669,7 +684,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
          * @param localSegment a {@link QueryBus} used to dispatch incoming queries to the local environment
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder localSegment(SimpleQueryBus localSegment) {
+        public Builder localSegment(QueryBus localSegment) {
             assertNonNull(localSegment, "Local QueryBus may not be null");
             this.localSegment = localSegment;
             return this;
@@ -718,7 +733,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         /**
          * Sets the {@link QueryPriorityCalculator} used to deduce the priority of an incoming query among other
          * queries, to give precedence over high(er) valued queries for example. Defaults to a
-         * {@link QueryPriorityCalculator#defaultQueryPriorityCalculator()}.
+         * {@link QueryPriorityCalculator#defaultCalculator()}.
          *
          * @param priorityCalculator a {@link QueryPriorityCalculator} used to deduce the priority of an incoming query
          *                           among other queries

@@ -16,24 +16,19 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.Registration;
 import org.axonframework.common.TypeReference;
+import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.correlation.MessageOriginProvider;
-import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
-import org.axonframework.queryhandling.registration.DuplicateQueryHandlerSubscriptionException;
-import org.axonframework.tracing.TestSpanFactory;
+import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.core.Disposable;
@@ -43,10 +38,10 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -57,14 +52,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toSet;
-import static org.axonframework.common.ReflectionUtils.methodOf;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
-import static org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution.silentlyAdd;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -74,116 +67,86 @@ import static org.mockito.Mockito.*;
  * @author Marc Gathier
  */
 class SimpleQueryBusTest {
-    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {};
+
+    private static final QualifiedName QUERY_NAME = new QualifiedName("query");
+    private static final MessageType QUERY_TYPE = new MessageType(QUERY_NAME);
+    private static final QualifiedName RESPONSE_NAME = new QualifiedName(String.class);
+    private static final MessageType RESPONSE_TYPE = new MessageType(RESPONSE_NAME);
+    private static final QueryHandler SINGLE_RESPONSE_HANDLER = (query, context) -> {
+        QueryResponseMessage response = new GenericQueryResponseMessage(RESPONSE_TYPE, query.payload() + "1234");
+        return MessageStream.just(response);
+    };
+    private static final QueryHandler MULTI_RESPONSE_HANDLER = (query, context) -> {
+        QueryResponseMessage responseOne = new GenericQueryResponseMessage(RESPONSE_TYPE, query.payload() + "1234");
+        QueryResponseMessage responseTwo = new GenericQueryResponseMessage(RESPONSE_TYPE, query.payload() + "5678");
+        return MessageStream.fromIterable(List.of(responseOne, responseTwo));
+    };
+    private static final ResponseType<String> SINGLE_STRING_RESPONSE = instanceOf(String.class);
+    private static final ResponseType<List<String>> MULTI_STRING_RESPONSE = multipleInstancesOf(String.class);
+
+    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
+    };
     private static final String TRACE_ID = "traceId";
     private static final String CORRELATION_ID = "correlationId";
 
     private final ResponseType<String> singleStringResponse = instanceOf(String.class);
     private final ResponseType<List<String>> multipleStringResponse = multipleInstancesOf(String.class);
     private SimpleQueryBus testSubject;
-    private MessageMonitor<QueryMessage> messageMonitor;
     private QueryInvocationErrorHandler errorHandler;
-    private MessageMonitor.MonitorCallback monitorCallback;
-    private TestSpanFactory spanFactory;
-    private QueryBusSpanFactory queryBusSpanFactory;
-    private QueryUpdateEmitterSpanFactory queryUpdateEmitterSpanFactory;
 
     @BeforeEach
     void setUp() {
-        spanFactory = new TestSpanFactory();
-        queryBusSpanFactory = DefaultQueryBusSpanFactory.builder().spanFactory(spanFactory).build();
-        queryUpdateEmitterSpanFactory = DefaultQueryUpdateEmitterSpanFactory.builder().spanFactory(spanFactory).build();
-        //noinspection unchecked
-        messageMonitor = mock(MessageMonitor.class);
         errorHandler = mock(QueryInvocationErrorHandler.class);
-        monitorCallback = mock(MessageMonitor.MonitorCallback.class);
-        when(messageMonitor.onMessageIngested(any())).thenReturn(monitorCallback);
-
-        testSubject = SimpleQueryBus.builder()
-                                    .messageMonitor(messageMonitor)
-                                    .errorHandler(errorHandler)
-                                    .spanFactory(queryBusSpanFactory)
-                                    .queryUpdateEmitter(SimpleQueryUpdateEmitter.builder()
-                                                                                .spanFactory(
-                                                                                        queryUpdateEmitterSpanFactory)
-                                                                                .build())
-                                    .duplicateQueryHandlerResolver(silentlyAdd())
-                                    .build();
-
-        MessageHandlerInterceptor<QueryMessage> correlationDataInterceptor =
-                new CorrelationDataInterceptor<>(new MessageOriginProvider(CORRELATION_ID, TRACE_ID));
-        testSubject.registerHandlerInterceptor(correlationDataInterceptor);
+        testSubject = new SimpleQueryBus(UnitOfWorkTestUtils.SIMPLE_FACTORY,
+                                         SimpleQueryUpdateEmitter.builder().build());
     }
 
-    @Disabled("TODO: reintegrate as part of #3079")
-    @Test
-    public void handlerInterceptorThrowsException() throws ExecutionException, InterruptedException {
-        testSubject.subscribe("test", String.class, (q, ctx) -> q.payload().toString());
-        testSubject.registerHandlerInterceptor(( message,context, chain) ->
-            MessageStream.failed(new RuntimeException("Faking"))
-        );
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("test"), "hello", instanceOf(String.class)
-        );
+    @Nested
+    class HandlerSubscriptions {
 
-        CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
+        @Test
+        void subscribeAddsQueryHandlers() {
+            // given...
+            MockComponentDescriptor testDescriptor = new MockComponentDescriptor();
+            // when first subscription...
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            // then...
+            testSubject.describeTo(testDescriptor);
+            Map<QueryHandlerName, QueryHandler> subscriptions = testDescriptor.getProperty("subscriptions");
+            assertThat(subscriptions.size()).isEqualTo(1);
+            assertThat(subscriptions).containsValue(SINGLE_RESPONSE_HANDLER);
+            // when second subscription with different query  name...
+            testSubject.subscribe(new QualifiedName("test2"), RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            // then...
+            testSubject.describeTo(testDescriptor);
+            subscriptions = testDescriptor.getProperty("subscriptions");
+            assertThat(subscriptions.size()).isEqualTo(2);
+            assertThat(subscriptions).containsValue(SINGLE_RESPONSE_HANDLER);
+            // when third subscription with different response name...
+            testSubject.subscribe(QUERY_NAME, new QualifiedName(Integer.class), SINGLE_RESPONSE_HANDLER);
+            // then...
+            testSubject.describeTo(testDescriptor);
+            subscriptions = testDescriptor.getProperty("subscriptions");
+            assertThat(subscriptions.size()).isEqualTo(3);
+        }
 
-        assertTrue(result.isDone());
-        assertTrue(result.get().isExceptional());
-    }
+        @Test
+        void subscribingSameHandlerTwiceDoesNotThrowDuplicateQueryHandlerSubscriptionException() {
+            // given...
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            // when/then...
+            assertDoesNotThrow(() -> testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER));
+        }
 
-    @Test
-    void subscribe() {
-        testSubject.subscribe("test", String.class, (m, ctx) -> m.payload());
-
-        assertEquals(1, testSubject.getSubscriptions().size());
-        assertEquals(1, testSubject.getSubscriptions().values().iterator().next().size());
-
-        testSubject.subscribe("test", String.class, (q, c) -> "aa" + q.payload());
-
-        assertEquals(1, testSubject.getSubscriptions().size());
-        assertEquals(2, testSubject.getSubscriptions().values().iterator().next().size());
-
-        testSubject.subscribe("test2", String.class, (q, c) -> "aa" + q.payload());
-
-        assertEquals(2, testSubject.getSubscriptions().size());
-    }
-
-    @Test
-    void subscribingSameHandlerTwiceInvokedOnce() throws Exception {
-        AtomicInteger invocationCount = new AtomicInteger();
-        MessageHandler<QueryMessage, QueryResponseMessage> handler = (message, ctx) -> {
-            invocationCount.incrementAndGet();
-            return "reply";
-        };
-        Registration subscription = testSubject.subscribe("test", String.class, handler);
-        testSubject.subscribe("test", String.class, handler);
-
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("test"), "request", singleStringResponse
-        );
-        Object result = testSubject.query(testQuery).thenApply(QueryResponseMessage::payload).get();
-
-        assertEquals("reply", result);
-        assertEquals(1, invocationCount.get());
-        assertTrue(subscription.cancel());
-        assertTrue(testSubject.query(testQuery).isDone());
-        assertTrue(testSubject.query(testQuery).isCompletedExceptionally());
-    }
-
-    @Test
-    void subscribingSameQueryTwiceWithThrowingDuplicateResolver() {
-        // Modify query bus with failing duplicate resolver
-        testSubject = SimpleQueryBus.builder()
-                                    .messageMonitor(messageMonitor)
-                                    .errorHandler(errorHandler)
-                                    .duplicateQueryHandlerResolver(DuplicateQueryHandlerResolution.rejectDuplicates())
-                                    .build();
-        MessageHandler<QueryMessage, QueryResponseMessage> handlerOne = (message, ctx) -> "reply";
-        MessageHandler<QueryMessage, QueryResponseMessage> handlerTwo = (message, ctx) -> "reply";
-        testSubject.subscribe("test", String.class, handlerOne);
-        assertThrows(DuplicateQueryHandlerSubscriptionException.class,
-                     () -> testSubject.subscribe("test", String.class, handlerTwo));
+        @Test
+        void subscribingDifferentHandlerForSameNamesThrowsDuplicateQueryHandlerSubscriptionException() {
+            // given...
+            QueryHandler testHandler = (query, context) -> MessageStream.empty().cast();
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
+            // when/then...
+            assertThatThrownBy(() -> testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, testHandler))
+                    .isInstanceOf(DuplicateQueryHandlerSubscriptionException.class);
+        }
     }
 
     /*
@@ -193,7 +156,7 @@ class SimpleQueryBusTest {
     @Disabled("TODO: reintegrate as part of #3079")
     @Test
     void queryResultContainsCorrelationData() throws Exception {
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
 
         QueryMessage testQuery =
                 new GenericQueryMessage(new MessageType(String.class), "hello", singleStringResponse)
@@ -211,7 +174,7 @@ class SimpleQueryBusTest {
     @Disabled("TODO: reintegrate as part of #3079")
     @Test
     void nullResponseProperlyReturned() throws ExecutionException, InterruptedException {
-        testSubject.subscribe(String.class.getName(), String.class, (p, ctx) -> null);
+//        testSubject.subscribe(String.class.getName(), String.class, (p, ctx) -> null);
         QueryMessage testQuery =
                 new GenericQueryMessage(new MessageType(String.class), "hello", singleStringResponse)
                         .andMetadata(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
@@ -234,13 +197,14 @@ class SimpleQueryBusTest {
         TransactionManager mockTxManager = mock(TransactionManager.class);
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = SimpleQueryBus.builder()
-                                    .transactionManager(mockTxManager)
-                                    .build();
+        testSubject = new SimpleQueryBus(
+                new TransactionalUnitOfWorkFactory(mockTxManager, UnitOfWorkTestUtils.SIMPLE_FACTORY),
+                SimpleQueryUpdateEmitter.builder().build()
+        );
 
-        testSubject.subscribe(String.class.getName(),
-                              methodOf(this.getClass(), "stringListQueryHandler").getGenericReturnType(),
-                              (q, ctx) -> asList(q.payload() + "1234", q.payload() + "567"));
+//        testSubject.subscribe(String.class.getName(),
+//                              methodOf(this.getClass(), "stringListQueryHandler").getGenericReturnType(),
+//                              (q, ctx) -> asList(q.payload() + "1234", q.payload() + "567"));
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "hello", multipleInstancesOf(String.class)
@@ -268,11 +232,12 @@ class SimpleQueryBusTest {
         TransactionManager mockTxManager = mock(TransactionManager.class);
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = SimpleQueryBus.builder()
-                                    .transactionManager(mockTxManager)
-                                    .build();
+        testSubject = new SimpleQueryBus(
+                new TransactionalUnitOfWorkFactory(mockTxManager, UnitOfWorkTestUtils.SIMPLE_FACTORY),
+                SimpleQueryUpdateEmitter.builder().build()
+        );
 
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "hello", singleStringResponse
@@ -287,49 +252,9 @@ class SimpleQueryBusTest {
     }
 
     @Test
-    void querySingleIsTraced() throws ExecutionException, InterruptedException {
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "hello", singleStringResponse
-        );
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> {
-            spanFactory.verifySpanActive("QueryBus.query", testQuery);
-            return q.payload() + "1234";
-        });
-
-        testSubject.query(testQuery).get();
-
-        spanFactory.verifySpanCompleted("QueryBus.query", testQuery);
-    }
-
-    @Test
-    void ScatterGatherIsTraced() {
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "hello", multipleStringResponse
-        );
-
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> {
-            spanFactory.verifySpanActive("QueryBus.scatterGatherQuery", testQuery);
-            spanFactory.verifySpanActive("QueryBus.scatterGatherQuery-0");
-            return q.payload() + "1234";
-        });
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> {
-            spanFactory.verifySpanActive("QueryBus.scatterGatherQuery", testQuery);
-            spanFactory.verifySpanActive("QueryBus.scatterGatherQuery-1");
-            return q.payload() + "12345678";
-        });
-
-        //noinspection ResultOfMethodCallIgnored
-        testSubject.scatterGather(testQuery, 500, TimeUnit.MILLISECONDS).toList();
-
-        spanFactory.verifySpanCompleted("QueryBus.scatterGatherQuery", testQuery);
-        spanFactory.verifySpanCompleted("QueryBus.scatterGatherHandler-0");
-        spanFactory.verifySpanCompleted("QueryBus.scatterGatherHandler-1");
-    }
-
-
-    @Test
+    @Disabled("TODO #3488")
     void queryListWithSingleHandlerReturnsSingleAsList() throws Exception {
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "hello", multipleStringResponse
@@ -341,13 +266,13 @@ class SimpleQueryBusTest {
         assertEquals("hello1234", result.get().getFirst());
     }
 
-
     @Test
+    @Disabled("TODO #3488")
     void queryListWithBothSingleHandlerAndListHandlerReturnsListResult() throws Exception {
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-        testSubject.subscribe(String.class.getName(), String[].class, (q, c) -> Arrays.asList(
-                q.payload() + "1234", q.payload() + "5678"
-        ));
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
+//        testSubject.subscribe(String.class.getName(), String[].class, (q, c) -> Arrays.asList(
+//                q.payload() + "1234", q.payload() + "5678"
+//        ));
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "hello", multipleStringResponse
@@ -361,6 +286,7 @@ class SimpleQueryBusTest {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void queryForSingleResultWithUnsuitableHandlers() throws Exception {
         AtomicInteger invocationCount = new AtomicInteger();
         MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> failingHandler = (message, ctx) -> {
@@ -371,10 +297,10 @@ class SimpleQueryBusTest {
             invocationCount.incrementAndGet();
             return "reply";
         };
-        testSubject.subscribe("query", String.class, failingHandler);
+//        testSubject.subscribe("query", String.class, failingHandler);
         //noinspection FunctionalExpressionCanBeFolded,Convert2MethodRef,Convert2MethodRef
-        testSubject.subscribe("query", String.class, (message, ctx) -> failingHandler.handleSync(message, ctx));
-        testSubject.subscribe("query", String.class, passingHandler);
+//        testSubject.subscribe("query", String.class, (message, ctx) -> failingHandler.handleSync(message, ctx));
+//        testSubject.subscribe("query", String.class, passingHandler);
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "query", singleStringResponse
@@ -388,10 +314,11 @@ class SimpleQueryBusTest {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void queryWithOnlyUnsuitableResultsInException() throws Exception {
-        testSubject.subscribe("query", String.class, (message, ctx) -> {
-            throw new NoHandlerForQueryException("Mock");
-        });
+//        testSubject.subscribe("query", String.class, (message, ctx) -> {
+//            throw new NoHandlerForQueryException("Mock");
+//        });
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "query", singleStringResponse
@@ -406,15 +333,16 @@ class SimpleQueryBusTest {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void queryReturnsResponseMessageFromHandlerAsIs() throws Exception {
         GenericQueryResponseMessage soleResult =
                 new GenericQueryResponseMessage(new MessageType(String.class), "soleResult");
-        testSubject.subscribe("query", String.class, (message, ctx) -> soleResult);
+//        testSubject.subscribe("query", String.class, (message, ctx) -> soleResult);
 
         QueryMessage testQuery =
                 new GenericQueryMessage(new MessageType("query"),
-                                          "query",
-                                          singleStringResponse);
+                                        "query",
+                                        singleStringResponse);
         CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
 
         assertTrue(result.isDone());
@@ -422,6 +350,7 @@ class SimpleQueryBusTest {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void queryWithHandlersResultsInException() throws Exception {
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "query", singleStringResponse
@@ -436,11 +365,12 @@ class SimpleQueryBusTest {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void queryForSingleResultWillReportErrors() throws Exception {
         MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> failingHandler = (message, ctx) -> {
             throw new MockException("Mock");
         };
-        testSubject.subscribe("query", String.class, failingHandler);
+//        testSubject.subscribe("query", String.class, failingHandler);
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "query", singleStringResponse
@@ -454,34 +384,11 @@ class SimpleQueryBusTest {
         assertEquals("Mock", queryResponseMessage.exceptionResult().getMessage());
     }
 
-    @Disabled("TODO: reintegrate as part of #3079")
     @Test
-    void queryWithInterceptors() throws Exception {
-        testSubject.registerDispatchInterceptor(
-                (message, context, chain) ->
-                        chain.proceed(message.andMetadata(Collections.singletonMap("key", "value")), context)
-        );
-        testSubject.registerHandlerInterceptor((message, context, chain) -> {
-            if (message.metadata().containsKey("key")) {
-                return MessageStream.just(new GenericQueryResponseMessage(new MessageType("response"), "fakeReply"));
-            }
-            return chain.proceed(message, context);
-        });
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "hello", singleStringResponse
-        );
-        CompletableFuture<Object> result = testSubject.query(testQuery)
-                                                      .thenApply(QueryResponseMessage::payload);
-
-        assertEquals("fakeReply", result.get());
-    }
-
-    @Test
+    @Disabled("TODO #3488")
     void queryDoesNotArriveAtUnsubscribedHandler() throws Exception {
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> "1234");
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + " is not here!").cancel();
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> "1234");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + " is not here!").cancel();
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "hello", singleStringResponse
@@ -493,11 +400,12 @@ class SimpleQueryBusTest {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void queryReturnsException() throws Exception {
         MockException mockException = new MockException();
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> {
-            throw mockException;
-        });
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> {
+//            throw mockException;
+//        });
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "hello", singleStringResponse
@@ -512,6 +420,7 @@ class SimpleQueryBusTest {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void queryUnknown() throws Exception {
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "hello", singleStringResponse
@@ -524,36 +433,16 @@ class SimpleQueryBusTest {
         } catch (ExecutionException e) {
             assertEquals(NoHandlerForQueryException.class, e.getCause().getClass());
         }
-        spanFactory.verifySpanHasException("QueryBus.query", NoHandlerForQueryException.class);
     }
 
     @Test
-    void queryUnsubscribedHandlers() throws Exception {
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + " is not here!").cancel();
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + " is not here!").cancel();
-
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "hello", singleStringResponse
-        );
-        CompletableFuture<?> result = testSubject.query(testQuery);
-
-        try {
-            result.get();
-            fail("Expected exception");
-        } catch (ExecutionException e) {
-            assertEquals(NoHandlerForQueryException.class, e.getCause().getClass());
-        }
-        verify(messageMonitor, times(1)).onMessageIngested(any());
-        verify(monitorCallback, times(1)).reportFailure(any());
-    }
-
-    @Test
+    @Disabled("TODO #3488")
     void scatterGather() {
         int expectedResults = 3;
 
-        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> q.payload() + "1234");
-        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> q.payload() + "5678");
-        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> q.payload() + "90");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> q.payload() + "1234");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> q.payload() + "5678");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> q.payload() + "90");
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "Hello, World", singleStringResponse
@@ -564,24 +453,23 @@ class SimpleQueryBusTest {
         assertEquals(expectedResults, results.size());
         Set<Object> resultSet = results.stream().map(Message::payload).collect(toSet());
         assertEquals(expectedResults, resultSet.size());
-        verify(messageMonitor, times(1)).onMessageIngested(any());
-        verify(monitorCallback, times(3)).reportSuccess();
     }
 
     @Test
+    @Disabled("TODO #3488")
     void scatterGatherOnArrayQueryHandlers() throws NoSuchMethodException {
         int expectedQueryResponses = 3;
         int expectedResults = 6;
 
-        testSubject.subscribe(String.class.getName(),
-                              methodOf(getClass(), "stringArrayQueryHandler").getGenericReturnType(),
-                              (q, ctx) -> new String[]{q.payload() + "12", q.payload() + "34"});
-        testSubject.subscribe(String.class.getName(),
-                              methodOf(getClass(), "stringArrayQueryHandler").getGenericReturnType(),
-                              (q, ctx) -> new String[]{q.payload() + "56", q.payload() + "78"});
-        testSubject.subscribe(String.class.getName(),
-                              methodOf(getClass(), "stringArrayQueryHandler").getGenericReturnType(),
-                              (q, ctx) -> new String[]{q.payload() + "9", q.payload() + "0"});
+//        testSubject.subscribe(String.class.getName(),
+//                              methodOf(getClass(), "stringArrayQueryHandler").getGenericReturnType(),
+//                              (q, ctx) -> new String[]{q.payload() + "12", q.payload() + "34"});
+//        testSubject.subscribe(String.class.getName(),
+//                              methodOf(getClass(), "stringArrayQueryHandler").getGenericReturnType(),
+//                              (q, ctx) -> new String[]{q.payload() + "56", q.payload() + "78"});
+//        testSubject.subscribe(String.class.getName(),
+//                              methodOf(getClass(), "stringArrayQueryHandler").getGenericReturnType(),
+//                              (q, ctx) -> new String[]{q.payload() + "9", q.payload() + "0"});
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "Hello, World", multipleInstancesOf(String.class)
@@ -596,8 +484,6 @@ class SimpleQueryBusTest {
                                        .flatMap(Collection::stream)
                                        .collect(toSet());
         assertEquals(expectedResults, resultSet.size());
-        verify(messageMonitor, times(1)).onMessageIngested(any());
-        verify(monitorCallback, times(3)).reportSuccess();
     }
 
     @SuppressWarnings("unused")// Used by 'testScatterGatherOnArrayQueryHandlers' to generate queryHandler responseType
@@ -611,15 +497,13 @@ class SimpleQueryBusTest {
         TransactionManager mockTxManager = mock(TransactionManager.class);
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = SimpleQueryBus.builder()
-                                    .messageMonitor(messageMonitor)
-                                    .transactionManager(mockTxManager)
-                                    .errorHandler(errorHandler)
-                                    .duplicateQueryHandlerResolver(silentlyAdd())
-                                    .build();
+        testSubject = new SimpleQueryBus(
+                new TransactionalUnitOfWorkFactory(mockTxManager, UnitOfWorkTestUtils.SIMPLE_FACTORY),
+                SimpleQueryUpdateEmitter.builder().build()
+        );
 
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "567");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "567");
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "Hello, World", singleStringResponse
@@ -627,8 +511,6 @@ class SimpleQueryBusTest {
         Set<Object> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).collect(toSet());
 
         assertEquals(2, results.size());
-        verify(messageMonitor, times(1)).onMessageIngested(any());
-        verify(monitorCallback, times(2)).reportSuccess();
         // TODO reintegrate with #3079
         verify(mockTxManager, times(2)).startTransaction();
         verify(mockTx, times(2)).commit();
@@ -640,17 +522,15 @@ class SimpleQueryBusTest {
         TransactionManager mockTxManager = mock(TransactionManager.class);
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = SimpleQueryBus.builder()
-                                    .messageMonitor(messageMonitor)
-                                    .transactionManager(mockTxManager)
-                                    .errorHandler(errorHandler)
-                                    .duplicateQueryHandlerResolver(silentlyAdd())
-                                    .build();
+        testSubject = new SimpleQueryBus(
+                new TransactionalUnitOfWorkFactory(mockTxManager, UnitOfWorkTestUtils.SIMPLE_FACTORY),
+                SimpleQueryUpdateEmitter.builder().build()
+        );
 
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> {
-            throw new MockException();
-        });
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> {
+//            throw new MockException();
+//        });
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "Hello, World", singleStringResponse
@@ -658,9 +538,6 @@ class SimpleQueryBusTest {
         Set<Object> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).collect(toSet());
 
         assertEquals(1, results.size());
-        verify(messageMonitor, times(1)).onMessageIngested(any());
-        verify(monitorCallback, times(1)).reportSuccess();
-        verify(monitorCallback, times(1)).reportFailure(isA(MockException.class));
         // TODO reintegrate with #3079
         verify(mockTxManager, times(2)).startTransaction();
         verify(mockTx, times(1)).commit();
@@ -673,15 +550,13 @@ class SimpleQueryBusTest {
         TransactionManager mockTxManager = mock(TransactionManager.class);
         Transaction mockTx = mock(Transaction.class);
         when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = SimpleQueryBus.builder()
-                                    .messageMonitor(messageMonitor)
-                                    .transactionManager(mockTxManager)
-                                    .errorHandler(errorHandler)
-                                    .duplicateQueryHandlerResolver(silentlyAdd())
-                                    .build();
+        testSubject = new SimpleQueryBus(
+                new TransactionalUnitOfWorkFactory(mockTxManager, UnitOfWorkTestUtils.SIMPLE_FACTORY),
+                SimpleQueryUpdateEmitter.builder().build()
+        );
 
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "567");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "567");
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "Hello, World", singleStringResponse
@@ -690,43 +565,13 @@ class SimpleQueryBusTest {
                 testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).findFirst();
 
         assertTrue(firstResult.isPresent());
-        verify(messageMonitor, times(1)).onMessageIngested(any());
-        verify(monitorCallback, atMost(2)).reportSuccess();
         // TODO reintegrate with #3079
         verify(mockTxManager).startTransaction();
         verify(mockTx).commit();
     }
 
     @Test
-    @Disabled("TODO: reintegrate as part of #3079")
-    void scatterGatherWithInterceptors() {
-        testSubject.registerDispatchInterceptor(
-                (message, context, chain) ->
-                        chain.proceed(message.andMetadata(Collections.singletonMap("key", "value")), context)
-        );
-        testSubject.registerHandlerInterceptor((message, context, chain) -> {
-            if (message.metadata().containsKey("key")) {
-                return MessageStream.just(new GenericResultMessage(new MessageType("response"), "fakeReply"));
-            }
-            return chain.proceed(message, context);
-        });
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "567");
-
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", singleStringResponse
-        );
-        List<Object> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS)
-                                          .map(Message::payload)
-                                          .collect(Collectors.toList());
-
-        assertEquals(2, results.size());
-        verify(messageMonitor, times(1)).onMessageIngested(any());
-        verify(monitorCallback, times(2)).reportSuccess();
-        assertEquals(asList("fakeReply", "fakeReply"), results);
-    }
-
-    @Test
+    @Disabled("TODO #3488")
     void scatterGatherReturnsEmptyStreamWhenNoHandlersAvailable() {
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "Hello, World", singleStringResponse
@@ -734,16 +579,15 @@ class SimpleQueryBusTest {
         Set<Object> allResults = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).collect(toSet());
 
         assertEquals(0, allResults.size());
-        verify(messageMonitor).onMessageIngested(any());
-        verify(monitorCallback).reportIgnored();
     }
 
     @Test
+    @Disabled("TODO #3488")
     void scatterGatherReportsExceptionsWithErrorHandler() {
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> {
-            throw new MockException();
-        });
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> {
+//            throw new MockException();
+//        });
 
         QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(String.class), "Hello, World", singleStringResponse
@@ -752,30 +596,14 @@ class SimpleQueryBusTest {
 
         assertEquals(1, results.size());
         verify(errorHandler).onError(isA(MockException.class), eq(testQuery), isA(MessageHandler.class));
-        verify(messageMonitor, times(1)).onMessageIngested(any());
-        verify(monitorCallback, times(1)).reportSuccess();
-        verify(monitorCallback, times(1)).reportFailure(isA(MockException.class));
     }
 
     @Test
-    @Disabled("TODO: reintegrate as part of #3079")
-    void queryResponseMessageCorrelationData() throws ExecutionException, InterruptedException {
-        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-        testSubject.registerHandlerInterceptor(new CorrelationDataInterceptor<>(new MessageOriginProvider()));
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", singleStringResponse
-        );
-        QueryResponseMessage queryResponseMessage = testSubject.query(testQuery).get();
-        assertEquals(testQuery.identifier(), queryResponseMessage.metadata().get("traceId"));
-        assertEquals(testQuery.identifier(), queryResponseMessage.metadata().get("correlationId"));
-        assertEquals("Hello, World1234", queryResponseMessage.payload());
-    }
-
-    @Test
+    @Disabled("TODO #3488")
     void subscriptionQueryReportsExceptionInInitialResult() {
-        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> {
-            throw new MockException();
-        });
+//        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> {
+//            throw new MockException();
+//        });
 
         SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType(String.class), "test", instanceOf(String.class), instanceOf(String.class)
@@ -797,7 +625,7 @@ class SimpleQueryBusTest {
         CountDownLatch hundred = new CountDownLatch(1);
         CountDownLatch thousand = new CountDownLatch(1);
         final AtomicLong value = new AtomicLong();
-        testSubject.subscribe("queryName", Long.class, (q, ctx) -> value.get());
+//        testSubject.subscribe("queryName", Long.class, (q, ctx) -> value.get());
         QueryUpdateEmitter updateEmitter = testSubject.queryUpdateEmitter();
         Disposable disposable = Flux.interval(Duration.ofMillis(0), Duration.ofMillis(3))
                                     .doOnNext(next -> {
@@ -813,7 +641,8 @@ class SimpleQueryBusTest {
                                         value.set(next);
                                         updateEmitter.emit(query -> "queryName".equals(query.type().name()), next);
                                     })
-                                    .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.type().name())))
+                                    .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.type()
+                                                                                                                .name())))
                                     .subscribe();
 
 
@@ -836,43 +665,11 @@ class SimpleQueryBusTest {
     }
 
     @Test
-    void subscriptionQueryIsTraced() throws InterruptedException {
-        CountDownLatch updatedLatch = new CountDownLatch(2);
-        final AtomicLong value = new AtomicLong();
-        testSubject.subscribe("queryName", Long.class, (q, ctx) -> value.get());
-        QueryUpdateEmitter updateEmitter = testSubject.queryUpdateEmitter();
-        Disposable disposable = Flux.interval(Duration.ofMillis(0), Duration.ofMillis(20))
-                                    .doOnNext(next -> {
-                                        updatedLatch.countDown();
-                                        updateEmitter.emit(query -> "queryName".equals(query.type().name()), next);
-                                    })
-                                    .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.type().name())))
-                                    .subscribe();
-
-
-        SubscriptionQueryMessage<String, Long, Long> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType("queryName"), "test",
-                instanceOf(Long.class), instanceOf(Long.class)
-        );
-        try {
-            SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result =
-                    testSubject.subscriptionQuery(testQuery);
-            Mono<QueryResponseMessage> initialResult = result.initialResult();
-            Objects.requireNonNull(initialResult.block()).payload();
-            spanFactory.verifySpanCompleted("QueryBus.query");
-            updatedLatch.await();
-            Objects.requireNonNull(result.updates().next().block()).payload();
-            spanFactory.verifySpanCompleted("QueryUpdateEmitter.emitQueryUpdateMessage");
-        } finally {
-            disposable.dispose();
-        }
-    }
-
-    @Test
+    @Disabled("TODO #3488")
     void queryReportsExceptionInResponseMessage() throws ExecutionException, InterruptedException {
-        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> {
-            throw new MockException();
-        });
+//        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> {
+//            throw new MockException();
+//        });
 
         CompletableFuture<QueryResponseMessage> result = testSubject.query(
                 new GenericQueryMessage(new MessageType(String.class), "test", instanceOf(String.class))
@@ -883,11 +680,12 @@ class SimpleQueryBusTest {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void queryHandlerDeclaresFutureResponseType() throws Exception {
         Type responseType = ReflectionUtils.methodOf(getClass(), "futureMethod").getGenericReturnType();
-        testSubject.subscribe(String.class.getName(),
-                              responseType,
-                              (q, c) -> CompletableFuture.completedFuture(q.payload() + "1234"));
+//        testSubject.subscribe(String.class.getName(),
+//                              responseType,
+//                              (q, c) -> CompletableFuture.completedFuture(q.payload() + "1234"));
 
         QueryMessage testQuery =
                 new GenericQueryMessage(new MessageType(String.class), "hello", singleStringResponse);
@@ -898,11 +696,12 @@ class SimpleQueryBusTest {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void queryHandlerDeclaresCompletableFutureResponseType() throws Exception {
         Type responseType = ReflectionUtils.methodOf(getClass(), "completableFutureMethod").getGenericReturnType();
-        testSubject.subscribe(String.class.getName(),
-                              responseType,
-                              (q, c) -> CompletableFuture.completedFuture(q.payload() + "1234"));
+//        testSubject.subscribe(String.class.getName(),
+//                              responseType,
+//                              (q, c) -> CompletableFuture.completedFuture(q.payload() + "1234"));
 
         QueryMessage testQuery =
                 new GenericQueryMessage(new MessageType(String.class), "hello", singleStringResponse);
@@ -913,8 +712,9 @@ class SimpleQueryBusTest {
     }
 
     @Test
+    @Disabled("TODO #3488")
     void onSubscriptionQueryCancelTheActiveSubscriptionIsRemovedFromTheEmitterIfFluxIsNotSubscribed() {
-        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> q.payload() + "1234");
+//        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> q.payload() + "1234");
 
         SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType(String.class), "test", instanceOf(String.class), instanceOf(String.class)

@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
@@ -119,68 +120,6 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void assignmentRules() {
-        Map<String, StubEventProcessor> processors = new HashMap<>();
-        ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<>();
-        AnnotatedBean annotatedBean = new AnnotatedBean();
-        AnnotatedBeanSubclass annotatedBeanSubclass = new AnnotatedBeanSubclass();
-
-        configurer.eventProcessing()
-                  .registerEventProcessorFactory((name, config, eventHandlerInvoker) -> {
-                      StubEventProcessor processor =
-                              new StubEventProcessor(name, eventHandlerInvoker);
-                      processors.put(name, processor);
-                      return processor;
-                  })
-                  .assignHandlerInstancesMatching("java.util.concurrent", "concurrent"::equals)
-                  .registerEventHandler(c -> new Object()) // --> java.lang
-                  .registerEventHandler(c -> "") // --> java.lang
-                  .registerEventHandler(c -> "concurrent") // --> java.util.concurrent
-                  .registerEventHandler(c -> map) // --> java.util.concurrent
-                  .registerEventHandler(c -> annotatedBean)
-                  .registerEventHandler(c -> annotatedBeanSubclass);
-        LegacyConfiguration configuration = configurer.start();
-
-        assertEquals(3, configuration.eventProcessingConfiguration().eventProcessors().size());
-        assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains("concurrent"));
-        assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains(map));
-        assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
-        assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBean));
-        assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBeanSubclass));
-    }
-
-    @Test
-    void byTypeAssignmentRules() {
-        Map<String, StubEventProcessor> processors = new HashMap<>();
-        ConcurrentHashMap<Object, Object> map = new ConcurrentHashMap<>();
-        AnnotatedBean annotatedBean = new AnnotatedBean();
-        AnnotatedBeanSubclass annotatedBeanSubclass = new AnnotatedBeanSubclass();
-
-        configurer.eventProcessing()
-                  .registerEventProcessorFactory((name, config, eventHandlerInvoker) -> {
-                      StubEventProcessor processor =
-                              new StubEventProcessor(name, eventHandlerInvoker);
-                      processors.put(name, processor);
-                      return processor;
-                  })
-                  .assignHandlerTypesMatching("special", ConcurrentHashMap.class::isAssignableFrom)
-                  .registerEventHandler(c -> new Object()) // --> java.lang
-                  .registerEventHandler(c -> "") // --> java.lang
-                  .registerEventHandler(c -> "concurrent") // --> java.lang
-                  .registerEventHandler(c -> map) // --> java.util.concurrent
-                  .registerEventHandler(c -> annotatedBean)
-                  .registerEventHandler(c -> annotatedBeanSubclass);
-        LegacyConfiguration configuration = configurer.start();
-
-        assertEquals(3, configuration.eventProcessingConfiguration().eventProcessors().size());
-        assertTrue(processors.get("java.lang").getEventHandlers().contains("concurrent"));
-        assertTrue(processors.get("special").getEventHandlers().contains(map));
-        assertTrue(processors.get("java.lang").getEventHandlers().contains(""));
-        assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBean));
-        assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBeanSubclass));
-    }
-
-    @Test
     void processorsDefaultToSubscribingWhenUsingSimpleEventBus() {
         LegacyConfiguration configuration =
                 LegacyDefaultConfigurer.defaultConfiguration()
@@ -199,125 +138,6 @@ class EventProcessingModuleTest {
         assertTrue(processingConfig.eventProcessor("tracking")
                                    .map(p -> p instanceof SubscribingEventProcessor)
                                    .orElse(false));
-    }
-
-    @Test
-    void assigningAPooledProcessorFailsWhenUsingSimpleEventBus() {
-        LegacyConfigurer configurer =
-                LegacyDefaultConfigurer.defaultConfiguration()
-                                       .configureEventBus(c -> SimpleEventBus.builder().build())
-                                       .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
-                                                                .registerEventHandler(c -> new TrackingEventHandler())
-                                                                .registerPooledStreamingEventProcessor("tracking"));
-
-        assertThrows(LifecycleHandlerInvocationException.class, configurer::start);
-    }
-
-    @Test
-    void defaultAssignToKeepsAnnotationScanning() {
-        Map<String, StubEventProcessor> processors = new HashMap<>();
-        AnnotatedBean annotatedBean = new AnnotatedBean();
-        Object object = new Object();
-        configurer.eventProcessing()
-                  .registerEventProcessorFactory((name, config, handlers) -> {
-                      StubEventProcessor processor = new StubEventProcessor(name, handlers);
-                      processors.put(name, processor);
-                      return processor;
-                  })
-                  .assignHandlerInstancesMatching("java.util.concurrent", "concurrent"::equals)
-                  .byDefaultAssignTo("default")
-                  .registerEventHandler(c -> object)        // --> default
-                  .registerEventHandler(c -> "concurrent")  // --> java.util.concurrent
-                  .registerEventHandler(c -> annotatedBean); // --> processingGroup
-        configurer.start();
-
-        assertEquals(3, processors.size());
-        assertTrue(processors.get("default").getEventHandlers().contains(object));
-        assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains("concurrent"));
-        assertTrue(processors.get("processingGroup").getEventHandlers().contains(annotatedBean));
-    }
-
-    @Test
-    void typeAssignmentWithCustomDefault() {
-        configurer.eventProcessing()
-                  .assignHandlerTypesMatching("myGroup", String.class::equals)
-                  .byDefaultAssignHandlerTypesTo(
-                          t -> Object.class.equals(t) ? "obj" : t.getSimpleName() + "CustomProcessor"
-                  )
-                  .registerSaga(Object.class)
-                  .registerSaga(ConcurrentMap.class)
-                  .registerSaga(String.class)
-                  .registerEventHandler(c -> new HashMap<>());
-        EventProcessingConfiguration configuration = configurer.start()
-                                                               .eventProcessingConfiguration();
-
-        assertEquals("myGroup", configuration.sagaProcessingGroup(String.class));
-        assertEquals("obj", configuration.sagaProcessingGroup(Object.class));
-        assertEquals("ConcurrentMapCustomProcessor", configuration.sagaProcessingGroup(ConcurrentMap.class));
-
-        assertEquals(4, configuration.eventProcessors().size());
-        assertTrue(configuration.eventProcessor("myGroup").isPresent());
-        assertTrue(configuration.eventProcessor("obj").isPresent());
-        assertTrue(configuration.eventProcessor("java.util").isPresent());
-        assertTrue(configuration.eventProcessor("ConcurrentMapCustomProcessor").isPresent());
-    }
-
-    @Test
-    void typeAssignment() {
-        configurer.eventProcessing()
-                  .assignHandlerTypesMatching("myGroup", c -> "java.lang".equals(c.getPackage().getName()))
-                  .registerSaga(Object.class)
-                  .registerSaga(ConcurrentMap.class)
-                  .registerSaga(String.class)
-                  .registerEventHandler(c -> new HashMap<>());
-        EventProcessingConfiguration configuration = configurer.start()
-                                                               .eventProcessingConfiguration();
-
-        assertEquals("myGroup", configuration.sagaProcessingGroup(String.class));
-        assertEquals("myGroup", configuration.sagaProcessingGroup(Object.class));
-        assertEquals("ConcurrentMapProcessor", configuration.sagaProcessingGroup(ConcurrentMap.class));
-
-        assertEquals(3, configuration.eventProcessors().size());
-        assertTrue(configuration.eventProcessor("myGroup").isPresent());
-        assertTrue(configuration.eventProcessor("java.util").isPresent());
-        assertTrue(configuration.eventProcessor("ConcurrentMapProcessor").isPresent());
-    }
-
-    @Disabled("TODO #3098 - Must be refactored because of the eventProcessorOperations removal")
-    @Test
-    void assignSequencingPolicy() throws NoSuchFieldException, IllegalAccessException {
-        Object mockHandler = new Object();
-        Object specialHandler = new Object();
-        SequentialPolicy sequentialPolicy = SequentialPolicy.INSTANCE;
-        FullConcurrencyPolicy fullConcurrencyPolicy = FullConcurrencyPolicy.INSTANCE;
-        configurer.eventProcessing()
-                  .registerEventHandler(c -> mockHandler)
-                  .registerEventHandler(c -> specialHandler)
-                  .assignHandlerInstancesMatching("special", specialHandler::equals)
-                  .byDefaultAssignTo("default")
-                  .registerDefaultSequencingPolicy(c -> sequentialPolicy)
-                  .registerSequencingPolicy("special", c -> fullConcurrencyPolicy);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<EventProcessor> defaultProcessorOptional =
-                config.eventProcessingConfiguration().eventProcessor("default", EventProcessor.class);
-        assertTrue(defaultProcessorOptional.isPresent());
-        EventProcessor defaultProcessor = defaultProcessorOptional.get();
-
-        Optional<EventProcessor> specialProcessorOptional =
-                config.eventProcessingConfiguration().eventProcessor("special", EventProcessor.class);
-        assertTrue(specialProcessorOptional.isPresent());
-        EventProcessor specialProcessor = specialProcessorOptional.get();
-
-//        DefaultEventProcessingPipeline defaultOperations = getField("eventProcessorOperations", defaultProcessor);
-//        EventHandlingComponent defaultInvoker = getField("eventHandlingComponent", defaultOperations);
-//        DefaultEventProcessingPipeline specialOperations = getField("eventProcessorOperations", specialProcessor);
-//        EventHandlingComponent specialInvoker = getField("eventHandlingComponent", specialOperations);
-//
-//        EventMessage<Object> message =
-//                new GenericEventMessage<>(new MessageType("event"), "test");
-//        assertThat(sequentialPolicy.getSequenceIdentifierFor(message)).hasValue(defaultInvoker.sequenceIdentifierFor(message));
-//        assertThat(fullConcurrencyPolicy.getSequenceIdentifierFor(message)).hasValue(specialInvoker.sequenceIdentifierFor(message));
     }
 
     @Test
@@ -343,156 +163,6 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void configureMonitor() throws Exception {
-        MessageCollectingMonitor subscribingMonitor = new MessageCollectingMonitor();
-        MessageCollectingMonitor trackingMonitor = new MessageCollectingMonitor(1);
-        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-
-        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
-        configurer.eventProcessing()
-                  .registerMessageMonitor("subscribing", c -> subscribingMonitor)
-                  .registerMessageMonitor("tracking", c -> trackingMonitor);
-        LegacyConfiguration config = configurer.start();
-
-        try {
-            config.eventBus()
-                  .publish(new GenericEventMessage(new MessageType("event"), "test"));
-
-            assertEquals(1, subscribingMonitor.getMessages().size());
-            assertTrue(trackingMonitor.await(10, TimeUnit.SECONDS));
-            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void configureSpanFactory() {
-        TestSpanFactory spanFactory = new TestSpanFactory();
-        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-
-        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
-        configurer.configureSpanFactory(c -> spanFactory);
-        LegacyConfiguration config = configurer.start();
-
-        try {
-            EventMessage message =
-                    new GenericEventMessage(new MessageType("event"), "test");
-            config.eventBus().publish(message);
-
-            spanFactory.verifySpanCompleted("EventProcessor.process", message);
-            assertWithin(2, TimeUnit.SECONDS,
-                         () -> spanFactory.verifySpanCompleted("StreamingEventProcessor.process", message));
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void configureDefaultListenerInvocationErrorHandler() throws Exception {
-        EventMessage errorThrowingEventMessage =
-                new GenericEventMessage(new MessageType("event"), true);
-
-        int expectedListenerInvocationErrorHandlerCalls = 2;
-
-        StubErrorHandler errorHandler = new StubErrorHandler(2);
-        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-
-        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
-        configurer.eventProcessing()
-                  .registerDefaultListenerInvocationErrorHandler(config -> errorHandler);
-        LegacyConfiguration config = configurer.start();
-
-        //noinspection Duplicates
-        try {
-            config.eventBus().publish(errorThrowingEventMessage);
-            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
-
-            assertTrue(errorHandler.await(10, TimeUnit.SECONDS));
-            assertEquals(expectedListenerInvocationErrorHandlerCalls, errorHandler.getErrorCounter());
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void configureListenerInvocationErrorHandlerPerEventProcessor() throws Exception {
-        EventMessage errorThrowingEventMessage =
-                new GenericEventMessage(new MessageType("event"), true);
-
-        int expectedErrorHandlerCalls = 1;
-
-        StubErrorHandler subscribingErrorHandler = new StubErrorHandler(1);
-        StubErrorHandler trackingErrorHandler = new StubErrorHandler(1);
-        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-
-        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
-        configurer.eventProcessing()
-                  .registerListenerInvocationErrorHandler("subscribing", config -> subscribingErrorHandler)
-                  .registerListenerInvocationErrorHandler("tracking", config -> trackingErrorHandler);
-        LegacyConfiguration config = configurer.start();
-
-        //noinspection Duplicates
-        try {
-            config.eventBus().publish(errorThrowingEventMessage);
-
-            assertEquals(expectedErrorHandlerCalls, subscribingErrorHandler.getErrorCounter());
-
-            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
-            assertTrue(trackingErrorHandler.await(10, TimeUnit.SECONDS));
-            assertEquals(expectedErrorHandlerCalls, trackingErrorHandler.getErrorCounter());
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void configureDefaultErrorHandler() throws Exception {
-        EventMessage failingEventMessage =
-                new GenericEventMessage(new MessageType("event"), 1000);
-
-        int expectedErrorHandlerCalls = 2;
-
-        StubErrorHandler errorHandler = new StubErrorHandler(2);
-        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-
-        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
-        configurer.eventProcessing()
-                  .registerDefaultListenerInvocationErrorHandler(c -> PropagatingErrorHandler.instance())
-                  .registerDefaultErrorHandler(config -> errorHandler);
-        LegacyConfiguration config = configurer.start();
-
-        //noinspection Duplicates
-        try {
-            config.eventBus().publish(failingEventMessage);
-            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
-
-            assertTrue(errorHandler.await(10, TimeUnit.SECONDS));
-            assertEquals(expectedErrorHandlerCalls, errorHandler.getErrorCounter());
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    void subscribingProcessorsUsesConfiguredDefaultSubscribableMessageSource() {
-        configurer.eventProcessing().configureDefaultSubscribableMessageSource(c -> eventStoreOne);
-        configurer.eventProcessing().usingSubscribingEventProcessors();
-        configurer.registerEventHandler(c -> new SubscribingEventHandler());
-
-        LegacyConfiguration config = configurer.start();
-        Optional<SubscribingEventProcessor> processor = config.eventProcessingConfiguration()
-                                                              .eventProcessor("subscribing");
-        assertTrue(processor.isPresent());
-        assertEquals(eventStoreOne, processor.get().getMessageSource());
-    }
-
-    @Test
     void subscribingProcessorsUsesSpecificSource() {
         configurer.eventProcessing()
                   .configureDefaultSubscribableMessageSource(c -> eventStoreOne)
@@ -504,40 +174,6 @@ class EventProcessingModuleTest {
                                                               .eventProcessor("subscribing");
         assertTrue(processor.isPresent());
         assertEquals(eventStoreTwo, processor.get().getMessageSource());
-    }
-
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void configureErrorHandlerPerEventProcessor() throws Exception {
-        EventMessage failingEventMessage =
-                new GenericEventMessage(new MessageType("event"), 1000);
-
-        int expectedErrorHandlerCalls = 1;
-
-        StubErrorHandler subscribingErrorHandler = new StubErrorHandler(1);
-        StubErrorHandler trackingErrorHandler = new StubErrorHandler(1);
-        CountDownLatch tokenStoreInvocation = new CountDownLatch(1);
-
-        buildComplexEventHandlingConfiguration(tokenStoreInvocation);
-        configurer.eventProcessing()
-                  .registerDefaultListenerInvocationErrorHandler(c -> PropagatingErrorHandler.instance())
-                  .registerErrorHandler("subscribing", config -> subscribingErrorHandler)
-                  .registerErrorHandler("tracking", config -> trackingErrorHandler);
-        LegacyConfiguration config = configurer.start();
-
-        //noinspection Duplicates
-        try {
-            config.eventBus().publish(failingEventMessage);
-
-            assertEquals(expectedErrorHandlerCalls, subscribingErrorHandler.getErrorCounter());
-
-            assertTrue(tokenStoreInvocation.await(10, TimeUnit.SECONDS));
-            assertTrue(trackingErrorHandler.await(10, TimeUnit.SECONDS));
-            assertEquals(expectedErrorHandlerCalls, trackingErrorHandler.getErrorCounter());
-        } finally {
-            config.shutdown();
-        }
     }
 
     @Test
@@ -686,27 +322,6 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void defaultPooledStreamingEventProcessingConfiguration() {
-        Object someHandler = new Object();
-        configurer.eventProcessing()
-                  .usingPooledStreamingEventProcessors()
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .byDefaultAssignTo("default")
-                  .registerEventHandler(config -> someHandler)
-                  .registerEventHandler(config -> new PooledStreamingEventHandler());
-        LegacyConfiguration config = configurer.start();
-
-        Optional<PooledStreamingEventProcessor> resultPooledPsep =
-                config.eventProcessingConfiguration()
-                      .eventProcessor("pooled-streaming", PooledStreamingEventProcessor.class);
-        assertTrue(resultPooledPsep.isPresent());
-
-        Optional<PooledStreamingEventProcessor> resultDefaultPsep =
-                config.eventProcessingConfiguration().eventProcessor("default", PooledStreamingEventProcessor.class);
-        assertTrue(resultDefaultPsep.isPresent());
-    }
-
-    @Test
     void configurePooledStreamingEventProcessorFailsInAbsenceOfStreamableMessageSource() {
         String testName = "pooled-streaming";
         // This configurer does not contain an EventStore or other StreamableMessageSource.
@@ -714,126 +329,6 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessor(testName)
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
         assertThrows(LifecycleHandlerInvocationException.class, () -> configurer.start());
-    }
-
-    @Disabled("TODO #3098 - Must be refactored because of the eventProcessorOperations removal")
-    @Test
-    void configurePooledStreamingEventProcessor() throws NoSuchFieldException, IllegalAccessException {
-        String testName = "pooled-streaming";
-        TokenStore testTokenStore = new InMemoryTokenStore();
-        TestSpanFactory testSpanFactory = new TestSpanFactory();
-
-        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                  .configureSpanFactory(c -> testSpanFactory)
-                  .eventProcessing()
-                  .registerPooledStreamingEventProcessor(testName)
-                  .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerErrorHandler(testName, config -> PropagatingErrorHandler.INSTANCE)
-                  .registerTokenStore(testName, config -> testTokenStore)
-                  .registerTransactionManager(testName, config -> NoTransactionManager.INSTANCE);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<PooledStreamingEventProcessor> optionalResult =
-                config.eventProcessingConfiguration()
-                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
-
-        assertTrue(optionalResult.isPresent());
-        PooledStreamingEventProcessor result = optionalResult.get();
-        assertEquals(testName, result.name());
-//        DefaultEventProcessingPipeline operations = getField("eventProcessorOperations", result);
-//        assertEquals(PropagatingErrorHandler.INSTANCE, getField("errorHandler", operations));
-//        assertEquals(testTokenStore, getField("tokenStore", result));
-//        assertInstanceOf(SimpleUnitOfWorkFactory.class, getField("unitOfWorkFactory", result));
-//        assertEquals(config.getComponent(EventProcessorSpanFactory.class),
-//                     getField("spanFactory", operations));
-    }
-
-    @Disabled("TODO #3098 - Must be refactored because of the eventProcessorOperations removal")
-    @Test
-    void configurePooledStreamingEventProcessorWithSource() throws NoSuchFieldException, IllegalAccessException {
-        String testName = "pooled-streaming";
-        TokenStore testTokenStore = new InMemoryTokenStore();
-
-        configurer.eventProcessing()
-                  .registerPooledStreamingEventProcessor(testName, config -> eventStoreOne)
-                  .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerErrorHandler(testName, config -> PropagatingErrorHandler.INSTANCE)
-                  .registerTokenStore(testName, config -> testTokenStore)
-                  .registerTransactionManager(testName, config -> NoTransactionManager.INSTANCE);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<PooledStreamingEventProcessor> optionalResult =
-                config.eventProcessingConfiguration()
-                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
-
-        assertTrue(optionalResult.isPresent());
-        PooledStreamingEventProcessor result = optionalResult.get();
-        assertEquals(testName, result.name());
-//        DefaultEventProcessingPipeline operations = getField("eventProcessorOperations", result);
-//        assertEquals(PropagatingErrorHandler.INSTANCE, getField("errorHandler", operations));
-//        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
-        assertEquals(testTokenStore, getField("tokenStore", result));
-        assertInstanceOf(SimpleUnitOfWorkFactory.class, getField("unitOfWorkFactory", result));
-    }
-
-    @Test
-    void configurePooledStreamingEventProcessorWithConfiguration() throws NoSuchFieldException, IllegalAccessException {
-        String testName = "pooled-streaming";
-        int testCapacity = 24;
-
-        configurer.eventProcessing()
-                  .registerPooledStreamingEventProcessor(
-                          testName,
-                          config -> eventStoreOne,
-                          (config, builder) -> builder.maxClaimedSegments(testCapacity)
-                  )
-                  .registerEventHandler(config -> new PooledStreamingEventHandler());
-        LegacyConfiguration config = configurer.start();
-
-        Optional<PooledStreamingEventProcessor> optionalResult =
-                config.eventProcessingConfiguration()
-                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
-
-        assertTrue(optionalResult.isPresent());
-        PooledStreamingEventProcessor result = optionalResult.get();
-        assertEquals(testCapacity, result.maxCapacity());
-//        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
-    }
-
-    @Test
-    void registerPooledStreamingEventProcessorConfigurationIsUsedDuringAllPsepConstructions()
-            throws NoSuchFieldException, IllegalAccessException {
-        String testName = "pooled-streaming";
-        int testCapacity = 24;
-        Object testHandler = new Object();
-
-        configurer.eventProcessing()
-                  .usingPooledStreamingEventProcessors()
-                  .registerPooledStreamingEventProcessorConfiguration(
-                          (config, builder) -> builder.maxClaimedSegments(testCapacity)
-                  )
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .byDefaultAssignTo("default")
-                  .registerEventHandler(config -> testHandler);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<PooledStreamingEventProcessor> optionalResult =
-                config.eventProcessingConfiguration()
-                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
-
-        assertTrue(optionalResult.isPresent());
-        PooledStreamingEventProcessor result = optionalResult.get();
-        assertEquals(testCapacity, result.maxCapacity());
-//        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
-
-        optionalResult = config.eventProcessingConfiguration()
-                               .eventProcessor("default", PooledStreamingEventProcessor.class);
-
-        assertTrue(optionalResult.isPresent());
-        result = optionalResult.get();
-        assertEquals(testCapacity, result.maxCapacity());
-//        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
     }
 
     @Test
@@ -869,157 +364,6 @@ class EventProcessingModuleTest {
 //        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
     }
 
-    @Test
-    void registerPooledStreamingEventProcessorConfigurationForNameIsUsedDuringSpecificPsepConstruction()
-            throws NoSuchFieldException, IllegalAccessException {
-        String testName = "pooled-streaming";
-        int testCapacity = 24;
-        Object testHandler = new Object();
-
-        configurer.eventProcessing()
-                  .usingPooledStreamingEventProcessors()
-                  .registerPooledStreamingEventProcessorConfiguration(
-                          "pooled-streaming", (config, builder) -> builder.maxClaimedSegments(testCapacity)
-                  )
-                  .configureDefaultStreamableMessageSource(config -> eventStoreOne)
-                  .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .byDefaultAssignTo("default")
-                  .registerEventHandler(config -> testHandler);
-        LegacyConfiguration config = configurer.start();
-
-        Optional<PooledStreamingEventProcessor> optionalResult =
-                config.eventProcessingConfiguration()
-                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
-
-        assertTrue(optionalResult.isPresent());
-        PooledStreamingEventProcessor result = optionalResult.get();
-        assertEquals(testCapacity, result.maxCapacity());
-//        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
-
-        optionalResult = config.eventProcessingConfiguration()
-                               .eventProcessor("default", PooledStreamingEventProcessor.class);
-
-        assertTrue(optionalResult.isPresent());
-        result = optionalResult.get();
-        assertEquals(Short.MAX_VALUE, result.maxCapacity());
-//        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
-    }
-
-    @Test
-    void registerPooledStreamingEventProcessorWithConfigurationOverridesDefaultPsepConfiguration()
-            throws NoSuchFieldException, IllegalAccessException {
-        String testName = "pooled-streaming";
-        int testCapacity = 24;
-        int incorrectCapacity = 1745;
-
-        configurer.eventProcessing()
-                  .registerPooledStreamingEventProcessorConfiguration(
-                          (config, builder) -> builder.maxClaimedSegments(incorrectCapacity)
-                  )
-                  .registerPooledStreamingEventProcessor(
-                          testName,
-                          config -> eventStoreOne,
-                          (config, builder) -> builder.maxClaimedSegments(testCapacity)
-                  )
-                  .registerEventHandler(config -> new PooledStreamingEventHandler());
-        LegacyConfiguration config = configurer.start();
-
-        Optional<PooledStreamingEventProcessor> optionalResult =
-                config.eventProcessingConfiguration()
-                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
-
-        assertTrue(optionalResult.isPresent());
-        PooledStreamingEventProcessor result = optionalResult.get();
-        assertEquals(testCapacity, result.maxCapacity());
-//        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
-    }
-
-    @Test
-    void registerPooledStreamingEventProcessorWithConfigurationOverridesCustomPsepConfiguration()
-            throws NoSuchFieldException, IllegalAccessException {
-        String testName = "pooled-streaming";
-        int testCapacity = 24;
-        int wrongCapacity = 42;
-        int incorrectCapacity = 1729;
-
-        configurer.eventProcessing()
-                  .registerPooledStreamingEventProcessorConfiguration(
-                          (config, builder) -> builder.batchSize(100).maxClaimedSegments(wrongCapacity)
-                  )
-                  .registerPooledStreamingEventProcessorConfiguration(
-                          "pooled-streaming", (config, builder) -> builder.maxClaimedSegments(incorrectCapacity)
-                  )
-                  .registerPooledStreamingEventProcessor(
-                          testName,
-                          config -> eventStoreOne,
-                          (config, builder) -> builder.maxClaimedSegments(testCapacity)
-                  )
-                  .registerEventHandler(config -> new PooledStreamingEventHandler());
-        LegacyConfiguration config = configurer.buildConfiguration();
-
-        Optional<PooledStreamingEventProcessor> optionalResult =
-                config.eventProcessingConfiguration()
-                      .eventProcessor(testName, PooledStreamingEventProcessor.class);
-
-        assertTrue(optionalResult.isPresent());
-        PooledStreamingEventProcessor result = optionalResult.get();
-        assertEquals(testCapacity, result.maxCapacity());
-//        assertEquals(eventStoreOne, getField("eventSource", result)); fixme: temporarily LegacyStreamableEventSource is used
-        PooledStreamingEventProcessorConfiguration configuration = getField("configuration", result);
-        assertEquals(100, (int) getField("batchSize", configuration));
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void defaultTransactionManagerIsUsedUponEventProcessorConstruction() throws InterruptedException {
-        String testName = "pooled-streaming";
-        EventMessage testEvent = new GenericEventMessage(new MessageType("event"), 1000);
-
-        CountDownLatch transactionCommitted = new CountDownLatch(1);
-        TransactionManager defaultTransactionManager = new StubTransactionManager(transactionCommitted);
-
-        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                  .eventProcessing()
-                  .registerPooledStreamingEventProcessor(testName)
-                  .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerDefaultTransactionManager(c -> defaultTransactionManager);
-        LegacyConfiguration config = configurer.start();
-
-        try {
-            config.eventBus().publish(testEvent);
-            assertTrue(transactionCommitted.await(10, TimeUnit.SECONDS));
-        } finally {
-            config.shutdown();
-        }
-    }
-
-    @Test
-    @Disabled("Disabled due to lifecycle solution removal")
-    void defaultTransactionManagerIsOverriddenByProcessorSpecificInstance() throws InterruptedException {
-        String testName = "pooled-streaming";
-        EventMessage testEvent = new GenericEventMessage(new MessageType("event"), 1000);
-
-        TransactionManager defaultTransactionManager = spy(TransactionManager.class);
-        CountDownLatch transactionCommitted = new CountDownLatch(1);
-        TransactionManager processorSpecificTransactionManager = new StubTransactionManager(transactionCommitted);
-
-        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                  .eventProcessing()
-                  .registerPooledStreamingEventProcessor(testName)
-                  .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerDefaultTransactionManager(c -> defaultTransactionManager)
-                  .registerTransactionManager(testName, c -> processorSpecificTransactionManager);
-        LegacyConfiguration config = configurer.start();
-
-        try {
-            config.eventBus().publish(testEvent);
-            assertTrue(transactionCommitted.await(10, TimeUnit.SECONDS));
-        } finally {
-            config.shutdown();
-        }
-        verifyNoInteractions(defaultTransactionManager);
-    }
-
     @Disabled("TODO #3517 - Revise Dead Letter Queue")
     @Test
     void registerDeadLetterQueueConstructsDeadLetteringEventHandlerInvoker(
@@ -1031,8 +375,7 @@ class EventProcessingModuleTest {
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue);
         LegacyConfiguration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage>> optionalPolicy = config.eventProcessingConfiguration()
@@ -1079,8 +422,7 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
-                  .registerDefaultDeadLetterPolicy(c -> expectedPolicy)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  .registerDefaultDeadLetterPolicy(c -> expectedPolicy);
         LegacyConfiguration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage>> optionalPolicy = config.eventProcessingConfiguration()
@@ -1128,8 +470,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
                   .registerDeadLetterPolicy(processingGroup, c -> expectedPolicy)
-                  .registerDeadLetterPolicy("unused-processing-group", c -> unexpectedPolicy)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  .registerDeadLetterPolicy("unused-processing-group", c -> unexpectedPolicy);
         LegacyConfiguration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage>> optionalPolicy = config.eventProcessingConfiguration()
@@ -1178,8 +519,7 @@ class EventProcessingModuleTest {
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
                   .registerDeadLetteringEventHandlerInvokerConfiguration(
                           processingGroup, (config, builder) -> builder.allowReset(true)
-                  )
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  );
         LegacyConfiguration config = configurer.start();
 
         Optional<SequencedDeadLetterQueue<EventMessage>> configuredDlq =
@@ -1219,8 +559,7 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessor(otherProcessingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerEventHandler(config -> new TrackingEventHandler())
-                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue);
 
         LegacyConfiguration config = configurer.start();
         EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
@@ -1254,7 +593,6 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE)
                   .registerHandlerInterceptor(processingGroup, c -> interceptor1)
                   .registerDefaultHandlerInterceptor((c, n) -> interceptor2);
 
@@ -1279,8 +617,7 @@ class EventProcessingModuleTest {
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerDeadLetterQueueProvider(p -> c -> deadLetterQueue)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  .registerDeadLetterQueueProvider(p -> c -> deadLetterQueue);
         LegacyConfiguration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage>> optionalPolicy = config.eventProcessingConfiguration()
@@ -1326,8 +663,7 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDeadLetterQueue(processingGroup, c -> specificDeadLetterQueue)
-                  .registerDeadLetterQueueProvider(p -> c -> genericDeadLetterQueue)
-                  .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
+                  .registerDeadLetterQueueProvider(p -> c -> genericDeadLetterQueue);
         LegacyConfiguration config = configurer.start();
 
         Optional<SequencedDeadLetterQueue<EventMessage>> configuredDlq =
@@ -1347,29 +683,6 @@ class EventProcessingModuleTest {
         field.setAccessible(true);
         //noinspection unchecked
         return (R) field.get(object);
-    }
-
-    private void buildComplexEventHandlingConfiguration(CountDownLatch tokenStoreInvocation) {
-        // Use InMemoryEventStorageEngine so tracking processors don't miss events
-        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine());
-        configurer.eventProcessing()
-                  .registerSubscribingEventProcessor("subscribing")
-                  .registerPooledStreamingEventProcessor("pooled")
-                  .assignHandlerInstancesMatching(
-                          "subscribing", eh -> eh.getClass().isAssignableFrom(SubscribingEventHandler.class)
-                  )
-                  .assignHandlerInstancesMatching(
-                          "tracking", eh -> eh.getClass().isAssignableFrom(TrackingEventHandler.class)
-                  )
-                  .registerEventHandler(c -> new SubscribingEventHandler())
-                  .registerEventHandler(c -> new TrackingEventHandler())
-                  .registerTokenStore("tracking", c -> new InMemoryTokenStore() {
-                      @Override
-                      public int[] fetchSegments(@Nonnull String processorName) {
-                          tokenStoreInvocation.countDown();
-                          return super.fetchSegments(processorName);
-                      }
-                  });
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -1411,13 +724,13 @@ class EventProcessingModuleTest {
         }
 
         @Override
-        public void start() {
-            // noop
+        public CompletableFuture<Void> start() {
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override
-        public void shutDown() {
-            // noop
+        public CompletableFuture<Void> shutdown() {
+            return FutureUtils.emptyCompletedFuture();
         }
 
         @Override

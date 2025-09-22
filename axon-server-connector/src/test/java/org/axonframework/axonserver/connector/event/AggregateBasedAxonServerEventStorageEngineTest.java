@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.processors.streaming.token.GlobalSequence
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventstreaming.StreamingCondition;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.test.server.AxonServerContainer;
 import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
@@ -69,7 +70,7 @@ class AggregateBasedAxonServerEventStorageEngineTest extends
                 IllegalArgumentException.class,
                 () -> testSubject.stream(StreamingCondition.startingFrom(
                         new GapAwareTrackingToken(5, Collections.emptySet())
-                ))
+                ), processingContext())
         );
     }
 
@@ -80,6 +81,11 @@ class AggregateBasedAxonServerEventStorageEngineTest extends
                                                            "default",
                                                            AxonServerContainerUtils.NO_DCB_CONTEXT);
         return new AggregateBasedAxonServerEventStorageEngine(connection, converter);
+    }
+
+    @Override
+    protected ProcessingContext processingContext() {
+        return null;
     }
 
     @Override

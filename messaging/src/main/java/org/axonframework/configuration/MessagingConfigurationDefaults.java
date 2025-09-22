@@ -63,10 +63,9 @@ import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
+import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
@@ -91,14 +90,16 @@ import java.util.concurrent.CompletableFuture;
  *     <li>Registers a {@link DefaultDispatchInterceptorRegistry} for class {@link DispatchInterceptorRegistry} containing an {@link CorrelationDataInterceptor} if there are {@link CorrelationDataProvider CorrelationDataProviders} present.</li>
  *     <li>Registers a {@link DefaultHandlerInterceptorRegistry} for class {@link HandlerInterceptorRegistry} containing an {@link CorrelationDataInterceptor} if there are {@link CorrelationDataProvider CorrelationDataProviders} present.</li>
  *     <li>Registers a {@link TransactionalUnitOfWorkFactory} for class {@link UnitOfWorkFactory}</li>
- *     <li>Registers a {@link DefaultCommandGateway} for class {@link CommandGateway}</li>
  *     <li>Registers a {@link SimpleCommandBus} for class {@link CommandBus}</li>
+ *     <li>Registers a {@link CommandPriorityCalculator#defaultCalculator()} for class {@link CommandPriorityCalculator}</li>
  *     <li>Registers a {@link AnnotationRoutingStrategy} for class {@link RoutingStrategy}</li>
+ *     <li>Registers a {@link DefaultCommandGateway} for class {@link CommandGateway}</li>
  *     <li>Registers a {@link DefaultEventGateway} for class {@link EventGateway}</li>
  *     <li>Registers a {@link SimpleEventBus} for class {@link EventBus}</li>
- *     <li>Registers a {@link DefaultQueryGateway} for class {@link QueryGateway}</li>
  *     <li>Registers a {@link SimpleQueryBus} for class {@link QueryBus}</li>
  *     <li>Registers a {@link SimpleQueryUpdateEmitter} for class {@link QueryUpdateEmitter}</li>
+ *     <li>Registers a {@link QueryPriorityCalculator#defaultCalculator()} for class {@link QueryPriorityCalculator}</li>
+ *     <li>Registers a {@link DefaultQueryGateway} for class {@link QueryGateway}</li>
  * </ul>
  * <p>
  * Furthermore, this enhancer will decorate the:
@@ -157,16 +158,20 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                                       MessagingConfigurationDefaults::defaultDispatchInterceptorRegistry)
                 .registerIfNotPresent(HandlerInterceptorRegistry.class,
                                       MessagingConfigurationDefaults::defaultHandlerInterceptorRegistry)
-                .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(CommandBus.class, MessagingConfigurationDefaults::defaultCommandBus)
+                .registerIfNotPresent(CommandPriorityCalculator.class,
+                                      c -> CommandPriorityCalculator.defaultCalculator())
                 .registerIfNotPresent(RoutingStrategy.class, MessagingConfigurationDefaults::defaultRoutingStrategy)
+                .registerIfNotPresent(CommandGateway.class, MessagingConfigurationDefaults::defaultCommandGateway)
                 .registerIfNotPresent(EventGateway.class, MessagingConfigurationDefaults::defaultEventGateway)
                 .registerIfNotPresent(EventSink.class, MessagingConfigurationDefaults::defaultEventSink)
                 .registerIfNotPresent(EventBus.class, MessagingConfigurationDefaults::defaultEventBus)
-                .registerIfNotPresent(QueryGateway.class, MessagingConfigurationDefaults::defaultQueryGateway)
                 .registerIfNotPresent(QueryBus.class, MessagingConfigurationDefaults::defaultQueryBus)
                 .registerIfNotPresent(QueryUpdateEmitter.class,
-                                      MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
+                                      MessagingConfigurationDefaults::defaultQueryUpdateEmitter)
+                .registerIfNotPresent(QueryPriorityCalculator.class,
+                                      c -> QueryPriorityCalculator.defaultCalculator())
+                .registerIfNotPresent(QueryGateway.class, MessagingConfigurationDefaults::defaultQueryGateway);
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(Configuration config) {
@@ -225,12 +230,16 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         );
     }
 
+    private static RoutingStrategy defaultRoutingStrategy(Configuration config) {
+        return new AnnotationRoutingStrategy();
+    }
+
     private static CommandGateway defaultCommandGateway(Configuration config) {
         return new DefaultCommandGateway(
                 config.getComponent(CommandBus.class),
                 config.getComponent(MessageTypeResolver.class),
-                config.getOptionalComponent(CommandPriorityCalculator.class).orElse(null),
-                config.getOptionalComponent(RoutingStrategy.class).orElse(null)
+                config.getComponent(CommandPriorityCalculator.class),
+                config.getComponent(RoutingStrategy.class)
         );
     }
 
@@ -265,31 +274,22 @@ public class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static QueryGateway defaultQueryGateway(Configuration config) {
-        return DefaultQueryGateway.builder()
-                                  .queryBus(config.getComponent(QueryBus.class))
-                                  .build();
+        return new DefaultQueryGateway(
+                config.getComponent(QueryBus.class),
+                config.getComponent(MessageTypeResolver.class),
+                config.getComponent(QueryPriorityCalculator.class)
+        );
     }
 
     private static QueryBus defaultQueryBus(Configuration config) {
-        return SimpleQueryBus.builder()
-                             .transactionManager(config.getComponent(
-                                     TransactionManager.class,
-                                     NoTransactionManager::instance
-                             ))
-                             .errorHandler(config.getComponent(
-                                     QueryInvocationErrorHandler.class,
-                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
-                             ))
-                             .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                             .build();
+        return new SimpleQueryBus(
+                config.getComponent(UnitOfWorkFactory.class),
+                config.getComponent(QueryUpdateEmitter.class)
+        );
     }
 
     private static QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
         return SimpleQueryUpdateEmitter.builder().build();
-    }
-
-    private static RoutingStrategy defaultRoutingStrategy(Configuration config) {
-        return new AnnotationRoutingStrategy();
     }
 
     private static void registerDecorators(@Nonnull ComponentRegistry registry) {

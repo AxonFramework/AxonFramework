@@ -36,6 +36,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
@@ -61,33 +62,6 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
     private final ErrorHandler errorHandler;
 
     private volatile Registration eventBusRegistration;
-
-    /**
-     * Instantiate a {@code SubscribingEventProcessor} with given {@code name}, {@code eventHandlingComponents} and
-     * based on the fields contained in the {@link SubscribingEventProcessorConfiguration}.
-     * <p>
-     * Will assert the following for their presence in the configuration, prior to constructing this processor:
-     * <ul>
-     *     <li>A {@link SubscribableMessageSource}.</li>
-     * </ul>
-     * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
-
-     * @param name A {@link String} defining this {@link EventProcessor} instance.
-     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual {@link EventMessage}s.
-     * @param customization The function that allows to customize default {@link SubscribingEventProcessor} used to configure a {@code SubscribingEventProcessor} instance.
-     */
-    public SubscribingEventProcessor(
-            @Nonnull String name,
-            @Nonnull List<EventHandlingComponent> eventHandlingComponents,
-            @Nonnull UnaryOperator<SubscribingEventProcessorConfiguration> customization
-    ) {
-        this(
-                Objects.requireNonNull(name, "Name may not be null"),
-                Objects.requireNonNull(eventHandlingComponents, "EventHandlingComponents may not be null"),
-                Objects.requireNonNull(customization, "Customization may not be null")
-                       .apply(new SubscribingEventProcessorConfiguration())
-        );
-    }
 
     /**
      * Instantiate a {@code SubscribingEventProcessor} with given {@code name}, {@code eventHandlingComponents} and
@@ -131,13 +105,14 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
      * {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS} phase.
      */
     @Override
-    public void start() {
+    public CompletableFuture<Void> start() {
         if (eventBusRegistration != null) {
             // This event processor has already been started
-            return;
+            return FutureUtils.emptyCompletedFuture();
         }
         eventBusRegistration =
                 messageSource.subscribe(eventMessages -> processingStrategy.handle(eventMessages, this::process));
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Override
@@ -197,11 +172,12 @@ public class SubscribingEventProcessor implements EventProcessor, DescribableCom
      * {@link Phase#LOCAL_MESSAGE_HANDLER_REGISTRATIONS} phase.
      */
     @Override
-    public void shutDown() {
+    public CompletableFuture<Void> shutdown() {
         if (eventBusRegistration != null) {
             eventBusRegistration.cancel();
         }
         eventBusRegistration = null;
+        return FutureUtils.emptyCompletedFuture();
     }
 
     /**

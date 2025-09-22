@@ -17,12 +17,14 @@
 package org.axonframework.integrationtests.eventsourcing.eventstore.benchmark;
 
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
@@ -110,7 +112,8 @@ public abstract class AbstractEventStoreBenchmark {
         this.eventProcessor = new PooledStreamingEventProcessor(
                 "benchmark",
                 List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                cfg -> cfg.eventSource(new LegacyStreamableEventSource<>(eventStore))
+                new PooledStreamingEventProcessorConfiguration()
+                        .eventSource(new LegacyStreamableEventSource<>(eventStore))
                         .unitOfWorkFactory(UnitOfWorkTestUtils.SIMPLE_FACTORY)
                         .tokenStore(new InMemoryTokenStore())
                         .coordinatorExecutor(coordinatorExecutor)
@@ -153,7 +156,7 @@ public abstract class AbstractEventStoreBenchmark {
     }
 
     protected void prepareForBenchmark() {
-        eventProcessor.start();
+        FutureUtils.joinAndUnwrap(eventProcessor.start());
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -163,7 +166,7 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected void cleanUpAfterBenchmark() {
         executorService.shutdown();
-        eventProcessor.shutDown();
+        FutureUtils.joinAndUnwrap(eventProcessor.shutdown());
         eventStore.shutDown();
         coordinatorExecutor.shutdown();
         workerExecutor.shutdown();

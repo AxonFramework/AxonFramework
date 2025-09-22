@@ -18,16 +18,16 @@ package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.common.TypeReference;
 import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
@@ -69,7 +69,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Milan Savic
  */
 public abstract class AbstractSubscriptionQueryTestSuite {
-    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {};
+
+    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
+    };
     private static final String FOUND = "found";
     private static final String TEST_PAYLOAD = "axonFrameworkCR";
 
@@ -278,7 +280,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
             query1Updates.add("Error1");
             throw (RuntimeException) t;
         });
-        result2.updates().map(m -> m.payloadAs(String.class)).subscribe(query2Updates::add, t -> query2Updates.add("Error2"));
+        result2.updates().map(m -> m.payloadAs(String.class)).subscribe(query2Updates::add,
+                                                                        t -> query2Updates.add("Error2"));
 
         chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");
         chatQueryHandler.emitter.completeExceptionally(String.class, TEST_PAYLOAD::equals, new RuntimeException());
@@ -818,7 +821,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         List<String> initialResult = new ArrayList<>();
         List<String> updates = new ArrayList<>();
         queryBus.subscriptionQuery(queryMessage)
-                .handle(initial -> initialResult.add((String) initial.payload()), update -> updates.add((String) update.payload()));
+                .handle(initial -> initialResult.add((String) initial.payload()),
+                        update -> updates.add((String) update.payload()));
         chatQueryHandler.emitter.completeExceptionally(String.class, TEST_PAYLOAD::equals, new RuntimeException());
         chatQueryHandler.emitter.emit(String.class, TEST_PAYLOAD::equals, "Update1");
 
@@ -830,7 +834,9 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     @Test
     void queryGatewayCorrectlyReturnsNullOnSubscriptionQueryWithNullInitialResult()
             throws ExecutionException, InterruptedException {
-        QueryGateway queryGateway = DefaultQueryGateway.builder().queryBus(queryBus).build();
+        QueryGateway queryGateway = new DefaultQueryGateway(queryBus,
+                                                            new ClassBasedMessageTypeResolver(),
+                                                            QueryPriorityCalculator.defaultCalculator());
 
         assertNull(queryGateway.subscriptionQuery(new SomeQuery("not " + FOUND), String.class, String.class)
                                .initialResult()
@@ -839,7 +845,9 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
     @Test
     void queryGatewayCorrectlyReturnsOnSubscriptionQuery() throws ExecutionException, InterruptedException {
-        QueryGateway queryGateway = DefaultQueryGateway.builder().queryBus(queryBus).build();
+        QueryGateway queryGateway = new DefaultQueryGateway(queryBus,
+                                                            new ClassBasedMessageTypeResolver(),
+                                                            QueryPriorityCalculator.defaultCalculator());
         String result = queryGateway.subscriptionQuery(new SomeQuery(FOUND), String.class, String.class)
                                     .initialResult()
                                     .toFuture().get();

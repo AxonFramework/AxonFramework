@@ -24,6 +24,8 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.QueryHandlerName;
+import org.axonframework.queryhandling.QueryHandlerRegistry;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 
 import java.util.Set;
@@ -42,9 +44,13 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface MessageHandlingComponent
-        extends CommandHandlingComponent, CommandHandlerRegistry<MessageHandlingComponent>,
-        EventHandlingComponent, QueryHandlingComponent, MessageHandler {
+public interface MessageHandlingComponent extends
+        CommandHandlingComponent,
+        CommandHandlerRegistry<MessageHandlingComponent>,
+        EventHandlingComponent,
+        QueryHandlingComponent,
+        QueryHandlerRegistry<MessageHandlingComponent>,
+        MessageHandler {
 
     /**
      * Subscribe the given {@code handler} for {@link org.axonframework.messaging.Message messages} of the given
@@ -91,7 +97,7 @@ public interface MessageHandlingComponent
                 component.supportedEvents()
                          .forEach(eventName -> subscribe(eventName, (EventHandler) component));
                 component.supportedQueries()
-                         .forEach(queryName -> subscribe(queryName, (QueryHandler) component));
+                         .forEach(queryHandlerName -> subscribe(queryHandlerName, component));
                 break;
             case CommandHandler commandHandler:
                 subscribe(name, commandHandler);
@@ -112,9 +118,10 @@ public interface MessageHandlingComponent
      * Subscribe the given {@code handlingComponent} with this component.
      * <p>
      * Typically invokes {@link #subscribe(Set, CommandHandler)}, {@link #subscribe(QualifiedName, EventHandler)}, and
-     * {@link #subscribe(QualifiedName, QueryHandler)}, using the {@link CommandHandlingComponent#supportedCommands()},
-     * {@link EventHandlingComponent#supportedEvents()}, and {@link QueryHandlingComponent#supportedQueries()}
-     * respectively as the set of compatible {@link QualifiedName names} the component in question can deal with.
+     * {@link #subscribe(QueryHandlerName, QueryHandler)}, using the
+     * {@link CommandHandlingComponent#supportedCommands()}, {@link EventHandlingComponent#supportedEvents()}, and
+     * {@link QueryHandlingComponent#supportedQueries()} respectively as the set of compatible
+     * {@link QualifiedName names} the component in question can deal with.
      *
      * @param handlingComponent The message handling component instance to subscribe with this component.
      * @return This component for fluent interfacing.
@@ -125,7 +132,7 @@ public interface MessageHandlingComponent
         handlingComponent.supportedEvents()
                          .forEach(eventName -> subscribe(eventName, (EventHandler) handlingComponent));
         handlingComponent.supportedQueries()
-                         .forEach(queryName -> subscribe(queryName, (QueryHandler) handlingComponent));
+                         .forEach(queryHandlerName -> subscribe(queryHandlerName, handlingComponent));
         return this;
     }
 
@@ -150,10 +157,10 @@ public interface MessageHandlingComponent
     }
 
     @Override
-    MessageHandlingComponent subscribe(@Nonnull QualifiedName name, @Nonnull QueryHandler queryHandler);
+    MessageHandlingComponent subscribe(@Nonnull QueryHandlerName handlerName, @Nonnull QueryHandler queryHandler);
 
     @Override
-    default MessageHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
+    default MessageHandlingComponent subscribe(@Nonnull Set<QueryHandlerName> names,
                                                @Nonnull QueryHandler queryHandler) {
         names.forEach(name -> subscribe(name, queryHandler));
         return this;

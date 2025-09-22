@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.EventProcessor;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
@@ -97,7 +98,7 @@ public class EventProcessingModule
 
     private static final String CONFIGURED_DEFAULT_PSEP_CONFIG = "___DEFAULT_PSEP_CONFIG";
     private static final PooledStreamingProcessorConfiguration DEFAULT_SAGA_PSEP_CONFIG =
-            (config, builder) -> builder.initialToken(TrackingTokenSource::firstToken);
+            (config, builder) -> builder.initialToken(tts -> tts.firstToken(null));
     private static final Function<Class<?>, String> DEFAULT_SAGA_PROCESSING_GROUP_FUNCTION =
             c -> c.getSimpleName() + "Processor";
 
@@ -414,10 +415,14 @@ public class EventProcessingModule
         );
     }
 
+    @Override
+    public <T extends EventProcessor> Optional<T> sagaEventProcessor(Class<?> sagaType) {
+        return eventProcessorByProcessingGroup(sagaProcessingGroup(sagaType));
+    }
+
     //<editor-fold desc="configuration methods">
     @SuppressWarnings("unchecked")
-    @Override
-    public <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup) {
+    private <T extends EventProcessor> Optional<T> eventProcessorByProcessingGroup(String processingGroup) {
         return Optional.ofNullable((T) eventProcessors().get(processorNameForProcessingGroup(processingGroup)));
     }
 
@@ -452,8 +457,7 @@ public class EventProcessingModule
                 : defaultSequencingPolicy.get();
     }
 
-    @Override
-    public ErrorHandler errorHandler(String processorName) {
+    private ErrorHandler errorHandler(String processorName) {
         validateConfigInitialization();
         return errorHandlers.containsKey(processorName)
                 ? errorHandlers.get(processorName).get()
@@ -480,8 +484,7 @@ public class EventProcessingModule
                                                                 .apply(processingGroup));
     }
 
-    @Override
-    public MessageMonitor<? super Message> messageMonitor(Class<?> componentType,
+    private MessageMonitor<? super Message> messageMonitor(Class<?> componentType,
                                                              String eventProcessorName) {
         validateConfigInitialization();
         if (messageMonitorFactories.containsKey(eventProcessorName)) {
@@ -501,8 +504,7 @@ public class EventProcessingModule
                 : defaultTokenStore.get();
     }
 
-    @Override
-    public TransactionManager transactionManager(String processorName) {
+    private TransactionManager transactionManager(String processorName) {
         validateConfigInitialization();
         return transactionManagers.containsKey(processorName)
                 ? transactionManagers.get(processorName).get()
@@ -572,14 +574,6 @@ public class EventProcessingModule
     //</editor-fold>
 
     @Override
-    public EventProcessingConfigurer registerDefaultListenerInvocationErrorHandler(
-            Function<LegacyConfiguration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder
-    ) {
-        defaultListenerInvocationErrorHandler.update(listenerInvocationErrorHandlerBuilder);
-        return this;
-    }
-
-    @Override
     public EventProcessingConfigurer registerListenerInvocationErrorHandler(String processingGroup,
                                                                             Function<LegacyConfiguration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
         listenerInvocationErrorHandlers.put(processingGroup, new Component<>(() -> configuration,
@@ -605,34 +599,12 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerEventProcessorFactory(
-            EventProcessorBuilder eventProcessorBuilder) {
-        this.defaultEventProcessorBuilder = eventProcessorBuilder;
-        return this;
-    }
-
-    @Override
     public EventProcessingConfigurer registerEventProcessor(String name,
                                                             EventProcessorBuilder eventProcessorBuilder) {
         if (this.eventProcessorBuilders.containsKey(name)) {
             throw new AxonConfigurationException(format("Event processor with name %s already exists", name));
         }
         this.eventProcessorBuilders.put(name, eventProcessorBuilder);
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerTokenStore(String processorName,
-                                                        Function<LegacyConfiguration, TokenStore> tokenStore) {
-        this.tokenStore.put(processorName, new Component<>(() -> configuration,
-                                                           "tokenStore",
-                                                           tokenStore));
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerTokenStore(Function<LegacyConfiguration, TokenStore> tokenStore) {
-        this.defaultTokenStore.update(tokenStore);
         return this;
     }
 
@@ -659,22 +631,6 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerDefaultErrorHandler(
-            Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder) {
-        this.defaultErrorHandler.update(errorHandlerBuilder);
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerErrorHandler(String eventProcessorName,
-                                                          Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder) {
-        this.errorHandlers.put(eventProcessorName, new Component<>(() -> configuration,
-                                                                   "errorHandler",
-                                                                   errorHandlerBuilder));
-        return this;
-    }
-
-    @Override
     public EventProcessingConfigurer byDefaultAssignHandlerInstancesTo(Function<Object, String> assignmentFunction) {
         this.instanceFallbackSelector = InstanceProcessingGroupSelector.defaultSelector(assignmentFunction);
         return this;
@@ -683,13 +639,6 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer byDefaultAssignHandlerTypesTo(Function<Class<?>, String> assignmentFunction) {
         this.typeFallback = TypeProcessingGroupSelector.defaultSelector(assignmentFunction);
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer assignHandlerInstancesMatching(String processingGroup, int priority,
-                                                                    Predicate<Object> criteria) {
-        this.instanceSelectors.add(new InstanceProcessingGroupSelector(processingGroup, priority, criteria));
         return this;
     }
 
@@ -735,38 +684,6 @@ public class EventProcessingModule
         this.sequencingPolicies.put(processingGroup, new Component<>(() -> configuration,
                                                                      "sequencingPolicy",
                                                                      policyBuilder));
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerDefaultSequencingPolicy(
-            Function<LegacyConfiguration, SequencingPolicy> policyBuilder
-    ) {
-        this.defaultSequencingPolicy.update(policyBuilder);
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerMessageMonitorFactory(String eventProcessorName,
-                                                                   MessageMonitorFactory messageMonitorFactory) {
-        this.messageMonitorFactories.put(eventProcessorName, messageMonitorFactory);
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerTransactionManager(String name,
-                                                                Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder) {
-        this.transactionManagers.put(name, new Component<>(() -> configuration,
-                                                           "transactionManager",
-                                                           transactionManagerBuilder));
-        return this;
-    }
-
-    @Override
-    public EventProcessingConfigurer registerDefaultTransactionManager(
-            Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder
-    ) {
-        this.defaultTransactionManager.update(transactionManagerBuilder);
         return this;
     }
 
@@ -883,12 +800,14 @@ public class EventProcessingModule
         return new SubscribingEventProcessor(
                 name,
                 List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                c -> c.errorHandler(errorHandler(name))
-                      .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
-                      .messageSource(messageSource)
-                      .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
-                      .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name), simpleUnitOfWorkFactory))
-                      .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
+                new SubscribingEventProcessorConfiguration()
+                        .errorHandler(errorHandler(name))
+                        .messageMonitor(messageMonitor(SubscribingEventProcessor.class, name))
+                        .messageSource(messageSource)
+                        .processingStrategy(DirectEventProcessingStrategy.INSTANCE)
+                        .unitOfWorkFactory(new TransactionalUnitOfWorkFactory(transactionManager(name),
+                                                                              simpleUnitOfWorkFactory))
+                        .spanFactory(configuration.getComponent(EventProcessorSpanFactory.class))
         );
     }
 

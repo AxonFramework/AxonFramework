@@ -17,6 +17,7 @@
 package org.axonframework.integrationtests.eventhandling;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -76,7 +77,7 @@ class SubscribingEventProcessorTest {
 
     @AfterEach
     void tearDown() {
-        testSubject.shutDown();
+        shutdownEventProcessor();
         eventBus.shutDown();
     }
 
@@ -92,14 +93,22 @@ class SubscribingEventProcessorTest {
         withTestSubject(List.of(eventHandlingComponent), config -> config);
 
         // when
-        testSubject.start();
-        testSubject.shutDown();
-        testSubject.start();
+        startEventProcessor();
+        shutdownEventProcessor();
+        startEventProcessor();
 
         // then
         List<EventMessage> events = createEvents(2);
         eventBus.publish(events);
         assertTrue(countDownLatch.await(5, TimeUnit.SECONDS), "Expected Handler to have received 2 published events");
+    }
+
+    private void startEventProcessor() {
+        FutureUtils.joinAndUnwrap(testSubject.start());
+    }
+
+    private void shutdownEventProcessor() {
+        FutureUtils.joinAndUnwrap(testSubject.shutdown());
     }
 
     @Disabled("TODO #3098 - Support tracking on the level of batch / Unit of Work")
@@ -114,7 +123,7 @@ class SubscribingEventProcessorTest {
         withTestSubject(List.of(eventHandlingComponent), config -> config);
 
         // when
-        testSubject.start();
+        startEventProcessor();
 
         // then
         List<EventMessage> events = createEvents(2);
@@ -124,7 +133,7 @@ class SubscribingEventProcessorTest {
 
     @Test
     void startTransactionManager() throws Exception {
-        testSubject.start();
+        startEventProcessor();
         eventBus.publish(createEvents(1));
 
         assertTrue(transactionManager.started, "Expected Transaction to be started");

@@ -22,6 +22,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.EventBus;
@@ -31,6 +32,7 @@ import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorConfiguration;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
@@ -68,6 +70,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(classes = GenericJpaRepositoryIntegrationTest.TestContext.class)
 @Transactional
+@Disabled("State based aggregates are not supported") // FIXME #3499
 class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
 
     private final List<EventMessage> capturedEvents = new ArrayList<>();
@@ -88,14 +91,14 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         eventProcessor = new SubscribingEventProcessor(
                 "test",
                 List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                cfg -> cfg.messageSource(eventBus)
+                new SubscribingEventProcessorConfiguration().messageSource(eventBus)
         );
-        eventProcessor.start();
+        FutureUtils.joinAndUnwrap(eventProcessor.start());
     }
 
     @AfterEach
     void tearDown() {
-        eventProcessor.shutDown();
+        FutureUtils.joinAndUnwrap(eventProcessor.shutdown());
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }

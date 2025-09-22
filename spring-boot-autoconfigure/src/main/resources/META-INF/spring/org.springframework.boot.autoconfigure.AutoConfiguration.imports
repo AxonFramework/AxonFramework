@@ -22,3 +22,4 @@ org.axonframework.springboot.autoconfig.ConverterAutoConfiguration
 org.axonframework.springboot.autoconfig.CorrelationDataProviderAutoConfiguration
 org.axonframework.springboot.autoconfig.InterceptorAutoConfiguration
 org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration
+org.axonframework.springboot.autoconfig.InfrastructureConfiguration

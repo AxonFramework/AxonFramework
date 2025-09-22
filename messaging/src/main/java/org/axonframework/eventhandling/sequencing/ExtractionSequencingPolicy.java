@@ -39,7 +39,6 @@ public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy {
 
     private final Class<T> payloadClass;
     private final Function<T, K> identifierExtractor;
-    private final EventConverter eventConverter;
 
     /**
      * Creates a new instance of the {@link ExtractionSequencingPolicy}, which extracts the sequence identifier from the
@@ -52,13 +51,11 @@ public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy {
      */
     public ExtractionSequencingPolicy(
             @Nonnull Class<T> payloadClass,
-            @Nonnull Function<T, K> identifierExtractor,
-            @Nonnull EventConverter eventConverter
+            @Nonnull Function<T, K> identifierExtractor
     ) {
         this.payloadClass = Objects.requireNonNull(payloadClass, "Payload class may not be null.");
         this.identifierExtractor = Objects.requireNonNull(identifierExtractor,
                                                           "Identifier extractor function may not be null.");
-        this.eventConverter = Objects.requireNonNull(eventConverter, "EventConverter may not be null");
     }
 
     @Override
@@ -69,6 +66,7 @@ public class ExtractionSequencingPolicy<T, K> implements SequencingPolicy {
         Objects.requireNonNull(eventMessage, "EventMessage may not be null");
         Objects.requireNonNull(context, "ProcessingContext may not be null");
 
+        var eventConverter = context.component(EventConverter.class);
         var convertedPayload = eventMessage.payloadAs(payloadClass, eventConverter);
         return Optional.ofNullable(identifierExtractor.apply(convertedPayload));
     }

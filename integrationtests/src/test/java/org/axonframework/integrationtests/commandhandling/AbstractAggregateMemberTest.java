@@ -26,7 +26,7 @@ import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
-import org.axonframework.spring.stereotype.Aggregate;
+import org.axonframework.spring.stereotype.EventSourced;
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
 import org.junit.jupiter.api.*;
@@ -167,7 +167,7 @@ public class AbstractAggregateMemberTest {
         }
     }
 
-    @Aggregate
+    @EventSourced
     private static class FactoryAggregate {
         @AggregateIdentifier
         public String factoryId;

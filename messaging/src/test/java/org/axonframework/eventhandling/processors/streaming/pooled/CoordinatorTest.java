@@ -91,8 +91,8 @@ class CoordinatorTest {
 
     @BeforeEach
     void setUp() {
-        when(messageSource.latestToken()).thenReturn(CompletableFuture.completedFuture(null));
-        when(messageSource.firstToken()).thenReturn(CompletableFuture.completedFuture(null));
+        when(messageSource.latestToken(null)).thenReturn(CompletableFuture.completedFuture(null));
+        when(messageSource.firstToken(null)).thenReturn(CompletableFuture.completedFuture(null));
         testSubject = Coordinator.builder()
                                  .name(PROCESSOR_NAME)
                                  .eventSource(messageSource)
@@ -100,7 +100,7 @@ class CoordinatorTest {
                                  .unitOfWorkFactory(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE))
                                  .executorService(executorService)
                                  .workPackageFactory((segment, trackingToken) -> workPackage)
-                                 .initialToken(es -> es.firstToken().thenApply(ReplayToken::createReplayToken))
+                                 .initialToken(es -> es.firstToken(null).thenApply(ReplayToken::createReplayToken))
                                  .maxSegmentProvider(e -> SEGMENT_IDS.length)
                                  .build();
     }
@@ -116,7 +116,7 @@ class CoordinatorTest {
         doReturn(completedFuture(token)).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
         doThrow(releaseClaimException).when(tokenStore).releaseClaim(eq(PROCESSOR_NAME), anyInt());
         //noinspection resource
-        doThrow(streamOpenException).when(messageSource).open(any());
+        doThrow(streamOpenException).when(messageSource).open(any(), isNull());
         doReturn(completedFuture(streamOpenException)).when(workPackage).abort(any());
         doReturn(SEGMENT_ZERO).when(workPackage).segment();
         doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
@@ -187,7 +187,7 @@ class CoordinatorTest {
         when(tokenStore.fetchAvailableSegments(PROCESSOR_NAME)).thenReturn(completedFuture(Collections.singletonList(
                 SEGMENT_ONE)));
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ONE)).thenReturn(completedFuture(testToken));
-        when(messageSource.open(streamingFrom(testToken))).thenReturn(testStream);
+        when(messageSource.open(streamingFrom(testToken), null)).thenReturn(testStream);
 
         testSubject.start();
 
@@ -195,7 +195,7 @@ class CoordinatorTest {
 
         assertWithin(500,
                      TimeUnit.MILLISECONDS,
-                     () -> verify(messageSource).open(streamingFrom(testToken)));
+                     () -> verify(messageSource).open(streamingFrom(testToken), null));
 
         //noinspection unchecked
         ArgumentCaptor<List<MessageStream.Entry<? extends EventMessage>>> eventsCaptor = ArgumentCaptor.forClass(List.class);
@@ -229,7 +229,7 @@ class CoordinatorTest {
         testSubject.start();
 
         //asserts
-        verify(messageSource, never()).open(any(StreamingCondition.class));
+        verify(messageSource, never()).open(any(StreamingCondition.class), eq(null));
     }
 
     private Answer<Future<Void>> runTaskSync() {

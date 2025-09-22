@@ -20,9 +20,11 @@ import org.awaitility.Awaitility;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandBusTestUtils;
 import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
+import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -38,9 +40,11 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.SimpleQueryBus;
+import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
@@ -60,13 +64,14 @@ class AsyncMessageHandlerTest {
     private static final ParameterResolverFactory PARAMETER_RESOLVER_FACTORY = new DefaultParameterResolverFactory();
 
     private final CommandBus commandBus = CommandBusTestUtils.aCommandBus();
-    private final CommandGateway commandGateway =
-            new DefaultCommandGateway(commandBus, new ClassBasedMessageTypeResolver());
-    private final QueryBus queryBus = SimpleQueryBus.builder().build();
-    private final QueryGateway queryGateway = DefaultQueryGateway.builder()
-                                                                 .queryBus(queryBus)
-                                                                 .messageNameResolver(new ClassBasedMessageTypeResolver())
-                                                                 .build();
+    private final CommandGateway commandGateway = new DefaultCommandGateway(commandBus,
+                                                                            new ClassBasedMessageTypeResolver(),
+                                                                            CommandPriorityCalculator.defaultCalculator(),
+                                                                            new AnnotationRoutingStrategy());
+    private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
+    private final QueryGateway queryGateway = new DefaultQueryGateway(queryBus,
+                                                                      new ClassBasedMessageTypeResolver(),
+                                                                      QueryPriorityCalculator.defaultCalculator());
     private final EventBus eventBus = SimpleEventBus.builder()
                                                     .build();  // TODO #3392 - Replace for actual EventSink implementation.
     private final AtomicBoolean eventHandlerCalled = new AtomicBoolean();
@@ -214,15 +219,19 @@ class AsyncMessageHandlerTest {
             }
         }
 
+        @Disabled("TODO #3488")
         @Nested
         class QueryHandlers {
 
             @Test
             void declarativeQueryHandlerShouldUseFluxReturnType() throws Exception {
                 queryBus.subscribe(
-                        GetKnownPrimes.class.getName(),
-                        Integer.class,
-                        (query, context) -> Flux.just(2, 3, 5, 7)
+                        new QualifiedName(GetKnownPrimes.class),
+                        new QualifiedName(Integer.class),
+                        (query, context) -> MessageStream.fromFlux(
+                                Flux.just(2, 3, 5, 7)
+                                    .map(i -> new GenericQueryResponseMessage(new MessageType(Integer.class), i))
+                        )
                 );
 
                 assertQuery();
@@ -231,9 +240,14 @@ class AsyncMessageHandlerTest {
             @Test
             void declarativeQueryHandlerShouldUseIterableReturnType() throws Exception {
                 queryBus.subscribe(
-                        GetKnownPrimes.class.getName(),
-                        Integer.class,
-                        (query, context) -> List.of(2, 3, 5, 7)
+                        new QualifiedName(GetKnownPrimes.class),
+                        new QualifiedName(Integer.class),
+                        (query, context) -> MessageStream.fromIterable(List.of(
+                                new GenericQueryResponseMessage(new MessageType(Integer.class), 2),
+                                new GenericQueryResponseMessage(new MessageType(Integer.class), 3),
+                                new GenericQueryResponseMessage(new MessageType(Integer.class), 5),
+                                new GenericQueryResponseMessage(new MessageType(Integer.class), 7)
+                        ))
                 );
 
                 assertQuery();

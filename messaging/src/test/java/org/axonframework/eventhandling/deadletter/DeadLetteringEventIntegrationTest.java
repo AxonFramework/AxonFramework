@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
@@ -225,7 +226,7 @@ public abstract class DeadLetteringEventIntegrationTest {
     @AfterEach
     void tearDown() {
         boolean executorTerminated = false;
-        CompletableFuture<Void> processorShutdown = streamingProcessor.shutdownAsync();
+        CompletableFuture<Void> processorShutdown = streamingProcessor.shutdown();
         try {
             processorShutdown.get(15, TimeUnit.SECONDS);
             executorTerminated = executor.awaitTermination(50, TimeUnit.MILLISECONDS);
@@ -244,7 +245,7 @@ public abstract class DeadLetteringEventIntegrationTest {
      * Start this test's {@link StreamingEventProcessor}. This will start event handling.
      */
     protected void startProcessingEvent() {
-        streamingProcessor.start();
+        FutureUtils.joinAndUnwrap(streamingProcessor.start());
     }
 
     /**
