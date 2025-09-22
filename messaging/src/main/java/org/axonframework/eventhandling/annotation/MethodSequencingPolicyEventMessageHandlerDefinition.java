@@ -41,9 +41,7 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
         return original.unwrap(Method.class)
-                       .map(method -> findSequencingPolicy(method)
-                               .map(annotation -> (MessageHandlingMember<T>) new SequencingPolicyEventMessageHandlingMember<>(original, annotation))
-                               .orElse(original))
+                       .flatMap(method -> findSequencingPolicy(method).map(annotation -> (MessageHandlingMember<T>) new SequencingPolicyEventMessageHandlingMember<>(original, annotation)))
                        .orElse(original);
     }
 
@@ -52,7 +50,7 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
                        .or(() -> Optional.ofNullable(method.getDeclaringClass().getAnnotation(SequencingPolicy.class)));
     }
 
-    private static class SequencingPolicyEventMessageHandlingMember<T>
+    static class SequencingPolicyEventMessageHandlingMember<T>
             extends WrappedMessageHandlingMember<T>
             implements EventHandlingMember<T> {
 
