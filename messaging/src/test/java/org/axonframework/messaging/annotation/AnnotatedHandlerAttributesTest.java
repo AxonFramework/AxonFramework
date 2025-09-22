@@ -79,6 +79,7 @@ class AnnotatedHandlerAttributesTest {
         Method messageHandlingMember = getClass().getMethod("annotatedAllowReplayAndEventHandler", Object.class);
 
         Map<String, Object> expected = new HashMap<>();
+        expected.put(HandlerAttributes.EVENT_NAME, "custom-event-name");
         expected.put(HandlerAttributes.ALLOW_REPLAY, true);
         expected.put(HandlerAttributes.MESSAGE_TYPE, EventMessage.class);
         expected.put(HandlerAttributes.PAYLOAD_TYPE, Boolean.class);
@@ -179,7 +180,7 @@ class AnnotatedHandlerAttributesTest {
 
     @SuppressWarnings("unused")
     @AllowReplay
-    @EventHandler(payloadType = Boolean.class)
+    @EventHandler(eventName = "custom-event-name", payloadType = Boolean.class)
     public void annotatedAllowReplayAndEventHandler(Object event) {
         // No-op
     }
