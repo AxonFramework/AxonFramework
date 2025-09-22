@@ -71,7 +71,7 @@ public class NoHandlerForQueryException extends AxonException {
     /**
      * Initialize this exception with the given {@code message}.
      *
-     * @param message the message describing the cause of the exception
+     * @param message The message describing the cause of the exception.
      */
     public NoHandlerForQueryException(String message) {
         super(message);
