@@ -627,15 +627,26 @@ that were implemented by this class) has been removed from the framework. To con
 Processors and register instances, use the `MessagingConfigurer#eventProcessing` method.
 
 ### Processing Group layer removal
+
 The `ProcessingGroup` layer has been removed from the framework. This layer was used to group Event Handlers to be
 assigned to a single Event Processor.
 The new configuration API just allows you to register Event Handlers directly to an Event Processor with the following
 syntax:
+
 ```java
 EventProcessorModule.pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
-.eventHandlingComponents(components -> components.declarative(eventHandler1).annotated(eventHandler2))
-.notCustomized();
+.
+
+eventHandlingComponents(components ->components.
+
+declarative(eventHandler1).
+
+annotated(eventHandler2))
+        .
+
+notCustomized();
 ```
+
 With this usage the `eventHandler1` and `eventHandler2` will be assigned to the same Event Processor with the name
 `when-student-enrolled-to-max-courses-then-send-notification`.
 It's an equivalent of the `@ProcessingGroup("when-student-enrolled-to-max-courses-then-send-notification")` annotation
@@ -716,13 +727,13 @@ Here's an example of how to register a `DefaultCommandGateway` through the `regi
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-                       .componentRegistry(registry -> registry.registerComponent(
-                               CommandGateway.class,
-                               config -> new DefaultCommandGateway(
-                                       config.getComponent(CommandBus.class),
-                                       config.getComponent(MessageTypeResolver.class)
-                               )
-                       ));
+            .componentRegistry(registry -> registry.registerComponent(
+                    CommandGateway.class,
+                    config -> new DefaultCommandGateway(
+                            config.getComponent(CommandBus.class),
+                            config.getComponent(MessageTypeResolver.class)
+                    )
+            ));
     // Further configuration...
 }
 ```
@@ -755,24 +766,24 @@ components **and** decorators:
 ```java
 public static void main(String[] args) {
     EventSourcingConfigurer.create()
-                           .componentRegistry(registry -> registry.registerComponent(
-                                   ComponentDefinition.ofType(AxonServerConnectionManager.class)
-                                                      .withInstance(AxonServerConnectionManager.builder()
-                                                                                               /* left out for brevity*/
-                                                                                               .build())
-                                                      .onStart(
-                                                              Phase.INSTRUCTION_COMPONENTS,
-                                                              AxonServerConnectionManager::start
-                                                      )
-                           ))
-                           .componentRegistry(registry -> registry.registerDecorator(
-                                   DecoratorDefinition.forType(DeadlineManager.class)
-                                                      .with((config, name, delegate) -> /* left out for brevity*/)
-                                                      .onShutdown(
-                                                              Phase.INBOUND_EVENT_CONNECTORS,
-                                                              DeadlineManager::shutdown
-                                                      )
-                           ));
+            .componentRegistry(registry -> registry.registerComponent(
+                    ComponentDefinition.ofType(AxonServerConnectionManager.class)
+                            .withInstance(AxonServerConnectionManager.builder()
+                                    /* left out for brevity*/
+                                    .build())
+                            .onStart(
+                                    Phase.INSTRUCTION_COMPONENTS,
+                                    AxonServerConnectionManager::start
+                            )
+            ))
+            .componentRegistry(registry -> registry.registerDecorator(
+                    DecoratorDefinition.forType(DeadlineManager.class)
+                            .with((config, name, delegate) -> /* left out for brevity*/)
+                            .onShutdown(
+                                    Phase.INBOUND_EVENT_CONNECTORS,
+                                    DeadlineManager::shutdown
+                            )
+            ));
 }
 ```
 
@@ -803,17 +814,17 @@ Here's an example of how we can decorate the `SimpleCommandBus` in with a `Compo
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-                       .componentRegistry(registry -> registry.registerComponent(
-                               CommandBus.class, config -> new SimpleCommandBus()
-                       ))
-                       .componentRegistry(registry -> registry.registerDecorator(
-                               CommandBus.class,
-                               0,
-                               (config, name, delegate) -> new TracingCommandBus(
-                                       delegate,
-                                       config.getComponent(CommandBusSpanFactory.class)
-                               )
-                       ));
+            .componentRegistry(registry -> registry.registerComponent(
+                    CommandBus.class, config -> new SimpleCommandBus()
+            ))
+            .componentRegistry(registry -> registry.registerDecorator(
+                    CommandBus.class,
+                    0,
+                    (config, name, delegate) -> new TracingCommandBus(
+                            delegate,
+                            config.getComponent(CommandBusSpanFactory.class)
+                    )
+            ));
     // Further configuration...
 }
 ```
@@ -841,17 +852,17 @@ present:
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-                       .componentRegistry(registry -> registry.registerEnhancer(configurer -> {
-                           if (configurer.hasComponent(CommandBus.class)) {
-                               configurer.registerDecorator(
-                                       CommandBus.class, 0,
-                                       (config, name, delegate) -> new TracingCommandBus(
-                                               delegate,
-                                               config.getComponent(CommandBusSpanFactory.class)
-                                       )
-                               );
-                           }
-                       }));
+            .componentRegistry(registry -> registry.registerEnhancer(configurer -> {
+                if (configurer.hasComponent(CommandBus.class)) {
+                    configurer.registerDecorator(
+                            CommandBus.class, 0,
+                            (config, name, delegate) -> new TracingCommandBus(
+                                    delegate,
+                                    config.getComponent(CommandBusSpanFactory.class)
+                            )
+                    );
+                }
+            }));
     // Further configuration...
 }
 ```
@@ -890,10 +901,10 @@ Down below is shortened example on how to register a `StatefulCommandHandlingMod
 ```java
 public static void main(String[] args) {
     ModellingConfigurer.create()
-                       .registerStatefulCommandHandlingModule(
-                               StatefulCommandHandlingModule.named("my-module")
-                               // Further MODULE configuration...
-                       );
+            .registerStatefulCommandHandlingModule(
+                    StatefulCommandHandlingModule.named("my-module")
+                    // Further MODULE configuration...
+            );
     // Further configuration...
 }
 ```
@@ -922,16 +933,16 @@ Down below is an example when a factory is **not** invoked:
 public static void main(String[] args) {
     AxonConfiguration configuration =
             MessagingConfigurer.create()
-                               .componentRegistry(registry -> registry.registerComponent(
-                                       CommandGateway.class,
-                                       config -> new DefaultCommandGateway(
-                                               config.getComponent(CommandBus.class),
-                                               config.getComponent(MessageTypeResolver.class)
-                                       )
-                               ))
-                               .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
-                               // Further configuration...
-                               .build();
+                    .componentRegistry(registry -> registry.registerComponent(
+                            CommandGateway.class,
+                            config -> new DefaultCommandGateway(
+                                    config.getComponent(CommandBus.class),
+                                    config.getComponent(MessageTypeResolver.class)
+                            )
+                    ))
+                    .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
+                    // Further configuration...
+                    .build();
 
     // This will invoke the CommandGatewayFactory!
     CommandGateway commandGateway = configuration.getComponent(CommandGateway.class, "some-context");
@@ -944,16 +955,16 @@ However, if we take the above example and invoke `getComponent` with a different
 public static void main(String[] args) {
     AxonConfiguration configuration =
             MessagingConfigurer.create()
-                               .componentRegistry(registry -> registry.registerComponent(
-                                       CommandGateway.class,
-                                       config -> new DefaultCommandGateway(
-                                               config.getComponent(CommandBus.class),
-                                               config.getComponent(MessageTypeResolver.class)
-                                       )
-                               ))
-                               .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
-                               // Further configuration...
-                               .build();
+                    .componentRegistry(registry -> registry.registerComponent(
+                            CommandGateway.class,
+                            config -> new DefaultCommandGateway(
+                                    config.getComponent(CommandBus.class),
+                                    config.getComponent(MessageTypeResolver.class)
+                            )
+                    ))
+                    .componentRegistry(registry -> registry.registerFactory(new CommandGatewayFactory()))
+                    // Further configuration...
+                    .build();
 
     // This will return the registered DefaultCommandGateway!
     CommandGateway commandGateway = configuration.getComponent(CommandGateway.class);
@@ -980,19 +991,19 @@ delegate to be given. For example the `MessagingConfigurer` has a `componentRegi
 ```java
 public static void main(String[] args) {
     ModellingConfigurer.create()
-                       .componentRegistry(componentRegistry -> componentRegistry.registerComponent(
-                               CommandGateway.class,
-                               config -> new DefaultCommandGateway(
-                                       config.getComponent(CommandBus.class),
-                                       config.getComponent(MessageTypeResolver.class)
-                               )
-                       ))
-                       .lifecycleRegistry(lifecycleRegistry -> lifecycleRegistry.registerLifecyclePhaseTimeout(
-                               5, TimeUnit.DAYS
-                       ))
-                       .messaging(messagingConfigurer -> messagingConfigurer.registerEventSink(
-                               config -> new CustomEventSink()
-                       ));
+            .componentRegistry(componentRegistry -> componentRegistry.registerComponent(
+                    CommandGateway.class,
+                    config -> new DefaultCommandGateway(
+                            config.getComponent(CommandBus.class),
+                            config.getComponent(MessageTypeResolver.class)
+                    )
+            ))
+            .lifecycleRegistry(lifecycleRegistry -> lifecycleRegistry.registerLifecyclePhaseTimeout(
+                    5, TimeUnit.DAYS
+            ))
+            .messaging(messagingConfigurer -> messagingConfigurer.registerEventSink(
+                    config -> new CustomEventSink()
+            ));
     // Further configuration...
 }
 ```
@@ -1344,6 +1355,26 @@ exceptions, you will need to change your code. The following table shows the cha
 |------------------------------------------------------------------------|-------------------------------------------------------------------|
 | `org.axonframework.modelling.command.AggregateEntityNotFoundException` | `org.axonframework.modelling.entity.ChildEntityNotFoundException` |
 
+### Spring Configuration
+
+AF5 fosters auto-detection and auto-configuration of entities, command and message handlers in Spring environment. The
+`@EventSourced` annotation
+is still used as a Spring meta-annotation for a prototype scoped component and now is additionally is meta-annotated
+with `@EventSourcedEntity` (
+replicating all its attributes.) This effectively means that you only need to put the `@EventSourced` annotation to your
+entity and the remaining
+configuration will be executed by Spring Auto-Configuration. The following attributes are available:
+
+| Attribute                    | Type                                                   | Description                                                                                      |
+|------------------------------|--------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| `type`                       | `String`                                               | Defines the type of the entity. If not provided, defaults to the simple class name.              |
+| `idType`                     | `Class<?>`                                             | Defines the type of the identity of the entity. If not provided, defaults to `java.lang.String`. |
+| `tagKey`                     | `String`                                               | See `EventSourcedEntity#tagKey`                                                                  |
+| `concreteTypes`              | `Class<?>[]`                                           | See `EventSourcedEntity#concreteTypes`                                                           |
+| `criteriaResolverDefinition` | `Class<? extends CriteriaResolverDefinition>`          | See `EventSourcedEntity#criteriaResolverDefinition`                                              |
+| `entityFactoryDefinition`    | `Class<? extends EventSourcedEntityFactoryDefinition>` | See `EventSourcedEntity#entityFactoryDefinition`                                                 |
+| `entityIdResolverDefinition` | `Class<? extends EntityIdResolverDefinition>`          | See `EventSourcedEntity#entityIdResolverDefinition`.                                             |
+
 ## Test Fixtures
 
 The `axon-test` module of Axon Framework has historically provided two different test fixtures:
@@ -1479,10 +1510,10 @@ and handler interceptors, both generically and for specific `Message` types:
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-                       .registerMessageHandlerInterceptor(config -> new BeanValidationInterceptor<>()) // 1
-                       .registerEventHandlerInterceptor(config -> new LoggingInterceptor<>()) // 2
-                       .registerDispatchInterceptor(config -> new LoggingInterceptor<>()) // 3
-                       .registerCommandDispatchInterceptor(config -> new BeanValidationInterceptor<>()); // 4
+            .registerMessageHandlerInterceptor(config -> new BeanValidationInterceptor<>()) // 1
+            .registerEventHandlerInterceptor(config -> new LoggingInterceptor<>()) // 2
+            .registerDispatchInterceptor(config -> new LoggingInterceptor<>()) // 3
+            .registerCommandDispatchInterceptor(config -> new BeanValidationInterceptor<>()); // 4
     // Further configuration...
 }
 ```
@@ -1540,17 +1571,39 @@ adjusts the `QueryBus#query` method to return a `MessageStream` of the `QueryRes
 `CompletableFuture`. As the `MessageStream` supports 0, 1, or N responses, this shifts lets the `QueryBus#query` method
 align with whatever query result coming back from query handlers.
 
+#### Subscribing Query Handlers
+
 Subscribing query handlers has been adjusted to allow easier registration of query handling lambdas. This shift was
 combined with the new `QualifiedName` (as described [here](#message-type-and-qualified-name)) replacing the previous
-`String queryName` parameter. Lastly, the old subscribe operation enforced providing a `Type`, which has been mapped to
-a... TODO - Likely this becomes the ResponseType, but not sure yet...
-Both the query name and the response name/type are combined in a `QueryHandlerName` object.
-This makes it so that subscribe looks like
-`QueryBus#subscribe(QueryHandlerName, QueryHandler)` i.o. `QueryBus#subscribe(String, Type, MessageHandler<?>)`.
-On top of that, it is now possible to register a single handler for multiple names, through
-`QueryBus#subscribe(Set<QueryHandlerName>, QueryHandler)`. This ensures that registering a Query Handling
-Component (read: object with several query handlers in it) can be performed seamlessly. For ease of use, there's thus
-also a `QueryBus#subscribe(QueryHandlingComponent)` operation present.
+`String queryName` parameter. Lastly, the old subscribe operation enforced providing a `Type`, which has been replaced
+by a `QualifiedName` for the query response. Both the query name and the response name are combined in a
+`QueryHandlerName` object. This makes it so that subscribe looks like
+`QueryBus#subscribe(QueryHandlerName, QueryHandler)` i.o. `QueryBus#subscribe(String, Type, MessageHandler<?>)`. On top
+of that, it is now possible to register a single handler for multiple names, through
+`QueryBus#subscribe(Set<QueryHandlerName>, QueryHandler)`. This ensures that registering a Query Handling Component (
+read: object with several query handlers in it) can be performed seamlessly. For ease of use, there's thus also a
+`QueryBus#subscribe(QueryHandlingComponent)` operation present.
+
+Now a note on `QueryHandler` uniqueness within a JVM.
+
+In Axon Framework 4 you were able to register multiple Query Handlers for the same query name and response name.
+This had to do with the scatter-gather query, that would hit multiple query handlers to gather the responses.
+Since we decided to remove scatter-gather entirely, there's no necessity to being able to register multiple handlers
+for the same combination anymore.
+
+On top of that, Axon Framework 4 be "smart about" selecting a Query Handler that best fit the expected `ResponseType`.
+As Query Handler registration is no longer based on a the `ResponeType`/`Type`, we lose the capability to, for
+example, let a single-response query favor a single-response query handler. Or, for a multiple-response query to favor
+a
+multiple-response query handler, while a query handler was registered for both single and multiple responses.
+
+However, we view losing this capability as a benefit, as (1) it led to complex code and (2) led to unclarity in use,
+as we have noticed over the years. As a consequence, the local `QueryBus` will now throw a
+DuplicateQueryHandlerSubscriptionException` whenever a `QueryHandler` for an already existing query name and response
+name is being registered.
+
+As with any change, if you feel strongly about the previous solution, be sure to reach out to use. We would love to
+hear your use case to deduce the best way forward.
 
 ### Query Gateway
 
@@ -1842,6 +1895,9 @@ This section contains five tables:
 | org.axonframework.messaging.interceptors.TransactionManagingInterceptor                  | Replaced by the `UnitOfWorkFactory` constructing transaction-aware UoWs.                                                                       |
 | org.axonframework.messaging.MessageDispatchInterceptorSupport                            | See [here](#message-handler-interceptors-and-dispatch-interceptors)                                                                            |
 | org.axonframework.messaging.MessageHandlerInterceptorSupport                             | See [here](#message-handler-interceptors-and-dispatch-interceptors)                                                                            |
+| org.axonframework.messaging.MessageHandlerInterceptorSupport                             | See [here](#message-handler-interceptors-and-dispatch-interceptors)                                                                            |
+| org.axonframework.springboot.autoconfig.InfraConfiguration                               | Removed in favour of `InfrastructureConfiguration`                                                                                             | 
+| org.axonframework.spring.stereotype.Aggregate                                            | Removed in favour of `org.axonframework.spring.stereotype.EventSourced`                                                                        | 
 | org.axonframework.queryhandling.QueryHandlerAdapter                                      | Redundant class with current handler registration flow                                                                                         |
 | org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution             | Redundant class with current handler registration flow                                                                                         |
 | org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolver               | Redundant class with current handler registration flow                                                                                         |
@@ -2018,6 +2074,13 @@ This section contains four subsections, called:
 | `MessageDispatchInterceptor#handle(List<? extends T>)`                                                            | Removed due to limited usage.                                                                                               |
 | `PropertySequencingPolicy#builder`                                                                                | Use constructor instead. To define fallbackSequencingPolicy use `FallbackSequencingPolicy`.                                 |
 | `EventProcessor#shutdownAsync()`                                                                                  | Use `shutdown` instead. It returns `CompletableFuture<Void>` since the version 5.0.0.                                       |
+| `org.axonframework.spring.stereotype.Aggregate#repository`                                                        | Conceptually configured on `EventSourcedEntityModule`.                                                                      |
+| `org.axonframework.spring.stereotype.Aggregate#snapshotTriggerDefinition`                                         | Removed and will be replaced as part of #3105.                                                                              |
+| `org.axonframework.spring.stereotype.Aggregate#snapshotFilter`                                                    | Removed and will be replaced as part of #3105.                                                                              |
+| `org.axonframework.spring.stereotype.Aggregate#commandTargetResolver`                                             | Conceptually moved to `CommandHandlingComponent`.                                                                           |
+| `org.axonframework.spring.stereotype.Aggregate#filterEventsByType`                                                | Removed as not needed.                                                                                                      |
+| `org.axonframework.spring.stereotype.Aggregate#cache`                                                             | Conceptually configured on `EventSourcedEntityModule`.                                                                      |
+| `org.axonframework.spring.stereotype.Aggregate#lockFactory`                                                       | Conceptually configured on `EventSourcedEntityModule`.                                                                      |
 | `QueryBus#scatterGather(QueryMessage<Q, R>, long, TimeUnit)`                                                      | Removed due to limited use (see [Query Dispatching and Handling](#query-dispatching-and-handling)                           |
 | `QueryGateway#scatterGather(Q, ResponseType<R>, long, TimeUnit)`                                                  | Removed due to limited use (see [Query Dispatching and Handling](#query-dispatching-and-handling)                           |
 | `QueryUpdateEmitter#queryUpdateHandlerRegistered(SubscriptionQueryMessage)`                                       | Moved duplicate handler registration into `QueryUpdateEmitter#subscribeUpdateHandler` method.                               |
