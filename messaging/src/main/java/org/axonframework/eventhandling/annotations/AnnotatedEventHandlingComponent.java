@@ -22,6 +22,8 @@ import org.axonframework.eventhandling.EventHandlerRegistry;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.eventhandling.annotation.MethodSequencingPolicyEventMessageHandlerDefinition;
+import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentBuilder;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
@@ -34,7 +36,6 @@ import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberCha
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.Converter;
 
 import java.util.Set;
 
@@ -155,14 +156,33 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         delegate.subscribe(
                 qualifiedName,
-                (event, ctx) ->
-                        interceptorChain.handle(
-                                event.withConvertedPayload(handler.payloadType(), ctx.component(EventConverter.class)),
-                                ctx,
-                                target,
-                                handler
-                        ).ignoreEntries().cast()
+                interceptedEventHandler(qualifiedName, handler, interceptorChain)
         );
+    }
+
+    @Nonnull
+    private EventHandler interceptedEventHandler(
+            QualifiedName qualifiedName,
+            MessageHandlingMember<? super T> handler,
+            MessageHandlerInterceptorMemberChain<T> interceptorChain
+    ) {
+        EventHandler interceptedEventHandler = (event, ctx) ->
+                interceptorChain.handle(
+                        event.withConvertedPayload(handler.payloadType(), ctx.component(EventConverter.class)),
+                        ctx,
+                        target,
+                        handler
+                ).ignoreEntries().cast();
+
+        var sequencingPolicy = handler
+                .unwrap(MethodSequencingPolicyEventMessageHandlerDefinition.SequencingPolicyEventMessageHandlingMember.class)
+                .map(MethodSequencingPolicyEventMessageHandlerDefinition.SequencingPolicyEventMessageHandlingMember::sequencingPolicy);
+
+        return sequencingPolicy.map(sp -> (EventHandler) new DefaultEventHandlingComponentBuilder(new SimpleEventHandlingComponent())
+                .sequencingPolicy(sp)
+                .handles(qualifiedName, interceptedEventHandler)
+                .build()
+        ).orElse(interceptedEventHandler);
     }
 
     @Override

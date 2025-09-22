@@ -22,6 +22,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -81,5 +82,13 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
     @Override
     public Set<QualifiedName> supportedEvents() {
         return Set.copyOf(eventHandlers.keySet());
+    }
+
+    @Nonnull
+    @Override
+    public Object sequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
+        var qualifiedName = event.type().qualifiedName();
+
+        return EventHandlingComponent.super.sequenceIdentifierFor(event, context);
     }
 }

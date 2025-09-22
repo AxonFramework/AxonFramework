@@ -50,7 +50,7 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
                        .or(() -> Optional.ofNullable(method.getDeclaringClass().getAnnotation(SequencingPolicy.class)));
     }
 
-    static class SequencingPolicyEventMessageHandlingMember<T>
+    public static class SequencingPolicyEventMessageHandlingMember<T>
             extends WrappedMessageHandlingMember<T>
             implements EventHandlingMember<T> {
 
