@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
@@ -163,5 +164,12 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
             QualifiedName queryName = messageTypeResolver.resolveOrThrow(queryType).qualifiedName();
             return queryName.equals(message.type().qualifiedName()) && filter.test(message.payloadAs(queryType));
         };
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("queryBus", queryBus);
+        descriptor.describeProperty("context", context);
     }
 }

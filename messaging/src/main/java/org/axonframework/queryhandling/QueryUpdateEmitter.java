@@ -18,6 +18,7 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageTypeNotResolvedException;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -39,8 +40,8 @@ import java.util.function.Predicate;
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 3.3.0
- */ // TODO make it a DescribableComponent
-public interface QueryUpdateEmitter {
+ */
+public interface QueryUpdateEmitter extends DescribableComponent {
 
     /**
      * The {@link ResourceKey} used to store the {@link QueryUpdateEmitter} in the {@link ProcessingContext}.
