@@ -57,7 +57,7 @@ import static java.util.Objects.isNull;
 import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
 
 /**
- * Implementation of the {@code QueryBus} that dispatches queries (through {@link #query(QueryMessage) dispatches},
+ * Implementation of the {@code QueryBus} that dispatches queries (through {@link #query(QueryMessage)},
  * {@link #streamingQuery(StreamingQueryMessage)}, or {@link #subscriptionQuery(SubscriptionQueryMessage)}) to the
  * {@link QueryHandler QueryHandlers} subscribed to that specific query's {@link QualifiedName name} and
  * {@link ResponseType type} combination.
