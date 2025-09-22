@@ -18,16 +18,26 @@ package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
+import org.axonframework.common.annotation.Internal;
+import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.QueryMessage;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * An implementation of a {@link ConfigurationEnhancer} that will register a list of beans as handlers for a specific
@@ -42,11 +52,11 @@ import java.util.List;
  * @author Allard Buijze
  * @since 4.6.0
  */
-// TODO #3498 Fix as part of referred to issue
+@Internal
 public class MessageHandlerConfigurer implements ConfigurationEnhancer, ApplicationContextAware {
 
     private final Type type;
-    private final List<String> handlerBeans;
+    private final List<String> handlerBeansRefs;
     private ApplicationContext applicationContext;
 
     /**
@@ -58,21 +68,42 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
      */
     public MessageHandlerConfigurer(Type type, List<String> beanRefs) {
         this.type = type;
-        this.handlerBeans = beanRefs;
+        this.handlerBeansRefs = beanRefs;
     }
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
         switch (type) {
             case EVENT:
-//                handlerBeans.forEach(handler -> configurer.registerEventHandler(c -> applicationContext.getBean(handler)));
+                groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
+                    var eventHandlingModuleBuilder = EventProcessorModule
+                            .pooledStreaming(packageName + ".EventProcessor")
+                            .eventHandlingComponents(phase -> {
+                                EventHandlingComponentsConfigurer.AdditionalComponentPhase resultOfRegistration = null;
+                                for (NamedBeanDefinition namedBeanDefinition : beanDefs) {
+                                    resultOfRegistration = phase.annotated(this.createComponentBuilder(
+                                            namedBeanDefinition));
+                                }
+                                return resultOfRegistration;
+                            });
+                    registry.registerModule(eventHandlingModuleBuilder.notCustomized());
+                });
                 break;
             case QUERY:
+                // TODO: register query handler registration as a part of #3364
 //                handlerBeans.forEach(handler -> configurer.registerQueryHandler(c -> applicationContext.getBean(handler)));
                 break;
             case COMMAND:
-//                handlerBeans.forEach(handler -> configurer.registerCommandHandler(c -> applicationContext.getBean(
-//                        handler)));
+                groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
+                    var commandHandlingModuleBuilder = CommandHandlingModule
+                            .named(packageName + ".CommandHandling")
+                            .commandHandlers();
+                    beanDefs.forEach(namedBeanDefinition -> {
+                        commandHandlingModuleBuilder
+                                .annotatedCommandHandlingComponent(this.createComponentBuilder(namedBeanDefinition));
+                    });
+                    registry.registerModule(commandHandlingModuleBuilder.build());
+                });
                 break;
         }
     }
@@ -80,6 +111,47 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
     @Override
     public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+
+    private ComponentBuilder<Object> createComponentBuilder(@Nonnull NamedBeanDefinition namedBeanDefinition) {
+        return (c) -> applicationContext.getBean(namedBeanDefinition.name());
+    }
+
+    private Map<String, List<NamedBeanDefinition>> groupNamedBeanDefinitionsByPackage() {
+
+        // We need access to the BeanFactory, so cast to ConfigurableApplicationContext
+        var beanFactory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
+        return handlerBeansRefs.stream()
+                               .map(name -> new NamedBeanDefinition(name, beanFactory.getBeanDefinition(name)))
+                               .collect(Collectors.groupingBy(
+                                                nbd -> {
+                                                    String className = nbd.definition().getBeanClassName();
+                                                    if (className == null) {
+                                                        if (nbd.definition() instanceof AbstractBeanDefinition abstractBeanDefinition) {
+                                                            if (abstractBeanDefinition.hasBeanClass()) {
+                                                                className = abstractBeanDefinition.getBeanClass().getName();
+                                                            }
+                                                        }
+                                                    }
+                                                    return (className != null && className.contains("."))
+                                                            ? className.substring(0, className.lastIndexOf('.'))
+                                                            : "default";
+                                                }
+                                        )
+                               );
+    }
+
+    /**
+     * Named bean definition.
+     *
+     * @param name       name of the bean.
+     * @param definition bean definition.
+     */
+    record NamedBeanDefinition(
+            @Nonnull String name,
+            @Nonnull BeanDefinition definition
+    ) {
+
     }
 
     /**

@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.slf4j.Logger;
@@ -50,7 +51,7 @@ import java.util.stream.Collectors;
  * @author Allard Buijze
  * @since 4.6.0
  */
-// TODO #3498 Fix as part of referred to issue
+@Internal
 public class MessageHandlerLookup implements BeanDefinitionRegistryPostProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageHandlerLookup.class);
