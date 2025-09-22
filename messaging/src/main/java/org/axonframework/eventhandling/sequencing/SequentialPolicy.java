@@ -37,6 +37,9 @@ public class SequentialPolicy implements SequencingPolicy {
     public static final SequentialPolicy INSTANCE = new SequentialPolicy();
 
     @Internal
+    /**
+     * Object used to represent the full sequential policy.
+     */
     public static final Object FULL_SEQUENTIAL_POLICY = new Object();
 
     private SequentialPolicy() {
