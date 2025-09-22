@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.sequencing.FullConcurrencyPolicy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -43,6 +44,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.axonframework.eventhandling.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -299,6 +301,22 @@ class AnnotatedEventHandlingComponentTest {
                     new QualifiedName(Object.class),
                     new QualifiedName(Integer.class)
             );
+        }
+    }
+
+    @Nested
+    class SequenceIdentifierFor {
+
+        @Test
+        void returnsDefaultSequenceIdentifier() {
+            // given
+            var event = domainEvent(0);
+
+            // when
+            var sequenceIdentifier = eventHandlingComponent.sequenceIdentifierFor(event, messageProcessingContext(event));
+
+            // then
+            assertThat(sequenceIdentifier).isEqualTo(FULL_SEQUENTIAL_POLICY);
         }
     }
 
