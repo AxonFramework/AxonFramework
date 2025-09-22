@@ -52,7 +52,7 @@ import static java.util.Objects.isNull;
 
 /**
  * Implementation of the {@code QueryBus} that dispatches queries (through
- * {@link #query(QueryMessage, ProcessingContext) dispatches}, {@link #streamingQuery(StreamingQueryMessage)}, or
+ * {@link #query(QueryMessage, ProcessingContext)}, {@link #streamingQuery(StreamingQueryMessage)}, or
  * {@link #subscriptionQuery(SubscriptionQueryMessage)}) to the {@link QueryHandler QueryHandlers} subscribed to that
  * specific query's {@link QualifiedName name} and {@link ResponseType type} combination.
  * <p>

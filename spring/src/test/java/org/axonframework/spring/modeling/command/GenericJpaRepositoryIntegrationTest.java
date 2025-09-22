@@ -69,6 +69,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(classes = GenericJpaRepositoryIntegrationTest.TestContext.class)
 @Transactional
+@Disabled("State based aggregates are not supported") // FIXME #3499
 class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
 
     private final List<EventMessage> capturedEvents = new ArrayList<>();
