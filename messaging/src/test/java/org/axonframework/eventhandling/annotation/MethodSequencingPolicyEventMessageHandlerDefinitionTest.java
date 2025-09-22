@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.annotations.SequencingPolicy;
 import org.axonframework.eventhandling.sequencing.MetadataSequencingPolicy;
@@ -31,8 +30,6 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -66,7 +63,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertTrue(wrappedHandler instanceof SequencingPolicyEventMessageHandlingMember);
+            assertInstanceOf(SequencingPolicyEventMessageHandlingMember.class, wrappedHandler);
             SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest> policyHandler =
                     (SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest>) wrappedHandler;
             assertEquals(SequentialPolicy.class, policyHandler.sequencingPolicy().getClass());
@@ -79,7 +76,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertTrue(wrappedHandler instanceof SequencingPolicyEventMessageHandlingMember);
+            assertInstanceOf(SequencingPolicyEventMessageHandlingMember.class, wrappedHandler);
             SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest> policyHandler =
                     (SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest>) wrappedHandler;
             assertEquals(MetadataSequencingPolicy.class, policyHandler.sequencingPolicy().getClass());
@@ -92,7 +89,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertTrue(wrappedHandler instanceof SequencingPolicyEventMessageHandlingMember);
+            assertInstanceOf(SequencingPolicyEventMessageHandlingMember.class, wrappedHandler);
             SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest> policyHandler =
                     (SequencingPolicyEventMessageHandlingMember<MethodLevelPolicyTest>) wrappedHandler;
             assertEquals(PropertySequencingPolicy.class, policyHandler.sequencingPolicy().getClass());
@@ -129,7 +126,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<ClassLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertTrue(wrappedHandler instanceof SequencingPolicyEventMessageHandlingMember);
+            assertInstanceOf(SequencingPolicyEventMessageHandlingMember.class, wrappedHandler);
             SequencingPolicyEventMessageHandlingMember<ClassLevelPolicyTest> policyHandler =
                     (SequencingPolicyEventMessageHandlingMember<ClassLevelPolicyTest>) wrappedHandler;
             assertEquals(SequentialPolicy.class, policyHandler.sequencingPolicy().getClass());
@@ -159,7 +156,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodOverridesClassTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertTrue(wrappedHandler instanceof SequencingPolicyEventMessageHandlingMember);
+            assertInstanceOf(SequencingPolicyEventMessageHandlingMember.class, wrappedHandler);
             SequencingPolicyEventMessageHandlingMember<MethodOverridesClassTest> policyHandler =
                     (SequencingPolicyEventMessageHandlingMember<MethodOverridesClassTest>) wrappedHandler;
             // Should be MetadataSequencingPolicy from method, not SequentialPolicy from class
