@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.annotations.SequencingPolicy;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -50,6 +51,11 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
                        .or(() -> Optional.ofNullable(method.getDeclaringClass().getAnnotation(SequencingPolicy.class)));
     }
 
+    /**
+     * Extracting {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} from the {@link SequencingPolicy} annotation.
+     * @param <T>
+     */
+    @Internal
     public static class SequencingPolicyEventMessageHandlingMember<T>
             extends WrappedMessageHandlingMember<T>
             implements MessageHandlingMember<T> {
@@ -63,7 +69,7 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
          * @param original         The original message handling member to wrap
          * @param policyAnnotation The {@link SequencingPolicy} annotation containing policy configuration
          */
-        public SequencingPolicyEventMessageHandlingMember(MessageHandlingMember<T> original,
+        private SequencingPolicyEventMessageHandlingMember(MessageHandlingMember<T> original,
                                                           SequencingPolicy policyAnnotation) {
             super(original);
             this.sequencingPolicy = createSequencingPolicy(policyAnnotation, original);

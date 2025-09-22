@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.HandlerAttributes;
@@ -56,13 +57,18 @@ public class MethodEventMessageHandlerDefinition implements HandlerEnhancerDefin
                        .orElse(original);
     }
 
-    private static class MethodEventMessageHandlingMember<T>
+    /**
+     * Extracting event name from {@link EventHandler} annotation.
+     * @param <T> The type of the declaring class of the event handling method.
+     */
+    @Internal
+    public static class MethodEventMessageHandlingMember<T>
             extends WrappedMessageHandlingMember<T>
             implements EventHandlingMember<T> {
 
         private final String eventName;
 
-        public MethodEventMessageHandlingMember(MessageHandlingMember<T> delegate, String eventNameAttribute) {
+        private MethodEventMessageHandlingMember(MessageHandlingMember<T> delegate, String eventNameAttribute) {
             super(delegate);
 
             if (delegate.unwrap(Method.class).isEmpty()) {

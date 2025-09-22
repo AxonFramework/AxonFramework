@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.annotation.EventHandlingMember;
+import org.axonframework.eventhandling.annotation.MethodEventMessageHandlerDefinition;
 import org.axonframework.eventhandling.annotation.MethodSequencingPolicyEventMessageHandlerDefinition;
 import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentBuilder;
 import org.axonframework.eventhandling.conversion.EventConverter;
@@ -153,7 +154,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     private void registerHandler(MessageHandlingMember<? super T> handler) {
         Class<?> payloadType = handler.payloadType();
-        QualifiedName qualifiedName = handler.unwrap(EventHandlingMember.class)
+        QualifiedName qualifiedName = handler.unwrap(MethodEventMessageHandlerDefinition.MethodEventMessageHandlingMember.class)
                                              .map(EventHandlingMember::eventName)
                                              .map(QualifiedName::new)
                                              .orElseGet(() -> new QualifiedName(payloadType));

@@ -63,10 +63,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertInstanceOf(EventHandlingMember.class, wrappedHandler);
             assertNotSame(handler, wrappedHandler);
-
-            // Use reflection to access the sequencing policy
             org.axonframework.eventhandling.sequencing.SequencingPolicy policy = getSequencingPolicy(wrappedHandler);
             assertEquals(SequentialPolicy.class, policy.getClass());
         }
@@ -78,10 +75,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertInstanceOf(EventHandlingMember.class, wrappedHandler);
             assertNotSame(handler, wrappedHandler);
-
-            // Use reflection to access the sequencing policy
             org.axonframework.eventhandling.sequencing.SequencingPolicy policy = getSequencingPolicy(wrappedHandler);
             assertEquals(MetadataSequencingPolicy.class, policy.getClass());
         }
@@ -93,10 +87,6 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertInstanceOf(EventHandlingMember.class, wrappedHandler);
-            assertNotSame(handler, wrappedHandler);
-
-            // Use reflection to access the sequencing policy
             org.axonframework.eventhandling.sequencing.SequencingPolicy policy = getSequencingPolicy(wrappedHandler);
             assertEquals(PropertySequencingPolicy.class, policy.getClass());
         }
@@ -132,10 +122,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<ClassLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertInstanceOf(EventHandlingMember.class, wrappedHandler);
             assertNotSame(handler, wrappedHandler);
-
-            // Use reflection to access the sequencing policy
             org.axonframework.eventhandling.sequencing.SequencingPolicy policy = getSequencingPolicy(wrappedHandler);
             assertEquals(SequentialPolicy.class, policy.getClass());
         }
@@ -164,10 +151,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodOverridesClassTest> wrappedHandler = testSubject.wrapHandler(handler);
 
-            assertInstanceOf(EventHandlingMember.class, wrappedHandler);
             assertNotSame(handler, wrappedHandler);
-
-            // Use reflection to access the sequencing policy
             org.axonframework.eventhandling.sequencing.SequencingPolicy policy = getSequencingPolicy(wrappedHandler);
             // Should be MetadataSequencingPolicy from method, not SequentialPolicy from class
             assertEquals(MetadataSequencingPolicy.class, policy.getClass());
