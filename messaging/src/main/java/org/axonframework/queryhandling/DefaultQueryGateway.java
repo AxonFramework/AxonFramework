@@ -18,7 +18,6 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -28,6 +27,7 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
+import reactor.util.concurrent.Queues;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -124,39 +124,37 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @Nonnull
     @Override
-    public <I, U> SubscriptionQueryResult<I, U> subscriptionQuery(@Nonnull Object query,
-                                                                  @Nonnull Class<I> initialResponseType,
-                                                                  @Nonnull Class<U> updateResponseType,
-                                                                  @Nullable ProcessingContext context,
-                                                                  int updateBufferSize) {
-        SubscriptionQueryMessage subscriptionQueryMessage =
+    public <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
+                                              @Nonnull Class<R> responseType,
+                                              @Nullable ProcessingContext context) {
+        SubscriptionQueryMessage queryMessage =
                 asSubscriptionQueryMessage(query,
-                                           ResponseTypes.instanceOf(initialResponseType),
-                                           ResponseTypes.instanceOf(updateResponseType));
-
-        SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result =
-                queryBus.subscriptionQuery(subscriptionQueryMessage, context, updateBufferSize);
-
-        return getSubscriptionQueryResult(result, initialResponseType, updateResponseType);
+                                           ResponseTypes.instanceOf(responseType),
+                                           ResponseTypes.instanceOf(responseType));
+        return queryBus.subscriptionQuery(queryMessage, context, Queues.SMALL_BUFFER_SIZE)
+                       .asFlux()
+                       .mapNotNull(message -> message.payloadAs(responseType));
     }
 
     @Nonnull
     @Override
-    public <I, U> SubscriptionQueryResult<List<I>, U> subscriptionQueryMany(@Nonnull Object query,
-                                                                      @Nonnull Class<I> initialResponseType,
-                                                                      @Nonnull Class<U> updateResponseType,
-                                                                      @Nullable ProcessingContext context,
-                                                                      int updateBufferSize) {
-        SubscriptionQueryMessage subscriptionQueryMessage =
+    public <I, U> SubscriptionQueryResponse<I, U> subscriptionQuery(@Nonnull Object query,
+                                                                    @Nonnull Class<I> initialResponseType,
+                                                                    @Nonnull Class<U> updateResponseType,
+                                                                    @Nullable ProcessingContext context,
+                                                                    int updateBufferSize) {
+        SubscriptionQueryMessage queryMessage =
                 asSubscriptionQueryMessage(query,
-                                           ResponseTypes.multipleInstancesOf(initialResponseType),
+                                           ResponseTypes.instanceOf(initialResponseType),
                                            ResponseTypes.instanceOf(updateResponseType));
-
-        SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result =
-                queryBus.subscriptionQuery(subscriptionQueryMessage, context, updateBufferSize);
-
-        return (SubscriptionQueryResult<List<I>, U>) getSubscriptionQueryResult(result, initialResponseType, updateResponseType);
+        SubscriptionQueryResponseMessages response = queryBus.subscriptionQuery(queryMessage,
+                                                                                context,
+                                                                                updateBufferSize);
+        return new GenericSubscriptionQueryResponse<>(response,
+                                                      message -> message.payloadAs(initialResponseType),
+                                                      message -> message.payloadAs(updateResponseType));
     }
+
 
     private QueryMessage asQueryMessage(Object query, ResponseType<?> responseType) {
         return query instanceof Message message
@@ -180,23 +178,6 @@ public class DefaultQueryGateway implements QueryGateway {
 
     private MessageType resolveType(Object query) {
         return messageTypeResolver.resolveOrThrow(query);
-    }
-
-    private <I, U> DefaultSubscriptionQueryResult<I, U> getSubscriptionQueryResult(
-            SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result,
-            Class<I> initialResponseType,
-            Class<U> updateResponseType
-    ) {
-        result.initialResult()
-              .mapNotNull(response -> response.payloadAs(initialResponseType))
-              .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e);
-        return new DefaultSubscriptionQueryResult<>(
-                null,
-                result.updates()
-                      .filter(update -> Objects.nonNull(update.payload()))
-                      .mapNotNull(t -> t.payloadAs(updateResponseType)),
-                result
-        );
     }
 
     @Override
