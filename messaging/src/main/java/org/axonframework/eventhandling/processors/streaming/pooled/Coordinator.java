@@ -59,6 +59,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+import static java.util.concurrent.CompletableFuture.runAsync;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
 import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
@@ -303,16 +304,17 @@ class Coordinator {
             joinAndUnwrap(
                     unitOfWorkFactory.create()
                                      .executeWithResult(context -> {
-                                         int[] segments = tokenStore.fetchSegments(name);
+                                         int[] segments = joinAndUnwrap(tokenStore.fetchSegments(name));
                                          if (segments == null || segments.length == 0) {
                                              logger.info("Initializing segments for processor [{}] ({} segments)",
                                                          name,
                                                          initialSegmentCount);
-                                             tokenStore.initializeTokenSegments(
+                                             joinAndUnwrap(tokenStore.initializeTokenSegments(
                                                      name,
                                                      initialSegmentCount,
                                                      joinAndUnwrap(initialToken.apply(eventSource)),
-                                                     context);
+                                                     context)
+                                             );
                                          }
                                          tokenStoreInitialized.set(true);
                                          return emptyCompletedFuture();
@@ -917,8 +919,8 @@ class Coordinator {
             Map<Segment, TrackingToken> newClaims = new HashMap<>();
             List<Segment> segments = joinAndUnwrap(
                     unitOfWorkFactory.create()
-                                     .executeWithResult(context -> CompletableFuture.completedFuture(tokenStore.fetchAvailableSegments(
-                                             name)))
+                                     .executeWithResult(context -> tokenStore.fetchAvailableSegments(
+                                             name))
             );
             // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
             List<Segment> unClaimedSegments = segments.stream()

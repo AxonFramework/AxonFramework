@@ -17,12 +17,15 @@
 package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
+
+import java.util.function.Function;
+
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
-import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventstreaming.EventCriteria;
@@ -47,6 +50,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
 import static org.axonframework.eventhandling.processors.streaming.segmenting.Segment.computeSegment;
 import static org.axonframework.utils.AssertUtils.assertWithin;
 import static org.junit.jupiter.api.Assertions.*;
@@ -63,21 +67,27 @@ import static org.mockito.Mockito.anyLong;
 class CoordinatorTest {
 
     private static final String PROCESSOR_NAME = "test";
-
-    private Coordinator testSubject;
-
     private final Segment SEGMENT_ZERO = computeSegment(0);
     private final int SEGMENT_ID = 0;
     private final int[] SEGMENT_IDS = {SEGMENT_ID};
     private final Segment SEGMENT_ONE = Segment.computeSegment(SEGMENT_ID, SEGMENT_IDS);
     private final int[] EMPTY_SEGMENT_IDS = {};
-
     private final TokenStore tokenStore = mock(TokenStore.class);
     private final ScheduledThreadPoolExecutor executorService = mock(ScheduledThreadPoolExecutor.class);
     @SuppressWarnings("unchecked")
     private final StreamableEventSource<EventMessage> messageSource = mock(StreamableEventSource.class);
-
     private final WorkPackage workPackage = mock(WorkPackage.class);
+    private Coordinator testSubject;
+
+    private static Context trackingTokenContext(TrackingToken token) {
+        return TrackingToken.addToContext(
+                Context.empty(), token);
+    }
+
+    @Nonnull
+    private static StreamingCondition streamingFrom(TrackingToken testToken) {
+        return StreamingCondition.conditionFor(testToken, EventCriteria.havingAnyTag());
+    }
 
     @BeforeEach
     void setUp() {
@@ -102,7 +112,7 @@ class CoordinatorTest {
         final RuntimeException releaseClaimException = new RuntimeException("Some exception during release claim");
         final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
 
-        doReturn(SEGMENT_IDS).when(tokenStore).fetchSegments(PROCESSOR_NAME);
+        doReturn(completedFuture(SEGMENT_IDS)).when(tokenStore).fetchSegments(PROCESSOR_NAME);
         doReturn(completedFuture(token)).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
         doThrow(releaseClaimException).when(tokenStore).releaseClaim(eq(PROCESSOR_NAME), anyInt());
         //noinspection resource
@@ -129,7 +139,13 @@ class CoordinatorTest {
         //arrange
         final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
 
-        doReturn(EMPTY_SEGMENT_IDS).when(tokenStore).fetchSegments(PROCESSOR_NAME);
+        doReturn(completedFuture(EMPTY_SEGMENT_IDS)).when(tokenStore).fetchSegments(PROCESSOR_NAME);
+        doReturn(emptyCompletedFuture()).when(tokenStore).initializeTokenSegments(
+                eq(PROCESSOR_NAME),
+                anyInt(),
+                any(),
+                any(ProcessingContext.class)
+        );
         doReturn(completedFuture(token)).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
         doReturn(SEGMENT_ZERO).when(workPackage).segment();
         doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
@@ -139,7 +155,10 @@ class CoordinatorTest {
 
         //asserts
         verify(executorService, times(1)).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
-        verify(tokenStore, times(1)).initializeTokenSegments(anyString(), anyInt(), isNull(), any(ProcessingContext.class));
+        verify(tokenStore, times(1)).initializeTokenSegments(anyString(),
+                                                             anyInt(),
+                                                             isNull(),
+                                                             any(ProcessingContext.class));
     }
 
     @Test
@@ -164,8 +183,9 @@ class CoordinatorTest {
         );
 
         when(executorService.submit(any(Runnable.class))).thenAnswer(runTaskAsync());
-        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(SEGMENT_IDS);
-        when(tokenStore.fetchAvailableSegments(PROCESSOR_NAME)).thenReturn(Collections.singletonList(SEGMENT_ONE));
+        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(completedFuture(SEGMENT_IDS));
+        when(tokenStore.fetchAvailableSegments(PROCESSOR_NAME)).thenReturn(completedFuture(Collections.singletonList(
+                SEGMENT_ONE)));
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ONE)).thenReturn(completedFuture(testToken));
         when(messageSource.open(streamingFrom(testToken))).thenReturn(testStream);
 
@@ -194,7 +214,7 @@ class CoordinatorTest {
         //arrange
         final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
 
-        doReturn(SEGMENT_IDS).when(tokenStore).fetchSegments(PROCESSOR_NAME);
+        doReturn(completedFuture(SEGMENT_IDS)).when(tokenStore).fetchSegments(PROCESSOR_NAME);
         doReturn(completedFuture(token)).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
         doReturn(SEGMENT_ZERO).when(workPackage).segment();
         doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
@@ -222,15 +242,5 @@ class CoordinatorTest {
 
     private Answer<Future<Void>> runTaskAsync() {
         return invocationOnMock -> CompletableFuture.runAsync(invocationOnMock.getArgument(0));
-    }
-
-    private static Context trackingTokenContext(TrackingToken token) {
-        return TrackingToken.addToContext(
-                Context.empty(), token);
-    }
-
-    @Nonnull
-    private static StreamingCondition streamingFrom(TrackingToken testToken) {
-        return StreamingCondition.conditionFor(testToken, EventCriteria.havingAnyTag());
     }
 }

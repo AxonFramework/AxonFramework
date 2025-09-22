@@ -16,34 +16,38 @@
 
 package org.axonframework.eventhandling.processors.streaming.token.store.jpa;
 
-import jakarta.persistence.*;
+import jakarta.annotation.Nullable;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.Persistence;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.ConfigToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.serialization.TestSerializer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import jakarta.annotation.Nullable;
 import java.time.Duration;
 import java.time.temporal.TemporalAmount;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 class JpaTokenStoreTest {
 
@@ -71,17 +75,17 @@ class JpaTokenStoreTest {
     @Test
     void updateNullToken() {
         var ctx = createProcessingContext();
-        jpaTokenStore.initializeTokenSegments("test", 1, ctx);
-        jpaTokenStore.fetchToken("test", 0);
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 1, null, ctx));
+        joinAndUnwrap(jpaTokenStore.fetchToken("test", 0));
         joinAndUnwrap(jpaTokenStore.storeToken(null, "test", 0, ctx));
         List<TokenEntry> tokens = entityManager.createQuery(
-                        "SELECT t FROM TokenEntry t " +
-                                "WHERE t.processorName = :processorName",
-                        TokenEntry.class)
-                .setParameter(
-                        "processorName",
-                        "test")
-                .getResultList();
+                                                       "SELECT t FROM TokenEntry t " +
+                                                               "WHERE t.processorName = :processorName",
+                                                       TokenEntry.class)
+                                               .setParameter(
+                                                       "processorName",
+                                                       "test")
+                                               .getResultList();
         assertEquals(1, tokens.size());
         assertNotNull(tokens.getFirst().getOwner());
         assertNull(tokens.getFirst().getToken(TestSerializer.JACKSON.getSerializer()));
@@ -90,7 +94,7 @@ class JpaTokenStoreTest {
     @Test
     void updateAndLoadNullToken() {
         var ctx = createProcessingContext();
-        jpaTokenStore.initializeTokenSegments("test", 1, ctx);
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 1, null, ctx));
         joinAndUnwrap(jpaTokenStore.fetchToken("test", 0));
         entityManager.flush();
         joinAndUnwrap(jpaTokenStore.storeToken(null, "test", 0, ctx));
@@ -112,11 +116,11 @@ class JpaTokenStoreTest {
     @Test
     void identifierReadIfAvailable() {
         entityManager.persist(new TokenEntry("__config",
-                0,
-                new ConfigToken(Collections.singletonMap(
-                        "id",
-                        "test")),
-                jpaTokenStore.serializer()));
+                                             0,
+                                             new ConfigToken(Collections.singletonMap(
+                                                     "id",
+                                                     "test")),
+                                             jpaTokenStore.serializer()));
         Optional<String> id1 = jpaTokenStore.retrieveStorageIdentifier();
         assertTrue(id1.isPresent());
         Optional<String> id2 = jpaTokenStore.retrieveStorageIdentifier();
@@ -131,11 +135,11 @@ class JpaTokenStoreTest {
         EntityManager spyEntityManager = mock(EntityManager.class);
 
         JpaTokenStore testSubject = JpaTokenStore.builder()
-                .serializer(TestSerializer.JACKSON.getSerializer())
-                .loadingLockMode(LockModeType.NONE)
-                .entityManagerProvider(new SimpleEntityManagerProvider(spyEntityManager))
-                .nodeId("test")
-                .build();
+                                                 .serializer(TestSerializer.JACKSON.getSerializer())
+                                                 .loadingLockMode(LockModeType.NONE)
+                                                 .entityManagerProvider(new SimpleEntityManagerProvider(spyEntityManager))
+                                                 .nodeId("test")
+                                                 .build();
 
         try {
             joinAndUnwrap(testSubject.fetchToken("processorName", 1));
@@ -143,15 +147,20 @@ class JpaTokenStoreTest {
             // ignore. This fails
         }
         verify(spyEntityManager).find(eq(TokenEntry.class),
-                any(),
-                eq(LockModeType.NONE));
+                                      any(),
+                                      eq(LockModeType.NONE));
     }
 
     @Test
     void initializeTokens() {
-        jpaTokenStore.initializeTokenSegments("test1", 7, createProcessingContext());
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
+                "test1",
+                7,
+                null,
+                createProcessingContext())
+        );
 
-        int[] actual = jpaTokenStore.fetchSegments("test1");
+        int[] actual = joinAndUnwrap(jpaTokenStore.fetchSegments("test1"));
         Arrays.sort(actual);
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
     }
@@ -159,18 +168,20 @@ class JpaTokenStoreTest {
     @SuppressWarnings("Duplicates")
     @Test
     void initializeTokensAtGivenPosition() {
-        jpaTokenStore.initializeTokenSegments(
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
                 "test1",
                 7,
                 new GlobalSequenceTrackingToken(10),
-                createProcessingContext());
+                createProcessingContext())
+        );
 
-        int[] actual = jpaTokenStore.fetchSegments("test1");
+        int[] actual = joinAndUnwrap(jpaTokenStore.fetchSegments("test1"));
         Arrays.sort(actual);
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
 
         for (int segment : actual) {
-            assertEquals(new GlobalSequenceTrackingToken(10), joinAndUnwrap(jpaTokenStore.fetchToken("test1", segment)));
+            assertEquals(new GlobalSequenceTrackingToken(10),
+                         joinAndUnwrap(jpaTokenStore.fetchToken("test1", segment)));
         }
     }
 
@@ -181,7 +192,12 @@ class JpaTokenStoreTest {
 
     @Test
     void deleteTokenRejectedIfNotClaimedOrNotInitialized() {
-        jpaTokenStore.initializeTokenSegments("test", 2, createProcessingContext());
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
+                "test",
+                2,
+                null,
+                createProcessingContext())
+        );
 
         try {
             jpaTokenStore.deleteToken("test", 0);
@@ -207,15 +223,15 @@ class JpaTokenStoreTest {
         jpaTokenStore.deleteToken("delete", 0);
 
         assertEquals(0L, (long) entityManager.createQuery("SELECT count(t) FROM TokenEntry t " +
-                        "WHERE t.processorName = :processorName", Long.class)
-                .setParameter("processorName", "delete")
-                .getSingleResult());
+                                                                  "WHERE t.processorName = :processorName", Long.class)
+                                             .setParameter("processorName", "delete")
+                                             .getSingleResult());
     }
 
     @Test
     void claimAndUpdateToken() {
         var ctx = createProcessingContext();
-        jpaTokenStore.initializeTokenSegments("test", 1, ctx);
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 1, null, ctx));
 
         assertNull(joinAndUnwrap(jpaTokenStore.fetchToken("test", 0)));
         joinAndUnwrap(jpaTokenStore.storeToken(
@@ -225,10 +241,10 @@ class JpaTokenStoreTest {
                 ctx));
 
         List<TokenEntry> tokens = entityManager.createQuery("SELECT t FROM TokenEntry t " +
-                                "WHERE t.processorName = :processorName",
-                        TokenEntry.class)
-                .setParameter("processorName", "test")
-                .getResultList();
+                                                                    "WHERE t.processorName = :processorName",
+                                                            TokenEntry.class)
+                                               .setParameter("processorName", "test")
+                                               .getResultList();
         assertEquals(1, tokens.size());
         assertNotNull(tokens.getFirst().getOwner());
         joinAndUnwrap(jpaTokenStore.releaseClaim("test", 0));
@@ -242,7 +258,12 @@ class JpaTokenStoreTest {
 
     @Test
     void fetchTokenBySegment() {
-        jpaTokenStore.initializeTokenSegments("test", 2, createProcessingContext());
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
+                "test",
+                2,
+                null,
+                createProcessingContext()
+        ));
         Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
 
         assertNull(joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch)));
@@ -250,7 +271,12 @@ class JpaTokenStoreTest {
 
     @Test
     void fetchTokenBySegmentSegment0() {
-        jpaTokenStore.initializeTokenSegments("test", 1, createProcessingContext());
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
+                "test",
+                1,
+                null,
+                createProcessingContext()
+        ));
         Segment segmentToFetch = Segment.computeSegment(0, 0);
 
         assertNull(joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch)));
@@ -258,43 +284,63 @@ class JpaTokenStoreTest {
 
     @Test
     void fetchTokenBySegmentFailsDuringMerge() {
-        jpaTokenStore.initializeTokenSegments("test", 1, createProcessingContext());
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
+                "test",
+                1,
+                null,
+                createProcessingContext()
+        ));
         // Create a segment as if there would be two segments in total. This simulates that these two segments have been merged into one.
         Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
 
         assertThrows(UnableToClaimTokenException.class,
-                () -> joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch))
+                     () -> joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch))
         );
     }
 
     @Test
     void fetchTokenBySegmentFailsDuringMergeSegment0() {
-        jpaTokenStore.initializeTokenSegments("test", 1, createProcessingContext());
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
+                "test",
+                1,
+                null,
+                createProcessingContext()
+        ));
         Segment segmentToFetch = Segment.computeSegment(0, 0, 1);
 
         assertThrows(UnableToClaimTokenException.class,
-                () -> joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch))
+                     () -> joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch))
         );
     }
 
     @Test
     void fetchTokenBySegmentFailsDuringSplit() {
-        jpaTokenStore.initializeTokenSegments("test", 4, createProcessingContext());
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
+                "test",
+                4,
+                null,
+                createProcessingContext()
+        ));
         //Create a segment as if there would be only two segments in total. This simulates that the segments have been split into 4 segments.
         Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
 
         assertThrows(UnableToClaimTokenException.class,
-                () -> joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch))
+                     () -> joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch))
         );
     }
 
     @Test
     void fetchTokenBySegmentFailsDuringSplitSegment0() {
-        jpaTokenStore.initializeTokenSegments("test", 2, createProcessingContext());
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
+                "test",
+                2,
+                null,
+                createProcessingContext()
+        ));
         Segment segmentToFetch = Segment.computeSegment(0, 0);
 
         assertThrows(UnableToClaimTokenException.class,
-                () -> joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch))
+                     () -> joinAndUnwrap(jpaTokenStore.fetchToken("test", segmentToFetch))
         );
     }
 
@@ -303,15 +349,15 @@ class JpaTokenStoreTest {
         prepareTokenStore(createProcessingContext());
 
         {
-            final int[] segments = jpaTokenStore.fetchSegments("proc1");
+            final int[] segments = joinAndUnwrap(jpaTokenStore.fetchSegments("proc1"));
             assertThat(segments.length, is(2));
         }
         {
-            final int[] segments = jpaTokenStore.fetchSegments("proc2");
+            final int[] segments = joinAndUnwrap(jpaTokenStore.fetchSegments("proc2"));
             assertThat(segments.length, is(1));
         }
         {
-            final int[] segments = jpaTokenStore.fetchSegments("proc3");
+            final int[] segments = joinAndUnwrap(jpaTokenStore.fetchSegments("proc3"));
             assertThat(segments.length, is(0));
         }
 
@@ -324,25 +370,27 @@ class JpaTokenStoreTest {
         prepareTokenStore(createProcessingContext());
 
         {
-            final List<Segment> segments = concurrentJpaTokenStore.fetchAvailableSegments("proc1");
+            final List<Segment> segments = joinAndUnwrap(concurrentJpaTokenStore.fetchAvailableSegments("proc1"));
             assertThat(segments.size(), is(0));
             joinAndUnwrap(jpaTokenStore.releaseClaim("proc1", 0));
             entityManager.flush();
             entityManager.clear();
-            final List<Segment> segmentsAfterRelease = concurrentJpaTokenStore.fetchAvailableSegments("proc1");
+            final List<Segment> segmentsAfterRelease = joinAndUnwrap(concurrentJpaTokenStore.fetchAvailableSegments(
+                    "proc1"));
             assertThat(segmentsAfterRelease.size(), is(1));
         }
         {
-            final List<Segment> segments = concurrentJpaTokenStore.fetchAvailableSegments("proc2");
+            final List<Segment> segments = joinAndUnwrap(concurrentJpaTokenStore.fetchAvailableSegments("proc2"));
             assertThat(segments.size(), is(0));
             joinAndUnwrap(jpaTokenStore.releaseClaim("proc2", 0));
             entityManager.flush();
             entityManager.clear();
-            final List<Segment> segmentsAfterRelease = concurrentJpaTokenStore.fetchAvailableSegments("proc2");
+            final List<Segment> segmentsAfterRelease = joinAndUnwrap(concurrentJpaTokenStore.fetchAvailableSegments(
+                    "proc2"));
             assertThat(segmentsAfterRelease.size(), is(1));
         }
         {
-            final List<Segment> segments = jpaTokenStore.fetchAvailableSegments("proc3");
+            final List<Segment> segments = joinAndUnwrap(jpaTokenStore.fetchAvailableSegments("proc3"));
             assertThat(segments.size(), is(0));
         }
 
@@ -351,9 +399,9 @@ class JpaTokenStoreTest {
     }
 
     private void prepareTokenStore(ProcessingContext ctx) {
-        jpaTokenStore.initializeTokenSegments("test", 1, ctx);
-        jpaTokenStore.initializeTokenSegments("proc1", 2, ctx);
-        jpaTokenStore.initializeTokenSegments("proc2", 1, ctx);
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("test", 1, null, ctx));
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("proc1", 2, null, ctx));
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("proc2", 1, null, ctx));
 
         assertNull(joinAndUnwrap(jpaTokenStore.fetchToken("test", 0)));
 
@@ -364,7 +412,12 @@ class JpaTokenStoreTest {
 
     @Test
     void claimTokenConcurrently() {
-        jpaTokenStore.initializeTokenSegments("concurrent", 1, createProcessingContext());
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
+                "concurrent",
+                1,
+                null,
+                createProcessingContext()
+        ));
         joinAndUnwrap(jpaTokenStore.fetchToken("concurrent", 0));
         try {
             joinAndUnwrap(concurrentJpaTokenStore.fetchToken("concurrent", 0));
@@ -377,7 +430,7 @@ class JpaTokenStoreTest {
     @Test
     void stealToken() {
         var ctx = createProcessingContext();
-        jpaTokenStore.initializeTokenSegments("stealing", 1, ctx);
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("stealing", 1, null, ctx));
 
         joinAndUnwrap(jpaTokenStore.fetchToken("stealing", 0));
         joinAndUnwrap(stealingJpaTokenStore.fetchToken("stealing", 0));
@@ -403,7 +456,12 @@ class JpaTokenStoreTest {
 
     @Test
     void extendingLostClaimFails() {
-        jpaTokenStore.initializeTokenSegments("processor", 1, createProcessingContext());
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments(
+                "processor",
+                1,
+                null,
+                createProcessingContext()
+        ));
         joinAndUnwrap(jpaTokenStore.fetchToken("processor", 0));
 
         try {
@@ -417,7 +475,7 @@ class JpaTokenStoreTest {
     @Test
     void storeAndLoadAcrossTransactions() {
         var ctx = createProcessingContext();
-        jpaTokenStore.initializeTokenSegments("multi", 1, ctx);
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("multi", 1, null, ctx));
         newTransaction();
 
         joinAndUnwrap(jpaTokenStore.fetchToken("multi", 0));
@@ -442,16 +500,16 @@ class JpaTokenStoreTest {
     }
 
 
-        private ProcessingContext createProcessingContext() {
+    private ProcessingContext createProcessingContext() {
         return new StubProcessingContext();
     }
 
 
     private JpaTokenStore getTokenStore(String nodeId, @Nullable TemporalAmount claimTimeOut) {
         JpaTokenStore.Builder builder = JpaTokenStore.builder()
-                .entityManagerProvider(entityManagerProvider)
-                .serializer(TestSerializer.JACKSON.getSerializer())
-                .nodeId(nodeId);
+                                                     .entityManagerProvider(entityManagerProvider)
+                                                     .serializer(TestSerializer.JACKSON.getSerializer())
+                                                     .nodeId(nodeId);
         if (!Objects.isNull(claimTimeOut)) {
             builder.claimTimeout(claimTimeOut);
         }

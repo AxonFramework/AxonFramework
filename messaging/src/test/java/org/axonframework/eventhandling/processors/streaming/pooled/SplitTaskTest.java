@@ -96,7 +96,7 @@ class SplitTaskTest {
         TrackerStatus expectedOriginal = expectedTokens[0];
         TrackerStatus expectedSplit = expectedTokens[1];
 
-        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(testSegmentIds);
+        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(completedFuture(testSegmentIds));
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(completedFuture(testTokenToSplit));
 
         testSubject.run();
@@ -111,7 +111,7 @@ class SplitTaskTest {
 
     @Test
     void runCompletesExceptionallyThroughUnableToClaimTokenException() {
-        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(new int[]{SEGMENT_ID});
+        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(completedFuture(new int[]{SEGMENT_ID}));
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID))
                 .thenThrow(new UnableToClaimTokenException("some exception"));
 

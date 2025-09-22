@@ -16,11 +16,15 @@
 
 package org.axonframework.eventhandling.processors.streaming.token.store;
 
+import java.util.concurrent.CompletableFuture;
+
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -30,8 +34,8 @@ class TokenStoreTest {
 
     @Test
     void fetchAvailableSegments() {
-        when(tokenStore.fetchSegments("")).thenReturn(new int[]{0, 1, 2, 3});
-        List<Segment> availableSegments = tokenStore.fetchAvailableSegments("");
+        when(tokenStore.fetchSegments("")).thenReturn(completedFuture(new int[]{0, 1, 2, 3}));
+        List<Segment> availableSegments = joinAndUnwrap(tokenStore.fetchAvailableSegments(""));
 
         assertEquals(4, availableSegments.size());
 
@@ -51,4 +55,5 @@ class TokenStoreTest {
         assertEquals(3, segment3.getSegmentId());
         assertEquals(3, segment3.getMask());
     }
+
 }

@@ -103,7 +103,7 @@ class MergeTask extends CoordinatorTask {
                 unitOfWorkFactory
                         .create()
                         .executeWithResult(context ->
-                                                   CompletableFuture.completedFuture(tokenStore.fetchSegments(name))
+                                                   tokenStore.fetchSegments(name)
                         )
         );
         Segment thisSegment = Segment.computeSegment(segmentId, segments);

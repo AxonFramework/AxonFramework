@@ -18,16 +18,12 @@ package org.axonframework.eventhandling.processors.streaming.token.store.inmemor
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-
-import java.util.concurrent.Executor;
-
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToInitializeTokenException;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.quartz.spi.ThreadExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +36,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -69,25 +66,22 @@ public class InMemoryTokenStore implements TokenStore {
     }
 
     @Override
-    public void initializeTokenSegments(@Nonnull String processorName,
-                                        int segmentCount,
-                                        @Nonnull ProcessingContext processingContext)
+    public CompletableFuture<Void> initializeTokenSegments(@Nonnull String processorName,
+                                                           int segmentCount,
+                                                           TrackingToken initialToken,
+                                                           @Nonnull ProcessingContext processingContext)
             throws UnableToClaimTokenException {
-        initializeTokenSegments(processorName, segmentCount, null, processingContext);
-    }
-
-    @Override
-    public void initializeTokenSegments(@Nonnull String processorName,
-                                        int segmentCount,
-                                        TrackingToken initialToken,
-                                        @Nonnull ProcessingContext processingContext)
-            throws UnableToClaimTokenException {
-        if (fetchSegments(processorName).length > 0) {
-            throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
-        }
-        for (int segment = 0; segment < segmentCount; segment++) {
-            tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(initialToken, NULL_TOKEN));
-        }
+        return fetchSegments(processorName)
+                .thenAccept(segments -> {
+                    if (segments.length > 0) {
+                        throw new UnableToClaimTokenException(
+                                "Could not initialize segments. Some segments were already present.");
+                    }
+                    for (int segment = 0; segment < segmentCount; segment++) {
+                        tokens.put(new ProcessAndSegment(processorName, segment),
+                                   getOrDefault(initialToken, NULL_TOKEN));
+                    }
+                });
     }
 
     // TODO #3432 - CurrentUnitOfWork is here to mimic transactional behavior, adjust it by mean of ProcessingContext
@@ -111,7 +105,7 @@ public class InMemoryTokenStore implements TokenStore {
     @Override
     public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, int segment) {
 
-        return CompletableFuture.supplyAsync(() -> {
+        return supplyAsync(() -> {
             TrackingToken trackingToken = tokens.get(new ProcessAndSegment(processorName, segment));
             if (trackingToken == null) {
                 throw new UnableToClaimTokenException(
@@ -150,13 +144,13 @@ public class InMemoryTokenStore implements TokenStore {
     }
 
     @Override
-    public int[] fetchSegments(@Nonnull String processorName) {
-        return tokens.keySet().stream()
-                     .filter(ps -> ps.processorName.equals(processorName))
-                     .map(ProcessAndSegment::getSegment)
-                     .distinct()
-                     .mapToInt(Number::intValue)
-                     .sorted().toArray();
+    public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName) {
+        return supplyAsync(() -> tokens.keySet().stream()
+                                       .filter(ps -> ps.processorName.equals(processorName))
+                                       .map(ProcessAndSegment::getSegment)
+                                       .distinct()
+                                       .mapToInt(Number::intValue)
+                                       .sorted().toArray());
     }
 
     @Override

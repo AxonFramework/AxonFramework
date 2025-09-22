@@ -102,21 +102,22 @@ class JdbcTokenStoreTest {
     void claimAndUpdateToken() {
         ProcessingContext ctx = createProcessingContext();
         transactionManager.executeInTransaction(
-                () -> tokenStore.initializeTokenSegments("test", 1, ctx)
+                () -> joinAndUnwrap(tokenStore.initializeTokenSegments("test", 1, null, ctx))
         );
 
         transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(tokenStore.fetchToken("test", 0))));
         TrackingToken token = new GlobalSequenceTrackingToken(1L);
         transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.storeToken(token, "test", 0, ctx)));
-        transactionManager.executeInTransaction(() -> assertEquals(token, joinAndUnwrap(tokenStore.fetchToken("test", 0))));
+        transactionManager.executeInTransaction(() -> assertEquals(token,
+                                                                   joinAndUnwrap(tokenStore.fetchToken("test", 0))));
     }
 
     @Transactional
     @Test
     void updateAndLoadNullToken() {
         ProcessingContext ctx = createProcessingContext();
-        tokenStore.initializeTokenSegments("test", 1, ctx);
-        tokenStore.fetchToken("test", 0);
+        joinAndUnwrap(tokenStore.initializeTokenSegments("test", 1, null, ctx));
+        joinAndUnwrap(tokenStore.fetchToken("test", 0));
 
         joinAndUnwrap(tokenStore.storeToken(null, "test", 0, ctx));
 
@@ -127,51 +128,67 @@ class JdbcTokenStoreTest {
     @Transactional
     @Test
     void fetchTokenBySegment() {
-        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments(
+        transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.initializeTokenSegments(
                 "test",
                 2,
+                null,
                 createProcessingContext())
-        );
+        ));
         Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
 
-        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch))));
+        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(tokenStore.fetchToken("test",
+                                                                                                     segmentToFetch))));
     }
 
     @Transactional
     @Test
-    void fetchTokenBySegmentSegment0() {
+    void fetchInitializedNullTokenBySegmentResultsToNull() {
         transactionManager.executeInTransaction(
-                () -> tokenStore.initializeTokenSegments("test", 1, createProcessingContext())
-        );
+                () -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+                        "test",
+                        1,
+                        null,
+                        createProcessingContext())
+                ));
         Segment segmentToFetch = Segment.computeSegment(0, 0);
 
-        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch))));
+        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(tokenStore.fetchToken("test",
+                                                                                                     segmentToFetch))));
+    }
+
+    @Transactional
+    @Test
+    void fetchTokenBySegment0FailsDuringMerge() {
+        transactionManager.executeInTransaction(
+                () -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+                        "test",
+                        1,
+                        null,
+                        createProcessingContext())
+                ));
+        // Create a segment as if there would be two segments in total. This simulates that these two segments have been merged into one.
+        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.fetchToken("test",
+                                                                                                             segmentToFetch)))
+        );
     }
 
     @Transactional
     @Test
     void fetchTokenBySegmentFailsDuringMerge() {
         transactionManager.executeInTransaction(
-                () -> tokenStore.initializeTokenSegments("test", 1, createProcessingContext())
-        );
-        //Create a segment as if there would be two segments in total. This simulates that these two segments have been merged into one.
-        Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
-
-        assertThrows(UnableToClaimTokenException.class,
-                     () -> transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch)))
-        );
-    }
-
-    @Transactional
-    @Test
-    void fetchTokenBySegmentFailsDuringMergeSegment0() {
-        transactionManager.executeInTransaction(
-                () -> tokenStore.initializeTokenSegments("test", 1, createProcessingContext())
-        );
+                () -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+                        "test",
+                        1,
+                        null,
+                        createProcessingContext())
+                ));
         Segment segmentToFetch = Segment.computeSegment(0, 0, 1);
 
         assertThrows(UnableToClaimTokenException.class,
-                     () -> transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch)))
+                     () -> transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.fetchToken("test",
+                                                                                                             segmentToFetch)))
         );
     }
 
@@ -179,13 +196,18 @@ class JdbcTokenStoreTest {
     @Test
     void fetchTokenBySegmentFailsDuringSplit() {
         transactionManager.executeInTransaction(
-                () -> tokenStore.initializeTokenSegments("test", 4, createProcessingContext())
-        );
-        //Create a segment as if there would be only two segments in total. This simulates that the segments have been split into 4 segments.
+                () -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+                        "test",
+                        4,
+                        null,
+                        createProcessingContext())
+                ));
+        // Create a segment as if there would be only two segments in total. This simulates that the segments have been split into 4 segments.
         Segment segmentToFetch = Segment.computeSegment(1, 0, 1);
 
         assertThrows(UnableToClaimTokenException.class,
-                     () -> transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch)))
+                     () -> transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.fetchToken("test",
+                                                                                                             segmentToFetch)))
         );
     }
 
@@ -193,21 +215,30 @@ class JdbcTokenStoreTest {
     @Test
     void fetchTokenBySegmentFailsDuringSplitSegment0() {
         transactionManager.executeInTransaction(
-                () -> tokenStore.initializeTokenSegments("test", 2, createProcessingContext())
-        );
+                () -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+                        "test",
+                        2,
+                        null,
+                        createProcessingContext())
+                ));
         Segment segmentToFetch = Segment.computeSegment(0, 0);
 
         assertThrows(UnableToClaimTokenException.class,
-                     () -> transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.fetchToken("test", segmentToFetch)))
+                     () -> transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.fetchToken("test",
+                                                                                                             segmentToFetch)))
         );
     }
 
     @Transactional
     @Test
-    void initializeTokens() {
-        tokenStore.initializeTokenSegments("test1", 7, createProcessingContext());
+    void initializeTokenSegmentsResultsToExpectedSegments() {
+        joinAndUnwrap(tokenStore.initializeTokenSegments(
+                "test1",
+                7,
+                null,
+                createProcessingContext()));
 
-        int[] actual = tokenStore.fetchSegments("test1");
+        int[] actual = joinAndUnwrap(tokenStore.fetchSegments("test1"));
         Arrays.sort(actual);
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
     }
@@ -215,14 +246,14 @@ class JdbcTokenStoreTest {
     @SuppressWarnings("Duplicates")
     @Transactional
     @Test
-    void initializeTokensAtGivenPosition() {
-        tokenStore.initializeTokenSegments(
+    void initializeTokenSegmentsResultsToExpectedTokenAtGivenPositions() {
+        joinAndUnwrap(tokenStore.initializeTokenSegments(
                 "test1",
                 7,
                 new GlobalSequenceTrackingToken(10),
-                createProcessingContext());
+                createProcessingContext()));
 
-        int[] actual = tokenStore.fetchSegments("test1");
+        int[] actual = joinAndUnwrap(tokenStore.fetchSegments("test1"));
         Arrays.sort(actual);
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
 
@@ -233,50 +264,50 @@ class JdbcTokenStoreTest {
 
     @Transactional
     @Test
-    void initializeTokensWhileAlreadyPresent() {
+    void readingMissingTokenThrowsException() {
         assertThrows(UnableToClaimTokenException.class, () -> joinAndUnwrap(tokenStore.fetchToken("test1", 1)));
     }
 
     @Transactional
     @Test
-    void querySegments() {
+    void fetchSegmentsByProcessorNameResultsToExpectedSegmentCount() {
         prepareTokenStore();
 
         transactionManager.executeInTransaction(() -> {
-            final int[] segments = tokenStore.fetchSegments("proc1");
+            final int[] segments = joinAndUnwrap(tokenStore.fetchSegments("proc1"));
             assertThat(segments.length, is(2));
         });
         transactionManager.executeInTransaction(() -> {
-            final int[] segments = tokenStore.fetchSegments("proc2");
+            final int[] segments = joinAndUnwrap(tokenStore.fetchSegments("proc2"));
             assertThat(segments.length, is(2));
         });
         transactionManager.executeInTransaction(() -> {
-            final int[] segments = tokenStore.fetchSegments("proc3");
+            final int[] segments = joinAndUnwrap(tokenStore.fetchSegments("proc3"));
             assertThat(segments.length, is(0));
         });
     }
 
     @Transactional
     @Test
-    void queryAvailableSegments() {
+    void releaseClaimOnSegmentMakesItAvailableForOtherProcessor() {
         prepareTokenStore();
 
         transactionManager.executeInTransaction(() -> {
-            final List<Segment> segments = concurrentTokenStore.fetchAvailableSegments("proc1");
+            final List<Segment> segments = joinAndUnwrap((concurrentTokenStore.fetchAvailableSegments("proc1")));
             assertThat(segments.size(), is(0));
             joinAndUnwrap(tokenStore.releaseClaim("proc1", 0));
-            final List<Segment> segmentsAfterRelease = concurrentTokenStore.fetchAvailableSegments("proc1");
+            final List<Segment> segmentsAfterRelease = joinAndUnwrap(concurrentTokenStore.fetchAvailableSegments("proc1"));
             assertThat(segmentsAfterRelease.size(), is(1));
         });
         transactionManager.executeInTransaction(() -> {
-            final List<Segment> segments = concurrentTokenStore.fetchAvailableSegments("proc2");
+            final List<Segment> segments = joinAndUnwrap(concurrentTokenStore.fetchAvailableSegments("proc2"));
             assertThat(segments.size(), is(1));
             joinAndUnwrap(tokenStore.releaseClaim("proc2", 1));
-            final List<Segment> segmentsAfterRelease = concurrentTokenStore.fetchAvailableSegments("proc2");
+            final List<Segment> segmentsAfterRelease = joinAndUnwrap(concurrentTokenStore.fetchAvailableSegments("proc2"));
             assertThat(segmentsAfterRelease.size(), is(2));
         });
         transactionManager.executeInTransaction(() -> {
-            final List<Segment> segments = tokenStore.fetchAvailableSegments("proc3");
+            final List<Segment> segments = joinAndUnwrap(tokenStore.fetchAvailableSegments("proc3"));
             assertThat(segments.size(), is(0));
         });
     }
@@ -284,9 +315,9 @@ class JdbcTokenStoreTest {
     private void prepareTokenStore() {
         var ctx = createProcessingContext();
         transactionManager.executeInTransaction(() -> {
-            tokenStore.initializeTokenSegments("test", 1, ctx);
-            tokenStore.initializeTokenSegments("proc1", 2, ctx);
-            tokenStore.initializeTokenSegments("proc2", 2, ctx);
+            joinAndUnwrap(tokenStore.initializeTokenSegments("test", 1, null, ctx));
+            joinAndUnwrap(tokenStore.initializeTokenSegments("proc1", 2, null, ctx));
+            joinAndUnwrap(tokenStore.initializeTokenSegments("proc2", 2, null, ctx));
         });
         transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(tokenStore.fetchToken("test", 0))));
 
@@ -316,7 +347,11 @@ class JdbcTokenStoreTest {
     @Test
     void claimAndUpdateTokenWithoutTransaction() {
         var ctx = createProcessingContext();
-        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("test", 1, ctx));
+        transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+                "test",
+                1,
+                null,
+                ctx)));
 
         assertNull(joinAndUnwrap(tokenStore.fetchToken("test", 0)));
         TrackingToken token = new GlobalSequenceTrackingToken(1L);
@@ -327,12 +362,18 @@ class JdbcTokenStoreTest {
     @Test
     void claimTokenConcurrently() {
         transactionManager.executeInTransaction(
-                () -> tokenStore.initializeTokenSegments("concurrent", 1, createProcessingContext())
-        );
+                () -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+                        "concurrent",
+                        1,
+                        null,
+                        createProcessingContext())
+                ));
 
-        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(tokenStore.fetchToken("concurrent", 0))));
+        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(tokenStore.fetchToken("concurrent",
+                                                                                                     0))));
         try {
-            transactionManager.executeInTransaction(() -> joinAndUnwrap(concurrentTokenStore.fetchToken("concurrent", 0)));
+            transactionManager.executeInTransaction(() -> joinAndUnwrap(concurrentTokenStore.fetchToken("concurrent",
+                                                                                                        0)));
             fail("Expected UnableToClaimTokenException");
         } catch (UnableToClaimTokenException e) {
             // expected
@@ -342,32 +383,52 @@ class JdbcTokenStoreTest {
     @Test
     void claimTokenConcurrentlyAfterRelease() {
         transactionManager.executeInTransaction(
-                () -> tokenStore.initializeTokenSegments("concurrent", 1, createProcessingContext())
-        );
+                () -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+                        "concurrent",
+                        1,
+                        null,
+                        createProcessingContext())
+                ));
 
         transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.fetchToken("concurrent", 0)));
-        transactionManager.executeInTransaction(() -> tokenStore.releaseClaim("concurrent", 0));
-        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(concurrentTokenStore.fetchToken("concurrent", 0))));
+        transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.releaseClaim("concurrent", 0)));
+        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(concurrentTokenStore.fetchToken(
+                "concurrent",
+                0))));
     }
 
     @Test
     void claimTokenConcurrentlyAfterTimeLimit() {
         transactionManager.executeInTransaction(
-                () -> tokenStore.initializeTokenSegments("concurrent", 1, createProcessingContext())
-        );
+                () -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+                        "concurrent",
+                        1,
+                        null,
+                        createProcessingContext())
+                ));
 
         transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.fetchToken("concurrent", 0)));
         AbstractTokenEntry.clock = Clock.offset(Clock.systemUTC(), Duration.ofHours(1));
-        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(concurrentTokenStore.fetchToken("concurrent", 0))));
+        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(concurrentTokenStore.fetchToken(
+                "concurrent",
+                0))));
     }
 
     @Test
     void stealToken() {
         var ctx = createProcessingContext();
-        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("stealing", 1, ctx));
+        transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+                "stealing",
+                1,
+                null,
+                ctx)));
 
-        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(tokenStore.fetchToken("stealing", 0))));
-        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(stealingTokenStore.fetchToken("stealing", 0))));
+        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(
+                tokenStore.fetchToken("stealing", 0)
+        )));
+        transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(
+                stealingTokenStore.fetchToken("stealing", 0)
+        )));
 
         try {
             transactionManager.executeInTransaction(
@@ -394,7 +455,11 @@ class JdbcTokenStoreTest {
     @Test
     void storeAndLoadAcrossTransactions() {
         var ctx = createProcessingContext();
-        transactionManager.executeInTransaction(() -> tokenStore.initializeTokenSegments("multi", 1, ctx));
+        transactionManager.executeInTransaction(() -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+                "multi",
+                1,
+                null,
+                ctx)));
 
         transactionManager.executeInTransaction(() -> {
             joinAndUnwrap(tokenStore.fetchToken("multi", 0));
@@ -424,26 +489,31 @@ class JdbcTokenStoreTest {
     @Test
     void claimAndDeleteToken() {
         transactionManager.executeInTransaction(
-                () -> tokenStore.initializeTokenSegments("test1", 2, createProcessingContext())
-        );
+                () -> joinAndUnwrap(tokenStore.initializeTokenSegments(
+                        "test1",
+                        2,
+                        null,
+                        createProcessingContext())
+                ));
 
         joinAndUnwrap(tokenStore.fetchToken("test1", 0));
         joinAndUnwrap(tokenStore.fetchToken("test1", 1));
 
         tokenStore.deleteToken("test1", 1);
 
-        assertArrayEquals(new int[]{0}, tokenStore.fetchSegments("test1"));
+        assertArrayEquals(new int[]{0}, joinAndUnwrap(tokenStore.fetchSegments("test1")));
     }
 
     @Test
-    void deleteUnclaimedTokenFails() {
+    void fetchUnclaimedTokenFails() {
         assertThrows(UnableToClaimTokenException.class, () -> joinAndUnwrap(tokenStore.fetchToken("test1", 1)));
     }
 
     @Transactional
     @Test
-    void deleteTokenFailsWhenClaimedByOtherNode() {
-        assertThrows(UnableToClaimTokenException.class, () -> joinAndUnwrap(concurrentTokenStore.fetchToken("test1", 1)));
+    void fetchTokenFailsWhenClaimedByOtherNode() {
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> joinAndUnwrap(concurrentTokenStore.fetchToken("test1", 1)));
     }
 
     @Transactional
@@ -547,5 +617,4 @@ class JdbcTokenStoreTest {
             };
         }
     }
-
 }

@@ -164,7 +164,9 @@ class PooledStreamingEventProcessorTest {
                 tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3, ctx)
         );
         when(tokenStore.fetchAvailableSegments(testSubject.name()))
-                .thenReturn(Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3)));
+                .thenReturn(CompletableFuture.completedFuture(
+                        Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3))
+                ));
 
         testSubject.start();
 
@@ -418,7 +420,7 @@ class PooledStreamingEventProcessorTest {
             // given
             doThrow(new RuntimeException("Simulated failure")).doCallRealMethod()
                                                               .when(tokenStore)
-                                                              .initializeTokenSegments(any(), anyInt(), any());
+                                                              .initializeTokenSegments(any(), anyInt(), any(), any());
 
             // when
             List<EventMessage> events =
@@ -477,7 +479,7 @@ class PooledStreamingEventProcessorTest {
         @Test
         void tokenStoreReturningSingleNullToken() {
             var ctx = createProcessingContext();
-            tokenStore.initializeTokenSegments(testSubject.name(), 2, ctx);
+            tokenStore.initializeTokenSegments(testSubject.name(), 2, null, ctx);
             joinAndUnwrap(
                     tokenStore.storeToken(new GlobalSequenceTrackingToken(0), testSubject.name(), 1, ctx)
             );
@@ -670,7 +672,7 @@ class PooledStreamingEventProcessorTest {
             testSubject.start();
 
             assertWithin(1, TimeUnit.SECONDS, () -> assertThat(testSubject.processingStatus()).hasSize(8));
-            assertEquals(8, tokenStore.fetchSegments(PROCESSOR_NAME).length);
+            assertEquals(8, joinAndUnwrap(tokenStore.fetchSegments(PROCESSOR_NAME)).length);
 
             events.forEach(e -> stubMessageSource.publishMessage(e));
 

@@ -48,9 +48,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry.clock;
 
@@ -109,28 +111,34 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public void initializeTokenSegments(@Nonnull String processorName,
-                                        int segmentCount,
-                                        @Nonnull ProcessingContext processingContext)
+    public CompletableFuture<Void> initializeTokenSegments(@Nonnull String processorName,
+                                                           int segmentCount,
+                                                           @Nullable TrackingToken initialToken,
+                                                           @Nonnull ProcessingContext processingContext)
             throws UnableToClaimTokenException {
-        initializeTokenSegments(processorName, segmentCount, null, processingContext);
-    }
 
-    @Override
-    public void initializeTokenSegments(@Nonnull String processorName,
-                                        int segmentCount,
-                                        @Nullable TrackingToken initialToken,
-                                        @Nonnull ProcessingContext processingContext)
-            throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        if (fetchSegments(processorName).length > 0) {
-            throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
-        }
-        for (int segment = 0; segment < segmentCount; segment++) {
-            TokenEntry token = new TokenEntry(processorName, segment, initialToken, serializer);
-            entityManager.persist(token);
-        }
-        entityManager.flush();
+        return fetchSegments(processorName).thenApply((segments) -> {
+            if (segments.length > 0) {
+                throw new UnableToClaimTokenException(
+                        "Could not initialize segments. Some segments were already present.");
+            }
+            return segments;
+        }).thenAccept(segments -> {
+            for (int segment = 0; segment < segmentCount; segment++) {
+                TokenEntry token = new TokenEntry(processorName, segment, initialToken, serializer);
+                entityManager.persist(token);
+            }
+            entityManager.flush();
+        });
+//        if (joinAndUnwrap(fetchSegments(processorName)).length > 0) {
+//            throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
+//        }
+//        for (int segment = 0; segment < segmentCount; segment++) {
+//            TokenEntry token = new TokenEntry(processorName, segment, initialToken, serializer);
+//            entityManager.persist(token);
+//        }
+//        entityManager.flush();
     }
 
     @Override
@@ -220,7 +228,7 @@ public class JpaTokenStore implements TokenStore {
 
     @Override
     public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, int segment) {
-        return CompletableFuture.supplyAsync(() -> {
+        return supplyAsync(() -> {
 
             EntityManager entityManager = entityManagerProvider.getEntityManager();
             return loadToken(processorName, segment, entityManager).getToken(serializer);
@@ -230,7 +238,7 @@ public class JpaTokenStore implements TokenStore {
     @Override
     public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, @Nonnull Segment segment)
             throws UnableToClaimTokenException {
-        return CompletableFuture.supplyAsync(() -> {
+        return supplyAsync(() -> {
             EntityManager entityManager = entityManagerProvider.getEntityManager();
             return loadToken(processorName, segment, entityManager).getToken(serializer);
         });
@@ -262,34 +270,38 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public int[] fetchSegments(@Nonnull String processorName) {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
+    public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName) {
+        return supplyAsync(() -> {
+            EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-        final List<Integer> resultList = entityManager.createQuery(
-                "SELECT te.segment FROM TokenEntry te "
-                        + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
-                Integer.class
-        ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
+            final List<Integer> resultList = entityManager.createQuery(
+                    "SELECT te.segment FROM TokenEntry te "
+                            + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
+                    Integer.class
+            ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
 
-        return resultList.stream().mapToInt(i -> i).toArray();
+            return resultList.stream().mapToInt(i -> i).toArray();
+        });
     }
 
     @Override
-    public List<Segment> fetchAvailableSegments(@Nonnull String processorName) {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
+    public CompletableFuture<List<Segment>> fetchAvailableSegments(@Nonnull String processorName) {
+        return supplyAsync(() -> {
+            EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-        final List<TokenEntry> resultList = entityManager.createQuery(
-                "SELECT te FROM TokenEntry te "
-                        + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
-                TokenEntry.class
-        ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
-        int[] allSegments = resultList.stream()
-                                      .mapToInt(TokenEntry::getSegment)
-                                      .toArray();
-        return resultList.stream()
-                         .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
-                         .map(tokenEntry -> Segment.computeSegment(tokenEntry.getSegment(), allSegments))
-                         .collect(Collectors.toList());
+            final List<TokenEntry> resultList = entityManager.createQuery(
+                    "SELECT te FROM TokenEntry te "
+                            + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
+                    TokenEntry.class
+            ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
+            int[] allSegments = resultList.stream()
+                                          .mapToInt(TokenEntry::getSegment)
+                                          .toArray();
+            return resultList.stream()
+                             .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
+                             .map(tokenEntry -> Segment.computeSegment(tokenEntry.getSegment(), allSegments))
+                             .collect(Collectors.toList());
+        });
     }
 
     /**

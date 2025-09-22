@@ -109,7 +109,7 @@ class SplitTask extends CoordinatorTask {
         return unitOfWorkFactory
                 .create()
                 .executeWithResult(context -> {
-                    int[] segments = tokenStore.fetchSegments(name);
+                    int[] segments = joinAndUnwrap(tokenStore.fetchSegments(name)); // TODO refactor without blocking?
                     Segment segmentToSplit = Segment.computeSegment(segmentId, segments);
                     return CompletableFuture.completedFuture(splitAndRelease(segmentToSplit));
                 });

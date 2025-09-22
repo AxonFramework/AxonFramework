@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static java.util.concurrent.CompletableFuture.runAsync;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
@@ -42,33 +43,9 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 public interface TokenStore {
 
     /**
-     * Initializes the given {@code segmentCount} number of segments for the given {@code processorName} to track its
-     * tokens. This method should only be invoked when no tokens have been stored for the given processor, yet.
-     * <p>
-     * This method will initialize the tokens but not claim them. It will create the segments ranging from {@code 0}
-     * until {@code segmentCount - 1}.
-     * <p>
-     * The exact behavior when this method is called while tokens were already present is undefined in case the token
-     * already present is not owned by the initializing process.
-     *
-     * @param processorName     The name of the processor to initialize segments for
-     * @param segmentCount      The number of segments to initialize
-     * @param processingContext The processing context to use when initializing the segments.
-     * @throws UnableToClaimTokenException when a segment has already been created
-     */
-    default void initializeTokenSegments(@Nonnull String processorName,
-                                         int segmentCount,
-                                         @Nonnull ProcessingContext processingContext)
-            throws UnableToClaimTokenException {
-        for (int segment = 0; segment < segmentCount; segment++) {
-            fetchToken(processorName, segment);
-            releaseClaim(processorName, segment);
-        }
-    }
-
-    /**
-     * Initializes the given {@code segmentCount} number of segments for the given {@code processorName} to track its
-     * tokens. This method should only be invoked when no tokens have been stored for the given processor, yet.
+     * Returns a {@link CompletableFuture} that initializes the given {@code segmentCount} number of segments for the
+     * given {@code processorName} to track its tokens. This method should only be invoked when no tokens have been
+     * stored for the given processor, yet.
      * <p>
      * This method will store {@code initialToken} for all segments as starting point for processor, but not claim them.
      * It will create the segments ranging from {@code 0} until {@code segmentCount - 1}.
@@ -80,17 +57,21 @@ public interface TokenStore {
      * @param segmentCount      The number of segments to initialize
      * @param initialToken      The initial token which is used as a starting point for the processor
      * @param processingContext The processing context to use when initializing the segments
+     * @return {@link CompletableFuture} that completes when the segments have been initialized
      * @throws UnableToClaimTokenException when a segment has already been created
      */
-    default void initializeTokenSegments(@Nonnull String processorName,
-                                         int segmentCount,
-                                         @Nullable TrackingToken initialToken,
-                                         @Nonnull ProcessingContext processingContext)
+    default CompletableFuture<Void> initializeTokenSegments(@Nonnull String processorName,
+                                                            int segmentCount,
+                                                            @Nullable TrackingToken initialToken,
+                                                            @Nonnull ProcessingContext processingContext)
             throws UnableToClaimTokenException {
-        for (int segment = 0; segment < segmentCount; segment++) {
-            joinAndUnwrap(storeToken(initialToken, processorName, segment, processingContext));
-            releaseClaim(processorName, segment);
-        }
+        return runAsync(() -> {
+            for (int segment = 0; segment < segmentCount; segment++) {
+                joinAndUnwrap(storeToken(initialToken, processorName, segment, processingContext));
+                releaseClaim(processorName, segment);
+            }
+        });
+
     }
 
     /**
@@ -109,7 +90,7 @@ public interface TokenStore {
      * @param processorName     The name of the process for which to store the token
      * @param segment           The index of the segment for which to store the token
      * @param processingContext The current {@link ProcessingContext}
-     * @return CompletableFuture that completes when the token has been stored.
+     * @return {@link CompletableFuture} that completes when the token has been stored.
      * @throws UnableToClaimTokenException when the token being updated has been claimed by another process. Since this
      *                                     method works asynchronously, the thrown exception is wrapped by a
      *                                     {@link java.util.concurrent.CompletionException}.
@@ -121,8 +102,9 @@ public interface TokenStore {
             throws UnableToClaimTokenException;
 
     /**
-     * Returns the last stored {@link TrackingToken token} for the given {@code processorName} and {@code segment}.
-     * Returns {@code null} if the stored token for the given process and segment is {@code null}.
+     * Returns a {@link CompletableFuture} that supplies the last stored {@link TrackingToken token} for the given
+     * {@code processorName} and {@code segment} on completion. The {@link CompletableFuture} will return {@code null}
+     * if the stored token for the given process and segment is {@code null}.
      * <p>
      * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
      * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly
@@ -146,8 +128,9 @@ public interface TokenStore {
             throws UnableToClaimTokenException;
 
     /**
-     * Returns the last stored {@link TrackingToken token} for the given {@code processorName} and {@code segment}.
-     * Returns {@code null} if the stored token for the given process and segment is {@code null}.
+     * Returns a {@link CompletableFuture} that supplies the last stored {@link TrackingToken token} for the given
+     * {@code processorName} and {@code segment} on completion. The {@link CompletableFuture} will return {@code null}
+     * if the stored token for the given process and segment is {@code null}.
      * <p>
      * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
      * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly
@@ -231,7 +214,7 @@ public interface TokenStore {
 
     /**
      * Deletes the token for the processor with given {@code processorName} and {@code segment}. The token must be owned
-     * by the current node, to be able to delete it.
+     * by the current node to be able to delete it.
      * <p>
      * Implementations should implement this method only when {@link #requiresExplicitSegmentInitialization()} is
      * overridden to return {@code true}. Deleting tokens using implementations that do not require explicit token
@@ -253,7 +236,6 @@ public interface TokenStore {
      * be claimed for that segment.
      *
      * @return {@code true} if this instance requires tokens to be explicitly initialized, otherwise {@code false}.
-     * @see #initializeTokenSegments(String, int, ProcessingContext)
      * @see #initializeTokenSegments(String, int, TrackingToken, ProcessingContext)
      * @see #initializeSegment(TrackingToken, String, int)
      */
@@ -262,15 +244,16 @@ public interface TokenStore {
     }
 
     /**
-     * Returns an array of known {@code segments} for a given {@code processorName}.
+     * Returns a {@link CompletableFuture} that supplies an array of known {@code segments} for a given
+     * {@code processorName} on completion.
      * <p>
      * The segments returned are segments for which a token has been stored previously. When the {@link TokenStore} is
-     * empty, an empty array is returned.
+     * empty, the {@link CompletableFuture} will return an empty array.
      *
      * @param processorName The process name for which to fetch the segments
-     * @return an array of segment identifiers.
+     * @return a {@link CompletableFuture} that results to an array of segment identifiers on completion.
      */
-    int[] fetchSegments(@Nonnull String processorName);
+    CompletableFuture<int[]> fetchSegments(@Nonnull String processorName);
 
     /**
      * Returns a List of known available {@code segments} for a given {@code processorName}. A segment is considered
@@ -285,11 +268,18 @@ public interface TokenStore {
      * @param processorName the processor's name for which to fetch the segments
      * @return a List of available segment identifiers for the specified {@code processorName}
      */
-    default List<Segment> fetchAvailableSegments(@Nonnull String processorName) {
-        int[] allSegments = fetchSegments(processorName);
-        return Arrays.stream(allSegments).boxed()
-                     .map(segment -> Segment.computeSegment(segment, allSegments))
-                     .collect(Collectors.toList());
+    default CompletableFuture<List<Segment>> fetchAvailableSegments(@Nonnull String processorName) {
+        return fetchSegments(processorName)
+                .thenApply(segments ->
+                                   Arrays.stream(segments).boxed()
+                                         .map(segment -> Segment.computeSegment(segment, segments))
+                                         .collect(Collectors.toList())
+                );
+//        CompletableFuture<int[]> allSegments = fetchSegments(processorName);
+//        return Arrays.stream(allSegments).boxed()
+//                     .map(segment -> Segment.computeSegment(segment, allSegments))
+//                     .collect(Collectors.toList());
+
     }
 
     /**

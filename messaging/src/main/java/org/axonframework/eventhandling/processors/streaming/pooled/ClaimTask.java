@@ -57,7 +57,7 @@ class ClaimTask extends CoordinatorTask {
     private final UnitOfWorkFactory unitOfWorkFactory;
 
     /**
-     * Constructs a {@link ClaimTask}.
+     * Constructs a {@code ClaimTask}.
      *
      * @param result            The {@link CompletableFuture} to {@link #complete(Boolean, Throwable)} once
      *                          {@link #run()} has finalized.
@@ -107,9 +107,7 @@ class ClaimTask extends CoordinatorTask {
         List<Segment> segments = joinAndUnwrap(
                 unitOfWorkFactory.create()
                                  .executeWithResult((context) ->
-                                                            CompletableFuture.completedFuture(
-                                                                    tokenStore.fetchAvailableSegments(name)
-                                                            )
+                                                            tokenStore.fetchAvailableSegments(name)
                                  )
         );
 
