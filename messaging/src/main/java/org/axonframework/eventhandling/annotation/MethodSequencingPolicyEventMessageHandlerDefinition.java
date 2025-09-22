@@ -52,7 +52,7 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
 
     public static class SequencingPolicyEventMessageHandlingMember<T>
             extends WrappedMessageHandlingMember<T>
-            implements EventHandlingMember<T> {
+            implements MessageHandlingMember<T> {
 
         private final org.axonframework.eventhandling.sequencing.SequencingPolicy sequencingPolicy;
 

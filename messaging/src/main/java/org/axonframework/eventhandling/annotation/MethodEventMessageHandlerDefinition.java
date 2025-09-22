@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -27,6 +28,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.Optional;
+
 import jakarta.annotation.Nonnull;
 
 /**
@@ -40,10 +43,15 @@ public class MethodEventMessageHandlerDefinition implements HandlerEnhancerDefin
 
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
+        Optional<String> optionalCommandName = original.attribute(HandlerAttributes.EVENT_NAME);
         return original.unwrap(Method.class)
                        .filter(method -> method.isAnnotationPresent(EventHandler.class))
+                       .filter(method -> optionalCommandName.isPresent())
                        .map(method -> (MessageHandlingMember<T>)
-                               new MethodEventMessageHandlerDefinition.MethodEventMessageHandlingMember<>(original)
+                               new MethodEventMessageHandlerDefinition.MethodEventMessageHandlingMember<>(
+                                       original,
+                                       optionalCommandName.get()
+                               )
                        )
                        .orElse(original);
     }
@@ -52,20 +60,29 @@ public class MethodEventMessageHandlerDefinition implements HandlerEnhancerDefin
             extends WrappedMessageHandlingMember<T>
             implements EventHandlingMember<T> {
 
-        public MethodEventMessageHandlingMember(MessageHandlingMember<T> original) {
-            super(original);
+        private final String eventName;
 
-            if (original.unwrap(Method.class).isEmpty()) {
+        public MethodEventMessageHandlingMember(MessageHandlingMember<T> delegate, String eventNameAttribute) {
+            super(delegate);
+
+            if (delegate.unwrap(Method.class).isEmpty()) {
                 throw new UnsupportedHandlerException(
                         "@EventHandler annotation can only be put on methods.",
-                        original.unwrap(Member.class).orElse(null)
+                        delegate.unwrap(Member.class).orElse(null)
                 );
             }
+
+            eventName = "".equals(eventNameAttribute) ? delegate.payloadType().getName() : eventNameAttribute;
         }
 
         @Override
         public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
-            return super.canHandle(message, context) && message instanceof EventMessage;
+            return super.canHandle(message, context) && eventName.equals(message.type().name());
+        }
+
+        @Override
+        public String eventName() {
+            return eventName;
         }
     }
 }

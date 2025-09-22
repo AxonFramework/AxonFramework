@@ -27,4 +27,11 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
  */
 public interface EventHandlingMember<T> extends MessageHandlingMember<T> {
 
+    /**
+     * Returns the name of the event that can be handled.
+     *
+     * @return The name of the event that can be handled
+     */
+    String eventName();
+
 }
