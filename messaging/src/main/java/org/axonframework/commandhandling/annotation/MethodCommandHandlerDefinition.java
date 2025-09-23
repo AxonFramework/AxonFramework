@@ -44,23 +44,23 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
         Optional<String> optionalRoutingKey = original.attribute(HandlerAttributes.COMMAND_ROUTING_KEY);
         Optional<String> optionalCommandName = original.attribute(HandlerAttributes.COMMAND_NAME);
         return optionalRoutingKey.isPresent() && optionalCommandName.isPresent()
-                ? new MethodCommandMessageHandlingMember<>(original,
-                                                           optionalRoutingKey.get(),
-                                                           optionalCommandName.get())
+                ? new MethodCommandHandlingMember<>(original,
+                                                    optionalRoutingKey.get(),
+                                                    optionalCommandName.get())
                 : original;
     }
 
-    private static class MethodCommandMessageHandlingMember<T>
+    private static class MethodCommandHandlingMember<T>
             extends WrappedMessageHandlingMember<T>
-            implements CommandMessageHandlingMember<T> {
+            implements CommandHandlingMember<T> {
 
         private final String commandName;
         private final boolean isFactoryHandler;
         private final String routingKey;
 
-        private MethodCommandMessageHandlingMember(MessageHandlingMember<T> delegate,
-                                                   String routingKeyAttribute,
-                                                   String commandNameAttribute) {
+        private MethodCommandHandlingMember(MessageHandlingMember<T> delegate,
+                                            String routingKeyAttribute,
+                                            String commandNameAttribute) {
             super(delegate);
             Executable executable =
                     delegate.unwrap(Executable.class)

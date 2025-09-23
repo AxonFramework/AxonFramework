@@ -22,7 +22,6 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +46,6 @@ import static org.junit.jupiter.api.Assertions.*;
         WebClientAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,
         DataSourceAutoConfiguration.class,
-        AxonServerBusAutoConfiguration.class,
         AxonServerAutoConfiguration.class,
         AxonServerActuatorAutoConfiguration.class
 })
@@ -64,7 +62,7 @@ public class AxonHandlerConfigurationTest {
     @Test
     void messageRoutedToCorrectMethod() throws Exception {
         assertEquals("Command: info", commandGateway.sendAndWait("info", String.class));
-        assertEquals("Query: info", queryGateway.query("info", String.class).get());
+        assertEquals("Query: info", queryGateway.query("info", String.class, null).get());
     }
 
     @SuppressWarnings("unused")

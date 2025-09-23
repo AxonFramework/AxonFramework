@@ -38,7 +38,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation that informs Axon's auto configurer for Spring that a given {@link Component} is an entity instance.
+ * Annotation that informs Axon's auto configurer for Spring that a given {@link Component} is an event-sourced entity instance.
  * <p>This annotation is a meta-annotation of {@link EventSourcedEntity} allowing to put the configuration
  * directly.</p>
  *
@@ -67,7 +67,6 @@ public @interface EventSourced {
      * @return The class of the entity id.
      */
     Class<?> idType() default String.class;
-
 
     /**
      * The tag name to use when resolving the {@link EventCriteria} for the entity. If empty, the simple name of the

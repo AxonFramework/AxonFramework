@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,16 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 /**
  * Interface describing a message handler capable of handling a specific command.
  *
- * @param <T> The type of entity to which the message handler will delegate the actual handling of the command
+ * @param <T> The type of entity to which the message handler will delegate the actual handling of the command.
+ * @author Allard Buijze
+ * @since 3.0.0
  */
-public interface CommandMessageHandlingMember<T> extends MessageHandlingMember<T> {
+public interface CommandHandlingMember<T> extends MessageHandlingMember<T> {
 
     /**
      * Returns the name of the command that can be handled.
      *
-     * @return The name of the command that can be handled
+     * @return The name of the command that can be handled.
      */
     String commandName();
 
@@ -37,7 +39,7 @@ public interface CommandMessageHandlingMember<T> extends MessageHandlingMember<T
      * multiple handlers instances are available, a sending component is responsible to route commands with the same
      * routing key value to the correct instance.
      *
-     * @return The property of the command to use as routing key
+     * @return The property of the command to use as routing key.
      */
     String routingKey();
 

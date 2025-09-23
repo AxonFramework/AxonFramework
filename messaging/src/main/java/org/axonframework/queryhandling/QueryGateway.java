@@ -16,15 +16,17 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.reactivestreams.Publisher;
 import reactor.util.concurrent.Queues;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 /**
  * Interface towards the Query Handling components of an application.
@@ -37,53 +39,53 @@ import java.util.stream.Stream;
  * @author Steven van Beelen
  * @since 3.1.0
  */
-public interface QueryGateway {
+public interface QueryGateway extends DescribableComponent {
 
     /**
-     * Sends given {@code query} over the {@link QueryBus}, expecting a response with the given {@code responseType}
-     * from a single source.
-     * <p>Execution may be asynchronous, depending on the
-     * {@code QueryBus} implementation.
-     * <p>
-     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
-     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
-     * {@code QueryMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.Metadata}.
-     *
-     * @param query        The {@code query} to be sent.
-     * @param responseType A {@code Class} describing the desired response type.
-     * @param <R>          The response class contained in the given {@code responseType}.
-     * @param <Q>          The query class.
-     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
-     * {@code responseType}.
-     */
-    @Nonnull
-    default <R, Q> CompletableFuture<R> query(@Nonnull Q query,
-                                              @Nonnull Class<R> responseType) {
-        return query(query, ResponseTypes.instanceOf(responseType));
-    }
-
-    /**
-     * Sends given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
-     * from a single source.
+     * Sends given {@code query} over the {@link QueryBus}, expecting a single response with the given
+     * {@code responseType} from a single source.
      * <p>
      * Execution may be asynchronous, depending on the {@code QueryBus} implementation.
      * <p>
      * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
      * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
-     * {@code QueryMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.Metadata}.
+     * {@code QueryMessage} is constructed from that message's payload and {@link org.axonframework.messaging.Metadata}.
+     * The {@link QueryMessage#responseType()} will <b>at all times</b> be a
+     * {@link org.axonframework.messaging.responsetypes.InstanceResponseType}.
      *
      * @param query        The {@code query} to be sent.
-     * @param responseType The {@link ResponseType} used for this query.
-     * @param <R>          The response class contained in the given {@code responseType}.
-     * @param <Q>          The query class.
-     * @return A {@link java.util.concurrent.CompletableFuture} containing the query result as dictated by the given
-     * {@code responseType}.
+     * @param responseType A {@code Class} describing the desired response type.
+     * @param context      The processing context, if any, to dispatch the given {@code query} in.
+     * @param <R>          The generic type of the expected response.
+     * @return A {@code CompletableFuture} containing a single query response of type {@code responseType}.
      */
     @Nonnull
-    <R, Q> CompletableFuture<R> query(@Nonnull Q query,
-                                      @Nonnull ResponseType<R> responseType);
+    <R> CompletableFuture<R> query(@Nonnull Object query,
+                                   @Nonnull Class<R> responseType,
+                                   @Nullable ProcessingContext context);
+
+    /**
+     * Sends given {@code query} over the {@link QueryBus}, expecting multiple responses in the form of
+     * {@code responseType} from a single source.
+     * <p>
+     * Execution may be asynchronous, depending on the {@code QueryBus} implementation.
+     * <p>
+     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
+     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
+     * {@code QueryMessage} is constructed from that message's payload and {@link org.axonframework.messaging.Metadata}.
+     * The {@link QueryMessage#responseType()} will <b>at all times</b> be a
+     * {@link org.axonframework.messaging.responsetypes.MultipleInstancesResponseType}.
+     *
+     * @param query        The {@code query} to be sent.
+     * @param responseType A {@code Class} describing the desired response type.
+     * @param context      The processing context, if any, to dispatch the given {@code query} in.
+     * @param <R>          The generic type of the expected response(s).
+     * @return A {@code CompletableFuture} containing a list of query responses of type {@code responseType}.
+     */
+    @Nonnull
+    <R> CompletableFuture<List<R>> queryMany(@Nonnull Object query,
+                                             @Nonnull Class<R> responseType,
+                                             @Nullable ProcessingContext context);
 
     /**
      * Sends given {@code query} over the {@link QueryBus}, expecting a response as
@@ -114,32 +116,6 @@ public interface QueryGateway {
     @Nonnull
     <R, Q> Publisher<R> streamingQuery(@Nonnull Q query,
                                        @Nonnull Class<R> responseType);
-
-    /**
-     * Sends given {@code query} over the {@link QueryBus}, expecting a response in the form of {@code responseType}
-     * from several sources.
-     * <p>
-     * The stream is completed when a {@code timeout} occurs or when all results are received. Execution may be
-     * asynchronous, depending on the {@code QueryBus} implementation.
-     * <p>
-     * The given {@code query} is wrapped as the payload of the {@link QueryMessage} that is eventually posted on the
-     * {@code QueryBus}, unless the {@code query} already implements {@link Message}. In that case, a
-     * {@code QueryMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.Metadata}.
-     *
-     * @param query        The {@code query} to be sent.
-     * @param responseType The {@link ResponseType} used for this query.
-     * @param timeout      A timeout of {@code long} for the query.
-     * @param timeUnit     The selected {@link java.util.concurrent.TimeUnit} for the given {@code timeout}.
-     * @param <R>          The response class contained in the given {@code responseType}.
-     * @param <Q>          The query class.
-     * @return A stream of results.
-     */
-    @Nonnull
-    <R, Q> Stream<R> scatterGather(@Nonnull Q query,
-                                   @Nonnull ResponseType<R> responseType,
-                                   long timeout,
-                                   @Nonnull TimeUnit timeUnit);
 
     /**
      * Sends given {@code query} over the {@link QueryBus} and returns result containing initial response and

@@ -19,6 +19,50 @@ package org.axonframework.queryhandling.intercepting;
 // TODO 3488 - Implement once InterceptingQueryBus is in place
 class InterceptingQueryBusTest {
 
+    /* Correlation data tests
+    @Disabled("TODO: reintegrate as part of #3079")
+        @Test
+        void directQueryResultsInEmptyMessageStream() throws ExecutionException, InterruptedException {
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, "query", SINGLE_STRING_RESPONSE);
+            testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
+            QueryMessage testQuery =
+                    new GenericQueryMessage(new MessageType(String.class), "query", SINGLE_STRING_RESPONSE)
+                            .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
+            CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
+
+            assertTrue(result.isDone(), "SimpleQueryBus should resolve CompletableFutures directly");
+            assertNull(result.get().payload());
+            assertEquals(String.class, result.get().payloadType());
+            assertEquals(
+                    // TODO: this assumes the correlation and tracing data gets into response
+                    // but this is done via interceptors, which are currently not integrated
+                    MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
+                    result.get().metaData()
+            );
+        }
+
+        /*
+         * This test ensures that the QueryResponseMessage is created inside the scope of the Unit of Work, and therefore
+         * contains the correlation data registered with the Unit of Work
+         */
+//    @Disabled("TODO: reintegrate as part of #3079")
+//    @Test
+//    void queryResultContainsCorrelationData() throws Exception {
+////        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
+//
+//        QueryMessage testQuery =
+//                new GenericQueryMessage(new MessageType(String.class), "query", SINGLE_STRING_RESPONSE)
+//                        .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
+//        CompletableFuture<QueryResponseMessage> result = testSubject.query(testQuery);
+//
+//        assertTrue(result.isDone(), "SimpleQueryBus should resolve CompletableFutures directly");
+//        assertEquals("query1234", result.get().payload());
+//        assertEquals(
+//                MetaData.with(CORRELATION_ID, testQuery.identifier()).and(TRACE_ID, "fakeTraceId"),
+//                result.get().metaData()
+//        );
+//    }
+
     /*
         @Test
     public void handlerInterceptorThrowsException() throws ExecutionException, InterruptedException {
@@ -147,5 +191,4 @@ class InterceptingQueryBusTest {
                     .verifyComplete();
     }
      */
-
 }

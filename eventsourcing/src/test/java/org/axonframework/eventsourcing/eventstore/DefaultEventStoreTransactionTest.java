@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
@@ -88,9 +89,9 @@ class DefaultEventStoreTransactionTest {
                    transaction.appendEvent(event2);
                    transaction.appendEvent(event3);
                })
-               // Event are given to the store in the PREPARE_COMMIT phase.
-               // Hence, we retrieve the sourced set after that.
-               .runOnAfterCommit(context -> {
+               // Consistency marker is computed in AFTER_COMMIT phase, so we retrieve
+               // it and the source set after that:
+               .whenComplete(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                    afterCommitEvents.set(transaction.source(sourcingCondition));
 
@@ -168,14 +169,25 @@ class DefaultEventStoreTransactionTest {
         }
 
         private ConsistencyMarker appendEventForTag(Tag tag) {
-            return eventStorageEngine.appendEvents(AppendCondition.none(),
-                                                   processingContext,
-                                                   new GenericTaggedEventMessage<>(
-                                                           new GenericEventMessage(
-                                                                   new MessageType(String.class), "my payload"
-                                                           ),
-                                                           Set.of(tag)
-                                                   )).join().commit().join();
+            AppendTransaction<Object> appendTransaction = eventStorageEngine.appendEvents(
+                AppendCondition.none(),
+                processingContext,
+                new GenericTaggedEventMessage<>(
+                    new GenericEventMessage(new MessageType(String.class), "my payload"),
+                    Set.of(tag)
+                )
+            )
+            .thenApply(this::castTransaction)
+            .join();
+
+            return appendTransaction.commit(processingContext)
+                .thenCompose(v -> appendTransaction.afterCommit(v, processingContext))
+                .join();
+        }
+
+        @SuppressWarnings("unchecked")
+        private AppendTransaction<Object> castTransaction(AppendTransaction<?> at) {
+            return (AppendTransaction<Object>) at;
         }
 
         private void testCanCommitTag(EventCriteria nonExistingCriteria, EventCriteria existingCriteria,
@@ -276,7 +288,9 @@ class DefaultEventStoreTransactionTest {
                 transaction.appendEvent(eventMessage(1));
                 transaction.appendEvent(eventMessage(2));
                 transaction.appendEvent(eventMessage(3));
-            }).runOnAfterCommit(context -> {
+            })
+            // Consistency marker is computed in AFTER_COMMIT phase, so retrieve after that:
+            .whenComplete(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 result.set(transaction.appendPosition());
             });

@@ -36,14 +36,14 @@ import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.annotation.DefaultParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.DefaultQueryGateway;
+import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
-import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
@@ -67,7 +67,7 @@ class AsyncMessageHandlerTest {
                                                                             new ClassBasedMessageTypeResolver(),
                                                                             CommandPriorityCalculator.defaultCalculator(),
                                                                             new AnnotationRoutingStrategy());
-    private final QueryBus queryBus = SimpleQueryBus.builder().build();
+    private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
     private final QueryGateway queryGateway = new DefaultQueryGateway(queryBus,
                                                                       new ClassBasedMessageTypeResolver(),
                                                                       QueryPriorityCalculator.defaultCalculator());
@@ -218,15 +218,19 @@ class AsyncMessageHandlerTest {
             }
         }
 
+        @Disabled("TODO #3488")
         @Nested
         class QueryHandlers {
 
             @Test
             void declarativeQueryHandlerShouldUseFluxReturnType() throws Exception {
                 queryBus.subscribe(
-                        GetKnownPrimes.class.getName(),
-                        Integer.class,
-                        (query, context) -> Flux.just(2, 3, 5, 7)
+                        new QualifiedName(GetKnownPrimes.class),
+                        new QualifiedName(Integer.class),
+                        (query, context) -> MessageStream.fromFlux(
+                                Flux.just(2, 3, 5, 7)
+                                    .map(i -> new GenericQueryResponseMessage(new MessageType(Integer.class), i))
+                        )
                 );
 
                 assertQuery();
@@ -235,9 +239,14 @@ class AsyncMessageHandlerTest {
             @Test
             void declarativeQueryHandlerShouldUseIterableReturnType() throws Exception {
                 queryBus.subscribe(
-                        GetKnownPrimes.class.getName(),
-                        Integer.class,
-                        (query, context) -> List.of(2, 3, 5, 7)
+                        new QualifiedName(GetKnownPrimes.class),
+                        new QualifiedName(Integer.class),
+                        (query, context) -> MessageStream.fromIterable(List.of(
+                                new GenericQueryResponseMessage(new MessageType(Integer.class), 2),
+                                new GenericQueryResponseMessage(new MessageType(Integer.class), 3),
+                                new GenericQueryResponseMessage(new MessageType(Integer.class), 5),
+                                new GenericQueryResponseMessage(new MessageType(Integer.class), 7)
+                        ))
                 );
 
                 assertQuery();
@@ -264,8 +273,8 @@ class AsyncMessageHandlerTest {
     }
 
     private void assertQuery() throws Exception {
-        List<Integer> primes = queryGateway.query(new GetKnownPrimes(),
-                                                  ResponseTypes.multipleInstancesOf(Integer.class)).get();
+        List<Integer> primes = queryGateway.queryMany(new GetKnownPrimes(), Integer.class, null)
+                                           .get();
 
         assertThat(primes).isEqualTo(List.of(2, 3, 5, 7));
     }

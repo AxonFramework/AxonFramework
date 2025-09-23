@@ -36,23 +36,23 @@ import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 @Internal
 public class SpringEventSourcedEntityConfigurer<ID, T> implements ConfigurationEnhancer {
 
-    private final Class<T> aggregateType;
+    private final Class<T> entityType;
     private final Class<ID> idType;
 
     /**
-     * Initializes a {@link ConfigurationEnhancer} for given {@code aggregateType} and {@code idType}.
+     * Initializes a {@link ConfigurationEnhancer} for given {@code entityType} and {@code idType}.
      *
-     * @param aggregateType The declared type of the aggregate.
+     * @param entityType The declared type of the entity.
      * @param idType        The type of id.
      */
-    public SpringEventSourcedEntityConfigurer(Class<T> aggregateType, Class<ID> idType) {
-        this.aggregateType = aggregateType;
+    public SpringEventSourcedEntityConfigurer(@Nonnull Class<T> entityType, @Nonnull Class<ID> idType) {
+        this.entityType = entityType;
         this.idType = idType;
     }
 
     @Override
     public void enhance(@Nonnull ComponentRegistry registry) {
-        var eventSourcedEntityModule = EventSourcedEntityModule.annotated(this.idType, this.aggregateType);
+        var eventSourcedEntityModule = EventSourcedEntityModule.annotated(this.idType, this.entityType);
         registry.registerModule(eventSourcedEntityModule);
     }
 }

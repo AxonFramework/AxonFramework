@@ -22,7 +22,6 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
-import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +54,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Mateusz Nowak
  */
 @EnableAutoConfiguration(exclude = {
-        AxonServerBusAutoConfiguration.class,
         AxonServerAutoConfiguration.class,
         AxonServerActuatorAutoConfiguration.class
 })
@@ -159,10 +157,7 @@ class AxonAutoConfigurationWithGracefulShutdownTest {
                 logger.info("GRACEFUL SHUTDOWN TEST | After sleep...");
                 var dummyQuery = new DummyQuery();
                 try {
-                    var resultOpt = queryGateway.query(
-                            dummyQuery,
-                            ResponseTypes.instanceOf(DummyQueryResponse.class)
-                    );
+                    var resultOpt = queryGateway.query(dummyQuery, DummyQueryResponse.class, null);
                     var result = resultOpt.get(1, TimeUnit.SECONDS);
                     logger.info("GRACEFUL SHUTDOWN TEST | Query executed!");
                     return ResponseEntity.ok(result);

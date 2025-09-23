@@ -139,8 +139,8 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
 
     private void registerHandler(MessageHandlingMember<? super T> handler) {
         Class<?> payloadType = handler.payloadType();
-        QualifiedName qualifiedName = handler.unwrap(CommandMessageHandlingMember.class)
-                                             .map(CommandMessageHandlingMember::commandName)
+        QualifiedName qualifiedName = handler.unwrap(CommandHandlingMember.class)
+                                             .map(CommandHandlingMember::commandName)
                                              .map(QualifiedName::new)
                                              .orElseGet(() -> new QualifiedName(payloadType));
 
