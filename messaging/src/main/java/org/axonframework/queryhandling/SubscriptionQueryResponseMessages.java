@@ -81,7 +81,7 @@ public interface SubscriptionQueryResponseMessages {
     }
 
     /**
-     * Closes this {@code SubscriptionQueryResponseMessages} canceling and/or closing any subscriptions backing this the
+     * Closes this {@code SubscriptionQueryResponseMessages} canceling and/or closing any subscriptions backing the
      * response messages returned by {@link #initialResult()} and {@link #updates()}.
      */
     void close();

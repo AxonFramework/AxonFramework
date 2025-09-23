@@ -75,8 +75,7 @@ public class GenericSubscriptionQueryResponse<I, U> implements SubscriptionQuery
     }
 
     @Override
-    public boolean cancel() {
+    public void close() {
         response.close();
-        return true;
     }
 }

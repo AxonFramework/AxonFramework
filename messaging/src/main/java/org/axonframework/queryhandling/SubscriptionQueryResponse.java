@@ -17,7 +17,6 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Registration;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import reactor.core.publisher.Flux;
@@ -39,7 +38,7 @@ import java.util.function.Predicate;
  * @see QueryGateway#subscriptionQuery(Object, Class, Class, ProcessingContext, int)
  * @since 3.3.0
  */
-public interface SubscriptionQueryResponse<I, U> extends Registration {
+public interface SubscriptionQueryResponse<I, U> {
 
     /**
      * Returns the {@code Flux} of initial results from hitting a {@link QueryHandler}.
@@ -68,6 +67,12 @@ public interface SubscriptionQueryResponse<I, U> extends Registration {
     Flux<U> updates();
 
     /**
+     * Closes this {@code SubscriptionQueryResponse} canceling and/or closing any subscriptions backing the responses
+     * returned by {@link #initialResult()} and {@link #updates()}.
+     */
+    void close();
+
+    /**
      * Delegates handling of initial result and incremental updates to the provided consumers.
      * <p>
      * Subscription to the incremental updates is done after the initial result is retrieved and its consumer is
@@ -91,22 +96,22 @@ public interface SubscriptionQueryResponse<I, U> extends Registration {
                                     try {
                                         updateConsumer.accept(update);
                                     } catch (Exception e) {
-                                        cancel();
+                                        close();
                                         errorConsumer.accept(e);
                                     }
                                 },
                                 throwable -> {
-                                    cancel();
+                                    close();
                                     errorConsumer.accept(throwable);
                                 }
                         );
                     } catch (Exception e) {
-                        cancel();
+                        close();
                         errorConsumer.accept(e);
                     }
                 },
                 throwable -> {
-                    cancel();
+                    close();
                     errorConsumer.accept(throwable);
                 }
         );
