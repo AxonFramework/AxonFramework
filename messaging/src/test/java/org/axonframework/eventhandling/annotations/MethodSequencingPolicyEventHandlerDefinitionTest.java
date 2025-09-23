@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.annotation;
+package org.axonframework.eventhandling.annotations;
 
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.annotations.MethodSequencingPolicyEventHandlerDefinition;
-import org.axonframework.eventhandling.annotations.SequencingPolicy;
 import org.axonframework.eventhandling.sequencing.MetadataSequencingPolicy;
 import org.axonframework.eventhandling.sequencing.PropertySequencingPolicy;
 import org.axonframework.eventhandling.sequencing.SequentialPolicy;

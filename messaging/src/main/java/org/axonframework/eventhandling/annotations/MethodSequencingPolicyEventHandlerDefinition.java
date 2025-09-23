@@ -27,15 +27,16 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Optional;
+
 import jakarta.annotation.Nonnull;
 
 /**
  * Definition of handlers that are annotated with {@link SequencingPolicy}. These handlers are wrapped with a
  * {@link SequencingPolicyEventMessageHandlingMember} that provides access to the configured sequencing policy.
  * <p>
- * The {@link SequencingPolicy} annotation can be applied either directly to the handler method or to the
- * declaring class. When applied to the class, all handler methods in that class will inherit the sequencing policy.
- * Method-level annotations take precedence over class-level annotations.
+ * The {@link SequencingPolicy} annotation can be applied either directly to the handler method or to the declaring
+ * class. When applied to the class, all handler methods in that class will inherit the sequencing policy. Method-level
+ * annotations take precedence over class-level annotations.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -45,7 +46,9 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
         return original.unwrap(Method.class)
-                       .flatMap(method -> findSequencingPolicy(method).map(annotation -> (MessageHandlingMember<T>) new SequencingPolicyEventMessageHandlingMember<>(original, annotation)))
+                       .flatMap(method -> findSequencingPolicy(method).map(annotation -> (MessageHandlingMember<T>) new SequencingPolicyEventMessageHandlingMember<>(
+                               original,
+                               annotation)))
                        .orElse(original);
     }
 
@@ -55,25 +58,27 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
     }
 
     /**
-     * Extracting {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} from the {@link SequencingPolicy} annotation.
+     * Extracting {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} from the {@link SequencingPolicy}
+     * annotation.
+     *
      * @param <T> The type of the declaring class of the event handling method.
      */
     @Internal
-    public static class SequencingPolicyEventMessageHandlingMember<T>
+    static class SequencingPolicyEventMessageHandlingMember<T>
             extends WrappedMessageHandlingMember<T>
             implements MessageHandlingMember<T> {
 
         private final org.axonframework.eventhandling.sequencing.SequencingPolicy sequencingPolicy;
 
         /**
-         * Constructs a new SequencingPolicyEventMessageHandlingMember by wrapping the given {@code original}
-         * handler and creating a sequencing policy instance from the {@link SequencingPolicy} annotation.
+         * Constructs a new SequencingPolicyEventMessageHandlingMember by wrapping the given {@code original} handler
+         * and creating a sequencing policy instance from the {@link SequencingPolicy} annotation.
          *
          * @param original         The original message handling member to wrap
          * @param policyAnnotation The {@link SequencingPolicy} annotation containing policy configuration
          */
         private SequencingPolicyEventMessageHandlingMember(MessageHandlingMember<T> original,
-                                                          SequencingPolicy policyAnnotation) {
+                                                           SequencingPolicy policyAnnotation) {
             super(original);
             this.sequencingPolicy = createSequencingPolicy(policyAnnotation, original);
         }
@@ -96,8 +101,8 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
 
             try {
                 return parameters.length == 0
-                    ? createNoArgPolicy(policyType, original)
-                    : createParameterizedPolicy(policyType, parameters, original);
+                        ? createNoArgPolicy(policyType, original)
+                        : createParameterizedPolicy(policyType, parameters, original);
             } catch (Exception e) {
                 throw new UnsupportedHandlerException(
                         "Failed to create SequencingPolicy instance: " + e.getMessage(),
@@ -130,7 +135,8 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
             var matchingConstructor = findMatchingConstructor(policyType, parameters.length, original);
             var parsedParameters = parseParameters(matchingConstructor.getParameterTypes(), parameters, original);
             matchingConstructor.setAccessible(true);
-            return (org.axonframework.eventhandling.sequencing.SequencingPolicy) matchingConstructor.newInstance(parsedParameters);
+            return (org.axonframework.eventhandling.sequencing.SequencingPolicy) matchingConstructor.newInstance(
+                    parsedParameters);
         }
 
         private Constructor<?> findMatchingConstructor(
@@ -143,7 +149,8 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
                          .findFirst()
                          .orElseThrow(() -> new UnsupportedHandlerException(
                                  "No constructor found for SequencingPolicy " + policyType.getName() +
-                                         " that matches " + parameterCount + " string parameters (excluding Class parameters)",
+                                         " that matches " + parameterCount
+                                         + " string parameters (excluding Class parameters)",
                                  original.unwrap(Member.class).orElse(null)
                          ));
         }
@@ -154,7 +161,8 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
             return hasClassAsFirstParam ? paramTypes.length - 1 : paramTypes.length;
         }
 
-        private Object[] parseParameters(Class<?>[] parameterTypes, String[] stringParameters, MessageHandlingMember<T> original) {
+        private Object[] parseParameters(Class<?>[] parameterTypes, String[] stringParameters,
+                                         MessageHandlingMember<T> original) {
             var parsedParameters = new Object[parameterTypes.length];
             var stringParameterIndex = 0;
 
@@ -171,7 +179,8 @@ public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnha
                 } else {
                     if (stringParameterIndex >= stringParameters.length) {
                         throw new IllegalArgumentException(
-                                "Not enough string parameters provided. Expected parameter for type: " + targetType.getName()
+                                "Not enough string parameters provided. Expected parameter for type: "
+                                        + targetType.getName()
                         );
                     }
                     var stringValue = stringParameters[stringParameterIndex];

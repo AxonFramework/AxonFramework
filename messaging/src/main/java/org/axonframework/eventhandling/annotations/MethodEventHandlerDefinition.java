@@ -58,10 +58,11 @@ public class MethodEventHandlerDefinition implements HandlerEnhancerDefinition {
 
     /**
      * Extracting event name from {@link EventHandler} annotation.
+     *
      * @param <T> The type of entity to which the message handler will delegate the actual handling of the message.
      */
     @Internal
-    public static class MethodEventMessageHandlingMember<T>
+    static class MethodEventMessageHandlingMember<T>
             extends WrappedMessageHandlingMember<T>
             implements EventHandlingMember<T> {
 
@@ -82,7 +83,8 @@ public class MethodEventHandlerDefinition implements HandlerEnhancerDefinition {
 
         @Override
         public boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context) {
-            return super.canHandle(message, context) && (message instanceof EventMessage || eventName.equals(message.type().name()));
+            return super.canHandle(message, context) && (message instanceof EventMessage
+                    || eventName.equals(message.type().name()));
         }
 
         @Override
