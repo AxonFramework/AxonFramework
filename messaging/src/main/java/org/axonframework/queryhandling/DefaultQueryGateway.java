@@ -32,8 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 /**
  * Default implementation of the {@link QueryGateway} interface.
@@ -126,17 +124,6 @@ public class DefaultQueryGateway implements QueryGateway {
         return query instanceof Message
                 ? new GenericStreamingQueryMessage((Message) query, responseType)
                 : new GenericStreamingQueryMessage(messageTypeResolver.resolveOrThrow(query), query, responseType);
-    }
-
-    @Nonnull
-    @Override
-    public <R, Q> Stream<R> scatterGather(@Nonnull Q query,
-                                          @Nonnull ResponseType<R> responseType,
-                                          long timeout,
-                                          @Nonnull TimeUnit timeUnit) {
-        QueryMessage queryMessage = asQueryMessage(query, responseType);
-        return queryBus.scatterGather(queryMessage, timeout, timeUnit)
-                       .map(t -> (R) t.payload());
     }
 
     @Nonnull

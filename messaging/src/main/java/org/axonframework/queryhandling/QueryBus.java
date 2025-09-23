@@ -25,10 +25,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.reactivestreams.Publisher;
 import reactor.util.concurrent.Queues;
 
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-
 /**
  * The mechanism that dispatches {@link QueryMessage queries} to their appropriate {@link QueryHandler query handler}.
  * <p>
@@ -38,9 +34,8 @@ import java.util.stream.Stream;
  * resulting from the {@link QueryMessage#responseType() response type}.
  * <p>
  * Hence, queries dispatched (through either {@link #query(QueryMessage, ProcessingContext)},
- * {@link #streamingQuery(StreamingQueryMessage)}, {@link #scatterGather(QueryMessage, long, TimeUnit)}, and
- * {@link #subscriptionQuery(SubscriptionQueryMessage)}) match a subscribed query handler based on "query name" and
- * "query response name."
+ * {@link #streamingQuery(StreamingQueryMessage)}, and {@link #subscriptionQuery(SubscriptionQueryMessage)}) match a
+ * subscribed query handler based on "query name" and "query response name."
  * <p>
  * There may be multiple handlers for each query- and response-name combination.
  *
@@ -89,25 +84,6 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
     default Publisher<QueryResponseMessage> streamingQuery(StreamingQueryMessage query) {
         throw new UnsupportedOperationException("Streaming query is not supported by this QueryBus.");
     }
-
-    /**
-     * Dispatch the given {@code query} to all QueryHandlers subscribed to the given {@code query}'s
-     * queryName/responseType. Returns a stream of results which blocks until all handlers have processed the request or
-     * when the timeout occurs.
-     * <p>
-     * If no handlers are available to provide a result, or when all available handlers throw an exception while
-     * attempting to do so, the returned Stream is empty.
-     * <p>
-     * Note that any terminal operation (such as {@link Stream#forEach(Consumer)}) on the Stream may cause it to block
-     * until the {@code timeout} has expired, awaiting additional data to include in the stream.
-     *
-     * @param query   the query
-     * @param timeout time to wait for results
-     * @param unit    unit for the timeout
-     * @return stream of query results
-     */
-    Stream<QueryResponseMessage> scatterGather(@Nonnull QueryMessage query, long timeout,
-                                               @Nonnull TimeUnit unit);
 
     /**
      * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s

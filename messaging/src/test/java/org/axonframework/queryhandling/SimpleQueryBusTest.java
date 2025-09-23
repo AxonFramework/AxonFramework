@@ -15,11 +15,9 @@
  */
 package org.axonframework.queryhandling;
 
-import org.axonframework.common.TypeReference;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -35,18 +33,15 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
@@ -77,9 +72,6 @@ class SimpleQueryBusTest {
     };
     private static final ResponseType<String> SINGLE_STRING_RESPONSE = instanceOf(String.class);
     private static final ResponseType<List<String>> MULTI_STRING_RESPONSE = multipleInstancesOf(String.class);
-
-    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
-    };
 
     private SimpleQueryBus testSubject;
 
@@ -294,169 +286,6 @@ class SimpleQueryBusTest {
             verify(transactionManager).startTransaction();
             verify(testTransaction).commit();
         }
-    }
-
-    @Test
-    @Disabled("TODO #3488 - Pick up together with scatter-gather implementation")
-    void scatterGather() {
-        int expectedResults = 3;
-
-//        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> q.payload() + "1234");
-//        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> q.payload() + "5678");
-//        testSubject.subscribe(String.class.getName(), String.class, (q, ctx) -> q.payload() + "90");
-
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", SINGLE_STRING_RESPONSE
-        );
-        Set<QueryResponseMessage> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS)
-                                                       .collect(toSet());
-
-        assertEquals(expectedResults, results.size());
-        Set<Object> resultSet = results.stream().map(Message::payload).collect(toSet());
-        assertEquals(expectedResults, resultSet.size());
-    }
-
-    @Test
-    @Disabled("TODO #3488 - Pick up together with scatter-gather implementation")
-    void scatterGatherOnArrayQueryHandlers() throws NoSuchMethodException {
-        int expectedQueryResponses = 3;
-        int expectedResults = 6;
-
-//        testSubject.subscribe(String.class.getName(),
-//                              methodOf(getClass(), "stringArrayQueryHandler").getGenericReturnType(),
-//                              (q, ctx) -> new String[]{q.payload() + "12", q.payload() + "34"});
-//        testSubject.subscribe(String.class.getName(),
-//                              methodOf(getClass(), "stringArrayQueryHandler").getGenericReturnType(),
-//                              (q, ctx) -> new String[]{q.payload() + "56", q.payload() + "78"});
-//        testSubject.subscribe(String.class.getName(),
-//                              methodOf(getClass(), "stringArrayQueryHandler").getGenericReturnType(),
-//                              (q, ctx) -> new String[]{q.payload() + "9", q.payload() + "0"});
-
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", multipleInstancesOf(String.class)
-        );
-        Set<QueryResponseMessage> results =
-                testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS)
-                           .collect(toSet());
-
-        assertEquals(expectedQueryResponses, results.size());
-        Set<String> resultSet = results.stream()
-                                       .map(m -> m.payloadAs(LIST_OF_STRINGS))
-                                       .flatMap(Collection::stream)
-                                       .collect(toSet());
-        assertEquals(expectedResults, resultSet.size());
-    }
-
-    @SuppressWarnings("unused")// Used by 'testScatterGatherOnArrayQueryHandlers' to generate queryHandler responseType
-    public String[] stringArrayQueryHandler() {
-        return new String[]{};
-    }
-
-    @Disabled("TODO reintegrate with #3079")
-    @Test
-    void scatterGatherWithTransaction() {
-        TransactionManager mockTxManager = mock(TransactionManager.class);
-        Transaction mockTx = mock(Transaction.class);
-        when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = new SimpleQueryBus(
-                new TransactionalUnitOfWorkFactory(mockTxManager, UnitOfWorkTestUtils.SIMPLE_FACTORY),
-                SimpleQueryUpdateEmitter.builder().build()
-        );
-
-//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "567");
-
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", SINGLE_STRING_RESPONSE
-        );
-        Set<Object> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).collect(toSet());
-
-        assertEquals(2, results.size());
-        // TODO reintegrate with #3079
-        verify(mockTxManager, times(2)).startTransaction();
-        verify(mockTx, times(2)).commit();
-    }
-
-    @Disabled("TODO reintegrate with #3079")
-    @Test
-    void scatterGatherWithTransactionRollsBackOnFailure() {
-        TransactionManager mockTxManager = mock(TransactionManager.class);
-        Transaction mockTx = mock(Transaction.class);
-        when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = new SimpleQueryBus(
-                new TransactionalUnitOfWorkFactory(mockTxManager, UnitOfWorkTestUtils.SIMPLE_FACTORY),
-                SimpleQueryUpdateEmitter.builder().build()
-        );
-
-//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> {
-//            throw new MockException();
-//        });
-
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", SINGLE_STRING_RESPONSE
-        );
-        Set<Object> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).collect(toSet());
-
-        assertEquals(1, results.size());
-        // TODO reintegrate with #3079
-        verify(mockTxManager, times(2)).startTransaction();
-        verify(mockTx, times(1)).commit();
-        verify(mockTx, times(1)).rollback();
-    }
-
-    @Disabled("TODO reintegrate with #3079")
-    @Test
-    void queryFirstFromScatterGatherWillCommitUnitOfWork() {
-        TransactionManager mockTxManager = mock(TransactionManager.class);
-        Transaction mockTx = mock(Transaction.class);
-        when(mockTxManager.startTransaction()).thenReturn(mockTx);
-        testSubject = new SimpleQueryBus(
-                new TransactionalUnitOfWorkFactory(mockTxManager, UnitOfWorkTestUtils.SIMPLE_FACTORY),
-                SimpleQueryUpdateEmitter.builder().build()
-        );
-
-//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "567");
-
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", SINGLE_STRING_RESPONSE
-        );
-        Optional<QueryResponseMessage> firstResult =
-                testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).findFirst();
-
-        assertTrue(firstResult.isPresent());
-        // TODO reintegrate with #3079
-        verify(mockTxManager).startTransaction();
-        verify(mockTx).commit();
-    }
-
-    @Test
-    @Disabled("TODO #3488")
-    void scatterGatherReturnsEmptyStreamWhenNoHandlersAvailable() {
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", SINGLE_STRING_RESPONSE
-        );
-        Set<Object> allResults = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).collect(toSet());
-
-        assertEquals(0, allResults.size());
-    }
-
-    @Test
-    @Disabled("TODO #3488 - Pick up together with scatter-gather implementation")
-    void scatterGatherReportsExceptionsWithErrorHandler() {
-//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> q.payload() + "1234");
-//        testSubject.subscribe(String.class.getName(), String.class, (q, c) -> {
-//            throw new MockException();
-//        });
-
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(String.class), "Hello, World", SINGLE_STRING_RESPONSE
-        );
-        Set<Object> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).collect(toSet());
-
-        assertEquals(1, results.size());
-//        verify(errorHandler).onError(isA(MockException.class), eq(testQuery), isA(MessageHandler.class));
     }
 
     @Test

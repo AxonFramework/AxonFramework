@@ -27,7 +27,6 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -35,7 +34,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -102,38 +100,6 @@ class FutureAsResponseTypeToQueryHandlersTest {
     }
 
     @Test
-    void scatterGatherQueryWithMultipleResponses() {
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("myQueryWithMultipleResponses"), "criteria",
-                multipleInstancesOf(String.class)
-        );
-
-        List<String> response =
-                queryBus.scatterGather(testQuery, FUTURE_RESOLVING_TIMEOUT * 2, TimeUnit.MILLISECONDS)
-                        .map(m -> m.payloadAs(LIST_OF_STRINGS))
-                        .flatMap(Collection::stream)
-                        .collect(Collectors.toList());
-
-        assertEquals(asList("Response1", "Response2"), response);
-    }
-
-    @Test
-    void scatterGatherQueryWithSingleResponse() {
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("myQueryWithSingleResponse"), "criteria",
-                instanceOf(String.class)
-        );
-
-        Object response =
-                queryBus.scatterGather(testQuery, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
-                        .map(Message::payload)
-                        .findFirst()
-                        .orElse(null);
-
-        assertEquals("Response", response);
-    }
-
-    @Test
     void subscriptionQueryWithMultipleResponses() {
         SubscriptionQueryMessage<String, List<String>, String> testQuery = new GenericSubscriptionQueryMessage<>(
                 new MessageType("myQueryWithMultipleResponses"), "criteria",
@@ -178,22 +144,6 @@ class FutureAsResponseTypeToQueryHandlersTest {
                                           return list;
                                       })
                                       .get();
-
-        assertEquals(asList("Response1", "Response2"), result);
-    }
-
-    @Test
-    void futureScatterGatherQueryWithMultipleResponses() {
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("myQueryFutureWithMultipleResponses"), "criteria",
-                multipleInstancesOf(String.class)
-        );
-
-        List<String> result =
-                queryBus.scatterGather(testQuery, FUTURE_RESOLVING_TIMEOUT + 100, TimeUnit.MILLISECONDS)
-                        .map(m -> m.payloadAs(LIST_OF_STRINGS))
-                        .findFirst()
-                        .orElse(null);
 
         assertEquals(asList("Response1", "Response2"), result);
     }

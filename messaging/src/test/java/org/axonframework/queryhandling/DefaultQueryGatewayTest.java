@@ -34,10 +34,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
@@ -61,7 +58,6 @@ class DefaultQueryGatewayTest {
     private DefaultQueryGateway testSubject;
 
     private ArgumentCaptor<QueryMessage> queryCaptor;
-    private QueryResponseMessage answer;
 
     @BeforeEach
     void setUp() {
@@ -72,7 +68,6 @@ class DefaultQueryGatewayTest {
                                               QueryPriorityCalculator.defaultCalculator());
 
         queryCaptor = ArgumentCaptor.forClass(QueryMessage.class);
-        answer = new GenericQueryResponseMessage(RESPONSE_TYPE, RESPONSE_PAYLOAD);
     }
 
     @Nested
@@ -279,67 +274,6 @@ class DefaultQueryGatewayTest {
             assertThat(result).isCompletedExceptionally();
             assertThat(result.exceptionNow().getMessage()).isEqualTo("Faking conversion problem");
         }
-    }
-
-    @Test
-    void scatterGatherQuery() {
-        long expectedTimeout = 1L;
-        TimeUnit expectedTimeUnit = TimeUnit.SECONDS;
-
-        when(queryBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any()))
-                .thenReturn(Stream.of(answer));
-
-        Stream<String> queryResponse =
-                testSubject.scatterGather("scatterGather", instanceOf(String.class), expectedTimeout, expectedTimeUnit);
-        Optional<String> firstResult = queryResponse.findFirst();
-        assertTrue(firstResult.isPresent());
-        assertEquals(RESPONSE_PAYLOAD, firstResult.get());
-
-        ArgumentCaptor<QueryMessage> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
-
-        verify(queryBus).scatterGather(queryMessageCaptor.capture(), eq(expectedTimeout), eq(expectedTimeUnit));
-
-        QueryMessage result = queryMessageCaptor.getValue();
-        assertEquals("scatterGather", result.payload());
-        assertEquals(String.class, result.payloadType());
-        assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
-        assertEquals(String.class, result.responseType().getExpectedResponseType());
-        assertEquals(Metadata.emptyInstance(), result.metadata());
-    }
-
-    @Test
-    void scatterGatherQueryWithMetadata() {
-        String expectedMetadataKey = "key";
-        String expectedMetadataValue = "value";
-        long expectedTimeout = 1L;
-        TimeUnit expectedTimeUnit = TimeUnit.SECONDS;
-
-        when(queryBus.scatterGather(anyMessage(String.class, String.class), anyLong(), any()))
-                .thenReturn(Stream.of(answer));
-
-        Message testQuery = new GenericMessage(
-                QUERY_TYPE, "scatterGather",
-                Metadata.with(expectedMetadataKey, expectedMetadataValue)
-        );
-
-        Stream<String> queryResponse =
-                testSubject.scatterGather(testQuery, instanceOf(String.class), expectedTimeout, expectedTimeUnit);
-        Optional<String> firstResult = queryResponse.findFirst();
-        assertTrue(firstResult.isPresent());
-        assertEquals(RESPONSE_PAYLOAD, firstResult.get());
-
-        ArgumentCaptor<QueryMessage> queryMessageCaptor = ArgumentCaptor.forClass(QueryMessage.class);
-
-        verify(queryBus).scatterGather(queryMessageCaptor.capture(), eq(expectedTimeout), eq(expectedTimeUnit));
-
-        QueryMessage result = queryMessageCaptor.getValue();
-        assertEquals("scatterGather", result.payload());
-        assertEquals(String.class, result.payloadType());
-        assertTrue(InstanceResponseType.class.isAssignableFrom(result.responseType().getClass()));
-        assertEquals(String.class, result.responseType().getExpectedResponseType());
-        Metadata resultMetadata = result.metadata();
-        assertTrue(resultMetadata.containsKey(expectedMetadataKey));
-        assertTrue(resultMetadata.containsValue(expectedMetadataValue));
     }
 
     @Test

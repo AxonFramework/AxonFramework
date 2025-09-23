@@ -448,61 +448,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     @Override
-    public Stream<QueryResponseMessage> scatterGather(@Nonnull QueryMessage queryMessage,
-                                                                long timeout,
-                                                                @Nonnull TimeUnit timeUnit) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.responseType().getExpectedResponseType()),
-                       () -> "The scatter-Gather query does not support Flux as a return type.");
-        shutdownLatch.ifShuttingDown(format(
-                "Cannot dispatch new %s as this bus is being shut down", "scatter-gather queries"
-        ));
-        ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
-
-        Span span = spanFactory.createScatterGatherSpan(queryMessage, true).start();
-        try (SpanScope unused = span.makeCurrent()) {
-            QueryMessage interceptedQuery = new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
-                    .proceed(spanFactory.propagateContext(queryMessage), null)
-                    .first()
-                    .<QueryMessage>cast()
-                    .asMono()
-                    .map(MessageStream.Entry::message)
-                    .block(); // TODO reintegrate as part of #3079
-            long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
-            String targetContext = targetContextResolver.resolveContext(interceptedQuery);
-            QueryRequest queryRequest =
-                    serializer.serializeRequest(interceptedQuery,
-                                                SCATTER_GATHER_NUMBER_OF_RESULTS,
-                                                timeUnit.toMillis(timeout),
-                                                priorityCalculator.determinePriority(interceptedQuery));
-
-            ResultStream<QueryResponse> queryResult = axonServerConnectionManager.getConnection(targetContext)
-                                                                                 .queryChannel()
-                                                                                 .query(queryRequest);
-
-            AtomicBoolean closed = new AtomicBoolean(false);
-            Runnable closeHandler = () -> {
-                if (closed.compareAndSet(false, true)) {
-                    queryInTransit.end();
-                    span.end();
-                }
-            };
-            return StreamSupport.stream(
-                    new QueryResponseSpliterator(queryMessage,
-                                                 queryResult,
-                                                 deadline,
-                                                 serializer,
-                                                 closeHandler),
-                    false
-            ).onClose(closeHandler);
-        } catch (Exception e) {
-            logger.debug("There was a problem issuing a scatter-gather query {}.", queryMessage, e);
-            queryInTransit.end();
-            span.recordException(e).end();
-            throw e;
-        }
-    }
-
-    @Override
     public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
             @Nonnull SubscriptionQueryMessage<Q, I, U> query,
             int updateBufferSize
