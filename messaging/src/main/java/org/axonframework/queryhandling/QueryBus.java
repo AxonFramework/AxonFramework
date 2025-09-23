@@ -143,7 +143,6 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * @throws SubscriptionQueryAlreadyRegisteredException Whenever an update handler was already registered for the
      *                                                     given {@code query}.
      */
-    @Internal
     @Nonnull
     UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize);
 

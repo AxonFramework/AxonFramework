@@ -33,7 +33,6 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 4.0.0
  */
-@Internal
 public final class UpdateHandler {
 
     private final Flux<SubscriptionQueryUpdateMessage> updates;
