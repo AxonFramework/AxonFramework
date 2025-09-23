@@ -26,6 +26,7 @@ import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 import org.axonframework.utils.MockException;
@@ -694,6 +695,34 @@ class SimpleQueryBusTest {
                         .then(() -> testSubject.completeSubscriptions(query -> true, null))
                         .verifyComplete();
         }
+
+        @Test
+        void emittingUpdatesWithProcessingContextStagesEmitsToAfterCommit() {
+            // given...
+            AtomicBoolean filterInvoked = new AtomicBoolean(false);
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, QUERY_PAYLOAD, SINGLE_STRING_RESPONSE, SINGLE_STRING_RESPONSE
+            );
+            Predicate<SubscriptionQueryMessage> queryFilter =
+                    query -> {
+                        filterInvoked.set(true);
+                        return query.identifier().equals(testQuery.identifier());
+                    };
+            SubscriptionQueryUpdateMessage updateMessage =
+                    new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, UPDATE_PAYLOAD);
+            // We should have a subscription query for an update handler to even exist.
+            SubscriptionQueryResponseMessages result =
+                    testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
+            UnitOfWork uow = UnitOfWorkTestUtils.aUnitOfWork();
+            // when emitting on invocation...
+            uow.onInvocation(context -> testSubject.emitUpdate(queryFilter, updateMessage, context));
+            // then before the after commit phase validate the filter was not invoked yet...
+            assertThat(filterInvoked).isFalse();
+            // when executing the UnitOfWork, we pass the after commit phase
+            uow.execute().join();
+            // then we expect the update to be emitted, validated by the filter being invoked...
+            assertThat(filterInvoked).isTrue();
+        }
     }
 
     @Nested
@@ -734,6 +763,31 @@ class SimpleQueryBusTest {
             StepVerifier.create(thirdResponses.updates())
                         .expectNextMatches(response -> Objects.equals(response.payload(), UPDATE_PAYLOAD))
                         .verifyTimeout(Duration.ofMillis(100));
+        }
+
+        @Test
+        void completingSubscriptionsWithProcessingContextStagesCompletionToAfterCommit() {
+            // given...
+            AtomicBoolean filterInvoked = new AtomicBoolean(false);
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, QUERY_PAYLOAD, SINGLE_STRING_RESPONSE, SINGLE_STRING_RESPONSE
+            );
+            Predicate<SubscriptionQueryMessage> queryFilter =
+                    query -> {
+                        filterInvoked.set(true);
+                        return query.identifier().equals(testQuery.identifier());
+                    };
+            // We should have a subscription query for an update handler to even exist.
+            testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
+            UnitOfWork uow = UnitOfWorkTestUtils.aUnitOfWork();
+            // when emitting on invocation...
+            uow.onInvocation(context -> testSubject.completeSubscriptions(queryFilter, context));
+            // then before the after commit phase validate the filter was not invoked yet...
+            assertThat(filterInvoked).isFalse();
+            // when executing the UnitOfWork, we pass the after commit phase
+            uow.execute().join();
+            // then we expect the update to be emitted, validated by the filter being invoked...
+            assertThat(filterInvoked).isTrue();
         }
     }
 
@@ -776,6 +830,34 @@ class SimpleQueryBusTest {
             StepVerifier.create(thirdResponses.updates())
                         .expectNextMatches(response -> Objects.equals(response.payload(), UPDATE_PAYLOAD))
                         .verifyTimeout(Duration.ofMillis(100));
+        }
+
+        @Test
+        void completingSubscriptionsExceptionallyWithProcessingContextStagesCompletionToAfterCommit() {
+            // given...
+            AtomicBoolean filterInvoked = new AtomicBoolean(false);
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, QUERY_PAYLOAD, SINGLE_STRING_RESPONSE, SINGLE_STRING_RESPONSE
+            );
+            Predicate<SubscriptionQueryMessage> queryFilter =
+                    query -> {
+                        filterInvoked.set(true);
+                        return query.identifier().equals(testQuery.identifier());
+                    };
+            MockException mockException = new MockException("Mock");
+            // We should have a subscription query for an update handler to even exist.
+            testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
+            UnitOfWork uow = UnitOfWorkTestUtils.aUnitOfWork();
+            // when emitting on invocation...
+            uow.onInvocation(context -> testSubject.completeSubscriptionsExceptionally(
+                    queryFilter, mockException, context
+            ));
+            // then before the after commit phase validate the filter was not invoked yet...
+            assertThat(filterInvoked).isFalse();
+            // when executing the UnitOfWork, we pass the after commit phase
+            uow.execute().join();
+            // then we expect the update to be emitted, validated by the filter being invoked...
+            assertThat(filterInvoked).isTrue();
         }
     }
 }
