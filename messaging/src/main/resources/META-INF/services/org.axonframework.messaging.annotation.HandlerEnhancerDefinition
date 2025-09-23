@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010-2023. Axon Framework
+# Copyright (c) 2010-2025. Axon Framework
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,4 +18,4 @@ org.axonframework.commandhandling.annotation.MethodCommandHandlerDefinition
 org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition
 org.axonframework.eventhandling.replay.annotations.ReplayAwareMessageHandlerWrapper
 org.axonframework.messaging.annotation.MessageHandlerInterceptorDefinition
-org.axonframework.queryhandling.annotation.MethodQueryMessageHandlerDefinition
+org.axonframework.queryhandling.annotation.MethodQueryHandlerDefinition

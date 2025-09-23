@@ -99,20 +99,20 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
-                                                             @Nullable ProcessingContext processingContext,
-                                                             @Nonnull List<TaggedEventMessage<?>> events) {
+    public CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+                                                                @Nullable ProcessingContext processingContext,
+                                                                @Nonnull List<TaggedEventMessage<?>> events) {
         if (containsConflicts(condition)) {
             // early failure, since we know conflicts already exist at insert-time
             return CompletableFuture.failedFuture(conflictingEventsDetected(condition.consistencyMarker()));
         }
 
-        return CompletableFuture.completedFuture(new AppendTransaction() {
+        return CompletableFuture.completedFuture(new AppendTransaction<ConsistencyMarker>() {
 
             private final AtomicBoolean finished = new AtomicBoolean(false);
 
             @Override
-            public CompletableFuture<ConsistencyMarker> commit() {
+            public CompletableFuture<ConsistencyMarker> commit(@Nullable ProcessingContext context) {
                 if (finished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
@@ -122,7 +122,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                     if (containsConflicts(condition)) {
                         return CompletableFuture.failedFuture(conflictingEventsDetected(condition.consistencyMarker()));
                     }
-                    Optional<ConsistencyMarker> newLatest =
+                    ConsistencyMarker newLatest =
                             events.stream()
                                   .map(event -> {
                                       long next = nextIndex();
@@ -137,17 +137,23 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                                       }
                                       return (ConsistencyMarker) new GlobalIndexConsistencyMarker(marker);
                                   })
-                                  .reduce(ConsistencyMarker::upperBound);
+                                  .reduce(ConsistencyMarker::upperBound)
+                                  .orElse(ConsistencyMarker.ORIGIN);
 
                     openStreams.forEach(m -> m.callback().run());
-                    return CompletableFuture.completedFuture(newLatest.orElse(ConsistencyMarker.ORIGIN));
+                    return CompletableFuture.completedFuture(newLatest);
                 } finally {
                     appendLock.unlock();
                 }
             }
 
             @Override
-            public void rollback() {
+            public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull ConsistencyMarker marker, @Nullable ProcessingContext context) {
+                return CompletableFuture.completedFuture(marker);
+            }
+
+            @Override
+            public void rollback(@Nullable ProcessingContext context) {
                 finished.set(true);
             }
         });

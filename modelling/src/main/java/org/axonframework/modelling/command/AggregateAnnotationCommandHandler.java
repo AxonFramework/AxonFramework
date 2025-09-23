@@ -26,7 +26,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
-import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
+import org.axonframework.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
@@ -184,7 +184,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                                    MessageHandlingMember<? super T> handler,
                                    List<MessageHandler<CommandMessage, CommandResultMessage<?>>> handlersFound) {
 
-        handler.unwrap(CommandMessageHandlingMember.class).ifPresent(cmh -> {
+        handler.unwrap(CommandHandlingMember.class).ifPresent(cmh -> {
             Optional<AggregateCreationPolicy> policy = handler.unwrap(CreationPolicyMember.class)
                                                               .map(CreationPolicyMember::creationPolicy);
 

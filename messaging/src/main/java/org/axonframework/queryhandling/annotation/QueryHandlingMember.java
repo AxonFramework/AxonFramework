@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,25 +21,26 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 import java.lang.reflect.Type;
 
 /**
- * Interface indicating that a MessageHandlingMember is capable of handling specific query messages.
+ * Interface indicating that a {@link MessageHandlingMember} is capable of handling specific
+ * {@link org.axonframework.queryhandling.QueryMessage QueryMessages}.
  *
- * @param <T> The type of entity to which the message handler will delegate the actual handling of the message
+ * @param <T> The type of entity to which the message handler will delegate the actual handling of the message.
  * @author Allard Buijze
  * @since 3.1
  */
 public interface QueryHandlingMember<T> extends MessageHandlingMember<T> {
 
     /**
-     * Returns the name of the query the handler can handle
+     * Returns the name of the query the handler can handle.
      *
-     * @return the name of the query the handler can handle
+     * @return The name of the query the handler can handle.
      */
-    String getQueryName();
+    String queryName();
 
     /**
      * Returns the return type declared by the handler
      *
-     * @return the return type declared by the handler
+     * @return The return type declared by the handler.
      */
-    Type getResultType();
+    Type resultType();
 }

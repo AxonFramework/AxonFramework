@@ -224,7 +224,8 @@ public class PooledStreamingEventProcessorModule extends BaseModule<PooledStream
     private static PooledStreamingEventProcessorConfiguration defaultEventProcessorsConfiguration(Configuration cfg) {
         return new PooledStreamingEventProcessorConfiguration(
                 parentSharedCustomizationOrDefault(cfg)
-                        .apply(cfg, new EventProcessorConfiguration(cfg))
+                        .apply(cfg, new EventProcessorConfiguration(cfg)),
+                cfg
         );
     }
 

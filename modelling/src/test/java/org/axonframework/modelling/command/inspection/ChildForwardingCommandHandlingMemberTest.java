@@ -29,22 +29,22 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link ChildForwardingCommandMessageHandlingMember}.
+ * Test class validating the {@link ChildForwardingCommandHandlingMember}.
  *
  * @author Steven van Beelen
  */
-class ChildForwardingCommandMessageHandlingMemberTest {
+class ChildForwardingCommandHandlingMemberTest {
 
     private MessageHandlingMember<Object> childMember;
 
-    private ChildForwardingCommandMessageHandlingMember<Object, Object> testSubject;
+    private ChildForwardingCommandHandlingMember<Object, Object> testSubject;
 
     @BeforeEach
     void setUp() {
         //noinspection unchecked
         childMember = mock(MessageHandlingMember.class);
 
-        testSubject = new ChildForwardingCommandMessageHandlingMember<>(
+        testSubject = new ChildForwardingCommandHandlingMember<>(
                 Collections.emptyList(), childMember, (msg, parent) -> parent
         );
     }

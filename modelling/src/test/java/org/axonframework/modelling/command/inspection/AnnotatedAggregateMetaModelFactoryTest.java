@@ -20,7 +20,7 @@ import jakarta.persistence.Id;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
+import org.axonframework.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -28,7 +28,6 @@ import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -117,12 +116,12 @@ class AnnotatedAggregateMetaModelFactoryTest {
         CommandMessage testCommand = new GenericCommandMessage(TEST_COMMAND_TYPE, "string");
         final MessageHandlingMember<? super SomeAnnotatedFactoryMethodClass> messageHandlingMember =
                 getHandler(inspector, testCommand);
-        final Optional<CommandMessageHandlingMember> unwrap =
-                messageHandlingMember.unwrap(CommandMessageHandlingMember.class);
+        final Optional<CommandHandlingMember> unwrap =
+                messageHandlingMember.unwrap(CommandHandlingMember.class);
         assertNotNull(unwrap);
         assertTrue(unwrap.isPresent());
-        final CommandMessageHandlingMember commandMessageHandlingMember = unwrap.get();
-        assertTrue(commandMessageHandlingMember.isFactoryHandler());
+        final CommandHandlingMember commandHandlingMember = unwrap.get();
+        assertTrue(commandHandlingMember.isFactoryHandler());
     }
 
 

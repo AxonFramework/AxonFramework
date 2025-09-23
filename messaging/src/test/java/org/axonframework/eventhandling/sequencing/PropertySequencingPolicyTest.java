@@ -43,8 +43,7 @@ final class PropertySequencingPolicyTest {
         final SequencingPolicy sequencingPolicy =
                 new ExtractionSequencingPolicy<>(
                         TestEvent.class,
-                        TestEvent::id,
-                        eventConverter()
+                        TestEvent::id
                 );
 
         assertThat(sequencingPolicy.getSequenceIdentifierFor(
@@ -57,13 +56,10 @@ final class PropertySequencingPolicyTest {
     void propertyShouldReadCorrectValue() {
         final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(
                 TestEvent.class,
-                "id",
-                eventConverter()
+                "id"
         );
 
-        assertThat(sequencingPolicy.getSequenceIdentifierFor(
-                anEvent(new TestEvent("42")),
-                aProcessingContext())
+        assertThat(sequencingPolicy.getSequenceIdentifierFor(anEvent(new TestEvent("42")), aProcessingContext())
         ).hasValue("42");
     }
 
@@ -71,8 +67,7 @@ final class PropertySequencingPolicyTest {
     void withoutFallbackShouldThrowException() {
         final SequencingPolicy sequencingPolicy = new PropertySequencingPolicy<>(
                 TestEvent.class,
-                "id",
-                eventConverter()
+                "id"
         );
 
         assertThrows(IllegalArgumentException.class,
@@ -84,8 +79,7 @@ final class PropertySequencingPolicyTest {
         final SequencingPolicy sequencingPolicy = new FallbackSequencingPolicy<>(
                 new PropertySequencingPolicy<>(
                         TestEvent.class,
-                        "id",
-                        eventConverter()
+                        "id"
                 ),
                 (event, context) -> Optional.of("A"),
                 ConversionException.class
@@ -102,7 +96,7 @@ final class PropertySequencingPolicyTest {
     }
 
     private static StubProcessingContext aProcessingContext() {
-        return new StubProcessingContext();
+        return StubProcessingContext.withComponent(EventConverter.class, eventConverter());
     }
 
     @Nonnull

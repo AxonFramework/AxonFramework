@@ -16,9 +16,14 @@
 
 package org.axonframework.modelling.command.inspection;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
+import org.axonframework.commandhandling.annotation.CommandHandlingMember;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ChainedMessageHandlerInterceptorMember;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -29,18 +34,16 @@ import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 /**
- * Implementation of a {@link CommandMessageHandlingMember} that forwards commands to a child entity.
+ * Implementation of a {@link CommandHandlingMember} that forwards commands to a child entity.
  *
- * @param <P> the parent entity type
- * @param <C> the child entity type
+ * @param <P> The parent entity type.
+ * @param <C> The child entity type.
  * @author Allard Buijze
- * @since 3.0
+ * @since 3.0.0
  */
-public class ChildForwardingCommandMessageHandlingMember<P, C> implements ForwardingCommandMessageHandlingMember<P> {
+public class ChildForwardingCommandHandlingMember<P, C> implements ForwardingCommandHandlingMember<P> {
 
     private final List<MessageHandlingMember<? super C>> childHandlingInterceptors;
     private final MessageHandlingMember<? super C> childHandler;
@@ -49,25 +52,26 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
     private final boolean isFactoryHandler;
 
     /**
-     * Initializes a {@link ChildForwardingCommandMessageHandlingMember} that routes commands to a compatible child
-     * entity. Child entities are resolved using the given {@code childEntityResolver}. If an entity is found the
-     * command will be handled using the given {@code childHandler}.
+     * Initializes a {@code ChildForwardingCommandHandlingMember} that routes commands to a compatible child entity.
+     * <p>
+     * Child entities are resolved using the given {@code childEntityResolver}. If an entity is found the command will
+     * be handled using the given {@code childHandler}.
      *
-     * @param childHandlerInterceptors interceptors for {@code childHandler}
-     * @param childHandler             handler of the command once a suitable entity is found
-     * @param childEntityResolver      resolver of child entities for a given command
+     * @param childHandlerInterceptors Interceptors for {@code childHandler}.
+     * @param childHandler             Handler of the command once a suitable entity is found.
+     * @param childEntityResolver      Resolver of child entities for a given command.
      */
-    public ChildForwardingCommandMessageHandlingMember(List<MessageHandlingMember<? super C>> childHandlerInterceptors,
-                                                       MessageHandlingMember<? super C> childHandler,
-                                                       BiFunction<CommandMessage, P, C> childEntityResolver) {
+    public ChildForwardingCommandHandlingMember(List<MessageHandlingMember<? super C>> childHandlerInterceptors,
+                                                MessageHandlingMember<? super C> childHandler,
+                                                BiFunction<CommandMessage, P, C> childEntityResolver) {
         this.childHandlingInterceptors = childHandlerInterceptors;
         this.childHandler = childHandler;
         this.childEntityResolver = childEntityResolver;
         this.commandName =
-                childHandler.unwrap(CommandMessageHandlingMember.class).map(CommandMessageHandlingMember::commandName)
+                childHandler.unwrap(CommandHandlingMember.class).map(CommandHandlingMember::commandName)
                             .orElse(null);
-        this.isFactoryHandler = childHandler.unwrap(CommandMessageHandlingMember.class)
-                                            .map(CommandMessageHandlingMember::isFactoryHandler).orElse(false);
+        this.isFactoryHandler = childHandler.unwrap(CommandHandlingMember.class)
+                                            .map(CommandHandlingMember::isFactoryHandler).orElse(false);
     }
 
     @Override
@@ -96,7 +100,7 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
     }
 
     @Override
-    public boolean canForward(CommandMessage message, P target) {
+    public boolean canForward(@Nonnull CommandMessage message, @Nonnull P target) {
         return childEntityResolver.apply(message, target) != null;
     }
 
@@ -106,13 +110,14 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
     }
 
     @Override
-    @SuppressWarnings("rawtypes")
     public boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType) {
         return childHandler.canHandleMessageType(messageType);
     }
 
     @Override
-    public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable P target) throws Exception {
+    public Object handleSync(@Nonnull Message message,
+                             @Nonnull ProcessingContext context,
+                             @Nullable P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage) message, target);
         if (childEntity == null) {
             throw new ChildEntityNotFoundException(
@@ -120,9 +125,17 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Forwar
                             + "], as there is no entity instance within the aggregate to forward it to."
             );
         }
+        return interceptorChain(childEntity.getClass()).handleSync(message, childEntity, childHandler);
+    }
 
-        return interceptorChain(childEntity.getClass())
-                .handleSync(message, childEntity, childHandler);
+    @Override
+    public MessageStream<?> handle(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable P target) {
+        try {
+            Object result = handleSync(message, context, target);
+            return MessageStream.just(new GenericMessage(new MessageType(result.getClass()), result));
+        } catch (Exception e) {
+            return MessageStream.failed(e);
+        }
     }
 
     private MessageHandlerInterceptorMemberChain<C> interceptorChain(Class<?> childType) {
