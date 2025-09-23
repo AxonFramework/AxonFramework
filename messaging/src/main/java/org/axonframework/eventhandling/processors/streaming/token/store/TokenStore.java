@@ -202,6 +202,8 @@ public interface TokenStore {
      * @param token         The token to initialize the segment with
      * @param processorName The name of the processor to create the segment for
      * @param segment       The identifier of the segment to initialize
+     * @return a {@link CompletableFuture} that completes when the segment has been initialized.
+     *
      * @throws UnableToInitializeTokenException if a Token already exists
      * @throws UnsupportedOperationException    if this implementation does not support explicit initialization. See
      *                                          {@link #requiresExplicitSegmentInitialization()}.
@@ -227,10 +229,11 @@ public interface TokenStore {
      *
      * @param processorName The name of the processor to remove the token for
      * @param segment       The segment to delete
+     * @return a {@link CompletableFuture} that completes when the token has been deleted.
      * @throws UnableToClaimTokenException   if the token is not currently claimed by this node
      * @throws UnsupportedOperationException if this operation is not supported by this implementation
      */
-    default void deleteToken(@Nonnull String processorName, int segment) throws UnableToClaimTokenException {
+    default CompletableFuture<Void> deleteToken(@Nonnull String processorName, int segment) throws UnableToClaimTokenException {
         throw new UnsupportedOperationException(
                 "Explicit initialization (which is required to reliably delete tokens) is not supported by this TokenStore implementation");
     }
@@ -251,7 +254,7 @@ public interface TokenStore {
      * Returns a {@link CompletableFuture} that supplies an array of known {@code segments} for a given
      * {@code processorName} on completion.
      * <p>
-     * The segments returned are segments for which a token has been stored previously. When the {@link TokenStore} is
+     * The segments returned are segments for which a token has been stored previously. When the {@code TokenStore} is
      * empty, the {@link CompletableFuture} will return an empty array.
      *
      * @param processorName The process name for which to fetch the segments
@@ -264,7 +267,7 @@ public interface TokenStore {
      * available if it is not claimed by any other event processor.
      * <p>
      * The segments returned are segments for which a token has been stored previously and have not been claimed by
-     * another processor. When the {@link TokenStore} is empty, an empty list is returned.
+     * another processor. When the {@code TokenStore} is empty, an empty list is returned.
      * <p>
      * By default, if this method is not implemented, we will return all segments instead, whether they are available or
      * not.
@@ -279,17 +282,13 @@ public interface TokenStore {
                                          .map(segment -> Segment.computeSegment(segment, segments))
                                          .collect(Collectors.toList())
                 );
-//        CompletableFuture<int[]> allSegments = fetchSegments(processorName);
-//        return Arrays.stream(allSegments).boxed()
-//                     .map(segment -> Segment.computeSegment(segment, allSegments))
-//                     .collect(Collectors.toList());
 
     }
 
     /**
      * Returns a unique identifier that uniquely identifies the storage location of the tokens in this store. Two token
-     * store implementations that share state, must return the same identifier. Two token store implementations that do
-     * not share a location, must return a different identifier (or an empty optional if identifiers are not
+     * store implementations that share state must return the same identifier. Two token store implementations that do
+     * not share a location must return a different identifier (or an empty optional if identifiers are not
      * supported).
      * <p>
      * Note that this method may require the implementation to consult its underlying storage. Therefore, a Transaction

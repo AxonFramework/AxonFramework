@@ -204,21 +204,24 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public void deleteToken(@Nonnull String processorName, int segment) throws UnableToClaimTokenException {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
+    public CompletableFuture<Void> deleteToken(@Nonnull String processorName, int segment)
+            throws UnableToClaimTokenException {
+        return runAsync(() -> {
+            EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-        int updates = entityManager.createQuery(
-                                           "DELETE FROM TokenEntry te " +
-                                                   "WHERE te.owner = :owner AND te.processorName = :processorName " +
-                                                   "AND te.segment = :segment")
-                                   .setParameter(PROCESSOR_NAME_PARAM, processorName)
-                                   .setParameter(SEGMENT_PARAM, segment)
-                                   .setParameter(OWNER_PARAM, nodeId)
-                                   .executeUpdate();
+            int updates = entityManager.createQuery(
+                                               "DELETE FROM TokenEntry te " +
+                                                       "WHERE te.owner = :owner AND te.processorName = :processorName " +
+                                                       "AND te.segment = :segment")
+                                       .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                       .setParameter(SEGMENT_PARAM, segment)
+                                       .setParameter(OWNER_PARAM, nodeId)
+                                       .executeUpdate();
 
-        if (updates == 0) {
-            throw new UnableToClaimTokenException("Unable to remove token. It is not owned by " + nodeId);
-        }
+            if (updates == 0) {
+                throw new UnableToClaimTokenException("Unable to remove token. It is not owned by " + nodeId);
+            }
+        });
     }
 
     @Override

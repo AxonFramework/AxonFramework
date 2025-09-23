@@ -156,9 +156,9 @@ class MergeTask extends CoordinatorTask {
                 unitOfWorkFactory
                         .create()
                         .executeWithResult(context -> {
-                            tokenStore.deleteToken(name, tokenToDelete);
-                            tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId(), context);
-                            tokenStore.releaseClaim(name, mergedSegment.getSegmentId());
+                            joinAndUnwrap(tokenStore.deleteToken(name, tokenToDelete));
+                            joinAndUnwrap(tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId(), context));
+                            joinAndUnwrap(tokenStore.releaseClaim(name, mergedSegment.getSegmentId()));
                             return emptyCompletedFuture();
                         })
         );

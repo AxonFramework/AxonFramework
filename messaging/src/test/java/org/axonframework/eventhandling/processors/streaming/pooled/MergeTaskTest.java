@@ -95,6 +95,9 @@ class MergeTaskTest {
         workPackages.put(SEGMENT_TO_MERGE, workPackageOne);
         when(workPackageTwo.segment()).thenReturn(SEGMENT_ONE);
         when(workPackageTwo.abort(null)).thenReturn(FutureUtils.emptyCompletedFuture());
+        when(tokenStore.deleteToken(anyString(), anyInt())).thenReturn(completedFuture(null));
+        when(tokenStore.storeToken(any(), anyString(), anyInt(), any())).thenReturn(completedFuture(null));
+        when(tokenStore.releaseClaim(anyString(), anyInt())).thenReturn(completedFuture(null));
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_BE_MERGED))
                 .thenReturn(completedFuture(testTokenToBeMerged));
         workPackages.put(SEGMENT_TO_BE_MERGED, workPackageTwo);
@@ -123,6 +126,9 @@ class MergeTaskTest {
     void runMergeSegmentsAfterClaimingBoth() throws ExecutionException, InterruptedException {
         TrackingToken testTokenToMerge = new GlobalSequenceTrackingToken(0);
         TrackingToken testTokenToBeMerged = new GlobalSequenceTrackingToken(1);
+        when(tokenStore.deleteToken(anyString(), anyInt())).thenReturn(completedFuture(null));
+        when(tokenStore.storeToken(any(), anyString(), anyInt(), any())).thenReturn(completedFuture(null));
+        when(tokenStore.releaseClaim(anyString(), anyInt())).thenReturn(completedFuture(null));
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_MERGE)).thenReturn(completedFuture(testTokenToMerge));
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_BE_MERGED)).thenReturn(completedFuture(testTokenToBeMerged));
 
@@ -156,6 +162,9 @@ class MergeTaskTest {
         when(workPackageOne.abort(null)).thenReturn(FutureUtils.emptyCompletedFuture());
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_MERGE)).thenReturn(completedFuture(testTokenToMerge));
         workPackages.put(SEGMENT_TO_MERGE, workPackageOne);
+        when(tokenStore.deleteToken(anyString(), anyInt())).thenReturn(completedFuture(null));
+        when(tokenStore.storeToken(any(), anyString(), anyInt(), any())).thenReturn(completedFuture(null));
+        when(tokenStore.releaseClaim(anyString(), anyInt())).thenReturn(completedFuture(null));
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_TO_BE_MERGED)).thenReturn(completedFuture(testTokenToBeMerged));
 
         ArgumentCaptor<TrackingToken> mergedTokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);

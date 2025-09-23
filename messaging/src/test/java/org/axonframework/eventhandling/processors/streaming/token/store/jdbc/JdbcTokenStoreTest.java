@@ -499,7 +499,7 @@ class JdbcTokenStoreTest {
         joinAndUnwrap(tokenStore.fetchToken("test1", 0));
         joinAndUnwrap(tokenStore.fetchToken("test1", 1));
 
-        tokenStore.deleteToken("test1", 1);
+        joinAndUnwrap(tokenStore.deleteToken("test1", 1));
 
         assertArrayEquals(new int[]{0}, joinAndUnwrap(tokenStore.fetchSegments("test1")));
     }

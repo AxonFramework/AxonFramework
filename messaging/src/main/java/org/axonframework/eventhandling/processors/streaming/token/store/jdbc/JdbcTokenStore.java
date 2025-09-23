@@ -332,21 +332,23 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public void deleteToken(@Nonnull String processorName, int segment) {
-        Connection connection = getConnection();
-        try {
-            int[] result = executeUpdates(connection, e -> {
-                                              throw new JdbcException(
-                                                      format("Could not remove token for processor [%s] and segment " + "[%d]",
-                                                             processorName, segment), e);
-                                          },
-                                          c -> deleteToken(c, processorName, segment));
-            if (result[0] < 1) {
-                throw new UnableToClaimTokenException("Unable to claim token. It wasn't owned by " + nodeId);
+    public CompletableFuture<Void> deleteToken(@Nonnull String processorName, int segment) {
+        return runAsync(() -> {
+            Connection connection = getConnection();
+            try {
+                int[] result = executeUpdates(connection, e -> {
+                                                  throw new JdbcException(
+                                                          format("Could not remove token for processor [%s] and segment " + "[%d]",
+                                                                 processorName, segment), e);
+                                              },
+                                              c -> deleteToken(c, processorName, segment));
+                if (result[0] < 1) {
+                    throw new UnableToClaimTokenException("Unable to claim token. It wasn't owned by " + nodeId);
+                }
+            } finally {
+                closeQuietly(connection);
             }
-        } finally {
-            closeQuietly(connection);
-        }
+        });
     }
 
     @Override

@@ -123,8 +123,11 @@ public class InMemoryTokenStore implements TokenStore {
     }
 
     @Override
-    public void deleteToken(@Nonnull String processorName, int segment) throws UnableToClaimTokenException {
-        tokens.remove(new ProcessAndSegment(processorName, segment));
+    public CompletableFuture<Void> deleteToken(@Nonnull String processorName, int segment)
+            throws UnableToClaimTokenException {
+        return runAsync(() -> {
+            tokens.remove(new ProcessAndSegment(processorName, segment));
+        });
     }
 
     @Override

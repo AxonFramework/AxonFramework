@@ -200,14 +200,14 @@ class JpaTokenStoreTest {
         );
 
         try {
-            jpaTokenStore.deleteToken("test", 0);
+            joinAndUnwrap(jpaTokenStore.deleteToken("test", 0));
             fail("Expected delete to fail");
         } catch (UnableToClaimTokenException e) {
             // expected
         }
 
         try {
-            jpaTokenStore.deleteToken("unknown", 0);
+            joinAndUnwrap(jpaTokenStore.deleteToken("unknown", 0));
             fail("Expected delete to fail");
         } catch (UnableToClaimTokenException e) {
             // expected
