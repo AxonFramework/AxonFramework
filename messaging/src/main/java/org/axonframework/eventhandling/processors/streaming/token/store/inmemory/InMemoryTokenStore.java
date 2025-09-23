@@ -35,8 +35,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static java.util.concurrent.CompletableFuture.completedFuture;
-import static java.util.concurrent.CompletableFuture.supplyAsync;
+import static java.util.concurrent.CompletableFuture.*;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -91,14 +90,14 @@ public class InMemoryTokenStore implements TokenStore {
                                               int segment,
                                               @Nonnull ProcessingContext processingContext) {
         if (processingContext.isStarted()) {
-            var future = CompletableFuture.runAsync(() -> tokens.put(
+            var future = runAsync(() -> tokens.put(
                     new ProcessAndSegment(processorName, segment),
                     getOrDefault(token, NULL_TOKEN)));
             processingContext.onAfterCommit((ctx) -> future);
             return future;
         } else {
-            return CompletableFuture.runAsync(() -> tokens.put(new ProcessAndSegment(processorName, segment),
-                                                               getOrDefault(token, NULL_TOKEN)));
+            return runAsync(() -> tokens.put(new ProcessAndSegment(processorName, segment),
+                                             getOrDefault(token, NULL_TOKEN)));
         }
     }
 
@@ -129,13 +128,15 @@ public class InMemoryTokenStore implements TokenStore {
     }
 
     @Override
-    public void initializeSegment(TrackingToken token, @Nonnull String processorName, int segment)
+    public CompletableFuture<Void> initializeSegment(TrackingToken token, @Nonnull String processorName, int segment)
             throws UnableToInitializeTokenException {
-        TrackingToken previous = tokens.putIfAbsent(new ProcessAndSegment(processorName, segment),
-                                                    token == null ? NULL_TOKEN : token);
-        if (previous != null) {
-            throw new UnableToInitializeTokenException("Token was already present");
-        }
+        return runAsync(() -> {
+            TrackingToken previous = tokens.putIfAbsent(new ProcessAndSegment(processorName, segment),
+                                                        token == null ? NULL_TOKEN : token);
+            if (previous != null) {
+                throw new UnableToInitializeTokenException("Token was already present");
+            }
+        });
     }
 
     @Override

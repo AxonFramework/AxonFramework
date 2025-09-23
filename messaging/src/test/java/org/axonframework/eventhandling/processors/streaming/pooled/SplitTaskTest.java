@@ -32,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -72,8 +73,10 @@ class SplitTaskTest {
         TrackerStatus expectedSplit = expectedTokens[1];
 
         when(workPackage.segment()).thenReturn(testSegmentToSplit);
-        when(workPackage.abort(null)).thenReturn(FutureUtils.emptyCompletedFuture());
+        when(workPackage.abort(null)).thenReturn(emptyCompletedFuture());
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(completedFuture(testTokenToSplit));
+        when(tokenStore.initializeSegment(any(), anyString(), anyInt())).thenReturn(emptyCompletedFuture());
+        when(tokenStore.releaseClaim(any(), anyInt())).thenReturn(emptyCompletedFuture());
         workPackages.put(SEGMENT_ID, workPackage);
 
         testSubject.run();
@@ -98,6 +101,8 @@ class SplitTaskTest {
 
         when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(completedFuture(testSegmentIds));
         when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(completedFuture(testTokenToSplit));
+        when(tokenStore.initializeSegment(any(), anyString(), anyInt())).thenReturn(emptyCompletedFuture());
+        when(tokenStore.releaseClaim(any(), anyInt())).thenReturn(emptyCompletedFuture());
 
         testSubject.run();
 

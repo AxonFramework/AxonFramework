@@ -27,7 +27,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 /**
  * Interface towards a streamable event source.
  * <p>
- * Provides functionality to {@link #open(StreamingCondition) open} an {@link MessageStream event stream}.
+ * Provides functionality to {@link #open(StreamingCondition, ProcessingContext) open} an
+ * {@link MessageStream event stream}.
  *
  * @param <E> The type of {@link EventMessage} streamed by this source.
  * @author Allard Buijze

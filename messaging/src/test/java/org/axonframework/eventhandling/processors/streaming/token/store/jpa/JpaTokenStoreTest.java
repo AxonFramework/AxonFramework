@@ -216,7 +216,7 @@ class JpaTokenStoreTest {
 
     @Test
     void deleteToken() {
-        jpaTokenStore.initializeSegment(null, "delete", 0);
+        joinAndUnwrap(jpaTokenStore.initializeSegment(null, "delete", 0));
         joinAndUnwrap(jpaTokenStore.fetchToken("delete", 0));
 
         entityManager.flush();

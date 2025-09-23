@@ -206,7 +206,11 @@ public interface TokenStore {
      * @throws UnsupportedOperationException    if this implementation does not support explicit initialization. See
      *                                          {@link #requiresExplicitSegmentInitialization()}.
      */
-    default void initializeSegment(@Nullable TrackingToken token, @Nonnull String processorName, int segment)
+    default CompletableFuture<Void> initializeSegment(
+            @Nullable TrackingToken token,
+            @Nonnull String processorName,
+            int segment
+    )
             throws UnableToInitializeTokenException {
         throw new UnsupportedOperationException(
                 "Explicit initialization is not supported by this TokenStore implementation");

@@ -329,7 +329,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
     /**
      * {@inheritDoc}
      * <p>
-     * The maximum capacity of the {@link PooledStreamingEventProcessor} defaults to {@value Short#MAX_VALUE}. If
+     * The maximum capacity of the {@code PooledStreamingEventProcessor} defaults to {@value Short#MAX_VALUE}. If
      * required, this value can be adjusted through the
      * {@link PooledStreamingEventProcessorConfiguration#maxClaimedSegments(int)} method.
      */

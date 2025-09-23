@@ -162,22 +162,25 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public void initializeSegment(@Nullable TrackingToken token, @Nonnull String processorName, int segment)
+    public CompletableFuture<Void> initializeSegment(@Nullable TrackingToken token, @Nonnull String processorName,
+                                                     int segment)
             throws UnableToInitializeTokenException {
-        Connection connection = getConnection();
-        try {
-            executeQuery(connection,
-                         c -> selectForUpdate(c, processorName, 0),
-                         resultSet -> {
-                             insertTokenEntry(connection, token, processorName, segment);
-                             return null;
-                         },
-                         e -> new UnableToInitializeTokenException(
-                                 "Could not initialize segments. Some segments were already present.", e
-                         ));
-        } finally {
-            closeQuietly(connection);
-        }
+        return runAsync(() -> {
+            Connection connection = getConnection();
+            try {
+                executeQuery(connection,
+                             c -> selectForUpdate(c, processorName, 0),
+                             resultSet -> {
+                                 insertTokenEntry(connection, token, processorName, segment);
+                                 return null;
+                             },
+                             e -> new UnableToInitializeTokenException(
+                                     "Could not initialize segments. Some segments were already present.", e
+                             ));
+            } finally {
+                closeQuietly(connection);
+            }
+        });
     }
 
     @Override

@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling.processors.streaming.token.store;
 
-import java.util.concurrent.CompletableFuture;
-
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.junit.jupiter.api.*;
 
@@ -39,7 +37,7 @@ class TokenStoreTest {
 
         assertEquals(4, availableSegments.size());
 
-        Segment segment0 = availableSegments.get(0);
+        Segment segment0 = availableSegments.getFirst();
         assertEquals(0, segment0.getSegmentId());
         assertEquals(3, segment0.getMask());
 

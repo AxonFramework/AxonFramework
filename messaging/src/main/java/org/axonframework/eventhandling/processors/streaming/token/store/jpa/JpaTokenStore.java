@@ -48,11 +48,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
-import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry.clock;
 
@@ -131,14 +131,6 @@ public class JpaTokenStore implements TokenStore {
             }
             entityManager.flush();
         });
-//        if (joinAndUnwrap(fetchSegments(processorName)).length > 0) {
-//            throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
-//        }
-//        for (int segment = 0; segment < segmentCount; segment++) {
-//            TokenEntry token = new TokenEntry(processorName, segment, initialToken, serializer);
-//            entityManager.persist(token);
-//        }
-//        entityManager.flush();
     }
 
     @Override
@@ -146,7 +138,7 @@ public class JpaTokenStore implements TokenStore {
                                               @Nonnull String processorName,
                                               int segment,
                                               @Nonnull ProcessingContext processingContext) {
-        return CompletableFuture.runAsync(() -> {
+        return runAsync(() -> {
             EntityManager entityManager = entityManagerProvider.getEntityManager();
             TokenEntry tokenToStore = new TokenEntry(processorName, segment, token, serializer);
             byte[] tokenDataToStore =
@@ -180,7 +172,7 @@ public class JpaTokenStore implements TokenStore {
 
     @Override
     public CompletableFuture<Void> releaseClaim(@Nonnull String processorName, int segment) {
-        return CompletableFuture.runAsync(() -> {
+        return runAsync(() -> {
             EntityManager entityManager = entityManagerProvider.getEntityManager();
 
             entityManager.createQuery(
@@ -194,13 +186,16 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public void initializeSegment(@Nullable TrackingToken token, @Nonnull String processorName, int segment)
+    public CompletableFuture<Void> initializeSegment(@Nullable TrackingToken token, @Nonnull String processorName,
+                                                     int segment)
             throws UnableToInitializeTokenException {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        return runAsync(() -> {
+            EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-        TokenEntry entry = new TokenEntry(processorName, segment, token, serializer);
-        entityManager.persist(entry);
-        entityManager.flush();
+            TokenEntry entry = new TokenEntry(processorName, segment, token, serializer);
+            entityManager.persist(entry);
+            entityManager.flush();
+        });
     }
 
     @Override
@@ -247,7 +242,7 @@ public class JpaTokenStore implements TokenStore {
     @Override
     public CompletableFuture<Void> extendClaim(@Nonnull String processorName, int segment)
             throws UnableToClaimTokenException {
-        return CompletableFuture.runAsync(() -> {
+        return runAsync(() -> {
             EntityManager
                     entityManager = entityManagerProvider.getEntityManager();
             int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
