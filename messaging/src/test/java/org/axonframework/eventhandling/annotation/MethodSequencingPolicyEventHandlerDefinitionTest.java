@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.eventhandling.annotations.MethodSequencingPolicyEventHandlerDefinition;
 import org.axonframework.eventhandling.annotations.SequencingPolicy;
 import org.axonframework.eventhandling.sequencing.MetadataSequencingPolicy;
 import org.axonframework.eventhandling.sequencing.PropertySequencingPolicy;

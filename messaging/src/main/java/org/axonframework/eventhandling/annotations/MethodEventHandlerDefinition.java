@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.annotation;
+package org.axonframework.eventhandling.annotations;
 
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
