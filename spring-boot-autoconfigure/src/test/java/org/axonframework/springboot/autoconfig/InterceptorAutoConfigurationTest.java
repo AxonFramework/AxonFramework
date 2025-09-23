@@ -97,7 +97,7 @@ class InterceptorAutoConfigurationTest {
     @Disabled("TODO #3488 - QueryHandler annotated methods are not yet found")
     public void queryHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
-            context.getBean(QueryGateway.class).query("foo", String.class);
+            context.getBean(QueryGateway.class).query("foo", String.class, null);
             //noinspection unchecked
             Queue<String> commandHandlingInterceptingOutcome =
                     context.getBean("commandHandlingInterceptingOutcome", Queue.class);
@@ -198,7 +198,7 @@ class InterceptorAutoConfigurationTest {
     @Disabled("TODO #3488 - QueryHandler annotated methods are not yet found")
     public void queryDispatchInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
-            context.getBean(QueryGateway.class).query("foo", String.class);
+            context.getBean(QueryGateway.class).query("foo", String.class, null);
             //noinspection unchecked
             Queue<String> commandDispatchingInterceptingOutcome =
                     context.getBean("commandDispatchingInterceptingOutcome", Queue.class);

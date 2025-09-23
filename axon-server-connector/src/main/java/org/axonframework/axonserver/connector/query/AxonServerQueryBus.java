@@ -29,6 +29,7 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerRegistration;
@@ -60,6 +61,7 @@ import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandlerName;
@@ -283,9 +285,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         return result;
     }
 
+    @Nonnull
     @Override
-    public CompletableFuture<QueryResponseMessage> query(@Nonnull QueryMessage queryMessage) {
-
+    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage queryMessage,
+                                                     @Nullable ProcessingContext context) {
         Span span = spanFactory.createQuerySpan(queryMessage, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             QueryMessage queryWithContext = spanFactory.propagateContext(queryMessage);
@@ -305,7 +308,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             CompletableFuture<QueryResponseMessage> queryTransaction = new CompletableFuture<>();
             try {
                 if (shouldRunQueryLocally(interceptedQuery.type().name())) {
-                    queryTransaction = localSegment.query(interceptedQuery);
+//                    queryTransaction = localSegment.query(interceptedQuery);
                 } else {
                     int priority = priorityCalculator.determinePriority(interceptedQuery);
                     QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
@@ -340,8 +343,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 }
                 span.end();
             });
-            return queryTransaction;
+//            return queryTransaction;
         }
+        return MessageStream.empty().cast();
     }
 
     private boolean shouldRunQueryLocally(String queryName) {

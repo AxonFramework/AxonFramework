@@ -204,29 +204,30 @@ class QueryProcessingTask implements Runnable, FlowControl {
     }
 
     private <T> void directQuery(QueryMessage queryMessage) {
-        localSegment.query(queryMessage)
-                    .whenComplete((result, e) -> {
-                        if (e != null) {
-                            sendError(e);
-                        } else {
-                            try {
-                                StreamableResponse streamableResponse;
-                                if (supportsStreaming
-                                        && queryMessage.responseType() instanceof MultipleInstancesResponseType) {
-                                    //noinspection unchecked
-                                    streamableResponse = streamableMultiInstanceResult(
-                                            result,
-                                            (Class<T>) queryMessage.responseType().getExpectedResponseType()
-                                    );
-                                } else {
-                                    streamableResponse = streamableInstanceResult(result);
-                                }
-                                setResult(streamableResponse);
-                            } catch (Throwable t) {
-                                sendError(t);
-                            }
-                        }
-                    });
+        // TODO #3488 - Implement as part of Axon Server Query Bus implementation
+//        localSegment.query(queryMessage)
+//                    .whenComplete((result, e) -> {
+//                        if (e != null) {
+//                            sendError(e);
+//                        } else {
+//                            try {
+//                                StreamableResponse streamableResponse;
+//                                if (supportsStreaming
+//                                        && queryMessage.responseType() instanceof MultipleInstancesResponseType) {
+//                                    //noinspection unchecked
+//                                    streamableResponse = streamableMultiInstanceResult(
+//                                            result,
+//                                            (Class<T>) queryMessage.responseType().getExpectedResponseType()
+//                                    );
+//                                } else {
+//                                    streamableResponse = streamableInstanceResult(result);
+//                                }
+//                                setResult(streamableResponse);
+//                            } catch (Throwable t) {
+//                                sendError(t);
+//                            }
+//                        }
+//                    });
     }
 
     private void setResult(StreamableResponse result) {

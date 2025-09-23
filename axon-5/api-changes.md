@@ -48,8 +48,7 @@ Major API Changes
   results), Command Handlers (one result), and Query Handlers (N results). Added, the `MessageStream` will function as a
   replacement for components like the `DomainEventStream` and `BlockingStream` on the `EventStore`. As such, the
   `MessageStream` changes **a lot** of (public) APIs within Axon Framework. Please check
-  the [Message Stream](#message-stream) section for more details, like an exhaustive list of all the adjusted
-  interfaces.
+  the [Message Stream](#message-stream) section for more details.
 * The API of all infrastructure components is rewritten to be "async native." This means that the
   aforementioned [Unit of Work](#unit-of-work) adjustments flow through most APIs, as well as the use of
   a [Message Stream](#message-stream) to provide a way to support imperative and reactive message handlers. See
@@ -311,13 +310,15 @@ Nonetheless, if you **do** use these operations, it is good to know they've chan
 
 The following classes have undergone changes to accompany this shift:
 
-* The `CommandBus`
-* The `CommandGateway`
-* The `EventStorageEngine`
-* The `EventStore`
-* The `EventProcessors`
+* The `CommandBus` - Read [here](#command-dispatching-and-handling) for more details.
+* The `CommandGateway` - Read [here](#command-dispatching-and-handling) for more details.
+* The `EventStorageEngine` - Read [here](#event-storage) for more details.
+* The `EventStore` - Read [here](#event-store) for more details.
+* The `EventProcessors` - Read [here](#event-processors) for more details.
 * The `Repository`
 * The `StreamableMessageSource`
+* The `QueryBus` - Read [here](#query-dispatching-and-handling) for more details.
+* The `QueryGateway` - Read [here](#query-dispatching-and-handling) for more details.
 
 ## Command Dispatching and Handling
 
@@ -331,7 +332,7 @@ the [Command Dispatcher](#command-dispatcher) section.
 The `CommandBus` has undergone some minor API changes to align with the [Async Native API](#async-native-apis) and ease
 of configuration. The alignment with the Async Native API shows itself in being able to provide the `ProcessingContext`.
 Giving the active `ProcessingContext` is **paramount** if a command should be dispatched as part of a running message
-handling task. For example, if an event handler should dispatch a command (e.g., was with process automations), it is
+handling task. For example, if an event handler should dispatch a command (e.g., as with process automations), it is
 strongly advised to provide the active `ProcessingContext` as part of the dispatch operation.
 
 The `CommandBus` is now fixed to an asynchronous flow, by sporting the
@@ -344,7 +345,7 @@ combined with the new `QualifiedName` (as described [here](#message-type-and-qua
 `String commandName` parameter. This makes it so that subscribe looks like
 `CommandBus#subscribe(QualifiedName, CommandHandler)` i.o. `CommandBus#subscribe(String, MessageHandler<?>)`. On top of
 that, it is now possible to register a single handler for multiple names, through
-`CommandBus#subscribe(List<QualifiedName>, CommandHandler)`. This ensures that registering a Command Handling
+`CommandBus#subscribe(Set<QualifiedName>, CommandHandler)`. This ensures that registering a Command Handling
 Component (read: object with several command handlers in it) can be performed seamlessly. For ease of use, there's thus
 also a `CommandBus#subscribe(CommandHandlingComponent)` operation present. The "old-fashioned" aggregate is, for
 example, a Command Handling Component at heart. With the current handler subscription API, this single class can be
@@ -362,7 +363,7 @@ open [an issue](https://github.com/AxonFramework/AxonFramework/issues) for this.
 The `CommandGateway` has undergone some minor API changes to align with the [Async Native API](#async-native-apis).
 This alignment shows itself in being able to provide the `ProcessingContext`. Giving the active `ProcessingContext` is *
 *paramount** if a command should be dispatched as part of a running message handling task. For example, if an event
-handler should dispatch a command (e.g., was with process automations), it is strongly advised to provide the active
+handler should dispatch a command (e.g., as with process automations), it is strongly advised to provide the active
 `ProcessingContext` as part of the send operation.
 
 For a removal perspective, similarly as with the `CommandBus`, the `CommandCallback` has not returned on this interface.
@@ -1542,6 +1543,86 @@ generic specified on the `MessageHandlerInterceptor` and `MessageDispatchInterce
 auto-configuration, ensuring (e.g.) that `MessageDispatchInterceptor<QueryMessage>` beans are **only** used for query
 dispatching components.
 
+## Query Dispatching and Handling
+
+This section describes numerous changes around Query Dispatching and Handling. For a reintroduction to the
+`QueryBus` and `QueryGateway`, check [this](#query-bus) and [this](#query-gateway) section respectively. For the
+newly **recommended** approach to dispatch queries from within another message handling function, please check
+the [Query Dispatcher](#query-dispatcher) section.
+
+### Query Bus
+
+The `QueryBus` has undergone some API changes to align with the [Async Native API](#async-native-apis) and ease
+of configuration. The alignment with the Async Native API shows itself in being able to provide the `ProcessingContext`.
+Giving the active `ProcessingContext` is **paramount** if a query should be dispatched as part of a running message
+handling task. For example, if an event handler should dispatch a query (e.g., as with process automations), it is
+strongly advised to provide the active `ProcessingContext` as part of the dispatch operation.
+
+The dispatch operations now align with the newly introduced [Message Stream](#message-stream). This, for example,
+adjusts the `QueryBus#query` method to return a `MessageStream` of the `QueryResponseMessage` instead of a
+`CompletableFuture`. As the `MessageStream` supports 0, 1, or N responses, this shifts lets the `QueryBus#query` method
+align with whatever query result coming back from query handlers.
+
+#### Subscribing Query Handlers
+
+Subscribing query handlers has been adjusted to allow easier registration of query handling lambdas. This shift was
+combined with the new `QualifiedName` (as described [here](#message-type-and-qualified-name)) replacing the previous
+`String queryName` parameter. Lastly, the old subscribe operation enforced providing a `Type`, which has been replaced
+by a `QualifiedName` for the query response. Both the query name and the response name are combined in a
+`QueryHandlerName` object. This makes it so that subscribe looks like
+`QueryBus#subscribe(QueryHandlerName, QueryHandler)` i.o. `QueryBus#subscribe(String, Type, MessageHandler<?>)`. On top
+of that, it is now possible to register a single handler for multiple names, through
+`QueryBus#subscribe(Set<QueryHandlerName>, QueryHandler)`. This ensures that registering a Query Handling Component (
+read: object with several query handlers in it) can be performed seamlessly. For ease of use, there's thus also a
+`QueryBus#subscribe(QueryHandlingComponent)` operation present.
+
+Now a note on `QueryHandler` uniqueness within a JVM.
+
+In Axon Framework 4 you were able to register multiple Query Handlers for the same query name and response name.
+This had to do with the scatter-gather query, that would hit multiple query handlers to gather the responses.
+Since we decided to remove scatter-gather entirely, there's no necessity to being able to register multiple handlers
+for the same combination anymore.
+
+On top of that, Axon Framework 4 be "smart about" selecting a Query Handler that best fit the expected `ResponseType`.
+As Query Handler registration is no longer based on a the `ResponeType`/`Type`, we lose the capability to, for
+example, let a single-response query favor a single-response query handler. Or, for a multiple-response query to favor
+a
+multiple-response query handler, while a query handler was registered for both single and multiple responses.
+
+However, we view losing this capability as a benefit, as (1) it led to complex code and (2) led to unclarity in use,
+as we have noticed over the years. As a consequence, the local `QueryBus` will now throw a
+DuplicateQueryHandlerSubscriptionException` whenever a `QueryHandler` for an already existing query name and response
+name is being registered.
+
+As with any change, if you feel strongly about the previous solution, be sure to reach out to use. We would love to
+hear your use case to deduce the best way forward.
+
+### Query Gateway
+
+The `QueryGateway` has undergone some minor API changes to align with the [Async Native API](#async-native-apis).
+This alignment shows itself in being able to provide the `ProcessingContext`. Giving the active `ProcessingContext` is *
+*paramount** if a query should be dispatched as part of a running message handling task. For example, if an event
+handler should dispatch a query (e.g., as with process automations), it is strongly advised to provide the active
+`ProcessingContext` as part of the send operation.
+
+On top of that, we have eliminated use of the `ResponseType` **entirely** from the `QueryGateway`, as we feel the
+`ResponseType` is an internal concern; not something to be bothered with when dispatching queries.
+To keep support for querying a single or multiple instances, the gateway now has dedicated methods:
+
+1. `CompletableFuture<R> QueryGateway#query(Object, Class<R>, ProcessingContext)`
+2. `CompletableFuture<List<R>> QueryGateway#queryMany(Object, Class<R>, ProcessingContext)`
+
+This shift is inline with the streaming query (introduced in Axon Framework 4.6), which also does **not** allow you to
+define the `ResponseType`.
+
+As might be clear, the `QueryGateway` has an entirely new look and feel. If there are any operations we have
+removed/adjusted you miss, or if you have any other suggestions for improvement, please
+construct [an issue](https://github.com/AxonFramework/AxonFramework/issues) for us.
+
+### Query Dispatcher
+
+#TODO
+
 Minor API Changes
 =================
 
@@ -1925,6 +2006,9 @@ This section contains four subsections, called:
 | `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`                                                             | `MessageHandlerInterceptor#interceptOnHandle(M, ProcessingContext, MessageHandlerInterceptorChain<M>)`                 | 
 | `InterceptorChain#proceed()`                                                                                                    | `MessageHandlerInterceptorChain#proceed(M, ProcessingContext)`                                                         | 
 | `QueryBus#subscribe(String, Type, MessageHandler<? super QueryMessage<?, R>>)`                                                  | `QueryBus#subscribe(QualifiedName, QualifiedName, QueryHandler)`                                                       | 
+| `QueryBus#query(QueryMessage)`                                                                                                  | `QueryBus#query(QueryMessage, ProcessingContext)`                                                                      | 
+| `QueryGateway#query(Q, Class<R>)`                                                                                               | `QueryGateway#query(Object, Class<R>, ProcessingContext)`                                                              | 
+| `QueryGateway#query(String, Q, ResponseType<R>)`                                                                                | `QueryGateway#queryMany(Object, Class<R>, ProcessingContext)`                                                          | 
 
 ### Removed Methods and Constructors
 
@@ -1987,21 +2071,23 @@ This section contains four subsections, called:
 
 ### Changed Method return types
 
-| Method                                                                         | Before                         | After                                        |
-|--------------------------------------------------------------------------------|--------------------------------|----------------------------------------------|
-| `CorrelationDataProvider#correlationDataFor()`                                 | `Map<String, String>`          | `Map<String, ?>`                             | 
-| `CommandTargetResolver#resolveTarget`                                          | `VersionedAggregateIdentifier` | `String`                                     |
-| `EventGateway#publish(Object...)`                                              | `void`                         | `CompletableFuture<Void>`                    |
-| `EventGateway#publish(List<?>)`                                                | `void`                         | `CompletableFuture<Void>`                    |
-| `SequencingPolicy#getSequenceIdentifierFor(List<?>)`                           | `Object`                       | `Optional<Object>`                           |
-| `CommandBus#dispatch(CommandMessage<C>)`                                       | `void`                         | `CompletableFuture<CommandResultMessage<?>>` |
-| `CommandBus#subscribe(String, MessageHandler<? super CommandMessage<?>>)`      | `Registration`                 | `<? extends CommandHandlerRegistry>`         |
-| `CommandGateway#sendAndWait(Object)`                                           | `R`                            | `void`                                       |
-| `MessageDispatchInterceptor#handle(T)`                                         | `T`                            | `MessageStream<?>`                           |
-| `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`            | `Object`                       | `MessageStream<?>`                           |
-| `InterceptorChain#proceed()`                                                   | `Object`                       | `MessageStream<?>`                           |
-| `EventProcessor#start()`                                                       | `void`                         | `CompletableFuture<Void>`                    |
-| `EventProcessor#shutdown()`                                                    | `void`                         | `CompletableFuture<Void>`                    |
-| `StreamingEventProcessor#releaseSegment`                                       | `void`                         | `CompletableFuture<Void>`                    |
-| `StreamingEventProcessor#resetTokens`                                          | `void`                         | `CompletableFuture<Void>`                    |
-| `QueryBus#subscribe(String, Type, MessageHandler<? super QueryMessage<?, R>>)` | `Registration`                 | `void`                                       |
+| Method                                                                         | Before                                       | After                                        |
+|--------------------------------------------------------------------------------|----------------------------------------------|----------------------------------------------|
+| `CorrelationDataProvider#correlationDataFor()`                                 | `Map<String, String>`                        | `Map<String, ?>`                             | 
+| `CommandTargetResolver#resolveTarget`                                          | `VersionedAggregateIdentifier`               | `String`                                     |
+| `EventGateway#publish(Object...)`                                              | `void`                                       | `CompletableFuture<Void>`                    |
+| `EventGateway#publish(List<?>)`                                                | `void`                                       | `CompletableFuture<Void>`                    |
+| `SequencingPolicy#getSequenceIdentifierFor(List<?>)`                           | `Object`                                     | `Optional<Object>`                           |
+| `CommandBus#dispatch(CommandMessage<C>)`                                       | `void`                                       | `CompletableFuture<CommandResultMessage<?>>` |
+| `CommandBus#subscribe(String, MessageHandler<? super CommandMessage<?>>)`      | `Registration`                               | `<? extends CommandHandlerRegistry>`         |
+| `CommandGateway#sendAndWait(Object)`                                           | `R`                                          | `void`                                       |
+| `MessageDispatchInterceptor#handle(T)`                                         | `T`                                          | `MessageStream<?>`                           |
+| `MessageHandlerInterceptor#handle(UnitOfWork<T>, InterceptorChain)`            | `Object`                                     | `MessageStream<?>`                           |
+| `InterceptorChain#proceed()`                                                   | `Object`                                     | `MessageStream<?>`                           |
+| `EventProcessor#start()`                                                       | `void`                                       | `CompletableFuture<Void>`                    |
+| `EventProcessor#shutdown()`                                                    | `void`                                       | `CompletableFuture<Void>`                    |
+| `StreamingEventProcessor#releaseSegment`                                       | `void`                                       | `CompletableFuture<Void>`                    |
+| `StreamingEventProcessor#resetTokens`                                          | `void`                                       | `CompletableFuture<Void>`                    |
+| `QueryBus#subscribe(String, Type, MessageHandler<? super QueryMessage<?, R>>)` | `Registration`                               | `void`                                       |
+| `QueryBus#query(QueryMessage<Q, R>)`                                           | `CompletableFuture<QueryResponseMessage<R>>` | `MessageStream<QueryResponseMessage>`        |
+| `QueryGateway#query(String, Q, ResponseType<R>)`                               | `CompletableFuture<R>`                       | `CompletableFuture<List<R>>`                 |
