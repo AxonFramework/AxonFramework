@@ -30,6 +30,10 @@ import java.lang.annotation.Target;
  * <p>
  * The sequencing policy determines how events are processed in relation to each other,
  * controlling whether events should be processed sequentially or in parallel.
+ * <p>
+ * This annotation can be applied either directly to event handler methods or to the declaring class.
+ * When applied to a class, all event handler methods in that class will inherit the sequencing policy.
+ * Method-level annotations take precedence over class-level annotations.
  *
  * <h3>Sequencing Policy Implementation Requirements</h3>
  * <p>

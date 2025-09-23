@@ -32,6 +32,10 @@ import jakarta.annotation.Nonnull;
 /**
  * Definition of handlers that are annotated with {@link SequencingPolicy}. These handlers are wrapped with a
  * {@link SequencingPolicyEventMessageHandlingMember} that provides access to the configured sequencing policy.
+ * <p>
+ * The {@link SequencingPolicy} annotation can be applied either directly to the handler method or to the
+ * declaring class. When applied to the class, all handler methods in that class will inherit the sequencing policy.
+ * Method-level annotations take precedence over class-level annotations.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
