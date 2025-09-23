@@ -82,6 +82,10 @@ import java.lang.annotation.Target;
  * @EventHandler
  * @SequencingPolicy(type = CustomPolicy.class, parameters = {"10", "true"})
  * public void handle(OrderEvent event) { ... }
+ *
+ * // Example CustomPolicy constructor implementation:
+ * public record CustomPolicy(Class<?> payloadType, int intParam, boolean booleanParam) implements SequencingPolicy {
+ * }
  * }</pre>
  *
  * <h3>Error Conditions</h3>

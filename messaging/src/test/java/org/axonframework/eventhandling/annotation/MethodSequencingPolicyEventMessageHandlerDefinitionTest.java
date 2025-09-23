@@ -87,6 +87,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
             );
             MessageHandlingMember<MethodLevelPolicyTest> wrappedHandler = testSubject.wrapHandler(handler);
 
+            assertNotSame(handler, wrappedHandler);
             org.axonframework.eventhandling.sequencing.SequencingPolicy policy = getSequencingPolicy(wrappedHandler);
             assertEquals(PropertySequencingPolicy.class, policy.getClass());
         }
