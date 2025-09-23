@@ -16,6 +16,8 @@
 
 package org.axonframework.queryhandling.annotation;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
@@ -31,8 +33,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.Optional;
 import java.util.concurrent.Future;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 
 import static org.axonframework.common.ReflectionUtils.resolvePrimitiveWrapperTypeIfPrimitive;
 import static org.axonframework.common.ReflectionUtils.unwrapIfType;
@@ -42,29 +42,27 @@ import static org.axonframework.common.ReflectionUtils.unwrapIfType;
  * {@link QueryHandlingMember} that exposes query-specific handler information.
  *
  * @author Allard Buijze
- * @since 3.1
+ * @since 3.1.0
  */
-public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefinition {
+public class MethodQueryHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
         return original.<String>attribute(HandlerAttributes.QUERY_NAME)
-                       .map(queryName -> (MessageHandlingMember<T>)
-                               new MethodQueryMessageHandlerDefinition.MethodQueryMessageHandlingMember<>(
-                                       original, queryName
-                               )
-                       )
+                       .map(queryName -> (MessageHandlingMember<T>) new MethodQueryHandlingMember<>(
+                               original, queryName
+                       ))
                        .orElse(original);
     }
 
-    private static class MethodQueryMessageHandlingMember<T>
+    private static class MethodQueryHandlingMember<T>
             extends WrappedMessageHandlingMember<T>
             implements QueryHandlingMember<T> {
 
         private final String queryName;
         private final Type resultType;
 
-        public MethodQueryMessageHandlingMember(MessageHandlingMember<T> original, String queryNameAttribute) {
+        public MethodQueryHandlingMember(MessageHandlingMember<T> original, String queryNameAttribute) {
             super(original);
 
             if ("".equals(queryNameAttribute)) {
@@ -87,7 +85,9 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable T target) throws Exception {
+        public Object handleSync(@Nonnull Message message,
+                                 @Nonnull ProcessingContext context,
+                                 @Nullable T target) throws Exception {
             Object result = super.handleSync(message, context, target);
             if (result instanceof Optional) {
                 return ((Optional<?>) result).orElse(null);
@@ -128,11 +128,11 @@ public class MethodQueryMessageHandlerDefinition implements HandlerEnhancerDefin
         }
 
         @Override
-        public String getQueryName() {
+        public String queryName() {
             return queryName;
         }
 
-        public Type getResultType() {
+        public Type resultType() {
             return resultType;
         }
     }

@@ -62,8 +62,8 @@ public interface MessageHandlingMember<T> {
     /**
      * Checks if this handler is capable of handling the given {@code message}.
      *
-     * @param message           The message that is to be handled.
-     * @param context           The context in which the message is being handled.
+     * @param message The message that is to be handled.
+     * @param context The context in which the message is being handled.
      * @return {@code true} if the handler is capable of handling the message, {@code false} otherwise.
      */
     boolean canHandle(@Nonnull Message message, @Nonnull ProcessingContext context);
@@ -72,7 +72,7 @@ public interface MessageHandlingMember<T> {
      * Checks if this handler is capable of handling messages with the given {@code payloadType}.
      *
      * @param payloadType The payloadType of a message that is to be handled
-     * @return {@code true} if the handler is capable of handling the message with given type, {@code false} otherwise
+     * @return {@code true} if the handler is capable of handling the message with given type, {@code false} otherwise.
      */
     default boolean canHandleType(@Nonnull Class<?> payloadType) {
         return true;
@@ -85,8 +85,8 @@ public interface MessageHandlingMember<T> {
      * this method, as usage of this method with a {@code Message} generic would required reflection or casting
      * otherwise.
      *
-     * @param messageType the {@link Message}'s type to check if it can be handled by this handler
-     * @return {@code true} if this handler can handle the given {@code messageType}, {@code false} otherwise
+     * @param messageType The {@link Message}'s type to check if it can be handled by this handler.
+     * @return {@code true} if this handler can handle the given {@code messageType}, {@code false} otherwise.
      */
     boolean canHandleMessageType(@Nonnull Class<? extends Message> messageType);
 
@@ -101,13 +101,25 @@ public interface MessageHandlingMember<T> {
      * @return The message handling result in case the invocation was successful.
      * @throws Exception when there was a problem that prevented invocation of the method or if an exception was thrown
      *                   from the invoked method.
+     * @deprecated In favor of {@link #handle(Message, ProcessingContext, Object)}.
      */
     @Deprecated
-    Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable T target)
-            throws Exception;
+    Object handleSync(@Nonnull Message message,
+                      @Nonnull ProcessingContext context,
+                      @Nullable T target) throws Exception;
 
     /**
-     * TODO add documentation
+     * Handles the given {@code message} within the given {@code context} by invoking the appropriate method on given
+     * {@code target}.
+     * <p>
+     * This may result in an exception if the given target is not capable of handling the message or if an exception is
+     * thrown during invocation of the method. These exceptions should be caught and passed along in a
+     * {@link MessageStream#failed(Throwable) failed MessageStream}.
+     *
+     * @param message The message to handle.
+     * @param context The context in which the message is being handled.
+     * @param target  The target to handle the message.
+     * @return The {@code MessageStream} containing the response(s), if any, from handling the given {@code message}.
      */
     default MessageStream<?> handle(@Nonnull Message message,
                                     @Nonnull ProcessingContext context,
@@ -158,16 +170,17 @@ public interface MessageHandlingMember<T> {
     }
 
     /**
-     * Retrieve a single attributes for the given {@code attributeKey}. If this {@link MessageHandlingMember} does not
+     * Retrieve a single attributes for the given {@code attributeKey}. If this {@code MessageHandlingMember} does not
      * hold a value referencing the {@code attributeKey}, an {@link Optional#empty()} is returned. Otherwise, a
      * non-empty {@link Optional} containing the attribute will be provided.
      * <p>
      * When using the method, consider checking the {@link org.axonframework.messaging.HandlerAttributes} for a list of
      * common handler attributes.
      *
-     * @param attributeKey the key to retrieve an attribute for
-     * @return a non-empty {@link Optional} of the attribute referencing the given {@code attributeKey}. Otherwise, an
-     * {@link Optional#empty()} will be returned
+     * @param attributeKey The key to retrieve an attribute for.
+     * @param <R>          The value type of the returned attribute.
+     * @return A non-empty {@link Optional} of the attribute referencing the given {@code attributeKey}. Otherwise, an
+     * {@link Optional#empty()} will be returned.
      */
     default <R> Optional<R> attribute(String attributeKey) {
         return Optional.empty();

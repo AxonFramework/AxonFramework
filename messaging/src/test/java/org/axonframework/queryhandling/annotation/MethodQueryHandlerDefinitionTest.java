@@ -37,21 +37,21 @@ import java.util.concurrent.CompletableFuture;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test whether the {@link MethodQueryMessageHandlerDefinition} correctly deals with return types, as well as for
+ * Test whether the {@link MethodQueryHandlerDefinition} correctly deals with return types, as well as for
  * example {@link java.util.concurrent.Future} and {@link Optional} which contain a generic type.
  *
  * @author Allard Buijze
  */
-class MethodQueryMessageHandlerDefinitionTest {
+class MethodQueryHandlerDefinitionTest {
 
-    private MethodQueryMessageHandlerDefinition testSubject;
+    private MethodQueryHandlerDefinition testSubject;
     private AnnotatedMessageHandlingMemberDefinition handlerDefinition;
     private ParameterResolverFactory parameterResolver;
 
     @BeforeEach
     void setUp() {
         parameterResolver = ClasspathParameterResolverFactory.forClass(getClass());
-        testSubject = new MethodQueryMessageHandlerDefinition();
+        testSubject = new MethodQueryHandlerDefinition();
         handlerDefinition = new AnnotatedMessageHandlingMemberDefinition();
     }
 
@@ -63,13 +63,13 @@ class MethodQueryMessageHandlerDefinitionTest {
     @Test
     void futureResponseTypeUnwrapped() {
         QueryHandlingMember<?> handler = messageHandler("futureReturnType");
-        assertEquals(String.class, handler.getResultType());
+        assertEquals(String.class, handler.resultType());
     }
 
     @Test
     void optionalResponseTypeUnwrapped() throws Exception {
-        QueryHandlingMember<MethodQueryMessageHandlerDefinitionTest> handler = messageHandler("optionalReturnType");
-        assertEquals(String.class, handler.getResultType());
+        QueryHandlingMember<MethodQueryHandlerDefinitionTest> handler = messageHandler("optionalReturnType");
+        assertEquals(String.class, handler.resultType());
 
         GenericQueryMessage message = new GenericQueryMessage(
                 new MessageType(String.class), "mock", ResponseTypes.instanceOf(String.class)
@@ -85,19 +85,19 @@ class MethodQueryMessageHandlerDefinitionTest {
     @Test
     void unspecifiedOptionalResponseTypeUnwrapped() {
         QueryHandlingMember<?> handler = messageHandler("unspecifiedOptionalType");
-        assertEquals(Object.class, handler.getResultType());
+        assertEquals(Object.class, handler.resultType());
     }
 
     @Test
     void wildcardOptionalResponseTypeUnwrapped() {
         QueryHandlingMember<?> handler = messageHandler("wildcardOptionalType");
-        assertEquals(Object.class, handler.getResultType());
+        assertEquals(Object.class, handler.resultType());
     }
 
     @Test
     void upperBoundWildcardOptionalResponseTypeUnwrapped() {
         QueryHandlingMember<?> handler = messageHandler("upperBoundWildcardOptionalType");
-        assertEquals(CharSequence.class, handler.getResultType());
+        assertEquals(CharSequence.class, handler.resultType());
     }
 
     // TODO This local static function should be replaced with a dedicated interface that converts types.
@@ -116,11 +116,11 @@ class MethodQueryMessageHandlerDefinitionTest {
 
     private <R> QueryHandlingMember<R> messageHandler(String methodName) {
         try {
-            MessageHandlingMember<MethodQueryMessageHandlerDefinitionTest> handler = handlerDefinition.createHandler(
-                    MethodQueryMessageHandlerDefinitionTest.class,
-                    MethodQueryMessageHandlerDefinitionTest.class.getDeclaredMethod(methodName, String.class),
+            MessageHandlingMember<MethodQueryHandlerDefinitionTest> handler = handlerDefinition.createHandler(
+                    MethodQueryHandlerDefinitionTest.class,
+                    MethodQueryHandlerDefinitionTest.class.getDeclaredMethod(methodName, String.class),
                     parameterResolver,
-                    MethodQueryMessageHandlerDefinitionTest::returnTypeConverter
+                    MethodQueryHandlerDefinitionTest::returnTypeConverter
             ).orElseThrow(IllegalArgumentException::new);
             //noinspection unchecked
             return testSubject.wrapHandler(handler)

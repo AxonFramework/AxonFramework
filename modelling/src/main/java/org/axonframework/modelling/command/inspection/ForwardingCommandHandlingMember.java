@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package org.axonframework.modelling.command.inspection;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
+import org.axonframework.commandhandling.annotation.CommandHandlingMember;
 
 /**
  * Interface describing a message handler capable of forwarding a specific command.
@@ -26,14 +27,14 @@ import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember
  * @author Somrak Monpengpinij
  * @since 4.6.0
  */
-public interface ForwardingCommandMessageHandlingMember<T> extends CommandMessageHandlingMember<T> {
+public interface ForwardingCommandHandlingMember<T> extends CommandHandlingMember<T> {
 
     /**
      * Check if this handler is in a state where it can currently accept the command.
      *
-     * @param message The message that is to be forwarded
-     * @param target  The target to forward the command message
+     * @param message The message that is to be forwarded.
+     * @param target  The target to forward the command message.
      * @return {@code true} if this handler can forward command to target entity, {@code false} otherwise.
      */
-    boolean canForward(CommandMessage message, T target);
+    boolean canForward(@Nonnull CommandMessage message, @Nonnull T target);
 }

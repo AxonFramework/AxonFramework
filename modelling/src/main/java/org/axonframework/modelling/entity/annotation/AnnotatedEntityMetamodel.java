@@ -21,7 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
+import org.axonframework.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
@@ -276,7 +276,7 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
                                           QualifiedName qualifiedName,
                                           LinkedList<QualifiedName> registeredCommands
     ) {
-        if (!(handler instanceof CommandMessageHandlingMember<? super E> commandMember)) {
+        if (!(handler instanceof CommandHandlingMember<? super E> commandMember)) {
             return;
         }
         registeredCommands.add(qualifiedName);

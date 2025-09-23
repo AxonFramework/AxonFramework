@@ -454,7 +454,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                                                ProcessingContext context) throws Exception {
         //noinspection unchecked
         return handlers.stream()
-                       .filter(mh -> mh.unwrap(ForwardingCommandMessageHandlingMember.class)
+                       .filter(mh -> mh.unwrap(ForwardingCommandHandlingMember.class)
                                        .map(c -> c.canForward(command, aggregateRoot))
                                        .orElse(true))
                        .findFirst()
