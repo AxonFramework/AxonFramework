@@ -55,6 +55,4 @@ public class InfrastructureConfiguration {
     public static SpringEventSourcedEntityLookup springEventSourcedEntityLookup() {
         return new SpringEventSourcedEntityLookup();
     }
-
-
 }

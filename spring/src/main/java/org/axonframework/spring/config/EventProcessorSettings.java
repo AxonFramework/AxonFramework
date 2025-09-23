@@ -21,10 +21,31 @@ import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 
+import java.util.Map;
+
 /**
  * Event processor settings.
+ * <p>
+ * Subclasses are segregating settings for the different processors.
+ *
+ * @author Simon Zambrovski
+ * @since 5.0.0
  */
 public sealed interface EventProcessorSettings {
+
+    /**
+     * Key for default settings. Intentionally contains <code>..</code> to avoid potential package name clashing.
+     */
+    String DEFAULT = "..default";
+
+    /**
+     * Holder class to be able to retrieve a map of those by a single non-parameterized class.
+     *
+     * @param settings setting to wrap.
+     */
+    record MapWrapper(Map<String, EventProcessorSettings> settings) {
+
+    }
 
     /**
      * The processing modes of an {@link EventProcessor}.
@@ -47,7 +68,7 @@ public sealed interface EventProcessorSettings {
      * @return processor mode.
      */
     @Nonnull
-    ProcessorMode getProcessorMode();
+    ProcessorMode processorMode();
 
     /**
      * Name of the bean acting as source for this processor.
@@ -55,7 +76,7 @@ public sealed interface EventProcessorSettings {
      * @return only used if non-null.
      */
     @Nullable
-    String getSource();
+    String source();
 
     /**
      * Settings for subscribing event processor.
@@ -64,7 +85,7 @@ public sealed interface EventProcessorSettings {
 
         @Nonnull
         @Override
-        default ProcessorMode getProcessorMode() {
+        default ProcessorMode processorMode() {
             return ProcessorMode.SUBSCRIBING;
         }
     }
@@ -80,7 +101,7 @@ public sealed interface EventProcessorSettings {
          * @return processor mode.
          */
         @Nonnull
-        default ProcessorMode getProcessorMode() {
+        default ProcessorMode processorMode() {
             return ProcessorMode.POOLED;
         }
 
@@ -89,27 +110,27 @@ public sealed interface EventProcessorSettings {
          *
          * @return returns initial segment count.
          */
-        int getInitialSegmentCount();
+        int initialSegmentCount();
 
         /**
          * Retrieves token claim interval.
          *
          * @return interval in milliseconds.
          */
-        long getTokenClaimIntervalInMillis();
+        long tokenClaimIntervalInMillis();
 
         /**
          * Thread count for pooled processor.
          *
          * @return a positive integer describing the size of the thread pool.
          */
-        int getThreadCount();
+        int threadCount();
 
         /**
          * Batch size for the pooled processor.
          *
-         * @return a positive integer describing the size of the batch-
+         * @return a positive integer describing the size of the batch.
          */
-        int getBatchSize();
+        int batchSize();
     }
 }

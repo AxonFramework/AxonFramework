@@ -43,12 +43,23 @@ public class EventProcessingAutoConfiguration {
      * @return event processor settings keyed by processor name.
      */
     @Bean
-    public Map<String, EventProcessorSettings> eventProcessorSettings(EventProcessorProperties properties) {
-        return properties.getProcessors().entrySet().stream().collect(
-                Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue
-                )
-        );
+    public EventProcessorSettings.MapWrapper eventProcessorSettings(EventProcessorProperties properties) {
+        Map<String, EventProcessorSettings> map = properties
+                .getProcessors()
+                .entrySet()
+                .stream()
+                .collect(
+                        Collectors.toMap(
+                                java.util.Map.Entry::getKey,
+                                java.util.Map.Entry::getValue
+                        )
+                );
+        // supply a default setting
+        // this gives us the location for the default values, and allows to overwrite them
+        // via properties by the user.
+        if (!map.containsKey(EventProcessorSettings.DEFAULT)) {
+            map.put(EventProcessorSettings.DEFAULT, new EventProcessorProperties.ProcessorSettings());
+        }
+        return new EventProcessorSettings.MapWrapper(map);
     }
 }

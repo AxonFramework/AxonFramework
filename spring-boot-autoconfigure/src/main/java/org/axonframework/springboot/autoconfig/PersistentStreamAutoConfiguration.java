@@ -196,12 +196,12 @@ public class PersistentStreamAutoConfiguration {
                                                            .filter(e -> axonServerConfiguration.getPersistentStreams()
                                                                                                .containsKey(
                                                                                                        e.getValue()
-                                                                                                        .getSource()))
+                                                                                                        .source()))
                                                            .forEach(e -> {
                                                                AxonServerConfiguration.PersistentStreamSettings persistentStreamConfig =
                                                                        axonServerConfiguration.getPersistentStreams()
                                                                                               .get(e.getValue()
-                                                                                                    .getSource());
+                                                                                                    .source());
                                                                processingConfigurer.registerSequencingPolicy(
                                                                        e.getKey(),
                                                                        // TODO #3520

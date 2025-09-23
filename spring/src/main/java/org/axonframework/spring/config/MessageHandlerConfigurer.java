@@ -17,24 +17,26 @@
 package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.configuration.Module;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
+import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer.AdditionalComponentPhase;
+import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer.CompletePhase;
+import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer.RequiredComponentPhase;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.spring.config.EventProcessorSettings.PooledEventProcessorSettings;
+import org.axonframework.spring.config.EventProcessorSettings.SubscribingEventProcessorSettings;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.context.ApplicationContext;
@@ -43,14 +45,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static java.lang.String.format;
-import static org.axonframework.configuration.ComponentDefinition.ofTypeAndName;
 
 /**
  * An implementation of a {@link ConfigurationEnhancer} that will register a list of beans as handlers for a specific
@@ -100,103 +97,53 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         }
     }
 
-    @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
-
     private void configureEventHandlers(ComponentRegistry registry) {
 
         groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
 
-            Function<EventHandlingComponentsConfigurer.RequiredComponentPhase, EventHandlingComponentsConfigurer.CompletePhase> componentRegistration = (phase) -> {
-                EventHandlingComponentsConfigurer.AdditionalComponentPhase resultOfRegistration = null;
+            Function<RequiredComponentPhase, CompletePhase> componentRegistration = (RequiredComponentPhase phase) -> {
+                AdditionalComponentPhase resultOfRegistration = null;
                 for (NamedBeanDefinition namedBeanDefinition : beanDefs) {
                     resultOfRegistration = phase.annotated(this.createComponentBuilder(namedBeanDefinition));
                 }
                 return resultOfRegistration;
             };
 
-            EventProcessorModule module;
-            String processorName = "EventProcessor[" + packageName + "]";
-            EventProcessorSettings settings = resolve(packageName);
-            if (settings == null) {
-                module = EventProcessorModule
-                        .pooledStreaming(processorName)
-                        .eventHandlingComponents(componentRegistration)
-                        .notCustomized();
-            } else {
-                switch (settings.getProcessorMode()) {
+            var processorName = "EventProcessor[" + packageName + "]";
+
+            Function<Configuration, ModuleBuilder<? extends Module>> moduleBuilder = (configuration) -> {
+
+                var allSettings = configuration.getComponent(EventProcessorSettings.MapWrapper.class).settings();
+                var settings = Optional.ofNullable(allSettings.get(packageName))
+                                       .orElseGet(() -> allSettings.get(EventProcessorSettings.DEFAULT));
+                return switch (settings.processorMode()) {
                     case POOLED -> {
-                        var moduleSettings = (EventProcessorSettings.PooledEventProcessorSettings) settings;
-                        String executorName = "WorkPackage[" + packageName + "]";
-                        module = EventProcessorModule
+                        var moduleSettings = (PooledEventProcessorSettings) settings;
+                        yield EventProcessorModule
                                 .pooledStreaming(processorName)
                                 .eventHandlingComponents(componentRegistration)
-                                .customized((c, pooledStreamConfiguration) -> {
-                                    // worker executor
-                                    var workerExecutor = c.getComponent(ScheduledExecutorService.class, executorName);
-                                    var config = pooledStreamConfiguration
-                                            .workerExecutor(workerExecutor)
-                                            .tokenClaimInterval(moduleSettings.getTokenClaimIntervalInMillis())
-                                            .batchSize(moduleSettings.getBatchSize())
-                                            .initialSegmentCount(moduleSettings.getInitialSegmentCount());
-                                    if (moduleSettings.getSource() != null) {
-                                        //noinspection unchecked
-                                        config = config.eventSource(getTypedBeanByName(
-                                                moduleSettings.getSource(),
-                                                StreamableEventSource.class,
-                                                "Invalid event source [%s] configured for Pooled Streaming Event Processor ["
-                                                        + packageName
-                                                        + "]."
-                                        ));
-                                    }
-                                    return config;
-                                }).componentRegistry(
-                                        (cr) -> cr.registerComponent(
-                                                ofTypeAndName(
-                                                        ScheduledExecutorService.class,
-                                                        executorName
-                                                ).withInstance(Executors.newScheduledThreadPool(
-                                                                       moduleSettings.getThreadCount(),
-                                                                       new AxonThreadFactory(executorName)
-                                                               )
-                                                ).onShutdown(Phase.OUTBOUND_EVENT_CONNECTORS,
-                                                             ExecutorService::shutdown
-                                                )
-
-                                        )
-                                );
+                                .customized(SpringCustomizations.pooledStreamingCustomizations(
+                                        packageName,
+                                        moduleSettings
+                                ));
                     }
                     case SUBSCRIBING -> {
-                        var moduleSettings = (EventProcessorSettings.SubscribingEventProcessorSettings) settings;
-                        module = EventProcessorModule
+                        var moduleSettings = (SubscribingEventProcessorSettings) settings;
+                        yield EventProcessorModule
                                 .subscribing(processorName)
                                 .eventHandlingComponents(componentRegistration)
-                                .customized((c, subscribingConfiguration) -> {
-                                    var config = subscribingConfiguration;
-                                    if (moduleSettings.getSource() != null) {
-                                        //noinspection unchecked
-                                        config = config.messageSource(getTypedBeanByName(
-                                                moduleSettings.getSource(),
-                                                SubscribableMessageSource.class,
-                                                "Invalid message source [%s] configured for Subscribing Event Processor ["
-                                                        + packageName
-                                                        + "]."
-                                        ));
-                                    }
-                                    return config;
-                                });
+                                .customized(SpringCustomizations.subscribingCustomizations(
+                                        moduleSettings
+                                ));
                     }
-                    default -> throw new IllegalStateException(
-                            "Unsupported event handling mode: " + settings.getProcessorMode()
-                                    + " for package "
-                                    + packageName);
-                }
-            }
-            registry.registerModule(module);
+                };
+            };
+            registry.registerModule(
+                    new SpringLazyCreatingModule<>("Lazy[" + processorName + "]", moduleBuilder)
+            );
         });
     }
+
 
     private void configureCommandHandlers(ComponentRegistry registry) {
         groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
@@ -212,52 +159,40 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         });
     }
 
-    @Nonnull
-    private <T> T getTypedBeanByName(@Nonnull String name, @Nonnull Class<T> clazz, @Nonnull String message) {
-        var object = applicationContext.getBean(name);
-        if (clazz.isAssignableFrom(object.getClass())) {
-            //noinspection unchecked
-            return (T) object;
-        }
-        throw new AxonConfigurationException(format(
-                message + " The expected bean should be of type %s, but it was %s.",
-                name, clazz.getSimpleName(), object.getClass().getSimpleName()
-        ));
-    }
-
-    @Nullable
-    private EventProcessorSettings resolve(@Nonnull String packageName) {
-        Map<String, EventProcessorSettings> allSettings = applicationContext.getBeansOfType(EventProcessorSettings.class);
-        return allSettings.get(packageName);
-    }
-
-
     private ComponentBuilder<Object> createComponentBuilder(@Nonnull NamedBeanDefinition namedBeanDefinition) {
-        return (c) -> applicationContext.getBean(namedBeanDefinition.name());
+        return (Configuration configuration) -> applicationContext.getBean(namedBeanDefinition.name());
     }
 
     private Map<String, List<NamedBeanDefinition>> groupNamedBeanDefinitionsByPackage() {
 
         // We need access to the BeanFactory, so cast to ConfigurableApplicationContext
         var beanFactory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
-        return handlerBeansRefs.stream()
-                               .map(name -> new NamedBeanDefinition(name, beanFactory.getBeanDefinition(name)))
-                               .collect(Collectors.groupingBy(
-                                                nbd -> {
-                                                    String className = nbd.definition().getBeanClassName();
-                                                    if (className == null) {
-                                                        if (nbd.definition() instanceof AbstractBeanDefinition abstractBeanDefinition) {
-                                                            if (abstractBeanDefinition.hasBeanClass()) {
-                                                                className = abstractBeanDefinition.getBeanClass().getName();
-                                                            }
-                                                        }
-                                                    }
-                                                    return (className != null && className.contains("."))
-                                                            ? className.substring(0, className.lastIndexOf('.'))
-                                                            : "default";
-                                                }
-                                        )
-                               );
+        return handlerBeansRefs
+                .stream()
+                .map(name -> new NamedBeanDefinition(name, beanFactory.getBeanDefinition(name)))
+                .collect(Collectors.groupingBy(
+                                 nbd -> {
+                                     String className = nbd.definition().getBeanClassName();
+                                     if (className == null) {
+                                         if (nbd.definition() instanceof AbstractBeanDefinition abstractBeanDefinition) {
+                                             if (abstractBeanDefinition.hasBeanClass()) {
+                                                 className = abstractBeanDefinition.getBeanClass().getName();
+                                             } else if (nbd.definition() instanceof AnnotatedBeanDefinition annotatedBeanDefinition) {
+                                                 className = annotatedBeanDefinition.getMetadata().getClassName();
+                                             }
+                                         }
+                                     }
+                                     return (className != null && className.contains("."))
+                                             ? className.substring(0, className.lastIndexOf('.'))
+                                             : "default";
+                                 }
+                         )
+                );
+    }
+
+    @Override
+    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     /**

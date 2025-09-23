@@ -89,34 +89,34 @@ class MessageHandlerConfigurerTest {
                 "my.event.packaging.custom",
                 new EventProcessorSettings.SubscribingEventProcessorSettings() {
                     @Override
-                    public String getSource() {
+                    public String source() {
                         return "bean1";
                     }
                 },
                 "my.event.packaging",
                 new EventProcessorSettings.PooledEventProcessorSettings() {
                     @Override
-                    public int getInitialSegmentCount() {
+                    public int initialSegmentCount() {
                         return 7;
                     }
 
                     @Override
-                    public long getTokenClaimIntervalInMillis() {
+                    public long tokenClaimIntervalInMillis() {
                         return 5;
                     }
 
                     @Override
-                    public int getThreadCount() {
+                    public int threadCount() {
                         return 3;
                     }
 
                     @Override
-                    public int getBatchSize() {
+                    public int batchSize() {
                         return 19;
                     }
 
                     @Override
-                    public String getSource() {
+                    public String source() {
                         return "bean2";
                     }
                 }
@@ -144,13 +144,19 @@ class MessageHandlerConfigurerTest {
         var registeredModules = moduleCaptor.getAllValues();
         assertThat(registeredModules).isNotNull();
         assertThat(registeredModules).hasSize(3);
-        assertThat(registeredModules.get(0)).isInstanceOf(PooledStreamingEventProcessorModule.class);
-        assertThat(registeredModules.get(1)).isInstanceOf(SubscribingEventProcessorModule.class);
-        assertThat(registeredModules.get(2)).isInstanceOf(PooledStreamingEventProcessorModule.class);
+        assertThat(registeredModules.get(0)).isInstanceOf(SpringLazyCreatingModule.class);
+        assertThat(registeredModules.get(1)).isInstanceOf(SpringLazyCreatingModule.class);
+        assertThat(registeredModules.get(2)).isInstanceOf(SpringLazyCreatingModule.class);
+
+        // since we use lazy initialization, there is no way to get the modules underneath
+        // assertThat(registeredModules.get(0)).isInstanceOf(PooledStreamingEventProcessorModule.class);
+        // assertThat(registeredModules.get(1)).isInstanceOf(SubscribingEventProcessorModule.class);
+        // assertThat(registeredModules.get(2)).isInstanceOf(PooledStreamingEventProcessorModule.class);
+
         assertThat(registeredModules.stream().map(Module::name)).containsExactlyInAnyOrder(
-                "EventProcessor[my.event.packaging]",
-                "EventProcessor[my.event.packaging.custom]",
-                "EventProcessor[default]"
+                "Lazy[EventProcessor[my.event.packaging]]",
+                "Lazy[EventProcessor[my.event.packaging.custom]]",
+                "Lazy[EventProcessor[default]]"
         );
     }
 

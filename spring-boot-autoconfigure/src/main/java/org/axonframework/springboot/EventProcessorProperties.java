@@ -141,7 +141,7 @@ public class EventProcessorProperties {
          * @return the name of the bean that should be used as source for Event Messages.
          */
         @Override
-        public String getSource() {
+        public String source() {
             return source;
         }
 
@@ -171,7 +171,7 @@ public class EventProcessorProperties {
          */
         @Override
         @Nonnull
-        public EventProcessorSettings.ProcessorMode getProcessorMode() {
+        public EventProcessorSettings.ProcessorMode processorMode() {
             if (Mode.SUBSCRIBING.equals(mode)) {
                 return ProcessorMode.SUBSCRIBING;
             }
@@ -194,7 +194,7 @@ public class EventProcessorProperties {
          * @return the number of initial segments that should be created.
          */
         @Override
-        public int getInitialSegmentCount() {
+        public int initialSegmentCount() {
             return initialSegmentCount;
         }
 
@@ -239,7 +239,7 @@ public class EventProcessorProperties {
         }
 
         @Override
-        public long getTokenClaimIntervalInMillis() {
+        public long tokenClaimIntervalInMillis() {
             return tokenClaimIntervalTimeUnit.toMillis(tokenClaimInterval);
         }
 
@@ -261,7 +261,7 @@ public class EventProcessorProperties {
          * @return the number of threads to use to process Events.
          */
         @Override
-        public int getThreadCount() {
+        public int threadCount() {
             int defaultThreadCount = 1;
             return threadCount < 1 ? defaultThreadCount : threadCount;
         }
@@ -284,7 +284,7 @@ public class EventProcessorProperties {
          * @return the maximum size of a processing batch.
          */
         @Override
-        public int getBatchSize() {
+        public int batchSize() {
             int defaultBatchSize = 1;
             return batchSize < 1 ? defaultBatchSize : batchSize;
         }
