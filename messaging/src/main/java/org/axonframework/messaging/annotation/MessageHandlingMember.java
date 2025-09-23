@@ -18,10 +18,8 @@ package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
@@ -33,7 +31,7 @@ import java.util.Optional;
  *
  * @param <T> The type of entity to which the message handler will delegate the actual handling of the message
  * @author Allard Buijze
- * @since 3.0
+ * @since 3.0.0
  */
 public interface MessageHandlingMember<T> {
 
@@ -121,17 +119,7 @@ public interface MessageHandlingMember<T> {
      * @param target  The target to handle the message.
      * @return The {@code MessageStream} containing the response(s), if any, from handling the given {@code message}.
      */
-    default MessageStream<?> handle(@Nonnull Message message,
-                                    @Nonnull ProcessingContext context,
-                                    @Nullable T target) {
-        try {
-            // TODO: 24-11-2023 proper impl
-            Object result = handleSync(message, context, target);
-            return MessageStream.just(new GenericMessage(new MessageType(result.getClass()), result));
-        } catch (Exception e) {
-            return MessageStream.failed(e);
-        }
-    }
+    MessageStream<?> handle(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable T target);
 
     /**
      * Returns the wrapped handler object if its type is an instance of the given {@code handlerType}. For instance, if

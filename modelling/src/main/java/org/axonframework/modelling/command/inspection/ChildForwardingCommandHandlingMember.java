@@ -20,7 +20,10 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandlingMember;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ChainedMessageHandlerInterceptorMember;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -122,9 +125,17 @@ public class ChildForwardingCommandHandlingMember<P, C> implements ForwardingCom
                             + "], as there is no entity instance within the aggregate to forward it to."
             );
         }
+        return interceptorChain(childEntity.getClass()).handleSync(message, childEntity, childHandler);
+    }
 
-        return interceptorChain(childEntity.getClass())
-                .handleSync(message, childEntity, childHandler);
+    @Override
+    public MessageStream<?> handle(@Nonnull Message message, @Nonnull ProcessingContext context, @Nullable P target) {
+        try {
+            Object result = handleSync(message, context, target);
+            return MessageStream.just(new GenericMessage(new MessageType(result.getClass()), result));
+        } catch (Exception e) {
+            return MessageStream.failed(e);
+        }
     }
 
     private MessageHandlerInterceptorMemberChain<C> interceptorChain(Class<?> childType) {
