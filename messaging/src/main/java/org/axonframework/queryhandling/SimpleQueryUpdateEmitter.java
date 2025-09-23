@@ -22,10 +22,13 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Type;
 import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
@@ -46,8 +49,9 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryUpdateEmitter.class);
 
-    private final MessageTypeResolver messageTypeResolver;
     private final QueryBus queryBus;
+    private final MessageTypeResolver messageTypeResolver;
+    private final MessageConverter converter;
     private final ProcessingContext context;
 
     /**
@@ -64,20 +68,25 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
      * {@link QueryBus#completeSubscriptions(Predicate, ProcessingContext)} and
      * {@link QueryBus#completeSubscriptionsExceptionally(Predicate, Throwable, ProcessingContext)}.
      *
-     * @param messageTypeResolver The {@link org.axonframework.messaging.MessageType} resolver used to construct
-     *                            {@link SubscriptionQueryUpdateMessage update messages} for
-     *                            {@link #emit(Class, Predicate, Object)} invocations
      * @param queryBus            The {@code QueryBus} to delegate the {@link #emit(Class, Predicate, Object)},
      *                            {@link #complete(Class, Predicate)}, and
      *                            {@link #completeExceptionally(Class, Predicate, Throwable)} invocations to.
+     * @param messageTypeResolver The {@link org.axonframework.messaging.MessageType} resolver used to construct
+     *                            {@link SubscriptionQueryUpdateMessage update messages} for
+     *                            {@link #emit(Class, Predicate, Object)} invocations
+     * @param converter           The {@code MessageConverter} used to convert the
+     *                            {@link Message#payloadAs(Type, Converter) payload} whenever a filter is used based on
+     *                            a concrete type. For example, through {@link #emit(Class, Predicate, Object)}.
      * @param context             The {@code ProcessingContext} within which updates are emitted, subscription query are
      *                            completed, and subscription queries are completed exceptionally in.
      */
-    public SimpleQueryUpdateEmitter(@Nonnull MessageTypeResolver messageTypeResolver,
-                                    @Nonnull QueryBus queryBus,
+    public SimpleQueryUpdateEmitter(@Nonnull QueryBus queryBus,
+                                    @Nonnull MessageTypeResolver messageTypeResolver,
+                                    @Nonnull MessageConverter converter,
                                     @Nonnull ProcessingContext context) {
-        this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver must not be null.");
         this.queryBus = requireNonNull(queryBus, "The QueryBus must not be null.");
+        this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver must not be null.");
+        this.converter = requireNonNull(converter, "The MessageConverter must not be null.");
         this.context = requireNonNull(context, "The ProcessingContext must not be null.");
     }
 
@@ -162,14 +171,16 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
                                                                               @Nonnull Predicate<? super Q> filter) {
         return message -> {
             QualifiedName queryName = messageTypeResolver.resolveOrThrow(queryType).qualifiedName();
-            return queryName.equals(message.type().qualifiedName()) && filter.test(message.payloadAs(queryType));
+            return queryName.equals(message.type().qualifiedName())
+                    && filter.test(message.payloadAs(queryType, converter));
         };
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
         descriptor.describeProperty("queryBus", queryBus);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("converter", converter);
         descriptor.describeProperty("context", context);
     }
 }

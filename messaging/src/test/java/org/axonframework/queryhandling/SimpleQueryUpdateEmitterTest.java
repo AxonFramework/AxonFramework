@@ -16,8 +16,25 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.common.FutureUtils;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeNotResolvedException;
+import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.conversion.MessageConverter;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.serialization.ConversionException;
+import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
+
+import java.lang.reflect.Type;
+import java.util.function.Predicate;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link SimpleQueryUpdateEmitter}.
@@ -28,31 +45,71 @@ import org.junit.jupiter.api.*;
  */
 class SimpleQueryUpdateEmitterTest {
 
+    private static final MessageType QUERY_TYPE = new MessageType("query-type");
+    private static final MessageType UPDATE_TYPE = new MessageType("update-type");
+    private static final Exception CAUSE = new MockException("oops");
+
     private QueryBus queryBus = QueryBusTestUtils.aQueryBus();
+    private MessageTypeResolver messageTypeResolver;
+    private MessageConverter converter;
+    private ProcessingContext context;
+
     private SimpleQueryUpdateEmitter testSubject;
+
+    private ArgumentCaptor<Predicate<SubscriptionQueryMessage>> filterCaptor;
+    private ArgumentCaptor<SubscriptionQueryUpdateMessage> updateCaptor;
 
     @BeforeEach
     void setUp() {
-        queryBus = QueryBusTestUtils.aQueryBus();
-        testSubject = new SimpleQueryUpdateEmitter(new ClassBasedMessageTypeResolver(), queryBus, null);
+        queryBus = mock(QueryBus.class);
+        messageTypeResolver = mock(MessageTypeResolver.class);
+        converter = mock(MessageConverter.class);
+        context = new StubProcessingContext();
+
+        testSubject = new SimpleQueryUpdateEmitter(queryBus, messageTypeResolver, converter, context);
+
+        when(queryBus.emitUpdate(any(), any(), eq(context))).thenReturn(FutureUtils.emptyCompletedFuture());
+        when(queryBus.completeSubscriptions(any(), eq(context))).thenReturn(FutureUtils.emptyCompletedFuture());
+        when(queryBus.completeSubscriptionsExceptionally(any(), any(), eq(context)))
+                .thenReturn(FutureUtils.emptyCompletedFuture());
+        //noinspection unchecked
+        filterCaptor = ArgumentCaptor.forClass(Predicate.class);
+        updateCaptor = ArgumentCaptor.forClass(SubscriptionQueryUpdateMessage.class);
     }
 
     @Nested
     class Construction {
 
         @Test
-        void throwsNullPointerExceptionForNullMessageTypeResolver() {
-
+        void throwsNullPointerExceptionForNullQueryBus() {
+            //noinspection DataFlowIssue
+            assertThatThrownBy(() -> new SimpleQueryUpdateEmitter(
+                    null, messageTypeResolver, converter, context
+            )).isInstanceOf(NullPointerException.class);
         }
 
         @Test
-        void throwsNullPointerExceptionForNullQueryBus() {
+        void throwsNullPointerExceptionForNullMessageTypeResolver() {
+            //noinspection DataFlowIssue
+            assertThatThrownBy(() -> new SimpleQueryUpdateEmitter(
+                    queryBus, null, converter, context
+            )).isInstanceOf(NullPointerException.class);
+        }
 
+        @Test
+        void throwsNullPointerExceptionForNullMessageConverter() {
+            //noinspection DataFlowIssue
+            assertThatThrownBy(() -> new SimpleQueryUpdateEmitter(
+                    queryBus, messageTypeResolver, null, context
+            )).isInstanceOf(NullPointerException.class);
         }
 
         @Test
         void throwsNullPointerExceptionForNullApplicationContext() {
-
+            //noinspection DataFlowIssue
+            assertThatThrownBy(() -> new SimpleQueryUpdateEmitter(
+                    queryBus, messageTypeResolver, converter, null
+            )).isInstanceOf(NullPointerException.class);
         }
     }
 
@@ -61,32 +118,134 @@ class SimpleQueryUpdateEmitterTest {
 
         @Test
         void emitForQueryType() {
-
+            // given...
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, "some-query", instanceOf(String.class), instanceOf(String.class)
+            );
+            Update testUpdatePayload = new Update("some-update");
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            // when...
+            testSubject.emit(String.class, query -> true, testUpdatePayload);
+            // then...
+            verify(queryBus).emitUpdate(filterCaptor.capture(), updateCaptor.capture(), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
+            SubscriptionQueryUpdateMessage resultUpdate = updateCaptor.getValue();
+            assertThat(resultUpdate.type()).isEqualTo(UPDATE_TYPE);
+            assertThat(resultUpdate.payload()).isEqualTo(testUpdatePayload);
+            verify(messageTypeResolver).resolveOrThrow(testUpdatePayload);
+            verifyNoInteractions(converter);
         }
 
         @Test
         void emitForQueryTypeAndFilter() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
+            Update testUpdatePayload = new Update("some-update");
 
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            when(converter.convert(any(), (Type) eq(String.class))).thenReturn("some-query");
+            // when...
+            testSubject.emit(String.class, query -> query.equals("some-query"), testUpdatePayload);
+            // then...
+            verify(queryBus).emitUpdate(filterCaptor.capture(), updateCaptor.capture(), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
+            SubscriptionQueryUpdateMessage resultUpdate = updateCaptor.getValue();
+            assertThat(resultUpdate.type()).isEqualTo(UPDATE_TYPE);
+            assertThat(resultUpdate.payload()).isEqualTo(testUpdatePayload);
+
+            verify(messageTypeResolver).resolveOrThrow(String.class);
+            verify(messageTypeResolver).resolveOrThrow(testUpdatePayload);
+            verify(converter).convert(testQueryPayload, (Type) String.class);
         }
 
         @Test
-        void emitForQueryTypeThrowsMessageTypeNotResolvedException() {
+        void emitForQueryTypeThrowsMessageTypeNotResolvedExceptionDuringFilter() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
+            Update testUpdatePayload = new Update("some-update");
 
+            when(messageTypeResolver.resolveOrThrow(any()))
+                    .thenThrow(MessageTypeNotResolvedException.class);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            when(converter.convert(any(), (Type) eq(String.class))).thenReturn("some-query");
+            // when...
+            testSubject.emit(String.class, query -> query.equals("some-query"), testUpdatePayload);
+            // then...
+            verify(queryBus).emitUpdate(filterCaptor.capture(), any(), eq(context));
+            assertThatThrownBy(() -> filterCaptor.getValue().test(testQuery))
+                    .isInstanceOf(MessageTypeNotResolvedException.class);
         }
 
         @Test
-        void emitForQueryTypeThrowsConversionException() {
+        void emitForQueryTypeThrowsConversionExceptionDuringFilter() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
+            Update testUpdatePayload = new Update("some-update");
 
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            when(converter.convert(any(), (Type) eq(String.class))).thenThrow(ConversionException.class);
+            // when...
+            testSubject.emit(String.class, query -> query.equals("some-query"), testUpdatePayload);
+            // then...
+            verify(queryBus).emitUpdate(filterCaptor.capture(), any(), eq(context));
+            assertThatThrownBy(() -> filterCaptor.getValue().test(testQuery))
+                    .isInstanceOf(ConversionException.class);
         }
 
         @Test
         void emitForQueryName() {
-
+            // given...
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, "some-query", instanceOf(String.class), instanceOf(String.class)
+            );
+            Update testUpdatePayload = new Update("some-update");
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            // when...
+            testSubject.emit(QUERY_TYPE.qualifiedName(), query -> true, testUpdatePayload);
+            // then...
+            verify(queryBus).emitUpdate(filterCaptor.capture(), updateCaptor.capture(), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
+            SubscriptionQueryUpdateMessage resultUpdate = updateCaptor.getValue();
+            assertThat(resultUpdate.type()).isEqualTo(UPDATE_TYPE);
+            assertThat(resultUpdate.payload()).isEqualTo(testUpdatePayload);
+            verify(messageTypeResolver).resolveOrThrow(testUpdatePayload);
+            verifyNoInteractions(converter);
         }
 
         @Test
         void emitForQueryNameAndGivenFilter() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
+            Update testUpdatePayload = new Update("some-update");
 
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            // when...
+            testSubject.emit(QUERY_TYPE.qualifiedName(), query -> query.equals(testQueryPayload), testUpdatePayload);
+            // then...
+            verify(queryBus).emitUpdate(filterCaptor.capture(), updateCaptor.capture(), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
+            SubscriptionQueryUpdateMessage resultUpdate = updateCaptor.getValue();
+            assertThat(resultUpdate.type()).isEqualTo(UPDATE_TYPE);
+            assertThat(resultUpdate.payload()).isEqualTo(testUpdatePayload);
+
+            verify(messageTypeResolver).resolveOrThrow(testUpdatePayload);
+            verifyNoInteractions(converter);
         }
     }
 
@@ -95,32 +254,111 @@ class SimpleQueryUpdateEmitterTest {
 
         @Test
         void completeForQueryType() {
-
+            // given...
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, "some-query", instanceOf(String.class), instanceOf(String.class)
+            );
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            // when...
+            testSubject.complete(String.class, query -> true);
+            // then...
+            verify(queryBus).completeSubscriptions(filterCaptor.capture(), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
+            verify(messageTypeResolver).resolveOrThrow(String.class);
+            verifyNoInteractions(converter);
         }
 
         @Test
         void completeForQueryTypeAndFilter() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
 
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(converter.convert(any(), (Type) eq(String.class))).thenReturn("some-query");
+            // when...
+            testSubject.complete(String.class, query -> query.equals("some-query"));
+            // then...
+            verify(queryBus).completeSubscriptions(filterCaptor.capture(), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
+            verify(messageTypeResolver).resolveOrThrow(String.class);
+            verify(converter).convert(testQueryPayload, (Type) String.class);
         }
 
         @Test
-        void completeForQueryTypeThrowsMessageTypeNotResolvedException() {
+        void completeForQueryTypeThrowsMessageTypeNotResolvedExceptionDuringFilter() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
 
+            when(messageTypeResolver.resolveOrThrow(any()))
+                    .thenThrow(MessageTypeNotResolvedException.class);
+            when(converter.convert(any(), (Type) eq(String.class))).thenReturn("some-query");
+            // when...
+            testSubject.complete(String.class, query -> query.equals("some-query"));
+            // then...
+            verify(queryBus).completeSubscriptions(filterCaptor.capture(), eq(context));
+            assertThatThrownBy(() -> filterCaptor.getValue().test(testQuery))
+                    .isInstanceOf(MessageTypeNotResolvedException.class);
         }
 
         @Test
-        void completeForQueryTypeThrowsConversionException() {
+        void completeForQueryTypeThrowsConversionExceptionDuringFilter() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
 
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(converter.convert(any(), (Type) eq(String.class))).thenThrow(ConversionException.class);
+            // when...
+            testSubject.complete(String.class, query -> query.equals("some-query"));
+            // then...
+            verify(queryBus).completeSubscriptions(filterCaptor.capture(), eq(context));
+            assertThatThrownBy(() -> filterCaptor.getValue().test(testQuery))
+                    .isInstanceOf(ConversionException.class);
         }
 
         @Test
         void completeForQueryName() {
+            // given...
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, "some-query", instanceOf(String.class), instanceOf(String.class)
+            );
+            // when...
+            testSubject.complete(QUERY_TYPE.qualifiedName(), query -> true);
+            // then...
+            verify(queryBus).completeSubscriptions(filterCaptor.capture(), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
 
+            verifyNoInteractions(messageTypeResolver);
+            verifyNoInteractions(converter);
         }
 
         @Test
         void completeForQueryNameAndGivenFilter() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
+            Update testUpdatePayload = new Update("some-update");
 
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            // when...
+            testSubject.complete(QUERY_TYPE.qualifiedName(), query -> query.equals(testQueryPayload));
+            // then...
+            verify(queryBus).completeSubscriptions(filterCaptor.capture(), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
+
+            verifyNoInteractions(messageTypeResolver);
+            verifyNoInteractions(converter);
         }
     }
 
@@ -129,32 +367,121 @@ class SimpleQueryUpdateEmitterTest {
 
         @Test
         void completeExceptionallyForQueryType() {
-
+            // given...
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, "some-query", instanceOf(String.class), instanceOf(String.class)
+            );
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            // when...
+            testSubject.completeExceptionally(String.class, query -> true, CAUSE);
+            // then...
+            verify(queryBus).completeSubscriptionsExceptionally(filterCaptor.capture(), eq(CAUSE), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
+            verify(messageTypeResolver).resolveOrThrow(String.class);
+            verifyNoInteractions(converter);
         }
 
         @Test
         void completeExceptionallyForQueryTypeAndFilter() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
 
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(converter.convert(any(), (Type) eq(String.class))).thenReturn("some-query");
+            // when...
+            testSubject.completeExceptionally(String.class, query -> query.equals("some-query"), CAUSE);
+            // then...
+            verify(queryBus).completeSubscriptionsExceptionally(filterCaptor.capture(), eq(CAUSE), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
+            verify(messageTypeResolver).resolveOrThrow(String.class);
+            verify(converter).convert(testQueryPayload, (Type) String.class);
         }
 
         @Test
-        void completeExceptionallyForQueryTypeThrowsMessageTypeNotResolvedException() {
+        void completeExceptionallyForQueryTypeThrowsMessageTypeNotResolvedExceptionDuringFilter() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
 
+            when(messageTypeResolver.resolveOrThrow(any()))
+                    .thenThrow(MessageTypeNotResolvedException.class);
+            when(converter.convert(any(), (Type) eq(String.class))).thenReturn("some-query");
+            // when...
+            testSubject.completeExceptionally(String.class, query -> query.equals("some-query"), CAUSE);
+            // then...
+            verify(queryBus).completeSubscriptionsExceptionally(filterCaptor.capture(), eq(CAUSE), eq(context));
+            assertThatThrownBy(() -> filterCaptor.getValue().test(testQuery))
+                    .isInstanceOf(MessageTypeNotResolvedException.class);
         }
 
         @Test
-        void completeExceptionallyForQueryTypeThrowsConversionException() {
+        void completeExceptionallyForQueryTypeThrowsConversionExceptionDuringFilter() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
 
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(converter.convert(any(), (Type) eq(String.class))).thenThrow(ConversionException.class);
+            // when...
+            testSubject.completeExceptionally(String.class, query -> query.equals("some-query"), CAUSE);
+            // then...
+            verify(queryBus).completeSubscriptionsExceptionally(filterCaptor.capture(), eq(CAUSE), eq(context));
+            assertThatThrownBy(() -> filterCaptor.getValue().test(testQuery))
+                    .isInstanceOf(ConversionException.class);
         }
 
         @Test
         void completeExceptionallyForQueryName() {
+            // given...
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, "some-query", instanceOf(String.class), instanceOf(String.class)
+            );
+            // when...
+            testSubject.completeExceptionally(QUERY_TYPE.qualifiedName(), query -> true, CAUSE);
+            // then...
+            verify(queryBus).completeSubscriptionsExceptionally(filterCaptor.capture(), eq(CAUSE), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
 
+            verifyNoInteractions(messageTypeResolver);
+            verifyNoInteractions(converter);
         }
 
         @Test
         void completeExceptionallyForQueryNameAndGivenFilter() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
+            Update testUpdatePayload = new Update("some-update");
 
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            when(messageTypeResolver.resolveOrThrow(testUpdatePayload)).thenReturn(UPDATE_TYPE);
+            // when...
+            testSubject.completeExceptionally(QUERY_TYPE.qualifiedName(),
+                                              query -> query.equals(testQueryPayload),
+                                              CAUSE);
+            // then...
+            verify(queryBus).completeSubscriptionsExceptionally(filterCaptor.capture(), eq(CAUSE), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
+
+            verifyNoInteractions(messageTypeResolver);
+            verifyNoInteractions(converter);
         }
+    }
+
+    private record SubscriptionQuery(String value) {
+
+    }
+
+    private record Update(String value) {
+
     }
 }
