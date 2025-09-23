@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.event;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.event.DcbEventChannel;
+import io.axoniq.axonserver.grpc.event.dcb.AppendEventsResponse;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsResponse;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
@@ -78,9 +79,9 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
-                                                             @Nullable ProcessingContext context,
-                                                             @Nonnull List<TaggedEventMessage<?>> events) {
+    public CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+                                                                @Nullable ProcessingContext context,
+                                                                @Nonnull List<TaggedEventMessage<?>> events) {
         if (events.isEmpty()) {
             return CompletableFuture.completedFuture(EmptyAppendTransaction.INSTANCE);
         }
@@ -165,10 +166,10 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
 
     private record AxonServerAppendTransaction(
             DcbEventChannel.AppendEventsTransaction appendTransaction
-    ) implements AppendTransaction {
+    ) implements AppendTransaction<AppendEventsResponse> {
 
         @Override
-        public CompletableFuture<ConsistencyMarker> commit() {
+        public CompletableFuture<AppendEventsResponse> commit(@Nullable ProcessingContext context) {
             logger.debug("Committing append event transaction...");
             return appendTransaction.commit()
                                     .exceptionallyCompose(throwable -> {
@@ -176,17 +177,19 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
                                         return CompletableFuture.failedFuture(
                                                 new AppendEventsTransactionRejectedException(throwable.getMessage())
                                         );
-                                    })
-                                    .thenApply(appendResponse -> {
-                                        long marker = appendResponse.getConsistencyMarker();
-                                        logger.debug("Committing append transaction succeeded with marker [{}].",
-                                                     marker);
-                                        return new GlobalIndexConsistencyMarker(marker);
                                     });
         }
 
         @Override
-        public void rollback() {
+        public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull AppendEventsResponse appendResponse, @Nullable ProcessingContext context) {
+            long marker = appendResponse.getConsistencyMarker();
+            logger.debug("Committing append transaction succeeded with marker [{}].", marker);
+
+            return CompletableFuture.completedFuture(new GlobalIndexConsistencyMarker(marker));
+        }
+
+        @Override
+        public void rollback(@Nullable ProcessingContext context) {
             appendTransaction.rollback();
         }
     }

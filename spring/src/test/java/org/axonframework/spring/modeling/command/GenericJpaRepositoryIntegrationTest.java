@@ -32,6 +32,7 @@ import org.axonframework.eventhandling.LegacyEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorConfiguration;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
@@ -90,7 +91,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         eventProcessor = new SubscribingEventProcessor(
                 "test",
                 List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                cfg -> cfg.messageSource(eventBus)
+                new SubscribingEventProcessorConfiguration().messageSource(eventBus)
         );
         FutureUtils.joinAndUnwrap(eventProcessor.start());
     }

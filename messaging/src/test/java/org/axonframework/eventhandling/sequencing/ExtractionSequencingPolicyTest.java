@@ -43,8 +43,7 @@ final class ExtractionSequencingPolicyTest {
         // given
         final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
-                TestEvent::id,
-                eventConverter()
+                TestEvent::id
         );
 
         // when / then
@@ -59,8 +58,7 @@ final class ExtractionSequencingPolicyTest {
         // given
         final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
-                event -> event.id() + "-" + event.version(),
-                eventConverter()
+                event -> event.id() + "-" + event.version()
         );
 
         // when / then
@@ -75,8 +73,7 @@ final class ExtractionSequencingPolicyTest {
         // given
         final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
-                event -> null,
-                eventConverter()
+                event -> null
         );
 
         // when / then
@@ -91,8 +88,7 @@ final class ExtractionSequencingPolicyTest {
         // given
         final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
-                event -> null,
-                eventConverter()
+                event -> null
         );
 
         // when
@@ -109,8 +105,7 @@ final class ExtractionSequencingPolicyTest {
         // given
         final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
-                TestEvent::id,
-                eventConverter()
+                TestEvent::id
         );
 
         // when / then
@@ -125,8 +120,7 @@ final class ExtractionSequencingPolicyTest {
         // given
         final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
-                TestEvent::id,
-                eventConverter()
+                TestEvent::id
         );
 
         // when / then
@@ -139,8 +133,7 @@ final class ExtractionSequencingPolicyTest {
         // given
         final SequencingPolicy expressionPolicy = new ExtractionSequencingPolicy<>(
                 TestEvent.class,
-                TestEvent::id,
-                eventConverter()
+                TestEvent::id
         );
         final SequencingPolicy fallbackPolicy = new FallbackSequencingPolicy<>(
                 expressionPolicy,
@@ -162,21 +155,21 @@ final class ExtractionSequencingPolicyTest {
         void shouldThrowNullPointerExceptionWhenPayloadClassIsNull() {
             // when / then
             assertThrows(NullPointerException.class, () ->
-                    new ExtractionSequencingPolicy<>(null, TestEvent::id, eventConverter()));
+                    new ExtractionSequencingPolicy<>(null, TestEvent::id));
         }
 
         @Test
         void shouldThrowNullPointerExceptionWhenIdentifierExtractorIsNull() {
             // when / then
             assertThrows(NullPointerException.class, () ->
-                    new ExtractionSequencingPolicy<>(TestEvent.class, null, eventConverter()));
+                    new ExtractionSequencingPolicy<>(TestEvent.class, null));
         }
 
         @Test
         void shouldThrowNullPointerExceptionWhenEventConverterIsNull() {
             // when / then
             assertThrows(NullPointerException.class, () ->
-                    new ExtractionSequencingPolicy<>(TestEvent.class, null, eventConverter()));
+                    new ExtractionSequencingPolicy<>(TestEvent.class, null));
         }
     }
 
@@ -188,8 +181,7 @@ final class ExtractionSequencingPolicyTest {
             // given
             final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                     TestEvent.class,
-                    TestEvent::id,
-                    eventConverter()
+                    TestEvent::id
             );
 
             // when / then
@@ -202,8 +194,7 @@ final class ExtractionSequencingPolicyTest {
             // given
             final SequencingPolicy sequencingPolicy = new ExtractionSequencingPolicy<>(
                     TestEvent.class,
-                    TestEvent::id,
-                    eventConverter()
+                    TestEvent::id
             );
 
             // when / then
@@ -217,7 +208,7 @@ final class ExtractionSequencingPolicyTest {
     }
 
     private static StubProcessingContext aProcessingContext() {
-        return new StubProcessingContext();
+        return StubProcessingContext.withComponent(EventConverter.class, eventConverter());
     }
 
     @Nonnull

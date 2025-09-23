@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
+import org.axonframework.commandhandling.annotation.CommandHandlingMember;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.property.Property;
@@ -139,11 +139,11 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
     protected Map<String, Property<Object>> extractCommandHandlerRoutingKeys(Member member,
                                                                              EntityModel<Object> childEntityModel) {
         return childEntityModel.commandHandlers(childEntityModel.entityClass())
-                               .map(commandHandler -> commandHandler.unwrap(CommandMessageHandlingMember.class)
+                               .map(commandHandler -> commandHandler.unwrap(CommandHandlingMember.class)
                                                                     .orElse(null))
                                .filter(Objects::nonNull)
                                .collect(Collectors.toMap(
-                                       CommandMessageHandlingMember::commandName,
+                                       CommandHandlingMember::commandName,
                                        commandHandler -> extractCommandHandlerRoutingKey(childEntityModel,
                                                                                          commandHandler,
                                                                                          member
@@ -153,7 +153,7 @@ public abstract class AbstractChildEntityDefinition implements ChildEntityDefini
 
 
     private Property<Object> extractCommandHandlerRoutingKey(EntityModel<Object> childEntityModel,
-                                                             CommandMessageHandlingMember<?> commandHandler,
+                                                             CommandHandlingMember<?> commandHandler,
                                                              Member member) {
         Class<?> commandPayloadType = commandHandler.payloadType();
 

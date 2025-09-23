@@ -91,9 +91,9 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
     }
 
     @Override
-    public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
-                                                             @Nullable ProcessingContext context,
-                                                             @Nonnull List<TaggedEventMessage<?>> events) {
+    public CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+                                                                @Nullable ProcessingContext context,
+                                                                @Nonnull List<TaggedEventMessage<?>> events) {
         try {
             assertValidTags(events);
         } catch (Exception e) {
@@ -137,13 +137,17 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
             return CompletableFuture.failedFuture(e);
         }
 
-        return CompletableFuture.completedFuture(new AppendTransaction() {
+        return CompletableFuture.completedFuture(new AppendTransaction<AggregateBasedConsistencyMarker>() {
             @Override
-            public CompletableFuture<ConsistencyMarker> commit() {
-                var finalConsistencyMarker = aggregateSequencer.forwarded();
+            public CompletableFuture<AggregateBasedConsistencyMarker> commit(@Nullable ProcessingContext context) {
                 return tx.commit()
                          .exceptionallyCompose(e -> CompletableFuture.failedFuture(translateConflictException(e)))
-                         .thenApply(r -> finalConsistencyMarker);
+                         .thenApply(r -> aggregateSequencer.forwarded());
+            }
+
+            @Override
+            public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull AggregateBasedConsistencyMarker marker, @Nullable ProcessingContext context) {
+                return CompletableFuture.completedFuture(marker);
             }
 
             private Throwable translateConflictException(Throwable e) {
@@ -154,7 +158,7 @@ public class AggregateBasedAxonServerEventStorageEngine implements EventStorageE
             }
 
             @Override
-            public void rollback() {
+            public void rollback(@Nullable ProcessingContext context) {
                 tx.rollback();
             }
         });
