@@ -37,7 +37,7 @@ import jakarta.annotation.Nonnull;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class MethodSequencingPolicyEventMessageHandlerDefinition implements HandlerEnhancerDefinition {
+public class MethodSequencingPolicyEventHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {

@@ -40,7 +40,7 @@ import jakarta.annotation.Nonnull;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class MethodEventMessageHandlerDefinition implements HandlerEnhancerDefinition {
+public class MethodEventHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
@@ -49,7 +49,7 @@ public class MethodEventMessageHandlerDefinition implements HandlerEnhancerDefin
                        .filter(method -> method.isAnnotationPresent(EventHandler.class))
                        .filter(method -> optionalEventName.isPresent())
                        .map(method -> (MessageHandlingMember<T>)
-                               new MethodEventMessageHandlerDefinition.MethodEventMessageHandlingMember<>(
+                               new MethodEventHandlerDefinition.MethodEventMessageHandlingMember<>(
                                        original,
                                        optionalEventName.get()
                                )

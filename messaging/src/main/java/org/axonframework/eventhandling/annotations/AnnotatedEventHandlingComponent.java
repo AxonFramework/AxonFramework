@@ -23,8 +23,8 @@ import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.annotation.EventHandlingMember;
-import org.axonframework.eventhandling.annotation.MethodEventMessageHandlerDefinition;
-import org.axonframework.eventhandling.annotation.MethodSequencingPolicyEventMessageHandlerDefinition;
+import org.axonframework.eventhandling.annotation.MethodEventHandlerDefinition;
+import org.axonframework.eventhandling.annotation.MethodSequencingPolicyEventHandlerDefinition;
 import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentBuilder;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.Message;
@@ -154,7 +154,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     private void registerHandler(MessageHandlingMember<? super T> handler) {
         Class<?> payloadType = handler.payloadType();
-        QualifiedName qualifiedName = handler.unwrap(MethodEventMessageHandlerDefinition.MethodEventMessageHandlingMember.class)
+        QualifiedName qualifiedName = handler.unwrap(MethodEventHandlerDefinition.MethodEventMessageHandlingMember.class)
                                              .map(EventHandlingMember::eventName)
                                              .map(QualifiedName::new)
                                              .orElseGet(() -> new QualifiedName(payloadType));
@@ -180,8 +180,8 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                 ).ignoreEntries().cast();
 
         var sequencingPolicy = handler
-                .unwrap(MethodSequencingPolicyEventMessageHandlerDefinition.SequencingPolicyEventMessageHandlingMember.class)
-                .map(MethodSequencingPolicyEventMessageHandlerDefinition.SequencingPolicyEventMessageHandlingMember::sequencingPolicy);
+                .unwrap(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember.class)
+                .map(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember::sequencingPolicy);
 
         return sequencingPolicy.map(sp -> (EventHandler) new DefaultEventHandlingComponentBuilder(new SimpleEventHandlingComponent())
                 .sequencingPolicy(sp)

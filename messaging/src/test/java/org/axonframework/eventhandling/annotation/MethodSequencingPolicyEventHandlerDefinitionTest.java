@@ -35,21 +35,21 @@ import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class for {@link MethodSequencingPolicyEventMessageHandlerDefinition} to verify proper wrapping of
+ * Test class for {@link MethodSequencingPolicyEventHandlerDefinition} to verify proper wrapping of
  * event handlers with sequencing policy annotations.
  *
  * @author Mateusz Nowak
  */
-class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
+class MethodSequencingPolicyEventHandlerDefinitionTest {
 
-    private MethodSequencingPolicyEventMessageHandlerDefinition testSubject;
+    private MethodSequencingPolicyEventHandlerDefinition testSubject;
     private AnnotatedMessageHandlingMemberDefinition handlerDefinition;
     private ParameterResolverFactory parameterResolver;
 
     @BeforeEach
     void setUp() {
         parameterResolver = ClasspathParameterResolverFactory.forClass(getClass());
-        testSubject = new MethodSequencingPolicyEventMessageHandlerDefinition();
+        testSubject = new MethodSequencingPolicyEventHandlerDefinition();
         handlerDefinition = new AnnotatedMessageHandlingMemberDefinition();
     }
 
@@ -164,7 +164,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
     }
 
     private org.axonframework.eventhandling.sequencing.SequencingPolicy getSequencingPolicy(MessageHandlingMember<?> wrappedHandler) {
-        var handler = (MethodSequencingPolicyEventMessageHandlerDefinition.SequencingPolicyEventMessageHandlingMember<?>) wrappedHandler;
+        var handler = (MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember<?>) wrappedHandler;
         return handler.sequencingPolicy();
     }
 
@@ -174,7 +174,7 @@ class MethodSequencingPolicyEventMessageHandlerDefinitionTest {
                     targetClass,
                     targetClass.getDeclaredMethod(methodName, parameterTypes),
                     parameterResolver,
-                    MethodSequencingPolicyEventMessageHandlerDefinitionTest::returnTypeConverter
+                    MethodSequencingPolicyEventHandlerDefinitionTest::returnTypeConverter
             ).orElseThrow(() -> new IllegalArgumentException("Handler creation failed"));
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("Method used to build handler does not exist: " + methodName, e);
