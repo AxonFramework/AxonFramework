@@ -21,7 +21,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
 /**
  * Interface indicating that a {@link MessageHandlingMember} is capable of handling specific event messages.
  *
- * @param <T> The type of entity to which the message handler will delegate the actual handling of the message
+ * @param <T> The type of entity to which the message handler will delegate the actual handling of the message.
  * @author Mateusz Nowak
  * @since 5.0.0
  */
@@ -30,7 +30,7 @@ public interface EventHandlingMember<T> extends MessageHandlingMember<T> {
     /**
      * Returns the name of the event that can be handled.
      *
-     * @return The name of the event that can be handled
+     * @return The name of the event that can be handled.
      */
     String eventName();
 

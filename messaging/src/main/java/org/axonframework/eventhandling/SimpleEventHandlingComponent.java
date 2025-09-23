@@ -63,8 +63,8 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
      *
      * @param sequencingPolicy the {@link SequencingPolicy} to use for sequencing events.
      */
-    public SimpleEventHandlingComponent(SequencingPolicy sequencingPolicy) {
-        this.sequencingPolicy = sequencingPolicy;
+    public SimpleEventHandlingComponent(@Nonnull SequencingPolicy sequencingPolicy) {
+        this.sequencingPolicy = Objects.requireNonNull(sequencingPolicy, "Sequencing Policy may not be null.");
     }
 
     @Nonnull
@@ -128,10 +128,6 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
      * {@link org.axonframework.eventhandling.processors.streaming.segmenting.SequenceOverridingEventHandlingComponent} if you cannot inherit from a certain
      * {@code EventHandlingComponent} implementation.
      * <p>
-     *
-     * @param event   The event for which to get the sequencing identifier.
-     * @param context The processing context in which the event is being handled.
-     * @return
      */
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Nonnull

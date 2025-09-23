@@ -53,7 +53,7 @@ public class MethodSequencingPolicyEventMessageHandlerDefinition implements Hand
 
     /**
      * Extracting {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} from the {@link SequencingPolicy} annotation.
-     * @param <T>
+     * @param <T> The type of the declaring class of the event handling method.
      */
     @Internal
     public static class SequencingPolicyEventMessageHandlingMember<T>

@@ -44,14 +44,14 @@ public class MethodEventMessageHandlerDefinition implements HandlerEnhancerDefin
 
     @Override
     public @Nonnull <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        Optional<String> optionalCommandName = original.attribute(HandlerAttributes.EVENT_NAME);
+        Optional<String> optionalEventName = original.attribute(HandlerAttributes.EVENT_NAME);
         return original.unwrap(Method.class)
                        .filter(method -> method.isAnnotationPresent(EventHandler.class))
-                       .filter(method -> optionalCommandName.isPresent())
+                       .filter(method -> optionalEventName.isPresent())
                        .map(method -> (MessageHandlingMember<T>)
                                new MethodEventMessageHandlerDefinition.MethodEventMessageHandlingMember<>(
                                        original,
-                                       optionalCommandName.get()
+                                       optionalEventName.get()
                                )
                        )
                        .orElse(original);
@@ -59,7 +59,7 @@ public class MethodEventMessageHandlerDefinition implements HandlerEnhancerDefin
 
     /**
      * Extracting event name from {@link EventHandler} annotation.
-     * @param <T> The type of the declaring class of the event handling method.
+     * @param <T> The type of entity to which the message handler will delegate the actual handling of the message.
      */
     @Internal
     public static class MethodEventMessageHandlingMember<T>

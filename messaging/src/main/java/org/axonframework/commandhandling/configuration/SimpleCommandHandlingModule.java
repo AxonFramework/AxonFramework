@@ -25,6 +25,8 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ComponentDefinition;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.QualifiedName;
 
@@ -82,6 +84,11 @@ class SimpleCommandHandlingModule extends BaseModule<SimpleCommandHandlingModule
                 requireNonNull(handlingComponentBuilder, "The command handling component builder cannot be null.")
         );
         return this;
+    }
+
+    @Override
+    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+        return super.build(parent, lifecycleRegistry);
     }
 
     @Override

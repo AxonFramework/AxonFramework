@@ -54,8 +54,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotatedEventHandlingComponentTest {
 
-    public static final String AGGREGATE_TYPE = "test";
-    public static final String AGGREGATE_IDENTIFIER = "id";
+    private static final String AGGREGATE_TYPE = "test";
+    private static final String AGGREGATE_IDENTIFIER = "id";
     private TestEventHandler eventHandler;
     private EventHandlingComponent eventHandlingComponent;
 

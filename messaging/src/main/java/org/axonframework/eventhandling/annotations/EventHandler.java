@@ -79,7 +79,7 @@ public @interface EventHandler {
      * The name of the Event this handler listens to. Defaults to the fully qualified class name of the payload type
      * (i.e. first parameter).
      *
-     * @return The event name
+     * @return The event name.
      */
     String eventName() default "";
 

@@ -97,7 +97,7 @@ import java.lang.annotation.Target;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-@Target({ElementType.METHOD, ElementType.TYPE})
+@Target({ElementType.METHOD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented
