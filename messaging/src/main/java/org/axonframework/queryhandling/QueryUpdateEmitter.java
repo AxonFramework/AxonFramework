@@ -23,6 +23,7 @@ import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageTypeNotResolvedException;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.function.Predicate;
@@ -61,8 +62,9 @@ public interface QueryUpdateEmitter extends DescribableComponent {
         return context.computeResourceIfAbsent(
                 RESOURCE_KEY,
                 () -> new SimpleQueryUpdateEmitter(
-                        context.component(MessageTypeResolver.class),
                         context.component(QueryBus.class),
+                        context.component(MessageTypeResolver.class),
+                        context.component(MessageConverter.class),
                         context
                 )
         );
