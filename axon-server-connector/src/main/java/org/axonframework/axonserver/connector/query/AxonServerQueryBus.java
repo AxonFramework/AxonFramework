@@ -675,7 +675,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         /**
          * Sets the {@link QueryUpdateEmitter} which can be used to emit updates to queries. Required to honor the
-         * {@link QueryBus#queryUpdateEmitter()} contract.
+         * {@code QueryBus#queryUpdateEmitter()} contract.
          *
          * @param updateEmitter a {@link QueryUpdateEmitter} which can be used to emit updates to queries
          * @return the current Builder instance, for fluent interfacing
