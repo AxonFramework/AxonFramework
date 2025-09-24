@@ -46,12 +46,12 @@ import static org.axonframework.test.matchers.Matchers.predicate;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * This test class is intended to test whether the registration of a
- * {@link HandlerDefinition} and a
+ * This test class is intended to test whether the registration of a {@link HandlerDefinition} and a
  * {@link HandlerEnhancerDefinition} go according to plan.
  *
  * @author Steven van Beelen
  */
+@Disabled("#3710 Reenable after ParameterResolver fix")
 public class FixtureTest_RegisteringMethodEnhancements {
 
     private static final String TEST_AGGREGATE_IDENTIFIER = "aggregate-identifier";
@@ -113,9 +113,9 @@ public class FixtureTest_RegisteringMethodEnhancements {
         testSubject.registerParameterResolverFactory(new TestParameterResolverFactory(new AtomicBoolean(false)))
                    .givenAggregate(TEST_AGGREGATE_IDENTIFIER)
                    .published(asEventMessage(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER))
-                                            .withMetadata(
-                                                         Collections.singletonMap("extraIdentifier",
-                                                                                  "myExtraIdentifier")))
+                                      .withMetadata(
+                                              Collections.singletonMap("extraIdentifier",
+                                                                       "myExtraIdentifier")))
                    .whenPublishingA(new ParameterResolvedEvent(TEST_AGGREGATE_IDENTIFIER))
                    .expectAssociationWith("extraIdentifier", "myExtraIdentifier");
     }

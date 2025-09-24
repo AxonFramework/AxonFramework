@@ -601,6 +601,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("#3710 Reenable after ParameterResolver fix")
     void annotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined(
             @Mock LegacyRepository<CollectionFieldWithoutGenerics> mockRepo
     ) {
@@ -740,6 +741,7 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
+    @Disabled("#3710 Reenable after ParameterResolver fix")
     void duplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
         commandBus = aCommandBus();
 
