@@ -28,7 +28,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -284,6 +286,20 @@ public interface AxonTestPhase {
          * @return The current Given instance, for fluent interfacing.
          */
         Given commands(@Nonnull List<?> commands);
+
+        /**
+         * Allows running custom setup steps (other than executing messages) on any component retrievable from the {@link Configuration}.
+         * @param function The function to execute on the configuration.
+         * @return The current Given instance, for fluent interfacing.
+         */
+        Given execute(@Nonnull Function<Configuration, Void> function);
+
+        /**
+         * Allows running custom setup steps (other than executing messages) on any component retrievable from the {@link Configuration}.
+         * @param function The function to execute on the configuration.
+         * @return The current Given instance, for fluent interfacing.
+         */
+        Given executeAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function);
 
         /**
          * Transitions to the When phase to execute the test action.
@@ -614,6 +630,20 @@ public interface AxonTestPhase {
              * @return The current Then instance, for fluent interfacing.
              */
             T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer);
+
+            /**
+             * Allows running assertions on any component retrievable from the {@link Configuration}.
+             * @param function The function to execute on the configuration.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            T execute(@Nonnull Function<Configuration, Void> function);
+
+            /**
+             * Allows running assertions on any component retrievable from the {@link Configuration}.
+             * @param function The function to execute on the configuration.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            T executeAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function);
 
             /**
              * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple

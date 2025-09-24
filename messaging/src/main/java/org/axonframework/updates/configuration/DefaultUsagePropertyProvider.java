@@ -16,7 +16,7 @@
 
 package org.axonframework.updates.configuration;
 
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 
 /**
  * Default implementation of the {@link UsagePropertyProvider} interface. This implementation provides default values

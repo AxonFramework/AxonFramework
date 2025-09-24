@@ -22,10 +22,10 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;

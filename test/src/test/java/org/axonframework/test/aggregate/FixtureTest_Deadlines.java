@@ -16,12 +16,12 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.deadline.annotation.DeadlineHandler;
-import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.deadline.annotations.DeadlineHandler;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.modelling.command.AggregateCreationPolicy;

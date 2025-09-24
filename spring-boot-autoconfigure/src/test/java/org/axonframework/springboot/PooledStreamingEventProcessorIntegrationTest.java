@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.messaging.annotation.MessageIdentifier;
+import org.axonframework.messaging.annotations.MessageIdentifier;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.json.JacksonSerializer;

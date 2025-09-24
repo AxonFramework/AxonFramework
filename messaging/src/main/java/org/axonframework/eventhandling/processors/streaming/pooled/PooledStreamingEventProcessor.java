@@ -20,21 +20,20 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.processors.EventProcessingException;
 import org.axonframework.eventhandling.processors.EventProcessor;
-import org.axonframework.eventhandling.processors.streaming.segmenting.EventTrackerStatus;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.processors.ProcessorEventHandlingComponents;
-import org.axonframework.eventhandling.replay.ResetNotSupportedException;
-import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.segmenting.EventTrackerStatus;
+import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.replay.ResetNotSupportedException;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamableEventSource;
 import org.axonframework.eventstreaming.TrackingTokenSource;
@@ -81,9 +80,9 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  *
  * @author Allard Buijze
  * @author Steven van Beelen
- * @since 4.5
+ * @since 4.5.0
  */
-public class PooledStreamingEventProcessor implements StreamingEventProcessor, DescribableComponent {
+public class PooledStreamingEventProcessor implements StreamingEventProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 

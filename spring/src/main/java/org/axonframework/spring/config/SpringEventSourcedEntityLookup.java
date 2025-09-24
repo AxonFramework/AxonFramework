@@ -18,8 +18,8 @@ package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.AnnotationUtils;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.spring.stereotype.EventSourced;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -18,7 +18,7 @@ package org.axonframework.modelling.command.inspection;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.CommandHandlingMember;
+import org.axonframework.commandhandling.annotations.CommandHandlingMember;
 
 /**
  * Interface describing a message handler capable of forwarding a specific command.

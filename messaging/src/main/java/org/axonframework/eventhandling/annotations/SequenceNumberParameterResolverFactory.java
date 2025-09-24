@@ -20,10 +20,11 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.AbstractAnnotatedParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 
@@ -43,8 +44,7 @@ public final class SequenceNumberParameterResolverFactory extends
     private final ParameterResolver<Long> resolver;
 
     /**
-     * Initializes a {@link ParameterResolverFactory} for {@link SequenceNumber}
-     * annotated parameters
+     * Initializes a {@link ParameterResolverFactory} for {@link SequenceNumber} annotated parameters
      */
     public SequenceNumberParameterResolverFactory() {
         super(SequenceNumber.class, Long.class);
@@ -64,6 +64,10 @@ public final class SequenceNumberParameterResolverFactory extends
         @Nullable
         @Override
         public Long resolveParameterValue(@Nonnull ProcessingContext context) {
+            var sequenceNumber = context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
+            if (sequenceNumber != null) {
+                return sequenceNumber;
+            }
             if (Message.fromContext(context) instanceof DomainEventMessage domainEventMessage) {
                 return domainEventMessage.getSequenceNumber();
             }
@@ -72,7 +76,8 @@ public final class SequenceNumberParameterResolverFactory extends
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return Message.fromContext(context) instanceof DomainEventMessage;
+            var sequenceInContext = context.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
+            return sequenceInContext || Message.fromContext(context) instanceof DomainEventMessage;
         }
     }
 }

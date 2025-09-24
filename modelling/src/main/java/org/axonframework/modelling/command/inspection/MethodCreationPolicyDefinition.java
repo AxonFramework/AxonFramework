@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.messaging.HandlerAttributes;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.annotations.HandlerAttributes;
+import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
 

@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.testsuite.student;
 
 
 import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
@@ -33,7 +33,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.SimpleEntityEvolvingComponent;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.annotation.InjectEntity;
+import org.axonframework.modelling.annotations.InjectEntity;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 

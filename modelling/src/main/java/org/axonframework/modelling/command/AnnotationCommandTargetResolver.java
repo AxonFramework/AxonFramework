@@ -18,7 +18,7 @@ package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;

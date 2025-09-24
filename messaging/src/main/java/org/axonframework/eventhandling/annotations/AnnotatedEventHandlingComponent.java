@@ -22,19 +22,19 @@ import org.axonframework.eventhandling.EventHandlerRegistry;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentBuilder;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotations.HandlerDefinition;
+import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.serialization.Converter;
 
 import java.util.Set;
 
@@ -150,19 +150,41 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     }
 
     private void registerHandler(MessageHandlingMember<? super T> handler) {
-        QualifiedName qualifiedName = new QualifiedName(handler.payloadType()); // TODO #3098 - allow to define eventName on the handling member
-
+        Class<?> payloadType = handler.payloadType();
+        QualifiedName qualifiedName = handler.unwrap(MethodEventHandlerDefinition.MethodEventMessageHandlingMember.class)
+                                             .map(EventHandlingMember::eventName)
+                                             .map(QualifiedName::new)
+                                             .orElseGet(() -> new QualifiedName(payloadType));
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         delegate.subscribe(
                 qualifiedName,
-                (event, ctx) ->
-                        interceptorChain.handle(
-                                event.withConvertedPayload(handler.payloadType(), ctx.component(EventConverter.class)),
-                                ctx,
-                                target,
-                                handler
-                        ).ignoreEntries().cast()
+                interceptedEventHandler(qualifiedName, handler, interceptorChain)
         );
+    }
+
+    @Nonnull
+    private EventHandler interceptedEventHandler(
+            QualifiedName qualifiedName,
+            MessageHandlingMember<? super T> handler,
+            MessageHandlerInterceptorMemberChain<T> interceptorChain
+    ) {
+        EventHandler interceptedEventHandler = (event, ctx) ->
+                interceptorChain.handle(
+                        event.withConvertedPayload(handler.payloadType(), ctx.component(EventConverter.class)),
+                        ctx,
+                        target,
+                        handler
+                ).ignoreEntries().cast();
+
+        var sequencingPolicy = handler
+                .unwrap(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember.class)
+                .map(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember::sequencingPolicy);
+
+        return sequencingPolicy.map(sp -> (EventHandler) new DefaultEventHandlingComponentBuilder(new SimpleEventHandlingComponent())
+                .sequencingPolicy(sp)
+                .handles(qualifiedName, interceptedEventHandler)
+                .build()
+        ).orElse(interceptedEventHandler);
     }
 
     @Override

@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.processors;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.streaming.segmenting.SequencingEventHandlingComponent;

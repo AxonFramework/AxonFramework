@@ -16,17 +16,17 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
-import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
-import org.axonframework.eventsourcing.annotation.reflection.InjectEntityId;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
+import org.axonframework.eventsourcing.annotations.reflection.InjectEntityId;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.commands.SendMaxCoursesNotificationCommand;
@@ -36,7 +36,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.annotation.InjectEntity;
+import org.axonframework.modelling.annotations.InjectEntity;
 import org.axonframework.modelling.configuration.EntityModule;
 import org.junit.jupiter.api.*;
 

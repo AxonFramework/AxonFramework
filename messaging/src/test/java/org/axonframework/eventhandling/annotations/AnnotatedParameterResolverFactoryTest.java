@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.annotations;
 
-import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotations.AbstractAnnotatedParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolver;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;

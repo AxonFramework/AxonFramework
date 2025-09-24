@@ -18,6 +18,8 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.messaging.NoScopeDescriptor;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.messaging.annotations.ParameterResolver;
+import org.axonframework.messaging.annotations.ScopeDescriptorParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 

@@ -17,7 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.ComponentRegistry;
@@ -28,14 +28,14 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.HandlerDefinition;
+import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.tracing.SpanFactory;

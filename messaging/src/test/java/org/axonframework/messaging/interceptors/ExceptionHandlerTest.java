@@ -18,20 +18,21 @@ package org.axonframework.messaging.interceptors;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
+import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.interceptors.annotations.ExceptionHandler;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;

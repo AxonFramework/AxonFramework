@@ -17,13 +17,16 @@
 package org.axonframework.test.aggregate;
 
 import jakarta.persistence.EntityManager;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.annotations.TimestampParameterResolverFactory;
-import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
-import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
+import org.axonframework.messaging.annotations.AnnotatedMessageHandlingMemberDefinition;
+import org.axonframework.messaging.annotations.HandlerDefinition;
+import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -45,9 +48,9 @@ import static org.mockito.Mockito.mock;
  *     <li>The default {@code Repository} of the fixture can be wired in message handling methods.</li>
  *     <li>A registered {@code Repository} in the fixture can be wired in message handling methods.</li>
  *     <li>A {@link FixtureExecutionException} is thrown whenever a {@link RepositoryProvider} is registered after the {@code Repository} is defined.</li>
- *     <li>A {@link FixtureExecutionException} is thrown whenever a {@link org.axonframework.messaging.annotation.ParameterResolverFactory} is registered after the {@code Repository} is defined.</li>
- *     <li>A {@link FixtureExecutionException} is thrown whenever a {@link org.axonframework.messaging.annotation.HandlerDefinition} is registered after the {@code Repository} is defined.</li>
- *     <li>A {@link FixtureExecutionException} is thrown whenever a {@link org.axonframework.messaging.annotation.HandlerEnhancerDefinition} is registered after the {@code Repository} is defined.</li>
+ *     <li>A {@link FixtureExecutionException} is thrown whenever a {@link ParameterResolverFactory} is registered after the {@code Repository} is defined.</li>
+ *     <li>A {@link FixtureExecutionException} is thrown whenever a {@link HandlerDefinition} is registered after the {@code Repository} is defined.</li>
+ *     <li>A {@link FixtureExecutionException} is thrown whenever a {@link HandlerEnhancerDefinition} is registered after the {@code Repository} is defined.</li>
  * </ul>
  *
  * @author Steven van Beelen
