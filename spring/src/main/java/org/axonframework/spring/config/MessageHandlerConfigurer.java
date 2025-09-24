@@ -133,6 +133,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                                 .subscribing(processorName)
                                 .eventHandlingComponents(componentRegistration)
                                 .customized(SpringCustomizations.subscribingCustomizations(
+                                        packageName,
                                         moduleSettings
                                 ));
                     }

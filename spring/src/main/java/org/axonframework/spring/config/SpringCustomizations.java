@@ -18,13 +18,12 @@ package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.common.annotation.Internal;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorConfiguration;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
-import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.eventstreaming.StreamableEventSource;
@@ -58,12 +57,14 @@ interface SpringCustomizations {
     /**
      * Creates customizations for a subscribing event processing module.
      *
+     * @param name     Module name.
      * @param settings Settings of the module.
      * @return Customizations for the module.
      */
     static SubscribingEventProcessorModule.Customization subscribingCustomizations(
+            String name,
             EventProcessorSettings.SubscribingEventProcessorSettings settings) {
-        return new SpringSubscribingEventProcessingModuleCustomization(settings);
+        return new SpringSubscribingEventProcessingModuleCustomization(name, settings);
     }
 
     /**
@@ -72,24 +73,29 @@ interface SpringCustomizations {
     class SpringSubscribingEventProcessingModuleCustomization implements SubscribingEventProcessorModule.Customization {
 
         private final EventProcessorSettings.SubscribingEventProcessorSettings settings;
+        private final String name;
 
         SpringSubscribingEventProcessingModuleCustomization(
+                String name,
                 EventProcessorSettings.SubscribingEventProcessorSettings settings) {
+            this.name = name;
             this.settings = settings;
         }
 
         @Override
         public SubscribingEventProcessorConfiguration apply(Configuration configuration,
                                                             SubscribingEventProcessorConfiguration subscribingEventProcessorConfiguration) {
+            var messageSource = getComponent(configuration,
+                                             SubscribableMessageSource.class,
+                                             settings.source(),
+                                             null
+            );
+            require(messageSource != null, "Could not find a mandatory Source with name '" + settings.source()
+                    + "' for event processor '" + name + "'.");
+
             //noinspection unchecked
             return subscribingEventProcessorConfiguration
-                    .messageSource(
-                            getComponent(configuration,
-                                         SubscribableMessageSource.class,
-                                         settings.source(),
-                                         null
-                            )
-                    );
+                    .messageSource(messageSource);
         }
     }
 
@@ -120,25 +126,31 @@ interface SpringCustomizations {
                     settings.threadCount(),
                     new AxonThreadFactory(executorName)
             );
+
+            var eventStore = getComponent(configuration,
+                                          StreamableEventSource.class,
+                                          settings.source(),
+                                          null);
+            require(eventStore != null,
+                    "Could not find a mandatory Source with name '" + settings.source()
+                            + "' for event processor '" + name + "'.");
+
+            var tokenStore = getComponent(configuration,
+                                          TokenStore.class,
+                                          settings.tokenStore(),
+                                          null);
+            require(tokenStore != null,
+                    "Could not find a mandatory TokenStore with name '" + settings.tokenStore()
+                            + "' for event processor '" + name + "'."
+            );
             //noinspection unchecked
             return eventProcessorConfiguration
                     .workerExecutor(scheduledExecutorService)
                     .tokenClaimInterval(settings.tokenClaimIntervalInMillis())
                     .batchSize(settings.batchSize())
                     .initialSegmentCount(settings.initialSegmentCount())
-                    .eventSource(
-                            getComponent(configuration,
-                                         StreamableEventSource.class,
-                                         settings.source(),
-                                         null)
-                    )
-                    .tokenStore(
-                            getComponent(configuration,
-                                         TokenStore.class,
-                                         null,
-                                         InMemoryTokenStore::new
-                            )
-                    );
+                    .eventSource(eventStore)
+                    .tokenStore(tokenStore);
         }
     }
 
@@ -152,14 +164,23 @@ interface SpringCustomizations {
      * @param <T>           type of the component.
      * @return a component of given type and name, if found or supplied by the supplier.
      */
+    @Nullable
     static <T> T getComponent(@Nonnull Configuration configuration, @Nonnull Class<T> type,
                               @Nullable String name,
                               @Nullable Supplier<T> supplier) {
         Supplier<T> safeSupplier = (supplier != null) ? supplier : () -> null;
-        if (name != null) {
-            return configuration.getComponent(type, name, safeSupplier);
-        } else {
-            return configuration.getComponent(type, safeSupplier);
+        return configuration.getOptionalComponent(type, name).orElseGet(safeSupplier);
+    }
+
+    /**
+     * Throws AxonConfiguration exception if the condition is not met.
+     *
+     * @param condition Condition which has to be met.
+     * @param message   Message reported in Axon Configuration Exception, if the condition is not met.
+     */
+    static void require(boolean condition, String message) {
+        if (!condition) {
+            throw new AxonConfigurationException(message);
         }
     }
 }

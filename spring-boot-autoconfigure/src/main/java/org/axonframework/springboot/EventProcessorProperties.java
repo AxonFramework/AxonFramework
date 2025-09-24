@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.spring.config.EventProcessorSettings;
@@ -28,6 +29,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -120,6 +122,10 @@ public class EventProcessorProperties {
          */
         private int batchSize = 1;
 
+        /**
+         * Name of the {@link TokenStore} bean used for this processor. Must not be null.
+         */
+        private String tokenStore = "tokenStore";
         /**
          * The name of the bean that represents the sequencing policy for processing events. If no name is specified,
          * the processor defaults to a {@link org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy},
@@ -297,6 +303,25 @@ public class EventProcessorProperties {
          */
         public void setBatchSize(int batchSize) {
             this.batchSize = batchSize;
+        }
+
+        /**
+         * Sets the name of the TokenStore bean.
+         * @param tokenStore A name of the Spring Bean used for this processor.
+         */
+        public void setTokenStore(@Nonnull String tokenStore) {
+            Objects.requireNonNull(tokenStore, "TokenStore cannot be null");
+            this.tokenStore = tokenStore;
+        }
+
+        /**
+         * Retrieves the name of the TokenStore bean.
+         * @return Name of the token store Spring Bean.
+         */
+        @Override
+        @Nonnull
+        public String tokenStore() {
+            return tokenStore;
         }
 
         /**

@@ -119,6 +119,11 @@ class MessageHandlerConfigurerTest {
                     public String source() {
                         return "bean2";
                     }
+
+                    @Override
+                    public String tokenStore() {
+                        return "bean3";
+                    }
                 }
         ));
         Map<String, String> eventHandlers = new HashMap<>();

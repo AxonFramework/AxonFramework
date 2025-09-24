@@ -16,35 +16,41 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
-import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorModule;
-import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.spring.config.SpringComponentRegistry;
 import org.axonframework.springboot.fixture.event.test1.FirstHandler;
 import org.axonframework.springboot.fixture.event.test2.Test2EventHandlingConfiguration;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
+import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextException;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.context.annotation.Import;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating configuration through a properties file, adjusting the {@link EventProcessorProperties}.
@@ -68,7 +74,9 @@ class EventProcessorConfigurationTest {
                     "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].tokenClaimInterval=7",
                     "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].tokenClaimIntervalTimeUnit=SECONDS",
                     "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].threadCount=5",
-                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].batchSize=3"
+                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].batchSize=3",
+                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].tokenStore=store2",
+                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].source=mySource"
             }
     )
     class TwoPoolProcessorsTest {
@@ -154,6 +162,66 @@ class EventProcessorConfigurationTest {
         }
     }
 
+    @Nested
+    class FailToLoadProcessorTest {
+
+        static Stream<Arguments> configToError() {
+            return Stream.of(
+                    Arguments.of(
+                            Map.of(
+                                    "axon.eventhandling.processors[" + KEY1 + "].mode", "SUBSCRIBING",
+                                    "axon.eventhandling.processors[" + KEY1 + "].source", "nonExisting1"
+                            ),
+                            "Could not find a mandatory Source with name 'nonExisting1' "
+                                    + "for event processor '" + KEY1 + "'."
+                    ),
+                    Arguments.of(
+                            Map.of(
+                                    "axon.eventhandling.processors[" + KEY1 + "].source", "nonExisting1"
+                            ),
+                            "Could not find a mandatory Source with name 'nonExisting1' "
+                                    + "for event processor '" + KEY1 + "'."
+                    ),
+                    Arguments.of(
+                            Map.of(
+                                    "axon.eventhandling.processors[" + KEY1 + "].tokenStore", "nonExisting1"
+                            ),
+                            "Could not find a mandatory TokenStore with name 'nonExisting1' "
+                                    + "for event processor '" + KEY1 + "'."
+                    )
+            );
+        }
+
+        @ParameterizedTest
+        @MethodSource("configToError")
+        void dontStartWithWrongConfiguredProcessor(Map<String, String> parameters, String message) {
+            var app = new SpringApplication(MyCustomContext.class);
+            app.setLogStartupInfo(false);
+            Map<String, Object> props = new HashMap<>();
+            props.put("logging.level.root", "OFF");
+            props.put("logging.level.org.springframework.context.support.DefaultLifecycleProcessor", "OFF");
+            props.put("axon.axonserver.enabled", "false");
+            props.put("spring.main.banner-mode", "off");
+            props.putAll(parameters);
+            app.setDefaultProperties(props);
+            var e = assertThrows(
+                    ApplicationContextException.class,
+                    () -> {
+                        var originalErr = System.err;
+                        try {
+                            System.setErr(new PrintStream(OutputStream.nullOutputStream()));
+                            app.run();
+                        } finally {
+                            System.setErr(originalErr);
+                        }
+                    }
+            );
+            assertThat(e).isNotNull();
+            assertThat(e.getCause()).isInstanceOf(AxonConfigurationException.class);
+            assertThat(e.getCause().getMessage()).isEqualTo(message);
+        }
+    }
+
 
     @SuppressWarnings("unused")
     @ContextConfiguration
@@ -163,19 +231,14 @@ class EventProcessorConfigurationTest {
     @Import(Test2EventHandlingConfiguration.class) // explicit configuration import
     private static class MyCustomContext {
 
-        @MockitoBean
-        private SubscribableMessageSource messageSource;
+        @Bean(name = "tokenStore")
+        public TokenStore store1() {
+            return Mockito.mock(TokenStore.class);
+        }
 
-        @MockitoBean(name = "alternativeMessageSource")
-        private SubscribableMessageSource alternativeMessageSource;
-
-        @MockitoBean
-        private StreamableEventSource eventSource;
-
-        @MockitoBean("alternativeEventStore")
-        private StreamableEventSource alternativeEventSource;
-
-        @MockitoBean
-        private TokenStore tokenStore;
+        @Bean(name = "store2")
+        public TokenStore store2() {
+            return Mockito.mock(TokenStore.class);
+        }
     }
 }
