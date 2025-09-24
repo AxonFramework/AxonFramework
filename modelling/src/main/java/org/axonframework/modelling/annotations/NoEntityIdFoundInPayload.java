@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.annotation;
+package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.modelling.command.EntityIdResolver;
 
 /**
- * Exception indicating that the payload of a message resolved to a {@code null} id. A non-null id is required to
- * resolve the entity from the {@link org.axonframework.modelling.StateManager}.
+ * Exception indicating that no id was found in the payload of a message. Exactly one method or field annotated with
+ * {@link TargetEntityId} is required to return a non-null value.
  *
+ * @author Mitchell Herrijgers
  * @see EntityIdResolver
  * @see TargetEntityId
  * @since 5.0.0
- * @author Mitchell Herrijgers
  */
-public class NullEntityIdInPayloadException extends RuntimeException {
+public class NoEntityIdFoundInPayload extends RuntimeException {
 
     /**
      * Initialize the exception with the given payload of type {@code payloadClass}.
      *
-     * @param payloadClass The type of the payload.
+     * @param payloadClass The type of the payload not containing an id.
      */
-    public NullEntityIdInPayloadException(@Nonnull Class<?> payloadClass) {
-        super(String.format("The payload of type [%s] resolved to a id of null. A non-null id is required.",
-                            payloadClass.getName()));
+    public NoEntityIdFoundInPayload(@Nonnull Class<?> payloadClass) {
+        super(String.format(
+                "No non-null @TargetEntityId annotation was found in payload of type [%s]. Exactly one non-null identifier is required.",
+                payloadClass.getName()));
     }
 }

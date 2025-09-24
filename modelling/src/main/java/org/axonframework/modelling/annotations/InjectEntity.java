@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.annotation;
+package org.axonframework.modelling.annotations;
 
 import org.axonframework.messaging.annotations.MessageHandler;
 import org.axonframework.modelling.command.EntityIdResolver;

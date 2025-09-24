@@ -25,8 +25,8 @@ import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
-import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
+import org.axonframework.modelling.annotations.AnnotationBasedEntityIdResolver;
+import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
 import org.axonframework.modelling.entity.EntityCommandHandler;
 import org.axonframework.modelling.entity.annotation.AnnotatedEntityIdResolverDefinition;
 
@@ -89,7 +89,7 @@ import java.lang.annotation.Target;
  * </ol>
  * <p>
  * By default, the id is resolved using the {@link AnnotationBasedEntityIdResolver}, which resolves the
- * id based on the {@link org.axonframework.modelling.annotation.TargetEntityId} annotation on a field or method
+ * id based on the {@link org.axonframework.modelling.annotations.TargetEntityId} annotation on a field or method
  * of the command payload. You can customize this behavior by providing a custom {@link #entityIdResolverDefinition()}.
  *
  * <h2>Polymorphic entities</h2>
@@ -152,7 +152,7 @@ public @interface EventSourcedEntity {
      * The definition of the {@link EntityIdResolverDefinition} to use to resolve the entity id from a
      * {@link org.axonframework.commandhandling.CommandMessage command message}. Defaults to the
      * {@link AnnotatedEntityIdResolverDefinition}, which resolves the entity id based on the
-     * {@link org.axonframework.modelling.annotation.TargetEntityId} annotation on a payload field or method, after
+     * {@link org.axonframework.modelling.annotations.TargetEntityId} annotation on a payload field or method, after
      * converting the payload to the representation wanted by the entity.
      *
      * @return The definition to construct an {@link EntityIdResolverDefinition}.

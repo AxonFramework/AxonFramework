@@ -31,7 +31,7 @@ import org.axonframework.eventsourcing.annotations.EventSourcedEntityFactoryDefi
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
+import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;

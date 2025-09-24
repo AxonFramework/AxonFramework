@@ -23,7 +23,7 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
+import org.axonframework.modelling.annotations.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.command.EntityIdResolver;
 
 import java.util.Objects;

@@ -20,14 +20,14 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
-import org.axonframework.modelling.annotation.EntityIdResolverDefinition;
+import org.axonframework.modelling.annotations.AnnotationBasedEntityIdResolver;
+import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
 import org.axonframework.modelling.command.EntityIdResolver;
 
 /**
  * {@link EntityIdResolverDefinition} that converts the payload of incoming messages based on the
  * {@link AnnotatedEntityMetamodel#getExpectedRepresentation(QualifiedName) expected payload type} of the message
- * handler in the model, and then looks for a {@link org.axonframework.modelling.annotation.TargetEntityId}-annotated
+ * handler in the model, and then looks for a {@link org.axonframework.modelling.annotations.TargetEntityId}-annotated
  * member in the payload, through the {@link AnnotationBasedEntityIdResolver}.
  *
  * @author Mitchell Herrijgers

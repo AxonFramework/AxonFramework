@@ -33,7 +33,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.annotation.InjectEntity;
+import org.axonframework.modelling.annotations.InjectEntity;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.serialization.Converter;

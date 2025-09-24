@@ -26,7 +26,7 @@ import java.util.Optional;
 /**
  * Interface describing the definition of an {@link EntityChildMetamodel}. These definitions are automatically
  * detected by the {@link AnnotatedEntityMetamodel} if the definition's implementation is registered in the
- * {@code META-INF/services/org.axonframework.modelling.entity.annotation.EntityChildModelDefinition} file.
+ * {@code META-INF/services/org.axonframework.modelling.entity.annotations.EntityChildModelDefinition} file.
  * <p>
  * Note: This class was known as {code org.axonframework.modelling.command.inspection.ChildEntityDefinition} before
  * version 5.0.0.

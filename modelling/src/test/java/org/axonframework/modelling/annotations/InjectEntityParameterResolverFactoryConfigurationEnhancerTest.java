@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.annotation;
+package org.axonframework.modelling.annotations;
 
 import org.axonframework.configuration.DefaultComponentRegistry;
 import org.axonframework.configuration.LifecycleRegistry;

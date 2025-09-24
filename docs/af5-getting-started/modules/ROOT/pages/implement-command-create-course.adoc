@@ -33,7 +33,7 @@ Following our Vertical Slice Architecture, we'll place each message in its appro
 package io.axoniq.demo.university.faculty.write.createcourse;
 
 import io.axoniq.demo.university.faculty.shared.ids.CourseId;
-import org.axonframework.modelling.annotation.TargetEntityId;
+import org.axonframework.modelling.annotations.TargetEntityId;
 
 public record CreateCourse(
     CourseId courseId,
@@ -352,7 +352,7 @@ package io.axoniq.demo.university.faculty.write.createcourse;
 
 import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.modelling.annotation.InjectEntity;
+import org.axonframework.modelling.annotations.InjectEntity;
 
 class CreateCourseCommandHandler {
 
