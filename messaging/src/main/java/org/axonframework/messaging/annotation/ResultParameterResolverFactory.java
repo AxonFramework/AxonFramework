@@ -18,7 +18,7 @@ package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.interceptors.ResultHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;

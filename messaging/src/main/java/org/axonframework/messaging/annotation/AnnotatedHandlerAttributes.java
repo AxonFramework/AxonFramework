@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.SimpleHandlerAttributes;
 
@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
-import static org.axonframework.common.annotation.AnnotationUtils.isAnnotatedWith;
+import static org.axonframework.common.annotations.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.common.annotations.AnnotationUtils.isAnnotatedWith;
 
 /**
  * Container for message handler attributes, constructed through inspecting an {@link AnnotatedElement}. It does so by

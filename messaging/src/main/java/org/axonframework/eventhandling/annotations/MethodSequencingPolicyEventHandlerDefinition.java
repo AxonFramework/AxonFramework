@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.annotations;
 
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;

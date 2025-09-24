@@ -24,7 +24,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 import static org.axonframework.common.ReflectionUtils.methodsOf;
-import static org.axonframework.common.annotation.AnnotationUtils.isAnnotationPresent;
+import static org.axonframework.common.annotations.AnnotationUtils.isAnnotationPresent;
 
 /**
  * Uses reflection to know if a handler handles a certain type of messages.

@@ -33,7 +33,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.FutureUtils;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;

@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;

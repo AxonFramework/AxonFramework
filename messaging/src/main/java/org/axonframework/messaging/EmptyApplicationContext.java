@@ -18,7 +18,7 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 
 /**
  * An {@link ApplicationContext} implementation that does not provide any components.

@@ -19,7 +19,7 @@ package org.axonframework.modelling.command.inspection;
 import org.axonframework.commandhandling.annotations.CommandHandlingMember;
 import org.axonframework.common.IdentifierValidator;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
@@ -63,7 +63,7 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.ListUtils.distinct;
 import static org.axonframework.common.ReflectionUtils.NOT_RECURSIVE;
-import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.common.annotations.AnnotationUtils.findAnnotationAttributes;
 
 /**
  * AggregateMetaModelFactory implementation that uses annotations on the target aggregate's members to build up the

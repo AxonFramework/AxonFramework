@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.sequencing;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 

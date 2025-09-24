@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,4 +18,4 @@
  * Contains the main classes for annotation support in Axon Framework. These classes are typically independent of the
  * type of annotated handler (e.g. event handler, command handler).
  */
-package org.axonframework.common.annotation;
+package org.axonframework.common.annotations;

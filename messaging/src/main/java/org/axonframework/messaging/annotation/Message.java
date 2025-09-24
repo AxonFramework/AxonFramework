@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 

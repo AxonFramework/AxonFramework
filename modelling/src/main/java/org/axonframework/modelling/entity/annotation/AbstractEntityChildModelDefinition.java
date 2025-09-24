@@ -18,7 +18,7 @@ package org.axonframework.modelling.entity.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ConstructorUtils;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
@@ -32,7 +32,7 @@ import java.util.Optional;
 
 import static org.axonframework.common.ReflectionUtils.fieldNameFromMember;
 import static org.axonframework.common.ReflectionUtils.getMemberValueType;
-import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.common.annotations.AnnotationUtils.findAnnotationAttributes;
 
 /**
  * Abstract implementation of the {@link EntityChildModelDefinition} interface that makes concrete implementations

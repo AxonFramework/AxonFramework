@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.annotations;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Configuration;

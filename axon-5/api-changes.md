@@ -1845,6 +1845,8 @@ This section contains five tables:
 | org.axonframework.commandhandling.annotation.CommandHandlingMember                                     | org.axonframework.commandhandling.annotations.CommandHandlingMember                 | No                             |
 | org.axonframework.commandhandling.annotation.MethodCommandHandlerDefinition                            | org.axonframework.commandhandling.annotations.MethodCommandHandlerDefinition        | No                             |
 | org.axonframework.commandhandling.annotation.RoutingKey                                                | org.axonframework.commandhandling.annotations.RoutingKey                            | No                             |
+| org.axonframework.common.annotation.AnnotationUtils                                                    | org.axonframework.common.annotations.AnnotationUtils                                | No                             |
+| org.axonframework.common.annotation.PriorityAnnotationComparator                                       | org.axonframework.common.annotations.PriorityAnnotationComparator                   | No                             |
 
 ### Removed Classes
 

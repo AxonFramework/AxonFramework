@@ -16,7 +16,7 @@
 
 package org.axonframework.updates.configuration;
 
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 
 /**
  * A {@link UsagePropertyProvider} implementation that reads the usage properties from the command line system

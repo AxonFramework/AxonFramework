@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.common.annotation;
+package org.axonframework.common.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

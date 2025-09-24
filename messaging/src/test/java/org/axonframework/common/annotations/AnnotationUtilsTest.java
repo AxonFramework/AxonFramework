@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.common.annotation;
+package org.axonframework.common.annotations;
 
 import org.axonframework.commandhandling.annotations.RoutingKey;
 import org.junit.jupiter.api.*;
@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.axonframework.common.annotation.AnnotationUtils.*;
+import static org.axonframework.common.annotations.AnnotationUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
