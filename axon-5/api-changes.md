@@ -1910,6 +1910,8 @@ This section contains five tables:
 | org.axonframework.modelling.command.inspection.ChildForwardingCommandMessageHandlingMember             | org.axonframework.modelling.command.inspection.ChildForwardingCommandHandlingMember | No                             |
 | org.axonframework.queryhandling.annotation.MethodQueryMessageHandlerDefinition                         | org.axonframework.queryhandling.annotation.MethodQueryHandlerDefinition             | No                             |
 | org.axonframework.queryhandling.UpdateHandlerRegistration                                              | org.axonframework.queryhandling.UpdateHandler                                       | No                             |
+| org.axonframework.queryhandling.SubscriptionQueryResult                                                | org.axonframework.queryhandling.SubscriptionQueryResponse                           | No                             |
+| org.axonframework.queryhandling.DefaultSubscriptionQueryResult                                         | org.axonframework.queryhandling.GenericSubscriptionQueryResponse                    | No                             |
 
 ### Removed Classes
 
@@ -2029,9 +2031,10 @@ per class described) approach.
 
 Note that **any**  changes here may have far extending impact on the original class.
 
-| Class      | Before           | After                 | Explanation                                                  | 
-|------------|------------------|-----------------------|--------------------------------------------------------------|
-| `MetaData` | `Map<String, ?>` | `Map<String, String>` | See the [metadata description](#metadata-with-string-values) |
+| Class                       | Before                    | After                 | Explanation                                                        | 
+|-----------------------------|---------------------------|-----------------------|--------------------------------------------------------------------|
+| `MetaData`                  | `Map<String, ?>`          | `Map<String, String>` | See the [metadata description](#metadata-with-string-values)       |
+| `SubscriptionQueryResult`   | `implements Registration` | nothing               | The `Registration#cancel` method moved to a local `close()` method |
 
 ### Adjusted Constants
 
@@ -2052,22 +2055,23 @@ This section contains four subsections, called:
 
 ### Constructor Parameter adjustments
 
-| Constructor                                                                                | What                         | Why                                          | 
-|--------------------------------------------------------------------------------------------|------------------------------|----------------------------------------------|
-| One org.axonframework.messaging.AbstractMessage constructor                                | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| One org.axonframework.serialization.SerializedMessage constructor                          | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| All none-copy org.axonframework.messaging.GenericMessage constructors                      | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| All none-copy org.axonframework.commandhandling.GenericCommandMessage constructors         | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| All none-copy org.axonframework.eventhandling.GenericEventMessage constructors             | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| All none-copy org.axonframework.eventhandling.GenericDomainEventMessage constructors       | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| All none-copy org.axonframework.queryhandling.GenericQueryMessage constructors             | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| All none-copy org.axonframework.queryhandling.GenericSubscriptionQueryMessage constructors | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| All none-copy org.axonframework.queryhandling.GenericStreamingQueryMessage constructors    | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| All none-copy org.axonframework.deadline.GenericDeadlineMessage constructors               | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| All none-copy org.axonframework.messaging.GenericResultMessage constructors                | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
-| All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| Constructor                                                                                | What                                                                                         | Why                                                             | 
+|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
+| One org.axonframework.messaging.AbstractMessage constructor                                | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| One org.axonframework.serialization.SerializedMessage constructor                          | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| All none-copy org.axonframework.messaging.GenericMessage constructors                      | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| All none-copy org.axonframework.commandhandling.GenericCommandMessage constructors         | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| All none-copy org.axonframework.eventhandling.GenericEventMessage constructors             | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| All none-copy org.axonframework.eventhandling.GenericDomainEventMessage constructors       | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| All none-copy org.axonframework.queryhandling.GenericQueryMessage constructors             | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| All none-copy org.axonframework.queryhandling.GenericSubscriptionQueryMessage constructors | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| All none-copy org.axonframework.queryhandling.GenericStreamingQueryMessage constructors    | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| All none-copy org.axonframework.deadline.GenericDeadlineMessage constructors               | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| All none-copy org.axonframework.messaging.GenericResultMessage constructors                | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
+| `DefaultSubscriptionQueryResult`                                                           | Replaced `Mono` and `Flux` for `SubscriptionQueryResponseMessages` and payload map functions | See [here](#subscription-queries-and-the-query-update-emitter)  |
 
 ### Moved, Renamed, or parameter adjusted Methods
 
@@ -2131,6 +2135,11 @@ This section contains four subsections, called:
 | `QueryHandlingMember#getResultType()`                                                                                           | `QueryHandlingMember#resultType()`                                                                                     | 
 | `QueryUpdateEmitter#registerUpdateHandler(SubscriptionQueryMessage, int)`                                                       | `QueryUpdateEmitter#subscribeUpdateHandler(SubscriptionQueryMessage, int)`                                             | 
 | `UpdateHandlerRegistration#getUpdates()`                                                                                        | `UpdateHandler#updates()`                                                                                              | 
+| `SubscriptionQueryResult#cancel()`                                                                                              | `SubscriptionQueryResponse#close()`                                                                                    | 
+| `QueryUpdateEmitter#emit(Predicate<SubscriptionQueryMessage<?, ?, U>>, SubscriptionQueryUpdateMessage)`                         | `QueryBus#emitUpdate(Predicate<SubscriptionQueryMessage>, SubscriptionQueryUpdateMessage, ProcessingContext)`          | 
+| `QueryUpdateEmitter#complete(Predicate<SubscriptionQueryMessage<?, ?, ?>>)`                                                     | `QueryBus#completeSubscriptions(Predicate<SubscriptionQueryMessage>, ProcessingContext)`                               | 
+| `QueryUpdateEmitter#completeExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>>, Throwable)`                             | `QueryBus#completeSubscriptionsExceptionally(Predicate<SubscriptionQueryMessage>, Throwable, ProcessingContext)`       | 
+| `QueryUpdateEmitter#registerUpdateHandler(SubscriptionQueryMessage<?, ?, ?>, int)`                                              | `QueryBus#subscribeToUpdates(SubscriptionQueryMessage, int)`                                                           |
 
 ### Removed Methods and Constructors
 
@@ -2218,3 +2227,4 @@ This section contains four subsections, called:
 | `QueryBus#subscribe(String, Type, MessageHandler<? super QueryMessage<?, R>>)` | `Registration`                               | `void`                                       |
 | `QueryBus#query(QueryMessage<Q, R>)`                                           | `CompletableFuture<QueryResponseMessage<R>>` | `MessageStream<QueryResponseMessage>`        |
 | `QueryGateway#query(String, Q, ResponseType<R>)`                               | `CompletableFuture<R>`                       | `CompletableFuture<List<R>>`                 |`
+| `SubscriptionQueryResult#initialResult()`                                      | `Mono<I>`                                    | `Flux<I>`                                    |`
