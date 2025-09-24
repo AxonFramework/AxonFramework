@@ -717,11 +717,16 @@ class SimpleQueryBusTest {
             // when emitting on invocation...
             uow.onInvocation(context -> testSubject.emitUpdate(queryFilter, updateMessage, context));
             // then before the after commit phase validate the filter was not invoked yet...
+            List<String> updateList = new ArrayList<>();
+            result.updates().mapNotNull(m -> m.payloadAs(String.class)).subscribe(updateList::add);
             assertThat(filterInvoked).isFalse();
+            assertThat(updateList).isEmpty();
             // when executing the UnitOfWork, we pass the after commit phase
             uow.execute().join();
             // then we expect the update to be emitted, validated by the filter being invoked...
             assertThat(filterInvoked).isTrue();
+            assertThat(updateList).isNotEmpty();
+            assertThat(updateList).containsExactlyInAnyOrder(UPDATE_PAYLOAD);
         }
     }
 
