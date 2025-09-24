@@ -21,8 +21,9 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventHandlingComponent;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.EventProcessingException;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.ProcessorEventHandlingComponents;
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 
 import static org.axonframework.common.BuilderUtils.assertThat;
 
@@ -50,9 +50,9 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * or asynchronously.
  *
  * @author Rene de Waele
- * @since 3.0
+ * @since 3.0.0
  */
-public class SubscribingEventProcessor implements EventProcessor, DescribableComponent {
+public class SubscribingEventProcessor implements EventProcessor {
 
     private final String name;
     private final SubscribingEventProcessorConfiguration configuration;
