@@ -31,7 +31,6 @@ import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
@@ -299,7 +298,8 @@ class AggregateBasedJpaEventStorageEngineTest
                                      AppendCondition condition,
                                      TaggedEventMessage<?>... events) {
         subject.appendEvents(condition, processingContext(), events)
-               .thenCompose(EventStorageEngine.AppendTransaction::commit)
+               .thenApply(this::castTransaction)
+               .thenCompose(tx -> tx.commit(processingContext()).thenCompose(v -> tx.afterCommit(v, processingContext())))
                .join();
     }
 

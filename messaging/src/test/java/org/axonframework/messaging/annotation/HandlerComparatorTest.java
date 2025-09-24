@@ -16,7 +16,9 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -164,6 +166,12 @@ class HandlerComparatorTest {
         }
 
         @Override
+        public MessageStream<?> handle(@Nonnull Message message, @Nonnull ProcessingContext context,
+                                       @Nullable Object target) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        @Override
         public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
             return Optional.empty();
         }
@@ -197,6 +205,12 @@ class HandlerComparatorTest {
 
         @Override
         public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, Object target) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        @Override
+        public MessageStream<?> handle(@Nonnull Message message, @Nonnull ProcessingContext context,
+                                       @Nullable Object target) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 

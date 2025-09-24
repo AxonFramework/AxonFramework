@@ -29,6 +29,7 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerRegistration;
@@ -60,6 +61,7 @@ import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryHandlerName;
@@ -195,7 +197,8 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     }
 
     @Override
-    public Publisher<QueryResponseMessage> streamingQuery(StreamingQueryMessage query) {
+    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull StreamingQueryMessage query,
+                                                          @Nullable ProcessingContext context) {
         Span span = spanFactory.createStreamingQuerySpan(query, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             StreamingQueryMessage queryWithContext = spanFactory.propagateContext(query);
@@ -214,7 +217,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                     .map(MessageStream.Entry::message)
                                                     .flatMapMany(intercepted -> {
                                                                      if (shouldRunQueryLocally(intercepted.type().name())) {
-                                                                         return localSegment.streamingQuery(intercepted);
+                                                                         return localSegment.streamingQuery(intercepted, context);
                                                                      }
                                                                      return Mono.just(serializeStreaming(intercepted, priority))
                                                                                 .flatMapMany(queryRequest -> new ResultStreamPublisher<>(
@@ -283,9 +286,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         return result;
     }
 
+    @Nonnull
     @Override
-    public CompletableFuture<QueryResponseMessage> query(@Nonnull QueryMessage queryMessage) {
-
+    public MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage queryMessage,
+                                                     @Nullable ProcessingContext context) {
         Span span = spanFactory.createQuerySpan(queryMessage, true).start();
         try (SpanScope unused = span.makeCurrent()) {
             QueryMessage queryWithContext = spanFactory.propagateContext(queryMessage);
@@ -305,7 +309,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             CompletableFuture<QueryResponseMessage> queryTransaction = new CompletableFuture<>();
             try {
                 if (shouldRunQueryLocally(interceptedQuery.type().name())) {
-                    queryTransaction = localSegment.query(interceptedQuery);
+//                    queryTransaction = localSegment.query(interceptedQuery);
                 } else {
                     int priority = priorityCalculator.determinePriority(interceptedQuery);
                     QueryRequest queryRequest = serialize(interceptedQuery, false, priority);
@@ -340,8 +344,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                 }
                 span.end();
             });
-            return queryTransaction;
+//            return queryTransaction;
         }
+        return MessageStream.empty().cast();
     }
 
     private boolean shouldRunQueryLocally(String queryName) {
@@ -441,61 +446,6 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                           expectedPayloadType,
                                                           original.metadata());
         return new GenericQueryResponseMessage(delegate);
-    }
-
-    @Override
-    public Stream<QueryResponseMessage> scatterGather(@Nonnull QueryMessage queryMessage,
-                                                                long timeout,
-                                                                @Nonnull TimeUnit timeUnit) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(queryMessage.responseType().getExpectedResponseType()),
-                       () -> "The scatter-Gather query does not support Flux as a return type.");
-        shutdownLatch.ifShuttingDown(format(
-                "Cannot dispatch new %s as this bus is being shut down", "scatter-gather queries"
-        ));
-        ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
-
-        Span span = spanFactory.createScatterGatherSpan(queryMessage, true).start();
-        try (SpanScope unused = span.makeCurrent()) {
-            QueryMessage interceptedQuery = new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
-                    .proceed(spanFactory.propagateContext(queryMessage), null)
-                    .first()
-                    .<QueryMessage>cast()
-                    .asMono()
-                    .map(MessageStream.Entry::message)
-                    .block(); // TODO reintegrate as part of #3079
-            long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
-            String targetContext = targetContextResolver.resolveContext(interceptedQuery);
-            QueryRequest queryRequest =
-                    serializer.serializeRequest(interceptedQuery,
-                                                SCATTER_GATHER_NUMBER_OF_RESULTS,
-                                                timeUnit.toMillis(timeout),
-                                                priorityCalculator.determinePriority(interceptedQuery));
-
-            ResultStream<QueryResponse> queryResult = axonServerConnectionManager.getConnection(targetContext)
-                                                                                 .queryChannel()
-                                                                                 .query(queryRequest);
-
-            AtomicBoolean closed = new AtomicBoolean(false);
-            Runnable closeHandler = () -> {
-                if (closed.compareAndSet(false, true)) {
-                    queryInTransit.end();
-                    span.end();
-                }
-            };
-            return StreamSupport.stream(
-                    new QueryResponseSpliterator(queryMessage,
-                                                 queryResult,
-                                                 deadline,
-                                                 serializer,
-                                                 closeHandler),
-                    false
-            ).onClose(closeHandler);
-        } catch (Exception e) {
-            logger.debug("There was a problem issuing a scatter-gather query {}.", queryMessage, e);
-            queryInTransit.end();
-            span.recordException(e).end();
-            throw e;
-        }
     }
 
     @Override
