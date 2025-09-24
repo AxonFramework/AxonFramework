@@ -27,7 +27,7 @@ import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory
 import org.axonframework.messaging.annotations.MessageHandlerTimeout;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling.annotation;
+package org.axonframework.queryhandling.annotations;
 
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 
@@ -26,7 +26,7 @@ import java.lang.reflect.Type;
  *
  * @param <T> The type of entity to which the message handler will delegate the actual handling of the message.
  * @author Allard Buijze
- * @since 3.1
+ * @since 3.1.0
  */
 public interface QueryHandlingMember<T> extends MessageHandlingMember<T> {
 

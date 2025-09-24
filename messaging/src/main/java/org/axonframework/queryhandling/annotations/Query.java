@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.queryhandling.annotation;
+package org.axonframework.queryhandling.annotations;
 
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
