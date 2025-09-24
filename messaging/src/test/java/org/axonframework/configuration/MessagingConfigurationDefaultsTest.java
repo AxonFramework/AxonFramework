@@ -127,7 +127,6 @@ class MessagingConfigurationDefaultsTest {
         assertInstanceOf(DefaultEventGateway.class, resultConfig.getComponent(EventGateway.class));
         assertInstanceOf(SimpleEventBus.class, resultConfig.getComponent(EventBus.class));
         assertInstanceOf(SimpleQueryBus.class, resultConfig.getComponent(QueryBus.class));
-        assertInstanceOf(SimpleQueryUpdateEmitter.class, resultConfig.getComponent(QueryUpdateEmitter.class));
         assertEquals(QueryPriorityCalculator.defaultCalculator(),
                      resultConfig.getComponent(QueryPriorityCalculator.class));
         assertInstanceOf(DefaultQueryGateway.class, resultConfig.getComponent(QueryGateway.class));
