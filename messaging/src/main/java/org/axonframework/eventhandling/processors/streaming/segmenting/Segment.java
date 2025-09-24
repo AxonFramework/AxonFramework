@@ -19,7 +19,7 @@ package org.axonframework.eventhandling.processors.streaming.segmenting;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.Context;
 
 import java.util.ArrayList;

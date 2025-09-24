@@ -17,7 +17,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.junit.jupiter.api.*;
 import org.mockito.*;

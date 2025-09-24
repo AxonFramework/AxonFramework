@@ -16,14 +16,14 @@
 
 package org.axonframework.eventhandling.annotations;
 
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.HandlerAttributes;
+import org.axonframework.messaging.annotations.HandlerAttributes;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.UnsupportedHandlerException;
-import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.annotations.UnsupportedHandlerException;
+import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Member;

@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.processors;
 
+import org.axonframework.common.infra.DescribableComponent;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -26,9 +28,9 @@ import java.util.concurrent.CompletableFuture;
  * a whole group at once.
  *
  * @author Allard Buijze
- * @since 1.2
+ * @since 1.2.0
  */
-public interface EventProcessor {
+public interface EventProcessor extends DescribableComponent {
 
     /**
      * Returns the name of this event processor. This name is used to detect distributed instances of the

@@ -16,7 +16,7 @@
 
 package org.axonframework.updates.detection;
 
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.updates.api.Artifact;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

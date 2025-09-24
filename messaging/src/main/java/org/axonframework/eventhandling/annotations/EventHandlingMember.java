@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.annotations;
 
-import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
 
 /**
  * Interface indicating that a {@link MessageHandlingMember} is capable of handling specific event messages.

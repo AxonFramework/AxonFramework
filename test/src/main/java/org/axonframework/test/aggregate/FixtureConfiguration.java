@@ -19,22 +19,26 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.HandlerDefinition;
+import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.ParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotations.ClasspathHandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotations.SimpleResourceParameterResolverFactory;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
@@ -209,8 +213,8 @@ public interface FixtureConfiguration<T> {
     /**
      * Registers a {@link ParameterResolverFactory} within this fixture. The given {@code parameterResolverFactory}
      * will be added to the other parameter resolver factories introduced through {@link
-     * org.axonframework.messaging.annotation.ClasspathParameterResolverFactory#forClass(Class)} and the {@link
-     * org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory} adding the registered resources
+     * ClasspathParameterResolverFactory#forClass(Class)} and the {@link
+     * SimpleResourceParameterResolverFactory} adding the registered resources
      * (with {@link #registerInjectableResource(Object)}. The generic {@code T} is used as input for the {@code
      * ClasspathParameterResolverFactory#forClass(Class)} operation.
      *
@@ -296,7 +300,7 @@ public interface FixtureConfiguration<T> {
 
     /**
      * Registers a {@link HandlerDefinition} within this fixture. The given {@code handlerDefinition} is added to the
-     * handler definitions introduced through {@link org.axonframework.messaging.annotation.ClasspathHandlerDefinition#forClass(Class)}.
+     * handler definitions introduced through {@link ClasspathHandlerDefinition#forClass(Class)}.
      * The generic {@code T} is used as input for the {@code ClasspathHandlerDefinition#forClass(Class)} operation.
      *
      * @param handlerDefinition used to create concrete handlers
@@ -306,7 +310,7 @@ public interface FixtureConfiguration<T> {
 
     /**
      * Registers a {@link HandlerEnhancerDefinition} within this fixture. This given {@code handlerEnhancerDefinition}
-     * is added to the handler enhancer definitions introduced through {@link org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition#forClass(Class)}.
+     * is added to the handler enhancer definitions introduced through {@link ClasspathHandlerEnhancerDefinition#forClass(Class)}.
      * The generic {@code T} is used as input for the {@code ClasspathHandlerEnhancerDefinition#forClass(Class)}
      * operation.
      *

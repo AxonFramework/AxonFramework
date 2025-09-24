@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.Reporter;
@@ -34,7 +35,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -255,7 +258,19 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public AxonTestPhase.Setup and() {
-        return new AxonTestFixture(configuration, c -> customization);
+        return new AxonTestFixture(configuration, customization);
+    }
+
+    @Override
+    public T execute(@Nonnull Function<Configuration, Void> function) {
+        function.apply(configuration);
+        return self();
+    }
+
+    @Override
+    public T executeAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function) {
+        function.apply(configuration).join();
+        return self();
     }
 
     private T self() {

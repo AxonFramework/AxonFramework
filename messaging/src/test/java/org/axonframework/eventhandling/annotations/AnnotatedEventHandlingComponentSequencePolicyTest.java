@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.serialization.Converter;

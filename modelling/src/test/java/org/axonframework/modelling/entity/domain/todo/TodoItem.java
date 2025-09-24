@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.entity.domain.todo;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
+import org.axonframework.commandhandling.annotations.CommandHandler;
+import org.axonframework.modelling.entity.annotations.AnnotatedEntityMetamodel;
 import org.axonframework.modelling.entity.domain.todo.commands.CreateTodoItem;
 import org.axonframework.modelling.entity.domain.todo.commands.FinishTodoItem;
 

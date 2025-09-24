@@ -19,6 +19,7 @@ package org.axonframework.config;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
@@ -741,6 +742,11 @@ class EventProcessingModuleTest {
         @Override
         public boolean isError() {
             return false;
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            throw new UnsupportedOperationException("Not required for tests.");
         }
     }
 
