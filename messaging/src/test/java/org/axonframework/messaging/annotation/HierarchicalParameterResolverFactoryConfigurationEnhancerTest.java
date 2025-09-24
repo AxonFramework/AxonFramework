@@ -41,13 +41,17 @@ class HierarchicalParameterResolverFactoryConfigurationEnhancerTest {
         DefaultComponentRegistry parent = createCleanComponentRegistry();
         ParameterResolverFactory parentParameterResolverFactory = mock(ParameterResolverFactory.class);
         parent.registerComponent(ParameterResolverFactory.class, c -> parentParameterResolverFactory);
-        ParameterResolver<?> parentParameterResolver = mock(ParameterResolver.class);
-        when(parentParameterResolverFactory.createInstance(eq(testMethod), eq(new Parameter[]{}), eq(0))).thenReturn(parentParameterResolver);
+        //noinspection rawtypes
+        ParameterResolver parentParameterResolver = mock(ParameterResolver.class);
+        //noinspection unchecked
+        when(parentParameterResolverFactory.createInstance(eq(testMethod), eq(new Parameter[]{}), eq(0)))
+                .thenReturn(parentParameterResolver);
 
         // Set up the child with its own ParameterResolverFactory
         DefaultComponentRegistry child = createCleanComponentRegistry();
         ParameterResolverFactory childParameterResolverFactory = mock(ParameterResolverFactory.class);
-        ParameterResolver<?> childParameterResolver = mock(ParameterResolver.class);
+        //noinspection rawtypes
+        ParameterResolver childParameterResolver = mock(ParameterResolver.class);
         child.registerComponent(ParameterResolverFactory.class, c -> childParameterResolverFactory);
 
         // Build both in a nested way - this will create a HierarchicalParameterResolverFactory
@@ -67,7 +71,9 @@ class HierarchicalParameterResolverFactoryConfigurationEnhancerTest {
         assertSame(parentParameterResolver, parentFactory.createInstance(testMethod, new Parameter[]{}, 0));
 
         // But if the child has a result, it should return that
-        when(childParameterResolverFactory.createInstance(eq(testMethod), eq(new Parameter[]{}), eq(0))).thenReturn(childParameterResolver);
+        //noinspection unchecked
+        when(childParameterResolverFactory.createInstance(eq(testMethod), eq(new Parameter[]{}), eq(0)))
+                .thenReturn(childParameterResolver);
         assertSame(childParameterResolver, childFactory.createInstance(testMethod, new Parameter[]{}, 0));
     }
 
