@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -288,14 +289,18 @@ public interface AxonTestPhase {
         Given commands(@Nonnull List<?> commands);
 
         /**
-         * Allows running custom setup steps (other than executing messages) on any component retrievable from the {@link Configuration}.
+         * Allows running custom setup steps (other than executing messages) on any component retrievable from the
+         * {@link Configuration}.
+         *
          * @param function The function to execute on the configuration.
          * @return The current Given instance, for fluent interfacing.
          */
         Given execute(@Nonnull Function<Configuration, Void> function);
 
         /**
-         * Allows running custom setup steps (other than executing messages) on any component retrievable from the {@link Configuration}.
+         * Allows running custom setup steps (other than executing messages) on any component retrievable from the
+         * {@link Configuration}.
+         *
          * @param function The function to execute on the configuration.
          * @return The current Given instance, for fluent interfacing.
          */
@@ -513,9 +518,20 @@ public interface AxonTestPhase {
         interface Message<T extends Message<T>> {
 
 //            T event(@Nonnull Object expectedEvent);
-//            T eventMatches(@Nonnull Object expectedEvent);
-//            T notEventMatches(@Nonnull Object expectedEvent);
+//            T event(@Nonnull EventMessage expectedEvent);
+//            T eventMatches(@Nonnull EventMessage expectedEvent);
 //            T notEvent(@Nonnull Object unexpectedEvent);
+//            T notEvent(@Nonnull EventMessage unexpectedEvent);
+//            T notEventMatches(@Nonnull Object expectedEvent);
+//            T notEventMatches(@Nonnull EventMessage expectedEvent);
+
+//            T command(@Nonnull Object expectedEvent);
+//            T command(@Nonnull CommandMessage expectedEvent);
+//            T commandMatches(@Nonnull EventMessage expectedEvent);
+//            T notCommand(@Nonnull Object unexpectedEvent);
+//            T notCommand(@Nonnull EventMessage unexpectedEvent);
+//            T notCommandMatches(@Nonnull Object expectedEvent);
+//            T notCommandMatches(@Nonnull EventMessage expectedEvent);
 
             /**
              * Expect the given set of events to have been published during the {@link When} phase.
@@ -582,6 +598,12 @@ public interface AxonTestPhase {
              * @return The current Then instance, for fluent interfacing.
              */
             T commands(@Nonnull Object... expectedCommands);
+
+            T awaitCommands(@Nonnull Duration timeout, @Nonnull Object... expectedCommands);
+
+            default T awaitCommands(@Nonnull Object... expectedCommands) {
+                return awaitCommands(Duration.ofSeconds(100), expectedCommands);
+            }
 
             /**
              * Expect the given set of command messages to have been dispatched during the When phase.
@@ -659,13 +681,15 @@ public interface AxonTestPhase {
 
             /**
              * Allows running assertions on any component retrievable from the {@link Configuration}.
+             *
              * @param function The function to execute on the configuration.
              * @return The current Then instance, for fluent interfacing.
              */
-            T execute(@Nonnull Function<Configuration, Void> function);
+            T execute(@Nonnull Consumer<Configuration> function);
 
             /**
              * Allows running assertions on any component retrievable from the {@link Configuration}.
+             *
              * @param function The function to execute on the configuration.
              * @return The current Then instance, for fluent interfacing.
              */

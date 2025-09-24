@@ -172,7 +172,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * This filter is used by following methods:
          * <ul>
          *     <li>{@link AxonTestPhase.Then.Message#events}</li>
-         *     <li>{@link AxonTestPhase.Then.Message#commands}</li>
+         *     <li>{@link AxonTestPhase.Then.Message#awaitCommands}</li>
          *     <li>{@link AxonTestPhase.Then.Command#resultMessagePayload}</li>
          * </ul>
          * <p>
@@ -200,7 +200,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * This filter is used by following methods:
          * <ul>
          *     <li>{@link AxonTestPhase.Then.Message#events}</li>
-         *     <li>{@link AxonTestPhase.Then.Message#commands}</li>
+         *     <li>{@link AxonTestPhase.Then.Message#awaitCommands}</li>
          *     <li>{@link AxonTestPhase.Then.Command#resultMessagePayload}</li>
          * </ul>
          * <p>

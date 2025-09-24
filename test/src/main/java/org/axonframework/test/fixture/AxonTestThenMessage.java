@@ -29,7 +29,9 @@ import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.saga.CommandValidator;
 import org.hamcrest.Matcher;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -154,6 +156,14 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
+    public T awaitCommands(@Nonnull Duration timeout, @Nonnull Object... expectedCommands) {
+        Awaitility.waitAtMost(timeout)
+                .pollDelay(Duration.ofMillis(50))
+                .untilAsserted(() -> commandValidator.assertDispatchedEqualTo(expectedCommands));
+        return self();
+    }
+
+    @Override
     public T commands(@Nonnull CommandMessage... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(List.of(expectedCommands));
         return self();
@@ -262,8 +272,8 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T execute(@Nonnull Function<Configuration, Void> function) {
-        function.apply(configuration);
+    public T execute(@Nonnull Consumer<Configuration> function) {
+        function.accept(configuration);
         return self();
     }
 
