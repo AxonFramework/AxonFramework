@@ -18,12 +18,11 @@ package org.axonframework.eventhandling.processors.streaming.token;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.annotations.TrackingTokenParameterResolverFactory;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -56,12 +55,11 @@ class TrackingTokenParameterResolverFactoryTest {
     void returnsTrackingTokenForTrackedEventMessage() {
         ParameterResolver<?> resolver = testSubject.createInstance(method, method.getParameters(), 1);
         GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(1L);
-        GenericTrackedEventMessage trackedEventMessage = new GenericTrackedEventMessage(
-                trackingToken,
-                new GenericEventMessage(new MessageType("event"), "test"));
-        ProcessingContext contextWithTrackedMessage = StubProcessingContext.forMessage(trackedEventMessage);
-        assertTrue(resolver.matches(contextWithTrackedMessage));
-        assertSame(trackingToken, resolver.resolveParameterValue(contextWithTrackedMessage));
+        EventMessage testMessage = new GenericEventMessage(new MessageType("event"), "test");
+        ProcessingContext testContext = StubProcessingContext.forMessage(testMessage)
+                                                             .withResource(TrackingToken.RESOURCE_KEY, trackingToken);
+        assertTrue(resolver.matches(testContext));
+        assertSame(trackingToken, resolver.resolveParameterValue(testContext));
     }
 
     @SuppressWarnings("unused")

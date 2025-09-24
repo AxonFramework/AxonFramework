@@ -16,17 +16,18 @@
 
 package org.axonframework.eventhandling.replay;
 
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.replay.annotations.AllowReplay;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -62,12 +63,12 @@ class ReplayAwareMessageHandlerWrapperTest {
 
     @Test
     void invokeWithReplayTokens() throws Exception {
-        GenericTrackedEventMessage stringEvent = new GenericTrackedEventMessage(replayToken,
-                                                                                          asEventMessage("1"));
-        ProcessingContext stringContext = StubProcessingContext.forMessage(stringEvent);
-        GenericTrackedEventMessage longEvent = new GenericTrackedEventMessage(replayToken,
-                                                                                        asEventMessage(1L));
-        ProcessingContext longContext = StubProcessingContext.forMessage(longEvent);
+        EventMessage stringEvent = asEventMessage("1");
+        ProcessingContext stringContext = StubProcessingContext.forMessage(stringEvent)
+                                                               .withResource(TrackingToken.RESOURCE_KEY, replayToken);
+        EventMessage longEvent = new GenericTrackedEventMessage(replayToken, asEventMessage(1L));
+        ProcessingContext longContext = StubProcessingContext.forMessage(longEvent)
+                                                             .withResource(TrackingToken.RESOURCE_KEY, replayToken);
         assertTrue(testSubject.canHandle(stringEvent, stringContext));
         assertTrue(testMethodSubject.canHandle(stringEvent, stringContext));
         assertTrue(testSubject.canHandle(longEvent, longContext));

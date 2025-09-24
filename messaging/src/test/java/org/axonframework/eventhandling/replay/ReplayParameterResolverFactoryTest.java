@@ -16,16 +16,17 @@
 
 package org.axonframework.eventhandling.replay;
 
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -54,10 +55,12 @@ class ReplayParameterResolverFactoryTest {
 
     @Test
     void invokeWithReplayTokens() throws Exception {
-        GenericTrackedEventMessage replayEvent = new GenericTrackedEventMessage(replayToken, asEventMessage(1L));
-        ProcessingContext replayContext = StubProcessingContext.forMessage(replayEvent);
-        GenericTrackedEventMessage liveEvent = new GenericTrackedEventMessage(regularToken, asEventMessage(2L));
-        ProcessingContext liveContext = StubProcessingContext.forMessage(liveEvent);
+        EventMessage replayEvent = new GenericTrackedEventMessage(replayToken, asEventMessage(1L));
+        ProcessingContext replayContext = StubProcessingContext.forMessage(replayEvent)
+                                                               .withResource(TrackingToken.RESOURCE_KEY, replayToken);
+        EventMessage liveEvent = asEventMessage(2L);
+        ProcessingContext liveContext = StubProcessingContext.forMessage(liveEvent)
+                                                             .withResource(TrackingToken.RESOURCE_KEY, regularToken);
         assertTrue(testSubject.canHandle(replayEvent, replayContext));
         assertTrue(testSubject.canHandle(liveEvent, liveContext));
         testSubject.handleSync(replayEvent, replayContext);
