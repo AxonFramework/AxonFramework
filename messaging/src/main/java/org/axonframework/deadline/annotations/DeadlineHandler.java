@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.deadline.annotation;
+package org.axonframework.deadline.annotations;
 
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.annotation.MessageHandler;
@@ -26,13 +26,13 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation used to mark handlers which are capable of handling a {@link DeadlineMessage}. It is a specialization of
- * {@link MessageHandler} were the {@code messageType} is set to DeadlineMessage. Hence, any parameter injections
- * which works for event handlers work for deadline handlers as well.
+ * {@link MessageHandler} were the {@code messageType} is set to DeadlineMessage. Hence, any parameter injections which
+ * works for event handlers work for deadline handlers as well.
  *
  * @author Milan Savic
  * @author Steven van Beelen
  * @see MessageHandler
- * @since 3.3
+ * @since 3.3.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
@@ -50,6 +50,8 @@ public @interface DeadlineHandler {
     /**
      * Specifies the type of message payload that can be handled by the member method. The payload of the message should
      * be assignable to this type. Defaults to any {@link Object}.
+     *
+     * @return The payload type handled by the function annotated with {@code @DeadlineHandler}.
      */
     Class<?> payloadType() default Object.class;
 }

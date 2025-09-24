@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.deadline.annotation.DeadlineHandler;
+import org.axonframework.deadline.annotations.DeadlineHandler;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.deadline.annotation;
+package org.axonframework.deadline.annotations;
 
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;

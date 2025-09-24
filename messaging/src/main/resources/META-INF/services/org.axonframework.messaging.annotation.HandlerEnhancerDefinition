@@ -15,7 +15,7 @@
 #
 
 org.axonframework.commandhandling.annotations.MethodCommandHandlerDefinition
-org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition
+org.axonframework.deadline.annotations.DeadlineMethodMessageHandlerDefinition
 org.axonframework.eventhandling.annotations.MethodEventHandlerDefinition
 org.axonframework.eventhandling.annotations.MethodSequencingPolicyEventHandlerDefinition
 org.axonframework.eventhandling.replay.annotations.ReplayAwareMessageHandlerWrapper

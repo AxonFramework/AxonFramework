@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.deadline.annotation;
+package org.axonframework.deadline.annotations;
 
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.HandlerAttributes;
@@ -31,7 +31,7 @@ import jakarta.annotation.Nonnull;
  *
  * @author Milan Savic
  * @author Steven van Beelen
- * @since 3.3
+ * @since 3.3.0
  */
 public class DeadlineMethodMessageHandlerDefinition implements HandlerEnhancerDefinition {
 

@@ -1847,6 +1847,9 @@ This section contains five tables:
 | org.axonframework.commandhandling.annotation.RoutingKey                                                | org.axonframework.commandhandling.annotations.RoutingKey                            | No                             |
 | org.axonframework.common.annotation.AnnotationUtils                                                    | org.axonframework.common.annotations.AnnotationUtils                                | No                             |
 | org.axonframework.common.annotation.PriorityAnnotationComparator                                       | org.axonframework.common.annotations.PriorityAnnotationComparator                   | No                             |
+| org.axonframework.deadline.annotations.DeadlineHandler                                                 | org.axonframework.deadline.annotations.DeadlineHandler                              | No                             |
+| org.axonframework.deadline.annotations.DeadlineHandlingMember                                          | org.axonframework.deadline.annotations.DeadlineHandlingMember                       | No                             |
+| org.axonframework.deadline.annotations.DeadlineMethodMessageHandlerDefinition                          | org.axonframework.deadline.annotations.DeadlineMethodMessageHandlerDefinition       | No                             |
 
 ### Removed Classes
 

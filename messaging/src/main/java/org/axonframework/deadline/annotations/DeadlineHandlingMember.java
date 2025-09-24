@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.deadline.annotation;
+package org.axonframework.deadline.annotations;
 
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
@@ -23,7 +23,7 @@ import org.axonframework.messaging.annotation.MessageHandlingMember;
  *
  * @param <T> The type of entity to which the message handler will delegate the actual handling of the deadline
  * @author Milan Savic
- * @since 3.3
+ * @since 3.3.0
  */
 public interface DeadlineHandlingMember<T> extends MessageHandlingMember<T> {
 
