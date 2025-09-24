@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -135,6 +136,18 @@ class AxonTestGiven implements AxonTestPhase.Given {
                                        : toGenericCommandMessage(c, Metadata.emptyInstance())
                                ).toArray(CommandMessage[]::new);
         return commands(messages);
+    }
+
+    @Override
+    public AxonTestPhase.Given execute(@Nonnull Function<Configuration, Void> function) {
+        function.apply(configuration);
+        return this;
+    }
+
+    @Override
+    public AxonTestPhase.Given executeAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function) {
+        function.apply(configuration).join();
+        return this;
     }
 
     private GenericCommandMessage toGenericCommandMessage(@Nonnull Object payload,

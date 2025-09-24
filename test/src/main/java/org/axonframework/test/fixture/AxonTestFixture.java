@@ -52,10 +52,18 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
-    AxonTestFixture(@Nonnull AxonConfiguration configuration,
-                    @Nonnull UnaryOperator<Customization> customization) {
-        this.customization = customization.apply(new Customization());
-        this.configuration = configuration;
+    /**
+     * Creates a new fixture.
+     *
+     * @param configuration The fixture will use the configuration to obtain components needed for test execution.
+     * @param customization A function that allows to customize the fixture setup.
+     */
+    public AxonTestFixture(
+            @Nonnull AxonConfiguration configuration,
+            @Nonnull Customization customization
+    ) {
+        this.customization = Objects.requireNonNull(customization, "Customization may not be null.");
+        this.configuration = Objects.requireNonNull(configuration, "Configuration may not be null.");
 
         CommandBus commandBusComponent = configuration.getComponent(CommandBus.class);
         if (!(commandBusComponent instanceof RecordingCommandBus)) {
@@ -106,10 +114,11 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                                        @Nonnull UnaryOperator<Customization> customization) {
         Objects.requireNonNull(configurer, "Configurer may not be null");
         Objects.requireNonNull(customization, "Customization may not be null");
+        var fixtureConfiguration = customization.apply(new Customization());
         var configuration =
                 configurer.componentRegistry(cr -> cr.registerEnhancer(new MessagesRecordingConfigurationEnhancer()))
                           .start();
-        return new AxonTestFixture(configuration, customization);
+        return new AxonTestFixture(configuration, fixtureConfiguration);
     }
 
     @Override
@@ -147,13 +156,13 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * @param fieldFilters Collections of {@link FieldFilter FieldFilters} used to adjust the matchers for commands,
      *                     events, and result messages.
      */
-    public record Customization(@Nonnull List<FieldFilter> fieldFilters) {
+    public record Customization(boolean axonServerEnabled, @Nonnull List<FieldFilter> fieldFilters) {
 
         /**
          * Creates a new instance of {@code Customization}.
          */
         public Customization() {
-            this(new ArrayList<>());
+            this(false, new ArrayList<>());
         }
 
         /**
@@ -179,8 +188,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * @return the current Customization, for fluent interfacing.
          */
         public Customization registerFieldFilter(@Nonnull FieldFilter fieldFilter) {
-            this.fieldFilters.add(fieldFilter);
-            return this;
+            List<FieldFilter> fieldFiltersCopy = new ArrayList<>(this.fieldFilters);
+            fieldFiltersCopy.add(fieldFilter);
+            return new Customization(axonServerEnabled, fieldFiltersCopy);
         }
 
         /**
@@ -211,9 +221,16 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          *
          * @return The list of field filters.
          */
-        @Override
         public List<FieldFilter> fieldFilters() {
             return fieldFilters;
+        }
+
+        public Customization axonServerEnabled(boolean enabled) {
+            return new Customization(enabled, fieldFilters);
+        }
+
+        public boolean axonServerEnabled() {
+            return axonServerEnabled;
         }
     }
 }
