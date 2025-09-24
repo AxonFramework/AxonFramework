@@ -420,13 +420,14 @@ public class AnnotationBasedEventSourcedEntityFactory<E, ID> implements EventSou
      */
     private class IdTypeParameterResolver implements ParameterResolver<ID> {
 
+        @Nullable
         @Override
-        public ID resolveParameterValue(ProcessingContext processingContext) {
+        public ID resolveParameterValue(@Nonnull ProcessingContext processingContext) {
             return processingContext.getResource(ID_KEY);
         }
 
         @Override
-        public boolean matches(ProcessingContext processingContext) {
+        public boolean matches(@Nonnull ProcessingContext processingContext) {
             return processingContext.containsResource(ID_KEY);
         }
     }

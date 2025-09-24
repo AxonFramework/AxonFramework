@@ -35,9 +35,9 @@ public class FixedValueParameterResolver<T> implements ParameterResolver<T> {
     /**
      * Initialize the ParameterResolver to inject the given {@code value} for each incoming message.
      *
-     * @param value The value to inject as parameter
+     * @param value The value to inject as parameter.
      */
-    public FixedValueParameterResolver(T value) {
+    public FixedValueParameterResolver(@Nonnull T value) {
         this.value = value;
     }
 

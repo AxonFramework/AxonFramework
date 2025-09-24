@@ -14,7 +14,6 @@
 # limitations under the License.
 #
 
-org.axonframework.commandhandling.annotations.CurrentUnitOfWorkParameterResolverFactory
 org.axonframework.eventhandling.annotations.ConcludesBatchParameterResolverFactory
 org.axonframework.eventhandling.annotations.SequenceNumberParameterResolverFactory
 org.axonframework.eventhandling.annotations.TimestampParameterResolverFactory

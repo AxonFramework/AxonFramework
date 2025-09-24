@@ -19,10 +19,8 @@ package org.axonframework.eventhandling.processors.streaming.token.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.WrappedToken;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -31,8 +29,11 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 
 /**
- * Implementation of a {@link ParameterResolverFactory} that resolves the {@link TrackingToken} of an event message
- * if that message is a {@link TrackedEventMessage}.
+ * Implementation of a {@link ParameterResolverFactory} that resolves the {@link TrackingToken} from the
+ * {@link ProcessingContext} whenever it's available.
+ *
+ * @author Allard Buijze
+ * @since 3.0.0
  */
 public class TrackingTokenParameterResolverFactory implements ParameterResolverFactory {
 
@@ -40,7 +41,9 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
     @Nullable
     @Override
-    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver createInstance(@Nonnull Executable executable,
+                                            @Nonnull Parameter[] parameters,
+                                            int parameterIndex) {
         if (TrackingToken.class.equals(parameters[parameterIndex].getType())) {
             return RESOLVER;
         }
@@ -52,10 +55,9 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
         @Nullable
         @Override
         public TrackingToken resolveParameterValue(@Nonnull ProcessingContext context) {
-            if (Message.fromContext(context) instanceof TrackedEventMessage trackedEventMessage) {
-                return unwrap(trackedEventMessage.trackingToken());
-            }
-            return null;
+            return TrackingToken.fromContext(context)
+                                .map(this::unwrap)
+                                .orElse(null);
         }
 
         private TrackingToken unwrap(TrackingToken trackingToken) {
@@ -64,7 +66,7 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return Message.fromContext(context) instanceof TrackedEventMessage;
+            return context.containsResource(TrackingToken.RESOURCE_KEY);
         }
     }
 }
