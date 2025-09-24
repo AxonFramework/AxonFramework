@@ -16,219 +16,228 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.config.EventProcessingModule;
-import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.EventHandlerInvoker;
-import org.axonframework.eventhandling.processors.EventProcessor;
-import org.axonframework.eventhandling.MultiEventHandlerInvoker;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.sequencing.FullConcurrencyPolicy;
-import org.axonframework.eventhandling.sequencing.SequencingPolicy;
-import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
-import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.Module;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorModule;
+import org.axonframework.spring.config.SpringComponentRegistry;
+import org.axonframework.springboot.fixture.event.test1.FirstHandler;
+import org.axonframework.springboot.fixture.event.test2.Test2EventHandlingConfiguration;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
+import org.mockito.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextException;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.context.annotation.Import;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 
-import java.util.List;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating configuration through a properties file, adjusting the {@link EventProcessorProperties}.
  *
  * @author Allard Buijze
+ * @author Simon Zambrovski
  */
-@Disabled("TODO #3495")
 class EventProcessorConfigurationTest {
 
-    @SuppressWarnings("deprecation") // Suppressed ReflectionUtils#ensureAccessible
-    @Test
-    void processorConfigurationWithCustomPolicy() {
-        new ApplicationContextRunner()
-                .withUserConfiguration(Context.class)
-                .withPropertyValues(
-                        "axon.axonserver.enabled=false",
-                        "axon.eventhandling.processors.first.mode=pooled",
-                        "axon.eventhandling.processors.first.sequencingPolicy=customPolicy"
-                )
-                .run(context -> {
-                    assertThat(context).hasSingleBean(EventProcessingModule.class);
-                    EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
 
-                    Map<String, EventProcessor> processors = eventProcessingConfig.eventProcessors();
-                    assertEquals(3, processors.size());
+    private static final String KEY1 = "org.axonframework.springboot.fixture.event.test1";
+    private static final String KEY2 = "org.axonframework.springboot.fixture.event.test2";
 
-                    EventProcessor eventProcessor = processors.get("first");
-                    assertNotNull(eventProcessor);
-                    assertEquals(PooledStreamingEventProcessor.class, eventProcessor.getClass());
+    @Nested
+    @SpringBootTest(
+            classes = {EventProcessorConfigurationTest.MyCustomContext.class},
+            properties = {
+                    "axon.axonserver.enabled=false",
+                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].mode=pooled",
+                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].initialSegmentCount=73",
+                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].tokenClaimInterval=7",
+                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].tokenClaimIntervalTimeUnit=SECONDS",
+                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].threadCount=5",
+                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].batchSize=3",
+                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].tokenStore=store2",
+            }
+    )
+    class TwoPoolProcessorsTest {
 
-                    long tokenClaimInterval = ReflectionUtils.getFieldValue(
-                            PooledStreamingEventProcessor.class.getDeclaredField("tokenClaimInterval"), eventProcessor
-                    );
-                    assertEquals(5000L, tokenClaimInterval, "Must be 5000 ms by default");
+        @Autowired
+        private ApplicationContext context;
 
-                    assertThat(context).hasSingleBean(SequencingPolicy.class);
-                    //noinspection unchecked
-                    SequencingPolicy expectedPolicy = context.getBean(SequencingPolicy.class);
+        @Autowired
+        private EventProcessorProperties properties;
 
-                    MultiEventHandlerInvoker invoker = (MultiEventHandlerInvoker) ensureAccessible(
-                            eventProcessor.getClass().getDeclaredMethod("eventHandlerInvoker")
-                    ).invoke(eventProcessor);
-                    SimpleEventHandlerInvoker simpleEventHandlerInvoker =
-                            (SimpleEventHandlerInvoker) invoker.delegates().get(0);
-                    SequencingPolicy policy = ReflectionUtils.getFieldValue(
-                            SimpleEventHandlerInvoker.class.getDeclaredField("sequencingPolicy"),
-                            simpleEventHandlerInvoker
-                    );
-                    assertEquals(expectedPolicy, policy);
-                });
+        @Test
+        void processorConfigurationWithCustomValues() throws Exception {
+
+
+            assertThat(properties.getProcessors().get(KEY1)).isNotNull();
+
+            assertThat(context.getBean(SpringComponentRegistry.class)).isNotNull();
+            Map<String, Module> modules = ReflectionUtils.getFieldValue(
+                    SpringComponentRegistry.class.getDeclaredField("modules"),
+                    context.getBean(SpringComponentRegistry.class)
+            );
+            assertThat(modules).isNotNull();
+            assertThat(modules).hasSize(4);
+            var module1 = modules.get("EventProcessor[" + KEY1 + "]");
+            assertThat(module1).isNotNull();
+            assertThat(module1).isInstanceOf(PooledStreamingEventProcessorModule.class);
+
+            var module2 = modules.get("EventProcessor[" + KEY2 + "]");
+            assertThat(module2).isNotNull();
+            assertThat(module2).isInstanceOf(PooledStreamingEventProcessorModule.class);
+        }
     }
 
-    @Test
-    void tokenClaimIntervalCanBeSetViaSpringConfiguration() {
-        new ApplicationContextRunner()
-                .withUserConfiguration(Context.class)
-                .withPropertyValues(
-                        "axon.axonserver.enabled=false",
-                        "axon.eventhandling.processors.non_default_token_claim_interval.mode=pooled",
-                        "axon.eventhandling.processors.non_default_token_claim_interval.tokenClaimInterval=1000",
-                        "axon.eventhandling.processors.non_default_token_claim_interval.tokenClaimIntervalTimeUnit=MINUTES"
-                )
-                .run(context -> {
-                    assertThat(context).hasSingleBean(EventProcessingModule.class);
-                    EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+    @Nested
+    @SpringBootTest(
+            classes = {EventProcessorConfigurationTest.MyCustomContext.class},
+            properties = {
+                    "axon.axonserver.enabled=false",
+                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].mode=subscribing",
+            }
+    )
+    class PooledAndSubscribingProcessorTest {
 
-                    Map<String, EventProcessor> processors = eventProcessingConfig.eventProcessors();
-                    assertEquals(3, processors.size());
+        @Autowired
+        private ApplicationContext context;
 
-                    EventProcessor eventProcessor = processors.get("non_default_token_claim_interval");
-                    assertNotNull(eventProcessor);
-                    assertEquals(PooledStreamingEventProcessor.class, eventProcessor.getClass());
-                    long tokenClaimInterval = ReflectionUtils.getFieldValue(
-                            PooledStreamingEventProcessor.class.getDeclaredField("tokenClaimInterval"), eventProcessor
-                    );
+        @Autowired
+        private EventProcessorProperties properties;
 
-                    assertEquals(60000000L,
-                                 tokenClaimInterval,
-                                 "It must be possible to override token claim interval via Spring Configuration");
-                });
+        @Test
+        void processorConfigurationSubscribed() throws Exception {
+
+            var settings = properties.getProcessors().get(KEY1);
+            assertThat(settings).isNotNull();
+            assertThat(settings.getMode()).isEqualTo(EventProcessorProperties.Mode.SUBSCRIBING);
+
+            assertThat(context.getBean(SpringComponentRegistry.class)).isNotNull();
+            Map<String, Module> modules = ReflectionUtils.getFieldValue(
+                    SpringComponentRegistry.class.getDeclaredField("modules"),
+                    context.getBean(SpringComponentRegistry.class)
+            );
+            assertThat(modules).isNotNull();
+            assertThat(modules).hasSize(4);
+
+            Map<String, Configuration> modulesConfigurations = ReflectionUtils.getFieldValue(
+                    SpringComponentRegistry.class.getDeclaredField("moduleConfigurations"),
+                    context.getBean(SpringComponentRegistry.class)
+            );
+
+            var ep1 = "EventProcessor[" + KEY1 + "]";
+            var ep2 = "EventProcessor[" + KEY2 + "]";
+
+            assertThat(modulesConfigurations).hasSize(2);
+            assertThat(modulesConfigurations).containsKeys(ep1, ep2);
+
+            var module1 = modules.get(ep1);
+            assertThat(module1).isNotNull();
+            assertThat(module1).isInstanceOf(SubscribingEventProcessorModule.class);
+
+            var module2 = modules.get(ep2);
+            assertThat(module2).isNotNull();
+            assertThat(module2).isInstanceOf(PooledStreamingEventProcessorModule.class);
+        }
     }
 
-    @Test
-    void configurePooledStreamingEventProcessor() {
-        new ApplicationContextRunner()
-                .withUserConfiguration(Context.class)
-                .withPropertyValues(
-                        "axon.axonserver.enabled=false",
-                        "axon.eventhandling.processors.second.mode=pooled",
-                        "axon.eventhandling.processors.second.initialSegmentCount=12",
-                        "axon.eventhandling.processors.second.tokenClaimInterval=1000",
-                        "axon.eventhandling.processors.second.tokenClaimIntervalTimeUnit=MINUTES",
-                        "axon.eventhandling.processors.second.batchSize=1024"
-                )
-                .run(context -> {
-                    assertThat(context).hasSingleBean(EventProcessingModule.class);
-                    EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
+    @Nested
+    class FailToLoadProcessorTest {
 
-                    Map<String, EventProcessor> processors = eventProcessingConfig.eventProcessors();
-                    assertEquals(3, processors.size());
+        static Stream<Arguments> configToError() {
+            return Stream.of(
+                    Arguments.of(
+                            Map.of(
+                                    "axon.eventhandling.processors[" + KEY1 + "].mode", "SUBSCRIBING",
+                                    "axon.eventhandling.processors[" + KEY1 + "].source", "nonExisting1"
+                            ),
+                            "Could not find a mandatory Source with name 'nonExisting1' "
+                                    + "for event processor '" + KEY1 + "'."
+                    ),
+                    Arguments.of(
+                            Map.of(
+                                    "axon.eventhandling.processors[" + KEY1 + "].source", "nonExisting1"
+                            ),
+                            "Could not find a mandatory Source with name 'nonExisting1' "
+                                    + "for event processor '" + KEY1 + "'."
+                    ),
+                    Arguments.of(
+                            Map.of(
+                                    "axon.eventhandling.processors[" + KEY1 + "].tokenStore", "nonExisting1"
+                            ),
+                            "Could not find a mandatory TokenStore with name 'nonExisting1' "
+                                    + "for event processor '" + KEY1 + "'."
+                    )
+            );
+        }
 
-                    EventProcessor defaultProcessor = processors.get("first");
-                    assertNotNull(defaultProcessor);
-                    assertEquals(PooledStreamingEventProcessor.class, defaultProcessor.getClass());
-
-                    EventProcessor pooledProcessor = processors.get("second");
-                    assertNotNull(pooledProcessor);
-                    assertEquals(PooledStreamingEventProcessor.class, pooledProcessor.getClass());
-
-                    long resultTokenClaimInterval = ReflectionUtils.getFieldValue(
-                            PooledStreamingEventProcessor.class.getDeclaredField("tokenClaimInterval"), pooledProcessor
-                    );
-                    assertEquals(60000000L, resultTokenClaimInterval);
-
-                    int resultBatchSize = ReflectionUtils.getFieldValue(
-                            PooledStreamingEventProcessor.class.getDeclaredField("batchSize"), pooledProcessor
-                    );
-                    assertEquals(1024, resultBatchSize);
-                });
+        @ParameterizedTest
+        @MethodSource("configToError")
+        void dontStartWithWrongConfiguredProcessor(Map<String, String> parameters, String message) {
+            var app = new SpringApplication(MyCustomContext.class);
+            app.setLogStartupInfo(false);
+            Map<String, Object> props = new HashMap<>();
+            props.put("logging.level.root", "OFF");
+            props.put("logging.level.org.springframework.context.support.DefaultLifecycleProcessor", "OFF");
+            props.put("axon.axonserver.enabled", "false");
+            props.put("spring.main.banner-mode", "off");
+            props.putAll(parameters);
+            app.setDefaultProperties(props);
+            var e = assertThrows(
+                    ApplicationContextException.class,
+                    () -> {
+                        var originalErr = System.err;
+                        try {
+                            System.setErr(new PrintStream(OutputStream.nullOutputStream()));
+                            app.run();
+                        } finally {
+                            System.setErr(originalErr);
+                        }
+                    }
+            );
+            assertThat(e).isNotNull();
+            assertThat(e.getCause()).isInstanceOf(AxonConfigurationException.class);
+            assertThat(e.getCause().getMessage()).isEqualTo(message);
+        }
     }
 
-    @Test
-    void sequencedDeadLetterQueueCanBeSetViaSpringConfiguration() {
-        new ApplicationContextRunner()
-                .withUserConfiguration(Context.class)
-                .withPropertyValues(
-                        "axon.axonserver.enabled=false",
-                        "axon.eventhandling.processors.first.dlq.enabled=true"
-                )
-                .run(context -> {
-                    assertThat(context).hasSingleBean(EventProcessingModule.class);
-                    EventProcessingModule eventProcessingConfig = context.getBean(EventProcessingModule.class);
-
-                    assertTrue(eventProcessingConfig.deadLetterQueue("first").isPresent());
-                    assertFalse(eventProcessingConfig.deadLetterQueue("second").isPresent());
-                });
-    }
 
     @SuppressWarnings("unused")
     @ContextConfiguration
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-    private static class Context {
+    @ComponentScan(basePackageClasses = FirstHandler.class) // explicit scan to a location not in the same sub-package
+    @Import(Test2EventHandlingConfiguration.class) // explicit configuration import
+    private static class MyCustomContext {
 
-        @Bean
-        public SequencingPolicy customPolicy() {
-            return FullConcurrencyPolicy.INSTANCE;
+        @Bean(name = "tokenStore")
+        public TokenStore store1() {
+            return Mockito.mock(TokenStore.class);
         }
 
-        @Bean
-        public FirstHandler firstHandler() {
-            return new FirstHandler();
-        }
-
-        @ProcessingGroup("first")
-        public static class FirstHandler {
-
-            @EventHandler
-            public void handle(String event) {
-            }
-        }
-
-        @Bean
-        public SecondHandler secondHandler() {
-            return new SecondHandler();
-        }
-
-        @ProcessingGroup("second")
-        public static class SecondHandler {
-
-            @EventHandler
-            public void handle(String event) {
-            }
-        }
-
-        @Bean
-        public NonDefaultTokenClaimIntervalHandler nonDefaultTokenClaimIntervalHandler() {
-            return new NonDefaultTokenClaimIntervalHandler();
-        }
-
-        @ProcessingGroup("non_default_token_claim_interval")
-        public static class NonDefaultTokenClaimIntervalHandler {
-
-            @EventHandler
-            public void handle(String event) {
-            }
+        @Bean(name = "store2")
+        public TokenStore store2() {
+            return Mockito.mock(TokenStore.class);
         }
     }
 }

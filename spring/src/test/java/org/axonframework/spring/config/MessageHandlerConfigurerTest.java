@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorModule;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -27,7 +28,6 @@ import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -76,15 +76,56 @@ class MessageHandlerConfigurerTest {
         assertThat(registeredModules).hasSize(3);
         assertThat(registeredModules).allMatch(module -> module instanceof CommandHandlingModule);
         assertThat(registeredModules.stream().map(Module::name)).containsExactlyInAnyOrder(
-                "my.command.packaging.CommandHandling",
-                "my.command.packaging.custom.CommandHandling",
-                "default.CommandHandling"
+                "CommandHandling[my.command.packaging]",
+                "CommandHandling[my.command.packaging.custom]",
+                "CommandHandling[default]"
         );
     }
 
     @Test
     void detectsAndRegistersEventHandlersPerPackage() {
 
+        when(applicationContext.getBeansOfType(EventProcessorSettings.class)).thenReturn(Map.of(
+                "my.event.packaging.custom",
+                new EventProcessorSettings.SubscribingEventProcessorSettings() {
+                    @Override
+                    public String source() {
+                        return "bean1";
+                    }
+                },
+                "my.event.packaging",
+                new EventProcessorSettings.PooledEventProcessorSettings() {
+                    @Override
+                    public int initialSegmentCount() {
+                        return 7;
+                    }
+
+                    @Override
+                    public long tokenClaimIntervalInMillis() {
+                        return 5;
+                    }
+
+                    @Override
+                    public int threadCount() {
+                        return 3;
+                    }
+
+                    @Override
+                    public int batchSize() {
+                        return 19;
+                    }
+
+                    @Override
+                    public String source() {
+                        return "bean2";
+                    }
+
+                    @Override
+                    public String tokenStore() {
+                        return "bean3";
+                    }
+                }
+        ));
         Map<String, String> eventHandlers = new HashMap<>();
         eventHandlers.put("Handler1", "my.event.packaging.Handler1");
         eventHandlers.put("Handler2", "my.event.packaging.Handler2");
@@ -108,11 +149,19 @@ class MessageHandlerConfigurerTest {
         var registeredModules = moduleCaptor.getAllValues();
         assertThat(registeredModules).isNotNull();
         assertThat(registeredModules).hasSize(3);
-        assertThat(registeredModules).allMatch(module -> module instanceof PooledStreamingEventProcessorModule);
+        assertThat(registeredModules.get(0)).isInstanceOf(SpringLazyCreatingModule.class);
+        assertThat(registeredModules.get(1)).isInstanceOf(SpringLazyCreatingModule.class);
+        assertThat(registeredModules.get(2)).isInstanceOf(SpringLazyCreatingModule.class);
+
+        // since we use lazy initialization, there is no way to get the modules underneath
+        // assertThat(registeredModules.get(0)).isInstanceOf(PooledStreamingEventProcessorModule.class);
+        // assertThat(registeredModules.get(1)).isInstanceOf(SubscribingEventProcessorModule.class);
+        // assertThat(registeredModules.get(2)).isInstanceOf(PooledStreamingEventProcessorModule.class);
+
         assertThat(registeredModules.stream().map(Module::name)).containsExactlyInAnyOrder(
-                "my.event.packaging.EventProcessor",
-                "my.event.packaging.custom.EventProcessor",
-                "default.EventProcessor"
+                "Lazy[EventProcessor[my.event.packaging]]",
+                "Lazy[EventProcessor[my.event.packaging.custom]]",
+                "Lazy[EventProcessor[default]]"
         );
     }
 
@@ -153,7 +202,6 @@ class MessageHandlerConfigurerTest {
 
          */
     }
-
 
 
     private static AbstractBeanDefinition beanDefinitionMock(String fqcn) {
