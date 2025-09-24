@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class EventProcessorPropertiesLoadTest {
+class EventProcessorPropertiesTest {
 
     @SpringBootTest(classes = MyContext.class)
     @Nested
@@ -90,7 +90,7 @@ class EventProcessorPropertiesLoadTest {
             assertThat(foo.batchSize()).isEqualTo(1);
             assertThat(foo.initialSegmentCount()).isEqualTo(2);
             assertThat(foo.getMode()).isEqualTo(EventProcessorProperties.Mode.SUBSCRIBING);
-            assertThat(foo.getSequencingPolicy()).isEqualTo("sp");
+            assertThat(foo.sequencingPolicy()).isEqualTo("sp");
             assertThat(foo.source()).isEqualTo("source");
             assertThat(foo.threadCount()).isEqualTo(3);
             assertThat(foo.getTokenClaimInterval()).isEqualTo(4);
@@ -104,7 +104,7 @@ class EventProcessorPropertiesLoadTest {
             assertThat(bar.initialSegmentCount()).isEqualTo(77); // the only modified value
 
             assertThat(bar.getMode()).isEqualTo(defaultSettings.getMode());
-            assertThat(bar.getSequencingPolicy()).isEqualTo(defaultSettings.getSequencingPolicy());
+            assertThat(bar.sequencingPolicy()).isEqualTo(defaultSettings.sequencingPolicy());
             assertThat(bar.source()).isEqualTo(defaultSettings.source());
             assertThat(bar.threadCount()).isEqualTo(defaultSettings.threadCount());
             assertThat(bar.getTokenClaimInterval()).isEqualTo(defaultSettings.getTokenClaimInterval());

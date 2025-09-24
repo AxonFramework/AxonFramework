@@ -18,8 +18,11 @@ package org.axonframework.springboot;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
+import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorsConfigurer;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.eventstreaming.StreamableEventSource;

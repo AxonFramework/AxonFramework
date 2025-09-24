@@ -39,8 +39,7 @@ import java.util.function.Supplier;
  * @author Simon Zambrovski
  * @since 5.0.0
  */
-@Internal
-public interface SpringCustomizations {
+interface SpringCustomizations {
 
     /**
      * Creates customizations for a pooled streaming event processing module.
@@ -70,7 +69,6 @@ public interface SpringCustomizations {
     /**
      * Customization executed based on the {@link EventProcessorSettings.SubscribingEventProcessorSettings}.
      */
-    @Internal
     class SpringSubscribingEventProcessingModuleCustomization implements SubscribingEventProcessorModule.Customization {
 
         private final EventProcessorSettings.SubscribingEventProcessorSettings settings;
@@ -99,7 +97,6 @@ public interface SpringCustomizations {
     /**
      * Customization executed based on the {@link EventProcessorSettings.PooledEventProcessorSettings}.
      */
-    @Internal
     class SpringPooledStreamingEventProcessingModuleCustomization
             implements PooledStreamingEventProcessorModule.Customization {
 
