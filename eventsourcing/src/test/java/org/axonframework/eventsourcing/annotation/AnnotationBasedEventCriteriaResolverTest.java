@@ -335,29 +335,5 @@ class AnnotationBasedEventCriteriaResolverTest {
                 return EventCriteria.havingTags("aggregateIdentifier", id);
             }
         }
-
-        @Test
-        void canResolveEventCriteriaBuilderInNestedStaticClass() {
-            var resolver = new AnnotationBasedEventCriteriaResolver<>(
-                    EntityWithNestedStaticClass.class,
-                    Object.class,
-                    configuration
-            );
-
-            var criteria = resolver.resolve("nestedId", new StubProcessingContext());
-            assertEquals(EventCriteria.havingTags("nestedAggregateIdentifier", "nestedId"), criteria);
-        }
-
-        @EventSourcedEntity
-        static class EntityWithNestedStaticClass {
-
-            @SuppressWarnings("unused")
-            static class NestedClass {
-                @EventCriteriaBuilder
-                public static EventCriteria buildCriteria(String id) {
-                    return EventCriteria.havingTags("nestedAggregateIdentifier", id);
-                }
-            }
-        }
     }
 }

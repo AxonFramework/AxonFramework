@@ -31,12 +31,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Annotation-based {@link CriteriaResolver} implementation which resolves {@link EventCriteria} based on the given
@@ -104,8 +102,9 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
         String annotationTagKey = (String) attributes.get("tagKey");
         this.tagKey = annotationTagKey.isEmpty() ? null : annotationTagKey;
 
-        var eventCriteriaBuilders = classAndStaticNestedClassesEventCriteriaBuilderMethods(entityType)
-                .stream()
+        var eventCriteriaBuilders = Arrays
+                .stream(entityType.getDeclaredMethods())
+                .filter(m -> m.isAnnotationPresent(EventCriteriaBuilder.class))
                 .map(WrappedEventCriteriaBuilderMethod::new)
                 .collect(Collectors.groupingBy(WrappedEventCriteriaBuilderMethod::getIdentifierType));
 
@@ -125,28 +124,6 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
         this.builderMap = eventCriteriaBuilders.entrySet().stream()
                                                .collect(Collectors.toMap(Map.Entry::getKey,
                                                                          m -> m.getValue().getFirst()));
-    }
-
-    /**
-     * Retrieves all methods annotated with {@link EventCriteriaBuilder} from the entity class and its nested static
-     * classes (including Kotlin companion objects).
-     *
-     * @param entityType The entity class to search for annotated methods.
-     * @return A list of methods annotated with {@link EventCriteriaBuilder}.
-     */
-    private List<Method> classAndStaticNestedClassesEventCriteriaBuilderMethods(Class<E> entityType) {
-        // Get methods from the main class
-        Stream<Method> mainClassMethods = Arrays.stream(entityType.getDeclaredMethods())
-                                                .filter(m -> m.isAnnotationPresent(EventCriteriaBuilder.class));
-
-        // Get methods from nested static classes (like Kotlin companion objects)
-        Stream<Method> nestedClassMethods = Arrays.stream(entityType.getDeclaredClasses())
-                                                  .filter(nestedClass -> Modifier.isStatic(nestedClass.getModifiers()))
-                                                  .flatMap(nestedClass -> Arrays.stream(nestedClass.getDeclaredMethods()))
-                                                  .filter(m -> m.isAnnotationPresent(EventCriteriaBuilder.class));
-
-        return Stream.concat(mainClassMethods, nestedClassMethods)
-                     .collect(Collectors.toList());
     }
 
     /**
