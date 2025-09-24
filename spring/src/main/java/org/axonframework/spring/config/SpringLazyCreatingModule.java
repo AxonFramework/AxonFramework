@@ -17,7 +17,7 @@
 package org.axonframework.spring.config;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
