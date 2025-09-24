@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotations.ParameterResolver;
+import org.axonframework.messaging.deadletter.annotations.DeadLetterParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;

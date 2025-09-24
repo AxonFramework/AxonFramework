@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.deadletter;
+package org.axonframework.messaging.deadletter.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
