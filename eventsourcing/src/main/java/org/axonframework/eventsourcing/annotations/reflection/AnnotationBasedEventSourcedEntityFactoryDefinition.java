@@ -23,7 +23,7 @@ import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntityFactoryDefinition;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 
 import java.util.Set;
 

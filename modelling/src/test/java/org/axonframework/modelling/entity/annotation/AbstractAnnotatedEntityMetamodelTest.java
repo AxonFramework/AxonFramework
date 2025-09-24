@@ -33,10 +33,10 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.serialization.json.JacksonConverter;
 

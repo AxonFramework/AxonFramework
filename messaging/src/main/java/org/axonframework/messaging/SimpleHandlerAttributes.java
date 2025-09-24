@@ -17,7 +17,7 @@
 package org.axonframework.messaging;
 
 
-import org.axonframework.messaging.annotation.HandlerAttributes;
+import org.axonframework.messaging.annotations.HandlerAttributes;
 
 import java.util.Collections;
 import java.util.HashMap;

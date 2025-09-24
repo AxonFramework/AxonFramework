@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.annotations.reflection;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;
 
 import java.lang.annotation.ElementType;
@@ -50,7 +51,7 @@ import java.lang.annotation.Target;
  *
  * <h3>Parameter types</h3>
  * The constructor or method can declare any number of parameters, as long as they can be resolved by a
- * {@link org.axonframework.messaging.annotation.ParameterResolverFactory}. If the payload is declared, this should be
+ * {@link ParameterResolverFactory}. If the payload is declared, this should be
  * the first parameter. {@link org.axonframework.configuration.Configuration} components can be injected, as well as any
  * message-related parameters. In addition to all regular parameters, the method can also declare the identifier of the
  * entity as a parameter.

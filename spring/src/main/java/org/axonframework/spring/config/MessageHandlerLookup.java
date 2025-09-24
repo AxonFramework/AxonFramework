@@ -22,7 +22,7 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.MessageHandler;
+import org.axonframework.messaging.annotations.MessageHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;

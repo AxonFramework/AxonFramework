@@ -24,11 +24,11 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.HandlerDefinition;
+import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.annotations.ParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -47,8 +47,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This test class is intended to test whether the registration of a
- * {@link org.axonframework.messaging.annotation.HandlerDefinition} and a
- * {@link org.axonframework.messaging.annotation.HandlerEnhancerDefinition} go according to plan.
+ * {@link HandlerDefinition} and a
+ * {@link HandlerEnhancerDefinition} go according to plan.
  *
  * @author Steven van Beelen
  */

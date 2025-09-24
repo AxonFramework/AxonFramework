@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling.annotations;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.annotation.MessageHandler;
+import org.axonframework.messaging.annotations.MessageHandler;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

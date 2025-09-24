@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.EntityIdResolver;

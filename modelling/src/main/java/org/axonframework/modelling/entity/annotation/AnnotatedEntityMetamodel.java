@@ -33,9 +33,9 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
@@ -63,7 +63,7 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.StreamSupport.stream;
-import static org.axonframework.messaging.annotation.AnnotatedHandlerInspector.inspectType;
+import static org.axonframework.messaging.annotations.AnnotatedHandlerInspector.inspectType;
 
 /**
  * An {@link EntityMetamodel} implementation that uses reflection to inspect the entity. It will detect annotated

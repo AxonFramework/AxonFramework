@@ -16,7 +16,7 @@
 
 package org.axonframework.deadline.annotations;
 
-import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
 
 /**
  * Interface describing a message handler capable of handling a specific deadline.

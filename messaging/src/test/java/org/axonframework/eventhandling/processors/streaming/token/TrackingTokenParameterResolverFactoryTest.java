@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.annotations.TrackingTokenParameterResolverFactory;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 

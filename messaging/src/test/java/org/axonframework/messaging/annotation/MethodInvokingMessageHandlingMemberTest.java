@@ -23,6 +23,9 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotations.HandlerAttributes;
+import org.axonframework.messaging.annotations.MethodInvokingMessageHandlingMember;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

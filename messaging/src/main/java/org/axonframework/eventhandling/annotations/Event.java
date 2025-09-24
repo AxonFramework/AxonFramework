@@ -19,7 +19,7 @@ package org.axonframework.eventhandling.annotations;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotation.Message;
+import org.axonframework.messaging.annotations.Message;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

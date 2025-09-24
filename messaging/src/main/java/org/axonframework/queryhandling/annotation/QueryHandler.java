@@ -15,7 +15,7 @@
  */
 package org.axonframework.queryhandling.annotation;
 
-import org.axonframework.messaging.annotation.MessageHandler;
+import org.axonframework.messaging.annotations.MessageHandler;
 import org.axonframework.queryhandling.QueryMessage;
 
 import java.lang.annotation.*;

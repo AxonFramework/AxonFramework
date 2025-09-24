@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.interceptors.annotations;
 
-import org.axonframework.messaging.annotation.HasHandlerAttributes;
+import org.axonframework.messaging.annotations.HasHandlerAttributes;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

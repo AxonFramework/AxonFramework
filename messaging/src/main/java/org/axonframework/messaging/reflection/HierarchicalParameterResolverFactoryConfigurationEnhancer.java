@@ -19,8 +19,8 @@ package org.axonframework.messaging.reflection;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.messaging.annotation.HierarchicalParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.HierarchicalParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 
 import java.util.Optional;
 

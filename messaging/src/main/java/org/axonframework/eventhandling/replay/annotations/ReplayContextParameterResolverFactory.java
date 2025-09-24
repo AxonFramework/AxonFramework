@@ -21,8 +21,8 @@ import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;

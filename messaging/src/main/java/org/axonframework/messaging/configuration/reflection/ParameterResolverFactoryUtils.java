@@ -21,8 +21,8 @@ import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.SearchScope;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 
 import java.util.Objects;
 import java.util.function.Function;

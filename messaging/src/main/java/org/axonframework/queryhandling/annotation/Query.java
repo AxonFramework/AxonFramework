@@ -18,7 +18,7 @@ package org.axonframework.queryhandling.annotation;
 
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotation.Message;
+import org.axonframework.messaging.annotations.Message;
 import org.axonframework.queryhandling.QueryMessage;
 
 import java.lang.annotation.ElementType;

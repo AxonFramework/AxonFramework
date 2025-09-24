@@ -16,7 +16,7 @@
 
 package org.axonframework.queryhandling.annotation;
 
-import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
 
 import java.lang.reflect.Type;
 

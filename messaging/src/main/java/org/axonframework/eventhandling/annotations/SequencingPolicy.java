@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.annotations;
 
 import org.axonframework.eventhandling.sequencing.SequentialPolicy;
+import org.axonframework.messaging.annotations.UnsupportedHandlerException;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -94,7 +95,7 @@ import java.lang.annotation.Target;
  *
  * <h3>Error Conditions</h3>
  * <p>
- * The following conditions will result in an {@link org.axonframework.messaging.annotation.UnsupportedHandlerException}:
+ * The following conditions will result in an {@link UnsupportedHandlerException}:
  * <ul>
  *   <li>No constructor found matching the parameter count</li>
  *   <li>Class parameter is not the first parameter in the constructor</li>

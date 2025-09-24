@@ -16,8 +16,8 @@
 package org.axonframework.messaging.timeout;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.TimeoutException;

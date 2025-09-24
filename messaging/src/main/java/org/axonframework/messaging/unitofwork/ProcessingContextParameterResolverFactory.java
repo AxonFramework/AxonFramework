@@ -19,8 +19,8 @@ package org.axonframework.messaging.unitofwork;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;

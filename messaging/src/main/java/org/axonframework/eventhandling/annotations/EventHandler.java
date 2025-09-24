@@ -19,8 +19,8 @@ package org.axonframework.eventhandling.annotations;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.annotation.MessageHandler;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.MessageHandler;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 
 import java.lang.annotation.*;
 

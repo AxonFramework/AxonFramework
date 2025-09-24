@@ -21,6 +21,7 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Metadata;
+import org.axonframework.messaging.annotations.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
  * The commands will be dispatched in the context this dispatcher was created for. You can construct one through the
  * {@link #forContext(ProcessingContext)}.
  * <p>
- * When using annotation-based {@link org.axonframework.messaging.annotation.MessageHandler @MessageHandler-methods} and
+ * When using annotation-based {@link MessageHandler @MessageHandler-methods} and
  * you have declared an argument of type {@link CommandDispatcher}, the dispatcher will automatically be injected by the
  * {@link org.axonframework.commandhandling.annotations.CommandDispatcherParameterResolverFactory}.
  * <p>

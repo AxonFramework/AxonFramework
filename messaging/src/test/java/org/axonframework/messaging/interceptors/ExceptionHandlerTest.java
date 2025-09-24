@@ -24,9 +24,9 @@ import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
+import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.interceptors.annotations.ExceptionHandler;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;

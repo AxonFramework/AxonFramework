@@ -18,12 +18,12 @@ package org.axonframework.queryhandling.annotation;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.annotation.HandlerAttributes;
+import org.axonframework.messaging.annotations.HandlerAttributes;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.UnsupportedHandlerException;
-import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.annotations.UnsupportedHandlerException;
+import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryMessage;
 

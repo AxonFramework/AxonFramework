@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.annotations;
 import org.axonframework.commandhandling.gateway.CommandDispatcher;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ContextAwareCommandDispatcher;
-import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;

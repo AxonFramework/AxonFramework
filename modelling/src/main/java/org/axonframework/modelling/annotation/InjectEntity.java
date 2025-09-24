@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.annotation;
 
+import org.axonframework.messaging.annotations.MessageHandler;
 import org.axonframework.modelling.command.EntityIdResolver;
 
 import java.lang.annotation.ElementType;
@@ -25,7 +26,7 @@ import java.lang.annotation.Target;
 
 
 /**
- * Annotation to be placed on a parameter of a {@link org.axonframework.messaging.annotation.MessageHandler} annotated
+ * Annotation to be placed on a parameter of a {@link MessageHandler} annotated
  * method that should receive an entity loaded from the {@link org.axonframework.modelling.StateManager}. The parameter
  * should be of the type of the entity to inject, or of a {@link org.axonframework.modelling.repository.ManagedEntity}
  * with the generic of the entity to inject.

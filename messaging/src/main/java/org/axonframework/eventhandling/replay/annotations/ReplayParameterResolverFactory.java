@@ -22,15 +22,15 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.replay.ReplayStatus;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 
 /**
- * An implementation of the {@link org.axonframework.messaging.annotation.ParameterResolverFactory} which resolves the
+ * An implementation of the {@link org.axonframework.messaging.annotations.ParameterResolverFactory} which resolves the
  * {@link ReplayStatus} parameter. Will resolve a {@link ReplayStatus#REPLAY} parameter
  * if the {@link org.axonframework.messaging.Message} is a {@link org.axonframework.eventhandling.TrackedEventMessage},
  * containing a {@link ReplayToken}. Otherwise, it will resolve a

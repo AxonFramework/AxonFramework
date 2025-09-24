@@ -19,7 +19,7 @@ import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.annotation.UnsupportedHandlerException;
+import org.axonframework.messaging.annotations.UnsupportedHandlerException;
 import org.axonframework.messaging.interceptors.annotations.ExceptionHandler;
 import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;

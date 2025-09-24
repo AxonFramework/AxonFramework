@@ -23,8 +23,8 @@ import org.axonframework.eventhandling.replay.ResetNotSupportedException;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.NoMoreInterceptors;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.interceptors.annotations.NoMoreInterceptors;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.junit.jupiter.api.*;
 

@@ -24,10 +24,10 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.ChainedMessageHandlerInterceptorMember;
-import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.NoMoreInterceptors;
+import org.axonframework.messaging.annotations.ChainedMessageHandlerInterceptorMember;
+import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.interceptors.annotations.NoMoreInterceptors;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.ChildEntityNotFoundException;
 

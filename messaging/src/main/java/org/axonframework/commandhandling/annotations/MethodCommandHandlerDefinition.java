@@ -17,11 +17,11 @@
 package org.axonframework.commandhandling.annotations;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.annotation.HandlerAttributes;
+import org.axonframework.messaging.annotations.HandlerAttributes;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Constructor;

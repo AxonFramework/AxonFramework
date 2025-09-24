@@ -44,13 +44,12 @@ import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreami
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.eventstreaming.LegacyStreamableEventSource;
-import org.axonframework.eventstreaming.TrackingTokenSource;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotations.HandlerDefinition;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
