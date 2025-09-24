@@ -1571,6 +1571,11 @@ adjusts the `QueryBus#query` method to return a `MessageStream` of the `QueryRes
 `CompletableFuture`. As the `MessageStream` supports 0, 1, or N responses, this shifts lets the `QueryBus#query` method
 align with whatever query result coming back from query handlers.
 
+Streaming solutions, like `QueryBus#streamingQuery` or the `subscriptionQuery` still rely on `Publisher` and `Flux` as
+the return type. However, internally, these also depend on the `MessageStream`.
+Furthermore, the subscription query support has seen a rigorous adjustment, as
+described [here](#subscription-queries-and-the-query-update-emitter).
+
 #### Subscribing Query Handlers
 
 Subscribing query handlers has been adjusted to allow easier registration of query handling lambdas. This shift was
@@ -1599,7 +1604,7 @@ multiple-response query handler, while a query handler was registered for both s
 
 However, we view losing this capability as a benefit, as (1) it led to complex code and (2) led to unclarity in use,
 as we have noticed over the years. As a consequence, the local `QueryBus` will now throw a
-DuplicateQueryHandlerSubscriptionException` whenever a `QueryHandler` for an already existing query name and response
+`DuplicateQueryHandlerSubscriptionException` whenever a `QueryHandler` for an already existing query name and response
 name is being registered.
 
 As with any change, if you feel strongly about the previous solution, be sure to reach out to use. We would love to
@@ -1620,8 +1625,20 @@ To keep support for querying a single or multiple instances, the gateway now has
 1. `CompletableFuture<R> QueryGateway#query(Object, Class<R>, ProcessingContext)`
 2. `CompletableFuture<List<R>> QueryGateway#queryMany(Object, Class<R>, ProcessingContext)`
 
-This shift is inline with the streaming query (introduced in Axon Framework 4.6), which also does **not** allow you to
+This shift is inline with the streaming query (introduced in Axon Framework 4.6), which already did **not** allow you to
 define the `ResponseType`.
+
+Besides the `CompletableFuture`, the `QueryGateway` has two `Publisher`-minded solution as well, being the
+`streamingQuery` and `subscriptionQuery`:
+
+1. `Publisher<R> QueryGateway#streamingQuery(Object, Class<R>, ProcessingContext)`
+2. `Publisher<R> QueryGateway#subscriptionQuery(Object, Class<R>, ProcessingContext)`
+3. `SubscriptionQueryResponse<I, U> QueryGateway#subscriptionQuery(Object, Class<I>, Class<U>, ProcessingContext)`
+
+As is clear, the `ResponseType` did not return for any of these methods either. Instead, a **nullable**
+`ProcessingContext` can be given (for example important to have correlation data populated). There have been more
+changes to the subscription query, for which we suggest you read up on
+in [this](#subscription-queries-and-the-query-update-emitter) section.
 
 As might be clear, the `QueryGateway` has an entirely new look and feel. If there are any operations we have
 removed/adjusted you miss, or if you have any other suggestions for improvement, please
@@ -1629,7 +1646,93 @@ construct [an issue](https://github.com/AxonFramework/AxonFramework/issues) for 
 
 ### Subscription Queries and the Query Update Emitter
 
-- Mention that we no longer match on the ResponseType and the returned update type for the user. We just take the filter given by a user.
+The subscription query support in Axon Framework 5 has seen somewhat of a shift. With the intent to simplify things for
+the user.
+
+#### Subscription Query API
+
+First and foremost, we tackled the typical touch points of this API, being the `QueryGateway` and `QueryUpdateEmitter`.
+The former no longer has `ResponseType` variants on the API at all. Instead, the desired `Class` type should be provided
+and the `QueryGateway` will ensure correct conversion. Removing the `ResponseType` has the side effect that you are no
+longer able to, for example, specify a collection as the initial result of a subscription query. To keep support for 0,
+1, or N, we switched the initial result from a `Mono` to a `Flux`.
+
+This becomes clear when you check the `SubscriptionQueryResponseMessages` (returned by the `QueryBus` when invoking a
+subscription query) and the `SubscriptionQueryResponse` (returned by the `QueryGateway` when invoking a subscription
+query), as for both the `initialResult()` operation returns a `Flux`. This should make concatenating initial results
+with updates more straightforward. On top of that, it aligns with Axon Framework's shift towards the `MessageStream` as
+the de facto response. Lastly on the topic of the return type, is the split of the `SubscriptionQueryResult`. In Axon
+Framework 4 the `SubscriptionQueryResult` was used by both the `QueryBus` and `QueryGateway`. This meant that you
+sometimes received a `SubscriptionQueryResult` with `Messages` in it and sometimes with payloads. By having a
+`SubscriptionQueryResponseMessages` that uses `Messages`, and a `SubscriptionQueryResponse` that uses payloads, we keep
+the symmetry between the bus-and-gateway as is present on other infrastructure components of Axon Framework.
+
+Knowing the above, we can have a look at the concrete subscription query methods on the `QueryBus` and `QueryGateway`:
+
+- `SubscriptionQueryResponseMessages QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)`
+- `Publisher<R> QueryGateway#subscriptionQuery(Object, Class<R>, ProcessingContext)`
+- `Publisher<R> QueryGateway#subscriptionQuery(Object, Class<R>, ProcessingContext, int)`
+- `SubscriptionQueryResponse<I, U> QueryGateway#subscriptionQuery(Object, Class<I>, Class<U>, ProcessingContext)`
+- `SubscriptionQueryResponse<I, U> QueryGateway#subscriptionQuery(Object, Class<I>, Class<U>, ProcessingContext, int)`
+
+The `QueryUpdateEmitter` makes a similar shift from `Message`-to-payload. As such, **all** methods on the
+`QueryUpdateEmitter` that accepted a filter of the `SubscriptionQueryMessage` or a `SubscriptionQueryUpdateMessage` as
+the update have been removed. Note that this does not mean the `QueryUpdateEmitter` does not accept `Message`
+implementations; it is simply no longer a part of the API.
+
+#### Query Update Emitter method move to the Query Bus
+
+Due to our move towards an [Async Native API](#async-native-apis), the `ProcessingContext` (the renewed `UnitOfWork`)
+has taken a very important spot within the framework.
+The `SimpleQueryUpdateEmitter` interacted with the old `UnitOfWork`, allowing users to emit updates, complete
+subscriptions, and complete subscriptions exceptionally within a `UnitOfWork` or outside a `UnitOfWork`. Whether these
+operations are done within `UnitOfWork` depends on the fact whether the `QueryUpdateEmitter` is invoked within a message
+handling function.
+
+We believe that the `QueryUpdateEmitter` should **at all times** be used within a message handling function. Hence, we
+adjusted the `QueryUpdateEmitter` to be `ProcessingContext`-aware. This makes it so that the `QueryUpdateEmitter` should
+be injected in message handling functions instead of wired for the entire class. This makes it so that (for example)
+projectors would interact with the emitter like so:
+
+```java
+public class MyEmittingProjector {
+
+    // Add QueryUpdateEmitter as a parameter, NOT as field of MyEmittingProjector! 
+    @EventHandler
+    public void on(MyEvent event, QueryUpdateEmitter emitter) {
+        // update projection(s)...
+        emitter.emit(MyQuery.class, query -> /*filter queries to emit the update to*/, new MyUpdate());
+    }
+}
+```
+
+Besides the "old" emit method filtering based on the concrete type, we added filter support (for `emit`, `complete`, and
+`completeExceptionally`) based on the [qualified name](#message-type-and-qualified-name) of the subscription query.
+
+Although we strongly believe this is the correct move for the `QueryUpdateEmitter` it does lead to the fact the emitter
+can no longer be used outside the scope of a message handling function.
+To not lose this support entirely, the `QueryBus` now allows for the switch between emitting updates within a
+`ProcessingContext` or outside a `ProcessingContext`.
+This means the `QueryBus` inherited some methods from the `QueryUpdateEmitter`, being:
+
+1. `CompletableFuture<Void> emitUpdate(Predicate<SubscriptionQueryMessage>, SubscriptionQueryUpdateMessage, ProcessingContext)`
+2. `CompletableFuture<Void> completeSubscriptions(Predicate<SubscriptionQueryMessage>, ProcessingContext)`
+3. `CompletableFuture<Void> completeSubscriptionsExceptionally(Predicate<SubscriptionQueryMessage>, Throwable, ProcessingContext)`
+
+As becomes clear from the above, the `QueryBus` now sports the methods that (1) take in a `SubscriptionQueryMessage` and
+`SubscriptionQueryUpdateMessage`, and (2) take in a nullable `ProcessingContext`.
+
+Lastly, to further simplify the `QueryUpdateEmitter` API, we moved the `subscribe` method which generated the
+`UpdateHandler` from the emitter to the `QueryBus`.
+This makes it so that the `QueryUpdateEmitter`, which we expect to be **the** touch point for emitting updates, no
+longer bothers the users with the possibility to register additional update handlers. Concluding, this mean the
+`QueryBus` takes on this role with the following method:
+
+* `UpdateHandler subscribeToUpdates(SubscriptionQueryMessage, int)`
+
+Although we expect users to benefit from the provided `QueryBus#subscriptionQuery` method to have the `UpdateHandler`
+managed by Axon Framework itself, you are (obviously) entirely free to register custom `UpdateHandlers` manually if
+desired.
 
 Minor API Changes
 =================
@@ -2114,4 +2217,4 @@ This section contains four subsections, called:
 | `StreamingEventProcessor#resetTokens`                                          | `void`                                       | `CompletableFuture<Void>`                    |
 | `QueryBus#subscribe(String, Type, MessageHandler<? super QueryMessage<?, R>>)` | `Registration`                               | `void`                                       |
 | `QueryBus#query(QueryMessage<Q, R>)`                                           | `CompletableFuture<QueryResponseMessage<R>>` | `MessageStream<QueryResponseMessage>`        |
-| `QueryGateway#query(String, Q, ResponseType<R>)`                               | `CompletableFuture<R>`                       | `CompletableFuture<List<R>>`                 |
+| `QueryGateway#query(String, Q, ResponseType<R>)`                               | `CompletableFuture<R>`                       | `CompletableFuture<List<R>>`                 |`
