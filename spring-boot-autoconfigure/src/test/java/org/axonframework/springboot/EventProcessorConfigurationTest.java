@@ -76,7 +76,6 @@ class EventProcessorConfigurationTest {
                     "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].threadCount=5",
                     "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].batchSize=3",
                     "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].tokenStore=store2",
-                    "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].source=mySource"
             }
     )
     class TwoPoolProcessorsTest {
