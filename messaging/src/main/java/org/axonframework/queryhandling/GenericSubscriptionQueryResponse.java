@@ -65,13 +65,17 @@ public class GenericSubscriptionQueryResponse<I, U> implements SubscriptionQuery
     @Nonnull
     @Override
     public Flux<I> initialResult() {
-        return response.initialResult().mapNotNull(initialConverter);
+        return response.initialResult().mapNotNull(
+                response -> Objects.isNull(response.payload()) ? null : initialConverter.apply(response)
+        );
     }
 
     @Nonnull
     @Override
     public Flux<U> updates() {
-        return response.updates().mapNotNull(updateConverter);
+        return response.updates().mapNotNull(
+                response -> Objects.isNull(response.payload()) ? null : updateConverter.apply(response)
+        );
     }
 
     @Override
