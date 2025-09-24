@@ -52,7 +52,11 @@ public interface HandlerAttributes {
      * handle.
      */
     String QUERY_NAME = "QueryHandler.queryName";
-
+    /**
+     * Attribute key referencing the name of the {@link org.axonframework.eventhandling.EventMessage} the handler
+     * can handle.
+     */
+    String EVENT_NAME = "EventHandler.eventName";
     /**
      * Attribute key referencing the result type the handler can handle.
      */

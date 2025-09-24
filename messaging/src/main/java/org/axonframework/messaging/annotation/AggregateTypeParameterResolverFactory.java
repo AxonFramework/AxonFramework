@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -58,7 +59,11 @@ public final class AggregateTypeParameterResolverFactory
         @Nullable
         @Override
         public String resolveParameterValue(@Nonnull ProcessingContext context) {
-            if(Message.fromContext(context) instanceof DomainEventMessage domainEventMessage) {
+            var aggregateType = context.getResource(LegacyResources.AGGREGATE_TYPE_KEY);
+            if (aggregateType != null) {
+                return aggregateType;
+            }
+            if (Message.fromContext(context) instanceof DomainEventMessage domainEventMessage) {
                 return domainEventMessage.getType();
             }
             return null;
@@ -66,7 +71,8 @@ public final class AggregateTypeParameterResolverFactory
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return Message.fromContext(context) instanceof DomainEventMessage;
+            var aggregateTypeInContext = context.containsResource(LegacyResources.AGGREGATE_TYPE_KEY);
+            return aggregateTypeInContext || Message.fromContext(context) instanceof DomainEventMessage;
         }
     }
 }

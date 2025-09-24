@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -57,6 +58,10 @@ public final class SourceIdParameterResolverFactory
         @Nullable
         @Override
         public String resolveParameterValue(@Nonnull ProcessingContext context) {
+            var sourceId = context.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
+            if (sourceId != null) {
+                return sourceId;
+            }
             if (Message.fromContext(context) instanceof DomainEventMessage message) {
                 return message.getAggregateIdentifier();
             }
@@ -65,7 +70,8 @@ public final class SourceIdParameterResolverFactory
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            return Message.fromContext(context) instanceof DomainEventMessage;
+            var sourceIdInContext = context.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
+            return sourceIdInContext || Message.fromContext(context) instanceof DomainEventMessage;
         }
     }
 }
