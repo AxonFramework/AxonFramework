@@ -17,10 +17,10 @@
 package org.axonframework.eventhandling.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.LegacyResources;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.axonframework.eventhandling.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -53,6 +54,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotatedEventHandlingComponentTest {
 
+    private static final String AGGREGATE_TYPE = "test";
+    private static final String AGGREGATE_IDENTIFIER = "id";
     private TestEventHandler eventHandler;
     private EventHandlingComponent eventHandlingComponent;
 
@@ -78,7 +81,7 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void canMutateStateInEventHandler() {
             // given
-            var event = domainEvent(0);
+            var event = eventMessage(0);
 
             // when
             var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
@@ -91,7 +94,7 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void returnsEmptyStreamAfterHandlingEvent() {
             // given
-            var event = domainEvent(0);
+            var event = eventMessage(0);
 
             // when
             var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
@@ -105,11 +108,11 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void handlesSequenceOfEvents() {
             // when
-            DomainEventMessage event0 = domainEvent(0);
+            EventMessage event0 = eventMessage(0);
             var result1 = eventHandlingComponent.handle(event0, messageProcessingContext(event0));
-            DomainEventMessage event1 = domainEvent(1);
+            EventMessage event1 = eventMessage(1);
             var result2 = eventHandlingComponent.handle(event1, messageProcessingContext(event1));
-            DomainEventMessage event2 = domainEvent(2);
+            EventMessage event2 = eventMessage(2);
             var result3 = eventHandlingComponent.handle(event2, messageProcessingContext(event2));
 
             // then
@@ -127,7 +130,7 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void resolvesMetadata() {
             // given
-            var event = domainEvent(0, "sampleValue");
+            var event = eventMessage(0, "sampleValue");
 
             // when
             var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
@@ -140,7 +143,7 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void resolvesSequenceNumber() {
             // given
-            var event = domainEvent(0);
+            var event = eventMessage(0);
 
             // when
             var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
@@ -153,7 +156,7 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void resolvesSources() {
             // given
-            var event = domainEvent(0);
+            var event = eventMessage(0);
 
             // when
             var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
@@ -169,7 +172,7 @@ class AnnotatedEventHandlingComponentTest {
             GenericEventMessage.clock = Clock.fixed(timestamp, ZoneId.systemDefault());
 
             // given
-            var event = domainEvent(0);
+            var event = eventMessage(0);
 
             // when
             var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
@@ -197,7 +200,7 @@ class AnnotatedEventHandlingComponentTest {
             // given
             var eventHandler = new HandlingJustStringEventHandler();
             var eventHandlingComponent = annotatedEventHandlingComponent(eventHandler);
-            var event = domainEvent(0);
+            var event = eventMessage(0);
 
             // when
             var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
@@ -217,7 +220,7 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void invokesOnlyMostSpecificHandler() {
             // given
-            var event = domainEvent(0);
+            var event = eventMessage(0);
 
             // when
             var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
@@ -227,6 +230,25 @@ class AnnotatedEventHandlingComponentTest {
             assertEquals("null-0", eventHandler.handledPayloads);
             assertFalse(eventHandler.objectHandlerInvoked);
             assertEquals(1, eventHandler.handledCount);
+        }
+
+        @Test
+        void invokesHandlerWithCustomName() {
+            // given
+            var eventHandler = new HandlingNamedEventHandler();
+            var eventHandlingComponent = annotatedEventHandlingComponent(eventHandler);
+            var event = new GenericEventMessage(
+                    new MessageType("CustomEventName"),
+                    123
+            );
+
+            // when
+            var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
+
+            // then
+            assertSuccessfulStream(result);
+            assertEquals(1, eventHandler.handledNamed);
+            assertEquals(0, eventHandler.handledNotNamed);
         }
     }
 
@@ -238,7 +260,7 @@ class AnnotatedEventHandlingComponentTest {
             // given
             var eventHandler = new ErrorThrowingEventHandler();
             var eventHandlingComponent = annotatedEventHandlingComponent(eventHandler);
-            var event = domainEvent(0);
+            var event = eventMessage(0);
 
             // when
             var result = eventHandlingComponent.handle(event, messageProcessingContext(event));
@@ -262,7 +284,7 @@ class AnnotatedEventHandlingComponentTest {
         void rejectsNullProcessingContext() {
             // when-then
             assertThrows(NullPointerException.class,
-                         () -> eventHandlingComponent.handle(domainEvent(0), null),
+                         () -> eventHandlingComponent.handle(eventMessage(0), null),
                          "Processing Context may not be null");
         }
     }
@@ -302,15 +324,40 @@ class AnnotatedEventHandlingComponentTest {
         }
     }
 
-    private static DomainEventMessage domainEvent(int seq) {
-        return domainEvent(seq, null);
+    @Nested
+    class SequenceIdentifierFor {
+
+        @Test
+        void defaultSequencingPolicyIsFullSequentialIfAggregateIdentifierNotInProcessingContext() {
+            // given
+            var event = eventMessage(0);
+
+            // when
+            var sequenceIdentifier = eventHandlingComponent.sequenceIdentifierFor(event, new StubProcessingContext());
+
+            // then
+            assertThat(sequenceIdentifier).isEqualTo(FULL_SEQUENTIAL_POLICY);
+        }
+
+        @Test
+        void defaultSequencingPolicyIsSequentialPerAggregateIfAggregateIdentifierIsPresentInProcessingContext() {
+            // given
+            var event = eventMessage(0);
+
+            // when
+            var sequenceIdentifier = eventHandlingComponent.sequenceIdentifierFor(event, messageProcessingContext(event));
+
+            // then
+            assertThat(sequenceIdentifier).isEqualTo("id");
+        }
     }
 
-    private static DomainEventMessage domainEvent(int seq, String sampleMetadata) {
-        return new GenericDomainEventMessage(
-                "test",
-                "id",
-                seq,
+    private static EventMessage eventMessage(int seq) {
+        return eventMessage(seq, null);
+    }
+
+    private static EventMessage eventMessage(int seq, String sampleMetadata) {
+        return new GenericEventMessage(
                 new MessageType(Integer.class),
                 seq,
                 sampleMetadata == null ? Metadata.emptyInstance() : Metadata.with("sampleKey", sampleMetadata)
@@ -368,6 +415,24 @@ class AnnotatedEventHandlingComponentTest {
         }
     }
 
+    private static class HandlingNamedEventHandler {
+
+        private int handledNamed = 0;
+        private int handledNotNamed = 0;
+
+        @EventHandler(eventName = "CustomEventName")
+        void handleNamed() {
+            handledNamed++;
+        }
+
+
+        @EventHandler
+        void handleNotNamed() {
+            handledNotNamed++;
+        }
+
+    }
+
     @Nonnull
     private static AnnotatedEventHandlingComponent<?> annotatedEventHandlingComponent(Object eventHandler) {
         return new AnnotatedEventHandlingComponent<>(
@@ -377,7 +442,13 @@ class AnnotatedEventHandlingComponentTest {
     }
 
     @Nonnull
-    private static ProcessingContext messageProcessingContext(DomainEventMessage event) {
-        return StubProcessingContext.withComponent(Converter.class, PassThroughConverter.INSTANCE).withMessage(event);
+    private static ProcessingContext messageProcessingContext(EventMessage event) {
+        var payload = event.payloadAs(Integer.class);
+        return StubProcessingContext
+                .withComponent(Converter.class, PassThroughConverter.INSTANCE)
+                .withMessage(event)
+                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, AGGREGATE_TYPE)
+                .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, AGGREGATE_IDENTIFIER)
+                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, payload.longValue());
     }
 }

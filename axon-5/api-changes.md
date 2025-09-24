@@ -669,6 +669,39 @@ disadvantage is outweighed by the `PooledStreamingEventProcessor` advantages and
 `TrackingEventProcessor`. Users who previously configured `TrackingEventProcessor` instances or used `tracking` mode in
 Spring Boot configuration should migrate to `PooledStreamingEventProcessor`.
 
+### SequencingPolicy Configuration
+
+While using Dynamic Consistency Boundary (DCB) instead of the Aggregate approach, the framework cannot
+ensure proper event ordering by default. To be on the safe side and avoid any potential out-of-order processing
+issues, we set `SequentialPolicy` by default (for events published by Aggregates it's still
+`SequentialPerAggregatePolicy`), which means that events are processed in the order they were published.
+This is not efficient because you cannot distribute the processing of events across different `EventProcessor` segments.
+But it's straightforward to tune the behavior. The new `@SequencingPolicy` annotation allows declaring sequencing
+policies on event handler methods or classes. Alternatively, you can use the declarative approach with the builder
+pattern.
+The most useful approach with DCB might be the `PropertySequencingPolicy`, which allows you to process events in order when they
+have the same value for a certain property. For example, you can process `StudentEnrolledEvent`s in order when they
+have the same `courseId` property, because they are related to the same course, but allow parallel processing of events
+that are related to different courses.
+
+```java
+// Annotation approach
+@EventHandler
+@SequencingPolicy(type = PropertySequencingPolicy.class, properties = {"courseId"})
+public void handle(StudentEnrolledEvent event) {
+    // Handler logic
+}
+
+// Declarative approach
+EventHandlingComponent component = new DefaultEventHandlingComponentBuilder(baseComponent)
+        .sequencingPolicy(new PropertySequencingPolicy(StudentEnrolledEvent.class, "courseId"))
+        .handles(new QualifiedName(StudentEnrolledEvent.class), /* event handling method*/)
+        .build();
+```
+
+The annotation can be defined on the class or method level.
+For comprehensive usage examples and configuration options, see the `@SequencingPolicy` JavaDoc documentation.
+
 ## ApplicationConfigurer and Configuration
 
 The configuration API of Axon Framework has seen a big adjustment. You can essentially say it has been turned upside
