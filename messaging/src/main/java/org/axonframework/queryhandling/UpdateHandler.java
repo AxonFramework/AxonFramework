@@ -18,7 +18,6 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
-import org.axonframework.common.annotation.Internal;
 import reactor.core.publisher.Flux;
 
 import java.util.Objects;
