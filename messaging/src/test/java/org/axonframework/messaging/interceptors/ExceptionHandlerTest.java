@@ -18,7 +18,7 @@ package org.axonframework.messaging.interceptors;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.annotations.EventHandler;

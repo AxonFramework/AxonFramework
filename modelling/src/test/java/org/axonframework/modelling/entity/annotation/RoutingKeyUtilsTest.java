@@ -17,7 +17,7 @@
 package org.axonframework.modelling.entity.annotation;
 
 
-import org.axonframework.commandhandling.annotation.RoutingKey;
+import org.axonframework.commandhandling.annotations.RoutingKey;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Field;

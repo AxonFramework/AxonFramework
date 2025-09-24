@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.commandhandling.annotation.CommandHandlingMember;
+import org.axonframework.commandhandling.annotations.CommandHandlingMember;
 import org.axonframework.common.IdentifierValidator;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;

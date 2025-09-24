@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-org.axonframework.commandhandling.annotation.MethodCommandHandlerDefinition
+org.axonframework.commandhandling.annotations.MethodCommandHandlerDefinition
 org.axonframework.deadline.annotation.DeadlineMethodMessageHandlerDefinition
 org.axonframework.eventhandling.annotations.MethodEventHandlerDefinition
 org.axonframework.eventhandling.annotations.MethodSequencingPolicyEventHandlerDefinition

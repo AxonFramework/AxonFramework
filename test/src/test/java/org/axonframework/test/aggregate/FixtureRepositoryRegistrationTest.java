@@ -17,7 +17,7 @@
 package org.axonframework.test.aggregate;
 
 import jakarta.persistence.EntityManager;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.annotations.TimestampParameterResolverFactory;

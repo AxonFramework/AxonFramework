@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * When using annotation-based {@link org.axonframework.messaging.annotation.MessageHandler @MessageHandler-methods} and
  * you have declared an argument of type {@link CommandDispatcher}, the dispatcher will automatically be injected by the
- * {@link org.axonframework.commandhandling.annotation.CommandDispatcherParameterResolverFactory}.
+ * {@link org.axonframework.commandhandling.annotations.CommandDispatcherParameterResolverFactory}.
  * <p>
  * As this component is {@link ProcessingContext}-scoped, it is not retrievable from the {@link Configuration}.
  *

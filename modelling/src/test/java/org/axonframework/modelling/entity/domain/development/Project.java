@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.domain.development;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;

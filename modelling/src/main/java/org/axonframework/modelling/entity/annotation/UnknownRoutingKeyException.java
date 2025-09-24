@@ -23,7 +23,7 @@ package org.axonframework.modelling.entity.annotation;
  * This issue can be resolved by ensuring the routing key specified on the child entity matches the routing key
  * specified on the incoming message. Ensure that the {@link EntityMember#routingKey} points to a valid member of the
  * message, or in its absence that the name of the
- * {@link org.axonframework.commandhandling.annotation.RoutingKey}-annotated member on the child entity does.
+ * {@link org.axonframework.commandhandling.annotations.RoutingKey}-annotated member on the child entity does.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0

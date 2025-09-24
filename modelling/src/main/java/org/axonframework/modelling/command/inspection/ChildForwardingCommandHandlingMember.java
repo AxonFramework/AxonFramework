@@ -19,7 +19,7 @@ package org.axonframework.modelling.command.inspection;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.CommandHandlingMember;
+import org.axonframework.commandhandling.annotations.CommandHandlingMember;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;

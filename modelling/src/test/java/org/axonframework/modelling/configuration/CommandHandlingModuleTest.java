@@ -109,7 +109,7 @@ class CommandHandlingModuleTest {
     void buildAnnotatedCommandHandlingComponentSucceedsAndRegisters() {
         //noinspection unused
         var myCommandHandlingObject = new Object() {
-            @org.axonframework.commandhandling.annotation.CommandHandler
+            @org.axonframework.commandhandling.annotations.CommandHandler
             public void handle(String command) {
             }
         };
@@ -130,7 +130,7 @@ class CommandHandlingModuleTest {
     void buildModellingConfigurationSucceedsAndRegistersTheModuleWithComponent() {
         //noinspection unused
         var myCommandHandlingObject = new Object() {
-            @org.axonframework.commandhandling.annotation.CommandHandler
+            @org.axonframework.commandhandling.annotations.CommandHandler
             public void handle(String command) {
             }
         };

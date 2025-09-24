@@ -17,7 +17,7 @@
 package org.axonframework.modelling.entity.annotation;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.RoutingKey;
+import org.axonframework.commandhandling.annotations.RoutingKey;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
 

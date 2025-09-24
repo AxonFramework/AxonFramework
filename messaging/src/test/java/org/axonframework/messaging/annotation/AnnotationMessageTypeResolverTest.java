@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.commandhandling.annotation.Command;
+import org.axonframework.commandhandling.annotations.Command;
 import org.axonframework.eventhandling.annotations.Event;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.annotation;
+package org.axonframework.commandhandling.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

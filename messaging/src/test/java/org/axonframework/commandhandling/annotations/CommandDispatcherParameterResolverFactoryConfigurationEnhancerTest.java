@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.annotation;
+package org.axonframework.commandhandling.annotations;
 
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.DefaultComponentRegistry;

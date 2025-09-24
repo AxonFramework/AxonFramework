@@ -15,7 +15,7 @@
  */
 package org.axonframework.messaging.timeout;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.annotations.EventHandler;

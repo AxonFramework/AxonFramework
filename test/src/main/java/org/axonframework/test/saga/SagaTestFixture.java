@@ -18,7 +18,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
-import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.annotations.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.deadline.DeadlineMessage;

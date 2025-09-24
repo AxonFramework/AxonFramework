@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation that marks a method in: - an Aggregate (either the root, or an entity) as a handler for Events generated
- * by that aggregate. - a State model needed for {@link org.axonframework.commandhandling.annotation.CommandHandler} as
+ * by that aggregate. - a State model needed for {@link org.axonframework.commandhandling.annotations.CommandHandler} as
  * a handler for Events sourced in order to handle given {@link org.axonframework.commandhandling.CommandMessage}. The
  * parameters of the annotated method are resolved using parameter resolvers.
  * <p/>

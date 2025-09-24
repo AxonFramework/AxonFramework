@@ -73,7 +73,7 @@ import java.lang.annotation.Target;
  * For more information, see the examples in the Javadoc of the annotation.
  *
  * <h2>Command handling</h2>
- * Entities can declare {@link org.axonframework.commandhandling.annotation.CommandHandler}-annotated methods
+ * Entities can declare {@link org.axonframework.commandhandling.annotations.CommandHandler}-annotated methods
  * to execute a command on the entity. When a command targets an entity, the following steps are taken:
  * <ol>
  *     <li>The {@link org.axonframework.modelling.entity.EntityCommandHandlingComponent} will use the

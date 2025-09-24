@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.annotation;
+package org.axonframework.commandhandling.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;

@@ -18,7 +18,7 @@ package org.axonframework.springboot.autoconfig;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.Registration;

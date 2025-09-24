@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.annotation.CurrentUnitOfWorkParameterResolverFactory;
+import org.axonframework.commandhandling.annotations.CurrentUnitOfWorkParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;

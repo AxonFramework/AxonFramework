@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.entity.annotation;
 
-import org.axonframework.commandhandling.annotation.RoutingKey;
+import org.axonframework.commandhandling.annotations.RoutingKey;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
