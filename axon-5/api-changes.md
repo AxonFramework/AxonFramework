@@ -1823,7 +1823,7 @@ This section contains five tables:
 | org.axonframework.commandhandling.distribute.MetaDataRoutingStrategy                                   | org.axonframework.commandhandling.MetadataRoutingStrategy                           | Yes. Moved to `axon-messaging` |
 | org.axonframework.commandhandling.distribute.RoutingStrategy                                           | org.axonframework.commandhandling.RoutingStrategy                                   | Yes. Moved to `axon-messaging` |
 | org.axonframework.commandhandling.distribute.UnresolvedRoutingKeyPolicy                                | org.axonframework.commandhandling.UnresolvedRoutingKeyPolicy                        | Yes. Moved to `axon-messaging` |
-| org.axonframework.commandhandling.distribute.AnnotationRoutingStrategy                                 | org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy              | Yes. Moved to `axon-messaging` |
+| org.axonframework.commandhandling.distribute.AnnotationRoutingStrategy                                 | org.axonframework.commandhandling.annotations.AnnotationRoutingStrategy             | Yes. Moved to `axon-messaging` |
 | org.axonframework.serialization.json.JacksonSerializer                                                 | org.axonframework.serialization.json.JacksonConverter                               | No                             |
 | org.axonframework.springboot.SerializerProperties                                                      | org.axonframework.springboot.ConverterProperties                                    | No                             |
 | org.axonframework.springboot.SerializerProperties.SerializerType                                       | org.axonframework.springboot.ConverterProperties.ConverterType                      | No                             |
@@ -1840,6 +1840,11 @@ This section contains five tables:
 | org.axonframework.modelling.command.inspection.ChildForwardingCommandMessageHandlingMember             | org.axonframework.modelling.command.inspection.ChildForwardingCommandHandlingMember | No                             |
 | org.axonframework.queryhandling.annotation.MethodQueryMessageHandlerDefinition                         | org.axonframework.queryhandling.annotation.MethodQueryHandlerDefinition             | No                             |
 | org.axonframework.eventsourcing.EventSourcingHandler                                                   | org.axonframework.eventsourcing.annotations.EventSourcingHandler                    | No                             |
+| org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter                           | org.axonframework.commandhandling.annotations.AnnotatedCommandHandlingComponent     | No                             |
+| org.axonframework.commandhandling.annotation.CommandHandler                                            | org.axonframework.commandhandling.annotations.CommandHandler                        | No                             |
+| org.axonframework.commandhandling.annotation.CommandHandlingMember                                     | org.axonframework.commandhandling.annotations.CommandHandlingMember                 | No                             |
+| org.axonframework.commandhandling.annotation.MethodCommandHandlerDefinition                            | org.axonframework.commandhandling.annotations.MethodCommandHandlerDefinition        | No                             |
+| org.axonframework.commandhandling.annotation.RoutingKey                                                | org.axonframework.commandhandling.annotations.RoutingKey                            | No                             |
 
 ### Removed Classes
 
