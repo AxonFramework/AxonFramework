@@ -307,6 +307,8 @@ public interface AxonTestPhase {
          * @return A {@link When} instance that allows executing the test.
          */
         When when();
+
+        Then.Nothing then();
     }
 
     /**
@@ -343,6 +345,19 @@ public interface AxonTestPhase {
              * @return A {@link Then} instance that allows validating the test results.
              */
             Then.Event then();
+        }
+
+        /**
+         * When-phase after no action in the When-phase.
+         */
+        interface Nothing {
+
+            /**
+             * Transitions to the Then phase to validate the results of the test.
+             *
+             * @return A {@link Then} instance that allows validating the test results.
+             */
+            Then.Nothing then();
         }
 
         /**
@@ -416,6 +431,8 @@ public interface AxonTestPhase {
          * @return The current When instance, for fluent interfacing.
          */
         Event events(@Nonnull List<?>... events);
+
+        Nothing nothing();
     }
 
     /**
@@ -482,6 +499,10 @@ public interface AxonTestPhase {
             Event success();
         }
 
+        interface Nothing extends Message<Nothing> {
+
+        }
+
         /**
          * Interface describing the operations available in the Then phase of the test fixture execution. It's possible
          * to assert published messages from the When phase.
@@ -490,6 +511,11 @@ public interface AxonTestPhase {
          *            which was triggered in the When phase.
          */
         interface Message<T extends Message<T>> {
+
+//            T event(@Nonnull Object expectedEvent);
+//            T eventMatches(@Nonnull Object expectedEvent);
+//            T notEventMatches(@Nonnull Object expectedEvent);
+//            T notEvent(@Nonnull Object unexpectedEvent);
 
             /**
              * Expect the given set of events to have been published during the {@link When} phase.
