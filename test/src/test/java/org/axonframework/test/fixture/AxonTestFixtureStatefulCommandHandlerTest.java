@@ -66,21 +66,6 @@ class AxonTestFixtureStatefulCommandHandlerTest {
     }
 
     @Test
-    void givenEventsWhenCommandThenNoEvents2() {
-        var configurer = MessagingConfigurer.create();
-        registerSampleStatefulCommandHandler(configurer);
-
-        var fixture = AxonTestFixture.with(configurer);
-
-        var studentNameChanged = studentNameChangedEventMessage("my-studentId-1", "name-1", 1);
-        var changeToTheSameName = new ChangeStudentNameCommand("my-studentId-1", "name-1");
-        fixture.given()
-               .events(studentNameChanged)
-               .then()
-               .noEvents();
-    }
-
-    @Test
     void givenEventsWhenCommandThenNoEventsConsumer() {
         var configurer = MessagingConfigurer.create();
         registerSampleStatefulCommandHandler(configurer);

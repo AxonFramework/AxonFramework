@@ -127,6 +127,11 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
+    public Nothing nothing() {
+        return null;
+    }
+
+    @Override
     public Event events(@Nonnull EventMessage... messages) {
         inUnitOfWorkOnInvocation(processingContext -> eventSink.publish(processingContext, messages));
         return new Event();

@@ -179,4 +179,15 @@ class AxonTestGiven implements AxonTestPhase.Given {
                 unitOfWorkFactory
         );
     }
+
+    @Override
+    public AxonTestPhase.Then.Nothing then() {
+        return new AxonTestThenNothing(
+                configuration,
+                customization,
+                commandBus,
+                eventSink,
+                null
+        );
+    }
 }
