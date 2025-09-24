@@ -26,7 +26,7 @@ import org.axonframework.integrationtests.testsuite.administration.common.Person
 import org.axonframework.integrationtests.testsuite.administration.events.EmailAddressChanged;
 import org.axonframework.integrationtests.testsuite.administration.events.EmployeeCreated;
 import org.axonframework.integrationtests.testsuite.administration.events.TaskAssigned;
-import org.axonframework.modelling.entity.annotation.EntityMember;
+import org.axonframework.modelling.entity.annotations.EntityMember;
 
 import java.util.ArrayList;
 import java.util.List;

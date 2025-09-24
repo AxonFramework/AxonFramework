@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.annotation;
+package org.axonframework.modelling.entity.annotations;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ConstructorUtils;
@@ -52,7 +52,7 @@ import static org.axonframework.common.annotations.AnnotationUtils.findAnnotatio
  *
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
- * @since 3.1
+ * @since 3.1.0
  */
 @Internal
 public abstract class AbstractEntityChildModelDefinition implements EntityChildModelDefinition {

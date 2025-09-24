@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.annotation;
+package org.axonframework.modelling.entity.annotations;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.modelling.entity.EntityMetamodel;
@@ -34,7 +34,7 @@ import java.util.Optional;
  * @author Allard Buijze
  * @author Mitchell Herrijgers
  * @see java.util.ServiceLoader
- * @since 3.0
+ * @since 3.0.0
  */
 public interface EntityChildModelDefinition {
 

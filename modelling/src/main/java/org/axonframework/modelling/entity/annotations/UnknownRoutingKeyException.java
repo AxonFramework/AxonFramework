@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.annotation;
+package org.axonframework.modelling.entity.annotations;
 
 /**
  * Exception indicating that a child entity indicated a routing key that is not known on the incoming message. As such,

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.annotation;
+package org.axonframework.modelling.entity.annotations;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
@@ -31,7 +31,7 @@ import org.axonframework.modelling.entity.child.EventTargetMatcher;
  * @param <E> The type of the child entity this matcher matches against.
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
- * @since 3.1
+ * @since 3.1.0
  */
 public class RoutingKeyEventTargetMatcher<E> implements EventTargetMatcher<E> {
 

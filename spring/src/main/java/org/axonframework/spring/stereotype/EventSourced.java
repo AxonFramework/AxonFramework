@@ -27,7 +27,7 @@ import org.axonframework.eventsourcing.annotations.EventSourcedEntityFactoryDefi
 import org.axonframework.eventsourcing.annotations.reflection.AnnotationBasedEventSourcedEntityFactoryDefinition;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
-import org.axonframework.modelling.entity.annotation.AnnotatedEntityIdResolverDefinition;
+import org.axonframework.modelling.entity.annotations.AnnotatedEntityIdResolverDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.stereotype.Component;
@@ -85,7 +85,7 @@ public @interface EventSourced {
      * should be specified here. Classes that are not specified here will not be scanned.
      *
      * @return The concrete types of the entity that should be considered when building the
-     * {@link org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel}.
+     * {@link org.axonframework.modelling.entity.annotations.AnnotatedEntityMetamodel}.
      */
     @AliasFor(annotation = EventSourcedEntity.class, attribute = "concreteTypes")
     Class<?>[] concreteTypes() default {};

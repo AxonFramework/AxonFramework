@@ -19,7 +19,7 @@ package org.axonframework.modelling.annotations;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.modelling.command.EntityIdResolver;
-import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
+import org.axonframework.modelling.entity.annotations.AnnotatedEntityMetamodel;
 
 /**
  * Definition describing how to create an {@link EntityIdResolver} for a given entity type and identifier type. Used by

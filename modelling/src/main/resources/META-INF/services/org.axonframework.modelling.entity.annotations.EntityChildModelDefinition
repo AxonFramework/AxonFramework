@@ -14,5 +14,5 @@
 # limitations under the License.
 #
 
-org.axonframework.modelling.entity.annotation.ListEntityChildModelDefinition
-org.axonframework.modelling.entity.annotation.SingleEntityChildModelDefinition
+org.axonframework.modelling.entity.annotations.ListEntityChildModelDefinition
+org.axonframework.modelling.entity.annotations.SingleEntityChildModelDefinition

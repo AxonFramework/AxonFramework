@@ -28,7 +28,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.annotations.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
 import org.axonframework.modelling.entity.EntityCommandHandler;
-import org.axonframework.modelling.entity.annotation.AnnotatedEntityIdResolverDefinition;
+import org.axonframework.modelling.entity.annotations.AnnotatedEntityIdResolverDefinition;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -126,7 +126,7 @@ public @interface EventSourcedEntity {
      * should be specified here. Classes that are not specified here will not be scanned.
      *
      * @return The concrete types of the entity that should be considered when building the
-     * {@link org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel}.
+     * {@link org.axonframework.modelling.entity.annotations.AnnotatedEntityMetamodel}.
      */
     Class<?>[] concreteTypes() default {};
 

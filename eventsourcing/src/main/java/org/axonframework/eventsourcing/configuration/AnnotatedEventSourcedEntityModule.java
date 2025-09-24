@@ -34,7 +34,7 @@ import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.entity.EntityMetamodel;
-import org.axonframework.modelling.entity.annotation.AnnotatedEntityMetamodel;
+import org.axonframework.modelling.entity.annotations.AnnotatedEntityMetamodel;
 
 import java.util.Arrays;
 import java.util.Map;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.annotation;
+package org.axonframework.modelling.entity.annotations;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotations.RoutingKey;
@@ -46,7 +46,7 @@ import java.lang.annotation.Target;
  *
  * @author Allard Buijze
  * @author Mitchell Herrijgers
- * @since 3.0
+ * @since 3.0.0
  */
 @Documented
 @Target({ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE})

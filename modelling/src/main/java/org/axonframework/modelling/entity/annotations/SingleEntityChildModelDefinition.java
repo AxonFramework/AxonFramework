@@ -14,48 +14,42 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.annotation;
+package org.axonframework.modelling.entity.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.CommandTargetResolver;
 import org.axonframework.modelling.entity.child.EntityChildMetamodel;
 import org.axonframework.modelling.entity.child.EventTargetMatcher;
-import org.axonframework.modelling.entity.child.ListEntityChildMetamodel;
+import org.axonframework.modelling.entity.child.SingleEntityChildMetamodel;
 
 import java.lang.reflect.Member;
-import java.util.List;
 
-import static java.lang.String.format;
-import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
+import static org.axonframework.common.ReflectionUtils.getMemberValueType;
 
 /**
- * {@link EntityChildModelDefinition} for creating {@link EntityChildMetamodel} instances for child entities
- * that are represented as a {@link List}. It resolves the child type from the member's generic type and creates a
- * {@link ListEntityChildMetamodel} accordingly.
+ * {@link EntityChildModelDefinition} that creates {@link EntityChildMetamodel} instances for child entities that are
+ * represented as a single entity (not iterable). It resolves the child type from the member's type and creates a
+ * {@link SingleEntityChildMetamodel} accordingly.
  * <p>
  * Before version 5.0.0, this class was known as the
- * {@code org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityCollectionDefinition}. The
- * class has been renamed to better fit the new entity modeling, and has been adjusted to only work with {@link List}
- * types.
+ * {@code org.axonframework.modelling.command.inspection.AggregateMemberAnnotatedChildEntityDefinition}. The class has
+ * been renamed to better fit the new entity modeling.
  *
- * @author Allard Buijze
  * @author Mitchell Herrijgers
- * @since 3.0
+ * @since 5.0.0
  */
-public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefinition {
+public class SingleEntityChildModelDefinition extends AbstractEntityChildModelDefinition {
 
     @Override
     protected boolean isMemberTypeSupported(@Nonnull Class<?> memberType) {
-        return List.class.isAssignableFrom(memberType);
+        return !Iterable.class.isAssignableFrom(memberType);
     }
 
     @Override
     protected Class<?> getChildTypeFromMember(@Nonnull Member member) {
-        return getChildTypeFromList(member);
+        return getMemberValueType(member);
     }
 
     @Nonnull
@@ -66,20 +60,13 @@ public class ListEntityChildModelDefinition extends AbstractEntityChildModelDefi
             @Nonnull String fieldName,
             @Nonnull EventTargetMatcher<C> eventTargetMatcher,
             @Nonnull CommandTargetResolver<C> commandTargetResolver) {
-
-        return ListEntityChildMetamodel
+        return SingleEntityChildMetamodel
                 .forEntityModel(parentClass, entityMetamodel)
-                .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(parentClass, fieldName))
+                .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(
+                        parentClass, fieldName
+                ))
                 .commandTargetResolver(commandTargetResolver)
                 .eventTargetMatcher(eventTargetMatcher)
                 .build();
-    }
-
-    @SuppressWarnings("unchecked")
-    private <C> Class<C> getChildTypeFromList(Member member) {
-        return (Class<C>) resolveMemberGenericType(member, 0).orElseThrow(
-                () -> new AxonConfigurationException(format(
-                        "Unable to resolve entity type of member [%s].", ReflectionUtils.getMemberGenericString(member)
-                )));
     }
 }

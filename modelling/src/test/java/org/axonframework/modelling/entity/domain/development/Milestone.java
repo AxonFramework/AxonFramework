@@ -17,7 +17,7 @@
 package org.axonframework.modelling.entity.domain.development;
 
 import org.axonframework.commandhandling.annotations.RoutingKey;
-import org.axonframework.modelling.entity.annotation.EntityMember;
+import org.axonframework.modelling.entity.annotations.EntityMember;
 
 import java.util.List;
 

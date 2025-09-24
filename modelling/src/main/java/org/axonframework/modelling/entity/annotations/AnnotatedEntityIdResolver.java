@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.annotation;
+package org.axonframework.modelling.entity.annotations;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;

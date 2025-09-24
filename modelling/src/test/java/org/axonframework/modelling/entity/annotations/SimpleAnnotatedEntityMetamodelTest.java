@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.entity.annotation;
+package org.axonframework.modelling.entity.annotations;
 
 import org.axonframework.modelling.entity.domain.todo.TodoItem;
 import org.axonframework.modelling.entity.domain.todo.commands.CreateTodoItem;
