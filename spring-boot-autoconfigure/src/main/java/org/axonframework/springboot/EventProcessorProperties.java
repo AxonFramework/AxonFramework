@@ -306,7 +306,7 @@ public class EventProcessorProperties {
          * @return the name of the bean that defines the
          * {@link org.axonframework.eventhandling.sequencing.SequencingPolicy} for this processor.
          */
-        public String getSequencingPolicy() {
+        public String sequencingPolicy() {
             return sequencingPolicy;
         }
 
