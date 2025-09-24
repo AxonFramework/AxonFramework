@@ -117,7 +117,7 @@ public interface CommandHandlingModule extends Module, ModuleBuilder<CommandHand
      * of the command handler can be registered through the
      * {@link #commandHandler(QualifiedName, ComponentBuilder)} method.
      */
-    interface CommandHandlerPhase extends SetupPhase, ModuleBuilder<CommandHandlingModule> {
+    interface CommandHandlerPhase extends ModuleBuilder<CommandHandlingModule> {
 
         /**
          * Registers the given {@code commandHandler} for the given qualified {@code commandName} within this module.

@@ -26,9 +26,9 @@ import org.axonframework.integrationtests.testsuite.student.commands.EnrollStude
 import java.util.function.Consumer;
 
 /**
- * Abstract test suite for command handling in a university context, extending the base student test suite.
- * It provides a common configuration for command handling modules and allows for additional command handlers to be
- * registered by subclasses.
+ * Abstract test suite for command handling in a university context, extending the base student test suite. It provides
+ * a common configuration for command handling modules and allows for additional command handlers to be registered by
+ * subclasses.
  *
  * @author Mateusz Nowak
  * @author Mitchell Herrijgers
@@ -36,15 +36,15 @@ import java.util.function.Consumer;
  */
 public abstract class AbstractCommandHandlingStudentTestSuite extends AbstractStudentTestSuite {
 
-    private final CommandHandlingModule.CommandHandlerPhase commandHandlingModule = CommandHandlingModule.named("student-course-module")
-            .commandHandlers();
+    private final CommandHandlingModule.SetupPhase commandHandlingModule =
+            CommandHandlingModule.named("student-course-module");
 
     protected CommandGateway commandGateway;
 
     @Override
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {
         return super.testSuiteConfigurer(configurer)
-                .registerCommandHandlingModule(commandHandlingModule);
+                    .registerCommandHandlingModule(commandHandlingModule.commandHandlers());
     }
 
     @Override
