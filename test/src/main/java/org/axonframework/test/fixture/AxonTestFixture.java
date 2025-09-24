@@ -156,13 +156,13 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * @param fieldFilters Collections of {@link FieldFilter FieldFilters} used to adjust the matchers for commands,
      *                     events, and result messages.
      */
-    public record Customization(boolean axonServerEnabled, @Nonnull List<FieldFilter> fieldFilters) {
+    public record Customization(@Nonnull List<FieldFilter> fieldFilters) {
 
         /**
          * Creates a new instance of {@code Customization}.
          */
         public Customization() {
-            this(false, new ArrayList<>());
+            this(new ArrayList<>());
         }
 
         /**
@@ -190,7 +190,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         public Customization registerFieldFilter(@Nonnull FieldFilter fieldFilter) {
             List<FieldFilter> fieldFiltersCopy = new ArrayList<>(this.fieldFilters);
             fieldFiltersCopy.add(fieldFilter);
-            return new Customization(axonServerEnabled, fieldFiltersCopy);
+            return new Customization(fieldFiltersCopy);
         }
 
         /**
@@ -223,14 +223,6 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          */
         public List<FieldFilter> fieldFilters() {
             return fieldFilters;
-        }
-
-        public Customization axonServerEnabled(boolean enabled) {
-            return new Customization(enabled, fieldFilters);
-        }
-
-        public boolean axonServerEnabled() {
-            return axonServerEnabled;
         }
     }
 }
