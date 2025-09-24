@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.interceptors;
+package org.axonframework.messaging.interceptors.annotations;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandler;
@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * will not block processing of any other handlers that do match.
  *
  * @author Allard Buijze
- * @since 4.4
+ * @since 4.4.0
  */
 @MessageHandler
 @Retention(RetentionPolicy.RUNTIME)
@@ -42,12 +42,17 @@ public @interface MessageHandlerInterceptor {
 
     /**
      * Specifies the type of message that can be handled by the member method. Defaults to any {@link Message}.
+     *
+     * @return The type of {@link Message} handled by function annotated with {@code @MessageHandlerInterceptor}.
      */
     Class<? extends Message> messageType() default Message.class;
 
     /**
      * Specifies the type of message payload that can be handled by the member method. The payload of the message should
      * be assignable to this type. Defaults to any {@link Object}.
+     *
+     * @return The type of {@link Message#payload()} handled by the function annotated with
+     * {@code @MessageHandlerInterceptor}.
      */
     Class<?> payloadType() default Object.class;
 }

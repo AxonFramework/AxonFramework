@@ -15,14 +15,13 @@
  */
 package org.axonframework.queryhandling.annotation;
 
-import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
-import org.axonframework.messaging.interceptors.ExceptionHandler;
-import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.annotations.ExceptionHandler;
+import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.NoHandlerForQueryException;

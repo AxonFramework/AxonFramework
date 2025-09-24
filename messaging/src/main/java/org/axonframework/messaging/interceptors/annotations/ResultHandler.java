@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.interceptors;
+package org.axonframework.messaging.interceptors.annotations;
 
 import org.axonframework.messaging.annotation.HasHandlerAttributes;
 
@@ -34,7 +34,7 @@ import java.lang.annotation.Target;
  *
  * @author Allard Buijze
  * @see ExceptionHandler
- * @since 4.4
+ * @since 4.4.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.ANNOTATION_TYPE})
@@ -45,6 +45,8 @@ public @interface ResultHandler {
      * The type of result object that the annotated handler should be invoked for. The handler will be ignored if the
      * actual response type (regular or thrown exception) is not an instance of the type defined by this property, even
      * when the parameters of the method match the result.
+     *
+     * @return The type of result returned my functions annotated with {@link @ResultHandler}
      */
     Class<?> resultType() default Object.class;
 }

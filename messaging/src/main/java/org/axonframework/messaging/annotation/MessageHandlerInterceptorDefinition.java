@@ -19,13 +19,12 @@ package org.axonframework.messaging.annotation;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
-import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
-import org.axonframework.messaging.interceptors.ResultHandler;
+import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.annotations.ResultHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Method;

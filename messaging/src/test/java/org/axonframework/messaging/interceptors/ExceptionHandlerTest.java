@@ -27,6 +27,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.interceptors.annotations.ExceptionHandler;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;

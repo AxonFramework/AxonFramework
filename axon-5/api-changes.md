@@ -1850,6 +1850,9 @@ This section contains five tables:
 | org.axonframework.deadline.annotations.DeadlineHandler                                                 | org.axonframework.deadline.annotations.DeadlineHandler                              | No                             |
 | org.axonframework.deadline.annotations.DeadlineHandlingMember                                          | org.axonframework.deadline.annotations.DeadlineHandlingMember                       | No                             |
 | org.axonframework.deadline.annotations.DeadlineMethodMessageHandlerDefinition                          | org.axonframework.deadline.annotations.DeadlineMethodMessageHandlerDefinition       | No                             |
+| org.axonframework.messaging.interceptors.ExceptionHandler                                              | org.axonframework.messaging.interceptors.annotations.ExceptionHandler               | No                             |
+| org.axonframework.messaging.interceptors.MessageHandlerInterceptor                                     | org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptor      | No                             |
+| org.axonframework.messaging.interceptors.ResultHandler                                                 | org.axonframework.messaging.interceptors.annotations.ResultHandler                  | No                             |
 
 ### Removed Classes
 

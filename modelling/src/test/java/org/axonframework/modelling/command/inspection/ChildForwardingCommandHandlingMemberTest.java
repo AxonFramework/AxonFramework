@@ -17,7 +17,7 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.HandlerAttributes;
+import org.axonframework.messaging.annotation.HandlerAttributes;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.junit.jupiter.api.*;

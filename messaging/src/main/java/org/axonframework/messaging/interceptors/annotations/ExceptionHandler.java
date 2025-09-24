@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.interceptors;
+package org.axonframework.messaging.interceptors.annotations;
 
 import org.axonframework.messaging.Message;
 
@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
  * the result of the handler method invocation.
  *
  * @author Allard Buijze
- * @since 4.4
+ * @since 4.4.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})

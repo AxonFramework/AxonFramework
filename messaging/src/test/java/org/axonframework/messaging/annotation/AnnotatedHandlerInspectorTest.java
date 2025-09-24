@@ -25,7 +25,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptor;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.internal.util.collections.*;

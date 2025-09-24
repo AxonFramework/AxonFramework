@@ -22,11 +22,10 @@ import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.replay.annotations.AllowReplay;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.interceptors.ExceptionHandler;
-import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
-import org.axonframework.messaging.interceptors.ResultHandler;
+import org.axonframework.messaging.interceptors.annotations.ExceptionHandler;
+import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.annotations.ResultHandler;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.Documented;

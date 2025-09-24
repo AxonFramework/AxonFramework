@@ -162,7 +162,7 @@ public interface MessageHandlingMember<T> {
      * hold a value referencing the {@code attributeKey}, an {@link Optional#empty()} is returned. Otherwise, a
      * non-empty {@link Optional} containing the attribute will be provided.
      * <p>
-     * When using the method, consider checking the {@link org.axonframework.messaging.HandlerAttributes} for a list of
+     * When using the method, consider checking the {@link HandlerAttributes} for a list of
      * common handler attributes.
      *
      * @param attributeKey The key to retrieve an attribute for.

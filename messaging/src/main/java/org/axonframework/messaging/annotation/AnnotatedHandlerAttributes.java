@@ -17,7 +17,6 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.annotations.AnnotationUtils;
-import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.SimpleHandlerAttributes;
 
 import java.lang.annotation.Annotation;

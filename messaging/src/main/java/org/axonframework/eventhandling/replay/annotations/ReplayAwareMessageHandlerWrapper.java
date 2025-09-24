@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.replay.annotations;
 
 import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
-import org.axonframework.messaging.HandlerAttributes;
+import org.axonframework.messaging.annotation.HandlerAttributes;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;

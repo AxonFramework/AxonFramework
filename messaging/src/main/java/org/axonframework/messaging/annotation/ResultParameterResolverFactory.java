@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.messaging.Context.ResourceKey;
-import org.axonframework.messaging.interceptors.ResultHandler;
+import org.axonframework.messaging.interceptors.annotations.ResultHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ResourceOverridingProcessingContext;
 
