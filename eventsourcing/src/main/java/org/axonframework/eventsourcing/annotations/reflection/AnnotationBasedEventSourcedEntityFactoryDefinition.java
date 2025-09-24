@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.annotation.reflection;
+package org.axonframework.eventsourcing.annotations.reflection;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
+import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotations.EventSourcedEntityFactoryDefinition;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 

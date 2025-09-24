@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.annotation;
+package org.axonframework.eventsourcing.annotations;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.annotation.reflection.AnnotationBasedEventSourcedEntityFactoryDefinition;
-import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
+import org.axonframework.eventsourcing.annotations.reflection.AnnotationBasedEventSourcedEntityFactoryDefinition;
+import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.messaging.QualifiedName;

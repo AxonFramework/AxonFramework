@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.annotation.reflection;
+package org.axonframework.eventsourcing.annotations.reflection;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

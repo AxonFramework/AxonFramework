@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.annotation;
+package org.axonframework.eventsourcing.annotations;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.Configuration;

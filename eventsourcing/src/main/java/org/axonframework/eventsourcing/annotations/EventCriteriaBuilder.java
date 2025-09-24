@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.annotation;
+package org.axonframework.eventsourcing.annotations;
 
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.modelling.annotation.TargetEntityId;
