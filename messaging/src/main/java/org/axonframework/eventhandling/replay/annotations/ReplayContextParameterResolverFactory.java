@@ -18,8 +18,8 @@ package org.axonframework.eventhandling.replay.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
@@ -43,7 +43,9 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
 
     @Nullable
     @Override
-    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<Object> createInstance(@Nonnull Executable executable,
+                                                    @Nonnull Parameter[] parameters,
+                                                    int parameterIndex) {
         Parameter parameter = parameters[parameterIndex];
         if (parameter.isAnnotationPresent(ReplayContext.class)) {
             return new ReplayContextParameterResolver(parameter.getType());
@@ -62,7 +64,7 @@ public class ReplayContextParameterResolverFactory implements ParameterResolverF
         @Nullable
         @Override
         public Object resolveParameterValue(@Nonnull ProcessingContext context) {
-            if(Message.fromContext(context) instanceof TrackedEventMessage trackedEventMessage) {
+            if (Message.fromContext(context) instanceof TrackedEventMessage trackedEventMessage) {
                 return ReplayToken.replayContext(trackedEventMessage, this.type).orElse(null);
             }
             return false;

@@ -55,7 +55,9 @@ public class ConfigurationParameterResolverFactory implements ParameterResolverF
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable,
+                                               @Nonnull Parameter[] parameters,
+                                               int parameterIndex) {
         Class<?> componentType = parameters[parameterIndex].getType();
         return configuration.getOptionalComponent(componentType)
                             .map(FixedValueParameterResolver::new)

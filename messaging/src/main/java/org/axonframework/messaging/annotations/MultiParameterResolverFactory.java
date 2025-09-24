@@ -111,10 +111,11 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
 
     @Nullable
     @Override
-    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters,
-                                            int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable,
+                                               @Nonnull Parameter[] parameters,
+                                               int parameterIndex) {
         for (ParameterResolverFactory factory : factories) {
-            ParameterResolver resolver = factory.createInstance(executable, parameters, parameterIndex);
+            ParameterResolver<?> resolver = factory.createInstance(executable, parameters, parameterIndex);
             if (resolver != null) {
                 return resolver;
             }

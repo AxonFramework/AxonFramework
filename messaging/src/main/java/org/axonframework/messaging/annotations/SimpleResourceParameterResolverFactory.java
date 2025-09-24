@@ -46,8 +46,9 @@ public class SimpleResourceParameterResolverFactory implements ParameterResolver
 
     @Nullable
     @Override
-    public ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters,
-                                            int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable,
+                                               @Nonnull Parameter[] parameters,
+                                               int parameterIndex) {
         for (Object resource : resources) {
             if (parameters[parameterIndex].getType().isInstance(resource)) {
                 return new FixedValueParameterResolver<>(resource);

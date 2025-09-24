@@ -28,12 +28,13 @@ import java.lang.reflect.Parameter;
  * provide the parameter values to use, given an incoming {@link Message}.
  * <p>
  * One of the implementations is the {@link ClasspathParameterResolverFactory}, which allows application developers to
- * provide custom ParameterResolverFactory implementations using the ServiceLoader mechanism. To do so, place a file
- * called {@code org.axonframework.messaging.annotations.ParameterResolverFactory} in the {@code META-INF/services}
- * folder. In this file, place the fully qualified class names of all available implementations.
+ * provide custom {@code ParameterResolverFactory} implementations using the {@link java.util.ServiceLoader} mechanism.
+ * To do so, place a file called {@code org.axonframework.messaging.annotations.ParameterResolverFactory} in the
+ * {@code META-INF/services} folder. In this file, place the fully qualified class names of all available
+ * implementations.
  * <p>
  * The factory implementations must be public, non-abstract, have a default public constructor and implement the
- * ParameterResolverFactory interface.
+ * {@code ParameterResolverFactory} interface.
  *
  * @author Allard Buijze
  * @see ClasspathParameterResolverFactory
@@ -43,17 +44,19 @@ import java.lang.reflect.Parameter;
 public interface ParameterResolverFactory {
 
     /**
-     * If available, creates a ParameterResolver instance that can provide a parameter of type {@code parameterType} for
-     * a given message.
+     * If available, creates a {@link ParameterResolver} instance that can provide a parameter of type
+     * {@code parameterType} for a given message.
      * <p>
-     * If the ParameterResolverFactory cannot provide a suitable ParameterResolver, returns {@code null}.
+     * If the {@code ParameterResolverFactory} cannot provide a suitable {@link ParameterResolver}, returns
+     * {@code null}.
      *
-     * @param executable     The executable (constructor or method) to inspect
-     * @param parameters     The parameters on the executable to inspect
-     * @param parameterIndex The index of the parameter to return a ParameterResolver for
-     * @return a suitable ParameterResolver, or {@code null} if none is found
+     * @param executable     The executable (constructor or method) to inspect.
+     * @param parameters     The parameters on the executable to inspect.
+     * @param parameterIndex The index of the parameter to return a {@link ParameterResolver} for.
+     * @return A suitable {@link ParameterResolver}, or {@code null} if none is found.
      */
     @Nullable
-    ParameterResolver createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters,
-                                     int parameterIndex);
+    ParameterResolver<?> createInstance(@Nonnull Executable executable,
+                                        @Nonnull Parameter[] parameters,
+                                        int parameterIndex);
 }

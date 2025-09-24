@@ -42,9 +42,9 @@ public class CommandDispatcherParameterResolverFactory implements ParameterResol
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@Nonnull Executable executable,
-                                               @Nonnull Parameter[] parameters,
-                                               int parameterIndex) {
+    public ParameterResolver<CommandDispatcher> createInstance(@Nonnull Executable executable,
+                                                               @Nonnull Parameter[] parameters,
+                                                               int parameterIndex) {
         if (!CommandDispatcher.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return null;
         }
@@ -52,7 +52,7 @@ public class CommandDispatcherParameterResolverFactory implements ParameterResol
         return new ParameterResolver<>() {
             @Nullable
             @Override
-            public Object resolveParameterValue(@Nonnull ProcessingContext context) {
+            public CommandDispatcher resolveParameterValue(@Nonnull ProcessingContext context) {
                 return CommandDispatcher.forContext(context);
             }
 

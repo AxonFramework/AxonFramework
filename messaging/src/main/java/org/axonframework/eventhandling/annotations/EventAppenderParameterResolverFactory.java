@@ -40,14 +40,14 @@ public class EventAppenderParameterResolverFactory implements ParameterResolverF
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@Nonnull Executable executable,
-                                               @Nonnull Parameter[] parameters,
-                                               int parameterIndex) {
+    public ParameterResolver<EventAppender> createInstance(@Nonnull Executable executable,
+                                                           @Nonnull Parameter[] parameters,
+                                                           int parameterIndex) {
         if (EventAppender.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return new ParameterResolver<>() {
                 @Nullable
                 @Override
-                public Object resolveParameterValue(@Nonnull ProcessingContext context) {
+                public EventAppender resolveParameterValue(@Nonnull ProcessingContext context) {
                     return EventAppender.forContext(context);
                 }
 

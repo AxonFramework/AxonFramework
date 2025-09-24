@@ -46,13 +46,13 @@ public class InjectEntityParameterResolverFactory implements ParameterResolverFa
     private final Configuration configuration;
 
     /**
-     * Initialize the factory with the given {@code configuration}. The {@code configuration} should
-     * contain a {@link org.axonframework.modelling.StateManager} to load entities from.
+     * Initialize the factory with the given {@code configuration}. The {@code configuration} should contain a
+     * {@link org.axonframework.modelling.StateManager} to load entities from.
      * <p>
-     * This constructor depends on the {@link Configuration} instead of the {@link StateManager} to prevent
-     * circular dependencies during creation of message handlers. For example, if the repository uses an annotation-based
-     * event state applier, it would construct methods, which would then require the {@link StateManager} to be
-     * created during the construction of the parameter resolvers. This would lead to a circular dependency.
+     * This constructor depends on the {@link Configuration} instead of the {@link StateManager} to prevent circular
+     * dependencies during creation of message handlers. For example, if the repository uses an annotation-based event
+     * state applier, it would construct methods, which would then require the {@link StateManager} to be created during
+     * the construction of the parameter resolvers. This would lead to a circular dependency.
      *
      * @param configuration The {@link Configuration} to use for loading entities.
      */
@@ -62,7 +62,9 @@ public class InjectEntityParameterResolverFactory implements ParameterResolverFa
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable,
+                                               @Nonnull Parameter[] parameters,
+                                               int parameterIndex) {
         Parameter parameter = parameters[parameterIndex];
         if (!parameter.isAnnotationPresent(InjectEntity.class)) {
             return null;
@@ -93,7 +95,8 @@ public class InjectEntityParameterResolverFactory implements ParameterResolverFa
         try {
             return getConstructorFunctionWithZeroArguments(annotation.idResolver()).get();
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to instantiate id resolver: " + annotation.idResolver().getName(), e);
+            throw new IllegalStateException("Failed to instantiate id resolver: " + annotation.idResolver().getName(),
+                                            e);
         }
     }
 }

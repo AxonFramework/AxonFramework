@@ -41,9 +41,9 @@ public class TrackingTokenParameterResolverFactory implements ParameterResolverF
 
     @Nullable
     @Override
-    public ParameterResolver createInstance(@Nonnull Executable executable,
-                                            @Nonnull Parameter[] parameters,
-                                            int parameterIndex) {
+    public ParameterResolver<TrackingToken> createInstance(@Nonnull Executable executable,
+                                                           @Nonnull Parameter[] parameters,
+                                                           int parameterIndex) {
         if (TrackingToken.class.equals(parameters[parameterIndex].getType())) {
             return RESOLVER;
         }
