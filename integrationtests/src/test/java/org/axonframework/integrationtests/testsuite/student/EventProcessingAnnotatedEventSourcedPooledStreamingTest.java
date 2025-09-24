@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
-import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
 import org.axonframework.eventsourcing.annotations.reflection.InjectEntityId;

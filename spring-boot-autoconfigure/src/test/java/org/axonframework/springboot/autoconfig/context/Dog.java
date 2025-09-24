@@ -17,7 +17,7 @@
 package org.axonframework.springboot.autoconfig.context;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.spring.stereotype.EventSourced;

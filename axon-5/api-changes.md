@@ -1839,6 +1839,7 @@ This section contains five tables:
 | org.axonframework.modelling.command.inspection.ForwardingCommandMessageHandlingMember                  | org.axonframework.modelling.command.inspection.ForwardingCommandHandlingMember      | No                             |
 | org.axonframework.modelling.command.inspection.ChildForwardingCommandMessageHandlingMember             | org.axonframework.modelling.command.inspection.ChildForwardingCommandHandlingMember | No                             |
 | org.axonframework.queryhandling.annotation.MethodQueryMessageHandlerDefinition                         | org.axonframework.queryhandling.annotation.MethodQueryHandlerDefinition             | No                             |
+| org.axonframework.eventsourcing.EventSourcingHandler                                                   | org.axonframework.eventsourcing.annotations.EventSourcingHandler                    | No                             |
 
 ### Removed Classes
 

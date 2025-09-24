@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
