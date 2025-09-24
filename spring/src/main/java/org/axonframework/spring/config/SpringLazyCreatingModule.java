@@ -66,7 +66,6 @@ public class SpringLazyCreatingModule<S extends Module> extends BaseModule<Sprin
     public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         Module module = moduleBuilder.apply(parent).build();
         this.moduleName = module.name(); // update the name for the configuration
-        // Configuration parentConfiguration = super.build(parent, lifecycleRegistry); // bypass this module configuration
         Configuration configuration = module.build(parent, lifecycleRegistry);
 
         Optional.of(parent.getComponent(ComponentRegistry.class, () -> null))
