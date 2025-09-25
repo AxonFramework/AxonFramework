@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: university-demo-kotlin
+
+server:
+  port: 8084
