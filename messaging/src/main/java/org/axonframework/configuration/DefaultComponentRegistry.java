@@ -277,6 +277,23 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     @Override
+    public ComponentRegistry disableEnhancer(String fullyQualifiedClassName) {
+        try {
+            var enhancerClass = Class.forName(fullyQualifiedClassName);
+            if (!ConfigurationEnhancer.class.isAssignableFrom(enhancerClass)) {
+                throw new IllegalArgumentException(
+                        String.format("Class %s is not a ConfigurationEnhancer", fullyQualifiedClassName)
+                );
+            }
+            //noinspection unchecked
+            return disableEnhancer((Class<? extends ConfigurationEnhancer>) enhancerClass);
+        } catch (ClassNotFoundException e) {
+            logger.warn("Disabling Configuration Enhancer [{}] won't take effect as the enhancer class could not be found.", fullyQualifiedClassName);
+        }
+        return this;
+    }
+
+    @Override
     public DefaultComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass) {
         if (invokedEnhancers.contains(enhancerClass)) {
             logger.warn("Disabling Configuration Enhancer [{}] won't take effect as it has already been invoked. "

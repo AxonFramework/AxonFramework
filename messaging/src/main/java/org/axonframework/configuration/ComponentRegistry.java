@@ -431,4 +431,15 @@ public interface ComponentRegistry extends DescribableComponent {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     ComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass);
+
+    /**
+     * Disables the given {@link ConfigurationEnhancer} class from being registered as an enhancer through the
+     * {@link java.util.ServiceLoader}. Only specific classes can be disabled, and class hierarchies are not taken into
+     * account. Does not affect enhancers that are registered through the
+     * {@link #registerEnhancer(ConfigurationEnhancer)} method.
+     *
+     * @param fullyQualifiedClassName The name of the class of the enhancer to disable.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    ComponentRegistry disableEnhancer(String fullyQualifiedClassName);
 }
