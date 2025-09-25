@@ -133,10 +133,7 @@ public class DefaultQueryGateway implements QueryGateway {
                                            ResponseTypes.instanceOf(responseType));
         return queryBus.subscriptionQuery(queryMessage, context, Queues.SMALL_BUFFER_SIZE)
                        .asFlux()
-                       .mapNotNull(message -> Objects.isNull(message.payload())
-                               ? null
-                               : message.payloadAs(responseType)
-                       );
+                       .mapNotNull(message -> message.payloadAs(responseType));
     }
 
     @Nonnull
