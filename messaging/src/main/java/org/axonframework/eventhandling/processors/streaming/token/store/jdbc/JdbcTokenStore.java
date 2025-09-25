@@ -69,7 +69,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * {@link JdbcTokenStore#createSchema(TokenTableFactory)} operation.
  *
  * @author Rene de Waele
- * @since 3.0
+ * @since 3.0.0
  */
 public class JdbcTokenStore implements TokenStore {
 
@@ -133,11 +133,12 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
+    @Nonnull
     @Override
     public CompletableFuture<Void> initializeTokenSegments(@Nonnull String processorName,
                                                            int segmentCount,
-                                                           TrackingToken initialToken,
-                                                           @Nullable ProcessingContext processingContext)
+                                                           @Nullable TrackingToken initialToken,
+                                                           @Nullable ProcessingContext context)
             throws UnableToClaimTokenException {
 
         Connection connection = getConnection();
@@ -159,11 +160,12 @@ public class JdbcTokenStore implements TokenStore {
         return completedFuture(null);
     }
 
+    @Nonnull
     @Override
     public CompletableFuture<Void> initializeSegment(@Nullable TrackingToken token,
                                                      @Nonnull String processorName,
                                                      int segment,
-                                                     @Nullable ProcessingContext processingContext)
+                                                     @Nullable ProcessingContext context)
             throws UnableToInitializeTokenException {
         Connection connection = getConnection();
         try {
@@ -182,6 +184,7 @@ public class JdbcTokenStore implements TokenStore {
         return completedFuture(null);
     }
 
+    @Nonnull
     @Override
     public CompletableFuture<Optional<String>> retrieveStorageIdentifier() throws UnableToRetrieveIdentifierException {
         return completedFuture(Optional.of(loadConfigurationToken()).map(configToken -> configToken.get("id")));
@@ -232,11 +235,12 @@ public class JdbcTokenStore implements TokenStore {
         return serializer;
     }
 
+    @Nonnull
     @Override
     public CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
                                               @Nonnull String processorName,
                                               int segment,
-                                              @Nullable ProcessingContext processingContext)
+                                              @Nullable ProcessingContext context)
             throws UnableToClaimTokenException {
 
         Connection connection = getConnection();
@@ -273,10 +277,11 @@ public class JdbcTokenStore implements TokenStore {
         return completedFuture(null);
     }
 
+    @Nonnull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
                                                        int segment,
-                                                       @Nullable ProcessingContext processingContext)
+                                                       @Nullable ProcessingContext context)
             throws UnableToClaimTokenException {
         Connection connection = getConnection();
         try {
@@ -291,10 +296,11 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
+    @Nonnull
     @Override
     public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
                                                        @Nonnull Segment segment,
-                                                       @Nullable ProcessingContext processingContext)
+                                                       @Nullable ProcessingContext context)
             throws UnableToClaimTokenException {
 
         Connection connection = getConnection();
@@ -311,10 +317,11 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
+    @Nonnull
     @Override
     public CompletableFuture<Void> releaseClaim(@Nonnull String processorName,
                                                 int segment,
-                                                @Nullable ProcessingContext processingContext) {
+                                                @Nullable ProcessingContext context) {
 
         Connection connection = getConnection();
         try {
@@ -330,10 +337,11 @@ public class JdbcTokenStore implements TokenStore {
         return completedFuture(null);
     }
 
+    @Nonnull
     @Override
     public CompletableFuture<Void> deleteToken(@Nonnull String processorName,
                                                int segment,
-                                               @Nullable ProcessingContext processingContext) {
+                                               @Nullable ProcessingContext context) {
         Connection connection = getConnection();
         try {
             int[] result = executeUpdates(connection, e -> {
@@ -351,9 +359,10 @@ public class JdbcTokenStore implements TokenStore {
         return completedFuture(null);
     }
 
+    @Nonnull
     @Override
     public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName,
-                                                  @Nullable ProcessingContext processingContext) {
+                                                  @Nullable ProcessingContext context) {
 
         Connection connection = getConnection();
         try {
@@ -370,9 +379,10 @@ public class JdbcTokenStore implements TokenStore {
         }
     }
 
+    @Nonnull
     @Override
     public CompletableFuture<List<Segment>> fetchAvailableSegments(@Nonnull String processorName,
-                                                                   @Nullable ProcessingContext processingContext) {
+                                                                   @Nullable ProcessingContext context) {
         Connection connection = getConnection();
         try {
             List<AbstractTokenEntry<?>> tokenEntries = executeQuery(connection,

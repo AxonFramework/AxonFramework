@@ -49,6 +49,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link JpaTokenStore}.
+ *
+ * @author Rene de Waele
+ */
 class JpaTokenStoreTest {
 
     private final EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("tokenstore");
@@ -190,7 +195,7 @@ class JpaTokenStoreTest {
     @Test
     void initializeTokensWhileAlreadyPresent() {
         assertThrows(UnableToClaimTokenException.class, () -> joinAndUnwrap(
-                jpaTokenStore.fetchToken("test1",1, null)));
+                jpaTokenStore.fetchToken("test1", 1, null)));
     }
 
     @Test

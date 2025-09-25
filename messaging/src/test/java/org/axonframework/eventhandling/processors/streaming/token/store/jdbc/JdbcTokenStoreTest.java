@@ -58,6 +58,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link JdbcTokenStore}.
+ *
+ * @author Rene de Waele
+ */
 @ContextConfiguration
 @ExtendWith(SpringExtension.class)
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
@@ -300,7 +305,8 @@ class JdbcTokenStoreTest {
 
         transactionManager.executeInTransaction(() -> {
             final List<Segment> segments = joinAndUnwrap((
-                    concurrentTokenStore.fetchAvailableSegments("proc1", null)));
+                                                                 concurrentTokenStore.fetchAvailableSegments("proc1",
+                                                                                                             null)));
             assertThat(segments.size(), is(0));
             joinAndUnwrap(tokenStore.releaseClaim("proc1", 0, null));
             final List<Segment> segmentsAfterRelease = joinAndUnwrap(
@@ -382,10 +388,10 @@ class JdbcTokenStoreTest {
                 ));
 
         transactionManager.executeInTransaction(() -> assertNull(
-                joinAndUnwrap(tokenStore.fetchToken("concurrent",0, null))));
+                joinAndUnwrap(tokenStore.fetchToken("concurrent", 0, null))));
         try {
             transactionManager.executeInTransaction(() -> joinAndUnwrap(
-                    concurrentTokenStore.fetchToken("concurrent",0, null)));
+                    concurrentTokenStore.fetchToken("concurrent", 0, null)));
             fail("Expected UnableToClaimTokenException");
         } catch (UnableToClaimTokenException e) {
             // expected
@@ -426,7 +432,7 @@ class JdbcTokenStoreTest {
                 tokenStore.fetchToken("concurrent", 0, null)));
         AbstractTokenEntry.clock = Clock.offset(Clock.systemUTC(), Duration.ofHours(1));
         transactionManager.executeInTransaction(() -> assertNull(joinAndUnwrap(
-                concurrentTokenStore.fetchToken("concurrent",0, null))));
+                concurrentTokenStore.fetchToken("concurrent", 0, null))));
     }
 
     @Test
