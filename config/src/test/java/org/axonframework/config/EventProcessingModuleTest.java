@@ -121,63 +121,6 @@ class EventProcessingModuleTest {
     }
 
     @Test
-    void processorsDefaultToSubscribingWhenUsingSimpleEventBus() {
-        LegacyConfiguration configuration =
-                LegacyDefaultConfigurer.defaultConfiguration()
-                                       .configureEventBus(c -> SimpleEventBus.builder().build())
-                                       .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
-                                                                .registerEventHandler(c -> new TrackingEventHandler()))
-                                       .start();
-
-        EventProcessingConfiguration processingConfig = configuration.eventProcessingConfiguration();
-
-        assertTrue(processingConfig.eventProcessor("subscribing").isPresent());
-        assertTrue(processingConfig.eventProcessor("subscribing")
-                                   .map(p -> p instanceof SubscribingEventProcessor)
-                                   .orElse(false));
-        assertTrue(processingConfig.eventProcessor("tracking").isPresent());
-        assertTrue(processingConfig.eventProcessor("tracking")
-                                   .map(p -> p instanceof SubscribingEventProcessor)
-                                   .orElse(false));
-    }
-
-    @Test
-    void createSubscribingEventProcessorIfSubscribableMessageSourceDefinitionBuilderPresent(
-            @Mock EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder mockBuilder,
-            @Mock SubscribableMessageSourceDefinition<EventMessage> definition,
-            @Mock SubscribableMessageSource source) {
-        when(mockBuilder.build("pooled-streaming")).thenReturn(definition);
-        when(mockBuilder.build("tracking")).thenReturn(definition);
-        when(definition.create(any())).thenReturn(source);
-
-        configurer.eventProcessing()
-                  .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerEventHandler(config -> new TrackingEventHandler())
-                  .usingSubscribingEventProcessors(mockBuilder);
-        LegacyConfiguration config = configurer.start();
-
-        Map<String, EventProcessor> processorMap = config.eventProcessingConfiguration().eventProcessors();
-
-        processorMap.forEach((c, processor) -> assertInstanceOf(SubscribingEventProcessor.class, processor));
-        assertEquals(2, processorMap.size());
-        verify(mockBuilder, times(2)).build(anyString());
-    }
-
-    @Test
-    void subscribingProcessorsUsesSpecificSource() {
-        configurer.eventProcessing()
-                  .configureDefaultSubscribableMessageSource(c -> eventStoreOne)
-                  .registerSubscribingEventProcessor("subscribing", c -> eventStoreTwo)
-                  .registerEventHandler(c -> new SubscribingEventHandler());
-
-        LegacyConfiguration config = configurer.start();
-        Optional<SubscribingEventProcessor> processor = config.eventProcessingConfiguration()
-                                                              .eventProcessor("subscribing");
-        assertTrue(processor.isPresent());
-        assertEquals(eventStoreTwo, processor.get().getMessageSource());
-    }
-
-    @Test
     void packageOfObject() {
         String expectedPackageName = EventProcessingModule.class.getPackage().getName();
         assertEquals(expectedPackageName, EventProcessingModule.packageOfObject(this));
@@ -545,40 +488,6 @@ class EventProcessingModuleTest {
 //                ((DeadLetteringEventHandlerInvoker) delegates.getFirst());
 //
 //        assertTrue((Boolean) getField("allowReset", resultDeadLetteringInvoker));
-    }
-
-    @Test
-    void sequencedDeadLetterProcessorReturnsForProcessingGroupWithDlq(
-            @Mock SequencedDeadLetterQueue<EventMessage> deadLetterQueue
-    ) {
-        String processingGroup = "pooled-streaming";
-        String otherProcessingGroup = "tracking";
-
-        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                  .eventProcessing()
-                  .registerPooledStreamingEventProcessor(processingGroup)
-                  .registerPooledStreamingEventProcessor(otherProcessingGroup)
-                  .registerEventHandler(config -> new PooledStreamingEventHandler())
-                  .registerEventHandler(config -> new TrackingEventHandler())
-                  .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue);
-
-        LegacyConfiguration config = configurer.start();
-        EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
-
-        Optional<SequencedDeadLetterQueue<EventMessage>> configuredDlq =
-                eventProcessingConfig.deadLetterQueue(processingGroup);
-        assertTrue(configuredDlq.isPresent());
-        assertEquals(deadLetterQueue, configuredDlq.get());
-
-        Optional<PooledStreamingEventProcessor> optionalProcessor =
-                eventProcessingConfig.eventProcessor(processingGroup, PooledStreamingEventProcessor.class);
-        assertTrue(optionalProcessor.isPresent());
-
-        Optional<SequencedDeadLetterProcessor<EventMessage>> optionalDeadLetterProcessor =
-                eventProcessingConfig.sequencedDeadLetterProcessor(processingGroup);
-        assertTrue(optionalDeadLetterProcessor.isPresent());
-        assertFalse(eventProcessingConfig.sequencedDeadLetterProcessor(otherProcessingGroup).isPresent());
-        assertFalse(eventProcessingConfig.sequencedDeadLetterProcessor("non-existing-group").isPresent());
     }
 
     @Test

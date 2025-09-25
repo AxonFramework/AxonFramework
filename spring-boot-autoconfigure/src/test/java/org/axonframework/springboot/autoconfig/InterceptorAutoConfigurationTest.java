@@ -24,6 +24,8 @@ import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageDispatchInterceptorChain;
@@ -55,7 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 /**
- * Test class validating the behavior of the {@link InfraConfiguration}.
+ * Test class validating the behavior of the {@link InfrastructureConfiguration}.
  *
  * @author Christian Thiel
  */
@@ -70,7 +72,7 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO #3498 - CommandHandler annotated methods are not yet found")
+    @Disabled("TODO # #3485 - Ordering of interceptors is not supported")
     public void commandHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(CommandGateway.class).sendAndWait(new Object());
@@ -118,7 +120,7 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO #3495 - EventProcessors are not yet autoconfigured")
+    @Disabled("TODO #3485 - Ordering is not supported")
     public void eventHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(EventGateway.class).publish(null, "foo");
@@ -148,7 +150,6 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO #3498 - CommandHandler annotated methods are not yet found")
     public void commandDispatchInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(CommandGateway.class).sendAndWait(new Object());
@@ -230,6 +231,11 @@ class InterceptorAutoConfigurationTest {
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     static class DefaultContext {
+
+        @Bean
+        public TokenStore tokenStore() {
+            return new InMemoryTokenStore();
+        }
 
     }
 

@@ -18,7 +18,6 @@ package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotations.CommandHandler;
@@ -33,7 +32,7 @@ import org.axonframework.messaging.annotations.MetadataValue;
 import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
@@ -807,7 +806,7 @@ class AggregateAnnotationCommandHandlerTest {
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(CreateCommand createCommand,
                            Metadata metadata,
-                           LegacyUnitOfWork<CommandMessage> unitOfWork,
+                           ProcessingContext unitOfWork,
                            @MetadataValue("notExist") String value) {
             this.setIdentifier(createCommand.getId());
             assertNotNull(metadata);
