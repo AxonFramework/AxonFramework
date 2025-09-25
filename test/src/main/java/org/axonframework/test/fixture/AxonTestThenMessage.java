@@ -18,6 +18,7 @@ package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.awaitility.Awaitility;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
@@ -29,7 +30,6 @@ import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.saga.CommandValidator;
 import org.hamcrest.Matcher;
-import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -158,7 +158,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     @Override
     public T await(Consumer<T> assertion, Duration timeout) {
         Awaitility.waitAtMost(timeout)
-                  .pollDelay(Duration.ofMillis(50))
+                  .pollInterval(Duration.ofMillis(50))
                   .untilAsserted(() -> assertion.accept(self()));
         return self();
     }

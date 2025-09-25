@@ -110,13 +110,16 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * @param customization A function that allows to customize the fixture setup.
      * @return A new fixture instance
      */
-    public static AxonTestFixture with(@Nonnull ApplicationConfigurer configurer,
-                                       @Nonnull UnaryOperator<Customization> customization) {
+    public static AxonTestFixture with(
+            @Nonnull ApplicationConfigurer configurer,
+            @Nonnull UnaryOperator<Customization> customization
+    ) {
         Objects.requireNonNull(configurer, "Configurer may not be null");
         Objects.requireNonNull(customization, "Customization may not be null");
         var fixtureConfiguration = customization.apply(new Customization());
         if (!fixtureConfiguration.axonServerEnabled()) {
-            configurer = configurer.componentRegistry(cr -> cr.disableEnhancer("org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer"));
+            configurer = configurer.componentRegistry(cr -> cr.disableEnhancer(
+                    "org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer"));
         }
         var configuration =
                 configurer.componentRegistry(cr -> cr.registerEnhancer(new MessagesRecordingConfigurationEnhancer()))
@@ -159,7 +162,10 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * @param fieldFilters Collections of {@link FieldFilter FieldFilters} used to adjust the matchers for commands,
      *                     events, and result messages.
      */
-    public record Customization(boolean axonServerEnabled, @Nonnull List<FieldFilter> fieldFilters) {
+    public record Customization(
+            boolean axonServerEnabled,
+            @Nonnull List<FieldFilter> fieldFilters
+    ) {
 
         /**
          * Creates a new instance of {@code Customization}.
@@ -228,10 +234,21 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             return fieldFilters;
         }
 
+        /**
+         * Configures Axon Server to be enabled or disabled.
+         *
+         * @param enabled True if Axon Server should be enabled, false otherwise.
+         * @return The current Customization, for fluent interfacing.
+         */
         public Customization axonServerEnabled(boolean enabled) {
             return new Customization(enabled, fieldFilters);
         }
 
+        /**
+         * Indicates whether Axon Server is enabled.
+         *
+         * @return True if Axon Server is enabled, false otherwise.
+         */
         public boolean axonServerEnabled() {
             return axonServerEnabled;
         }

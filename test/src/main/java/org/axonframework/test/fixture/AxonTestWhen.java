@@ -127,11 +127,6 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Nothing nothing() {
-        return null;
-    }
-
-    @Override
     public Event events(@Nonnull EventMessage... messages) {
         inUnitOfWorkOnInvocation(processingContext -> eventSink.publish(processingContext, messages));
         return new Event();
@@ -172,6 +167,25 @@ class AxonTestWhen implements AxonTestPhase.When {
         @Override
         public AxonTestPhase.Then.Event then() {
             return new AxonTestThenEvent(
+                    configuration,
+                    customization,
+                    commandBus,
+                    eventSink,
+                    actualException
+            );
+        }
+    }
+
+    @Override
+    public AxonTestPhase.When.Nothing nothing() {
+        return new Nothing();
+    }
+
+    class Nothing implements AxonTestPhase.When.Nothing {
+
+        @Override
+        public AxonTestPhase.Then.Nothing then() {
+            return new AxonTestThenNothing(
                     configuration,
                     customization,
                     commandBus,

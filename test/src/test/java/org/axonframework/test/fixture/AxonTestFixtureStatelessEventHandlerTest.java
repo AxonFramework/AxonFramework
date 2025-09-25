@@ -48,6 +48,22 @@ public class AxonTestFixtureStatelessEventHandlerTest {
                .await(r -> r.commands(expectedCommand), Duration.ofMillis(500));
     }
 
+    @Test
+    void givenEventsWhenNothingThenAwaitCommands_Success() {
+        var configurer = whenEventThenCommandConfig();
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        var studentNameChanged = new StudentNameChangedEvent("my-studentId-1", "name-1", 1);
+        var expectedCommand = new SendNotificationCommand("my-studentId-1", "Name changed");
+        fixture.given()
+               .events(studentNameChanged)
+               .when()
+               .nothing()
+               .then()
+               .await(r -> r.commands(expectedCommand));
+    }
+
     private static EventSourcingConfigurer whenEventThenCommandConfig() {
         var configurer = EventSourcingConfigurer.create();
         configurer.messaging(cr -> cr.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(
