@@ -118,7 +118,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * @param query            The subscription query to dispatch.
      * @param context          The processing context under which the query is being published (can be {@code null}).
      * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux} is
-     *                         made
+     *                         made.
      * @return query result containing initial result and incremental updates
      */
     @Nonnull
