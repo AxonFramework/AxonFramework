@@ -76,7 +76,6 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
         this.commandBus = (RecordingCommandBus) commandBusComponent;
 
-        // Safely cast EventSink with proper error handling
         EventSink eventSinkComponent = configuration.getComponent(EventSink.class);
         if (!(eventSinkComponent instanceof RecordingEventSink)) {
             throw new FixtureExecutionException(
@@ -87,6 +86,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             );
         }
         this.eventSink = (RecordingEventSink) eventSinkComponent;
+
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         this.unitOfWorkFactory = configuration.getComponent(UnitOfWorkFactory.class);
     }
@@ -115,6 +115,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         Objects.requireNonNull(configurer, "Configurer may not be null");
         Objects.requireNonNull(customization, "Customization may not be null");
         var fixtureConfiguration = customization.apply(new Customization());
+        if (!fixtureConfiguration.axonServerEnabled()) {
+            configurer = configurer.componentRegistry(cr -> cr.disableEnhancer("org.axonframework.axonserver.connector.AxonServerConfigurationEnhancer"));
+        }
         var configuration =
                 configurer.componentRegistry(cr -> cr.registerEnhancer(new MessagesRecordingConfigurationEnhancer()))
                           .start();
@@ -169,10 +172,10 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing
          * objects.
          * <p>
-         * This filter is used by following methods:
+         * This filter is used by the following methods:
          * <ul>
          *     <li>{@link AxonTestPhase.Then.Message#events}</li>
-         *     <li>{@link AxonTestPhase.Then.Message#awaitCommands}</li>
+         *     <li>{@link AxonTestPhase.Then.Message#commands}</li>
          *     <li>{@link AxonTestPhase.Then.Command#resultMessagePayload}</li>
          * </ul>
          * <p>
@@ -197,10 +200,10 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * Indicates that a field with given {@code fieldName}, which is declared in given {@code declaringClass} is
          * ignored when performing deep equality checks.
          * <p>
-         * This filter is used by following methods:
+         * This filter is used by the following methods:
          * <ul>
          *     <li>{@link AxonTestPhase.Then.Message#events}</li>
-         *     <li>{@link AxonTestPhase.Then.Message#awaitCommands}</li>
+         *     <li>{@link AxonTestPhase.Then.Message#commands}</li>
          *     <li>{@link AxonTestPhase.Then.Command#resultMessagePayload}</li>
          * </ul>
          * <p>
