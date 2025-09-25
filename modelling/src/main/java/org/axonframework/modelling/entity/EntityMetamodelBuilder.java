@@ -50,7 +50,7 @@ import org.axonframework.modelling.repository.Repository;
  * <ul>
  *     <li>If an instance command is invoked for a non-existing entity, an {@link EntityMissingForInstanceCommandHandler}
  *     will be thrown.</li>
- *     <li>If a creational command is invoked for an existing entity, an {@link EntityExistsForCreationalCommandHandler}
+ *     <li>If a creational command is invoked for an existing entity, an {@link EntityExistsForCreationalCommandHandlerException}
  *     will be thrown.</li>
  * </ul>
  *

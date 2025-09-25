@@ -26,7 +26,7 @@ import org.axonframework.commandhandling.CommandMessage;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class EntityExistsForCreationalCommandHandler extends RuntimeException {
+public class EntityExistsForCreationalCommandHandlerException extends RuntimeException {
 
     /**
      * Creates a new exception with the given {@code commandMessage} and {@code existingEntity}.
@@ -34,7 +34,7 @@ public class EntityExistsForCreationalCommandHandler extends RuntimeException {
      * @param commandMessage The {@link CommandMessage} that was handled.
      * @param existingEntity The existing entity that was found.
      */
-    public EntityExistsForCreationalCommandHandler(CommandMessage commandMessage, Object existingEntity) {
+    public EntityExistsForCreationalCommandHandlerException(CommandMessage commandMessage, Object existingEntity) {
         super(String.format(
                 "Creational command handler for command [%s] encountered an already existing entity: [%s]",
                 commandMessage.type(),

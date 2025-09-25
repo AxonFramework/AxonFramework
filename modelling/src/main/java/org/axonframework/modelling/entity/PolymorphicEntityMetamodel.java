@@ -151,7 +151,7 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
                                                                         @Nonnull E entity,
                                                                         @Nonnull ProcessingContext context) {
         if (isCreationalCommand(message) && !isInstanceCommand(message)) {
-            return MessageStream.failed(new EntityExistsForCreationalCommandHandler(message, entity));
+            return MessageStream.failed(new EntityExistsForCreationalCommandHandlerException(message, entity));
         }
         EntityMetamodel<E> concreteMetamodel = metamodelFor(entity);
         if (concreteMetamodel.supportedInstanceCommands().contains(message.type().qualifiedName())) {

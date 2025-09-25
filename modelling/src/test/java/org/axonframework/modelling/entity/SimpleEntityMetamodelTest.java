@@ -265,7 +265,7 @@ class SimpleEntityMetamodelTest {
 
             MessageStreamTestUtils.assertCompletedExceptionally(
                     metamodel.handleInstance(command, new TestEntity(), context),
-                    EntityExistsForCreationalCommandHandler.class,
+                    EntityExistsForCreationalCommandHandlerException.class,
                     "Creational command handler for command [ParentCreationalCommand#0.0.1] encountered an already existing entity"
             );
         }

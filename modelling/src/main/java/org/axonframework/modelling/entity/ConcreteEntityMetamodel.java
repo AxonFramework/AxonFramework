@@ -151,7 +151,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
             @Nonnull ProcessingContext context
     ) {
         if (isCreationalCommand(message) && !isInstanceCommand(message)) {
-            return MessageStream.failed(new EntityExistsForCreationalCommandHandler(message, entity));
+            return MessageStream.failed(new EntityExistsForCreationalCommandHandlerException(message, entity));
         }
         try {
             var childrenWithCommandHandlers = children.stream()

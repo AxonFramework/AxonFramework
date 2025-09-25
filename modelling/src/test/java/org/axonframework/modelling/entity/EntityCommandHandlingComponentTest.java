@@ -123,7 +123,7 @@ class EntityCommandHandlingComponentTest {
                                                                                         context);
 
             verify(metamodel, times(0)).handleCreate(eq(creationalCommandMessage), any());
-            assertCompletedExceptionally(result, EntityExistsForCreationalCommandHandler.class);
+            assertCompletedExceptionally(result, EntityExistsForCreationalCommandHandlerException.class);
         }
 
 
