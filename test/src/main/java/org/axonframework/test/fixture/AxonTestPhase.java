@@ -709,7 +709,7 @@ public interface AxonTestPhase {
              * @param function The function to execute on the configuration.
              * @return The current Then instance, for fluent interfacing.
              */
-            T execute(@Nonnull Consumer<Configuration> function);
+            T expect(@Nonnull Consumer<Configuration> function);
 
             /**
              * Allows running assertions on any component retrievable from the {@link Configuration}.
@@ -717,7 +717,7 @@ public interface AxonTestPhase {
              * @param function The function to execute on the configuration.
              * @return The current Then instance, for fluent interfacing.
              */
-            T executeAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function);
+            T expectAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function);
         }
     }
 }

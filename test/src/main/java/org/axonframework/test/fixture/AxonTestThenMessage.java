@@ -272,13 +272,13 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T execute(@Nonnull Consumer<Configuration> function) {
+    public T expect(@Nonnull Consumer<Configuration> function) {
         function.accept(configuration);
         return self();
     }
 
     @Override
-    public T executeAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function) {
+    public T expectAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function) {
         function.apply(configuration).join();
         return self();
     }
