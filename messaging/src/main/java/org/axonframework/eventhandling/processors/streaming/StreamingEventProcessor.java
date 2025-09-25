@@ -55,8 +55,7 @@ public interface StreamingEventProcessor extends EventProcessor {
      * Returns the unique identifier of the {@link TokenStore} used by this {@link StreamingEventProcessor}.
      *
      * @return the unique identifier of the {@link TokenStore} used by this {@link StreamingEventProcessor}
-     * @throws UnableToRetrieveIdentifierException if the {@link TokenStore}
-     *                                                                                        was unable to retrieve it
+     * @throws UnableToRetrieveIdentifierException if the {@link TokenStore} was unable to retrieve it
      */
     String getTokenStoreIdentifier();
 
@@ -86,14 +85,14 @@ public interface StreamingEventProcessor extends EventProcessor {
      * Instructs the processor to claim the segment with given {@code segmentId} and start processing it as soon as
      * possible.
      * <p>
-     * The given {@code segmentId} must not be currently processed by a different processor instance, as that will
-     * have an active claim on the token. Claiming a segment that is already being processed will have no effect
-     * and return {@code true}.
+     * The given {@code segmentId} must not be currently processed by a different processor instance, as that will have
+     * an active claim on the token. Claiming a segment that is already being processed will have no effect and return
+     * {@code true}.
      * <p>
      * A {@code true} return value indicates that the segment has been claimed and will be processed by this processor.
      * The {@link StreamingEventProcessor} may postpone start of work until after completion of this task, as long as
-     * the token has been claimed so work can be started. A return value of {@code false} indicates that the segment
-     * has not been claimed due to the token for that segment not being available.
+     * the token has been claimed so work can be started. A return value of {@code false} indicates that the segment has
+     * not been claimed due to the token for that segment not being available.
      *
      * @param segmentId the identifier of the segment to claim and start processing
      * @return a {@link CompletableFuture} providing the result of the claim operation
@@ -107,8 +106,8 @@ public interface StreamingEventProcessor extends EventProcessor {
      * additional process to start processing events from it.
      * <p>
      * To be able to split segments, the {@link TokenStore} configured with this processor must use explicitly
-     * initialized tokens. See {@link TokenStore#requiresExplicitSegmentInitialization()}. Also, the given {@code
-     * segmentId} must be currently processed by a process owned by this processor instance.
+     * initialized tokens. Also, the given {@code segmentId} must be currently processed by a process owned by this
+     * processor instance.
      *
      * @param segmentId the identifier of the segment to split
      * @return a {@link CompletableFuture} providing the result of the split operation
@@ -265,9 +264,9 @@ public interface StreamingEventProcessor extends EventProcessor {
      * Returns the overall replay status of <b>this</b> {@link StreamingEventProcessor}. Any other instances of this
      * streaming processor running on other applications are <b>not</b> not taken into account in this calculation.
      * <p>
-     * Note that when an {@link EventTrackerStatus} returns {@code true} for both {@link
-     * EventTrackerStatus#isReplaying()} and {@link EventTrackerStatus#isCaughtUp()}, that the replay is done but the
-     * processor did not handle any new events yet.
+     * Note that when an {@link EventTrackerStatus} returns {@code true} for both
+     * {@link EventTrackerStatus#isReplaying()} and {@link EventTrackerStatus#isCaughtUp()}, that the replay is done but
+     * the processor did not handle any new events yet.
      *
      * @return {@code true} if any of the segments is still replaying and not caught up yet, {@code false} otherwise
      */

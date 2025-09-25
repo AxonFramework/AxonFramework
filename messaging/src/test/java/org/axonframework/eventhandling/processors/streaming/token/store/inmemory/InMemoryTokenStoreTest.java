@@ -66,7 +66,7 @@ class InMemoryTokenStoreTest {
 
     @Test
     void identifierIsPresent() {
-        assertTrue(testSubject.retrieveStorageIdentifier().isPresent());
+        assertTrue(joinAndUnwrap(testSubject.retrieveStorageIdentifier()).isPresent());
     }
 
     @Test

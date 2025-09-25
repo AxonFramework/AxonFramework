@@ -48,11 +48,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
-import static java.util.concurrent.CompletableFuture.runAsync;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry.clock;
 
@@ -118,19 +119,15 @@ public class JpaTokenStore implements TokenStore {
             throws UnableToClaimTokenException {
 
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        return fetchSegments(processorName).thenApply((segments) -> {
-            if (segments.length > 0) {
-                throw new UnableToClaimTokenException(
-                        "Could not initialize segments. Some segments were already present.");
-            }
-            return segments;
-        }).thenAccept(segments -> {
-            for (int segment = 0; segment < segmentCount; segment++) {
-                TokenEntry token = new TokenEntry(processorName, segment, initialToken, serializer);
-                entityManager.persist(token);
-            }
-            entityManager.flush();
-        });
+        if (joinAndUnwrap(fetchSegments(processorName)).length > 0) {
+            throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
+        }
+        for (int segment = 0; segment < segmentCount; segment++) {
+            TokenEntry token = new TokenEntry(processorName, segment, initialToken, serializer);
+            entityManager.persist(token);
+        }
+        entityManager.flush();
+        return completedFuture(null);
     }
 
     @Override
@@ -138,153 +135,134 @@ public class JpaTokenStore implements TokenStore {
                                               @Nonnull String processorName,
                                               int segment,
                                               @Nonnull ProcessingContext processingContext) {
-        return runAsync(() -> {
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
-            TokenEntry tokenToStore = new TokenEntry(processorName, segment, token, serializer);
-            byte[] tokenDataToStore =
-                    getOrDefault(tokenToStore.getSerializedToken(), SerializedObject::getData, null);
-            String tokenTypeToStore = getOrDefault(tokenToStore.getTokenType(), SerializedType::getName, null);
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        TokenEntry tokenToStore = new TokenEntry(processorName, segment, token, serializer);
+        byte[] tokenDataToStore =
+                getOrDefault(tokenToStore.getSerializedToken(), SerializedObject::getData, null);
+        String tokenTypeToStore = getOrDefault(tokenToStore.getTokenType(), SerializedType::getName, null);
 
-            int updatedTokens = entityManager.createQuery("UPDATE TokenEntry te SET "
-                                                                  + "te.token = :token, "
-                                                                  + "te.tokenType = :tokenType, "
-                                                                  + "te.timestamp = :timestamp "
-                                                                  + "WHERE te.owner = :owner "
-                                                                  + "AND te.processorName = :processorName "
-                                                                  + "AND te.segment = :segment")
-                                             .setParameter("token", tokenDataToStore)
-                                             .setParameter("tokenType", tokenTypeToStore)
-                                             .setParameter("timestamp", tokenToStore.timestampAsString())
-                                             .setParameter(OWNER_PARAM, nodeId)
-                                             .setParameter(PROCESSOR_NAME_PARAM, processorName)
-                                             .setParameter(SEGMENT_PARAM, segment)
-                                             .executeUpdate();
+        int updatedTokens = entityManager.createQuery("UPDATE TokenEntry te SET "
+                                                              + "te.token = :token, "
+                                                              + "te.tokenType = :tokenType, "
+                                                              + "te.timestamp = :timestamp "
+                                                              + "WHERE te.owner = :owner "
+                                                              + "AND te.processorName = :processorName "
+                                                              + "AND te.segment = :segment")
+                                         .setParameter("token", tokenDataToStore)
+                                         .setParameter("tokenType", tokenTypeToStore)
+                                         .setParameter("timestamp", tokenToStore.timestampAsString())
+                                         .setParameter(OWNER_PARAM, nodeId)
+                                         .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                         .setParameter(SEGMENT_PARAM, segment)
+                                         .executeUpdate();
 
-            if (updatedTokens == 0) {
-                logger.debug("Could not update token [{}] for processor [{}] and segment [{}]. "
-                                     + "Trying load-then-save approach instead.",
-                             token, processorName, segment);
-                TokenEntry tokenEntry = loadToken(processorName, segment, entityManager);
-                tokenEntry.updateToken(token, serializer);
-            }
-        });
+        if (updatedTokens == 0) {
+            logger.debug("Could not update token [{}] for processor [{}] and segment [{}]. "
+                                 + "Trying load-then-save approach instead.",
+                         token, processorName, segment);
+            TokenEntry tokenEntry = loadToken(processorName, segment, entityManager);
+            tokenEntry.updateToken(token, serializer);
+        }
+        return completedFuture(null);
     }
 
     @Override
     public CompletableFuture<Void> releaseClaim(@Nonnull String processorName, int segment) {
-        return runAsync(() -> {
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-            entityManager.createQuery(
-                                 "UPDATE TokenEntry te SET te.owner = null " +
-                                         "WHERE te.owner = :owner AND te.processorName = :processorName " +
-                                         "AND te.segment = :segment")
-                         .setParameter(PROCESSOR_NAME_PARAM, processorName).setParameter(SEGMENT_PARAM, segment)
-                         .setParameter(OWNER_PARAM, nodeId)
-                         .executeUpdate();
-        });
+        entityManager.createQuery(
+                             "UPDATE TokenEntry te SET te.owner = null " +
+                                     "WHERE te.owner = :owner AND te.processorName = :processorName " +
+                                     "AND te.segment = :segment")
+                     .setParameter(PROCESSOR_NAME_PARAM, processorName).setParameter(SEGMENT_PARAM, segment)
+                     .setParameter(OWNER_PARAM, nodeId)
+                     .executeUpdate();
+        return completedFuture(null);
     }
 
     @Override
     public CompletableFuture<Void> initializeSegment(@Nullable TrackingToken token, @Nonnull String processorName,
                                                      int segment)
             throws UnableToInitializeTokenException {
-        return runAsync(() -> {
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-            TokenEntry entry = new TokenEntry(processorName, segment, token, serializer);
-            entityManager.persist(entry);
-            entityManager.flush();
-        });
-    }
-
-    @Override
-    public boolean requiresExplicitSegmentInitialization() {
-        return true;
+        TokenEntry entry = new TokenEntry(processorName, segment, token, serializer);
+        entityManager.persist(entry);
+        entityManager.flush();
+        return completedFuture(null);
     }
 
     @Override
     public CompletableFuture<Void> deleteToken(@Nonnull String processorName, int segment)
             throws UnableToClaimTokenException {
-        return runAsync(() -> {
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-            int updates = entityManager.createQuery(
-                                               "DELETE FROM TokenEntry te " +
-                                                       "WHERE te.owner = :owner AND te.processorName = :processorName " +
-                                                       "AND te.segment = :segment")
-                                       .setParameter(PROCESSOR_NAME_PARAM, processorName)
-                                       .setParameter(SEGMENT_PARAM, segment)
-                                       .setParameter(OWNER_PARAM, nodeId)
-                                       .executeUpdate();
+        int updates = entityManager.createQuery(
+                                           "DELETE FROM TokenEntry te " +
+                                                   "WHERE te.owner = :owner AND te.processorName = :processorName " +
+                                                   "AND te.segment = :segment")
+                                   .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                   .setParameter(SEGMENT_PARAM, segment)
+                                   .setParameter(OWNER_PARAM, nodeId)
+                                   .executeUpdate();
 
-            if (updates == 0) {
-                throw new UnableToClaimTokenException("Unable to remove token. It is not owned by " + nodeId);
-            }
-        });
+        if (updates == 0) {
+            throw new UnableToClaimTokenException("Unable to remove token. It is not owned by " + nodeId);
+        }
+        return completedFuture(null);
     }
 
     @Override
     public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, int segment) {
-        return supplyAsync(() -> {
-
             EntityManager entityManager = entityManagerProvider.getEntityManager();
-            return loadToken(processorName, segment, entityManager).getToken(serializer);
-        });
+            return completedFuture(loadToken(processorName, segment, entityManager).getToken(serializer));
     }
 
     @Override
     public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, @Nonnull Segment segment)
             throws UnableToClaimTokenException {
-        return supplyAsync(() -> {
             EntityManager entityManager = entityManagerProvider.getEntityManager();
-            return loadToken(processorName, segment, entityManager).getToken(serializer);
-        });
+            return completedFuture(loadToken(processorName, segment, entityManager).getToken(serializer));
     }
 
     @Override
     public CompletableFuture<Void> extendClaim(@Nonnull String processorName, int segment)
             throws UnableToClaimTokenException {
-        return runAsync(() -> {
-            EntityManager
-                    entityManager = entityManagerProvider.getEntityManager();
-            int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
-                                                            "WHERE te.processorName = :processorName " +
-                                                            "AND te.segment = :segment " +
-                                                            "AND te.owner = :owner")
-                                       .setParameter(PROCESSOR_NAME_PARAM, processorName)
-                                       .setParameter(SEGMENT_PARAM, segment)
-                                       .setParameter(OWNER_PARAM, nodeId)
-                                       .setParameter("timestamp", formatInstant(clock.instant()))
-                                       .executeUpdate();
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
+                                                        "WHERE te.processorName = :processorName " +
+                                                        "AND te.segment = :segment " +
+                                                        "AND te.owner = :owner")
+                                   .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                                   .setParameter(SEGMENT_PARAM, segment)
+                                   .setParameter(OWNER_PARAM, nodeId)
+                                   .setParameter("timestamp", formatInstant(clock.instant()))
+                                   .executeUpdate();
 
-            if (updates == 0) {
-                throw new UnableToClaimTokenException("Unable to extend the claim on token for processor '" +
-                                                              processorName + "[" + segment
-                                                              + "]'. It is either claimed " +
-                                                              "by another process, or there is no such token.");
-            }
-        });
+        if (updates == 0) {
+            throw new UnableToClaimTokenException("Unable to extend the claim on token for processor '" +
+                                                          processorName + "[" + segment
+                                                          + "]'. It is either claimed " +
+                                                          "by another process, or there is no such token.");
+        }
+        return completedFuture(null);
     }
 
     @Override
     public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName) {
-        return supplyAsync(() -> {
-            EntityManager entityManager = entityManagerProvider.getEntityManager();
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
 
-            final List<Integer> resultList = entityManager.createQuery(
-                    "SELECT te.segment FROM TokenEntry te "
-                            + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
-                    Integer.class
-            ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
+        final List<Integer> resultList = entityManager.createQuery(
+                "SELECT te.segment FROM TokenEntry te "
+                        + "WHERE te.processorName = :processorName ORDER BY te.segment ASC",
+                Integer.class
+        ).setParameter(PROCESSOR_NAME_PARAM, processorName).getResultList();
 
-            return resultList.stream().mapToInt(i -> i).toArray();
-        });
+        return completedFuture(resultList.stream().mapToInt(i -> i).toArray());
     }
 
     @Override
     public CompletableFuture<List<Segment>> fetchAvailableSegments(@Nonnull String processorName) {
-        return supplyAsync(() -> {
             EntityManager entityManager = entityManagerProvider.getEntityManager();
 
             final List<TokenEntry> resultList = entityManager.createQuery(
@@ -295,11 +273,11 @@ public class JpaTokenStore implements TokenStore {
             int[] allSegments = resultList.stream()
                                           .mapToInt(TokenEntry::getSegment)
                                           .toArray();
-            return resultList.stream()
+            return completedFuture(resultList.stream()
                              .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
                              .map(tokenEntry -> Segment.computeSegment(tokenEntry.getSegment(), allSegments))
-                             .collect(Collectors.toList());
-        });
+                             .collect(Collectors.toList())
+            );
     }
 
     /**
@@ -394,9 +372,9 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public Optional<String> retrieveStorageIdentifier() {
+    public CompletableFuture<Optional<String>> retrieveStorageIdentifier() {
         try {
-            return Optional.of(getConfig()).map(i -> i.get("id"));
+            return completedFuture(Optional.of(getConfig()).map(i -> i.get("id")));
         } catch (Exception e) {
             throw new UnableToRetrieveIdentifierException(
                     "Exception occurred while trying to establish storage identifier",

@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
@@ -63,7 +64,7 @@ public interface TokenStore {
     default CompletableFuture<Void> initializeTokenSegments(@Nonnull String processorName,
                                                             int segmentCount,
                                                             @Nullable TrackingToken initialToken,
-                                                            @Nonnull ProcessingContext processingContext)
+                                                            @Nullable ProcessingContext processingContext)
             throws UnableToClaimTokenException {
         return runAsync(() -> {
             for (int segment = 0; segment < segmentCount; segment++) {
@@ -71,7 +72,6 @@ public interface TokenStore {
                 releaseClaim(processorName, segment);
             }
         });
-
     }
 
     /**
@@ -82,9 +82,7 @@ public interface TokenStore {
      * <p>
      * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
      * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly
-     * initialized. A TokenStore implementation's ability to do so is exposed by the
-     * {@link #requiresExplicitSegmentInitialization()} method. If that method returns false, this method may implicitly
-     * initialize a token and return that token upon invocation.
+     * initialized.
      *
      * @param token             The token to store for a given process and segment. May be {@code null}.
      * @param processorName     The name of the process for which to store the token
@@ -98,7 +96,7 @@ public interface TokenStore {
     CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
                                        @Nonnull String processorName,
                                        int segment,
-                                       @Nonnull ProcessingContext processingContext)
+                                       @Nullable ProcessingContext processingContext)
             throws UnableToClaimTokenException;
 
     /**
@@ -108,9 +106,7 @@ public interface TokenStore {
      * <p>
      * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
      * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly
-     * initialized. A TokenStore implementation's ability to do so is exposed by the
-     * {@link #requiresExplicitSegmentInitialization()} method. If that method returns false, this method may implicitly
-     * initialize a token and return that token upon invocation.
+     * initialized.
      * <p>
      * The token will be claimed by the current process (JVM instance), preventing access by other instances. To release
      * the claim, use {@link #releaseClaim(String, int)}
@@ -134,9 +130,7 @@ public interface TokenStore {
      * <p>
      * This method should throw an {@code UnableToClaimTokenException} when the given {@code segment} has not been
      * initialized with a Token (albeit {@code null}) yet. In that case, a segment must have been explicitly
-     * initialized. A TokenStore implementation's ability to do so is exposed by the
-     * {@link #requiresExplicitSegmentInitialization()} method. If that method returns false, this method may implicitly
-     * initialize a token and return that token upon invocation.
+     * initialized.
      * <p>
      * The token will be claimed by the current process (JVM instance), preventing access by other instances. To release
      * the claim, use {@link #releaseClaim(String, int)}
@@ -203,10 +197,8 @@ public interface TokenStore {
      * @param processorName The name of the processor to create the segment for
      * @param segment       The identifier of the segment to initialize
      * @return a {@link CompletableFuture} that completes when the segment has been initialized.
-     *
      * @throws UnableToInitializeTokenException if a Token already exists
-     * @throws UnsupportedOperationException    if this implementation does not support explicit initialization. See
-     *                                          {@link #requiresExplicitSegmentInitialization()}.
+     * @throws UnsupportedOperationException    if this implementation does not support explicit initialization.
      */
     default CompletableFuture<Void> initializeSegment(
             @Nullable TrackingToken token,
@@ -222,32 +214,16 @@ public interface TokenStore {
      * Deletes the token for the processor with given {@code processorName} and {@code segment}. The token must be owned
      * by the current node to be able to delete it.
      * <p>
-     * Implementations should implement this method only when {@link #requiresExplicitSegmentInitialization()} is
-     * overridden to return {@code true}. Deleting tokens using implementations that do not require explicit token
-     * initialization is unsafe, as a claim will automatically recreate the deleted token instance, which may result in
-     * concurrency issues.
-     *
      * @param processorName The name of the processor to remove the token for
      * @param segment       The segment to delete
      * @return a {@link CompletableFuture} that completes when the token has been deleted.
      * @throws UnableToClaimTokenException   if the token is not currently claimed by this node
      * @throws UnsupportedOperationException if this operation is not supported by this implementation
      */
-    default CompletableFuture<Void> deleteToken(@Nonnull String processorName, int segment) throws UnableToClaimTokenException {
+    default CompletableFuture<Void> deleteToken(@Nonnull String processorName, int segment)
+            throws UnableToClaimTokenException {
         throw new UnsupportedOperationException(
                 "Explicit initialization (which is required to reliably delete tokens) is not supported by this TokenStore implementation");
-    }
-
-    /**
-     * Indicates whether this TokenStore instance requires segments to be explicitly initialized before any tokens can
-     * be claimed for that segment.
-     *
-     * @return {@code true} if this instance requires tokens to be explicitly initialized, otherwise {@code false}.
-     * @see #initializeTokenSegments(String, int, TrackingToken, ProcessingContext)
-     * @see #initializeSegment(TrackingToken, String, int)
-     */
-    default boolean requiresExplicitSegmentInitialization() {
-        return false;
     }
 
     /**
@@ -282,23 +258,22 @@ public interface TokenStore {
                                          .map(segment -> Segment.computeSegment(segment, segments))
                                          .collect(Collectors.toList())
                 );
-
     }
 
     /**
      * Returns a unique identifier that uniquely identifies the storage location of the tokens in this store. Two token
      * store implementations that share state must return the same identifier. Two token store implementations that do
-     * not share a location must return a different identifier (or an empty optional if identifiers are not
-     * supported).
+     * not share a location must return a different identifier (or an empty optional if identifiers are not supported).
      * <p>
      * Note that this method may require the implementation to consult its underlying storage. Therefore, a Transaction
      * should be active when this method is called, similarly to invocations like {@link #fetchToken(String, int)},
      * {@link #fetchSegments(String)}, etc. When no Transaction is active, the behavior is undefined.
      *
-     * @return an identifier to uniquely identify the storage location of tokens in this TokenStore.
+     * @return a {@link CompletableFuture} that provides an identifier to uniquely identify the storage location of
+     *         tokens in this TokenStore on completion.
      * @throws UnableToRetrieveIdentifierException when the implementation was unable to determine its identifier
      */
-    default Optional<String> retrieveStorageIdentifier() throws UnableToRetrieveIdentifierException {
-        return Optional.empty();
+    default CompletableFuture<Optional<String>> retrieveStorageIdentifier() throws UnableToRetrieveIdentifierException {
+        return completedFuture(Optional.empty());
     }
 }

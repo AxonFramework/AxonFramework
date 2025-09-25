@@ -205,7 +205,7 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
         var unitOfWork = unitOfWorkFactory.create();
         return joinAndUnwrap(
                 unitOfWork.executeWithResult(context -> CompletableFuture.completedFuture(
-                        tokenStore.retrieveStorageIdentifier().orElse("--unknown--"))
+                        joinAndUnwrap(tokenStore.retrieveStorageIdentifier()).orElse("--unknown--"))
                 )
         );
     }
@@ -231,27 +231,11 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor, D
 
     @Override
     public CompletableFuture<Boolean> splitSegment(int segmentId) {
-        if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            CompletableFuture<Boolean> result = new CompletableFuture<>();
-            result.completeExceptionally(new UnsupportedOperationException(
-                    "TokenStore must require explicit initialization to safely split tokens."
-            ));
-            return result;
-        }
-
         return coordinator.splitSegment(segmentId);
     }
 
     @Override
     public CompletableFuture<Boolean> mergeSegment(int segmentId) {
-        if (!tokenStore.requiresExplicitSegmentInitialization()) {
-            CompletableFuture<Boolean> result = new CompletableFuture<>();
-            result.completeExceptionally(new UnsupportedOperationException(
-                    "TokenStore must require explicit initialization to safely merge tokens."
-            ));
-            return result;
-        }
-
         return coordinator.mergeSegment(segmentId);
     }
 

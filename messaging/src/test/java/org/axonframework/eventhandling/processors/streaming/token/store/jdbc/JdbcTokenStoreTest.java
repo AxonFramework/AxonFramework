@@ -519,9 +519,9 @@ class JdbcTokenStoreTest {
     @Transactional
     @Test
     void identifierInitializedOnDemand() {
-        Optional<String> id1 = tokenStore.retrieveStorageIdentifier();
+        Optional<String> id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier());
         assertTrue(id1.isPresent());
-        Optional<String> id2 = tokenStore.retrieveStorageIdentifier();
+        Optional<String> id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier());
         assertTrue(id2.isPresent());
         assertEquals(id1.get(), id2.get());
     }
@@ -539,9 +539,9 @@ class JdbcTokenStoreTest {
         ps.setBytes(4, tokenStore.serializer().serialize(token, byte[].class).getData());
         ps.executeUpdate();
 
-        Optional<String> id1 = tokenStore.retrieveStorageIdentifier();
+        Optional<String> id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier());
         assertTrue(id1.isPresent());
-        Optional<String> id2 = tokenStore.retrieveStorageIdentifier();
+        Optional<String> id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier());
         assertTrue(id2.isPresent());
         assertEquals(id1.get(), id2.get());
 

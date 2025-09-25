@@ -32,6 +32,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.mockito.Mockito.*;
 
 /**
@@ -85,7 +87,6 @@ class EventProcessorControlServiceTest {
                 .thenReturn(loadBalancingResult);
         when(connection.adminChannel()).thenReturn(adminChannel);
     }
-
     @Test
     void startDoesNothingForNullAxonServerConnectionManager() {
         EventProcessorControlService unusableControlService =
@@ -113,7 +114,7 @@ class EventProcessorControlServiceTest {
         eventProcessors.put(THAT_PROCESSOR, mock(EventProcessor.class));
 //        when(processingConfiguration.eventProcessors()).thenReturn(eventProcessors);
         TokenStore tokenStore = mock(TokenStore.class);
-        when(tokenStore.retrieveStorageIdentifier()).thenReturn(Optional.of(TOKEN_STORE_IDENTIFIER));
+        when(tokenStore.retrieveStorageIdentifier()).thenReturn(completedFuture(Optional.of(TOKEN_STORE_IDENTIFIER)));
 //        when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
         TransactionManager transactionManager = mock(TransactionManager.class);
         when(transactionManager.fetchInTransaction(any()))
@@ -150,7 +151,7 @@ class EventProcessorControlServiceTest {
         eventProcessors.put(THAT_PROCESSOR, mock(EventProcessor.class));
 //        when(processingConfiguration.eventProcessors()).thenReturn(eventProcessors);
         TokenStore tokenStore = mock(TokenStore.class);
-        when(tokenStore.retrieveStorageIdentifier()).thenReturn(Optional.of(TOKEN_STORE_IDENTIFIER));
+        when(tokenStore.retrieveStorageIdentifier()).thenReturn(completedFuture(Optional.of(TOKEN_STORE_IDENTIFIER)));
 //        when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
         TransactionManager transactionManager = mock(TransactionManager.class);
         when(transactionManager.fetchInTransaction(any()))
@@ -194,7 +195,7 @@ class EventProcessorControlServiceTest {
         eventProcessors.put(THAT_PROCESSOR, mock(EventProcessor.class));
 //        when(processingConfiguration.eventProcessors()).thenReturn(eventProcessors);
         TokenStore tokenStore = mock(TokenStore.class);
-        when(tokenStore.retrieveStorageIdentifier()).thenReturn(Optional.empty());
+        when(tokenStore.retrieveStorageIdentifier()).thenReturn(completedFuture(Optional.empty()));
 //        when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
         TransactionManager transactionManager = mock(TransactionManager.class);
         when(transactionManager.fetchInTransaction(any()))

@@ -70,6 +70,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
@@ -169,7 +170,7 @@ class PooledStreamingEventProcessorTest {
                 tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3, ctx)
         );
         when(tokenStore.fetchAvailableSegments(testSubject.name()))
-                .thenReturn(CompletableFuture.completedFuture(
+                .thenReturn(completedFuture(
                         Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3))
                 ));
 
@@ -498,7 +499,7 @@ class PooledStreamingEventProcessorTest {
         void getTokenStoreIdentifier() {
             String expectedIdentifier = "some-identifier";
 
-            when(tokenStore.retrieveStorageIdentifier()).thenReturn(Optional.of(expectedIdentifier));
+            when(tokenStore.retrieveStorageIdentifier()).thenReturn(completedFuture(Optional.of(expectedIdentifier)));
 
             assertEquals(expectedIdentifier, testSubject.getTokenStoreIdentifier());
         }
@@ -1002,20 +1003,6 @@ class PooledStreamingEventProcessorTest {
         }
 
         @Test
-        void splitSegmentIsNotSupported() {
-            when(tokenStore.requiresExplicitSegmentInitialization()).thenReturn(false);
-
-            CompletableFuture<Boolean> result = testSubject.splitSegment(0);
-
-            assertTrue(result.isDone());
-            assertTrue(result.isCompletedExceptionally());
-            result.exceptionally(exception -> {
-                assertTrue(exception.getClass().isAssignableFrom(UnsupportedOperationException.class));
-                return null;
-            });
-        }
-
-        @Test
         void splitSegment() {
             // given
             int testSegmentId = 0;
@@ -1052,19 +1039,6 @@ class PooledStreamingEventProcessorTest {
             );
         }
 
-        @Test
-        void mergeSegmentIsNotSupported() {
-            when(tokenStore.requiresExplicitSegmentInitialization()).thenReturn(false);
-
-            CompletableFuture<Boolean> result = testSubject.mergeSegment(0);
-
-            assertTrue(result.isDone());
-            assertTrue(result.isCompletedExceptionally());
-            result.exceptionally(exception -> {
-                assertTrue(exception.getClass().isAssignableFrom(UnsupportedOperationException.class));
-                return null;
-            });
-        }
     }
 
 
