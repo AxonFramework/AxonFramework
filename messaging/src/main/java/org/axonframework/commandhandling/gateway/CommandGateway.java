@@ -72,12 +72,12 @@ public interface CommandGateway extends DescribableComponent {
     /**
      * Send the given command and waits for completion.
      * <p>
-     * If the command was successful, its result (if any) is discarded. If it was unsuccessful an
-     * exception is thrown. Any checked exceptions that may occur as the result of running the command
-     * will be wrapped in a {@link CommandExecutionException}.
+     * If the command was successful, its result (if any) is discarded. If it was unsuccessful an exception is thrown.
+     * Any checked exceptions that may occur as the result of running the command will be wrapped in a
+     * {@link CommandExecutionException}.
      * <p>
-     * If the result is needed, use {@link #sendAndWait(Object, Class)} instead, as it allows for type
-     * conversion of the result payload.
+     * If the result is needed, use {@link #sendAndWait(Object, Class)} instead, as it allows for type conversion of the
+     * result payload.
      *
      * @param command The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
      * @throws CommandExecutionException When a checked exception occurs while handling the command.
@@ -96,10 +96,9 @@ public interface CommandGateway extends DescribableComponent {
     /**
      * Send the given command and waits for the result.
      * <p>
-     * If the command was successful, its result will be converted to the specified {@code returnType}
-     * and returned. If it was unsuccessful or conversion failed, an exception is thrown. Any checked
-     * exceptions that may occur as the result of running the command will be wrapped in a
-     * {@link CommandExecutionException}.
+     * If the command was successful, its result will be converted to the specified {@code returnType} and returned. If
+     * it was unsuccessful or conversion failed, an exception is thrown. Any checked exceptions that may occur as the
+     * result of running the command will be wrapped in a {@link CommandExecutionException}.
      *
      * @param command    The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
      * @param resultType The class representing the type of the expected command result.
@@ -174,15 +173,15 @@ public interface CommandGateway extends DescribableComponent {
                        @Nonnull Metadata metadata,
                        @Nullable ProcessingContext context);
 
-    private static RuntimeException rethrowUnwrappedExecutionException(ExecutionException ee) {
-        if (ee.getCause() instanceof RuntimeException re) {
-            throw re;
+    private static RuntimeException rethrowUnwrappedExecutionException(@Nonnull ExecutionException executionException) {
+        if (executionException.getCause() instanceof RuntimeException runtimeException) {
+            throw runtimeException;
         }
-
-        if (ee.getCause() instanceof Error error) {
+        if (executionException.getCause() instanceof Error error) {
             throw error;
         }
-
-        throw new CommandExecutionException("Checked exception while handling command", ee.getCause());
+        throw new CommandExecutionException(
+                "Checked exception while handling command.", executionException.getCause()
+        );
     }
 }
