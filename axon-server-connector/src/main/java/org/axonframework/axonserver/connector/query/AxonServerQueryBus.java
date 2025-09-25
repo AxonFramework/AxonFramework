@@ -113,6 +113,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
@@ -508,7 +509,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
     @Nonnull
     @Override
     public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
-                                              @Nonnull SubscriptionQueryUpdateMessage update,
+                                              @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                               @Nullable ProcessingContext context) {
         // TODO #3488 implement as part of AxonServerQueryBus implementation
         return null;

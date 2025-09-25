@@ -27,6 +27,7 @@ import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * Query-specific component that interacts with
@@ -71,9 +72,8 @@ public interface QueryUpdateEmitter extends DescribableComponent {
     }
 
     /**
-     * Emits given incremental {@code update} to subscription queries matching the given {@code queryType} and given
-/**
-     * Emits the given {@code update} to subscription queries matching the given {@code queryType} and given
+     * Emits given {@code update} to subscription queries matching the given {@code queryType} and given
+     * {@code filter}.
      *
      * @param queryType The type of the {@link SubscriptionQueryMessage} to filter on.
      * @param filter    A predicate testing the {@link SubscriptionQueryMessage#payload()}, converted to the given
@@ -92,10 +92,39 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                                                             if a {@link org.axonframework.messaging.MessageType}
      *                                                             could be found for the given {@code queryType}.
      */
-    <Q> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter, @Nullable Object update);
+    default <Q> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter, @Nullable Object update) {
+        emit(queryType, filter, () -> update);
+    }
 
     /**
-     * Emits given incremental {@code update} to subscription queries matching the given {@code queryName} and given
+     * Emits the outcome of the {@code updateSupplier} to subscription queries matching the given {@code queryType} and
+     * given {@code filter}.
+     * <p>
+     * The {@code updateSupplier} is only invoked whenever there are matching queries.
+     *
+     * @param queryType      The type of the {@link SubscriptionQueryMessage} to filter on.
+     * @param filter         A predicate testing the {@link SubscriptionQueryMessage#payload()}, converted to the given
+     *                       {@code queryType} to filter on.
+     * @param updateSupplier The update supplier to emit for
+     *                       {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)
+     *                       subscription queries} matching the given {@code queryType} and {@code filter}.
+     * @param <Q>            The type of the {@link SubscriptionQueryMessage} to filter on.
+     * @throws MessageTypeNotResolvedException                     If the given {@code queryType} has no known
+     *                                                             {@link org.axonframework.messaging.MessageType}
+     *                                                             equivalent required to filter the
+     *                                                             {@link SubscriptionQueryMessage#payload()}.
+     * @throws org.axonframework.serialization.ConversionException If the {@link SubscriptionQueryMessage#payload()}
+     *                                                             could not be converted to the given {@code queryType}
+     *                                                             to perform the given {@code filter}. Will only occur
+     *                                                             if a {@link org.axonframework.messaging.MessageType}
+     *                                                             could be found for the given {@code queryType}.
+     */
+    <Q> void emit(@Nonnull Class<Q> queryType,
+                  @Nonnull Predicate<? super Q> filter,
+                  @Nonnull Supplier<Object> updateSupplier);
+
+    /**
+     * Emits given {@code update} to subscription queries matching the given {@code queryName} and given
      * {@code filter}.
      *
      * @param queryName The qualified name of the {@link SubscriptionQueryMessage#type()} to filter on.
@@ -105,7 +134,26 @@ public interface QueryUpdateEmitter extends DescribableComponent {
      *                  {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription
      *                  queries} matching the given {@code filter}.
      */
-    void emit(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter, @Nullable Object update);
+    default void emit(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter, @Nullable Object update) {
+        emit(queryName, filter, () -> update);
+    }
+
+    /**
+     * Emits the outcome of the {@code updateSupplier} to subscription queries matching the given {@code queryName} and
+     * given {@code filter}.
+     * <p>
+     * The {@code updateSupplier} is only invoked whenever there are matching queries.
+     *
+     * @param queryName      The qualified name of the {@link SubscriptionQueryMessage#type()} to filter on.
+     * @param filter         A predicate testing the {@link SubscriptionQueryMessage#payload()} as is to the given
+     *                       {@code queryType} to filter on.
+     * @param updateSupplier The update supplier to emit for
+     *                       {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)
+     *                       subscription queries} matching the given {@code queryName} and {@code filter}.
+     */
+    void emit(@Nonnull QualifiedName queryName,
+              @Nonnull Predicate<Object> filter,
+              @Nonnull Supplier<Object> updateSupplier);
 
     /**
      * Completes subscription queries matching the given {@code queryType} and {@code filter}.

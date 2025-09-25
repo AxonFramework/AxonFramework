@@ -145,13 +145,13 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                 new GenericSubscriptionQueryUpdateMessage(new MessageType("query-integer"), 2);
         // when
         SubscriptionQueryResponseMessages resultOne = queryBus.subscriptionQuery(queryMessage1, testContext, 50);
-        queryBus.emitUpdate(stringQueryFilter, stringUpdateOne, testContext);
+        queryBus.emitUpdate(stringQueryFilter, () -> stringUpdateOne, testContext);
         queryBus.completeSubscriptions(stringQueryFilter, testContext);
-        queryBus.emitUpdate(stringQueryFilter, stringUpdateTwo, testContext);
+        queryBus.emitUpdate(stringQueryFilter, () -> stringUpdateTwo, testContext);
         SubscriptionQueryResponseMessages resultTwo = queryBus.subscriptionQuery(queryMessage2, testContext, 50);
-        queryBus.emitUpdate(integerQueryFilter, integerUpdateOne, testContext);
+        queryBus.emitUpdate(integerQueryFilter, () -> integerUpdateOne, testContext);
         queryBus.completeSubscriptions(integerQueryFilter, testContext);
-        queryBus.emitUpdate(integerQueryFilter, integerUpdateTwo, testContext);
+        queryBus.emitUpdate(integerQueryFilter, () -> integerUpdateTwo, testContext);
         // then
         StepVerifier.create(resultOne.initialResult().mapNotNull(Message::payload))
                     .expectNext(Arrays.asList("Message1", "Message2", "Message3"))
@@ -184,7 +184,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                 new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_TYPE, null, String.class);
         // when
         SubscriptionQueryResponseMessages result = queryBus.subscriptionQuery(queryMessage, null, 50);
-        queryBus.emitUpdate(testFilter, testUpdate, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdate, testContext);
         queryBus.completeSubscriptions(testFilter, testContext);
         // then
         StepVerifier.create(result.updates())
@@ -208,7 +208,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         );
         SubscriptionQueryResponseMessages result = queryBus.subscriptionQuery(queryMessage, null, 50);
         // when...
-        testUoW.onInvocation(context -> queryBus.emitUpdate(testFilter, testUpdate, context));
+        testUoW.onInvocation(context -> queryBus.emitUpdate(testFilter, () -> testUpdate, context));
         // then before we commit we don't have anything yet...
         List<String> updateList = new ArrayList<>();
         result.updates().mapNotNull(m -> m.payloadAs(String.class)).subscribe(updateList::add);
@@ -241,9 +241,9 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                 queryBus.subscriptionQuery(queryMessage, null, Queues.SMALL_BUFFER_SIZE);
         try (ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor()) {
             executor.schedule(() -> {
-                queryBus.emitUpdate(testFilter, testUpdateOne, testContext);
+                queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
                 queryBus.completeSubscriptionsExceptionally(testFilter, toBeThrown, testContext);
-                queryBus.emitUpdate(testFilter, testUpdateTwo, testContext);
+                queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
             }, 500, TimeUnit.MILLISECONDS);
         }
         // then
@@ -289,9 +289,9 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         resultTwo.updates()
                  .mapNotNull(m -> m.payloadAs(String.class))
                  .subscribe(queryTwoUpdates::add, t -> queryTwoUpdates.add("Error2"));
-        queryBus.emitUpdate(testFilter, testUpdateOne, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
         queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext);
-        queryBus.emitUpdate(testFilter, testUpdateTwo, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
         // then
         assertEquals(Arrays.asList("Update1", "Error1"), queryOneUpdates);
         assertEquals(Arrays.asList("Update1", "Error2"), queryTwoUpdates);
@@ -314,7 +314,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when staging the subscription query and updates...
         SubscriptionQueryResponseMessages result = queryBus.subscriptionQuery(queryMessage, null, 50);
         testUoW.runOnInvocation(context -> {
-            queryBus.emitUpdate(testFilter, testUpdate, context);
+            queryBus.emitUpdate(testFilter, () -> testUpdate, context);
             queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), context);
         });
         // then before we commit we don't have anything yet...
@@ -350,9 +350,9 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         SubscriptionQueryResponseMessages result = queryBus.subscriptionQuery(queryMessage, null, 50);
         try (ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor()) {
             executor.schedule(() -> {
-                queryBus.emitUpdate(testFilter, testUpdateOne, testContext);
+                queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
                 queryBus.completeSubscriptions(testFilter, testContext);
-                queryBus.emitUpdate(testFilter, testUpdateTwo, testContext);
+                queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
             }, 500, TimeUnit.MILLISECONDS);
         }
         // then
@@ -380,11 +380,11 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when...
         SubscriptionQueryResponseMessages result = queryBus.subscriptionQuery(queryMessage, null, 50);
         testUoW.runOnInvocation(context -> {
-            queryBus.emitUpdate(testFilter, testUpdate, context);
+            queryBus.emitUpdate(testFilter, () -> testUpdate, context);
             queryBus.completeSubscriptions(testFilter, context);
         });
         // when...
-        testUoW.onInvocation(context -> queryBus.emitUpdate(testFilter, testUpdate, context));
+        testUoW.onInvocation(context -> queryBus.emitUpdate(testFilter, () -> testUpdate, context));
         // then before we commit we don't have anything yet...
         List<String> updateList = new ArrayList<>();
         result.updates().mapNotNull(m -> m.payloadAs(String.class)).subscribe(updateList::add);
@@ -460,17 +460,18 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         List<String> update3 = new ArrayList<>();
         result.initialResult().mapNotNull(m -> m.payloadAs(LIST_OF_STRINGS)).subscribe(initial1::addAll);
         result.initialResult().mapNotNull(m -> m.payloadAs(LIST_OF_STRINGS)).subscribe(initial2::addAll);
-        queryBus.emitUpdate(testFilter, testUpdateOne, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
         result.updates().mapNotNull(m -> m.payloadAs(String.class)).subscribe(update1::add);
         result.updates().mapNotNull(m -> m.payloadAs(String.class)).subscribe(update2::add);
         for (int i = 2; i < 10; i++) {
+            int number = i;
             queryBus.emitUpdate(testFilter,
-                                new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_TYPE, "Update" + i),
+                                () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_TYPE, "Update" + number),
                                 testContext);
         }
         result.updates().mapNotNull(m -> m.payloadAs(String.class)).subscribe(update3::add);
-        queryBus.emitUpdate(testFilter, testUpdateTwo, testContext);
-        queryBus.emitUpdate(testFilter, testUpdateThree, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateThree, testContext);
         queryBus.completeSubscriptions(testFilter, testContext);
         // then...
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initial1);
@@ -516,8 +517,9 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         // when...
         SubscriptionQueryResponseMessages result = queryBus.subscriptionQuery(queryMessage, null, 100);
         for (int i = 0; i <= 200; i++) {
+            int number = i;
             queryBus.emitUpdate(testFilter,
-                                new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_TYPE, "Update" + i),
+                                () -> new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_TYPE, "Update" + number),
                                 testContext);
         }
         queryBus.completeSubscriptions(testFilter, testContext);
@@ -557,9 +559,12 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                     .expectSubscription()
                     .then(() -> {
                         for (int i = 0; i < 200; i++) {
+                            int number = i;
                             queryBus.emitUpdate(
                                     testFilter,
-                                    new GenericSubscriptionQueryUpdateMessage(TEST_UPDATE_TYPE, "Update" + i),
+                                    () -> new GenericSubscriptionQueryUpdateMessage(
+                                            TEST_UPDATE_TYPE, "Update" + number
+                                    ),
                                     testContext
                             );
                         }
@@ -589,9 +594,9 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         ProcessingContext testContext = null;
         SubscriptionQueryResponseMessages result = queryBus.subscriptionQuery(queryMessage, null, 50);
         // when...
-        queryBus.emitUpdate(testFilter, testUpdateOne, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
         result.close();
-        queryBus.emitUpdate(testFilter, testUpdateTwo, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
         // then...
         StepVerifier.create(result.updates().mapNotNull(Message::payload))
                     .expectNext("Update1")
@@ -687,8 +692,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                                 // do nothing
                             }
                     );
-        queryBus.emitUpdate(testFilter, testUpdateOne, testContext);
-        queryBus.emitUpdate(testFilter, testUpdateTwo, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
         // then
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initialResult);
         assertEquals(Collections.singletonList("Update1"), updates);
@@ -717,7 +722,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                     .handle(initial -> {
                                 // Making sure update is emitted before subscribing and that emitting occurs once.
                                 if (invoked.compareAndSet(false, true)) {
-                                    queryBus.emitUpdate(testFilter, testUpdateOne, testContext);
+                                    queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
                                 }
                                 initialResult.add(initial);
                             },
@@ -729,7 +734,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                                 // do nothing
                             }
                     );
-        queryBus.emitUpdate(testFilter, testUpdateTwo, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
         // then
         assertEquals(Arrays.asList("Message1", "Message2", "Message3"), initialResult);
         assertEquals(Collections.singletonList("Update1"), updates);
@@ -761,8 +766,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                                 // Do Nothing
                             }
                     );
-        queryBus.emitUpdate(testFilter, testUpdateOne, testContext);
-        queryBus.emitUpdate(testFilter, testUpdateTwo, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateOne, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdateTwo, testContext);
         queryBus.completeSubscriptions(testFilter, testContext);
         // then
         assertTrue(initialResult.isEmpty());
@@ -794,7 +799,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                             }
                     );
         queryBus.completeSubscriptionsExceptionally(testFilter, new RuntimeException(), testContext);
-        queryBus.emitUpdate(testFilter, testUpdate, testContext);
+        queryBus.emitUpdate(testFilter, () -> testUpdate, testContext);
         // then
         assertTrue(initialResult.isEmpty());
         assertTrue(updates.isEmpty());

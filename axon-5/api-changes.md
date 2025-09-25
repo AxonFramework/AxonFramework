@@ -1734,26 +1734,27 @@ public class MyEmittingProjector {
     @EventHandler
     public void on(MyEvent event, QueryUpdateEmitter emitter) {
         // update projection(s)...
-        emitter.emit(MyQuery.class, query -> /*filter queries to emit the update to*/, new MyUpdate());
+        emitter.emit(MyQuery.class, query -> /*filter queries to emit the update to*/, () -> new MyUpdate());
     }
 }
 ```
 
 Besides the "old" emit method filtering based on the concrete type, we added filter support (for `emit`, `complete`, and
 `completeExceptionally`) based on the [qualified name](#message-type-and-qualified-name) of the subscription query.
+Furthermore, you can now provide a `Supplier` of the update, ensuring the update object is **not** created whenever
+there are no matching subscription queries to emit the update to.
 
 Although we strongly believe this is the correct move for the `QueryUpdateEmitter` it does lead to the fact the emitter
-can no longer be used outside the scope of a message handling function.
-To not lose this support entirely, the `QueryBus` now allows for the switch between emitting updates within a
-`ProcessingContext` or outside a `ProcessingContext`.
-This means the `QueryBus` inherited some methods from the `QueryUpdateEmitter`, being:
+can no longer be used outside the scope of a message handling function. To not lose this support entirely, the
+`QueryBus` now allows for the switch between emitting updates within a `ProcessingContext` or outside a
+`ProcessingContext`. This means the `QueryBus` inherited some methods from the `QueryUpdateEmitter`, being:
 
-1. `CompletableFuture<Void> emitUpdate(Predicate<SubscriptionQueryMessage>, SubscriptionQueryUpdateMessage, ProcessingContext)`
+1. `CompletableFuture<Void> emitUpdate(Predicate<SubscriptionQueryMessage>, Supplier<SubscriptionQueryUpdateMessage>, ProcessingContext)`
 2. `CompletableFuture<Void> completeSubscriptions(Predicate<SubscriptionQueryMessage>, ProcessingContext)`
 3. `CompletableFuture<Void> completeSubscriptionsExceptionally(Predicate<SubscriptionQueryMessage>, Throwable, ProcessingContext)`
 
 As becomes clear from the above, the `QueryBus` now sports the methods that (1) take in a `SubscriptionQueryMessage` and
-`SubscriptionQueryUpdateMessage`, and (2) take in a nullable `ProcessingContext`.
+supplier of a `SubscriptionQueryUpdateMessage`, and (2) take in a nullable `ProcessingContext`.
 
 Lastly, to further simplify the `QueryUpdateEmitter` API, we moved the `subscribe` method which generated the
 `UpdateHandler` from the emitter to the `QueryBus`.

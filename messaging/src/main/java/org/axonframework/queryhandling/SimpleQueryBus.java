@@ -31,16 +31,18 @@ import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of the {@code QueryBus} that dispatches queries (through
@@ -52,7 +54,7 @@ import java.util.function.Predicate;
  * Allows fine-grained control over
  * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries} through
  * {@link #subscribeToUpdates(SubscriptionQueryMessage, int)},
- * {@link #emitUpdate(Predicate, SubscriptionQueryUpdateMessage, ProcessingContext)},
+ * {@link #emitUpdate(Predicate, Supplier, ProcessingContext)},
  * {@link #completeSubscriptions(Predicate, ProcessingContext)}, and
  * {@link #completeSubscriptionsExceptionally(Predicate, Throwable, ProcessingContext)}.
  * <p>
@@ -218,29 +220,34 @@ public class SimpleQueryBus implements QueryBus {
     @Nonnull
     @Override
     public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
-                                              @Nonnull SubscriptionQueryUpdateMessage update,
+                                              @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                               @Nullable ProcessingContext context) {
-        return runAfterCommitOrImmediately(context, () -> emitUpdate(filter, update));
+        return runAfterCommitOrImmediately(context, () -> emitUpdate(filter, updateSupplier));
     }
 
     private void emitUpdate(Predicate<SubscriptionQueryMessage> filter,
-                            SubscriptionQueryUpdateMessage update) {
-        updateHandlers.entrySet()
-                      .stream()
-                      .filter(entry -> filter.test(entry.getKey()))
-                      .forEach(entry -> {
-                          SubscriptionQueryMessage query = entry.getKey();
-                          SinkWrapper<SubscriptionQueryUpdateMessage> updateHandler = entry.getValue();
-                          try {
-                              updateHandler.next(update);
-                          } catch (Exception e) {
-                              logger.info("An error occurred while trying to emit an update to a query '{}'. " +
-                                                  "The subscription will be cancelled. Exception summary: {}",
-                                          query.type(), e.toString());
-                              updateHandlers.remove(query);
-                              emitError(updateHandler, e, query);
-                          }
-                      });
+                            Supplier<SubscriptionQueryUpdateMessage> updateSupplier) {
+        Map<SubscriptionQueryMessage, SinkWrapper<SubscriptionQueryUpdateMessage>> matchingHandlers =
+                updateHandlers.entrySet()
+                              .stream()
+                              .filter(entry -> filter.test(entry.getKey()))
+                              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (matchingHandlers.isEmpty()) {
+            return;
+        }
+
+        SubscriptionQueryUpdateMessage update = updateSupplier.get();
+        matchingHandlers.forEach((query, updateHandler) -> {
+            try {
+                updateHandler.next(update);
+            } catch (Exception e) {
+                logger.info("An error occurred while trying to emit an update to a query '{}'. " +
+                                    "The subscription will be cancelled. Exception summary: {}",
+                            query.type(), e.toString());
+                updateHandlers.remove(query);
+                emitError(updateHandler, e, query);
+            }
+        });
     }
 
     @Nonnull

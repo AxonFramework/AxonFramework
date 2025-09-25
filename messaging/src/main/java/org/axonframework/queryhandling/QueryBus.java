@@ -27,6 +27,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * The mechanism that dispatches {@link QueryMessage queries} to their appropriate {@link QueryHandler query handler}.
@@ -146,21 +147,22 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
     UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize);
 
     /**
-     * Emits the given {@code update} to
+     * Emits the outcome of the {@code updateSupplier} to
      * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries}
-     * matching the given {@code filter}.
+     * matching the given {@code queryName} and given {@code filter}.
      *
-     * @param filter  A predicate filtering on {@link SubscriptionQueryMessage SubscriptionQueryMessages}. The
-     *                {@code update} will only be sent to subscription queries matching this filter.
-     * @param update  The incremental update to emit for
-     *                {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription
-     *                queries} matching the given {@code filter}.
-     * @param context The processing context under which the update is being emitted (can be {@code null}).
-     * @return A future completing whenever the update has been emitted.
+     * @param filter         A predicate filtering on {@link SubscriptionQueryMessage SubscriptionQueryMessages}. The
+     *                       {@code updateSupplier} will only be sent to subscription queries matching this filter.
+     * @param updateSupplier The update supplier to emit for
+     *                       {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)
+     *                       subscription queries} matching the given {@code filter}.
+     * @param context        The processing context under which the updateSupplier is being emitted (can be
+     *                       {@code null}).
+     * @return A future completing whenever the updateSupplier has been emitted.
      */
     @Nonnull
     CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
-                                       @Nonnull SubscriptionQueryUpdateMessage update,
+                                       @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
                                        @Nullable ProcessingContext context);
 
     /**
@@ -169,7 +171,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * matching the given {@code filter}.
      * <p>
      * To be used whenever there are no subsequent update to
-     * {@link #emitUpdate(Predicate, SubscriptionQueryUpdateMessage, ProcessingContext) emit} left.
+     * {@link #emitUpdate(Predicate, Supplier, ProcessingContext) emit} left.
      *
      * @param filter  A predicate filtering on {@link SubscriptionQueryMessage SubscriptionQueryMessages}. Subscription
      *                queries matching this filter will be completed.
@@ -187,8 +189,7 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries}
      * matching the given {@code filter} exceptionally with the given {@code cause}.
      * <p>
-     * To be used whenever
-     * {@link #emitUpdate(Predicate, SubscriptionQueryUpdateMessage, ProcessingContext) emitting updates} should be
+     * To be used whenever {@link #emitUpdate(Predicate, Supplier, ProcessingContext) emitting updates} should be
      * stopped due to some exception.
      *
      * @param filter  A predicate filtering on {@link SubscriptionQueryMessage SubscriptionQueryMessages}. Subscription

@@ -17,7 +17,6 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -30,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -61,7 +61,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
      * The {@code messageTypeResolver} is used to construct {@link SubscriptionQueryUpdateMessage update messages} for
      * {@link #emit(Class, Predicate, Object)} invocations. Any {@link #emit(Class, Predicate, Object)} or
      * {@link #emit(QualifiedName, Predicate, Object)} is delegated to
-     * {@link QueryBus#emitUpdate(Predicate, SubscriptionQueryUpdateMessage, ProcessingContext)}. Similarly,
+     * {@link QueryBus#emitUpdate(Predicate, Supplier, ProcessingContext)}. Similarly,
      * {@link #complete(Class, Predicate)}/{@link #complete(QualifiedName, Predicate)} and
      * {@link #completeExceptionally(Class, Predicate, Throwable)}/{@link #completeExceptionally(QualifiedName,
      * Predicate, Throwable)} are respectively delegated to
@@ -93,22 +93,22 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     @Override
     public <Q> void emit(@Nonnull Class<Q> queryType,
                          @Nonnull Predicate<? super Q> filter,
-                         @Nullable Object update) {
+                         @Nonnull Supplier<Object> updateSupplier) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Emitting update [{}] for query of type [{}].", update, queryType);
+            logger.debug("Emitting an update to queries matching type [{}] and a given filter.", queryType);
         }
-        queryBus.emitUpdate(concretePayloadTypeFilter(queryType, filter), asUpdateMessage(update), context)
+        queryBus.emitUpdate(queryTypeFilter(queryType, filter), () -> asUpdateMessage(updateSupplier.get()), context)
                 .join();
     }
 
     @Override
     public void emit(@Nonnull QualifiedName queryName,
                      @Nonnull Predicate<Object> filter,
-                     @Nullable Object update) {
+                     @Nonnull Supplier<Object> updateSupplier) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Emitting update [{}] for query with name [{}].", update, queryName);
+            logger.debug("Emitting an update to queries matching name [{}] and a given filter.", queryName);
         }
-        queryBus.emitUpdate(queryNameFilter(queryName, filter), asUpdateMessage(update), context)
+        queryBus.emitUpdate(queryNameFilter(queryName, filter), () -> asUpdateMessage(updateSupplier.get()), context)
                 .join();
     }
 
@@ -126,7 +126,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         if (logger.isDebugEnabled()) {
             logger.debug("Completing subscription queries of type [{}].", queryType);
         }
-        queryBus.completeSubscriptions(concretePayloadTypeFilter(queryType, filter), context)
+        queryBus.completeSubscriptions(queryTypeFilter(queryType, filter), context)
                 .join();
     }
 
@@ -146,7 +146,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         if (logger.isDebugEnabled()) {
             logger.debug("Completing subscription queries of type [{}] exceptionally.", queryType, cause);
         }
-        queryBus.completeSubscriptionsExceptionally(concretePayloadTypeFilter(queryType, filter), cause, context)
+        queryBus.completeSubscriptionsExceptionally(queryTypeFilter(queryType, filter), cause, context)
                 .join();
     }
 
@@ -162,18 +162,19 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
     }
 
     @Nonnull
-    private static Predicate<SubscriptionQueryMessage> queryNameFilter(@Nonnull QualifiedName queryName,
-                                                                       @Nonnull Predicate<Object> filter) {
-        return message -> queryName.equals(message.type().qualifiedName()) && filter.test(message.payload());
-    }
-
-    private <Q> Predicate<SubscriptionQueryMessage> concretePayloadTypeFilter(@Nonnull Class<Q> queryType,
-                                                                              @Nonnull Predicate<? super Q> filter) {
+    private <Q> Predicate<SubscriptionQueryMessage> queryTypeFilter(@Nonnull Class<Q> queryType,
+                                                                    @Nonnull Predicate<? super Q> filter) {
         return message -> {
             QualifiedName queryName = messageTypeResolver.resolveOrThrow(queryType).qualifiedName();
             return queryName.equals(message.type().qualifiedName())
                     && filter.test(message.payloadAs(queryType, converter));
         };
+    }
+
+    @Nonnull
+    private static Predicate<SubscriptionQueryMessage> queryNameFilter(@Nonnull QualifiedName queryName,
+                                                                       @Nonnull Predicate<Object> filter) {
+        return message -> queryName.equals(message.type().qualifiedName()) && filter.test(message.payload());
     }
 
     @Override

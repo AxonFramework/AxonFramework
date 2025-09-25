@@ -50,6 +50,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -533,7 +534,7 @@ class SimpleQueryBusTest {
                                             value.set(next);
                                             SubscriptionQueryUpdateMessage update =
                                                     new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, next);
-                                            testSubject.emitUpdate(queryFilter, update, null);
+                                            testSubject.emitUpdate(queryFilter, () -> update, null);
                                         })
                                         .doOnComplete(() -> testSubject.completeSubscriptions(queryFilter, null))
                                         .subscribe();
@@ -579,7 +580,7 @@ class SimpleQueryBusTest {
             SubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, UPDATE_PAYLOAD);
             UpdateHandler result = testSubject.subscribeToUpdates(testQuery, Queues.SMALL_BUFFER_SIZE);
-            testSubject.emitUpdate(query -> true, updateMessage, null).join();
+            testSubject.emitUpdate(query -> true, () -> updateMessage, null).join();
             // when...
             result.complete();
             // then...
@@ -597,7 +598,7 @@ class SimpleQueryBusTest {
             SubscriptionQueryUpdateMessage updateMessage =
                     new GenericSubscriptionQueryUpdateMessage(UPDATE_TYPE, UPDATE_PAYLOAD);
             UpdateHandler result = testSubject.subscribeToUpdates(testQuery, Queues.SMALL_BUFFER_SIZE);
-            testSubject.emitUpdate(query -> true, updateMessage, null).join();
+            testSubject.emitUpdate(query -> true, () -> updateMessage, null).join();
             // when...
             result.cancel();
             // then...
@@ -609,7 +610,7 @@ class SimpleQueryBusTest {
 
     /**
      * Nested test class validating
-     * {@link QueryBus#emitUpdate(Predicate, SubscriptionQueryUpdateMessage, ProcessingContext)} are handled by the
+     * {@link QueryBus#emitUpdate(Predicate, java.util.function.Supplier, ProcessingContext)} are handled by the
      * {@link SubscriptionQueryResponseMessages#updates()} as expected.
      */
     @Nested
@@ -628,7 +629,7 @@ class SimpleQueryBusTest {
             SubscriptionQueryResponseMessages responses =
                     testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
             // when...
-            testSubject.emitUpdate(queryFilter, updateMessage, null).join();
+            testSubject.emitUpdate(queryFilter, () -> updateMessage, null).join();
             // then...
             StepVerifier.create(responses.updates())
                         .expectNextMatches(response -> Objects.equals(response.payload(), UPDATE_PAYLOAD))
@@ -660,7 +661,7 @@ class SimpleQueryBusTest {
             SubscriptionQueryResponseMessages thirdResponses =
                     testSubject.subscriptionQuery(testQueryThree, null, Queues.SMALL_BUFFER_SIZE);
             // when...
-            testSubject.emitUpdate(queryFilter, updateMessage, null).join();
+            testSubject.emitUpdate(queryFilter, () -> updateMessage, null).join();
             // then...
             StepVerifier.create(firstResponses.updates())
                         .expectNextMatches(response -> Objects.equals(response.payload(), UPDATE_PAYLOAD))
@@ -684,7 +685,7 @@ class SimpleQueryBusTest {
             // when...
             try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
                 for (int i = 0; i < 100; i++) {
-                    executor.submit(() -> testSubject.emitUpdate(q -> true, updateMessage, null));
+                    executor.submit(() -> testSubject.emitUpdate(q -> true, () -> updateMessage, null));
                 }
                 executor.shutdown();
             }
@@ -715,7 +716,7 @@ class SimpleQueryBusTest {
                     testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
             UnitOfWork uow = UnitOfWorkTestUtils.aUnitOfWork();
             // when emitting on invocation...
-            uow.onInvocation(context -> testSubject.emitUpdate(queryFilter, updateMessage, context));
+            uow.onInvocation(context -> testSubject.emitUpdate(queryFilter, () -> updateMessage, context));
             // then before the after commit phase validate the filter was not invoked yet...
             List<String> updateList = new ArrayList<>();
             result.updates().mapNotNull(m -> m.payloadAs(String.class)).subscribe(updateList::add);
@@ -727,6 +728,26 @@ class SimpleQueryBusTest {
             assertThat(filterInvoked).isTrue();
             assertThat(updateList).isNotEmpty();
             assertThat(updateList).containsExactlyInAnyOrder(UPDATE_PAYLOAD);
+        }
+
+        @Test
+        void emittingUpdatesDoesNotRetrieveUpdateWhenNoQueriesMatch() {
+            // given...
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, QUERY_PAYLOAD, SINGLE_STRING_RESPONSE, SINGLE_STRING_RESPONSE
+            );
+            Predicate<SubscriptionQueryMessage> queryFilter = query -> false;
+            AtomicBoolean updateSupplierInvoked = new AtomicBoolean(false);
+            Supplier<SubscriptionQueryUpdateMessage> updateSupplier = () -> {
+                updateSupplierInvoked.set(true);
+                return null;
+            };
+            // We should have a subscription query for an update handler to even exist.
+            testSubject.subscriptionQuery(testQuery, null, Queues.SMALL_BUFFER_SIZE);
+            // when...
+            testSubject.emitUpdate(queryFilter, updateSupplier, null).join();
+            // then...
+            assertThat(updateSupplierInvoked).isFalse();
         }
     }
 
@@ -760,7 +781,7 @@ class SimpleQueryBusTest {
             // when...
             testSubject.completeSubscriptions(queryFilter, null).join();
             // then...
-            testSubject.emitUpdate(query -> true, updateMessage, null).join();
+            testSubject.emitUpdate(query -> true, () -> updateMessage, null).join();
             StepVerifier.create(firstResponses.updates())
                         .verifyComplete();
             StepVerifier.create(secondResponses.updates())
@@ -827,7 +848,7 @@ class SimpleQueryBusTest {
             // when...
             testSubject.completeSubscriptionsExceptionally(queryFilter, mockException, null).join();
             // then...
-            testSubject.emitUpdate(query -> true, updateMessage, null).join();
+            testSubject.emitUpdate(query -> true, () -> updateMessage, null).join();
             StepVerifier.create(firstResponses.updates())
                         .verifyError(MockException.class);
             StepVerifier.create(secondResponses.updates())

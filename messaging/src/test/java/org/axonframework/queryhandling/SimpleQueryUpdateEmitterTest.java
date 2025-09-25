@@ -29,7 +29,9 @@ import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.lang.reflect.Type;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -57,7 +59,7 @@ class SimpleQueryUpdateEmitterTest {
     private SimpleQueryUpdateEmitter testSubject;
 
     private ArgumentCaptor<Predicate<SubscriptionQueryMessage>> filterCaptor;
-    private ArgumentCaptor<SubscriptionQueryUpdateMessage> updateCaptor;
+    private ArgumentCaptor<Supplier<SubscriptionQueryUpdateMessage>> updateCaptor;
 
     @BeforeEach
     void setUp() {
@@ -72,9 +74,8 @@ class SimpleQueryUpdateEmitterTest {
         when(queryBus.completeSubscriptions(any(), eq(context))).thenReturn(FutureUtils.emptyCompletedFuture());
         when(queryBus.completeSubscriptionsExceptionally(any(), any(), eq(context)))
                 .thenReturn(FutureUtils.emptyCompletedFuture());
-        //noinspection unchecked
-        filterCaptor = ArgumentCaptor.forClass(Predicate.class);
-        updateCaptor = ArgumentCaptor.forClass(SubscriptionQueryUpdateMessage.class);
+        filterCaptor = ArgumentCaptor.captor();
+        updateCaptor = ArgumentCaptor.captor();
     }
 
     @Nested
@@ -130,7 +131,8 @@ class SimpleQueryUpdateEmitterTest {
             // then...
             verify(queryBus).emitUpdate(filterCaptor.capture(), updateCaptor.capture(), eq(context));
             assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
-            SubscriptionQueryUpdateMessage resultUpdate = updateCaptor.getValue();
+            Supplier<SubscriptionQueryUpdateMessage> resultUpdateSupplier = updateCaptor.getValue();
+            SubscriptionQueryUpdateMessage resultUpdate = resultUpdateSupplier.get();
             assertThat(resultUpdate.type()).isEqualTo(UPDATE_TYPE);
             assertThat(resultUpdate.payload()).isEqualTo(testUpdatePayload);
             verify(messageTypeResolver).resolveOrThrow(testUpdatePayload);
@@ -154,7 +156,8 @@ class SimpleQueryUpdateEmitterTest {
             // then...
             verify(queryBus).emitUpdate(filterCaptor.capture(), updateCaptor.capture(), eq(context));
             assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
-            SubscriptionQueryUpdateMessage resultUpdate = updateCaptor.getValue();
+            Supplier<SubscriptionQueryUpdateMessage> resultUpdateSupplier = updateCaptor.getValue();
+            SubscriptionQueryUpdateMessage resultUpdate = resultUpdateSupplier.get();
             assertThat(resultUpdate.type()).isEqualTo(UPDATE_TYPE);
             assertThat(resultUpdate.payload()).isEqualTo(testUpdatePayload);
 
@@ -179,7 +182,8 @@ class SimpleQueryUpdateEmitterTest {
             // when...
             testSubject.emit(String.class, query -> query.equals("some-query"), testUpdatePayload);
             // then...
-            verify(queryBus).emitUpdate(filterCaptor.capture(), any(), eq(context));
+            //noinspection unchecked
+            verify(queryBus).emitUpdate(filterCaptor.capture(), any(Supplier.class), eq(context));
             assertThatThrownBy(() -> filterCaptor.getValue().test(testQuery))
                     .isInstanceOf(MessageTypeNotResolvedException.class);
         }
@@ -205,6 +209,26 @@ class SimpleQueryUpdateEmitterTest {
         }
 
         @Test
+        void emitForQueryTypeDoesNotRetrieveUpdateWhenNoQueriesMatch() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
+            AtomicBoolean updateSupplierInvoked = new AtomicBoolean(false);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            // when...
+            testSubject.emit(String.class, query -> false, () -> {
+                updateSupplierInvoked.set(true);
+                return "this should never be returned!";
+            });
+            // then...
+            verify(queryBus).emitUpdate(filterCaptor.capture(), updateCaptor.capture(), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isFalse();
+            assertThat(updateSupplierInvoked).isFalse();
+        }
+
+        @Test
         void emitForQueryName() {
             // given...
             SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
@@ -217,7 +241,8 @@ class SimpleQueryUpdateEmitterTest {
             // then...
             verify(queryBus).emitUpdate(filterCaptor.capture(), updateCaptor.capture(), eq(context));
             assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
-            SubscriptionQueryUpdateMessage resultUpdate = updateCaptor.getValue();
+            Supplier<SubscriptionQueryUpdateMessage> resultUpdateSupplier = updateCaptor.getValue();
+            SubscriptionQueryUpdateMessage resultUpdate = resultUpdateSupplier.get();
             assertThat(resultUpdate.type()).isEqualTo(UPDATE_TYPE);
             assertThat(resultUpdate.payload()).isEqualTo(testUpdatePayload);
             verify(messageTypeResolver).resolveOrThrow(testUpdatePayload);
@@ -240,11 +265,35 @@ class SimpleQueryUpdateEmitterTest {
             // then...
             verify(queryBus).emitUpdate(filterCaptor.capture(), updateCaptor.capture(), eq(context));
             assertThat(filterCaptor.getValue().test(testQuery)).isTrue();
-            SubscriptionQueryUpdateMessage resultUpdate = updateCaptor.getValue();
+            Supplier<SubscriptionQueryUpdateMessage> resultUpdateSupplier = updateCaptor.getValue();
+            SubscriptionQueryUpdateMessage resultUpdate = resultUpdateSupplier.get();
             assertThat(resultUpdate.type()).isEqualTo(UPDATE_TYPE);
             assertThat(resultUpdate.payload()).isEqualTo(testUpdatePayload);
 
             verify(messageTypeResolver).resolveOrThrow(testUpdatePayload);
+            verifyNoInteractions(converter);
+        }
+
+        @Test
+        void emitForQueryNameDoesNotRetrieveUpdateWhenNoQueriesMatch() {
+            // given...
+            SubscriptionQuery testQueryPayload = new SubscriptionQuery("some-query");
+            SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
+                    QUERY_TYPE, testQueryPayload, instanceOf(String.class), instanceOf(String.class)
+            );
+            AtomicBoolean updateSupplierInvoked = new AtomicBoolean(false);
+            when(messageTypeResolver.resolveOrThrow(String.class)).thenReturn(QUERY_TYPE);
+            // when...
+            testSubject.emit(QUERY_TYPE.qualifiedName(), query -> false, () -> {
+                updateSupplierInvoked.set(true);
+                return "this should never be returned!";
+            });
+            // then...
+            verify(queryBus).emitUpdate(filterCaptor.capture(), updateCaptor.capture(), eq(context));
+            assertThat(filterCaptor.getValue().test(testQuery)).isFalse();
+            assertThat(updateSupplierInvoked).isFalse();
+
+            verify(messageTypeResolver, times(0)).resolveOrThrow(String.class);
             verifyNoInteractions(converter);
         }
     }
