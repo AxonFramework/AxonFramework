@@ -72,7 +72,8 @@ public interface QueryUpdateEmitter extends DescribableComponent {
 
     /**
      * Emits given incremental {@code update} to subscription queries matching the given {@code queryType} and given
-     * {@code filter}.
+/**
+     * Emits the given {@code update} to subscription queries matching the given {@code queryType} and given
      *
      * @param queryType The type of the {@link SubscriptionQueryMessage} to filter on.
      * @param filter    A predicate testing the {@link SubscriptionQueryMessage#payload()}, converted to the given
