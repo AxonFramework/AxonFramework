@@ -79,18 +79,40 @@ public class RecordingCommandBus implements CommandBus {
         descriptor.describeWrapperOf(delegate);
     }
 
+    /**
+     * Returns map of all the {@link CommandMessage CommandMessages} dispatched, and their corresponding results.
+     *
+     * @return A map of all the {@link CommandMessage CommandMessages} dispatched, and their corresponding results.
+     */
     public Map<CommandMessage, Message> recorded() {
         return Map.copyOf(recorded);
     }
 
+    /**
+     * Returns the commands that have been dispatched to this {@link CommandBus}.
+     *
+     * @return The commands that have been dispatched to this {@link CommandBus}
+     */
     public List<CommandMessage> recordedCommands() {
         return List.copyOf(recorded.keySet());
     }
 
+    /**
+     * Returns the result of the given {@code command}.
+     *
+     * @param command The command for which the result is returned.
+     * @return The result of the given {@code command}. May be {@code null} if the command has not been dispatched yet.
+     */
+    @Nullable
     public Message resultOf(CommandMessage command) {
         return recorded.get(command);
     }
 
+    /**
+     * Resets this recording {@link CommandBus}, by removing all recorded {@link CommandMessage CommandMessages}.
+     *
+     * @return This recording {@link CommandBus}, for fluent interfacing.
+     */
     public RecordingCommandBus reset() {
         recorded.clear();
         return this;
