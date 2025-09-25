@@ -166,8 +166,7 @@ public class SimpleQueryBus implements QueryBus {
                        () -> "Subscription Query query does not support Flux as an update type.");
 
         Flux<QueryResponseMessage> initialStream =
-                Mono.fromSupplier(() -> query(query, context))
-                    .flatMapMany(MessageStream::asFlux)
+                Flux.defer(() -> query(query, context).asFlux())
                     .map(MessageStream.Entry::message)
                     .doOnError(error -> logger.error(
                             "An error happened while trying to report an initial result. Query: {}",
