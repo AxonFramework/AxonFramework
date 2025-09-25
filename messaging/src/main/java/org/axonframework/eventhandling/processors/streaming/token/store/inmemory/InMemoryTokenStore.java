@@ -114,7 +114,6 @@ public class InMemoryTokenStore implements TokenStore {
     public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
                                                        int segment,
                                                        @Nullable ProcessingContext context) {
-
         TrackingToken trackingToken = tokens.get(new ProcessAndSegment(processorName, segment));
         if (trackingToken == null) {
             throw new UnableToClaimTokenException(
@@ -136,21 +135,23 @@ public class InMemoryTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> deleteToken(@Nonnull String processorName,
-                                               int segment,
-                                               @Nullable ProcessingContext context)
-            throws UnableToClaimTokenException {
+    public CompletableFuture<Void> deleteToken(
+            @Nonnull String processorName,
+            int segment,
+            @Nullable ProcessingContext context
+    ) throws UnableToClaimTokenException {
         tokens.remove(new ProcessAndSegment(processorName, segment));
         return FutureUtils.emptyCompletedFuture();
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> initializeSegment(@Nullable TrackingToken token,
-                                                     @Nonnull String processorName,
-                                                     int segment,
-                                                     @Nullable ProcessingContext context)
-            throws UnableToInitializeTokenException {
+    public CompletableFuture<Void> initializeSegment(
+            @Nullable TrackingToken token,
+            @Nonnull String processorName,
+            int segment,
+            @Nullable ProcessingContext context
+    ) throws UnableToInitializeTokenException {
         TrackingToken previous = tokens.putIfAbsent(new ProcessAndSegment(processorName, segment),
                                                     token == null ? NULL_TOKEN : token);
         if (previous != null) {

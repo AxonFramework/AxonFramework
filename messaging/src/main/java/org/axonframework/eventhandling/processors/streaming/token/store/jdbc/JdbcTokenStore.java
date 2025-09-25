@@ -135,12 +135,12 @@ public class JdbcTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> initializeTokenSegments(@Nonnull String processorName,
-                                                           int segmentCount,
-                                                           @Nullable TrackingToken initialToken,
-                                                           @Nullable ProcessingContext context)
-            throws UnableToClaimTokenException {
-
+    public CompletableFuture<Void> initializeTokenSegments(
+            @Nonnull String processorName,
+            int segmentCount,
+            @Nullable TrackingToken initialToken,
+            @Nullable ProcessingContext context
+    ) throws UnableToClaimTokenException {
         Connection connection = getConnection();
         try {
             executeQuery(connection,
@@ -162,11 +162,12 @@ public class JdbcTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> initializeSegment(@Nullable TrackingToken token,
-                                                     @Nonnull String processorName,
-                                                     int segment,
-                                                     @Nullable ProcessingContext context)
-            throws UnableToInitializeTokenException {
+    public CompletableFuture<Void> initializeSegment(
+            @Nullable TrackingToken token,
+            @Nonnull String processorName,
+            int segment,
+            @Nullable ProcessingContext context
+    ) throws UnableToInitializeTokenException {
         Connection connection = getConnection();
         try {
             executeQuery(connection,
@@ -210,8 +211,9 @@ public class JdbcTokenStore implements TokenStore {
             try {
                 if (token == null) {
                     token = insertTokenEntry(connection,
-                                             new ConfigToken(Collections.singletonMap("id",
-                                                                                      UUID.randomUUID().toString())),
+                                             new ConfigToken(Collections.singletonMap(
+                                                     "id", UUID.randomUUID().toString()
+                                             )),
                                              CONFIG_TOKEN_ID,
                                              CONFIG_SEGMENT);
                 }
@@ -237,12 +239,12 @@ public class JdbcTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
-                                              @Nonnull String processorName,
-                                              int segment,
-                                              @Nullable ProcessingContext context)
-            throws UnableToClaimTokenException {
-
+    public CompletableFuture<Void> storeToken(
+            @Nullable TrackingToken token,
+            @Nonnull String processorName,
+            int segment,
+            @Nullable ProcessingContext context
+    ) throws UnableToClaimTokenException {
         Connection connection = getConnection();
         try {
             int updatedToken = executeUpdate(
@@ -279,10 +281,11 @@ public class JdbcTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
-                                                       int segment,
-                                                       @Nullable ProcessingContext context)
-            throws UnableToClaimTokenException {
+    public CompletableFuture<TrackingToken> fetchToken(
+            @Nonnull String processorName,
+            int segment,
+            @Nullable ProcessingContext context
+    ) throws UnableToClaimTokenException {
         Connection connection = getConnection();
         try {
             return completedFuture(executeQuery(connection, c -> selectForUpdate(c, processorName, segment),
@@ -298,11 +301,11 @@ public class JdbcTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
-                                                       @Nonnull Segment segment,
-                                                       @Nullable ProcessingContext context)
-            throws UnableToClaimTokenException {
-
+    public CompletableFuture<TrackingToken> fetchToken(
+            @Nonnull String processorName,
+            @Nonnull Segment segment,
+            @Nullable ProcessingContext context
+    ) throws UnableToClaimTokenException {
         Connection connection = getConnection();
         try {
             return completedFuture(executeQuery(connection,
@@ -322,7 +325,6 @@ public class JdbcTokenStore implements TokenStore {
     public CompletableFuture<Void> releaseClaim(@Nonnull String processorName,
                                                 int segment,
                                                 @Nullable ProcessingContext context) {
-
         Connection connection = getConnection();
         try {
             executeUpdates(connection, e -> {
@@ -363,7 +365,6 @@ public class JdbcTokenStore implements TokenStore {
     @Override
     public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName,
                                                   @Nullable ProcessingContext context) {
-
         Connection connection = getConnection();
         try {
             return completedFuture(executeQuery(connection,
@@ -410,10 +411,10 @@ public class JdbcTokenStore implements TokenStore {
      * Returns a {@link PreparedStatement} to select all segments ids for a given processorName from the underlying
      * storage.
      *
-     * @param connection    the connection to the underlying database
-     * @param processorName the name of the processor to fetch the segments for
-     * @return a {@link PreparedStatement} that will fetch segments when executed
-     * @throws SQLException when an exception occurs while creating the prepared statement
+     * @param connection    The connection to the underlying database.
+     * @param processorName The name of the processor to fetch the segments for.
+     * @return A {@link PreparedStatement} that will fetch segments when executed.
+     * @throws SQLException When an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement selectForSegments(Connection connection, String processorName) throws SQLException {
         final String sql = "SELECT " + schema.segmentColumn() +
@@ -430,10 +431,10 @@ public class JdbcTokenStore implements TokenStore {
      * Returns a {@link PreparedStatement} to select all {@link TokenEntry TokenEntries} for a given processorName from
      * the underlying storage.
      *
-     * @param connection    the connection to the underlying database
-     * @param processorName the name of the processor to fetch the segments for
-     * @return a {@link PreparedStatement} that will fetch TokenEntries when executed
-     * @throws SQLException when an exception occurs while creating the prepared statement
+     * @param connection    The connection to the underlying database.
+     * @param processorName The name of the processor to fetch the segments for.
+     * @return A {@link PreparedStatement} that will fetch TokenEntries when executed.
+     * @throws SQLException When an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement selectTokenEntries(Connection connection, String processorName) throws SQLException {
         final String sql = "SELECT *" +
@@ -450,12 +451,12 @@ public class JdbcTokenStore implements TokenStore {
      * Returns a {@link PreparedStatement} which updates the given {@code token} for the given {@code processorName} and
      * {@code segment} combination.
      *
-     * @param connection    the connection to the underlying database
-     * @param token         the new token to store
-     * @param processorName the name of the processor executing the update
-     * @param segment       the segment of the processor to executing the update
-     * @return a {@link PreparedStatement} that will update a token entry when executed
-     * @throws SQLException when an exception occurs while creating the prepared statement
+     * @param connection    The connection to the underlying database.
+     * @param token         The new token to store.
+     * @param processorName The name of the processor executing the update.
+     * @param segment       The segment of the processor to executing the update.
+     * @return A {@link PreparedStatement} that will update a token entry when executed.
+     * @throws SQLException When an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement storeUpdate(Connection connection,
                                             TrackingToken token,
@@ -489,13 +490,14 @@ public class JdbcTokenStore implements TokenStore {
      * Returns a {@link PreparedStatement} to select a token entry from the underlying storage. The {@link ResultSet}
      * that is returned when this statement is executed should be updatable.
      *
-     * @param connection    the connection to the underlying database
-     * @param processorName the name of the processor to fetch the entry for
-     * @param segment       the segment of the processor to fetch the entry for
-     * @return a {@link PreparedStatement} that will fetch an updatable token entry when executed
-     * @throws SQLException when an exception occurs while creating the prepared statement
+     * @param connection    The connection to the underlying database.
+     * @param processorName The name of the processor to fetch the entry for.
+     * @param segment       The segment of the processor to fetch the entry for.
+     * @return A {@link PreparedStatement} that will fetch an updatable token entry when executed.
+     * @throws SQLException When an exception occurs while creating the prepared statement.
      */
-    protected PreparedStatement selectForUpdate(Connection connection, String processorName,
+    protected PreparedStatement selectForUpdate(Connection connection,
+                                                String processorName,
                                                 int segment) throws SQLException {
         return select(connection, processorName, segment, true);
     }
@@ -504,12 +506,12 @@ public class JdbcTokenStore implements TokenStore {
      * Returns a {@link PreparedStatement} to select a token entry from the underlying storage, either for updating or
      * just for reading.
      *
-     * @param connection    the connection to the underlying database
-     * @param processorName the name of the processor to fetch the entry for
-     * @param segment       the segment of the processor to fetch the entry for
-     * @param forUpdate     whether the returned token should be updatable
-     * @return a {@link PreparedStatement} that will fetch an updatable token entry when executed
-     * @throws SQLException when an exception occurs while creating the prepared statement
+     * @param connection    The connection to the underlying database.
+     * @param processorName The name of the processor to fetch the entry for.
+     * @param segment       The segment of the processor to fetch the entry for.
+     * @param forUpdate     Whether the returned token should be updatable.
+     * @return A {@link PreparedStatement} that will fetch an updatable token entry when executed.
+     * @throws SQLException When an exception occurs while creating the prepared statement.
      */
     protected PreparedStatement select(Connection connection, String processorName,
                                        int segment, boolean forUpdate) throws SQLException {
@@ -528,15 +530,19 @@ public class JdbcTokenStore implements TokenStore {
      * If the given {@code resultSet} has an entry, attempts to replace the token in the entry with the given
      * {@code token} and claim ownership.
      *
-     * @param connection    the connection to the underlying database
-     * @param resultSet     the updatable query result set of an executed {@link PreparedStatement}
-     * @param token         the token for the new or updated entry
-     * @param processorName the name of the processor owning the token
-     * @param segment       the segment of the processor owning the token
-     * @throws UnableToClaimTokenException if the token cannot be claimed because another node currently owns the token
-     * @throws SQLException                when an exception occurs while updating the result set
+     * @param connection    The connection to the underlying database.
+     * @param resultSet     The updatable query result set of an executed {@link PreparedStatement}.
+     * @param token         The token for the new or updated entry.
+     * @param processorName The name of the processor owning the token.
+     * @param segment       The segment of the processor owning the token.
+     * @throws UnableToClaimTokenException If the token cannot be claimed because another node currently owns the
+     *                                     token.
+     * @throws SQLException                When an exception occurs while updating the result set.
      */
-    protected void updateToken(Connection connection, ResultSet resultSet, TrackingToken token, String processorName,
+    protected void updateToken(Connection connection,
+                               ResultSet resultSet,
+                               TrackingToken token,
+                               String processorName,
                                int segment) throws SQLException {
         final String sql = "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColumn() + " = ?, " +
                 schema.tokenColumn() + " = ?, " + schema.tokenTypeColumn() + " = ?, " + schema.timestampColumn() +
@@ -564,30 +570,32 @@ public class JdbcTokenStore implements TokenStore {
                 }
             }
         } else {
-            throw new UnableToClaimTokenException(
-                    format("Unable to claim token '%s[%s]'. It has not been initialized yet",
-                           processorName, segment));
+            throw new UnableToClaimTokenException(format(
+                    "Unable to claim token '%s[%s]'. It has not been initialized yet", processorName, segment
+            ));
         }
     }
 
     /**
      * Tries to claim the given token {@code entry}. If the claim fails an {@link UnableToClaimTokenException} should be
-     * thrown. Otherwise the given {@code resultSet} should be updated to reflect the claim.
+     * thrown. Otherwise, the given {@code resultSet} should be updated to reflect the claim.
      *
-     * @param connection the connection to the underlying database
-     * @param entry      the entry extracted from the given result set
-     * @return the claimed tracking token
-     * @throws UnableToClaimTokenException if the token cannot be claimed because another node currently owns the token
-     * @throws SQLException                when an exception occurs while claiming the token entry
+     * @param connection The connection to the underlying database.
+     * @param entry      The entry extracted from the given result set.
+     * @return The claimed tracking token.
+     * @throws UnableToClaimTokenException If the token cannot be claimed because another node currently owns the
+     *                                     token.
+     * @throws SQLException                When an exception occurs while claiming the token entry.
      */
     protected TrackingToken claimToken(Connection connection, AbstractTokenEntry<?> entry) throws SQLException {
         final String sql = "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColumn() + " = ?, " +
                 schema.timestampColumn() + " = ? WHERE " + schema.processorNameColumn() + " = ? AND " +
                 schema.segmentColumn() + " = ?";
         if (!entry.claim(nodeId, claimTimeout)) {
-            throw new UnableToClaimTokenException(
-                    format("Unable to claim token '%s[%s]'. It is owned by '%s'", entry.getProcessorName(),
-                           entry.getSegment(), entry.getOwner()));
+            throw new UnableToClaimTokenException(format(
+                    "Unable to claim token '%s[%s]'. It is owned by '%s'",
+                    entry.getProcessorName(), entry.getSegment(), entry.getOwner()
+            ));
         }
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -613,20 +621,23 @@ public class JdbcTokenStore implements TokenStore {
      * If no such token exists yet, a new token entry will be inserted with {@code null} token owned by this node and
      * return {@code null}.
      *
-     * @param connection    the connection to the underlying database
-     * @param resultSet     the updatable result set from a prior select for update query
-     * @param processorName the name of the processor to load or insert a token entry for
-     * @param segment       the segment of the processor to load or insert a token entry for
-     * @return the tracking token of the fetched entry or {@code null} if a new entry was inserted
-     * @throws UnableToClaimTokenException if the token cannot be claimed because another node currently owns the token
-     * @throws SQLException                when an exception occurs while loading or inserting the entry
+     * @param connection    The connection to the underlying database.
+     * @param resultSet     The updatable result set from a prior select for update query.
+     * @param processorName The name of the processor to load or insert a token entry for.
+     * @param segment       The segment of the processor to load or insert a token entry for.
+     * @return The tracking token of the fetched entry or {@code null} if a new entry was inserted.
+     * @throws UnableToClaimTokenException If the token cannot be claimed because another node currently owns the
+     *                                     token.
+     * @throws SQLException                When an exception occurs while loading or inserting the entry.
      */
-    protected TrackingToken loadToken(Connection connection, ResultSet resultSet, String processorName,
+    protected TrackingToken loadToken(Connection connection,
+                                      ResultSet resultSet,
+                                      String processorName,
                                       int segment) throws SQLException {
         if (!resultSet.next()) {
-            throw new UnableToClaimTokenException(
-                    format("Unable to claim token '%s[%s]'. It has not been initialized yet", processorName,
-                           segment));
+            throw new UnableToClaimTokenException(format(
+                    "Unable to claim token '%s[%s]'. It has not been initialized yet", processorName, segment
+            ));
         }
         return claimToken(connection, readTokenEntry(resultSet));
     }
@@ -643,16 +654,18 @@ public class JdbcTokenStore implements TokenStore {
      * merge candidate segments. If a concurrent split or merge operation has been detected, the claim will be released
      * and an {@link UnableToClaimTokenException} will be thrown.
      *
-     * @param connection    the connection to the underlying database
-     * @param resultSet     the updatable result set from a prior select for update query
-     * @param processorName the name of the processor to load or insert a token entry for
-     * @param segment       the segment of the processor to load or insert a token entry for
-     * @return the tracking token of the fetched entry or {@code null} if a new entry was inserted
-     * @throws UnableToClaimTokenException if the token cannot be claimed because another node currently owns the token
-     *                                     or if the segment has been split or merged concurrently
-     * @throws SQLException                when an exception occurs while loading or inserting the entry
+     * @param connection    The connection to the underlying database.
+     * @param resultSet     The updatable result set from a prior select for update query.
+     * @param processorName The name of the processor to load or insert a token entry for.
+     * @param segment       The segment of the processor to load or insert a token entry for.
+     * @return The tracking token of the fetched entry or {@code null} if a new entry was inserted.
+     * @throws UnableToClaimTokenException If the token cannot be claimed because another node currently owns the token
+     *                                     or if the segment has been split or merged concurrently.
+     * @throws SQLException                When an exception occurs while loading or inserting the entry.
      */
-    protected TrackingToken loadToken(Connection connection, ResultSet resultSet, String processorName,
+    protected TrackingToken loadToken(Connection connection,
+                                      ResultSet resultSet,
+                                      String processorName,
                                       Segment segment) throws SQLException {
         if (!resultSet.next()) {
             throw new UnableToClaimTokenException(
@@ -671,8 +684,8 @@ public class JdbcTokenStore implements TokenStore {
      * claimed an incorrect {@code segment}. If the segment has been merged concurrently, the merge candidate segment
      * will no longer exist, also indicating that we have claimed an incorrect {@code segment}.
      *
-     * @param processorName the name of the processor to load or insert a token entry for
-     * @param segment       the segment of the processor to load or insert a token entry for
+     * @param processorName The name of the processor to load or insert a token entry for,
+     * @param segment       The segment of the processor to load or insert a token entry for,
      */
     protected void validateSegment(String processorName, Segment segment) {
         Connection connection = getConnection();
@@ -692,15 +705,17 @@ public class JdbcTokenStore implements TokenStore {
      * Returns a {@link PreparedStatement} for the count of segments that can be found after searching for the
      * {@code splitSegmentId} and {@code mergeableSegmentId}.
      *
-     * @param connection         the connection to the underlying database
-     * @param processorName      the name of the processor to load or insert a token entry for
-     * @param splitSegmentId     the id of the split candidate segment
-     * @param mergeableSegmentId the id of the merge candidate segment
-     * @return The PreparedStatement to execute
-     * @throws SQLException when an Exception occurs in building the {@link PreparedStatement}
+     * @param connection         The connection to the underlying database.
+     * @param processorName      The name of the processor to load or insert a token entry for.
+     * @param splitSegmentId     The id of the split candidate segment.
+     * @param mergeableSegmentId The id of the merge candidate segment.
+     * @return The PreparedStatement to execute.
+     * @throws SQLException When an Exception occurs in building the {@link PreparedStatement}.
      */
-    protected PreparedStatement selectSegments(Connection connection, String processorName,
-                                               int splitSegmentId, int mergeableSegmentId) throws SQLException {
+    protected PreparedStatement selectSegments(Connection connection,
+                                               String processorName,
+                                               int splitSegmentId,
+                                               int mergeableSegmentId) throws SQLException {
         final String sql = "SELECT count(*) as " + COUNT_COLUMN_NAME
                 + " FROM " + schema.tokenTable()
                 + " WHERE " + schema.processorNameColumn() + " = ? AND (" + schema.segmentColumn() +
@@ -716,11 +731,11 @@ public class JdbcTokenStore implements TokenStore {
      * Confirm that the first row of the {@code resultSet} only contains a size of 1, indicating that the desired number
      * of segments has been found.
      *
-     * @param resultSet     the ResultSet returned by the {@code selectSegments} method.
-     * @param processorName The process name for which a token has been fetched
-     * @param segmentId     The segment we are validating
-     * @return true if only a single segment was found
-     * @throws SQLException when an exception occurs processing the {@code resultSet}
+     * @param resultSet     The ResultSet returned by the {@code selectSegments} method.
+     * @param processorName The process name for which a token has been fetched.
+     * @param segmentId     The segment we are validating.
+     * @return True if only a single segment was found.
+     * @throws SQLException When an exception occurs processing the {@code resultSet}.
      */
     private boolean containsOneElement(ResultSet resultSet, String processorName, int segmentId) throws SQLException {
         resultSet.next();
@@ -743,14 +758,16 @@ public class JdbcTokenStore implements TokenStore {
     /**
      * Inserts a new token entry via the given updatable {@code resultSet}.
      *
-     * @param connection    the connection to the underlying database
-     * @param token         the token of the entry to insert
-     * @param processorName the name of the processor to insert a token for
-     * @param segment       the segment of the processor to insert a token for
-     * @return the tracking token of the inserted entry
-     * @throws SQLException when an exception occurs while inserting a token entry
+     * @param connection    The connection to the underlying database.
+     * @param token         The token of the entry to insert.
+     * @param processorName The name of the processor to insert a token for.
+     * @param segment       The segment of the processor to insert a token for.
+     * @return The tracking token of the inserted entry.
+     * @throws SQLException When an exception occurs while inserting a token entry.
      */
-    protected TrackingToken insertTokenEntry(Connection connection, TrackingToken token, String processorName,
+    protected TrackingToken insertTokenEntry(Connection connection,
+                                             TrackingToken token,
+                                             String processorName,
                                              int segment) throws SQLException {
         final String sql = "INSERT INTO " + schema.tokenTable() + " (" + schema.processorNameColumn() + "," +
                 schema.segmentColumn() + "," + schema.timestampColumn() + "," + schema.tokenColumn() + "," +
@@ -773,9 +790,9 @@ public class JdbcTokenStore implements TokenStore {
     /**
      * Convert given {@code resultSet} to an {@link AbstractTokenEntry}. The result set contains a single token entry.
      *
-     * @param resultSet the result set of a prior select statement containing a single token entry
-     * @return an token entry with data extracted from the result set
-     * @throws SQLException if the result set cannot be converted to an entry
+     * @param resultSet The result set of a prior select statement containing a single token entry.
+     * @return A token entry with data extracted from the result set.
+     * @throws SQLException If the result set cannot be converted to an entry.
      */
     protected AbstractTokenEntry<?> readTokenEntry(ResultSet resultSet) throws SQLException {
         return new GenericTokenEntry<>(readSerializedData(resultSet, schema.tokenColumn()),
@@ -790,13 +807,14 @@ public class JdbcTokenStore implements TokenStore {
      * Creates a new {@link PreparedStatement} to release the current claim this node has on a token belonging to a
      * processor with given {@code processorName} and {@code segment}.
      *
-     * @param connection    the connection that should be used to create a {@link PreparedStatement}
-     * @param processorName the name of the processor for which to release this node's claim
-     * @param segment       the segment of the processor for which to release this node's claim
-     * @return a {@link PreparedStatement} that will release the claim this node has on the token entry
-     * @throws SQLException if the statement to release a claim cannot be created
+     * @param connection    The connection that should be used to create a {@link PreparedStatement}.
+     * @param processorName The name of the processor for which to release this node's claim.
+     * @param segment       The segment of the processor for which to release this node's claim.
+     * @return A {@link PreparedStatement} that will release the claim this node has on the token entry.
+     * @throws SQLException If the statement to release a claim cannot be created.
      */
-    protected PreparedStatement releaseClaim(Connection connection, String processorName,
+    protected PreparedStatement releaseClaim(Connection connection,
+                                             String processorName,
                                              int segment) throws SQLException {
         final String sql =
                 "UPDATE " + schema.tokenTable() + " SET " + schema.ownerColumn() + " = ?, " + schema.timestampColumn() +
@@ -815,13 +833,14 @@ public class JdbcTokenStore implements TokenStore {
      * Creates a new {@link PreparedStatement} to release the current claim this node has on a token belonging to a
      * processor with given {@code processorName} and {@code segment}.
      *
-     * @param connection    the connection that should be used to create a {@link PreparedStatement}
-     * @param processorName the name of the processor for which to release this node's claim
-     * @param segment       the segment of the processor for which to release this node's claim
-     * @return a {@link PreparedStatement} that will release the claim this node has on the token entry
-     * @throws SQLException if the statement to release a claim cannot be created
+     * @param connection    The connection that should be used to create a {@link PreparedStatement}.
+     * @param processorName The name of the processor for which to release this node's claim.
+     * @param segment       The segment of the processor for which to release this node's claim.
+     * @return A {@link PreparedStatement} that will release the claim this node has on the token entry.
+     * @throws SQLException If the statement to release a claim cannot be created.
      */
-    protected PreparedStatement deleteToken(Connection connection, String processorName,
+    protected PreparedStatement deleteToken(Connection connection,
+                                            String processorName,
                                             int segment) throws SQLException {
         final String sql =
                 "DELETE FROM " + schema.tokenTable() +
@@ -838,11 +857,11 @@ public class JdbcTokenStore implements TokenStore {
     /**
      * Returns the serialized token data from the given {@code resultSet} at given {@code columnName}.
      *
-     * @param resultSet  the result set to get serialized data from
-     * @param columnName the name of the column containing the serialized token
-     * @param <T>        the type of data to return
-     * @return the serialized data of the token
-     * @throws SQLException if the token cannot be read from the entry
+     * @param resultSet  The result set to get serialized data from.
+     * @param columnName The name of the column containing the serialized token.
+     * @param <T>        The type of data to return.
+     * @return The serialized data of the token.
+     * @throws SQLException If the token cannot be read from the entry.
      */
     @SuppressWarnings("unchecked")
     protected <T> T readSerializedData(ResultSet resultSet, String columnName) throws SQLException {

@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
@@ -112,12 +113,12 @@ public class JpaTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> initializeTokenSegments(@Nonnull String processorName,
-                                                           int segmentCount,
-                                                           @Nullable TrackingToken initialToken,
-                                                           @Nonnull ProcessingContext context)
-            throws UnableToClaimTokenException {
-
+    public CompletableFuture<Void> initializeTokenSegments(
+            @Nonnull String processorName,
+            int segmentCount,
+            @Nullable TrackingToken initialToken,
+            @Nullable ProcessingContext context
+    ) throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         if (joinAndUnwrap(fetchSegments(processorName, context)).length > 0) {
             throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
@@ -127,7 +128,7 @@ public class JpaTokenStore implements TokenStore {
             entityManager.persist(token);
         }
         entityManager.flush();
-        return completedFuture(null);
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Nonnull
@@ -135,7 +136,7 @@ public class JpaTokenStore implements TokenStore {
     public CompletableFuture<Void> storeToken(@Nullable TrackingToken token,
                                               @Nonnull String processorName,
                                               int segment,
-                                              @Nonnull ProcessingContext context) {
+                                              @Nullable ProcessingContext context) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         TokenEntry tokenToStore = new TokenEntry(processorName, segment, token, serializer);
         byte[] tokenDataToStore =
@@ -164,7 +165,7 @@ public class JpaTokenStore implements TokenStore {
             TokenEntry tokenEntry = loadToken(processorName, segment, entityManager);
             tokenEntry.updateToken(token, serializer);
         }
-        return completedFuture(null);
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Nonnull
@@ -181,32 +182,33 @@ public class JpaTokenStore implements TokenStore {
                      .setParameter(PROCESSOR_NAME_PARAM, processorName).setParameter(SEGMENT_PARAM, segment)
                      .setParameter(OWNER_PARAM, nodeId)
                      .executeUpdate();
-        return completedFuture(null);
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> initializeSegment(@Nullable TrackingToken token,
-                                                     @Nonnull String processorName,
-                                                     int segment,
-                                                     @Nullable ProcessingContext context)
-            throws UnableToInitializeTokenException {
+    public CompletableFuture<Void> initializeSegment(
+            @Nullable TrackingToken token,
+            @Nonnull String processorName,
+            int segment,
+            @Nullable ProcessingContext context
+    ) throws UnableToInitializeTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
 
         TokenEntry entry = new TokenEntry(processorName, segment, token, serializer);
         entityManager.persist(entry);
         entityManager.flush();
-        return completedFuture(null);
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> deleteToken(@Nonnull String processorName,
-                                               int segment,
-                                               @Nullable ProcessingContext context)
-            throws UnableToClaimTokenException {
+    public CompletableFuture<Void> deleteToken(
+            @Nonnull String processorName,
+            int segment,
+            @Nullable ProcessingContext context
+    ) throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-
         int updates = entityManager.createQuery(
                                            "DELETE FROM TokenEntry te " +
                                                    "WHERE te.owner = :owner AND te.processorName = :processorName " +
@@ -219,7 +221,7 @@ public class JpaTokenStore implements TokenStore {
         if (updates == 0) {
             throw new UnableToClaimTokenException("Unable to remove token. It is not owned by " + nodeId);
         }
-        return completedFuture(null);
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Nonnull
@@ -233,20 +235,22 @@ public class JpaTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
-                                                       @Nonnull Segment segment,
-                                                       @Nullable ProcessingContext context)
-            throws UnableToClaimTokenException {
+    public CompletableFuture<TrackingToken> fetchToken(
+            @Nonnull String processorName,
+            @Nonnull Segment segment,
+            @Nullable ProcessingContext context
+    ) throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         return completedFuture(loadToken(processorName, segment, entityManager).getToken(serializer));
     }
 
     @Nonnull
     @Override
-    public CompletableFuture<Void> extendClaim(@Nonnull String processorName,
-                                               int segment,
-                                               @Nullable ProcessingContext context)
-            throws UnableToClaimTokenException {
+    public CompletableFuture<Void> extendClaim(
+            @Nonnull String processorName,
+            int segment,
+            @Nullable ProcessingContext context
+    ) throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
                                                         "WHERE te.processorName = :processorName " +
@@ -264,7 +268,7 @@ public class JpaTokenStore implements TokenStore {
                                                           + "]'. It is either claimed " +
                                                           "by another process, or there is no such token.");
         }
-        return completedFuture(null);
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Nonnull
@@ -298,8 +302,9 @@ public class JpaTokenStore implements TokenStore {
                                       .toArray();
         return completedFuture(resultList.stream()
                                          .filter(tokenEntry -> tokenEntry.mayClaim(nodeId, claimTimeout))
-                                         .map(tokenEntry -> Segment.computeSegment(tokenEntry.getSegment(),
-                                                                                   allSegments))
+                                         .map(tokenEntry -> Segment.computeSegment(
+                                                 tokenEntry.getSegment(), allSegments
+                                         ))
                                          .collect(Collectors.toList())
         );
     }
@@ -308,25 +313,26 @@ public class JpaTokenStore implements TokenStore {
      * Loads an existing {@link TokenEntry} or creates a new one using the given {@code entityManager} for given
      * {@code processorName} and {@code segment}.
      *
-     * @param processorName the name of the event processor
-     * @param segment       the segment of the event processor
-     * @param entityManager the entity manager instance to use for the query
-     * @return the token entry for the given processor name and segment
-     * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but
+     * @param processorName The name of the event processor.
+     * @param segment       The segment of the event processor.
+     * @param entityManager The entity manager instance to use for the query.
+     * @return The token entry for the given processor name and segment.
+     * @throws UnableToClaimTokenException If there is a token for given {@code processorName} and {@code segment}, but
      *                                     it is claimed by another process.
      */
     protected TokenEntry loadToken(String processorName, int segment, EntityManager entityManager) {
-        TokenEntry token = entityManager
-                .find(TokenEntry.class, new TokenEntry.PK(processorName, segment), loadingLockMode);
+        TokenEntry token = entityManager.find(TokenEntry.class,
+                                              new TokenEntry.PK(processorName, segment),
+                                              loadingLockMode);
 
         if (token == null) {
-            throw new UnableToClaimTokenException(
-                    format("Unable to claim token '%s[%s]'. It has not been initialized yet", processorName,
-                           segment));
+            throw new UnableToClaimTokenException(format(
+                    "Unable to claim token '%s[%s]'. It has not been initialized yet", processorName, segment
+            ));
         } else if (!token.claim(nodeId, claimTimeout)) {
-            throw new UnableToClaimTokenException(
-                    format("Unable to claim token '%s[%s]'. It is owned by '%s'", processorName,
-                           segment, token.getOwner()));
+            throw new UnableToClaimTokenException(format(
+                    "Unable to claim token '%s[%s]'. It is owned by '%s'", processorName, segment, token.getOwner()
+            ));
         }
         return token;
     }
@@ -343,12 +349,12 @@ public class JpaTokenStore implements TokenStore {
      * merge candidate segments. If a concurrent split or merge operation has been detected, the calim will be released
      * and an {@link UnableToClaimTokenException} will be thrown.}
      *
-     * @param processorName the name of the processor to load or insert a token entry for
-     * @param segment       the segment of the processor to load or insert a token entry for
-     * @param entityManager the entity manager instance to use for the query
-     * @return the tracking token of the fetched entry or {@code null} if a new entry was inserted
-     * @throws UnableToClaimTokenException if the token cannot be claimed because another node currently owns the token
-     *                                     or if the segment has been split or merged concurrently
+     * @param processorName The name of the processor to load or insert a token entry for.
+     * @param segment       The segment of the processor to load or insert a token entry for.
+     * @param entityManager The entity manager instance to use for the query.
+     * @return The tracking token of the fetched entry or {@code null} if a new entry was inserted.
+     * @throws UnableToClaimTokenException If the token cannot be claimed because another node currently owns the token
+     *                                     or if the segment has been split or merged concurrently.
      */
     protected TokenEntry loadToken(String processorName, Segment segment, EntityManager entityManager) {
         TokenEntry token = loadToken(processorName, segment.getSegmentId(), entityManager);
@@ -368,30 +374,29 @@ public class JpaTokenStore implements TokenStore {
      * claimed an incorrect {@code segment}. If the segment has been merged concurrently, the merge candidate segment
      * will no longer exist, also indicating that we have claimed an incorrect {@code segment}.
      *
-     * @param processorName the name of the processor to load or insert a token entry for
-     * @param segment       the segment of the processor to load or insert a token entry for
+     * @param processorName The name of the processor to load or insert a token entry for.
+     * @param segment       The segment of the processor to load or insert a token entry for.
      */
     private void validateSegment(String processorName, Segment segment, EntityManager entityManager) {
-        TokenEntry mergeableSegment = entityManager //This segment should exist
-                                                    .find(TokenEntry.class,
-                                                          new TokenEntry.PK(processorName,
-                                                                            segment.mergeableSegmentId()),
-                                                          loadingLockMode);
+        //This segment should exist
+        TokenEntry mergeableSegment = entityManager.find(TokenEntry.class,
+                                                         new TokenEntry.PK(processorName, segment.mergeableSegmentId()),
+                                                         loadingLockMode);
         if (mergeableSegment == null) {
             throw new UnableToClaimTokenException(format(
                     "Unable to claim token '%s[%s]'. It has been merged with another segment",
-                    processorName,
-                    segment.getSegmentId()));
+                    processorName, segment.getSegmentId()
+            ));
         }
-        TokenEntry splitSegment = entityManager //This segment should not exist
-                                                .find(TokenEntry.class,
-                                                      new TokenEntry.PK(processorName, segment.splitSegmentId()),
-                                                      loadingLockMode);
+        //This segment should not exist
+        TokenEntry splitSegment = entityManager.find(TokenEntry.class,
+                                                     new TokenEntry.PK(processorName, segment.splitSegmentId()),
+                                                     loadingLockMode);
         if (splitSegment != null) {
             throw new UnableToClaimTokenException(format(
                     "Unable to claim token '%s[%s]'. It has been split into two segments",
-                    processorName,
-                    segment.getSegmentId()));
+                    processorName, segment.getSegmentId()
+            ));
         }
     }
 
@@ -402,15 +407,16 @@ public class JpaTokenStore implements TokenStore {
             return completedFuture(Optional.of(getConfig()).map(i -> i.get("id")));
         } catch (Exception e) {
             throw new UnableToRetrieveIdentifierException(
-                    "Exception occurred while trying to establish storage identifier",
-                    e);
+                    "Exception occurred while trying to establish storage identifier", e
+            );
         }
     }
 
     private ConfigToken getConfig() {
         EntityManager em = entityManagerProvider.getEntityManager();
-        TokenEntry token = em
-                .find(TokenEntry.class, new TokenEntry.PK(CONFIG_TOKEN_ID, CONFIG_SEGMENT), LockModeType.NONE);
+        TokenEntry token = em.find(TokenEntry.class,
+                                   new TokenEntry.PK(CONFIG_TOKEN_ID, CONFIG_SEGMENT),
+                                   LockModeType.NONE);
         if (token == null) {
             token = new TokenEntry(CONFIG_TOKEN_ID,
                                    CONFIG_SEGMENT,
