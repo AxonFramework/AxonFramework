@@ -17,336 +17,171 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Registration;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
-import org.axonframework.messaging.responsetypes.OptionalResponseType;
-import org.axonframework.messaging.responsetypes.PublisherResponseType;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
-import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
-import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
-import org.axonframework.queryhandling.tracing.QueryUpdateEmitterSpanFactory;
-import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.Span;
-import org.reactivestreams.Publisher;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.conversion.MessageConverter;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.serialization.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Sinks;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.lang.reflect.Type;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static java.util.Objects.requireNonNull;
 
 /**
- * Implementation of {@link QueryUpdateEmitter} that uses Project Reactor to implement Update Handlers.
+ * Simple implementation of the {@link QueryUpdateEmitter}, delegating operations to a {@link QueryBus} for emitting
+ * updates, completing subscription queries, and completing subscription queries exceptionally.
+ * <p>
+ * Uses the {@link ProcessingContext} given during construction of the {@code SimpleQueryUpdateEmitter} to perform all
+ * operations in the expected lifecycle order.
  *
  * @author Milan Savic
  * @author Stefan Dragisic
- * @since 4.0
+ * @author Steven van Beelen
+ * @since 4.0.0
  */
 public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleQueryUpdateEmitter.class);
 
-    private static final String QUERY_UPDATE_TASKS_RESOURCE_KEY = "/update-tasks";
-
-    private final MessageMonitor<? super SubscriptionQueryUpdateMessage> updateMessageMonitor;
-    private final QueryUpdateEmitterSpanFactory spanFactory;
-
-    private final ConcurrentMap<SubscriptionQueryMessage<?, ?, ?>, SinkWrapper<?>> updateHandlers =
-            new ConcurrentHashMap<>();
-    private final List<MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage>> dispatchInterceptors =
-            new CopyOnWriteArrayList<>();
+    private final QueryBus queryBus;
+    private final MessageTypeResolver messageTypeResolver;
+    private final MessageConverter converter;
+    private final ProcessingContext context;
 
     /**
-     * Instantiate a {@link SimpleQueryUpdateEmitter} based on the fields contained in the {@link Builder}.
-     *
-     * @param builder the {@link Builder} used to instantiate a {@link SimpleQueryUpdateEmitter} instance
-     */
-    protected SimpleQueryUpdateEmitter(Builder builder) {
-        builder.validate();
-        this.updateMessageMonitor = builder.updateMessageMonitor;
-        this.spanFactory = builder.spanFactory;
-    }
-
-    /**
-     * Instantiate a Builder to be able to create a {@link SimpleQueryUpdateEmitter}.
+     * Construct a {@code SimpleQueryUpdateEmitter} with the given {@code messageTypeResolver}, {@code queryBus}, and
+     * {@code context}.
      * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link QueryBusSpanFactory}
-     * defaults to a {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}.
+     * The {@code messageTypeResolver} is used to construct {@link SubscriptionQueryUpdateMessage update messages} for
+     * {@link #emit(Class, Predicate, Object)} invocations. Any {@link #emit(Class, Predicate, Object)} or
+     * {@link #emit(QualifiedName, Predicate, Object)} is delegated to
+     * {@link QueryBus#emitUpdate(Predicate, Supplier, ProcessingContext)}. Similarly,
+     * {@link #complete(Class, Predicate)}/{@link #complete(QualifiedName, Predicate)} and
+     * {@link #completeExceptionally(Class, Predicate, Throwable)}/{@link #completeExceptionally(QualifiedName,
+     * Predicate, Throwable)} are respectively delegated to
+     * {@link QueryBus#completeSubscriptions(Predicate, ProcessingContext)} and
+     * {@link QueryBus#completeSubscriptionsExceptionally(Predicate, Throwable, ProcessingContext)}.
      *
-     * @return a Builder to be able to create a {@link SimpleQueryUpdateEmitter}
+     * @param queryBus            The {@code QueryBus} to delegate the {@link #emit(Class, Predicate, Object)},
+     *                            {@link #complete(Class, Predicate)}, and
+     *                            {@link #completeExceptionally(Class, Predicate, Throwable)} invocations to.
+     * @param messageTypeResolver The {@link org.axonframework.messaging.MessageType} resolver used to construct
+     *                            {@link SubscriptionQueryUpdateMessage update messages} for
+     *                            {@link #emit(Class, Predicate, Object)} invocations
+     * @param converter           The {@code MessageConverter} used to convert the
+     *                            {@link Message#payloadAs(Type, Converter) payload} whenever a filter is used based on
+     *                            a concrete type. For example, through {@link #emit(Class, Predicate, Object)}.
+     * @param context             The {@code ProcessingContext} within which updates are emitted, subscription query are
+     *                            completed, and subscription queries are completed exceptionally in.
      */
-    public static Builder builder() {
-        return new Builder();
+    public SimpleQueryUpdateEmitter(@Nonnull QueryBus queryBus,
+                                    @Nonnull MessageTypeResolver messageTypeResolver,
+                                    @Nonnull MessageConverter converter,
+                                    @Nonnull ProcessingContext context) {
+        this.queryBus = requireNonNull(queryBus, "The QueryBus must not be null.");
+        this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver must not be null.");
+        this.converter = requireNonNull(converter, "The MessageConverter must not be null.");
+        this.context = requireNonNull(context, "The ProcessingContext must not be null.");
     }
 
     @Override
-    public boolean queryUpdateHandlerRegistered(@Nonnull SubscriptionQueryMessage<?, ?, ?> query) {
-        return updateHandlers.keySet()
-                             .stream()
-                             .anyMatch(m -> m.identifier().equals(query.identifier()));
+    public <Q> void emit(@Nonnull Class<Q> queryType,
+                         @Nonnull Predicate<? super Q> filter,
+                         @Nonnull Supplier<Object> updateSupplier) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Emitting an update to queries matching type [{}] and a given filter.", queryType);
+        }
+        queryBus.emitUpdate(queryTypeFilter(queryType, filter), () -> asUpdateMessage(updateSupplier.get()), context)
+                .join();
     }
 
     @Override
-    public <U> UpdateHandlerRegistration registerUpdateHandler(@Nonnull SubscriptionQueryMessage<?, ?, ?> query,
-                                                               int updateBufferSize) {
-        Sinks.Many<SubscriptionQueryUpdateMessage> sink = Sinks.many().replay().limit(updateBufferSize);
-        SinksManyWrapper<SubscriptionQueryUpdateMessage> sinksManyWrapper = new SinksManyWrapper<>(sink);
+    public void emit(@Nonnull QualifiedName queryName,
+                     @Nonnull Predicate<Object> filter,
+                     @Nonnull Supplier<Object> updateSupplier) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Emitting an update to queries matching name [{}] and a given filter.", queryName);
+        }
+        queryBus.emitUpdate(queryNameFilter(queryName, filter), () -> asUpdateMessage(updateSupplier.get()), context)
+                .join();
+    }
 
-        Runnable removeHandler = () -> updateHandlers.remove(query);
-        Registration registration = () -> {
-            removeHandler.run();
-            return true;
-        };
-
-        updateHandlers.put(query, sinksManyWrapper);
-        Flux<SubscriptionQueryUpdateMessage> updateMessageFlux = sink.asFlux()
-                                                                     .doOnCancel(removeHandler)
-                                                                     .doOnTerminate(removeHandler);
-        return new UpdateHandlerRegistration(registration, updateMessageFlux, sinksManyWrapper::complete);
+    private SubscriptionQueryUpdateMessage asUpdateMessage(Object update) {
+        if (update instanceof SubscriptionQueryUpdateMessage updateMessage) {
+            return updateMessage;
+        }
+        return update instanceof Message updateMessage
+                ? new GenericSubscriptionQueryUpdateMessage(updateMessage)
+                : new GenericSubscriptionQueryUpdateMessage(messageTypeResolver.resolveOrThrow(update), update);
     }
 
     @Override
-    public <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                         @Nonnull SubscriptionQueryUpdateMessage update) {
-        SubscriptionQueryUpdateMessage updateMessage = spanFactory.propagateContext(update);
-        Span span = spanFactory.createUpdateScheduleEmitSpan(updateMessage);
-        span.run(() -> {
-            Span doEmitSpan = spanFactory.createUpdateEmitSpan(updateMessage);
-            runOnAfterCommitOrNow(doEmitSpan.wrapRunnable(
-                    () -> doEmit(filter, intercept(spanFactory.propagateContext(updateMessage)))));
-        });
-    }
-
-    private SubscriptionQueryUpdateMessage intercept(SubscriptionQueryUpdateMessage message) {
-        /*
-        // TODO #3488 - Reintegrate, and construct chain only once!
-        return new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
-                .proceed(message, null)
-                .first()
-                .<SubscriptionQueryUpdateMessage<U>>cast()
-                .asMono()
-                .map(MessageStream.Entry::message)
-                .block();
-         */
-        return message;
+    public <Q> void complete(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Completing subscription queries of type [{}].", queryType);
+        }
+        queryBus.completeSubscriptions(queryTypeFilter(queryType, filter), context)
+                .join();
     }
 
     @Override
-    public void complete(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
-        runOnAfterCommitOrNow(() -> doComplete(filter));
+    public void complete(@Nonnull QualifiedName queryName, @Nonnull Predicate<Object> filter) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Completing subscription queries with name [{}].", queryName);
+        }
+        queryBus.completeSubscriptions(queryNameFilter(queryName, filter), context)
+                .join();
     }
 
     @Override
-    public void completeExceptionally(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, ?>> filter,
+    public <Q> void completeExceptionally(@Nonnull Class<Q> queryType,
+                                          @Nonnull Predicate<? super Q> filter,
+                                          @Nonnull Throwable cause) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Completing subscription queries of type [{}] exceptionally.", queryType, cause);
+        }
+        queryBus.completeSubscriptionsExceptionally(queryTypeFilter(queryType, filter), cause, context)
+                .join();
+    }
+
+    @Override
+    public void completeExceptionally(@Nonnull QualifiedName queryName,
+                                      @Nonnull Predicate<Object> filter,
                                       @Nonnull Throwable cause) {
-        runOnAfterCommitOrNow(() -> doCompleteExceptionally(filter, cause));
+        if (logger.isDebugEnabled()) {
+            logger.debug("Completing subscription queries with name [{}] exceptionally.", queryName, cause);
+        }
+        queryBus.completeSubscriptionsExceptionally(queryNameFilter(queryName, filter), cause, context)
+                .join();
     }
 
-    public @Nonnull
-    Registration registerDispatchInterceptor(
-            @Nonnull MessageDispatchInterceptor<? super SubscriptionQueryUpdateMessage> interceptor) {
-        dispatchInterceptors.add(interceptor);
-        return () -> dispatchInterceptors.remove(interceptor);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <U> void doEmit(Predicate<SubscriptionQueryMessage<?, ?, U>> filter,
-                            SubscriptionQueryUpdateMessage update) {
-        updateHandlers.keySet()
-                      .stream()
-                      .filter(payloadMatchesQueryResponseType(update.payloadType()))
-                      .filter(sqm -> filter.test((SubscriptionQueryMessage<?, ?, U>) sqm))
-                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                .ifPresent(uh -> doEmit(query, uh, update)));
-    }
-
-    private Predicate<SubscriptionQueryMessage<?, ?, ?>> payloadMatchesQueryResponseType(Class<?> payloadType) {
-        return sqm -> {
-            if (sqm.updatesResponseType() instanceof MultipleInstancesResponseType) {
-                return payloadType.isArray() || Iterable.class.isAssignableFrom(payloadType);
-            }
-            if (sqm.updatesResponseType() instanceof OptionalResponseType) {
-                return Optional.class.isAssignableFrom(payloadType);
-            }
-            if (sqm.updatesResponseType() instanceof PublisherResponseType) {
-                return Publisher.class.isAssignableFrom(payloadType);
-            }
-            return sqm.updatesResponseType().getExpectedResponseType().isAssignableFrom(payloadType);
+    @Nonnull
+    private <Q> Predicate<SubscriptionQueryMessage> queryTypeFilter(@Nonnull Class<Q> queryType,
+                                                                    @Nonnull Predicate<? super Q> filter) {
+        return message -> {
+            QualifiedName queryName = messageTypeResolver.resolveOrThrow(queryType).qualifiedName();
+            return queryName.equals(message.type().qualifiedName())
+                    && filter.test(message.payloadAs(queryType, converter));
         };
     }
 
-    @SuppressWarnings("unchecked")
-    private void doEmit(SubscriptionQueryMessage<?, ?, ?> query, SinkWrapper<?> updateHandler,
-                        SubscriptionQueryUpdateMessage update) {
-        MessageMonitor.MonitorCallback monitorCallback = updateMessageMonitor.onMessageIngested(update);
-        try {
-            ((SinkWrapper<SubscriptionQueryUpdateMessage>) updateHandler).next(update);
-            monitorCallback.reportSuccess();
-        } catch (Exception e) {
-            logger.info("An error occurred while trying to emit an update to a query '{}'. " +
-                                "The subscription will be cancelled. Exception summary: {}",
-                        query.type(), e.toString());
-            monitorCallback.reportFailure(e);
-            updateHandlers.remove(query);
-            emitError(query, e, updateHandler);
-        }
-    }
-
-    private void doComplete(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter) {
-        updateHandlers.keySet()
-                      .stream()
-                      .filter(filter)
-                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                .ifPresent(updateHandler -> {
-                                                    try {
-                                                        updateHandler.complete();
-                                                    } catch (Exception e) {
-                                                        emitError(query, e, updateHandler);
-                                                    }
-                                                }));
-    }
-
-    private void emitError(SubscriptionQueryMessage<?, ?, ?> query, Throwable cause,
-                           SinkWrapper<?> updateHandler) {
-        try {
-            updateHandler.error(cause);
-        } catch (Exception e) {
-            logger.error("An error happened while trying to inform update handler about the error. Query: {}",
-                         query);
-        }
-    }
-
-    private void doCompleteExceptionally(Predicate<SubscriptionQueryMessage<?, ?, ?>> filter, Throwable cause) {
-        updateHandlers.keySet()
-                      .stream()
-                      .filter(filter)
-                      .forEach(query -> Optional.ofNullable(updateHandlers.get(query))
-                                                .ifPresent(updateHandler -> emitError(query, cause, updateHandler)));
-    }
-
-    /**
-     * Either runs the provided {@link Runnable} immediately or adds it to a {@link List} as a resource to the current
-     * {@link LegacyUnitOfWork} if {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}.
-     * This is done to ensure any emitter calls made from a message handling function are executed in the
-     * {@link LegacyUnitOfWork.Phase#AFTER_COMMIT} phase.
-     * <p>
-     * The latter check requires the current UnitOfWork's phase to be {@link LegacyUnitOfWork.Phase#STARTED}. This is
-     * done to allow users to circumvent their {@code queryUpdateTask} being handled in the AFTER_COMMIT phase. They can
-     * do this by retrieving the current UnitOfWork and performing any of the {@link QueryUpdateEmitter} calls in a
-     * different phase.
-     *
-     * @param queryUpdateTask a {@link Runnable} to be ran immediately or as a resource if
-     *                        {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}
-     */
-    private void runOnAfterCommitOrNow(Runnable queryUpdateTask) {
-        if (inStartedPhaseOfUnitOfWork()) {
-            LegacyUnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-            unitOfWork.getOrComputeResource(
-                    this.toString() + QUERY_UPDATE_TASKS_RESOURCE_KEY,
-                    resourceKey -> {
-                        List<Runnable> queryUpdateTasks = new ArrayList<>();
-                        unitOfWork.afterCommit(uow -> queryUpdateTasks.forEach(Runnable::run));
-                        return queryUpdateTasks;
-                    }
-            ).add(queryUpdateTask);
-        } else {
-            queryUpdateTask.run();
-        }
-    }
-
-    /**
-     * Return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if the phase is
-     * {@link LegacyUnitOfWork.Phase#STARTED}, otherwise {@code false}.
-     *
-     * @return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if the phase is
-     * {@link LegacyUnitOfWork.Phase#STARTED}, otherwise {@code false}.
-     */
-    private boolean inStartedPhaseOfUnitOfWork() {
-        return CurrentUnitOfWork.isStarted() && LegacyUnitOfWork.Phase.STARTED.equals(CurrentUnitOfWork.get().phase());
+    @Nonnull
+    private static Predicate<SubscriptionQueryMessage> queryNameFilter(@Nonnull QualifiedName queryName,
+                                                                       @Nonnull Predicate<Object> filter) {
+        return message -> queryName.equals(message.type().qualifiedName()) && filter.test(message.payload());
     }
 
     @Override
-    public Set<SubscriptionQueryMessage<?, ?, ?>> activeSubscriptions() {
-        return Collections.unmodifiableSet(updateHandlers.keySet());
-    }
-
-    /**
-     * Builder class to instantiate a {@link SimpleQueryUpdateEmitter}.
-     * <p>
-     * The {@link MessageMonitor} is defaulted to a {@link NoOpMessageMonitor} and the {@link QueryBusSpanFactory}
-     * defaults to a {@link DefaultQueryBusSpanFactory} backed by a {@link NoOpSpanFactory}.
-     */
-    public static class Builder {
-
-        private MessageMonitor<? super SubscriptionQueryUpdateMessage> updateMessageMonitor =
-                NoOpMessageMonitor.INSTANCE;
-        private QueryUpdateEmitterSpanFactory spanFactory = DefaultQueryUpdateEmitterSpanFactory
-                .builder()
-                .spanFactory(NoOpSpanFactory.INSTANCE)
-                .build();
-
-        /**
-         * Sets the {@link MessageMonitor} used to monitor {@link SubscriptionQueryUpdateMessage}s being processed.
-         * Defaults to a {@link NoOpMessageMonitor}.
-         *
-         * @param updateMessageMonitor the {@link MessageMonitor} used to monitor
-         *                             {@link SubscriptionQueryUpdateMessage}s being processed
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder updateMessageMonitor(
-                @Nonnull MessageMonitor<? super SubscriptionQueryUpdateMessage> updateMessageMonitor) {
-            assertNonNull(updateMessageMonitor, "MessageMonitor may not be null");
-            this.updateMessageMonitor = updateMessageMonitor;
-            return this;
-        }
-
-        /**
-         * Sets the {@link QueryUpdateEmitterSpanFactory} implementation to use for providing tracing capabilities.
-         * Defaults to a {@link DefaultQueryUpdateEmitterSpanFactory} backed by a {@link NoOpSpanFactory} by default,
-         * which provides no tracing capabilities.
-         *
-         * @param spanFactory The {@link QueryUpdateEmitterSpanFactory} implementation.
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder spanFactory(@Nonnull QueryUpdateEmitterSpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = spanFactory;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link SimpleQueryUpdateEmitter} as specified through this Builder.
-         *
-         * @return a {@link SimpleQueryUpdateEmitter} as specified through this Builder
-         */
-        public SimpleQueryUpdateEmitter build() {
-            return new SimpleQueryUpdateEmitter(this);
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        protected void validate() throws AxonConfigurationException {
-            // Method kept for overriding
-        }
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("queryBus", queryBus);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("converter", converter);
+        descriptor.describeProperty("context", context);
     }
 }

@@ -113,10 +113,6 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Optional<QueryBus> queryBus = result.getOptionalComponent(QueryBus.class);
         assertTrue(queryBus.isPresent());
         assertInstanceOf(SimpleQueryBus.class, queryBus.get());
-
-        Optional<QueryUpdateEmitter> queryUpdateEmitter = result.getOptionalComponent(QueryUpdateEmitter.class);
-        assertTrue(queryUpdateEmitter.isPresent());
-        assertInstanceOf(SimpleQueryUpdateEmitter.class, queryUpdateEmitter.get());
     }
 
     @Test
@@ -199,16 +195,6 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
                                           .build();
 
         assertEquals(expected, result.getComponent(QueryBus.class));
-    }
-
-    @Test
-    void registerQueryUpdateEmitterOverridesDefault() {
-        QueryUpdateEmitter expected = SimpleQueryUpdateEmitter.builder().build();
-
-        Configuration result = testSubject.registerQueryUpdateEmitter(c -> expected)
-                                          .build();
-
-        assertEquals(expected, result.getComponent(QueryUpdateEmitter.class));
     }
 
     @Test

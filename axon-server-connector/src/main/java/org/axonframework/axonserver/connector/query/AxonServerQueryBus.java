@@ -35,7 +35,6 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.AxonServerRegistration;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.TargetContextResolver;
-import org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult;
 import org.axonframework.axonserver.connector.query.subscription.SubscriptionMessageSerializer;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.axonserver.connector.util.PriorityTaskSchedulers;
@@ -71,9 +70,9 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.queryhandling.SubscriptionQueryResponseMessages;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.UpdateHandlerRegistration;
+import org.axonframework.queryhandling.UpdateHandler;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
@@ -113,8 +112,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
@@ -196,6 +195,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         return null;
     }
 
+    @Nonnull
     @Override
     public Publisher<QueryResponseMessage> streamingQuery(@Nonnull StreamingQueryMessage query,
                                                           @Nullable ProcessingContext context) {
@@ -448,9 +448,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         return new GenericQueryResponseMessage(delegate);
     }
 
+    @Nonnull
     @Override
-    public <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage<Q, I, U> query,
+    public SubscriptionQueryResponseMessages subscriptionQuery(
+            @Nonnull SubscriptionQueryMessage query,
+            @Nullable ProcessingContext context,
             int updateBufferSize
     ) {
         Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
@@ -464,11 +466,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         Span span = spanFactory.createSubscriptionQuerySpan(query, true).start();
         try (SpanScope unused = span.makeCurrent()) {
 
-            SubscriptionQueryMessage<Q, I, U> interceptedQuery = new DefaultMessageDispatchInterceptorChain<>(
+            SubscriptionQueryMessage interceptedQuery = new DefaultMessageDispatchInterceptorChain<>(
                     dispatchInterceptors)
                     .proceed(spanFactory.propagateContext(spanFactory.propagateContext(query)), null)
                     .first()
-                    .<SubscriptionQueryMessage<Q, I, U>>cast()
+                    .<SubscriptionQueryMessage>cast()
                     .asMono()
                     .map(MessageStream.Entry::message)
                     .block(); // TODO reintegrate as part of #3079
@@ -486,18 +488,50 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                                        Math.max(32, updateBufferSize),
                                                        Math.max(4, updateBufferSize >> 3)
                                                );
-            return new AxonServerSubscriptionQueryResult(
-                    interceptedQuery,
-                    result,
-                    subscriptionSerializer,
-                    spanFactory,
-                    span);
+            // TODO #3488 Pick up when picking up AxonServerQueryBus
+//            return new AxonServerSubscriptionQueryResult(
+//                    interceptedQuery,
+//                    result,
+//                    subscriptionSerializer,
+//                    spanFactory,
+//                    span);
+            return null;
         }
     }
 
+    @Nonnull
     @Override
-    public QueryUpdateEmitter queryUpdateEmitter() {
-        return updateEmitter;
+    public UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize) {
+        // TODO #3488 implement as part of AxonServerQueryBus implementation
+        return null;
+    }
+
+    @Nonnull
+    @Override
+    public CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                              @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
+                                              @Nullable ProcessingContext context) {
+        // TODO #3488 implement as part of AxonServerQueryBus implementation
+        return null;
+    }
+
+    @Nonnull
+    @Override
+    public CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                         @Nullable ProcessingContext context) {
+        // TODO #3488 implement as part of AxonServerQueryBus implementation
+        return null;
+    }
+
+    @Nonnull
+    @Override
+    public CompletableFuture<Void> completeSubscriptionsExceptionally(
+            @Nonnull Predicate<SubscriptionQueryMessage> filter,
+            @Nonnull Throwable cause,
+            @Nullable ProcessingContext context
+    ) {
+        // TODO #3488 implement as part of AxonServerQueryBus implementation
+        return null;
     }
 
     @Override
@@ -642,7 +676,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
         /**
          * Sets the {@link QueryUpdateEmitter} which can be used to emit updates to queries. Required to honor the
-         * {@link QueryBus#queryUpdateEmitter()} contract.
+         * {@code QueryBus#queryUpdateEmitter()} contract.
          *
          * @param updateEmitter a {@link QueryUpdateEmitter} which can be used to emit updates to queries
          * @return the current Builder instance, for fluent interfacing
@@ -1029,10 +1063,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
         @Override
         public io.axoniq.axonserver.connector.Registration registerSubscriptionQuery(SubscriptionQuery query,
                                                                                      UpdateHandler sendUpdate) {
-            UpdateHandlerRegistration updateHandler =
-                    updateEmitter.registerUpdateHandler(subscriptionSerializer.deserialize(query), 1024);
+            org.axonframework.queryhandling.UpdateHandler updateHandler =
+                    localSegment.subscribeToUpdates(subscriptionSerializer.deserialize(query), 1024);
 
-            updateHandler.getUpdates()
+            updateHandler.updates()
                          .doOnError(e -> {
                              ErrorMessage error = ExceptionSerializer.serialize(configuration.getClientId(), e);
                              String errorCode = ErrorCode.getQueryExecutionErrorCode(e).errorCode();
@@ -1048,7 +1082,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                          .subscribe(sendUpdate::sendUpdate);
 
             return () -> {
-                updateHandler.getRegistration().cancel();
+                updateHandler.cancel();
                 return FutureUtils.emptyCompletedFuture();
             };
         }

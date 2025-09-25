@@ -56,7 +56,7 @@ public class DefaultQueryBusSpanFactory implements QueryBusSpanFactory {
     }
 
     @Override
-    public Span createSubscriptionQuerySpan(SubscriptionQueryMessage<?, ?, ?> queryMessage, boolean distributed) {
+    public Span createSubscriptionQuerySpan(SubscriptionQueryMessage queryMessage, boolean distributed) {
         if (distributed) {
             return spanFactory.createDispatchSpan(() -> "QueryBus.subscriptionQueryDistributed", queryMessage);
         }
@@ -65,7 +65,7 @@ public class DefaultQueryBusSpanFactory implements QueryBusSpanFactory {
 
     @Override
     public Span createSubscriptionQueryProcessUpdateSpan(SubscriptionQueryUpdateMessage updateMessage,
-                                                         SubscriptionQueryMessage<?, ?, ?> queryMessage) {
+                                                         SubscriptionQueryMessage queryMessage) {
         return spanFactory.createChildHandlerSpan(() -> "QueryBus.queryUpdate", updateMessage, queryMessage);
     }
 

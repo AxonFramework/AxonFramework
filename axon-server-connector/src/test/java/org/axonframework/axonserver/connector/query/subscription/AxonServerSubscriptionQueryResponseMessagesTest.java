@@ -41,13 +41,13 @@ import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.*;
 
-class AxonServerSubscriptionQueryResultTest {
+class AxonServerSubscriptionQueryResponseMessagesTest {
 
     private ScheduledExecutorService executorService;
 
     private SubscriptionQueryUpdateBuffer subscriptionQueryUpdateBuffer;
 
-    private AxonServerSubscriptionQueryResult testSubject;
+    private AxonServerSubscriptionQueryResponseMessages testSubject;
 
     @SuppressWarnings("unchecked")
     @BeforeEach
@@ -76,11 +76,11 @@ class AxonServerSubscriptionQueryResultTest {
         QueryBusSpanFactory noOpSpanFactory = DefaultQueryBusSpanFactory.builder()
                                                                         .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                         .build();
-        testSubject = new AxonServerSubscriptionQueryResult(null,
-                                                            result,
-                                                            testSerializer,
-                                                            noOpSpanFactory,
-                                                            NoOpSpanFactory.NoOpSpan.INSTANCE);
+        testSubject = new AxonServerSubscriptionQueryResponseMessages(null,
+                                                                      result,
+                                                                      testSerializer,
+                                                                      noOpSpanFactory,
+                                                                      NoOpSpanFactory.NoOpSpan.INSTANCE);
     }
 
     @AfterEach

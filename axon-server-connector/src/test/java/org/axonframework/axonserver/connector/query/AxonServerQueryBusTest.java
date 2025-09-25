@@ -52,10 +52,9 @@ import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
+import org.axonframework.queryhandling.SubscriptionQueryResponseMessages;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.serialization.Serializer;
@@ -64,7 +63,6 @@ import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -129,7 +127,7 @@ class AxonServerQueryBusTest {
                                         .axonServerConnectionManager(axonServerConnectionManager)
                                         .configuration(configuration)
                                         .localSegment(localSegment)
-                                        .updateEmitter(SimpleQueryUpdateEmitter.builder().build())
+                                        .updateEmitter(null)
                                         .messageSerializer(serializer)
                                         .genericSerializer(serializer)
                                         .targetContextResolver(targetContextResolver)
@@ -222,7 +220,9 @@ class AxonServerQueryBusTest {
                                             .axonServerConnectionManager(axonServerConnectionManager)
                                             .configuration(configuration)
                                             .localSegment(localSegment)
-                                            .updateEmitter(SimpleQueryUpdateEmitter.builder().build())
+                                            .updateEmitter(
+                                                    null
+                                            )
                                             .messageSerializer(serializer)
                                             .genericSerializer(serializer)
                                             .targetContextResolver(targetContextResolver)
@@ -526,17 +526,16 @@ class AxonServerQueryBusTest {
                 .thenReturn(new SimpleSubscriptionQueryResult(
                         "<string>Hello world</string>", stubUpdate("Not a valid XML object")
                 ));
-        GenericSubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+        GenericSubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("test"), "Say hi",
                 instanceOf(String.class), instanceOf(String.class)
         );
 
-        SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> queryResult =
-                testSubject.subscriptionQuery(testQuery);
+        SubscriptionQueryResponseMessages queryResult = testSubject.subscriptionQuery(testQuery, null, 50);
 
-        Mono<QueryResponseMessage> initialResult = queryResult.initialResult();
+        Flux<QueryResponseMessage> initialResult = queryResult.initialResult();
         Flux<SubscriptionQueryUpdateMessage> updates = queryResult.updates();
-        queryResult.cancel();
+        queryResult.close();
 
         StepVerifier.create(initialResult)
                     .expectNextMatches(r -> r.payload().equals("Hello world"))
@@ -552,17 +551,16 @@ class AxonServerQueryBusTest {
                 .thenReturn(new SimpleSubscriptionQueryResult(
                         "Not a valid XML object", stubUpdate("<string>Hello world</string>")
                 ));
-        GenericSubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+        GenericSubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("test"), "Say hi",
                 instanceOf(String.class), instanceOf(String.class)
         );
 
-        SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> queryResult =
-                testSubject.subscriptionQuery(testQuery);
+        SubscriptionQueryResponseMessages queryResult = testSubject.subscriptionQuery(testQuery, null, 50);
 
-        Mono<QueryResponseMessage> initialResult = queryResult.initialResult();
+        Flux<QueryResponseMessage> initialResult = queryResult.initialResult();
         Flux<SubscriptionQueryUpdateMessage> updates = queryResult.updates();
-        queryResult.cancel();
+        queryResult.close();
 
         StepVerifier.create(initialResult.map(Message::payload))
                     .verifyError();
@@ -574,7 +572,7 @@ class AxonServerQueryBusTest {
 
     @Test
     void afterShutdownDispatchingAnShutdownInProgressExceptionOnSubscriptionQueryInvocation() {
-        SubscriptionQueryMessage<String, String, String> testSubscriptionQuery = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage testSubscriptionQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("query"), "some-query",
                 instanceOf(String.class), instanceOf(String.class)
         );
@@ -582,7 +580,7 @@ class AxonServerQueryBusTest {
         assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
 
         assertThrows(ShutdownInProgressException.class,
-                     () -> testSubject.subscriptionQuery(testSubscriptionQuery));
+                     () -> testSubject.subscriptionQuery(testSubscriptionQuery, null, 50));
     }
 
     @Test
@@ -591,7 +589,9 @@ class AxonServerQueryBusTest {
                                         .axonServerConnectionManager(axonServerConnectionManager)
                                         .configuration(configuration)
                                         .localSegment(localSegment)
-                                        .updateEmitter(SimpleQueryUpdateEmitter.builder().build())
+                                        .updateEmitter(
+                                                null
+                                        )
                                         .messageSerializer(serializer)
                                         .genericSerializer(serializer)
                                         .targetContextResolver(targetContextResolver)
@@ -666,26 +666,26 @@ class AxonServerQueryBusTest {
 
     @Test
     void subscriptionQueryRequestsPermitsBasedOnBufferSize() {
-        SubscriptionQueryMessage<Object, Object, Object> testQuery = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("test"), "test", instanceOf(Object.class), instanceOf(Object.class)
         );
         when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
                 .thenReturn(new SimpleSubscriptionQueryResult("result"));
 
-        testSubject.subscriptionQuery(testQuery, 124);
+        testSubject.subscriptionQuery(testQuery, null, 124);
 
         verify(mockQueryChannel).subscriptionQuery(any(), any(), eq(124), eq(15));
     }
 
     @Test
     void subscriptionQueryUpdateBufferSizeIsNEverLowerThan32() {
-        SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+        SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
                 new MessageType("test"), "test", instanceOf(String.class), instanceOf(String.class)
         );
         when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
                 .thenReturn(new SimpleSubscriptionQueryResult("result"));
 
-        testSubject.subscriptionQuery(testQuery, 31);
+        testSubject.subscriptionQuery(testQuery, null, 31);
 
         verify(mockQueryChannel).subscriptionQuery(any(), any(), eq(32), eq(4));
     }
@@ -697,7 +697,7 @@ class AxonServerQueryBusTest {
                                   .axonServerConnectionManager(axonServerConnectionManager)
                                   .configuration(configuration)
                                   .localSegment(localSegment)
-                                  .updateEmitter(SimpleQueryUpdateEmitter.builder().build())
+                                  .updateEmitter(null)
                                   .messageSerializer(serializer)
                                   .genericSerializer(serializer)
                                   .targetContextResolver(targetContextResolver)
@@ -727,7 +727,7 @@ class AxonServerQueryBusTest {
                                   .axonServerConnectionManager(axonServerConnectionManager)
                                   .configuration(configuration)
                                   .localSegment(localSegment)
-                                  .updateEmitter(SimpleQueryUpdateEmitter.builder().build())
+                                  .updateEmitter(null)
                                   .messageSerializer(serializer)
                                   .genericSerializer(serializer)
                                   .targetContextResolver(targetContextResolver)

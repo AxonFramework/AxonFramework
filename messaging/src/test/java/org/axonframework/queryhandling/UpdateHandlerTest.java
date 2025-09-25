@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,23 +24,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link UpdateHandlerRegistration}.
+ * Test class validating the {@link UpdateHandler}.
  *
  * @author Steven van Beelen
  */
-class UpdateHandlerRegistrationTest {
+class UpdateHandlerTest {
 
     @Test
-    void completeClosesTheRegistration() {
+    void completeCancelsTheRegistration() {
         AtomicBoolean registrationInvocation = new AtomicBoolean(false);
         AtomicBoolean completeInvocation = new AtomicBoolean(false);
 
-        UpdateHandlerRegistration testSubject = new UpdateHandlerRegistration(
-                () -> {
-                    registrationInvocation.set(true);
-                    return true;
-                },
+        UpdateHandler testSubject = new UpdateHandler(
                 Flux.empty(),
+                () -> registrationInvocation.set(true),
                 () -> completeInvocation.set(true)
         );
 

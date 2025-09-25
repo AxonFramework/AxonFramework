@@ -98,7 +98,6 @@ class QueryThreadingIntegrationTest {
                                      .axonServerConnectionManager(connectionManager)
                                      .configuration(configuration)
                                      .localSegment(localQueryBus)
-                                     .updateEmitter(localQueryBus.queryUpdateEmitter())
                                      .messageSerializer(serializer)
                                      .genericSerializer(serializer)
                                      .build();
@@ -110,7 +109,6 @@ class QueryThreadingIntegrationTest {
                                       .axonServerConnectionManager(connectionManager)
                                       .configuration(configuration)
                                       .localSegment(localQueryBus2)
-                                      .updateEmitter(localQueryBus.queryUpdateEmitter())
                                       .messageSerializer(serializer)
                                       .genericSerializer(serializer)
                                       .build();

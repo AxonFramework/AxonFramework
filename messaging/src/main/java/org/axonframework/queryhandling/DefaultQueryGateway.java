@@ -18,15 +18,16 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
+import reactor.util.concurrent.Queues;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -123,59 +124,60 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @Nonnull
     @Override
-    public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(@Nonnull Q query,
-                                                                     @Nonnull ResponseType<I> initialResponseType,
-                                                                     @Nonnull ResponseType<U> updateResponseType,
-                                                                     int updateBufferSize) {
-        SubscriptionQueryMessage<?, I, U> subscriptionQueryMessage =
-                asSubscriptionQueryMessage(query, initialResponseType, updateResponseType);
-
-        SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result =
-                queryBus.subscriptionQuery(subscriptionQueryMessage, updateBufferSize);
-
-        return getSubscriptionQueryResult(result);
+    public <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
+                                              @Nonnull Class<R> responseType,
+                                              @Nullable ProcessingContext context) {
+        SubscriptionQueryMessage queryMessage =
+                asSubscriptionQueryMessage(query,
+                                           ResponseTypes.instanceOf(responseType),
+                                           ResponseTypes.instanceOf(responseType));
+        return queryBus.subscriptionQuery(queryMessage, context, Queues.SMALL_BUFFER_SIZE)
+                       .asFlux()
+                       .mapNotNull(message -> message.payloadAs(responseType));
     }
+
+    @Nonnull
+    @Override
+    public <I, U> SubscriptionQueryResponse<I, U> subscriptionQuery(@Nonnull Object query,
+                                                                    @Nonnull Class<I> initialResponseType,
+                                                                    @Nonnull Class<U> updateResponseType,
+                                                                    @Nullable ProcessingContext context,
+                                                                    int updateBufferSize) {
+        SubscriptionQueryMessage queryMessage =
+                asSubscriptionQueryMessage(query,
+                                           ResponseTypes.instanceOf(initialResponseType),
+                                           ResponseTypes.instanceOf(updateResponseType));
+        SubscriptionQueryResponseMessages response = queryBus.subscriptionQuery(queryMessage,
+                                                                                context,
+                                                                                updateBufferSize);
+        return new GenericSubscriptionQueryResponse<>(response,
+                                                      message -> message.payloadAs(initialResponseType),
+                                                      message -> message.payloadAs(updateResponseType));
+    }
+
 
     private QueryMessage asQueryMessage(Object query, ResponseType<?> responseType) {
         return query instanceof Message message
                 ? new GenericQueryMessage(message, responseType)
-                : new GenericQueryMessage(messageTypeResolver.resolveOrThrow(query), query, responseType);
+                : new GenericQueryMessage(resolveType(query), query, responseType);
     }
 
     private <R> StreamingQueryMessage asStreamingQueryMessage(Object query, Class<R> responseType) {
         return query instanceof Message message
                 ? new GenericStreamingQueryMessage(message, responseType)
-                : new GenericStreamingQueryMessage(messageTypeResolver.resolveOrThrow(query), query, responseType);
+                : new GenericStreamingQueryMessage(resolveType(query), query, responseType);
     }
 
-    private <Q, I, U> SubscriptionQueryMessage<Q, I, U> asSubscriptionQueryMessage(
-            Q query,
-            ResponseType<I> initialResponseType,
-            ResponseType<U> updateResponseType
-    ) {
+    private <I, U> SubscriptionQueryMessage asSubscriptionQueryMessage(Object query,
+                                                                       ResponseType<I> initialType,
+                                                                       ResponseType<U> updateType) {
         return query instanceof Message
-                ? new GenericSubscriptionQueryMessage<>((Message) query,
-                                                        initialResponseType,
-                                                        updateResponseType)
-                : new GenericSubscriptionQueryMessage<>(messageTypeResolver.resolveOrThrow(query),
-                                                        query,
-                                                        initialResponseType,
-                                                        updateResponseType);
+                ? new GenericSubscriptionQueryMessage((Message) query, initialType, updateType)
+                : new GenericSubscriptionQueryMessage(resolveType(query), query, initialType, updateType);
     }
 
-    private <I, U> DefaultSubscriptionQueryResult<I, U> getSubscriptionQueryResult(
-            SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result
-    ) {
-        return new DefaultSubscriptionQueryResult<>(
-                result.initialResult()
-                      .filter(initialResult -> Objects.nonNull(initialResult.payload()))
-                      .map(t -> (I) t.payload())
-                      .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
-                result.updates()
-                      .filter(update -> Objects.nonNull(update.payload()))
-                      .map(t -> (U) t.payload()),
-                result
-        );
+    private MessageType resolveType(Object query) {
+        return messageTypeResolver.resolveOrThrow(query);
     }
 
     @Override

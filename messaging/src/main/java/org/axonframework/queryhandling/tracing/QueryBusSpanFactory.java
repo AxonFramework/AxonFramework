@@ -47,7 +47,7 @@ public interface QueryBusSpanFactory {
      * @param distributed  Whether the subscription query is from a distributed source.
      * @return The span for the handling of the subscription query.
      */
-    Span createSubscriptionQuerySpan(SubscriptionQueryMessage<?, ?, ?> queryMessage, boolean distributed);
+    Span createSubscriptionQuerySpan(SubscriptionQueryMessage queryMessage, boolean distributed);
 
     /**
      * Creates a span for processing a subscription query update that has been received from the server.
@@ -57,7 +57,7 @@ public interface QueryBusSpanFactory {
      * @return The span for the processing of the subscription query update.
      */
     Span createSubscriptionQueryProcessUpdateSpan(SubscriptionQueryUpdateMessage updateMessage,
-                                                  SubscriptionQueryMessage<?, ?, ?> queryMessage);
+                                                  SubscriptionQueryMessage queryMessage);
 
     /**
      * Creates a span for a streaming query.

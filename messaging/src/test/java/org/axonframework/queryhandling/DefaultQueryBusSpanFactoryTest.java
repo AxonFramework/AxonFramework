@@ -47,7 +47,7 @@ class DefaultQueryBusSpanFactoryTest extends
 
     @Test
     void createsSubscriptionQuerySpanNonDistributed() {
-        SubscriptionQueryMessage<?, ?, ?> queryMessage = Mockito.mock(SubscriptionQueryMessage.class);
+        SubscriptionQueryMessage queryMessage = Mockito.mock(SubscriptionQueryMessage.class);
         test(spanFactory -> spanFactory.createSubscriptionQuerySpan(queryMessage, false),
              expectedSpan("QueryBus.subscriptionQuery", TestSpanFactory.TestSpanType.INTERNAL)
                      .withMessage(queryMessage)
@@ -56,7 +56,7 @@ class DefaultQueryBusSpanFactoryTest extends
 
     @Test
     void createsSubscriptionQuerySpanDistributed() {
-        SubscriptionQueryMessage<?, ?, ?> queryMessage = Mockito.mock(SubscriptionQueryMessage.class);
+        SubscriptionQueryMessage queryMessage = Mockito.mock(SubscriptionQueryMessage.class);
         test(spanFactory -> spanFactory.createSubscriptionQuerySpan(queryMessage, true),
              expectedSpan("QueryBus.subscriptionQueryDistributed", TestSpanFactory.TestSpanType.DISPATCH)
                      .withMessage(queryMessage)

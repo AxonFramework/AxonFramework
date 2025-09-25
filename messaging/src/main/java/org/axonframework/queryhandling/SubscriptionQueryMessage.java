@@ -33,14 +33,10 @@ import java.util.Map;
  * <p>
  * Handlers should only answer a query if they can respond with the appropriate response type and update type.
  *
- * @param <P> The type of {@link #payload() payload} expressing the query in this {@link SubscriptionQueryMessage}.
- * @param <I> The type of {@link #responseType() initial response} expected from this {@link SubscriptionQueryMessage}.
- * @param <U> The type of {@link #updatesResponseType() incremental updates} expected from this
- *            {@link SubscriptionQueryMessage}.
  * @author Allard Buijze
  * @since 3.3.0
  */
-public interface SubscriptionQueryMessage<P, I, U> extends QueryMessage {
+public interface SubscriptionQueryMessage extends QueryMessage {
 
     /**
      * The {@link ResponseType type of incremental responses} expected by the sender of the query.
@@ -48,31 +44,31 @@ public interface SubscriptionQueryMessage<P, I, U> extends QueryMessage {
      * @return The {@link ResponseType type of incremental responses} expected by the sender of the query.
      */
     @Nonnull
-    ResponseType<U> updatesResponseType();
+    ResponseType<?> updatesResponseType();
 
     @Override
     @Nonnull
-    SubscriptionQueryMessage<P, I, U> withMetadata(@Nonnull Map<String, String> metadata);
+    SubscriptionQueryMessage withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    SubscriptionQueryMessage<P, I, U> andMetadata(@Nonnull Map<String, String> additionalMetadata);
+    SubscriptionQueryMessage andMetadata(@Nonnull Map<String, String> additionalMetadata);
 
     @Override
     @Nonnull
-    default SubscriptionQueryMessage<?, I, U> withConvertedPayload(@Nonnull Class<?> type,
-                                                                   @Nonnull Converter converter) {
+    default SubscriptionQueryMessage withConvertedPayload(@Nonnull Class<?> type,
+                                                          @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
     @Nonnull
-    default SubscriptionQueryMessage<?, I, U> withConvertedPayload(@Nonnull TypeReference<?> type,
-                                                                   @Nonnull Converter converter) {
+    default SubscriptionQueryMessage withConvertedPayload(@Nonnull TypeReference<?> type,
+                                                          @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @Nonnull
-    SubscriptionQueryMessage<?, I, U> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    SubscriptionQueryMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }
