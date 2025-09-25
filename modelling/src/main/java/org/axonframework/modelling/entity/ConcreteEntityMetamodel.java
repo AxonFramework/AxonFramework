@@ -129,7 +129,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
     public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage message,
                                                                       @Nonnull ProcessingContext context) {
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
-            return MessageStream.failed(new EntityMissingForInstanceCommandHandler(message));
+            return MessageStream.failed(new EntityMissingForInstanceCommandHandlerException(message));
         }
         try {
             CommandHandler commandHandler = creationalCommandHandlers.get(message.type().qualifiedName());
@@ -151,7 +151,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
             @Nonnull ProcessingContext context
     ) {
         if (isCreationalCommand(message) && !isInstanceCommand(message)) {
-            return MessageStream.failed(new EntityExistsForCreationalCommandHandler(message, entity));
+            return MessageStream.failed(new EntityAlreadyExistsForCreationalCommandHandlerException(message, entity));
         }
         try {
             var childrenWithCommandHandlers = children.stream()

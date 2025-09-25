@@ -46,16 +46,16 @@ class EntityCommandHandlingComponentTest {
 
     private final StubProcessingContext context = new StubProcessingContext();
     private final MessageType creationalMessageType = new MessageType("CreationalCommand");
-    private final CommandMessage creationalCommandMessage = new GenericCommandMessage(creationalMessageType,
-                                                                                           "command");
+    private final CommandMessage creationalCommandMessage =
+            new GenericCommandMessage(creationalMessageType, "command");
     private final MessageType instanceMessageType = new MessageType("InstanceCommand");
-    private final CommandMessage instanceCommandMessage = new GenericCommandMessage(instanceMessageType,
-                                                                                         "command");
+    private final CommandMessage instanceCommandMessage =
+            new GenericCommandMessage(instanceMessageType, "command");
     private final MessageType mixedMessageType = new MessageType("MixedCommand");
     private final CommandMessage mixedCommandMessage = new GenericCommandMessage(mixedMessageType, "command");
     private final MessageType missingMessageType = new MessageType("MissingCommand");
-    private final CommandMessage missingCommandMessage = new GenericCommandMessage(missingMessageType,
-                                                                                           "command");
+    private final CommandMessage missingCommandMessage =
+            new GenericCommandMessage(missingMessageType, "command");
     private final String entityId = "myEntityId456";
 
     @Mock
@@ -69,8 +69,10 @@ class EntityCommandHandlingComponentTest {
                                       ((command, c) -> resultMessage("creational")))
             .creationalCommandHandler(mixedMessageType.qualifiedName(),
                                       ((command, c) -> resultMessage("creational-mixed")))
-            .instanceCommandHandler(instanceMessageType.qualifiedName(), ((command, entity, c) -> resultMessage("instance")))
-            .instanceCommandHandler(mixedMessageType.qualifiedName(), ((command, entity, c) -> resultMessage("instance-mixed")))
+            .instanceCommandHandler(instanceMessageType.qualifiedName(),
+                                    ((command, entity, c) -> resultMessage("instance")))
+            .instanceCommandHandler(mixedMessageType.qualifiedName(),
+                                    ((command, entity, c) -> resultMessage("instance-mixed")))
             .build();
 
     @Mock
@@ -99,7 +101,9 @@ class EntityCommandHandlingComponentTest {
         MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent
                 .handle(missingCommandMessage, context);
 
-        assertCompletedExceptionally(componentResult, NoHandlerForCommandException.class, "No handler for command [MissingCommand]");
+        assertCompletedExceptionally(componentResult,
+                                     NoHandlerForCommandException.class,
+                                     "No handler for command [MissingCommand]");
     }
 
     @Nested
@@ -123,7 +127,7 @@ class EntityCommandHandlingComponentTest {
                                                                                         context);
 
             verify(metamodel, times(0)).handleCreate(eq(creationalCommandMessage), any());
-            assertCompletedExceptionally(result, EntityExistsForCreationalCommandHandler.class);
+            assertCompletedExceptionally(result, EntityAlreadyExistsForCreationalCommandHandlerException.class);
         }
 
 
@@ -152,7 +156,7 @@ class EntityCommandHandlingComponentTest {
             MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(instanceCommandMessage,
                                                                                                  context);
 
-            assertCompletedExceptionally(componentResult, EntityMissingForInstanceCommandHandler.class);
+            assertCompletedExceptionally(componentResult, EntityMissingForInstanceCommandHandlerException.class);
         }
 
         @Test
@@ -181,7 +185,6 @@ class EntityCommandHandlingComponentTest {
             var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
             assertEquals("Failed to load entity", exception.getCause().getMessage());
         }
-
     }
 
     @Nested
@@ -256,13 +259,14 @@ class EntityCommandHandlingComponentTest {
     }
 
     private void setupLoadOrCreateEntity(TestEntity entity) {
+        //noinspection unchecked
         ManagedEntity<String, TestEntity> managedEntity = mock(ManagedEntity.class);
         when(managedEntity.entity()).thenReturn(entity);
         when(repository.loadOrCreate(eq(entityId), any())).thenReturn(CompletableFuture.completedFuture(managedEntity));
     }
 
-
     private void setupLoadEntity(TestEntity entity) {
+        //noinspection unchecked
         ManagedEntity<String, TestEntity> managedEntity = mock(ManagedEntity.class);
         when(managedEntity.entity()).thenReturn(entity);
         when(repository.load(eq(entityId), any())).thenReturn(CompletableFuture.completedFuture(managedEntity));

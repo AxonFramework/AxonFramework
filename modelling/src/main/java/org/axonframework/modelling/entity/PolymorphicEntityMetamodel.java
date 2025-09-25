@@ -132,7 +132,7 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
     public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage message,
                                                                       @Nonnull ProcessingContext context) {
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
-            return MessageStream.failed(new EntityMissingForInstanceCommandHandler(message));
+            return MessageStream.failed(new EntityMissingForInstanceCommandHandlerException(message));
         }
         for (EntityMetamodel<? extends E> metamodel : concreteMetamodels.values()) {
             if (metamodel.supportedCreationalCommands().contains(message.type().qualifiedName())) {
@@ -151,7 +151,7 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
                                                                         @Nonnull E entity,
                                                                         @Nonnull ProcessingContext context) {
         if (isCreationalCommand(message) && !isInstanceCommand(message)) {
-            return MessageStream.failed(new EntityExistsForCreationalCommandHandler(message, entity));
+            return MessageStream.failed(new EntityAlreadyExistsForCreationalCommandHandlerException(message, entity));
         }
         EntityMetamodel<E> concreteMetamodel = metamodelFor(entity);
         if (concreteMetamodel.supportedInstanceCommands().contains(message.type().qualifiedName())) {
