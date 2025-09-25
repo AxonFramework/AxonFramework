@@ -23,14 +23,11 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * An {@link EventSink} implementation recording all the events that are
@@ -44,9 +41,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Internal
 public class RecordingEventSink implements EventSink {
 
-    private static final Logger logger = LoggerFactory.getLogger(RecordingEventSink.class);
-
-    private final AtomicBoolean frozen = new AtomicBoolean();
     private final List<EventMessage> recorded = new CopyOnWriteArrayList<>();
     protected final EventSink delegate;
 
@@ -60,14 +54,8 @@ public class RecordingEventSink implements EventSink {
     }
 
     @Override
-    public CompletableFuture<Void> publish(
-            @Nullable ProcessingContext context,
-            @Nonnull List<EventMessage> events
-    ) {
-        if (frozen.get()) {
-            logger.debug("Recording of events is frozen. It may happen if you published some events in the THEN phase. Skipping recording of [{}] events.", events);
-            return delegate.publish(context, events);
-        }
+    public CompletableFuture<Void> publish(@Nullable ProcessingContext context,
+                                           @Nonnull List<EventMessage> events) {
         return delegate.publish(context, events)
                        .thenRun(() -> recorded.addAll(events));
     }
@@ -90,18 +78,6 @@ public class RecordingEventSink implements EventSink {
      */
     public RecordingEventSink reset() {
         this.recorded.clear();
-        frozen.set(false);
-        return this;
-    }
-
-    /**
-     * Freezes this recording {@link EventSink}, preventing it from recording any further
-     * {@link EventMessage EventMessages}.
-     *
-     * @return This recording {@link EventSink}, for fluent interfacing.
-     */
-    public RecordingEventSink frozen() {
-//        frozen.set(true);
         return this;
     }
 
