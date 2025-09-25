@@ -160,8 +160,10 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<Void> initializeSegment(@Nullable TrackingToken token, @Nonnull String processorName,
-                                                     int segment)
+    public CompletableFuture<Void> initializeSegment(@Nullable TrackingToken token,
+                                                     @Nonnull String processorName,
+                                                     int segment,
+                                                     @Nullable ProcessingContext processingContext)
             throws UnableToInitializeTokenException {
         Connection connection = getConnection();
         try {
@@ -272,7 +274,9 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, int segment)
+    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
+                                                       int segment,
+                                                       @Nullable ProcessingContext processingContext)
             throws UnableToClaimTokenException {
         Connection connection = getConnection();
         try {
@@ -288,7 +292,9 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, @Nonnull Segment segment)
+    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
+                                                       @Nonnull Segment segment,
+                                                       @Nullable ProcessingContext processingContext)
             throws UnableToClaimTokenException {
 
         Connection connection = getConnection();
@@ -306,7 +312,9 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<Void> releaseClaim(@Nonnull String processorName, int segment) {
+    public CompletableFuture<Void> releaseClaim(@Nonnull String processorName,
+                                                int segment,
+                                                @Nullable ProcessingContext processingContext) {
 
         Connection connection = getConnection();
         try {
@@ -323,7 +331,9 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<Void> deleteToken(@Nonnull String processorName, int segment) {
+    public CompletableFuture<Void> deleteToken(@Nonnull String processorName,
+                                               int segment,
+                                               @Nullable ProcessingContext processingContext) {
         Connection connection = getConnection();
         try {
             int[] result = executeUpdates(connection, e -> {
@@ -342,7 +352,8 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName) {
+    public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName,
+                                                  @Nullable ProcessingContext processingContext) {
 
         Connection connection = getConnection();
         try {
@@ -360,7 +371,8 @@ public class JdbcTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<List<Segment>> fetchAvailableSegments(@Nonnull String processorName) {
+    public CompletableFuture<List<Segment>> fetchAvailableSegments(@Nonnull String processorName,
+                                                                   @Nullable ProcessingContext processingContext) {
         Connection connection = getConnection();
         try {
             List<AbstractTokenEntry<?>> tokenEntries = executeQuery(connection,

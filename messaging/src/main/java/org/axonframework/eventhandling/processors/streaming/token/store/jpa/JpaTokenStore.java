@@ -119,7 +119,7 @@ public class JpaTokenStore implements TokenStore {
             throws UnableToClaimTokenException {
 
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        if (joinAndUnwrap(fetchSegments(processorName)).length > 0) {
+        if (joinAndUnwrap(fetchSegments(processorName, processingContext)).length > 0) {
             throw new UnableToClaimTokenException("Could not initialize segments. Some segments were already present.");
         }
         for (int segment = 0; segment < segmentCount; segment++) {
@@ -167,7 +167,9 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<Void> releaseClaim(@Nonnull String processorName, int segment) {
+    public CompletableFuture<Void> releaseClaim(@Nonnull String processorName,
+                                                int segment,
+                                                @Nullable ProcessingContext processingContext) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
 
         entityManager.createQuery(
@@ -181,8 +183,10 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<Void> initializeSegment(@Nullable TrackingToken token, @Nonnull String processorName,
-                                                     int segment)
+    public CompletableFuture<Void> initializeSegment(@Nullable TrackingToken token,
+                                                     @Nonnull String processorName,
+                                                     int segment,
+                                                     @Nullable ProcessingContext processingContext)
             throws UnableToInitializeTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
 
@@ -193,7 +197,9 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<Void> deleteToken(@Nonnull String processorName, int segment)
+    public CompletableFuture<Void> deleteToken(@Nonnull String processorName,
+                                               int segment,
+                                               @Nullable ProcessingContext processingContext)
             throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
 
@@ -213,20 +219,26 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, int segment) {
+    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
+                                                       int segment,
+                                                       @Nullable ProcessingContext processingContext) {
             EntityManager entityManager = entityManagerProvider.getEntityManager();
             return completedFuture(loadToken(processorName, segment, entityManager).getToken(serializer));
     }
 
     @Override
-    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, @Nonnull Segment segment)
+    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
+                                                       @Nonnull Segment segment,
+                                                       @Nullable ProcessingContext processingContext)
             throws UnableToClaimTokenException {
             EntityManager entityManager = entityManagerProvider.getEntityManager();
             return completedFuture(loadToken(processorName, segment, entityManager).getToken(serializer));
     }
 
     @Override
-    public CompletableFuture<Void> extendClaim(@Nonnull String processorName, int segment)
+    public CompletableFuture<Void> extendClaim(@Nonnull String processorName,
+                                               int segment,
+                                               @Nullable ProcessingContext processingContext)
             throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         int updates = entityManager.createQuery("UPDATE TokenEntry te SET te.timestamp = :timestamp " +
@@ -249,7 +261,8 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName) {
+    public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName,
+                                                  @Nullable ProcessingContext processingContext) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
 
         final List<Integer> resultList = entityManager.createQuery(
@@ -262,7 +275,8 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<List<Segment>> fetchAvailableSegments(@Nonnull String processorName) {
+    public CompletableFuture<List<Segment>> fetchAvailableSegments(@Nonnull String processorName,
+                                                                   @Nullable ProcessingContext processingContext) {
             EntityManager entityManager = entityManagerProvider.getEntityManager();
 
             final List<TokenEntry> resultList = entityManager.createQuery(

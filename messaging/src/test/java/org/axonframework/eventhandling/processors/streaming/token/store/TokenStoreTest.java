@@ -32,8 +32,10 @@ class TokenStoreTest {
 
     @Test
     void fetchAvailableSegments() {
-        when(tokenStore.fetchSegments("")).thenReturn(completedFuture(new int[]{0, 1, 2, 3}));
-        List<Segment> availableSegments = joinAndUnwrap(tokenStore.fetchAvailableSegments(""));
+        when(tokenStore.fetchSegments("", null))
+                .thenReturn(completedFuture(new int[]{0, 1, 2, 3}));
+        List<Segment> availableSegments =
+                joinAndUnwrap(tokenStore.fetchAvailableSegments("", null));
 
         assertEquals(4, availableSegments.size());
 

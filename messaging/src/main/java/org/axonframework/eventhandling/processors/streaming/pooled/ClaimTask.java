@@ -107,7 +107,8 @@ class ClaimTask extends CoordinatorTask {
         List<Segment> segments = joinAndUnwrap(
                 unitOfWorkFactory.create()
                                  .executeWithResult((context) ->
-                                                            tokenStore.fetchAvailableSegments(name)
+                                                            tokenStore.fetchAvailableSegments(name,
+                                                                                              null)
                                  )
         );
 
@@ -124,7 +125,9 @@ class ClaimTask extends CoordinatorTask {
                     unitOfWorkFactory.create()
                                      .executeWithResult((context) ->
                                                                 CompletableFuture.completedFuture(
-                                                                        tokenStore.fetchToken(name, segmentId)
+                                                                        tokenStore.fetchToken(name,
+                                                                                              segmentId,
+                                                                                              null)
                                                                 )
                                      )
             );

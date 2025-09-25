@@ -42,9 +42,12 @@ class InMemoryTokenStoreTest {
 
     @Test
     void initializeTokens() {
-        joinAndUnwrap(testSubject.initializeTokenSegments("test1", 7, null, createProcessingContext()));
+        joinAndUnwrap(testSubject.initializeTokenSegments("test1",
+                                                          7,
+                                                          null,
+                                                          createProcessingContext()));
 
-        int[] actual = joinAndUnwrap(testSubject.fetchSegments("test1"));
+        int[] actual = joinAndUnwrap(testSubject.fetchSegments("test1", null));
         Arrays.sort(actual);
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
     }
@@ -78,12 +81,13 @@ class InMemoryTokenStoreTest {
                 createProcessingContext()
         ));
 
-        int[] actual = joinAndUnwrap(testSubject.fetchSegments("test1"));
+        int[] actual = joinAndUnwrap(testSubject.fetchSegments("test1", null));
         Arrays.sort(actual);
         assertArrayEquals(new int[]{0, 1, 2, 3, 4, 5, 6}, actual);
 
         for (int segment : actual) {
-            assertEquals(new GlobalSequenceTrackingToken(10), joinAndUnwrap(testSubject.fetchToken("test1", segment)));
+            assertEquals(new GlobalSequenceTrackingToken(10),
+                         joinAndUnwrap(testSubject.fetchToken("test1", segment, null)));
         }
     }
 
@@ -95,7 +99,8 @@ class InMemoryTokenStoreTest {
                 testSubject.storeToken(new GlobalSequenceTrackingToken(1), "test1", 0, ctx)
         );
 
-        assertEquals(new GlobalSequenceTrackingToken(1), joinAndUnwrap(testSubject.fetchToken("test1", 0)));
+        assertEquals(new GlobalSequenceTrackingToken(1),
+                     joinAndUnwrap(testSubject.fetchToken("test1", 0, null)));
     }
 
     @Test
@@ -107,13 +112,16 @@ class InMemoryTokenStoreTest {
                 createProcessingContext()
         ));
 
-        assertEquals(new GlobalSequenceTrackingToken(1), joinAndUnwrap(testSubject.fetchToken("test1", 0)));
-        assertEquals(new GlobalSequenceTrackingToken(1), joinAndUnwrap(testSubject.fetchToken("test1", 1)));
+        assertEquals(new GlobalSequenceTrackingToken(1),
+                     joinAndUnwrap(testSubject.fetchToken("test1", 0, null)));
+        assertEquals(new GlobalSequenceTrackingToken(1),
+                     joinAndUnwrap(testSubject.fetchToken("test1", 1, null)));
     }
 
     @Test
     void initializeTokensWhileAlreadyPresent() {
-        assertThrows(UnableToClaimTokenException.class, () -> joinAndUnwrap(testSubject.fetchToken("test1", 1)));
+        assertThrows(UnableToClaimTokenException.class,
+                     () -> joinAndUnwrap(testSubject.fetchToken("test1", 1, null)));
     }
 
     @Test
@@ -121,7 +129,7 @@ class InMemoryTokenStoreTest {
         var ctx = createProcessingContext();
         joinAndUnwrap(testSubject.initializeTokenSegments("test", 1, null, ctx));
 
-        assertNull(joinAndUnwrap(testSubject.fetchToken("test", 0)));
+        assertNull(joinAndUnwrap(testSubject.fetchToken("test", 0, null)));
 
         joinAndUnwrap(
                 testSubject.storeToken(new GlobalSequenceTrackingToken(1L), "proc1", 0, ctx)
@@ -134,15 +142,15 @@ class InMemoryTokenStoreTest {
         );
 
         {
-            final int[] segments = joinAndUnwrap(testSubject.fetchSegments("proc1"));
+            final int[] segments = joinAndUnwrap(testSubject.fetchSegments("proc1", null));
             assertThat(segments.length, is(2));
         }
         {
-            final int[] segments = joinAndUnwrap(testSubject.fetchSegments("proc2"));
+            final int[] segments = joinAndUnwrap(testSubject.fetchSegments("proc2", null));
             assertThat(segments.length, is(1));
         }
         {
-            final int[] segments = joinAndUnwrap(testSubject.fetchSegments("proc3"));
+            final int[] segments = joinAndUnwrap(testSubject.fetchSegments("proc3", null));
             assertThat(segments.length, is(0));
         }
     }
@@ -161,18 +169,21 @@ class InMemoryTokenStoreTest {
         );
 
         {
-            final List<Segment> segments = joinAndUnwrap(testSubject.fetchAvailableSegments("proc1"));
+            final List<Segment> segments =
+                    joinAndUnwrap(testSubject.fetchAvailableSegments("proc1", null));
             assertThat(segments.size(), is(2));
             assertThat(segments.get(0).getSegmentId(), is(0));
             assertThat(segments.get(1).getSegmentId(), is(1));
         }
         {
-            final List<Segment> segments = joinAndUnwrap(testSubject.fetchAvailableSegments("proc2"));
+            final List<Segment> segments =
+                    joinAndUnwrap(testSubject.fetchAvailableSegments("proc2", null));
             assertThat(segments.size(), is(1));
             assertThat(segments.getFirst().getSegmentId(), is(1));
         }
         {
-            final List<Segment> segments = joinAndUnwrap(testSubject.fetchAvailableSegments("proc3"));
+            final List<Segment> segments =
+                    joinAndUnwrap(testSubject.fetchAvailableSegments("proc3", null));
             assertThat(segments.size(), is(0));
         }
     }

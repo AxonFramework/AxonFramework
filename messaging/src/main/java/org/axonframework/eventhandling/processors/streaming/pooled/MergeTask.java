@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.processors.streaming.pooled;
 
-import org.axonframework.eventhandling.processors.streaming.token.MergedTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
+import org.axonframework.eventhandling.processors.streaming.token.MergedTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -40,8 +40,8 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * not in charge of one of the two segments, it will try to claim either segment's {@link TrackingToken} and perform the
  * merge then.
  * <p>
- * In either approach, this operation will delete one of the segments and release the claim on the other so that
- * another thread can proceed with processing it.
+ * In either approach, this operation will delete one of the segments and release the claim on the other so that another
+ * thread can proceed with processing it.
  *
  * @author Steven van Beelen
  * @see Coordinator
@@ -62,8 +62,8 @@ class MergeTask extends CoordinatorTask {
      *
      * @param result            The {@link CompletableFuture} to {@link #complete(Boolean, Throwable)} once
      *                          {@link #run()} has finalized.
-     * @param name              The name of the {@link Coordinator} this instruction will run in. Used to correctly
-     *                          deal with the {@code tokenStore}.
+     * @param name              The name of the {@link Coordinator} this instruction will run in. Used to correctly deal
+     *                          with the {@code tokenStore}.
      * @param segmentId         The identifier of the {@link Segment} this instruction should merge.
      * @param workPackages      The collection of {@link WorkPackage}s controlled by the {@link Coordinator}. Will be
      *                          queried for the presence of the given {@code segmentId} and the segment to merge it
@@ -103,7 +103,7 @@ class MergeTask extends CoordinatorTask {
                 unitOfWorkFactory
                         .create()
                         .executeWithResult(context ->
-                                                   tokenStore.fetchSegments(name)
+                                                   tokenStore.fetchSegments(name, null)
                         )
         );
         Segment thisSegment = Segment.computeSegment(segmentId, segments);
@@ -136,10 +136,13 @@ class MergeTask extends CoordinatorTask {
 
     private CompletableFuture<TrackingToken> fetchTokenInUnitOfWork(int segmentId) {
         return joinAndUnwrap(unitOfWorkFactory
-                .create()
-                .executeWithResult(context ->
-                                           CompletableFuture.completedFuture(tokenStore.fetchToken(name, segmentId))
-                ));
+                                     .create()
+                                     .executeWithResult(context ->
+                                                                CompletableFuture.completedFuture(
+                                                                        tokenStore.fetchToken(name,
+                                                                                              segmentId,
+                                                                                              null))
+                                     ));
     }
 
     private Boolean mergeSegments(Segment thisSegment, TrackingToken thisToken,
@@ -156,9 +159,14 @@ class MergeTask extends CoordinatorTask {
                 unitOfWorkFactory
                         .create()
                         .executeWithResult(context -> {
-                            joinAndUnwrap(tokenStore.deleteToken(name, tokenToDelete));
-                            joinAndUnwrap(tokenStore.storeToken(mergedToken, name, mergedSegment.getSegmentId(), context));
-                            joinAndUnwrap(tokenStore.releaseClaim(name, mergedSegment.getSegmentId()));
+                            joinAndUnwrap(tokenStore.deleteToken(name, tokenToDelete, null));
+                            joinAndUnwrap(tokenStore.storeToken(mergedToken,
+                                                                name,
+                                                                mergedSegment.getSegmentId(),
+                                                                context));
+                            joinAndUnwrap(tokenStore.releaseClaim(name,
+                                                                  mergedSegment.getSegmentId(),
+                                                                  null));
                             return emptyCompletedFuture();
                         })
         );

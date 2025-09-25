@@ -330,7 +330,7 @@ class WorkPackageTest {
                     // This should be done inside the assertWithin, as the WorkPackage does not re-trigger itself.
                     // Furthermore, the test could be too fast to incorporate the extremelyShortClaimExtensionThreshold as a reason to extend the claim too.
                     testSubjectWithShortThreshold.scheduleWorker();
-                    verify(tokenStore, atLeastOnce()).extendClaim(PROCESSOR_NAME, segment.getSegmentId());
+                    verify(tokenStore, atLeastOnce()).extendClaim(PROCESSOR_NAME, segment.getSegmentId(), null);
                 }
         );
     }

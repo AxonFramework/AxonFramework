@@ -304,7 +304,7 @@ class Coordinator {
             joinAndUnwrap(
                     unitOfWorkFactory.create()
                                      .executeWithResult(context -> {
-                                         int[] segments = joinAndUnwrap(tokenStore.fetchSegments(name));
+                                         int[] segments = joinAndUnwrap(tokenStore.fetchSegments(name, null));
                                          if (segments == null || segments.length == 0) {
                                              logger.info("Initializing segments for processor [{}] ({} segments)",
                                                          name,
@@ -919,8 +919,10 @@ class Coordinator {
             Map<Segment, TrackingToken> newClaims = new HashMap<>();
             List<Segment> segments = joinAndUnwrap(
                     unitOfWorkFactory.create()
-                                     .executeWithResult(context -> tokenStore.fetchAvailableSegments(
-                                             name))
+                                     .executeWithResult(context ->
+                                                                tokenStore.fetchAvailableSegments(
+                                                                        name,
+                                                                        null))
             );
             // As segments are used for Segment#computeSegment, we cannot filter out the WorkPackages upfront.
             List<Segment> unClaimedSegments = segments.stream()
@@ -942,7 +944,7 @@ class Coordinator {
                         TrackingToken token = joinAndUnwrap(
                                 unitOfWorkFactory.create()
                                                  .executeWithResult(context ->
-                                                         tokenStore.fetchToken(name, segment))
+                                                         tokenStore.fetchToken(name, segment, null))
                         );
                         newClaims.put(segment, token);
                         logger.info("Processor [{}] claimed the token for segment {}.", name, segmentId);
@@ -1172,7 +1174,7 @@ class Coordinator {
                                unitOfWorkFactory
                                        .create()
                                        .executeWithResult(context -> {
-                                           tokenStore.releaseClaim(name, segmentId);
+                                           tokenStore.releaseClaim(name, segmentId, null);
                                            segmentReleasedAction.accept(work.segment());
                                            return emptyCompletedFuture();
                                        }))

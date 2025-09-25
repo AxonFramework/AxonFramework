@@ -76,7 +76,6 @@ class JpaTokenStoreTest {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
-    @Disabled // TODO Move to JpaTokenStoreTest in axon-messaging
     @Transactional
     @Test
     void stealingFromOtherThreadFailsWithRowLock() throws Exception {
@@ -86,7 +85,7 @@ class JpaTokenStoreTest {
         ExecutorService executor1 = Executors.newSingleThreadExecutor();
         CountDownLatch cdl = new CountDownLatch(1);
         try {
-            jpaTokenStore.fetchToken("processor", 0);
+            jpaTokenStore.fetchToken("processor", 0, null);
             Future<?> result = executor1.submit(() -> {
 
                 DefaultTransactionDefinition txDef = new DefaultTransactionDefinition();
@@ -94,7 +93,7 @@ class JpaTokenStoreTest {
                 TransactionStatus tx = transactionManager.getTransaction(txDef);
                 cdl.countDown();
                 try {
-                    joinAndUnwrap(stealingJpaTokenStore.fetchToken("processor", 0));
+                    joinAndUnwrap(stealingJpaTokenStore.fetchToken("processor", 0, null));
                 } finally {
                     transactionManager.rollback(tx);
                 }

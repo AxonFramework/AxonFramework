@@ -109,7 +109,7 @@ class SplitTask extends CoordinatorTask {
         return unitOfWorkFactory
                 .create()
                 .executeWithResult(context -> {
-                    int[] segments = joinAndUnwrap(tokenStore.fetchSegments(name)); // TODO refactor without blocking?
+                    int[] segments = joinAndUnwrap(tokenStore.fetchSegments(name, null));
                     Segment segmentToSplit = Segment.computeSegment(segmentId, segments);
                     return CompletableFuture.completedFuture(splitAndRelease(segmentToSplit));
                 });
@@ -121,15 +121,18 @@ class SplitTask extends CoordinatorTask {
                         .create()
                         .executeWithResult(context -> {
                             TrackingToken tokenToSplit = joinAndUnwrap(
-                                    tokenStore.fetchToken(name, segmentToSplit.getSegmentId())
+                                    tokenStore.fetchToken(name, segmentToSplit.getSegmentId(), null)
                             );
                             TrackerStatus[] splitStatuses = TrackerStatus.split(segmentToSplit, tokenToSplit);
                             joinAndUnwrap(tokenStore.initializeSegment(
                                     splitStatuses[1].getTrackingToken(),
                                     name,
-                                    splitStatuses[1].getSegment().getSegmentId()
+                                    splitStatuses[1].getSegment().getSegmentId(),
+                                    null
                             ));
-                            joinAndUnwrap(tokenStore.releaseClaim(name, splitStatuses[0].getSegment().getSegmentId()));
+                            joinAndUnwrap(tokenStore.releaseClaim(name,
+                                                                  splitStatuses[0].getSegment().getSegmentId(),
+                                                                  null));
                             logger.info("Processor [{}] successfully split {} into {} and {}.",
                                         name,
                                         segmentToSplit,

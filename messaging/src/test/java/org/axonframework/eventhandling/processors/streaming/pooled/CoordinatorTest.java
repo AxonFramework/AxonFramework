@@ -112,9 +112,9 @@ class CoordinatorTest {
         final RuntimeException releaseClaimException = new RuntimeException("Some exception during release claim");
         final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
 
-        doReturn(completedFuture(SEGMENT_IDS)).when(tokenStore).fetchSegments(PROCESSOR_NAME);
-        doReturn(completedFuture(token)).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
-        doThrow(releaseClaimException).when(tokenStore).releaseClaim(eq(PROCESSOR_NAME), anyInt());
+        doReturn(completedFuture(SEGMENT_IDS)).when(tokenStore).fetchSegments(PROCESSOR_NAME, null);
+        doReturn(completedFuture(token)).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt(), any());
+        doThrow(releaseClaimException).when(tokenStore).releaseClaim(eq(PROCESSOR_NAME), anyInt(), any());
         //noinspection resource
         doThrow(streamOpenException).when(messageSource).open(any(), isNull());
         doReturn(completedFuture(streamOpenException)).when(workPackage).abort(any());
@@ -139,14 +139,15 @@ class CoordinatorTest {
         //arrange
         final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
 
-        doReturn(completedFuture(EMPTY_SEGMENT_IDS)).when(tokenStore).fetchSegments(PROCESSOR_NAME);
+        doReturn(completedFuture(EMPTY_SEGMENT_IDS)).when(tokenStore).fetchSegments(PROCESSOR_NAME,
+                                                                                    null);
         doReturn(emptyCompletedFuture()).when(tokenStore).initializeTokenSegments(
                 eq(PROCESSOR_NAME),
                 anyInt(),
                 any(),
                 any(ProcessingContext.class)
         );
-        doReturn(completedFuture(token)).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
+        doReturn(completedFuture(token)).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt(), any());
         doReturn(SEGMENT_ZERO).when(workPackage).segment();
         doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
 
@@ -183,15 +184,18 @@ class CoordinatorTest {
         );
 
         when(executorService.submit(any(Runnable.class))).thenAnswer(runTaskAsync());
-        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(completedFuture(SEGMENT_IDS));
-        when(tokenStore.fetchAvailableSegments(PROCESSOR_NAME)).thenReturn(completedFuture(Collections.singletonList(
-                SEGMENT_ONE)));
-        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ONE)).thenReturn(completedFuture(testToken));
+        when(tokenStore.fetchSegments(PROCESSOR_NAME, null)).thenReturn(completedFuture(SEGMENT_IDS));
+        when(tokenStore.fetchAvailableSegments(PROCESSOR_NAME, null))
+                .thenReturn(completedFuture(Collections.singletonList(SEGMENT_ONE)));
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ONE, null))
+                .thenReturn(completedFuture(testToken));
         when(messageSource.open(streamingFrom(testToken), null)).thenReturn(testStream);
 
         testSubject.start();
 
-        assertWithin(500, TimeUnit.MILLISECONDS, () -> verify(tokenStore).fetchToken(PROCESSOR_NAME, SEGMENT_ONE));
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> verify(tokenStore).fetchToken(PROCESSOR_NAME,
+                                                                                     SEGMENT_ONE,
+                                                                                     null));
 
         assertWithin(500,
                      TimeUnit.MILLISECONDS,
@@ -214,8 +218,8 @@ class CoordinatorTest {
         //arrange
         final GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(0);
 
-        doReturn(completedFuture(SEGMENT_IDS)).when(tokenStore).fetchSegments(PROCESSOR_NAME);
-        doReturn(completedFuture(token)).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt());
+        doReturn(completedFuture(SEGMENT_IDS)).when(tokenStore).fetchSegments(PROCESSOR_NAME, null);
+        doReturn(completedFuture(token)).when(tokenStore).fetchToken(eq(PROCESSOR_NAME), anyInt(), any());
         doReturn(SEGMENT_ZERO).when(workPackage).segment();
         doAnswer(runTaskSync()).when(executorService).submit(any(Runnable.class));
         //Using reflection to add a work package to keep the test simple

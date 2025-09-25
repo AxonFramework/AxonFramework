@@ -16,10 +16,9 @@
 
 package org.axonframework.eventhandling.processors.streaming.pooled;
 
-import org.axonframework.common.FutureUtils;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
@@ -45,14 +44,11 @@ class SplitTaskTest {
 
     private static final String PROCESSOR_NAME = "test";
     private static final int SEGMENT_ID = Segment.ROOT_SEGMENT.getSegmentId();
-
-    private CompletableFuture<Boolean> result;
     private final Map<Integer, WorkPackage> workPackages = new HashMap<>();
     private final TokenStore tokenStore = mock(TokenStore.class);
-
-    private SplitTask testSubject;
-
     private final WorkPackage workPackage = mock(WorkPackage.class);
+    private CompletableFuture<Boolean> result;
+    private SplitTask testSubject;
 
     @BeforeEach
     void setUp() {
@@ -74,17 +70,22 @@ class SplitTaskTest {
 
         when(workPackage.segment()).thenReturn(testSegmentToSplit);
         when(workPackage.abort(null)).thenReturn(emptyCompletedFuture());
-        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(completedFuture(testTokenToSplit));
-        when(tokenStore.initializeSegment(any(), anyString(), anyInt())).thenReturn(emptyCompletedFuture());
-        when(tokenStore.releaseClaim(any(), anyInt())).thenReturn(emptyCompletedFuture());
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID, null))
+                .thenReturn(completedFuture(testTokenToSplit));
+        when(tokenStore.initializeSegment(any(), anyString(), anyInt(), any())).thenReturn(emptyCompletedFuture());
+        when(tokenStore.releaseClaim(any(), anyInt(), any())).thenReturn(emptyCompletedFuture());
         workPackages.put(SEGMENT_ID, workPackage);
 
         testSubject.run();
 
-        verify(tokenStore).initializeSegment(
-                expectedSplit.getTrackingToken(), PROCESSOR_NAME, expectedSplit.getSegment().getSegmentId()
+        verify(tokenStore).initializeSegment(expectedSplit.getTrackingToken(),
+                                             PROCESSOR_NAME,
+                                             expectedSplit.getSegment().getSegmentId(),
+                                             null
         );
-        verify(tokenStore).releaseClaim(PROCESSOR_NAME, expectedOriginal.getSegment().getSegmentId());
+        verify(tokenStore).releaseClaim(PROCESSOR_NAME,
+                                        expectedOriginal.getSegment().getSegmentId(),
+                                        null);
         assertTrue(result.isDone());
         assertTrue(result.get());
     }
@@ -99,25 +100,31 @@ class SplitTaskTest {
         TrackerStatus expectedOriginal = expectedTokens[0];
         TrackerStatus expectedSplit = expectedTokens[1];
 
-        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(completedFuture(testSegmentIds));
-        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(completedFuture(testTokenToSplit));
-        when(tokenStore.initializeSegment(any(), anyString(), anyInt())).thenReturn(emptyCompletedFuture());
-        when(tokenStore.releaseClaim(any(), anyInt())).thenReturn(emptyCompletedFuture());
+        when(tokenStore.fetchSegments(PROCESSOR_NAME, null))
+                .thenReturn(completedFuture(testSegmentIds));
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID, null))
+                .thenReturn(completedFuture(testTokenToSplit));
+        when(tokenStore.initializeSegment(any(), anyString(), anyInt(), any())).thenReturn(emptyCompletedFuture());
+        when(tokenStore.releaseClaim(any(), anyInt(), any())).thenReturn(emptyCompletedFuture());
 
         testSubject.run();
 
-        verify(tokenStore).initializeSegment(
-                expectedSplit.getTrackingToken(), PROCESSOR_NAME, expectedSplit.getSegment().getSegmentId()
-        );
-        verify(tokenStore).releaseClaim(PROCESSOR_NAME, expectedOriginal.getSegment().getSegmentId());
+        verify(tokenStore).initializeSegment(expectedSplit.getTrackingToken(),
+                                             PROCESSOR_NAME,
+                                             expectedSplit.getSegment().getSegmentId(),
+                                             null);
+        verify(tokenStore).releaseClaim(PROCESSOR_NAME,
+                                        expectedOriginal.getSegment().getSegmentId(),
+                                        null);
         assertTrue(result.isDone());
         assertTrue(result.get());
     }
 
     @Test
     void runCompletesExceptionallyThroughUnableToClaimTokenException() {
-        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(completedFuture(new int[]{SEGMENT_ID}));
-        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID))
+        when(tokenStore.fetchSegments(PROCESSOR_NAME, null))
+                .thenReturn(completedFuture(new int[]{SEGMENT_ID}));
+        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID, null))
                 .thenThrow(new UnableToClaimTokenException("some exception"));
 
         testSubject.run();
@@ -129,7 +136,8 @@ class SplitTaskTest {
 
     @Test
     void runCompletesExceptionallyThroughOtherException() {
-        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenThrow(new IllegalStateException("some exception"));
+        when(tokenStore.fetchSegments(PROCESSOR_NAME, null))
+                .thenThrow(new IllegalStateException("some exception"));
 
         testSubject.run();
 

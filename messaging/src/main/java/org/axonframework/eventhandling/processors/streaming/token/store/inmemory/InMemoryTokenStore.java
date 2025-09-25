@@ -71,7 +71,7 @@ public class InMemoryTokenStore implements TokenStore {
                                                            TrackingToken initialToken,
                                                            @Nullable ProcessingContext processingContext)
             throws UnableToClaimTokenException {
-        return fetchSegments(processorName)
+        return fetchSegments(processorName, processingContext)
                 .thenAccept(segments -> {
                     if (segments.length > 0) {
                         throw new UnableToClaimTokenException(
@@ -103,7 +103,9 @@ public class InMemoryTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName, int segment) {
+    public CompletableFuture<TrackingToken> fetchToken(@Nonnull String processorName,
+                                                       int segment,
+                                                       @Nullable ProcessingContext processingContext) {
 
         TrackingToken trackingToken = tokens.get(new ProcessAndSegment(processorName, segment));
         if (trackingToken == null) {
@@ -116,20 +118,27 @@ public class InMemoryTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<Void> releaseClaim(@Nonnull String processorName, int segment) {
+    public CompletableFuture<Void> releaseClaim(@Nonnull String processorName,
+                                                int segment,
+                                                @Nullable ProcessingContext processingContext) {
         // no-op, the in-memory implementation isn't accessible by multiple processes
         return completedFuture(null);
     }
 
     @Override
-    public CompletableFuture<Void> deleteToken(@Nonnull String processorName, int segment)
+    public CompletableFuture<Void> deleteToken(@Nonnull String processorName,
+                                               int segment,
+                                               @Nullable ProcessingContext processingContext)
             throws UnableToClaimTokenException {
         tokens.remove(new ProcessAndSegment(processorName, segment));
         return completedFuture(null);
     }
 
     @Override
-    public CompletableFuture<Void> initializeSegment(TrackingToken token, @Nonnull String processorName, int segment)
+    public CompletableFuture<Void> initializeSegment(TrackingToken token,
+                                                     @Nonnull String processorName,
+                                                     int segment,
+                                                     @Nullable ProcessingContext processingContext)
             throws UnableToInitializeTokenException {
         TrackingToken previous = tokens.putIfAbsent(new ProcessAndSegment(processorName, segment),
                                                     token == null ? NULL_TOKEN : token);
@@ -140,7 +149,8 @@ public class InMemoryTokenStore implements TokenStore {
     }
 
     @Override
-    public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName) {
+    public CompletableFuture<int[]> fetchSegments(@Nonnull String processorName,
+                                                  @Nullable ProcessingContext processingContext) {
         return completedFuture(tokens.keySet().stream()
                                      .filter(ps -> ps.processorName.equals(processorName))
                                      .map(ProcessAndSegment::getSegment)

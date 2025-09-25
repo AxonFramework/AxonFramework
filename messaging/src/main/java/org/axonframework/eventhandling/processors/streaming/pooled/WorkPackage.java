@@ -418,7 +418,7 @@ class WorkPackage {
                     unitOfWorkFactory
                             .create()
                             .executeWithResult(context -> {
-                                tokenStore.extendClaim(name, segment.getSegmentId());
+                                tokenStore.extendClaim(name, segment.getSegmentId(), null);
                                 return emptyCompletedFuture();
                             })
             );
