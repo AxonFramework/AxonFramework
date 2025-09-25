@@ -16,7 +16,6 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
@@ -38,8 +37,8 @@ import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -130,20 +129,14 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractComma
         assertEquals("successful", result);
 
         // But not a second time
-        var exception = assertThrows(CommandExecutionException.class,
-                                     () -> sendCommand(new AssignMentorCommand("my-studentId-1", "my-studentId-3")));
-        Throwable commandExecutionExceptionCause = exception.getCause();
-        assertInstanceOf(ExecutionException.class, commandExecutionExceptionCause);
-        Throwable executionExceptionCause = commandExecutionExceptionCause.getCause();
-        assertTrue(executionExceptionCause.getMessage().contains("Mentee already has a mentor"));
+        assertThatThrownBy(() -> sendCommand(new AssignMentorCommand("my-studentId-1", "my-studentId-3")))
+            .isInstanceOf(CommandExecutionException.class)
+            .hasMessageContaining("Mentee already has a mentor");
 
         // And a third student can't become the mentee of the second, because the second is already a mentor
-        var exceptionTwo = assertThrows(CommandExecutionException.class,
-                                        () -> sendCommand(new AssignMentorCommand("my-studentId-3", "my-studentId-2")));
-        Throwable commandExecutionExceptionCauseTwo = exceptionTwo.getCause();
-        assertInstanceOf(ExecutionException.class, commandExecutionExceptionCauseTwo);
-        Throwable executionExceptionCauseTwo = commandExecutionExceptionCauseTwo.getCause();
-        assertTrue(executionExceptionCauseTwo.getMessage().contains("Mentor already assigned to a mentee"));
+        assertThatThrownBy(() -> sendCommand(new AssignMentorCommand("my-studentId-3", "my-studentId-2")))
+            .isInstanceOf(CommandExecutionException.class)
+            .hasMessageContaining("Mentor already assigned to a mentee");
 
         // But the mentee can become a mentor for a third student
         sendCommand(new AssignMentorCommand("my-studentId-2", "my-studentId-3"));
