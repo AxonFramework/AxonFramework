@@ -156,10 +156,10 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T awaitCommands(@Nonnull Duration timeout, @Nonnull Object... expectedCommands) {
+    public T await(Consumer<T> assertion, Duration timeout) {
         Awaitility.waitAtMost(timeout)
-                .pollDelay(Duration.ofMillis(50))
-                .untilAsserted(() -> commandValidator.assertDispatchedEqualTo(expectedCommands));
+                  .pollDelay(Duration.ofMillis(50))
+                  .untilAsserted(() -> assertion.accept(self()));
         return self();
     }
 

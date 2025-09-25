@@ -515,23 +515,53 @@ public interface AxonTestPhase {
          * @param <T> The type of the current Then instance, for fluent interfacing. The type depends on the operation
          *            which was triggered in the When phase.
          */
-        interface Message<T extends Message<T>> {
+        interface Message<T extends Message<T>> extends MessageAssertions<T> {
 
-//            T event(@Nonnull Object expectedEvent);
-//            T event(@Nonnull EventMessage expectedEvent);
-//            T eventMatches(@Nonnull EventMessage expectedEvent);
-//            T notEvent(@Nonnull Object unexpectedEvent);
-//            T notEvent(@Nonnull EventMessage unexpectedEvent);
-//            T notEventMatches(@Nonnull Object expectedEvent);
-//            T notEventMatches(@Nonnull EventMessage expectedEvent);
+            default T await(Consumer<T> assertion) {
+                return await(assertion, Duration.ofSeconds(5));
+            }
 
-//            T command(@Nonnull Object expectedEvent);
-//            T command(@Nonnull CommandMessage expectedEvent);
-//            T commandMatches(@Nonnull EventMessage expectedEvent);
-//            T notCommand(@Nonnull Object unexpectedEvent);
-//            T notCommand(@Nonnull EventMessage unexpectedEvent);
-//            T notCommandMatches(@Nonnull Object expectedEvent);
-//            T notCommandMatches(@Nonnull EventMessage expectedEvent);
+            T await(Consumer<T> assertion, Duration timeout);
+
+            /**
+             * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
+             * test scenarios within a single test method. The same configuration from the original fixture is reused,
+             * so all components are shared among the invocations.
+             * <p>
+             * Example usage:
+             * <pre>
+             * {@code
+             * fixture.given()
+             *        .event(new AccountCreatedEvent("account-1"))
+             *        .when()
+             *        .command(new WithdrawMoneyCommand("account-1", 50.00))
+             *        .then()
+             *        .events(new MoneyWithdrawnEvent("account-1", 50.00))
+             *        .success()
+             *        .and()  // Return to setup phase with same configuration
+             *        .given() // Start a new scenario
+             *        .event(new AccountCreatedEvent("account-2"))
+             *        .when()
+             *        .command(new WithdrawMoneyCommand("account-2", 30.00))
+             *        .then()
+             *        .events(new MoneyWithdrawnEvent("account-2", 30.00));
+             * }
+             * </pre>
+             *
+             * @return A {@link Setup} instance that allows configuring a new test scenario.
+             */
+            Setup and();
+
+            /**
+             * Stops the fixture, releasing any active resources, like registered handlers or pending event processing
+             * tasks.
+             */
+            default void stop() {
+                and().stop();
+            }
+        }
+
+        interface MessageAssertions<T extends MessageAssertions<T>> {
 
             /**
              * Expect the given set of events to have been published during the {@link When} phase.
@@ -598,12 +628,6 @@ public interface AxonTestPhase {
              * @return The current Then instance, for fluent interfacing.
              */
             T commands(@Nonnull Object... expectedCommands);
-
-            T awaitCommands(@Nonnull Duration timeout, @Nonnull Object... expectedCommands);
-
-            default T awaitCommands(@Nonnull Object... expectedCommands) {
-                return awaitCommands(Duration.ofSeconds(100), expectedCommands);
-            }
 
             /**
              * Expect the given set of command messages to have been dispatched during the When phase.
@@ -694,43 +718,6 @@ public interface AxonTestPhase {
              * @return The current Then instance, for fluent interfacing.
              */
             T executeAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function);
-
-            /**
-             * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
-             * test scenarios within a single test method. The same configuration from the original fixture is reused,
-             * so all components are shared among the invocations.
-             * <p>
-             * Example usage:
-             * <pre>
-             * {@code
-             * fixture.given()
-             *        .event(new AccountCreatedEvent("account-1"))
-             *        .when()
-             *        .command(new WithdrawMoneyCommand("account-1", 50.00))
-             *        .then()
-             *        .events(new MoneyWithdrawnEvent("account-1", 50.00))
-             *        .success()
-             *        .and()  // Return to setup phase with same configuration
-             *        .given() // Start a new scenario
-             *        .event(new AccountCreatedEvent("account-2"))
-             *        .when()
-             *        .command(new WithdrawMoneyCommand("account-2", 30.00))
-             *        .then()
-             *        .events(new MoneyWithdrawnEvent("account-2", 30.00));
-             * }
-             * </pre>
-             *
-             * @return A {@link Setup} instance that allows configuring a new test scenario.
-             */
-            Setup and();
-
-            /**
-             * Stops the fixture, releasing any active resources, like registered handlers or pending event processing
-             * tasks.
-             */
-            default void stop() {
-                and().stop();
-            }
         }
     }
 }

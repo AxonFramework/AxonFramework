@@ -16,14 +16,16 @@
 
 package org.axonframework.test.fixture;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentBuilder;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.test.fixture.sampledomain.SendNotificationCommand;
 import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
 import org.junit.jupiter.api.*;
@@ -33,7 +35,7 @@ import java.time.Duration;
 public class AxonTestFixtureStatelessEventHandlerTest {
 
     @Test
-    void givenEventsThenCommand_Failure() {
+    void givenEventsThenAwaitCommands_Success() {
         var configurer = whenEventThenCommandConfig();
 
         var fixture = AxonTestFixture.with(configurer);
@@ -43,38 +45,9 @@ public class AxonTestFixtureStatelessEventHandlerTest {
         fixture.given()
                .events(studentNameChanged)
                .then()
-               .commands(expectedCommand);
+               .await(r -> r.commands(expectedCommand), Duration.ofMillis(500));
     }
 
-    @Test
-    void givenEventsThenCommand_Success_AwaitCommandsDefault() {
-        var configurer = whenEventThenCommandConfig();
-
-        var fixture = AxonTestFixture.with(configurer);
-
-        var studentNameChanged = new StudentNameChangedEvent("my-studentId-1", "name-1", 1);
-        var expectedCommand = new SendNotificationCommand("my-studentId-1", "Name changed");
-        fixture.given()
-               .events(studentNameChanged)
-               .then()
-               .awaitCommands(expectedCommand);
-    }
-
-    @Test
-    void givenEventsThenCommand_Success_AwaitCommandsDefaultMillis() {
-        var configurer = whenEventThenCommandConfig();
-
-        var fixture = AxonTestFixture.with(configurer);
-
-        var studentNameChanged = new StudentNameChangedEvent("my-studentId-1", "name-1", 1);
-        var expectedCommand = new SendNotificationCommand("my-studentId-1", "Name changed");
-        fixture.given()
-               .events(studentNameChanged)
-               .then()
-               .awaitCommands(Duration.ofMillis(100), expectedCommand);
-    }
-
-    @Nonnull
     private static EventSourcingConfigurer whenEventThenCommandConfig() {
         var configurer = EventSourcingConfigurer.create();
         configurer.messaging(cr -> cr.eventProcessing(ep -> ep.pooledStreaming(ps -> ps.processor(
@@ -82,18 +55,22 @@ public class AxonTestFixtureStatelessEventHandlerTest {
                         .pooledStreaming("test-given-event-then-command")
                         .eventHandlingComponents(c -> c.declarative(
                                 cfg -> new DefaultEventHandlingComponentBuilder(new SimpleEventHandlingComponent())
-                                        .handles(new QualifiedName(StudentNameChangedEvent.class),
-                                                 (e, ctx) -> {
-                                                     var commandDispatcher = ctx.component(CommandGateway.class);
-                                                     var payload = e.payloadAs(StudentNameChangedEvent.class);
-                                                     commandDispatcher.send(new SendNotificationCommand(
-                                                             payload.id(),
-                                                             "Name changed"
-                                                     ), ctx);
-                                                     return MessageStream.empty();
-                                                 }).build()
+                                        .handles(
+                                                new QualifiedName(StudentNameChangedEvent.class),
+                                                AxonTestFixtureStatelessEventHandlerTest::handleStudentNameChanged
+                                        ).build()
                         )).notCustomized()
         ))));
         return configurer;
+    }
+
+    private static MessageStream.Empty<Message> handleStudentNameChanged(EventMessage e, ProcessingContext ctx) {
+        var commandDispatcher = ctx.component(CommandGateway.class);
+        var payload = e.payloadAs(StudentNameChangedEvent.class);
+        commandDispatcher.send(new SendNotificationCommand(
+                payload.id(),
+                "Name changed"
+        ), ctx);
+        return MessageStream.empty();
     }
 }
