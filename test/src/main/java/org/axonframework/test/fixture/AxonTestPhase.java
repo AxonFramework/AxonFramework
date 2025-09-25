@@ -504,6 +504,10 @@ public interface AxonTestPhase {
             Event success();
         }
 
+        /**
+         * Operations available in the Then phase of the test fixture execution only if no command or event was
+         * dispatched during the When phase.
+         */
         interface Nothing extends Message<Nothing> {
 
         }
@@ -517,10 +521,26 @@ public interface AxonTestPhase {
          */
         interface Message<T extends Message<T>> extends MessageAssertions<T> {
 
+            /**
+             * Waits until the given {@code assertion} passes or the default timeout of 5 seconds is reached. The
+             * assertion receives the current Then instance, allowing to invoke any of its assertion methods.
+             *
+             * @param assertion The assertion to wait for. The assertion will be invoked on the current Then instance.
+             * @return The current Then instance, for fluent interfacing.
+             */
             default T await(Consumer<T> assertion) {
                 return await(assertion, Duration.ofSeconds(5));
             }
 
+            /**
+             * Waits until the given {@code assertion} passes or the given {@code timeout} is reached. The assertion
+             * receives the current Then instance, allowing to invoke any of its assertion methods.
+             *
+             * @param assertion The assertion to wait for. The assertion will be invoked on the current Then instance.
+             * @param timeout   The maximum time to wait for the assertion to pass. If the timeout is reached, the
+             *                  assertion
+             * @return The current Then instance, for fluent interfacing.
+             */
             T await(Consumer<T> assertion, Duration timeout);
 
             /**
