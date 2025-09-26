@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
+import org.axonframework.commandhandling.annotations.CommandHandlingMember;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,9 +60,9 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
         this.commandHandlers = new ArrayList<>();
         if (forwardCommands) {
             entityModel.commandHandlers(entityModel.entityClass())
-                       .filter(eh -> eh.unwrap(CommandMessageHandlingMember.class).isPresent())
-                       .map(childHandler -> (ChildForwardingCommandMessageHandlingMember<? super P, C>)
-                               new ChildForwardingCommandMessageHandlingMember<>(
+                       .filter(eh -> eh.unwrap(CommandHandlingMember.class).isPresent())
+                       .map(childHandler -> (ChildForwardingCommandHandlingMember<? super P, C>)
+                               new ChildForwardingCommandHandlingMember<>(
                                        entityModel.commandHandlerInterceptors(entityModel.entityClass())
                                                   .collect(Collectors.toList()),
                                        childHandler,

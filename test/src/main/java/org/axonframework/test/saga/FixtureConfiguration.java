@@ -25,10 +25,14 @@ import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocati
 import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.HandlerDefinition;
+import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.ParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotations.ClasspathHandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotations.SimpleResourceParameterResolverFactory;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.aggregate.ResultValidator;
@@ -76,8 +80,8 @@ public interface FixtureConfiguration {
     /**
      * Registers a {@link ParameterResolverFactory} within this fixture. The given {@code parameterResolverFactory} will
      * be added to the other parameter resolver factories introduced through {@link
-     * org.axonframework.messaging.annotation.ClasspathParameterResolverFactory#forClass(Class)} and the {@link
-     * org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory} adding the registered resources
+     * ClasspathParameterResolverFactory#forClass(Class)} and the {@link
+     * SimpleResourceParameterResolverFactory} adding the registered resources
      * (with {@link #registerResource(Object)}. The type of the saga under test is used as input for the {@code
      * ClasspathParameterResolverFactory#forClass(Class)} operation.
      *
@@ -115,7 +119,7 @@ public interface FixtureConfiguration {
 
     /**
      * Registers a {@link HandlerDefinition} within this fixture. The given {@code handlerDefinition} is added to the
-     * handler definitions introduced through {@link org.axonframework.messaging.annotation.ClasspathHandlerDefinition#forClass(Class)}.
+     * handler definitions introduced through {@link ClasspathHandlerDefinition#forClass(Class)}.
      * The type of the saga under test is used as input for the {@code ClasspathHandlerDefinition#forClass(Class)}
      * operation.
      *
@@ -126,7 +130,7 @@ public interface FixtureConfiguration {
 
     /**
      * Registers a {@link HandlerEnhancerDefinition} within this fixture. This given {@code handlerEnhancerDefinition}
-     * is added to the handler enhancer definitions introduced through {@link org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition#forClass(Class)}.
+     * is added to the handler enhancer definitions introduced through {@link ClasspathHandlerEnhancerDefinition#forClass(Class)}.
      * The type of the saga under test is used as input for the {@code ClasspathHandlerEnhancerDefinition#forClass(Class)}
      * operation.
      *

@@ -16,10 +16,10 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.junit.jupiter.api.*;
@@ -62,7 +62,7 @@ public class AxonHandlerConfigurationTest {
     @Test
     void messageRoutedToCorrectMethod() throws Exception {
         assertEquals("Command: info", commandGateway.sendAndWait("info", String.class));
-        assertEquals("Query: info", queryGateway.query("info", String.class).get());
+        assertEquals("Query: info", queryGateway.query("info", String.class, null).get());
     }
 
     @SuppressWarnings("unused")

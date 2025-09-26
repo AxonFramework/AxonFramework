@@ -16,15 +16,15 @@
 
 package org.axonframework.util;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.queryhandling.annotations.QueryHandler;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 import static org.axonframework.common.ReflectionUtils.methodsOf;
-import static org.axonframework.common.annotation.AnnotationUtils.isAnnotationPresent;
+import static org.axonframework.common.annotations.AnnotationUtils.isAnnotationPresent;
 
 /**
  * Uses reflection to know if a handler handles a certain type of messages.

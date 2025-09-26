@@ -16,32 +16,6 @@
 
 package org.axonframework.queryhandling.tracing;
 
-import org.axonframework.messaging.MessageType;
-import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
-import org.axonframework.queryhandling.NoHandlerForQueryException;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SubscriptionQueryMessage;
-import org.axonframework.queryhandling.SubscriptionQueryResult;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.junit.jupiter.api.*;
-import reactor.core.Disposable;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
-import java.time.Duration;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.junit.jupiter.api.Assertions.*;
-
 // TODO 3488 - Introduce tracing test logic here.
 class TracingQueryBusTest {
     //private TestSpanFactory spanFactory;

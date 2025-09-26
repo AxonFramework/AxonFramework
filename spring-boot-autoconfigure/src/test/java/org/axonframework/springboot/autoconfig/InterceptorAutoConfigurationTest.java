@@ -18,12 +18,14 @@ package org.axonframework.springboot.autoconfig;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
+import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageDispatchInterceptorChain;
@@ -33,7 +35,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.*;
@@ -55,7 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 /**
- * Test class validating the behavior of the {@link InfraConfiguration}.
+ * Test class validating the behavior of the {@link InfrastructureConfiguration}.
  *
  * @author Christian Thiel
  */
@@ -70,7 +72,7 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO #3498 - CommandHandler annotated methods are not yet found")
+    @Disabled("TODO # #3485 - Ordering of interceptors is not supported")
     public void commandHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(CommandGateway.class).sendAndWait(new Object());
@@ -97,7 +99,7 @@ class InterceptorAutoConfigurationTest {
     @Disabled("TODO #3488 - QueryHandler annotated methods are not yet found")
     public void queryHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
-            context.getBean(QueryGateway.class).query("foo", String.class);
+            context.getBean(QueryGateway.class).query("foo", String.class, null);
             //noinspection unchecked
             Queue<String> commandHandlingInterceptingOutcome =
                     context.getBean("commandHandlingInterceptingOutcome", Queue.class);
@@ -118,7 +120,7 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO #3495 - EventProcessors are not yet autoconfigured")
+    @Disabled("TODO #3485 - Ordering is not supported")
     public void eventHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(EventGateway.class).publish(null, "foo");
@@ -148,7 +150,6 @@ class InterceptorAutoConfigurationTest {
     }
 
     @Test
-    @Disabled("TODO #3498 - CommandHandler annotated methods are not yet found")
     public void commandDispatchInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean(CommandGateway.class).sendAndWait(new Object());
@@ -198,7 +199,7 @@ class InterceptorAutoConfigurationTest {
     @Disabled("TODO #3488 - QueryHandler annotated methods are not yet found")
     public void queryDispatchInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
-            context.getBean(QueryGateway.class).query("foo", String.class);
+            context.getBean(QueryGateway.class).query("foo", String.class, null);
             //noinspection unchecked
             Queue<String> commandDispatchingInterceptingOutcome =
                     context.getBean("commandDispatchingInterceptingOutcome", Queue.class);
@@ -230,6 +231,11 @@ class InterceptorAutoConfigurationTest {
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     static class DefaultContext {
+
+        @Bean
+        public TokenStore tokenStore() {
+            return new InMemoryTokenStore();
+        }
 
     }
 

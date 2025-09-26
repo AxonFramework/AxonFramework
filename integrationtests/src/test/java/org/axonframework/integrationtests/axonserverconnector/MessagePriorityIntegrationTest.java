@@ -25,7 +25,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.annotations.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.DistributedCommandBusConfiguration;
@@ -33,11 +33,11 @@ import org.axonframework.commandhandling.distributed.PayloadConvertingCommandBus
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.conversion.DelegatingMessageConverter;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.axonframework.test.server.AxonServerContainer;
@@ -147,20 +147,20 @@ class MessagePriorityIntegrationTest {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            return MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class), "started"));
+            return MessageStream.just(new GenericCommandResultMessage(new MessageType(String.class), "started"));
         });
 
         commandBus.subscribe(
                 new QualifiedName(RegularMessage.class),
                 (command, context) -> MessageStream.just(
-                        new GenericCommandResultMessage<>(new MessageType(String.class), "regular")
+                        new GenericCommandResultMessage(new MessageType(String.class), "regular")
                 )
         );
 
         commandBus.subscribe(
                 new QualifiedName(PriorityMessage.class),
                 (command, context) -> MessageStream.just(
-                        new GenericCommandResultMessage<>(new MessageType(String.class), "priority")
+                        new GenericCommandResultMessage(new MessageType(String.class), "priority")
                 )
         );
 

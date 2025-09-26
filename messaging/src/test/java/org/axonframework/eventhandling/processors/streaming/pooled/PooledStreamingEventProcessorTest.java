@@ -106,6 +106,7 @@ class PooledStreamingEventProcessorTest {
     void setUp() {
         processingContext = mock(ProcessingContext.class);
         stubMessageSource = spy(new AsyncInMemoryStreamableEventSource());
+        when(stubMessageSource.firstToken(null)).thenReturn(CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(-1)));
         tokenStore = spy(new InMemoryTokenStore());
         coordinatorExecutor = spy(new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(2)));
         workerExecutor = new DelegateScheduledExecutorService(Executors.newScheduledThreadPool(8));

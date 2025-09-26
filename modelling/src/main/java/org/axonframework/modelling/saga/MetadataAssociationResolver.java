@@ -17,7 +17,7 @@
 package org.axonframework.modelling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
 
 import jakarta.annotation.Nonnull;
 

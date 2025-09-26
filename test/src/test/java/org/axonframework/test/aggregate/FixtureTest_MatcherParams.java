@@ -30,8 +30,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.axonframework.test.matchers.Matchers.matches;
 import static org.axonframework.test.matchers.Matchers.*;
+import static org.axonframework.test.matchers.Matchers.matches;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -53,40 +53,40 @@ class FixtureTest_MatcherParams {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void firstFixture() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
-                .given(new MyEvent("aggregateId", 1))
-                .when(new TestCommand("aggregateId"))
-                .expectResultMessageMatching(new DoesMatch<>())
-                .expectEventsMatching(sequenceOf(matches(i -> true)));
+               .given(new MyEvent("aggregateId", 1))
+               .when(new TestCommand("aggregateId"))
+               .expectResultMessageMatching(new DoesMatch<>())
+               .expectEventsMatching(sequenceOf(matches(i -> true)));
     }
 
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void payloadsMatch() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
-                .given(new MyEvent("aggregateId", 1))
-                .when(new TestCommand("aggregateId"))
-                .expectResultMessageMatching(new DoesMatch<>())
-                .expectEventsMatching(payloadsMatching(sequenceOf(matches(i -> true))));
+               .given(new MyEvent("aggregateId", 1))
+               .when(new TestCommand("aggregateId"))
+               .expectResultMessageMatching(new DoesMatch<>())
+               .expectEventsMatching(payloadsMatching(sequenceOf(matches(i -> true))));
     }
 
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void payloadsMatchExact() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
-                .given(new MyEvent("aggregateId", 1))
-                .when(new TestCommand("aggregateId"))
-                .expectResultMessageMatching(new DoesMatch<>())
-                .expectEventsMatching(payloadsMatching(exactSequenceOf(matches(i -> true))));
+               .given(new MyEvent("aggregateId", 1))
+               .when(new TestCommand("aggregateId"))
+               .expectResultMessageMatching(new DoesMatch<>())
+               .expectEventsMatching(payloadsMatching(exactSequenceOf(matches(i -> true))));
     }
 
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void payloadsMatchPredicate() {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
-                .given(new MyEvent("aggregateId", 1))
-                .when(new TestCommand("aggregateId"))
-                .expectResultMessageMatching(new DoesMatch<>())
-                .expectEventsMatching(payloadsMatching(predicate(ml -> !ml.isEmpty())));
+               .given(new MyEvent("aggregateId", 1))
+               .when(new TestCommand("aggregateId"))
+               .expectResultMessageMatching(new DoesMatch<>())
+               .expectEventsMatching(payloadsMatching(predicate(ml -> !ml.isEmpty())));
     }
 
     @Test
@@ -121,9 +121,9 @@ class FixtureTest_MatcherParams {
                                                                fixture.getEventBus());
         AxonAssertionError e = assertThrows(AxonAssertionError.class, () ->
                 fixture.registerAnnotatedCommandHandler(commandHandler)
-                        .given(givenEvents)
-                        .when(new TestCommand("aggregateId"))
-                        .expectException(new DoesMatch<>())
+                       .given(givenEvents)
+                       .when(new TestCommand("aggregateId"))
+                       .expectException(new DoesMatch<>())
         );
         String resultMessage = e.getMessage();
         assertTrue(
@@ -143,9 +143,9 @@ class FixtureTest_MatcherParams {
                                                                fixture.getEventBus());
         AxonAssertionError e = assertThrows(AxonAssertionError.class, () ->
                 fixture.registerAnnotatedCommandHandler(commandHandler)
-                        .given(givenEvents)
-                        .when(new TestCommand("aggregateId"))
-                        .expectResultMessageMatching(new DoesNotMatch<>())
+                       .given(givenEvents)
+                       .when(new TestCommand("aggregateId"))
+                       .expectResultMessageMatching(new DoesNotMatch<>())
         );
         String resultMessage = e.getMessage();
         assertTrue(
@@ -165,9 +165,9 @@ class FixtureTest_MatcherParams {
                                                                fixture.getEventBus());
         AxonAssertionError e = assertThrows(AxonAssertionError.class, () ->
                 fixture.registerAnnotatedCommandHandler(commandHandler)
-                        .given(givenEvents)
-                        .when(new StrangeCommand("aggregateId"))
-                        .expectException(new DoesNotMatch<>())
+                       .given(givenEvents)
+                       .when(new StrangeCommand("aggregateId"))
+                       .expectException(new DoesNotMatch<>())
         );
         String resultMessage = e.getMessage();
         assertTrue(
@@ -204,7 +204,7 @@ class FixtureTest_MatcherParams {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
-        MessageHandler<CommandMessage, CommandResultMessage<?>> mockCommandHandler = mock(MessageHandler.class);
+        MessageHandler<CommandMessage, CommandResultMessage> mockCommandHandler = mock(MessageHandler.class);
         fixture.registerCommandHandler(StrangeCommand.class, mockCommandHandler);
         fixture
                 .given(givenEvents)

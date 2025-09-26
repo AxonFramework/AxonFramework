@@ -37,7 +37,7 @@ import org.axonframework.eventhandling.processors.streaming.token.store.inmemory
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.annotation.MessageIdentifier;
+import org.axonframework.messaging.annotations.MessageIdentifier;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.Decisions;

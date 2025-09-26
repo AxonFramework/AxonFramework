@@ -27,7 +27,6 @@ import java.util.Optional;
 /**
  * A {@link Message} that represents a result of handling some form of request message.
  *
- * @param <R> The type of {@link #payload() result} contained in this {@link ResultMessage}.
  * @author Milan Savic
  * @since 4.0.0
  */

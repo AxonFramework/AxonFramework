@@ -26,7 +26,7 @@ import reactor.util.context.Context;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
-// TODO 3488 - Introduce monitoring logic here.
+// TODO 3595 - Introduce monitoring logic here.
 public class MonitoringQueryBus {
 
     // private final MessageMonitor<? super QueryMessage> messageMonitor;
@@ -171,54 +171,4 @@ public class MonitoringQueryBus {
                            messageMonitor.onMessageIngested(query));
         }
     }
-
-    /*
-    @Override
-    public Stream<QueryResponseMessage> scatterGather(@Nonnull QueryMessage query, long timeout,
-                                                      @Nonnull TimeUnit unit) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
-                       () -> "Scatter-Gather query does not support Flux as a return type.");
-        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
-        List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> handlers =
-                getHandlersForMessage(query);
-        if (handlers.isEmpty()) {
-            monitorCallback.reportIgnored();
-            return Stream.empty();
-        }
-
-        long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
-        return handlers
-                .stream()
-                .map(handler -> scatterGatherHandler(monitorCallback, query, deadline, handler))
-                .filter(Objects::nonNull);
-    }
-
-    private QueryResponseMessage scatterGatherHandler(
-            MessageMonitor.MonitorCallback monitorCallback,
-            QueryMessage interceptedQuery,
-            long deadline,
-            MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> handler
-    ) {
-        long leftTimeout = getRemainingOfDeadline(deadline);
-        ResultMessage resultMessage =
-                interceptAndInvoke(LegacyDefaultUnitOfWork.startAndGet(interceptedQuery),
-                                   handler);
-        QueryResponseMessage response = null;
-        if (resultMessage.isExceptional()) {
-            monitorCallback.reportFailure(resultMessage.exceptionResult());
-            errorHandler.onError(resultMessage.exceptionResult(), interceptedQuery, handler);
-        } else {
-            try {
-                response = ((CompletableFuture<QueryResponseMessage>) resultMessage.payload()).get(leftTimeout,
-                                                                                                   TimeUnit.MILLISECONDS);
-                monitorCallback.reportSuccess();
-            } catch (Exception e) {
-                monitorCallback.reportFailure(e);
-                errorHandler.onError(e, interceptedQuery, handler);
-            }
-        }
-        return response;
-    }
-     */
-
 }

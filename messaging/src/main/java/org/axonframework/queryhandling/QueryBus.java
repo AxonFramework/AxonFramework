@@ -16,18 +16,18 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.concurrent.Queues;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * The mechanism that dispatches {@link QueryMessage queries} to their appropriate {@link QueryHandler query handler}.
@@ -37,10 +37,10 @@ import java.util.stream.Stream;
  * on the {@link QualifiedName} present in the {@link QueryMessage#type() query's type} and the {@code QualifiedName}
  * resulting from the {@link QueryMessage#responseType() response type}.
  * <p>
- * Hence, queries dispatched (through either {@link #query(QueryMessage)},
- * {@link #streamingQuery(StreamingQueryMessage)}, {@link #scatterGather(QueryMessage, long, TimeUnit)}, and
- * {@link #subscriptionQuery(SubscriptionQueryMessage)}) match a subscribed query handler based on "query name" and
- * "query response name."
+ * Hence, queries dispatched (through either {@link #query(QueryMessage, ProcessingContext)},
+ * {@link #streamingQuery(StreamingQueryMessage, ProcessingContext)}, and
+ * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)}) match a subscribed query handler based
+ * on "query name" and "query response name."
  * <p>
  * There may be multiple handlers for each query- and response-name combination.
  *
@@ -51,81 +51,56 @@ import java.util.stream.Stream;
 public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableComponent {
 
     /**
-     * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s queryName and
-     * responseType. This method returns all values returned by the Query Handler as a Collection. This may or may not
-     * be the exact collection as defined in the Query Handler.
+     * Dispatch the given {@code query} to a {@link QueryHandler}
+     * {@link #subscribe(QueryHandlerName, QueryHandler) subscribed} to the given {@code query}'s
+     * {@link MessageType#qualifiedName() query name} and {@link QueryMessage#responseType()}, returning a
+     * {@link MessageStream} of {@link QueryResponseMessage responses} to the given {@code query}.
      * <p>
-     * If the Query Handler defines a single return object (i.e. not a collection or array), that object is returned as
-     * the sole entry in a singleton collection.
+     * The resulting {@code MessageStream} will contain 0, 1, or N {@link QueryResponseMessage QueryResponseMessages},
+     * depending on the {@code QueryHandler} that handled the given {@code query}.
      * <p>
-     * When no handlers are available that can answer the given {@code query}, the returned CompletableFuture will be
-     * completed with a {@link NoHandlerForQueryException}.
+     * As several {@code QueryHandlers} can be registered for the same query name and response name, this method will
+     * loop through them (in insert order) until one has a suitable return valuable. A suitable response is any value or
+     * user exception returned from a {@code QueryHandler} When no handlers are available that can answer the given
+     * {@code query}, the returned {@code MessageStream} will have {@link MessageStream#failed(Throwable) failed} with a
+     * {@link NoHandlerForQueryException}.
      *
-     * @param query the query
-     * @return a CompletableFuture that resolves when the response is available
+     * @param query   The query to dispatch.
+     * @param context The processing context under which the query is being published (can be {@code null}).
+     * @return A {@code MessageStream} containing either 0, 1, or N {@link QueryResponseMessage QueryResponseMessages}.
+     * @throws NoHandlerForQueryException When no {@link QueryHandler} is registered for the given {@code query}'s
+     *                                    {@link MessageType#qualifiedName() query name} and
+     *                                    {@link QueryMessage#responseType()}.
      */
-    CompletableFuture<QueryResponseMessage> query(@Nonnull QueryMessage query);
+    @Nonnull
+    MessageStream<QueryResponseMessage> query(@Nonnull QueryMessage query, @Nullable ProcessingContext context);
 
     /**
-     * Builds a {@link Publisher} of responses to the given {@code query}. The actual query is not dispatched until
-     * there is a subscription to the result. The query is dispatched to a single query handler. Implementations may opt
-     * for invoking several query handlers and then choosing a response from single one for performance or resilience
-     * reasons.
+     * Dispatch the given {@code query} to a {@link QueryHandler}
+     * {@link #subscribe(QueryHandlerName, QueryHandler) subscribed} to the given {@code query}'s
+     * {@link MessageType#qualifiedName() query name} and {@link QueryMessage#responseType()}, returning a
+     * {@link Publisher} of {@link QueryResponseMessage responses} to the given {@code query}.
+     * <p>
+     * The actual query is not dispatched until there is a subscription to the result. The query is dispatched to a
+     * single query handler. Implementations may opt for invoking several query handlers and then choosing a response
+     * from single one for performance or resilience reasons.
      * <p>
      * When no handlers are available that can answer the given {@code query}, the return Publisher will be completed
      * with a {@link NoHandlerForQueryException}.
      *
-     * @param query the streaming query message
-     * @return a Publisher of responses
+     * @param query   The query to dispatch.
+     * @param context The processing context under which the query is being published (can be {@code null}).
+     * @return A {@code Publisher} of {@link QueryResponseMessage responses}.
+     * @throws NoHandlerForQueryException When no {@link QueryHandler} is registered for the given {@code query}'s
+     *                                    {@link MessageType#qualifiedName() query name} and
+     *                                    {@link QueryMessage#responseType()}.
      */
-    default Publisher<QueryResponseMessage> streamingQuery(StreamingQueryMessage query) {
-        throw new UnsupportedOperationException("Streaming query is not supported by this QueryBus.");
-    }
-
-    /**
-     * Dispatch the given {@code query} to all QueryHandlers subscribed to the given {@code query}'s
-     * queryName/responseType. Returns a stream of results which blocks until all handlers have processed the request or
-     * when the timeout occurs.
-     * <p>
-     * If no handlers are available to provide a result, or when all available handlers throw an exception while
-     * attempting to do so, the returned Stream is empty.
-     * <p>
-     * Note that any terminal operation (such as {@link Stream#forEach(Consumer)}) on the Stream may cause it to block
-     * until the {@code timeout} has expired, awaiting additional data to include in the stream.
-     *
-     * @param query   the query
-     * @param timeout time to wait for results
-     * @param unit    unit for the timeout
-     * @return stream of query results
-     */
-    Stream<QueryResponseMessage> scatterGather(@Nonnull QueryMessage query, long timeout,
-                                               @Nonnull TimeUnit unit);
-
-    /**
-     * Dispatch the given {@code query} to a single QueryHandler subscribed to the given {@code query}'s
-     * queryName/initialResponseType/updateResponseType. The result is lazily created and there will be no execution of
-     * the query handler before there is a subscription to the initial result. In order not to miss updates, the query
-     * bus will queue all updates which happen after the subscription query is done and once the subscription to the
-     * flux is made, these updates will be emitted.
-     * <p>
-     * If there is an error during retrieving or consuming initial result, stream for incremental updates is NOT
-     * interrupted.
-     * <p>
-     * If there is an error during emitting an update, subscription is cancelled causing further emits not reaching the
-     * destination.
-     * <p>
-     * The buffer size which accumulates the updates (not to be missed) is {@link Queues#SMALL_BUFFER_SIZE}.
-     *
-     * @param query the query
-     * @param <Q>   the payload type of the query
-     * @param <I>   the response type of the query
-     * @param <U>   the incremental response types of the query
-     * @return query result containing initial result and incremental updates
-     */
-    default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage<Q, I, U> query
-    ) {
-        return subscriptionQuery(query, Queues.SMALL_BUFFER_SIZE);
+    @Nonnull
+    default Publisher<QueryResponseMessage> streamingQuery(@Nonnull StreamingQueryMessage query,
+                                                           @Nullable ProcessingContext context) {
+        return Mono.fromSupplier(() -> query(query, context))
+                   .flatMapMany(MessageStream::asFlux)
+                   .map(MessageStream.Entry::message);
     }
 
     /**
@@ -141,40 +116,93 @@ public interface QueryBus extends QueryHandlerRegistry<QueryBus>, DescribableCom
      * If there is an error during emitting an update, subscription is cancelled causing further emits not reaching the
      * destination.
      *
-     * @param query            the query
+     * @param query            The subscription query to dispatch.
+     * @param context          The processing context under which the query is being published (can be {@code null}).
      * @param updateBufferSize the size of buffer which accumulates updates before subscription to the {@code flux} is
-     *                         made
-     * @param <Q>              the payload type of the query
-     * @param <I>              the response type of the query
-     * @param <U>              the incremental response types of the query
+     *                         made.
      * @return query result containing initial result and incremental updates
      */
-    default <Q, I, U> SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> subscriptionQuery(
-            @Nonnull SubscriptionQueryMessage<Q, I, U> query, int updateBufferSize
-    ) {
-        return new SubscriptionQueryResult<>() {
-
-            @Override
-            public Mono<QueryResponseMessage> initialResult() {
-                return Mono.fromFuture(() -> query(query));
-            }
-
-            @Override
-            public Flux<SubscriptionQueryUpdateMessage> updates() {
-                return Flux.empty();
-            }
-
-            @Override
-            public boolean cancel() {
-                return true;
-            }
-        };
-    }
+    @Nonnull
+    SubscriptionQueryResponseMessages subscriptionQuery(@Nonnull SubscriptionQueryMessage query,
+                                                        @Nullable ProcessingContext context,
+                                                        int updateBufferSize);
 
     /**
-     * Gets the {@link QueryUpdateEmitter} associated with this {@link QueryBus}.
+     * Subscribes the given {@code query} with the given {@code updateBufferSize}, resulting in an {@link UpdateHandler}
+     * providing a {@link reactor.core.publisher.Flux} to the emitted updates.
+     * <p>
+     * Can be used directly instead when fine-grained control of update handlers is required. If using the
+     * {@link UpdateHandler} directly is not mandatory for your use case, we strongly recommend using
+     * {@link #subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)} instead.
      *
-     * @return the associated {@link QueryUpdateEmitter}
+     * @param query            The subscription query for which we register an update handler.
+     * @param updateBufferSize The size of buffer that accumulates updates before a subscription to the
+     *                         {@link UpdateHandler#updates()} is made.
+     * @return The update handler containing the {@link reactor.core.publisher.Flux} of emitted updates, as well as
+     * {@link UpdateHandler#cancel()} and {@link UpdateHandler#complete()} hooks.
+     * @throws SubscriptionQueryAlreadyRegisteredException Whenever an update handler was already registered for the
+     *                                                     given {@code query}.
      */
-    QueryUpdateEmitter queryUpdateEmitter();
+    @Nonnull
+    UpdateHandler subscribeToUpdates(@Nonnull SubscriptionQueryMessage query, int updateBufferSize);
+
+    /**
+     * Emits the outcome of the {@code updateSupplier} to
+     * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries}
+     * matching the given {@code queryName} and given {@code filter}.
+     *
+     * @param filter         A predicate filtering on {@link SubscriptionQueryMessage SubscriptionQueryMessages}. The
+     *                       {@code updateSupplier} will only be sent to subscription queries matching this filter.
+     * @param updateSupplier The update supplier to emit for
+     *                       {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int)
+     *                       subscription queries} matching the given {@code filter}.
+     * @param context        The processing context under which the updateSupplier is being emitted (can be
+     *                       {@code null}).
+     * @return A future completing whenever the updateSupplier has been emitted.
+     */
+    @Nonnull
+    CompletableFuture<Void> emitUpdate(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                       @Nonnull Supplier<SubscriptionQueryUpdateMessage> updateSupplier,
+                                       @Nullable ProcessingContext context);
+
+    /**
+     * Completes
+     * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries}
+     * matching the given {@code filter}.
+     * <p>
+     * To be used whenever there are no subsequent update to
+     * {@link #emitUpdate(Predicate, Supplier, ProcessingContext) emit} left.
+     *
+     * @param filter  A predicate filtering on {@link SubscriptionQueryMessage SubscriptionQueryMessages}. Subscription
+     *                queries matching this filter will be completed.
+     * @param context The processing context within which to complete subscription queries (can be {@code null}).
+     * @return A future completing whenever all matching
+     * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries} have
+     * been completed.
+     */
+    @Nonnull
+    CompletableFuture<Void> completeSubscriptions(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                  @Nullable ProcessingContext context);
+
+    /**
+     * Completes
+     * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries}
+     * matching the given {@code filter} exceptionally with the given {@code cause}.
+     * <p>
+     * To be used whenever {@link #emitUpdate(Predicate, Supplier, ProcessingContext) emitting updates} should be
+     * stopped due to some exception.
+     *
+     * @param filter  A predicate filtering on {@link SubscriptionQueryMessage SubscriptionQueryMessages}. Subscription
+     *                queries matching this filter will be completed exceptionally.
+     * @param cause   the cause of an error
+     * @param context The processing context within which to complete subscription queries exceptionally (can be
+     *                {@code null}).
+     * @return A future completing whenever all matching
+     * {@link QueryBus#subscriptionQuery(SubscriptionQueryMessage, ProcessingContext, int) subscription queries} have
+     * been completed exceptionally.
+     */
+    @Nonnull
+    CompletableFuture<Void> completeSubscriptionsExceptionally(@Nonnull Predicate<SubscriptionQueryMessage> filter,
+                                                               @Nonnull Throwable cause,
+                                                               @Nullable ProcessingContext context);
 }

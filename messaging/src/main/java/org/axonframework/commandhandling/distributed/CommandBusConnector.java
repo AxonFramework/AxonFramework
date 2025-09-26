@@ -49,8 +49,8 @@ public interface CommandBusConnector extends DescribableComponent {
      * @return A {@link CompletableFuture} that will complete with the result of the command handling.
      */
     @Nonnull
-    CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                        @Nullable ProcessingContext processingContext);
+    CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                     @Nullable ProcessingContext processingContext);
 
     /**
      * Subscribes to a command with the given {@code commandName} and a {@code loadFactor}.
@@ -105,7 +105,7 @@ public interface CommandBusConnector extends DescribableComponent {
          * @param resultMessage The result message containing the outcome of the command processing. If the message
          *                      handling yielded no result message, a {@code null} should be passed.
          */
-        void onSuccess(@Nullable CommandResultMessage<?> resultMessage);
+        void onSuccess(@Nullable CommandResultMessage resultMessage);
 
         /**
          * Called when an error occurs during command processing.

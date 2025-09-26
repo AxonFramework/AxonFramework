@@ -115,7 +115,7 @@ public interface ResultValidator<T> {
      * @param expectedResultMessage The expected result message of the command execution
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectResultMessage(CommandResultMessage<?> expectedResultMessage);
+    ResultValidator<T> expectResultMessage(CommandResultMessage expectedResultMessage);
 
     /**
      * Expect the command handler to return a value that matches the given {@code matcher} after execution.
@@ -123,7 +123,7 @@ public interface ResultValidator<T> {
      * @param matcher The matcher to verify the actual result message against
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectResultMessageMatching(Matcher<? super CommandResultMessage<?>> matcher);
+    ResultValidator<T> expectResultMessageMatching(Matcher<? super CommandResultMessage> matcher);
 
     /**
      * Expect an exception message to occur during command handler execution that matches with the given {@code

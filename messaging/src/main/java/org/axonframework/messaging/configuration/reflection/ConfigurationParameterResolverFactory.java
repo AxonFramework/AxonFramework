@@ -20,9 +20,9 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.messaging.annotation.FixedValueParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.FixedValueParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolver;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -55,7 +55,9 @@ public class ConfigurationParameterResolverFactory implements ParameterResolverF
 
     @Nullable
     @Override
-    public ParameterResolver<?> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<?> createInstance(@Nonnull Executable executable,
+                                               @Nonnull Parameter[] parameters,
+                                               int parameterIndex) {
         Class<?> componentType = parameters[parameterIndex].getType();
         return configuration.getOptionalComponent(componentType)
                             .map(FixedValueParameterResolver::new)

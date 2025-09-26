@@ -16,7 +16,7 @@
 
 package org.axonframework.queryhandling.tracing;
 
-// TODO 3488 - Introduce tracing logic here.
+// TODO 3594 - Introduce tracing logic here.
 public class TracingQueryBus {
 
     /*
@@ -39,7 +39,7 @@ public class TracingQueryBus {
             LegacyDefaultUnitOfWork<StreamingQueryMessage> uow = LegacyDefaultUnitOfWork.startAndGet(query);
             return uow.executeWithResult((ctx) -> {
                 /*
-                // TODO #3488 - Reintegrate, and construct chain only once!
+                // TODO 3594 - Reintegrate, and construct chain only once!
                 QueryHandler queryHandler = new QueryHandler() {
                     @Nonnull
                     @Override
@@ -60,66 +60,30 @@ public class TracingQueryBus {
 //        }
 
     /*
-    @Override
-    public Stream<QueryResponseMessage> scatterGather(@Nonnull QueryMessage query, long timeout,
-                                                      @Nonnull TimeUnit unit) {
-        Assert.isFalse(Publisher.class.isAssignableFrom(query.responseType().getExpectedResponseType()),
-                       () -> "Scatter-Gather query does not support Flux as a return type.");
-        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(query);
-        List<MessageHandler<? super QueryMessage, ? extends QueryResponseMessage>> handlers =
-                getHandlersForMessage(query);
-        if (handlers.isEmpty()) {
-            monitorCallback.reportIgnored();
-            return Stream.empty();
-        }
+    UpdateEmitter logic
 
-        return spanFactory.createScatterGatherSpan(query, false).runSupplier(() -> {
-            long deadline = System.currentTimeMillis() + unit.toMillis(timeout);
-            List<Span> spans = handlers.stream().map(handler -> {
-                int handlerIndex = handlers.indexOf(handler);
-                return spanFactory.createScatterGatherHandlerSpan(query, handlerIndex);
-            }).collect(Collectors.toList());
-            return handlers
-                    .stream()
-                    .map(handler -> {
-                        Span span = spans.get(handlers.indexOf(handler));
-                        return span.runSupplier(
-                                () -> scatterGatherHandler(span, monitorCallback, query, deadline, handler));
-                    })
-                    .filter(Objects::nonNull);
-        });
-    }
-     */
+    @Test
+    void queryUpdateEmitterIsTraced() {
+        SubscriptionQueryMessage queryMessage = new GenericSubscriptionQueryMessage(
+                new MessageType("chatMessages"), "some-payload",
+                multipleInstancesOf(String.class), instanceOf(String.class)
+        );
 
-    /*
-    private QueryResponseMessage scatterGatherHandler(
-            Span span,
-            MessageMonitor.MonitorCallback monitorCallback,
-            QueryMessage interceptedQuery,
-            long deadline,
-            MessageHandler<? super QueryMessage, ? extends QueryResponseMessage> handler
-    ) {
-        long leftTimeout = getRemainingOfDeadline(deadline);
-        ResultMessage resultMessage =
-                interceptAndInvoke(LegacyDefaultUnitOfWork.startAndGet(interceptedQuery),
-                                   handler);
-        QueryResponseMessage response = null;
-        if (resultMessage.isExceptional()) {
-            monitorCallback.reportFailure(resultMessage.exceptionResult());
-            span.recordException(resultMessage.exceptionResult());
-            errorHandler.onError(resultMessage.exceptionResult(), interceptedQuery, handler);
-        } else {
-            try {
-                response = ((CompletableFuture<QueryResponseMessage>) resultMessage.payload()).get(leftTimeout,
-                                                                                                   TimeUnit.MILLISECONDS);
-                monitorCallback.reportSuccess();
-            } catch (Exception e) {
-                span.recordException(e);
-                monitorCallback.reportFailure(e);
-                errorHandler.onError(e, interceptedQuery, handler);
-            }
-        }
-        return response;
+        UpdateHandler result = queryBus.subscribeToUpdates(
+                queryMessage,
+                1024
+        );
+
+        result.updates().subscribe();
+//        testSubject.emit(any -> true, "some-awesome-text");
+        result.complete();
+
+        spanFactory.verifySpanCompleted("QueryUpdateEmitter.scheduleQueryUpdateMessage");
+        spanFactory.verifySpanHasType("QueryUpdateEmitter.scheduleQueryUpdateMessage",
+                                      TestSpanFactory.TestSpanType.INTERNAL);
+        spanFactory.verifySpanCompleted("QueryUpdateEmitter.emitQueryUpdateMessage");
+        spanFactory.verifySpanHasType("QueryUpdateEmitter.emitQueryUpdateMessage",
+                                      TestSpanFactory.TestSpanType.DISPATCH);
     }
-     */
+    * */
 }

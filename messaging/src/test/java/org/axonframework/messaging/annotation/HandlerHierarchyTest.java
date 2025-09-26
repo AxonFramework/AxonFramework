@@ -23,6 +23,11 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.annotations.DefaultParameterResolverFactory;
+import org.axonframework.messaging.annotations.HandlerComparator;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.annotations.MethodInvokingMessageHandlingMember;
+import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;

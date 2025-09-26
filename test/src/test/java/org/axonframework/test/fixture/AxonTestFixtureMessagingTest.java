@@ -686,7 +686,7 @@ class AxonTestFixtureMessagingTest {
                             var metadataSample = command.metadata().get("sample");
                             var eventSink = c.getComponent(EventSink.class);
                             eventSink.publish(context, studentNameChangedEventMessage(payload.id(), payload.name(), 1));
-                            var resultMessage = new GenericCommandResultMessage<>(
+                            var resultMessage = new GenericCommandResultMessage(
                                     new MessageType(CommandResult.class),
                                     new CommandResult("Result " + payload.name(), metadataSample));
                             return MessageStream.just(resultMessage);

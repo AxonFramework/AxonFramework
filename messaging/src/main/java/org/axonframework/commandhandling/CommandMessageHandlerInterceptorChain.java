@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
 import org.axonframework.messaging.MessageStream;
@@ -77,8 +77,8 @@ public class CommandMessageHandlerInterceptorChain implements MessageHandlerInte
 
         @Override
         @Nonnull
-        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
-                                                                    @Nonnull ProcessingContext context) {
+        public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
+                                                                 @Nonnull ProcessingContext context) {
             //noinspection unchecked,rawtypes
             return interceptor.interceptOnHandle(command, context, (MessageHandlerInterceptorChain) this)
                               .first();

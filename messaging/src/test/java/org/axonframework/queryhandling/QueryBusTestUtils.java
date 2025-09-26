@@ -16,7 +16,6 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 
 /**
@@ -27,16 +26,13 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
 public class QueryBusTestUtils {
 
     /**
-     * Creates a new instance of {@link SimpleCommandBus} configured with a simple
+     * Creates a new instance of {@link SimpleQueryBus} configured with a simple
      * {@link UnitOfWorkTestUtils#SIMPLE_FACTORY} and an empty list of processing lifecycle handler registrars.
      *
-     * @return An instance of {@link SimpleCommandBus}.
+     * @return An instance of {@link SimpleQueryBus}.
      */
     public static QueryBus aQueryBus() {
-        return new SimpleQueryBus(
-                UnitOfWorkTestUtils.SIMPLE_FACTORY,
-                SimpleQueryUpdateEmitter.builder().build()
-        );
+        return new SimpleQueryBus(UnitOfWorkTestUtils.SIMPLE_FACTORY);
     }
 
     private QueryBusTestUtils() {

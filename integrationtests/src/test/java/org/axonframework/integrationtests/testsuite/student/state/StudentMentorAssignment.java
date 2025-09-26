@@ -16,9 +16,9 @@
 
 package org.axonframework.integrationtests.testsuite.student.state;
 
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotations.EventCriteriaBuilder;
+import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.Tag;
 import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;

@@ -86,7 +86,7 @@ public abstract class AbstractEntityChildMetamodel<C, P> implements EntityChildM
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage message,
+    public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage message,
                                                                 @Nonnull P parentEntity,
                                                                 @Nonnull ProcessingContext context) {
         List<C> childEntities = getChildEntities(parentEntity);

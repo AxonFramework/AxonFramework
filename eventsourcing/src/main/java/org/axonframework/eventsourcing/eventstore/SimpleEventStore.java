@@ -22,6 +22,7 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
@@ -84,7 +85,8 @@ public class SimpleEventStore implements EventStore {
                 taggedEvents.add(tagEvents(event));
             }
             return eventStorageEngine.appendEvents(none, context, taggedEvents)
-                                     .thenApply(EventStorageEngine.AppendTransaction::commit)
+                                     .thenApply(SimpleEventStore::castTransaction)
+                                     .thenApply(tx -> tx.commit(context).thenApply(v -> tx.afterCommit(v, context)))
                                      .thenApply(marker -> null);
         } else {
             // Return a completed future since we have an active context.
@@ -130,5 +132,10 @@ public class SimpleEventStore implements EventStore {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStorageEngine", eventStorageEngine);
         descriptor.describeProperty("tagResolver", tagResolver);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static AppendTransaction<Object> castTransaction(AppendTransaction<?> at) {
+        return (AppendTransaction<Object>) at;
     }
 }

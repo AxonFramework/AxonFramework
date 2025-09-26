@@ -23,3 +23,4 @@ org.axonframework.springboot.autoconfig.CorrelationDataProviderAutoConfiguration
 org.axonframework.springboot.autoconfig.InterceptorAutoConfiguration
 org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration
 org.axonframework.springboot.autoconfig.InfrastructureConfiguration
+org.axonframework.springboot.autoconfig.EventProcessingAutoConfiguration

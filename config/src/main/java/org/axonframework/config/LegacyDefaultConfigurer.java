@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.annotations.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
@@ -62,13 +62,13 @@ import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.MultiHandlerDefinition;
-import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotations.HandlerDefinition;
+import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.MultiHandlerDefinition;
+import org.axonframework.messaging.annotations.MultiHandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
@@ -86,7 +86,7 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotations.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
@@ -203,9 +203,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
         components.put(LegacyEventStore.class, new Component<>(config, "eventStore", LegacyConfiguration::eventStore));
         components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
-        components.put(
-                QueryUpdateEmitter.class, new Component<>(config, "queryUpdateEmitter", this::defaultQueryUpdateEmitter)
-        );
         components.put(ResourceInjector.class,
                        new Component<>(config, "resourceInjector", this::defaultResourceInjector));
         components.put(ScopeAwareProvider.class,
@@ -343,25 +340,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
                         CommandPriorityCalculator.defaultCalculator(),
                         new AnnotationRoutingStrategy()
                 ));
-    }
-
-    /**
-     * Provides the default QueryUpdateEmitter implementation. Subclasses may override this method to provide their own
-     * default.
-     *
-     * @param config The configuration based on which the component is initialized
-     * @return The default QueryUpdateEmitter to use
-     */
-    protected QueryUpdateEmitter defaultQueryUpdateEmitter(LegacyConfiguration config) {
-        return defaultComponent(QueryUpdateEmitter.class, config)
-                .orElseGet(() -> {
-                    MessageMonitor<? super SubscriptionQueryUpdateMessage> updateMessageMonitor =
-                            config.messageMonitor(QueryUpdateEmitter.class, "queryUpdateEmitter");
-                    return SimpleQueryUpdateEmitter.builder()
-                                                   .updateMessageMonitor(updateMessageMonitor)
-                                                   .spanFactory(config.getComponent(QueryUpdateEmitterSpanFactory.class))
-                                                   .build();
-                });
     }
 
     /**

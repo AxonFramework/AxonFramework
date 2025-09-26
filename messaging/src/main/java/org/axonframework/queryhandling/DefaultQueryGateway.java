@@ -17,18 +17,22 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.messaging.IllegalPayloadAccessException;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
+import reactor.util.concurrent.Queues;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 /**
  * Default implementation of the {@link QueryGateway} interface.
@@ -68,124 +72,118 @@ public class DefaultQueryGateway implements QueryGateway {
 
     @Nonnull
     @Override
-    public <R, Q> CompletableFuture<R> query(@Nonnull Q query,
-                                             @Nonnull ResponseType<R> responseType) {
-        QueryMessage queryMessage = asQueryMessage(query, responseType);
-
-        CompletableFuture<QueryResponseMessage> queryResponse = queryBus.query(queryMessage);
-        CompletableFuture<R> result = new CompletableFuture<>();
-        result.whenComplete((r, e) -> {
-            if (!queryResponse.isDone()) {
-                queryResponse.cancel(true);
+    public <R> CompletableFuture<R> query(@Nonnull Object query,
+                                          @Nonnull Class<R> responseType,
+                                          @Nullable ProcessingContext context) {
+        QueryMessage queryMessage = asQueryMessage(query, ResponseTypes.instanceOf(responseType));
+        MessageStream<QueryResponseMessage> resultStream = queryBus.query(queryMessage, context);
+        CompletableFuture<R> resultFuture =
+                resultStream.first()
+                            .asCompletableFuture()
+                            .thenApply(MessageStream.Entry::message)
+                            .thenApply(queryResponseMessage -> queryResponseMessage.payloadAs(responseType));
+        // We cannot chain the whenComplete call, as otherwise CompletableFuture#cancel is not propagated to the lambda.
+        resultFuture.whenComplete((r, e) -> {
+            if (!resultStream.isCompleted()) {
+                resultStream.close();
             }
         });
-        queryResponse.exceptionally(cause -> asResponseMessage(responseType.responseMessagePayloadType(), cause))
-                     .thenAccept(queryResponseMessage -> {
-                         try {
-                             if (queryResponseMessage.isExceptional()) {
-                                 result.completeExceptionally(queryResponseMessage.exceptionResult());
-                             } else {
-                                 result.complete((R) queryResponseMessage.payload());
-                             }
-                         } catch (Exception e) {
-                             result.completeExceptionally(e);
-                         }
-                     });
-        return result;
-    }
-
-    /**
-     * Creates a Query Response Message with given {@code declaredType} and {@code exception}.
-     *
-     * @param declaredType The declared type of the Query Response Message to be created
-     * @param exception    The Exception describing the cause of an error
-     * @param <R>          The type of the payload
-     * @return a message containing exception result
-     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
-     * {@link QualifiedName name}.
-     */
-    @Deprecated
-    private <R> QueryResponseMessage asResponseMessage(Class<R> declaredType, Throwable exception) {
-        return new GenericQueryResponseMessage(messageTypeResolver.resolveOrThrow(exception.getClass()),
-                                               exception,
-                                               declaredType);
+        return resultFuture;
     }
 
     @Nonnull
     @Override
-    public <R, Q> Publisher<R> streamingQuery(@Nonnull Q query, @Nonnull Class<R> responseType) {
+    public <R> CompletableFuture<List<R>> queryMany(@Nonnull Object query,
+                                                    @Nonnull Class<R> responseType,
+                                                    @Nullable ProcessingContext context) {
+        QueryMessage queryMessage = asQueryMessage(query, ResponseTypes.multipleInstancesOf(responseType));
+        MessageStream<QueryResponseMessage> resultStream = queryBus.query(queryMessage, context);
+        CompletableFuture<List<R>> resultFuture =
+                resultStream.reduce(new ArrayList<>(), (list, entry) -> {
+                    list.add(entry.message().payloadAs(responseType));
+                    return list;
+                });
+        // We cannot chain the whenComplete call, as otherwise CompletableFuture#cancel is not propagated to the lambda.
+        resultFuture.whenComplete((r, e) -> {
+            if (!resultStream.isCompleted()) {
+                resultStream.close();
+            }
+        });
+        return resultFuture;
+    }
+
+    @Nonnull
+    @Override
+    public <R> Publisher<R> streamingQuery(@Nonnull Object query,
+                                           @Nonnull Class<R> responseType,
+                                           @Nullable ProcessingContext context) {
         return Mono.fromSupplier(() -> asStreamingQueryMessage(query, responseType))
-                   .flatMapMany(queryMessage -> queryBus.streamingQuery(queryMessage))
-                   .map(m -> (R) m.payload());
-    }
-
-    private <R, Q> StreamingQueryMessage asStreamingQueryMessage(Q query,
-                                                                 Class<R> responseType) {
-        return query instanceof Message
-                ? new GenericStreamingQueryMessage((Message) query, responseType)
-                : new GenericStreamingQueryMessage(messageTypeResolver.resolveOrThrow(query), query, responseType);
+                   .flatMapMany(queryMessage -> queryBus.streamingQuery(queryMessage, context))
+                   .mapNotNull(m -> m.payloadAs(responseType));
     }
 
     @Nonnull
     @Override
-    public <R, Q> Stream<R> scatterGather(@Nonnull Q query,
-                                          @Nonnull ResponseType<R> responseType,
-                                          long timeout,
-                                          @Nonnull TimeUnit timeUnit) {
-        QueryMessage queryMessage = asQueryMessage(query, responseType);
-        return queryBus.scatterGather(queryMessage, timeout, timeUnit)
-                       .map(t -> (R) t.payload());
+    public <R> Publisher<R> subscriptionQuery(@Nonnull Object query,
+                                              @Nonnull Class<R> responseType,
+                                              @Nullable ProcessingContext context) {
+        SubscriptionQueryMessage queryMessage =
+                asSubscriptionQueryMessage(query,
+                                           ResponseTypes.instanceOf(responseType),
+                                           ResponseTypes.instanceOf(responseType));
+        return queryBus.subscriptionQuery(queryMessage, context, Queues.SMALL_BUFFER_SIZE)
+                       .asFlux()
+                       .mapNotNull(message -> message.payloadAs(responseType));
     }
 
     @Nonnull
     @Override
-    public <Q, I, U> SubscriptionQueryResult<I, U> subscriptionQuery(@Nonnull Q query,
-                                                                     @Nonnull ResponseType<I> initialResponseType,
-                                                                     @Nonnull ResponseType<U> updateResponseType,
-                                                                     int updateBufferSize) {
-        SubscriptionQueryMessage<?, I, U> subscriptionQueryMessage =
-                asSubscriptionQueryMessage(query, initialResponseType, updateResponseType);
-
-        SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result =
-                queryBus.subscriptionQuery(subscriptionQueryMessage, updateBufferSize);
-
-        return getSubscriptionQueryResult(result);
+    public <I, U> SubscriptionQueryResponse<I, U> subscriptionQuery(@Nonnull Object query,
+                                                                    @Nonnull Class<I> initialResponseType,
+                                                                    @Nonnull Class<U> updateResponseType,
+                                                                    @Nullable ProcessingContext context,
+                                                                    int updateBufferSize) {
+        SubscriptionQueryMessage queryMessage =
+                asSubscriptionQueryMessage(query,
+                                           ResponseTypes.instanceOf(initialResponseType),
+                                           ResponseTypes.instanceOf(updateResponseType));
+        SubscriptionQueryResponseMessages response = queryBus.subscriptionQuery(queryMessage,
+                                                                                context,
+                                                                                updateBufferSize);
+        return new GenericSubscriptionQueryResponse<>(response,
+                                                      message -> message.payloadAs(initialResponseType),
+                                                      message -> message.payloadAs(updateResponseType));
     }
 
-    private <R, Q> QueryMessage asQueryMessage(Q query,
-                                               ResponseType<R> responseType) {
+
+    private QueryMessage asQueryMessage(Object query, ResponseType<?> responseType) {
+        return query instanceof Message message
+                ? new GenericQueryMessage(message, responseType)
+                : new GenericQueryMessage(resolveType(query), query, responseType);
+    }
+
+    private <R> StreamingQueryMessage asStreamingQueryMessage(Object query, Class<R> responseType) {
+        return query instanceof Message message
+                ? new GenericStreamingQueryMessage(message, responseType)
+                : new GenericStreamingQueryMessage(resolveType(query), query, responseType);
+    }
+
+    private <I, U> SubscriptionQueryMessage asSubscriptionQueryMessage(Object query,
+                                                                       ResponseType<I> initialType,
+                                                                       ResponseType<U> updateType) {
         return query instanceof Message
-                ? new GenericQueryMessage((Message) query, responseType)
-                : new GenericQueryMessage(messageTypeResolver.resolveOrThrow(query), query, responseType);
+                ? new GenericSubscriptionQueryMessage((Message) query, initialType, updateType)
+                : new GenericSubscriptionQueryMessage(resolveType(query), query, initialType, updateType);
     }
 
-    private <Q, I, U> SubscriptionQueryMessage<Q, I, U> asSubscriptionQueryMessage(
-            Q query,
-            ResponseType<I> initialResponseType,
-            ResponseType<U> updateResponseType
-    ) {
-        return query instanceof Message
-                ? new GenericSubscriptionQueryMessage<>((Message) query,
-                                                        initialResponseType,
-                                                        updateResponseType)
-                : new GenericSubscriptionQueryMessage<>(messageTypeResolver.resolveOrThrow(query),
-                                                        query,
-                                                        initialResponseType,
-                                                        updateResponseType);
+    private MessageType resolveType(Object query) {
+        return messageTypeResolver.resolveOrThrow(query);
     }
 
-    private <I, U> DefaultSubscriptionQueryResult<I, U> getSubscriptionQueryResult(
-            SubscriptionQueryResult<QueryResponseMessage, SubscriptionQueryUpdateMessage> result
-    ) {
-        return new DefaultSubscriptionQueryResult<>(
-                result.initialResult()
-                      .filter(initialResult -> Objects.nonNull(initialResult.payload()))
-                      .map(t -> (I) t.payload())
-                      .onErrorMap(e -> e instanceof IllegalPayloadAccessException ? e.getCause() : e),
-                result.updates()
-                      .filter(update -> Objects.nonNull(update.payload()))
-                      .map(t -> (U) t.payload()),
-                result
-        );
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("queryBus", queryBus);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
+        descriptor.describeProperty("priorityCalculator", priorityCalculator);
     }
 }

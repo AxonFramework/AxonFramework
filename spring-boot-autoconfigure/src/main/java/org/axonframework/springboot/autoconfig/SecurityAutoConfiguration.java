@@ -16,7 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
 import org.axonframework.spring.authorization.SecuredMessageHandlerDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

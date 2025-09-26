@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.annotations.AnnotationRoutingStrategy;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.Metadata;
@@ -64,7 +64,7 @@ class DefaultCommandGatewayTest {
     @Test
     void wrapsObjectIntoCommandMessage() throws ExecutionException, InterruptedException {
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new MessageType("result"), "OK")
+                new GenericCommandResultMessage(new MessageType("result"), "OK")
         ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
@@ -97,7 +97,7 @@ class DefaultCommandGatewayTest {
     @Test
     void dispatchReturnsExceptionallyCompletedFutureWhenCommandBusReturnsExceptionalMessage() {
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new MessageType("result"), new MockException())
+                new GenericCommandResultMessage(new MessageType("result"), new MockException())
         ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
@@ -115,7 +115,7 @@ class DefaultCommandGatewayTest {
     void resolvesMessageTypeUsingMessageNameResolver() throws ExecutionException, InterruptedException {
         // given
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new MessageType("result"), "OK")
+                new GenericCommandResultMessage(new MessageType("result"), "OK")
         ));
 
         // when
@@ -132,7 +132,7 @@ class DefaultCommandGatewayTest {
     void passCommandMessageAsIs() throws ExecutionException, InterruptedException {
         // given
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new MessageType("result"), "OK")
+                new GenericCommandResultMessage(new MessageType("result"), "OK")
         ));
 
         // when

@@ -16,19 +16,19 @@
 
 package org.axonframework.modelling.command.inspection;
 
-import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
+import org.axonframework.commandhandling.annotations.CommandHandlingMember;
 import org.axonframework.common.IdentifierValidator;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotations.HandlerDefinition;
+import org.axonframework.messaging.annotations.MessageHandlerInvocationException;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateRoot;
@@ -63,7 +63,7 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.ListUtils.distinct;
 import static org.axonframework.common.ReflectionUtils.NOT_RECURSIVE;
-import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
+import static org.axonframework.common.annotations.AnnotationUtils.findAnnotationAttributes;
 
 /**
  * AggregateMetaModelFactory implementation that uses annotations on the target aggregate's members to build up the
@@ -252,7 +252,7 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
                     : handlerInspector.getAllHandlers().entrySet()) {
                 Class<?> type = handlersPerType.getKey();
                 for (MessageHandlingMember<? super T> handler : handlersPerType.getValue()) {
-                    if (handler.unwrap(CommandMessageHandlingMember.class).isPresent()) {
+                    if (handler.unwrap(CommandHandlingMember.class).isPresent()) {
                         if (Modifier.isAbstract(type.getModifiers()) && handler.unwrap(Constructor.class).isPresent()) {
                             throw new AggregateModellingException(format(
                                     "An abstract aggregate %s cannot have @CommandHandler on constructor.", type
@@ -313,10 +313,10 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         private void validateCommandHandlers() {
             List<List<MessageHandlingMember<? super T>>> handlers = new ArrayList<>(allCommandHandlers.values());
             for (int i = 0; i < handlers.size() - 1; i++) {
-                List<CommandMessageHandlingMember<? super T>> factoryCommands1 = factoryCommands(handlers.get(i));
-                List<CommandMessageHandlingMember<? super T>> factoryCommands2 = factoryCommands(handlers.get(i + 1));
-                for (CommandMessageHandlingMember<? super T> handler1 : factoryCommands1) {
-                    for (CommandMessageHandlingMember<? super T> handler2 : factoryCommands2) {
+                List<CommandHandlingMember<? super T>> factoryCommands1 = factoryCommands(handlers.get(i));
+                List<CommandHandlingMember<? super T>> factoryCommands2 = factoryCommands(handlers.get(i + 1));
+                for (CommandHandlingMember<? super T> handler1 : factoryCommands1) {
+                    for (CommandHandlingMember<? super T> handler2 : factoryCommands2) {
                         String commandName1 = handler1.commandName();
                         String commandName2 = handler2.commandName();
                         if (commandName1.equals(commandName2)) {
@@ -336,14 +336,14 @@ public class AnnotatedAggregateMetaModelFactory implements AggregateMetaModelFac
         }
 
         @SuppressWarnings("unchecked")
-        private List<CommandMessageHandlingMember<? super T>> factoryCommands(
+        private List<CommandHandlingMember<? super T>> factoryCommands(
                 List<MessageHandlingMember<? super T>> handlers) {
             return handlers.stream()
-                           .map(h -> h.unwrap(CommandMessageHandlingMember.class))
+                           .map(h -> h.unwrap(CommandHandlingMember.class))
                            .filter(Optional::isPresent)
                            .map(Optional::get)
-                           .filter(CommandMessageHandlingMember::isFactoryHandler)
-                           .map(h -> (CommandMessageHandlingMember<? super T>) h)
+                           .filter(CommandHandlingMember::isFactoryHandler)
+                           .map(h -> (CommandHandlingMember<? super T>) h)
                            .collect(toList());
         }
 

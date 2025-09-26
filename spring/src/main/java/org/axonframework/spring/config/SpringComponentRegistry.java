@@ -19,7 +19,7 @@ package org.axonframework.spring.config;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component;
 import org.axonframework.configuration.ComponentDefinition;
@@ -226,6 +226,24 @@ public class SpringComponentRegistry implements
     @Override
     public ComponentRegistry disableEnhancerScanning() {
         this.disableEnhancerScanning = true;
+        return this;
+    }
+
+    @Override
+    public ComponentRegistry disableEnhancer(@Nonnull String fullyQualifiedClassName) {
+        Objects.requireNonNull(fullyQualifiedClassName, "The fully qualified class name must not be null.");
+        try {
+            var enhancerClass = Class.forName(fullyQualifiedClassName);
+            if (!ConfigurationEnhancer.class.isAssignableFrom(enhancerClass)) {
+                throw new IllegalArgumentException(
+                        String.format("Class %s is not a ConfigurationEnhancer", fullyQualifiedClassName)
+                );
+            }
+            //noinspection unchecked
+            return disableEnhancer((Class<? extends ConfigurationEnhancer>) enhancerClass);
+        } catch (ClassNotFoundException e) {
+            logger.warn("Disabling Configuration Enhancer [{}] won't take effect as the enhancer class could not be found.", fullyQualifiedClassName);
+        }
         return this;
     }
 

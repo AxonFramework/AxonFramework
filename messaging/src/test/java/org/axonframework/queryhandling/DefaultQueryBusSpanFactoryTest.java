@@ -47,7 +47,7 @@ class DefaultQueryBusSpanFactoryTest extends
 
     @Test
     void createsSubscriptionQuerySpanNonDistributed() {
-        SubscriptionQueryMessage<?, ?, ?> queryMessage = Mockito.mock(SubscriptionQueryMessage.class);
+        SubscriptionQueryMessage queryMessage = Mockito.mock(SubscriptionQueryMessage.class);
         test(spanFactory -> spanFactory.createSubscriptionQuerySpan(queryMessage, false),
              expectedSpan("QueryBus.subscriptionQuery", TestSpanFactory.TestSpanType.INTERNAL)
                      .withMessage(queryMessage)
@@ -56,36 +56,9 @@ class DefaultQueryBusSpanFactoryTest extends
 
     @Test
     void createsSubscriptionQuerySpanDistributed() {
-        SubscriptionQueryMessage<?, ?, ?> queryMessage = Mockito.mock(SubscriptionQueryMessage.class);
+        SubscriptionQueryMessage queryMessage = Mockito.mock(SubscriptionQueryMessage.class);
         test(spanFactory -> spanFactory.createSubscriptionQuerySpan(queryMessage, true),
              expectedSpan("QueryBus.subscriptionQueryDistributed", TestSpanFactory.TestSpanType.DISPATCH)
-                     .withMessage(queryMessage)
-        );
-    }
-
-    @Test
-    void createsScatterGatherQuerySpanNonDistributed() {
-        QueryMessage queryMessage = Mockito.mock(QueryMessage.class);
-        test(spanFactory -> spanFactory.createScatterGatherSpan(queryMessage, false),
-             expectedSpan("QueryBus.scatterGatherQuery", TestSpanFactory.TestSpanType.INTERNAL)
-                     .withMessage(queryMessage)
-        );
-    }
-
-    @Test
-    void createsScatterGatherQuerySpanDistributed() {
-        QueryMessage queryMessage = Mockito.mock(QueryMessage.class);
-        test(spanFactory -> spanFactory.createScatterGatherSpan(queryMessage, true),
-             expectedSpan("QueryBus.scatterGatherQueryDistributed", TestSpanFactory.TestSpanType.DISPATCH)
-                     .withMessage(queryMessage)
-        );
-    }
-
-    @Test
-    void createsScatterGatherHandlerSpan() {
-        SubscriptionQueryMessage<?, ?, ?> queryMessage = Mockito.mock(SubscriptionQueryMessage.class);
-        test(spanFactory -> spanFactory.createScatterGatherHandlerSpan(queryMessage, 4),
-             expectedSpan("QueryBus.scatterGatherHandler-4", TestSpanFactory.TestSpanType.INTERNAL)
                      .withMessage(queryMessage)
         );
     }

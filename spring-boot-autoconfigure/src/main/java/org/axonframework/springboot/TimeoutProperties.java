@@ -15,7 +15,7 @@
  */
 package org.axonframework.springboot;
 
-import org.axonframework.messaging.annotation.MessageHandlerTimeout;
+import org.axonframework.messaging.annotations.MessageHandlerTimeout;
 import org.axonframework.messaging.timeout.HandlerTimeoutConfiguration;
 import org.axonframework.messaging.timeout.TaskTimeoutSettings;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;

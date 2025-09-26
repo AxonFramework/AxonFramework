@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.modelling.saga.metamodel;
 
-import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
-import org.axonframework.messaging.annotation.NoMoreInterceptors;
+import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.interceptors.annotations.NoMoreInterceptors;
 
 /**
  * Interface of a factory for a {@link SagaModel} for any given saga type.

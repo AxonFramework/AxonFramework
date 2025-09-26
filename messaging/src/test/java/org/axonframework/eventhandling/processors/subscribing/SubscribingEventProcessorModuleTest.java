@@ -27,7 +27,6 @@ import org.axonframework.eventhandling.RecordingEventHandlingComponent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.eventhandling.configuration.EventHandlingComponentBuilder;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
@@ -568,9 +567,7 @@ class SubscribingEventProcessorModuleTest {
             @Nonnull QualifiedName supportedEventName
     ) {
         return new RecordingEventHandlingComponent(
-                EventHandlingComponentBuilder.builder()
-                                             .handles(supportedEventName, (e, c) -> MessageStream.empty())
-                                             .build()
+                new SimpleEventHandlingComponent().subscribe(supportedEventName, (e, c) -> MessageStream.empty())
         );
     }
 
