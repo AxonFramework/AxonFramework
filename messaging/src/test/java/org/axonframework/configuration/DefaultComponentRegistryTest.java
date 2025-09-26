@@ -262,6 +262,17 @@ class DefaultComponentRegistryTest {
         });
     }
 
+    @Test
+    void disableSpecificEnhancerByClassNameWillDisableLoadingOfThatEnhancer() {
+        var className = TestConfigurationEnhancer.class.getName();
+        testSubject.disableEnhancer(className);
+
+        TestConfigurationEnhancer.withActiveTestEnhancer(() -> {
+            testSubject.build(new StubLifecycleRegistry());
+            assertFalse(TestConfigurationEnhancer.hasEnhanced());
+        });
+    }
+
     @Nested
     class DescribeTo {
 
