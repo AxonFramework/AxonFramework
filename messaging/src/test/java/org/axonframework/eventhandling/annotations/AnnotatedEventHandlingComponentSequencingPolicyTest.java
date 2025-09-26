@@ -45,7 +45,7 @@ import static org.axonframework.eventhandling.sequencing.SequentialPolicy.FULL_S
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class AnnotatedEventHandlingComponentSequencePolicyTest {
+class AnnotatedEventHandlingComponentSequencingPolicyTest {
 
     public static final String AGGREGATE_TYPE = "test";
     public static final String AGGREGATE_IDENTIFIER = "id";
@@ -123,21 +123,6 @@ class AnnotatedEventHandlingComponentSequencePolicyTest {
 
             // then
             assertThat(sequenceIdentifier).isEqualTo("user123");
-        }
-
-        @Test
-        void should_use_metadata_sequencing_policy_fallback_to_event_identifier() {
-            // given
-            var eventHandler = new MetadataSequencingPolicyEventHandler();
-            var component = annotatedEventHandlingComponent(eventHandler);
-            var event = eventMessage("test-event");
-            var context = messageProcessingContext(event);
-
-            // when
-            var sequenceIdentifier = component.sequenceIdentifierFor(event, context);
-
-            // then
-            assertThat(sequenceIdentifier).isEqualTo(event.identifier());
         }
 
         @Test
