@@ -30,11 +30,6 @@ Following our Vertical Slice Architecture, we'll place each message in its appro
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
-
-import io.axoniq.demo.university.faculty.shared.ids.CourseId;
-import org.axonframework.modelling.annotations.TargetEntityId;
-
 public record CreateCourse(
     CourseId courseId,
     String name,
@@ -71,10 +66,6 @@ Next, let's define the event that will be published when a course is created:
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/events/CourseCreated.java
 ----
-package io.axoniq.demo.university.faculty.events;
-
-import org.axonframework.eventsourcing.annotations.EventTag;
-
 public record CourseCreated(
     @EventTag
     CourseId courseId, // <1>
@@ -110,8 +101,6 @@ Depending on your IDE, the shortcut or menu may vary, but it's a shortcut worth 
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
-
 class CreateCourseTest {
 
 }
@@ -129,8 +118,6 @@ We need to have access to application components in tests to verify their behavi
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
-
 class CreateCourseTest {
 
     private AxonTestFixture fixture;
@@ -175,8 +162,6 @@ image::EventModeling_CreateCourse_GWT_Spec1.png[]
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
-
 class CreateCourseTest {
 
     // fixture creation skipped for brevity
@@ -307,30 +292,23 @@ So let's add a test case for that to the `CreateCourseTest` class as below.
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
-
 class CreateCourseTest {
 
     // fixture creation skipped for brevity
 
     @Test
     void givenCourseCreated_WhenCreateCourse_ThenSuccess_NoEvents() {
-        // given
         var courseId = CourseId.random();
         var courseName = "Event Sourcing in Practice";
         var capacity = 3;
 
-        eventOccurred(
-                new CourseCreated(courseId, courseName, capacity) // <1>
-        );
-
-        // when
-        executeCommand(
-                new CreateCourse(courseId, courseName, capacity) // <2>
-        );
-
-        // then
-        assertNoEvents(); // <3>
+        fixture.given()
+                .event(new CourseCreated(courseId, courseName, capacity)) // <1>
+                .when()
+                .command(new CreateCourse(courseId, courseName, capacity)) // <2>
+                .then()
+                .success()
+                .noEvents(); // <3>
     }
 
 }
@@ -365,8 +343,6 @@ I'm going to put it as internal class in the handler, because it will be used ju
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseCommandHandler.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
-
 class CreateCourseCommandHandler {
 
     @EventSourcedEntity(tagKey = "courseId") // <1>
@@ -429,8 +405,6 @@ Come back to the `CreateCourseConfiguration` class and add the `State` class to 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseConfiguration.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
-
 public class CreateCourseConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
