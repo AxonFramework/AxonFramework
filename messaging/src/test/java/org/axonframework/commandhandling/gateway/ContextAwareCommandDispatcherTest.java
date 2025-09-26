@@ -43,10 +43,10 @@ class ContextAwareCommandDispatcherTest {
 
     private static final String TEST_COMMAND_PAYLOAD_ONE = "My command 1";
     private static final int TEST_COMMAND_PAYLOAD_TWO = 500;
-    private static final GenericCommandResultMessage<String> TEST_RESULT_MESSAGE_ONE =
-            new GenericCommandResultMessage<>(new MessageType("result"), "resultOne");
-    private static final GenericCommandResultMessage<String> TEST_RESULT_MESSAGE_TWO =
-            new GenericCommandResultMessage<>(new MessageType("result"), "resultTwo");
+    private static final GenericCommandResultMessage TEST_RESULT_MESSAGE_ONE =
+            new GenericCommandResultMessage(new MessageType("result"), "resultOne");
+    private static final GenericCommandResultMessage TEST_RESULT_MESSAGE_TWO =
+            new GenericCommandResultMessage(new MessageType("result"), "resultTwo");
 
     private CommandGateway commandGateway = mock(CommandGateway.class);
     private ProcessingContext context;
@@ -106,7 +106,7 @@ class ContextAwareCommandDispatcherTest {
         CommandResult resultOne = testSubject.send(TEST_COMMAND_PAYLOAD_ONE, metadataOne);
         CompletableFuture<? extends Message> resultMessageOne = resultOne.getResultMessage();
         assertThat(resultMessageOne).isNotCompleted();
-        messageOneFuture.complete(new GenericCommandResultMessage<>(new MessageType("result"), "resultOne"));
+        messageOneFuture.complete(new GenericCommandResultMessage(new MessageType("result"), "resultOne"));
         assertThat(resultMessageOne).isCompleted();
 
         CommandResult resultTwo = testSubject.send(TEST_COMMAND_PAYLOAD_TWO, metadataTwo);
@@ -139,7 +139,7 @@ class ContextAwareCommandDispatcherTest {
         CompletableFuture<String> resultOne = testSubject.send(TEST_COMMAND_PAYLOAD_ONE, String.class);
         CompletableFuture<String> resultTwo = testSubject.send(TEST_COMMAND_PAYLOAD_TWO, String.class);
         assertThat(resultOne).isNotCompleted();
-        messageOneFuture.complete(new GenericCommandResultMessage<>(new MessageType("result"), "resultOne"));
+        messageOneFuture.complete(new GenericCommandResultMessage(new MessageType("result"), "resultOne"));
         assertThat(resultOne).isCompleted();
         assertThat(resultOne.get()).isEqualTo("resultOne");
 

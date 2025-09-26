@@ -176,7 +176,7 @@ class AsyncMessageHandlerTest {
                 commandBus.subscribe(
                         new QualifiedName(CheckIfPrime.class.getName()),
                         (command, context) -> {
-                            CommandResultMessage<Boolean> value = new GenericCommandResultMessage<>(
+                            CommandResultMessage value = new GenericCommandResultMessage(
                                     null, isPrime(((CheckIfPrime) command.payload()).value())
                             );
 
@@ -192,7 +192,7 @@ class AsyncMessageHandlerTest {
                 commandBus.subscribe(
                         new QualifiedName(CheckIfPrime.class.getName()),
                         (command, context) -> {
-                            CommandResultMessage<Boolean> data = new GenericCommandResultMessage<>(
+                            CommandResultMessage data = new GenericCommandResultMessage(
                                     null, isPrime(((CheckIfPrime) command.payload()).value())
                             );
 
@@ -207,7 +207,7 @@ class AsyncMessageHandlerTest {
             void returningBooleanShouldUseResult() {
                 commandBus.subscribe(
                         new QualifiedName(CheckIfPrime.class.getName()),
-                        (command, context) -> MessageStream.just(new GenericCommandResultMessage<>(
+                        (command, context) -> MessageStream.just(new GenericCommandResultMessage(
                                 null, isPrime(((CheckIfPrime) command.payload()).value())
                         ))
                 );

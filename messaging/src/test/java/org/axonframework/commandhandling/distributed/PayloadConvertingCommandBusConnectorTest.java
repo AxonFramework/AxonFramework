@@ -84,16 +84,14 @@ class PayloadConvertingCommandBusConnectorTest {
         ProcessingContext context = mock(ProcessingContext.class);
 
         when(mockConverter.convert(ORIGINAL_PAYLOAD, (Type) byte[].class)).thenReturn(CONVERTED_PAYLOAD);
-        //noinspection unchecked
         when(mockDelegate.dispatch(any(CommandMessage.class), eq(context)))
                 .thenReturn(CompletableFuture.completedFuture(mock(CommandResultMessage.class)));
 
         // When
-        CompletableFuture<CommandResultMessage<?>> result = testSubject.dispatch(originalCommand, context);
+        CompletableFuture<CommandResultMessage> result = testSubject.dispatch(originalCommand, context);
 
         // Then
         assertNotNull(result);
-        //noinspection unchecked
         ArgumentCaptor<CommandMessage> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
         verify(mockDelegate).dispatch(commandCaptor.capture(), eq(context));
 
@@ -125,14 +123,13 @@ class PayloadConvertingCommandBusConnectorTest {
         CommandBusConnector.ResultCallback convertingCallback = callbackCaptor.getValue();
 
         // When
-        CommandResultMessage<String> resultMessage = new GenericCommandResultMessage<>(COMMAND_TYPE, ORIGINAL_PAYLOAD);
+        CommandResultMessage resultMessage = new GenericCommandResultMessage(COMMAND_TYPE, ORIGINAL_PAYLOAD);
         when(mockConverter.convert(ORIGINAL_PAYLOAD, (Type) byte[].class)).thenReturn(CONVERTED_PAYLOAD);
 
         convertingCallback.onSuccess(resultMessage);
 
         // Then
-        //noinspection unchecked
-        ArgumentCaptor<CommandResultMessage<?>> messageCaptor = ArgumentCaptor.forClass(CommandResultMessage.class);
+        ArgumentCaptor<CommandResultMessage> messageCaptor = ArgumentCaptor.forClass(CommandResultMessage.class);
         verify(originalCallback).onSuccess(messageCaptor.capture());
 
         Message convertedMessage = messageCaptor.getValue();
@@ -190,8 +187,7 @@ class PayloadConvertingCommandBusConnectorTest {
         CommandBusConnector.ResultCallback convertingCallback = callbackCaptor.getValue();
 
         // When
-        CommandResultMessage<String> resultMessageWithNullPayload =
-                new GenericCommandResultMessage<>(COMMAND_TYPE, null);
+        CommandResultMessage resultMessageWithNullPayload = new GenericCommandResultMessage(COMMAND_TYPE, null);
         convertingCallback.onSuccess(resultMessageWithNullPayload);
 
         // Then
@@ -207,7 +203,6 @@ class PayloadConvertingCommandBusConnectorTest {
                 COMMAND_TYPE, ORIGINAL_PAYLOAD, originalMetadata);
 
         when(mockConverter.convert(ORIGINAL_PAYLOAD, byte[].class)).thenReturn(CONVERTED_PAYLOAD);
-        //noinspection unchecked
         when(mockDelegate.dispatch(any(CommandMessage.class), any()))
                 .thenReturn(CompletableFuture.completedFuture(mock(CommandResultMessage.class)));
 
@@ -215,7 +210,6 @@ class PayloadConvertingCommandBusConnectorTest {
         testSubject.dispatch(originalCommand, null);
 
         // Then
-        //noinspection unchecked
         ArgumentCaptor<CommandMessage> commandCaptor = ArgumentCaptor.forClass(CommandMessage.class);
         verify(mockDelegate).dispatch(commandCaptor.capture(), any());
 

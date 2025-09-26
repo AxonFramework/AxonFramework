@@ -426,7 +426,7 @@ class FixtureTest_RegularParams {
         assertTrue(e.getMessage().contains("probable cause"));
     }
 
-    private static <R> CommandResultMessage<R> asCommandResultMessage(Throwable exception) {
-        return new GenericCommandResultMessage<>(new MessageType(exception.getClass()), exception);
+    private static  CommandResultMessage asCommandResultMessage(Throwable exception) {
+        return new GenericCommandResultMessage(new MessageType(exception.getClass()), exception);
     }
 }

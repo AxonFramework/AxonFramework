@@ -122,7 +122,7 @@ class AxonServerCommandBusConnectorTest {
                 .thenReturn(CompletableFuture.completedFuture(response));
 
         // Act
-        CompletableFuture<CommandResultMessage<?>> result = testSubject.dispatch(command, null);
+        CompletableFuture<CommandResultMessage> result = testSubject.dispatch(command, null);
 
         // Assert
         Command dispatchedCommand = commandCaptor.getValue();
@@ -200,7 +200,7 @@ class AxonServerCommandBusConnectorTest {
                 .thenReturn(CompletableFuture.completedFuture(errorResponse));
 
         // Act
-        CompletableFuture<CommandResultMessage<?>> result = testSubject.dispatch(command, null);
+        CompletableFuture<CommandResultMessage> result = testSubject.dispatch(command, null);
 
         // Assert
         assertTrue(result.isCompletedExceptionally());
@@ -223,11 +223,11 @@ class AxonServerCommandBusConnectorTest {
                 .thenReturn(CompletableFuture.completedFuture(response));
 
         // Act
-        CompletableFuture<CommandResultMessage<?>> result = testSubject.dispatch(command, null);
+        CompletableFuture<CommandResultMessage> result = testSubject.dispatch(command, null);
 
         // Assert
         assertDoesNotThrow(() -> {
-            CommandResultMessage<?> resultMessage = result.get();
+            CommandResultMessage resultMessage = result.get();
             assertNull(resultMessage);
         });
     }

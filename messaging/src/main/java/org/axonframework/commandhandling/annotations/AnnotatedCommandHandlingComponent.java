@@ -159,10 +159,16 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
         );
     }
 
+    private CommandResultMessage asCommandResultMessage(@Nonnull Message commandResult) {
+        return commandResult instanceof CommandResultMessage
+                ? (CommandResultMessage) commandResult
+                : new GenericCommandResultMessage(commandResult);
+    }
+
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
-                                                                @Nonnull ProcessingContext processingContext) {
+    public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
+                                                             @Nonnull ProcessingContext processingContext) {
         return handlingComponent.handle(command, processingContext);
     }
 

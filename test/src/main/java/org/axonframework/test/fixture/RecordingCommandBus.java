@@ -49,7 +49,8 @@ public class RecordingCommandBus implements CommandBus {
     private final Map<CommandMessage, Message> recorded = new HashMap<>();
 
     /**
-     * Creates a new {@link RecordingCommandBus} that will record all commands dispatched to the given {@code delegate}.
+     * Creates a new {@code RecordingCommandBus} that will record all commands dispatched to the given
+     * {@code delegate}.
      *
      * @param delegate The {@link CommandBus} to which commands will be dispatched.
      */
@@ -58,8 +59,8 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                               @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                            @Nullable ProcessingContext processingContext) {
         recorded.put(command, null);
         var commandResult = delegate.dispatch(command, processingContext);
         commandResult.thenApply(result -> {

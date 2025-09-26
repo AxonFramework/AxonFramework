@@ -41,9 +41,9 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Polymorphic {@link EntityMetamodel} that represents an entity that can have multiple concrete types. For
- * example, {@code Employee} and {@code Customer} could be two concrete types of {@code Person}, sharing properties and
- * a set of commands and events.
+ * Polymorphic {@link EntityMetamodel} that represents an entity that can have multiple concrete types. For example,
+ * {@code Employee} and {@code Customer} could be two concrete types of {@code Person}, sharing properties and a set of
+ * commands and events.
  * <p>
  * This metamodel delegates commands to the concrete type if the concrete type is registered for the command. If not, it
  * will attempt to handle the command with the super type. Concrete types thus take precedence over the super type for
@@ -82,9 +82,9 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
     }
 
     /**
-     * Creates a new polymorphic {@link EntityMetamodel} for the given super type. The metamodel can then be
-     * used to add concrete types to the metamodel. Any method inherited from {@link EntityMetamodelBuilder} is
-     * delegated to the super type metamodel.
+     * Creates a new polymorphic {@link EntityMetamodel} for the given super type. The metamodel can then be used to add
+     * concrete types to the metamodel. Any method inherited from {@link EntityMetamodelBuilder} is delegated to the
+     * super type metamodel.
      *
      * @param entityType The type of the entity to create a metamodel for.
      * @param <E>        The type of the entity to create a metamodel for.
@@ -129,8 +129,8 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage message,
-                                                                      @Nonnull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage> handleCreate(@Nonnull CommandMessage message,
+                                                                   @Nonnull ProcessingContext context) {
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
             return MessageStream.failed(new EntityMissingForInstanceCommandHandlerException(message));
         }
@@ -147,9 +147,9 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handleInstance(@Nonnull CommandMessage message,
-                                                                        @Nonnull E entity,
-                                                                        @Nonnull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage> handleInstance(@Nonnull CommandMessage message,
+                                                                     @Nonnull E entity,
+                                                                     @Nonnull ProcessingContext context) {
         if (isCreationalCommand(message) && !isInstanceCommand(message)) {
             return MessageStream.failed(new EntityAlreadyExistsForCreationalCommandHandlerException(message, entity));
         }
@@ -201,9 +201,8 @@ public class PolymorphicEntityMetamodel<E> implements EntityMetamodel<E>, Descri
     }
 
     /**
-     * Builder for a {@link PolymorphicEntityMetamodel}. This builder allows you to add concrete types to the
-     * metamodel. Any method inherited from {@link EntityMetamodelBuilder} is delegated to the super type
-     * metamodel.
+     * Builder for a {@link PolymorphicEntityMetamodel}. This builder allows you to add concrete types to the metamodel.
+     * Any method inherited from {@link EntityMetamodelBuilder} is delegated to the super type metamodel.
      *
      * @param <E> The type of the entity this metamodel represents.
      */

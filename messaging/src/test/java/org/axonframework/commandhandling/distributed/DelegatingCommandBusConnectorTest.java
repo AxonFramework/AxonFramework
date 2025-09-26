@@ -56,13 +56,13 @@ class DelegatingCommandBusConnectorTest {
     void testDispatchDelegatesToWrappedConnector() {
         // Given
         CommandMessage command = asCommandMessage("command");
-        CompletableFuture<CommandResultMessage<?>> expectedResult =
+        CompletableFuture<CommandResultMessage> expectedResult =
                 CompletableFuture.completedFuture(asCommandResultMessage("result"));
 
         when(delegate.dispatch(command, processingContext)).thenReturn(expectedResult);
 
         // When
-        CompletableFuture<CommandResultMessage<?>> result = wrappedConnector.dispatch(command, processingContext);
+        CompletableFuture<CommandResultMessage> result = wrappedConnector.dispatch(command, processingContext);
 
         // Then
         assertSame(expectedResult, result);
@@ -73,13 +73,13 @@ class DelegatingCommandBusConnectorTest {
     void testDispatchWithNullProcessingContext() {
         // Given
         CommandMessage command = asCommandMessage("command");
-        CompletableFuture<CommandResultMessage<?>> expectedResult =
+        CompletableFuture<CommandResultMessage> expectedResult =
                 CompletableFuture.completedFuture(asCommandResultMessage("result"));
 
         when(delegate.dispatch(command, null)).thenReturn(expectedResult);
 
         // When
-        CompletableFuture<CommandResultMessage<?>> result = wrappedConnector.dispatch(command, null);
+        CompletableFuture<CommandResultMessage> result = wrappedConnector.dispatch(command, null);
 
         // Then
         assertSame(expectedResult, result);
@@ -124,8 +124,8 @@ class DelegatingCommandBusConnectorTest {
         return new GenericCommandMessage(MessageType.fromString("commandmessage#1.0"), payload);
     }
 
-    private CommandResultMessage<String> asCommandResultMessage(String payload) {
-        return new GenericCommandResultMessage<>(MessageType.fromString("commandresult#1.0"), payload);
+    private CommandResultMessage asCommandResultMessage(String payload) {
+        return new GenericCommandResultMessage(MessageType.fromString("commandresult#1.0"), payload);
     }
 
     private QualifiedName asQualifiedName(String name) {

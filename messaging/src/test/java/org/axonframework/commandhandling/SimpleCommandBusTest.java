@@ -184,8 +184,8 @@ class SimpleCommandBusTest {
         var commandHandler = new StubCommandHandler("ok") {
             @Nonnull
             @Override
-            public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
-                                                                        @Nonnull ProcessingContext processingContext) {
+            public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
+                                                                     @Nonnull ProcessingContext processingContext) {
                 throw new MockException("Simulating exception");
             }
         };
@@ -296,8 +296,8 @@ class SimpleCommandBusTest {
 
         @Nonnull
         @Override
-        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
-                                                                    @Nonnull ProcessingContext processingContext) {
+        public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
+                                                                 @Nonnull ProcessingContext processingContext) {
             if (result instanceof Throwable error) {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> future) {

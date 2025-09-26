@@ -89,7 +89,7 @@ class EntityCommandHandlingComponentTest {
     @Test
     void returnsSupportedCommandFromModel() {
         Set<QualifiedName> result = testComponent.supportedCommands();
-        Assertions.assertEquals(Set.of(
+        assertEquals(Set.of(
                 creationalMessageType.qualifiedName(),
                 instanceMessageType.qualifiedName(),
                 mixedMessageType.qualifiedName()
@@ -98,7 +98,7 @@ class EntityCommandHandlingComponentTest {
 
     @Test
     void resultsInNoHandlerExceptionWhenIsUnknownCommand() {
-        MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent
+        MessageStream.Single<CommandResultMessage> componentResult = testComponent
                 .handle(missingCommandMessage, context);
 
         assertCompletedExceptionally(componentResult,
@@ -112,8 +112,11 @@ class EntityCommandHandlingComponentTest {
         @Test
         void executesCreationalCommandHandlerAfterLoadGivesNullResult() {
             setupLoadEntity(null);
-            CommandResultMessage<?> resultMessage = testComponent.handle(creationalCommandMessage, context)
-                                                                 .first().asCompletableFuture().join().message();
+            CommandResultMessage resultMessage = testComponent.handle(creationalCommandMessage, context)
+                                                              .first()
+                                                              .asCompletableFuture()
+                                                              .join()
+                                                              .message();
 
             verify(metamodel).handleCreate(eq(creationalCommandMessage), any());
             assertEquals("creational", resultMessage.payload());
@@ -123,8 +126,8 @@ class EntityCommandHandlingComponentTest {
         void resultsInExceptionWhenLoadReturnsNonNullEntity() {
             setupLoadEntity(new TestEntity());
 
-            MessageStream.Single<CommandResultMessage<?>> result = testComponent.handle(creationalCommandMessage,
-                                                                                        context);
+            MessageStream.Single<CommandResultMessage> result =
+                    testComponent.handle(creationalCommandMessage, context);
 
             verify(metamodel, times(0)).handleCreate(eq(creationalCommandMessage), any());
             assertCompletedExceptionally(result, EntityAlreadyExistsForCreationalCommandHandlerException.class);
@@ -133,13 +136,11 @@ class EntityCommandHandlingComponentTest {
 
         @Test
         void failureToLoadEntityWillResultInFailedMessageStream() {
-            when(repository.load(eq(entityId), any())).thenReturn(CompletableFuture.failedFuture(new RuntimeException(
-                    "Failed to load entity")));
+            when(repository.load(eq(entityId), any()))
+                    .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Failed to load entity")));
 
-
-            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
-                    creationalCommandMessage,
-                    context);
+            MessageStream.Single<CommandResultMessage> componentResult =
+                    testComponent.handle(creationalCommandMessage, context);
 
             var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
             assertEquals("Failed to load entity", exception.getCause().getMessage());
@@ -153,8 +154,8 @@ class EntityCommandHandlingComponentTest {
         void willThrowExceptionIfEntityDoesNotExist() {
             setupLoadOrCreateEntity(null);
 
-            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(instanceCommandMessage,
-                                                                                                 context);
+            MessageStream.Single<CommandResultMessage> componentResult =
+                    testComponent.handle(instanceCommandMessage, context);
 
             assertCompletedExceptionally(componentResult, EntityMissingForInstanceCommandHandlerException.class);
         }
@@ -164,23 +165,21 @@ class EntityCommandHandlingComponentTest {
             TestEntity testEntity = new TestEntity();
             setupLoadOrCreateEntity(testEntity);
 
-            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
-                    instanceCommandMessage, context);
+            MessageStream.Single<CommandResultMessage> componentResult =
+                    testComponent.handle(instanceCommandMessage, context);
 
             verify(metamodel).handleInstance(eq(instanceCommandMessage), eq(testEntity), any());
-            Assertions.assertEquals("instance", componentResult.asCompletableFuture().join().message().payload());
+            assertEquals("instance", componentResult.asCompletableFuture().join().message().payload());
         }
 
 
         @Test
         void failureToLoadOrCreateEntityWillResultInFailedMessageStream() {
-            when(repository.loadOrCreate(eq(entityId),
-                                         any())).thenReturn(CompletableFuture.failedFuture(new RuntimeException(
-                    "Failed to load entity")));
+            when(repository.loadOrCreate(eq(entityId), any()))
+                    .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Failed to load entity")));
 
-
-            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(instanceCommandMessage,
-                                                                                                 context);
+            MessageStream.Single<CommandResultMessage> componentResult =
+                    testComponent.handle(instanceCommandMessage, context);
 
             var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
             assertEquals("Failed to load entity", exception.getCause().getMessage());
@@ -195,11 +194,10 @@ class EntityCommandHandlingComponentTest {
         void willInvokeCreationalCommandHandlerWhenRepositoryReturnsNull() {
             setupLoadEntity(null);
 
-            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
-                    mixedCommandMessage, context);
+            MessageStream.Single<CommandResultMessage> componentResult =
+                    testComponent.handle(mixedCommandMessage, context);
             verify(metamodel).handleCreate(mixedCommandMessage, context);
-            assertEquals("creational-mixed",
-                         componentResult.first().asCompletableFuture().join().message().payload());
+            assertEquals("creational-mixed", componentResult.first().asCompletableFuture().join().message().payload());
         }
 
         @Test
@@ -207,22 +205,20 @@ class EntityCommandHandlingComponentTest {
             TestEntity entity = new TestEntity();
             setupLoadEntity(entity);
 
-            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
-                    mixedCommandMessage, context);
+            MessageStream.Single<CommandResultMessage> componentResult =
+                    testComponent.handle(mixedCommandMessage, context);
 
             verify(metamodel).handleInstance(mixedCommandMessage, entity, context);
-            Assertions.assertEquals("instance-mixed",
-                                    componentResult.asCompletableFuture().join().message().payload());
+            assertEquals("instance-mixed", componentResult.asCompletableFuture().join().message().payload());
         }
 
         @Test
         void failureToLoadEntityWillResultInFailedMessageStream() {
-            when(repository.load(eq(entityId), any())).thenReturn(CompletableFuture.failedFuture(new RuntimeException(
-                    "Failed to load entity")));
+            when(repository.load(eq(entityId), any()))
+                    .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Failed to load entity")));
 
-
-            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(mixedCommandMessage,
-                                                                                                 context);
+            MessageStream.Single<CommandResultMessage> componentResult =
+                    testComponent.handle(mixedCommandMessage, context);
 
             var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
             assertEquals("Failed to load entity", exception.getCause().getMessage());
@@ -231,13 +227,11 @@ class EntityCommandHandlingComponentTest {
 
     @Test
     void failureToResolveIdWillResultInFailedMessageStream() {
-        when(idResolver.resolve(eq(creationalCommandMessage), any())).thenThrow(new RuntimeException(
-                "Failed to resolve ID"));
+        when(idResolver.resolve(eq(creationalCommandMessage), any()))
+                .thenThrow(new RuntimeException("Failed to resolve ID"));
 
-
-        MessageStream.Single<? extends CommandResultMessage<?>> componentResult = testComponent.handle(
-                creationalCommandMessage,
-                context);
+        MessageStream.Single<? extends CommandResultMessage> componentResult =
+                testComponent.handle(creationalCommandMessage, context);
 
         var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
         assertEquals("Failed to resolve ID", exception.getCause().getMessage());
@@ -272,7 +266,7 @@ class EntityCommandHandlingComponentTest {
         when(repository.load(eq(entityId), any())).thenReturn(CompletableFuture.completedFuture(managedEntity));
     }
 
-    private static MessageStream.Single<CommandResultMessage<?>> resultMessage(String creational) {
-        return MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class), creational));
+    private static MessageStream.Single<CommandResultMessage> resultMessage(String creational) {
+        return MessageStream.just(new GenericCommandResultMessage(new MessageType(String.class), creational));
     }
 }

@@ -476,7 +476,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the command result. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            Command resultMessageSatisfies(@Nonnull Consumer<? super CommandResultMessage<?>> consumer);
+            Command resultMessageSatisfies(@Nonnull Consumer<? super CommandResultMessage> consumer);
 
             /**
              * Expect the last command handler from the When phase to return the given {@code expectedPayload} after

@@ -74,14 +74,13 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command resultMessageSatisfies(
-            @Nonnull Consumer<? super CommandResultMessage<?>> consumer) {
+    public AxonTestPhase.Then.Command resultMessageSatisfies(@Nonnull Consumer<? super CommandResultMessage> consumer) {
         StringDescription expectedDescription = new StringDescription();
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
         }
         try {
-            consumer.accept((CommandResultMessage<?>) actualResult);
+            consumer.accept((CommandResultMessage) actualResult);
         } catch (AssertionError e) {
             reporter.reportWrongResult(actualResult, "Result message to satisfy custom assertions: " + e.getMessage());
         }
@@ -92,13 +91,13 @@ class AxonTestThenCommand
     public AxonTestPhase.Then.Command resultMessagePayload(@Nonnull Object expectedPayload) {
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
-        PayloadMatcher<CommandResultMessage<?>> expectedMatcher =
+        PayloadMatcher<CommandResultMessage> expectedMatcher =
                 new PayloadMatcher<>(CoreMatchers.equalTo(expectedPayload));
         expectedMatcher.describeTo(expectedDescription);
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
         } else if (!verifyPayloadEquality(expectedPayload, actualResult.payload())) {
-            PayloadMatcher<CommandResultMessage<?>> actualMatcher =
+            PayloadMatcher<CommandResultMessage> actualMatcher =
                     new PayloadMatcher<>(CoreMatchers.equalTo(actualResult.payload()));
             actualMatcher.describeTo(actualDescription);
             reporter.reportWrongResult(actualDescription, expectedDescription);

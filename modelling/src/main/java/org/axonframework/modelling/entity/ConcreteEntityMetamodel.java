@@ -126,8 +126,8 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
 
     @Override
     @Nonnull
-    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage message,
-                                                                      @Nonnull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage> handleCreate(@Nonnull CommandMessage message,
+                                                                   @Nonnull ProcessingContext context) {
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
             return MessageStream.failed(new EntityMissingForInstanceCommandHandlerException(message));
         }
@@ -145,7 +145,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
 
     @Override
     @Nonnull
-    public MessageStream.Single<CommandResultMessage<?>> handleInstance(
+    public MessageStream.Single<CommandResultMessage> handleInstance(
             @Nonnull CommandMessage message,
             @Nonnull E entity,
             @Nonnull ProcessingContext context
@@ -194,7 +194,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
      * {@link EntityChildMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}. If multiple children can
      * handle the command, an exception is thrown.
      */
-    private MessageStream.Single<CommandResultMessage<?>> handleForChildren(
+    private MessageStream.Single<CommandResultMessage> handleForChildren(
             List<EntityChildMetamodel<?, E>> childrenWithCommandHandler,
             CommandMessage message,
             E entity,
