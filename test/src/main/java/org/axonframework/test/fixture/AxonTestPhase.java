@@ -548,7 +548,7 @@ public interface AxonTestPhase {
              *
              * @param assertion The assertion to wait for. The assertion will be invoked on the current Then instance.
              * @param timeout   The maximum time to wait for the assertion to pass. If the timeout is reached, the
-             *                  assertion
+             *                  assertion.
              * @return The current Then instance, for fluent interfacing.
              */
             T await(@Nonnull Consumer<T> assertion, @Nonnull Duration timeout);
