@@ -382,7 +382,9 @@ class WorkPackage {
                 unitOfWork.runOnAfterCommit(
                         ctx -> {
                             segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
-                            batchProcessedCallback.run();
+                            if (batchProcessedCallback != null) {
+                                batchProcessedCallback.run();
+                            }
                         }
                 );
                 FutureUtils.joinAndUnwrap(unitOfWork.execute());
