@@ -123,16 +123,16 @@ public class AsyncInMemoryStreamableEventSource implements StreamableEventSource
 
     @Override
     public CompletableFuture<TrackingToken> latestToken(@Nullable ProcessingContext context) {
-        return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? null
                         : new GlobalSequenceTrackingToken(eventStorage.lastKey() + 1)
         );
+    }
+
+    @Override
+    public CompletableFuture<TrackingToken> firstToken(@Nullable ProcessingContext context) {
+        return CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(-1));
     }
 
     @Override
