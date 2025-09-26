@@ -37,7 +37,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static java.util.concurrent.CompletableFuture.runAsync;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -98,15 +97,12 @@ public class InMemoryTokenStore implements TokenStore {
                                               @Nullable ProcessingContext context) {
         Objects.requireNonNull(context, "processingContext may not be null for an InMemoryTokenStore");
         if (context.isStarted()) {
-            var future = runAsync(() -> tokens.put(
-                    new ProcessAndSegment(processorName, segment),
-                    getOrDefault(token, NULL_TOKEN)));
-            context.onAfterCommit((ctx) -> future);
-            return future;
+            context.runOnAfterCommit(c -> tokens.put(new ProcessAndSegment(processorName, segment),
+                                                     getOrDefault(token, NULL_TOKEN)));
         } else {
             tokens.put(new ProcessAndSegment(processorName, segment), getOrDefault(token, NULL_TOKEN));
-            return FutureUtils.emptyCompletedFuture();
         }
+        return FutureUtils.emptyCompletedFuture();
     }
 
     @Nonnull
