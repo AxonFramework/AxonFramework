@@ -225,10 +225,6 @@ Let's create a new class for that inside the slice package, name it `CreateCours
 ----
 package io.axoniq.demo.university.faculty.write.createcourse;
 
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.modelling.annotations.InjectEntity;
-
 class CreateCourseCommandHandler {
 
     @CommandHandler // <1>
@@ -312,8 +308,6 @@ So let's add a test case for that to the `CreateCourseTest` class as below.
 .src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
 ----
 package io.axoniq.demo.university.faculty.write.createcourse;
-
-import java.util.UUID;
 
 class CreateCourseTest {
 
