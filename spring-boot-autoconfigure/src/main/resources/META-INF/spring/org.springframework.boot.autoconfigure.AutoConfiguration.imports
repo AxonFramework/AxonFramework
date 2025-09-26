@@ -24,3 +24,6 @@ org.axonframework.springboot.autoconfig.InterceptorAutoConfiguration
 org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration
 org.axonframework.springboot.autoconfig.InfrastructureConfiguration
 org.axonframework.springboot.autoconfig.EventProcessingAutoConfiguration
+org.axonframework.springboot.autoconfig.TransactionAutoConfiguration
+org.axonframework.springboot.autoconfig.JpaAutoConfiguration
+org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration

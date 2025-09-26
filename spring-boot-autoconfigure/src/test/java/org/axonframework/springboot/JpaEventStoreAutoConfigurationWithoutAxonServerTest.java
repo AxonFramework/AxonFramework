@@ -16,11 +16,11 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
+import jakarta.persistence.EntityManagerFactory;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -28,52 +28,91 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests JPA EventStore auto-configuration
  *
  * @author Sara Pellegrini
  */
-@Disabled("TODO #3496")
 class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
 
     @Test
-    void eventStore() {
+    void construct() {
         new ApplicationContextRunner()
                 .withPropertyValues("axon.axonserver.enabled=false")
-                .withUserConfiguration(TestContext.class)
+                .withUserConfiguration(EmptyTestContext.class)
                 .run(context -> {
-                    assertThat(context).getBean(LegacyEventStore.class).isInstanceOf(LegacyEmbeddedEventStore.class);
+                    assertThat(context).hasSingleBean(EventStore.class);
+                    assertThat(context).getBean(EventStorageEngine.class).isInstanceOf(
+                            AggregateBasedJpaEventStorageEngine.class);
                 });
     }
 
     @Test
-    void eventBusOverridesEventStoreDefinition() {
+    void notConstructIfEventStoreDefinitionPresent() {
         new ApplicationContextRunner()
                 .withPropertyValues("axon.axonserver.enabled=false")
-                .withUserConfiguration(EventBusContext.class, TestContext.class)
+                .withUserConfiguration(ContextWithStore.class, EmptyTestContext.class)
                 .run(context -> {
-                    assertThat(context).hasBean("simpleEventBus");
-                    assertThat(context).getBean(EventBus.class).isInstanceOf(SimpleEventBus.class);
-                    assertThat(context).doesNotHaveBean(LegacyEventStore.class);
-                    assertThat(context).doesNotHaveBean(LegacyEventStorageEngine.class);
+                    assertThat(context)
+                            .hasBean(ContextWithStore.STORE_NAME)
+                            .doesNotHaveBean(AggregateBasedJpaEventStorageEngine.class);
+                    assertThat(context).getBeanNames(EventStore.class).containsExactly(ContextWithStore.STORE_NAME);
                 });
     }
+
+    @Test
+    void notConstructIfEventStorageEngineDefinitionPresent() {
+        new ApplicationContextRunner()
+                .withPropertyValues("axon.axonserver.enabled=false")
+                .withUserConfiguration(ContextWithEngine.class, EmptyTestContext.class)
+                .run(context -> {
+                    assertThat(context)
+                            .hasBean(ContextWithEngine.ENGINE_NAME)
+                            .doesNotHaveBean(AggregateBasedJpaEventStorageEngine.class);
+                    assertThat(context).getBeanNames(EventStorageEngine.class)
+                                       .containsExactly(ContextWithEngine.ENGINE_NAME);
+                });
+    }
+
 
     @ContextConfiguration
     @EnableAutoConfiguration
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
-    private static class TestContext {
-
-    }
-
-    private static class EventBusContext {
+    private static class EmptyTestContext {
 
         @Bean
-        public EventBus simpleEventBus() {
-            return SimpleEventBus.builder().build();
+        public EntityManagerFactory entityManagerFactory() {
+            return mock();
+        }
+
+        @Bean
+        public PlatformTransactionManager transactionManager() {
+            return mock();
+        }
+    }
+
+    private static class ContextWithStore {
+
+        static final String STORE_NAME = "StoreName";
+
+        @Bean(STORE_NAME)
+        public EventStore eventStore() {
+            return new SimpleEventStore(mock(), mock());
+        }
+    }
+
+    private static class ContextWithEngine {
+
+        static final String ENGINE_NAME = "EngineName";
+
+        @Bean(ENGINE_NAME)
+        public EventStorageEngine mockEventStorageEngine() {
+            return mock();
         }
     }
 }

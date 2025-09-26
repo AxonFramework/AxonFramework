@@ -16,27 +16,30 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.transaction.PlatformTransactionManager;
 
+/**
+ * Configuration of transaction management components.
+ */
 @AutoConfiguration
-@ConditionalOnClass(PlatformTransactionManager.class)
-@AutoConfigureAfter(name = {
-        "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
-        "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration"
-})
+@ConditionalOnBean({EntityManagerFactory.class, PlatformTransactionManager.class})
 public class TransactionAutoConfiguration {
 
+    /**
+     * Creates a transaction manager.
+     *
+     * @param transactionManager Transaction manager.
+     * @return A transaction manager to be used on DB-related operations.
+     */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnBean(PlatformTransactionManager.class)
     public TransactionManager axonTransactionManager(PlatformTransactionManager transactionManager) {
         return new SpringTransactionManager(transactionManager);
     }

@@ -66,7 +66,8 @@ class EventProcessorConfigurationTest {
 
     @Nested
     @SpringBootTest(
-            classes = {EventProcessorConfigurationTest.MyCustomContext.class},
+            webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+            classes = {MyCustomContext.class, ContextWithTokenStore.class},
             properties = {
                     "axon.axonserver.enabled=false",
                     "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].mode=pooled",
@@ -111,7 +112,8 @@ class EventProcessorConfigurationTest {
 
     @Nested
     @SpringBootTest(
-            classes = {EventProcessorConfigurationTest.MyCustomContext.class},
+            webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+            classes = {MyCustomContext.class, ContextWithTokenStore.class},
             properties = {
                     "axon.axonserver.enabled=false",
                     "axon.eventhandling.processors[org.axonframework.springboot.fixture.event.test1].mode=subscribing",
@@ -197,6 +199,7 @@ class EventProcessorConfigurationTest {
             var app = new SpringApplication(MyCustomContext.class);
             app.setLogStartupInfo(false);
             Map<String, Object> props = new HashMap<>();
+            props.put("server.port", 0);
             props.put("logging.level.root", "OFF");
             props.put("logging.level.org.springframework.context.support.DefaultLifecycleProcessor", "OFF");
             props.put("axon.axonserver.enabled", "false");
@@ -230,14 +233,18 @@ class EventProcessorConfigurationTest {
     @Import(Test2EventHandlingConfiguration.class) // explicit configuration import
     private static class MyCustomContext {
 
-        @Bean(name = "tokenStore")
-        public TokenStore store1() {
-            return Mockito.mock(TokenStore.class);
-        }
-
         @Bean(name = "store2")
         public TokenStore store2() {
             return Mockito.mock(TokenStore.class);
         }
+    }
+
+    private static class ContextWithTokenStore {
+
+        @Bean(name = "tokenStore")
+        public TokenStore tokenStore() {
+            return Mockito.mock(TokenStore.class);
+        }
+
     }
 }

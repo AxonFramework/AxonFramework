@@ -25,8 +25,6 @@ import org.axonframework.eventhandling.processors.streaming.token.store.TokenSto
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.springboot.util.DeadLetterQueueProviderConfigurerModule;
 import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider;
 import org.junit.jupiter.api.*;
@@ -46,7 +44,6 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Sara Pellegrini
  */
-@Disabled("TODO #3496")
 class JpaAutoConfigurationTest {
 
     private ApplicationContextRunner testContext;
@@ -72,13 +69,15 @@ class JpaAutoConfigurationTest {
             assertEquals(JpaTokenStore.class,
                          tokenStores.get("tokenStore").getClass());
 
+            /*
+            TODO re-enable as part of #3097
             //noinspection rawtypes
             Map<String, SagaStore> sagaStores =
                     context.getBeansOfType(SagaStore.class);
             assertTrue(sagaStores.containsKey("sagaStore"));
             assertEquals(JpaSagaStore.class,
                          sagaStores.get("sagaStore").getClass());
-
+             */
             Map<String, SQLErrorCodesResolver> persistenceExceptionResolvers =
                     context.getBeansOfType(SQLErrorCodesResolver.class);
             assertTrue(persistenceExceptionResolvers.containsKey("persistenceExceptionResolver"));
@@ -89,7 +88,7 @@ class JpaAutoConfigurationTest {
 
     @Test
     void setTokenStoreClaimTimeout() {
-        testContext.withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=3000")
+        testContext.withPropertyValues("axon.eventhandling.tokenstore.claim-timeout=3001")
                    .run(context -> {
                        Map<String, TokenStore> tokenStores =
                                context.getBeansOfType(TokenStore.class);
@@ -98,11 +97,13 @@ class JpaAutoConfigurationTest {
                        TemporalAmount tokenClaimInterval = ReflectionUtils.getFieldValue(
                                JpaTokenStore.class.getDeclaredField("claimTimeout"), tokenStore
                        );
-                       assertEquals(Duration.ofSeconds(3L), tokenClaimInterval);
+                       assertEquals(Duration.ofMillis(3001), tokenClaimInterval);
                    });
     }
 
+
     @Test
+    @Disabled("re-enable as part of #3517")
     void sequencedDeadLetterQueueCanBeSetViaSpringConfiguration() {
         testContext.withPropertyValues("axon.eventhandling.processors.first.dlq.enabled=true")
                    .run(context -> {
