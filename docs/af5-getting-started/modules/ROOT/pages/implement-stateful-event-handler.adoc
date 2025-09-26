@@ -36,8 +36,6 @@ First, let's define the command that will be sent internally and the event that 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/SendAllCoursesFullyBookedNotification.java
 ----
-package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
-
 public record SendAllCoursesFullyBookedNotification(String facultyId) { // <1>
 }
 ----
@@ -47,11 +45,6 @@ public record SendAllCoursesFullyBookedNotification(String facultyId) { // <1>
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/events/AllCoursesFullyBookedNotificationSent.java
 ----
-package io.axoniq.demo.university.faculty.events;
-
-import io.axoniq.demo.university.faculty.FacultyTags;
-import org.axonframework.eventsourcing.annotations.EventTag;
-
 public record AllCoursesFullyBookedNotificationSent( // <1>
         @EventTag(key = FacultyTags.FACULTY_ID) // <2>
         String facultyId
@@ -69,28 +62,6 @@ Now let's create the main stateful event handler with its internal state managem
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/WhenAllCoursesFullyBookedThenSendNotification.java
 ----
-package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
-
-import io.axoniq.demo.university.faculty.FacultyTags;
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import io.axoniq.demo.university.faculty.events.*;
-import io.axoniq.demo.university.shared.ids.CourseId;
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
-import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.annotations.InjectEntity;
-
-import java.util.HashMap;
-import java.util.Map;
-
 public class WhenAllCoursesFullyBookedThenSendNotification {
 
     private static final String FACULTY_ID = "ONLY_FACULTY_ID"; // <1>
@@ -256,18 +227,6 @@ Now we need to configure all the components - the event-sourced entity, command 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/AllCoursesFullyBookedNotifierConfiguration.java
 ----
-package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
-
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.modelling.configuration.EntityModule;
-
-import java.util.concurrent.CompletableFuture;
-
 public class AllCoursesFullyBookedNotifierConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
@@ -279,18 +238,18 @@ public class AllCoursesFullyBookedNotifierConfiguration {
                 .eventHandlingComponents(
                         c -> c.annotated(cfg -> new WhenAllCoursesFullyBookedThenSendNotification.AutomationEventHandler()) // <3>
                 )
-                .customized((c, cus) -> cus.initialToken(s -> CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(0)))); // <4>
+                .notCustomized();
 
-        var commandHandlingModule = CommandHandlingModule.named("SendAllCoursesFullyBookedCommandHandler") // <5>
+        var commandHandlingModule = CommandHandlingModule.named("SendAllCoursesFullyBookedCommandHandler") // <4>
                 .commandHandlers()
-                .annotatedCommandHandlingComponent(cfg -> new WhenAllCoursesFullyBookedThenSendNotification.AutomationCommandHandler()) // <6>
+                .annotatedCommandHandlingComponent(cfg -> new WhenAllCoursesFullyBookedThenSendNotification.AutomationCommandHandler()) // <5>
                 .build();
 
         return configurer
-                .componentRegistry(cr -> cr.registerModule(automationState)) // <7>
-                .registerCommandHandlingModule(commandHandlingModule) // <8>
+                .componentRegistry(cr -> cr.registerModule(automationState)) // <6>
+                .registerCommandHandlingModule(commandHandlingModule) // <7>
                 .modelling(modelling -> modelling.messaging(messaging -> messaging.eventProcessing(eventProcessing ->
-                        eventProcessing.pooledStreaming(ps -> ps.processor(automationProcessor)) // <9>
+                        eventProcessing.pooledStreaming(ps -> ps.processor(automationProcessor)) // <8>
                 )));
     }
 }
@@ -299,12 +258,11 @@ public class AllCoursesFullyBookedNotifierConfiguration {
 <1> Configure the event-sourced entity module for state management
 <2> Configure the event processor for handling incoming events
 <3> Register the event handler component
-<4> Custom token initialization for testing with `InMemoryEventStorageEngine` (this is a workaround for testing) - will not be needed in further Axon Framework milestones.
-<5> Configure command handling module with descriptive name
-<6> Register the command handler component
-<7> Register the entity module for state persistence
-<8> Register the command handling module
-<9> Register the event processor module
+<4> Configure command handling module with descriptive name
+<5> Register the command handler component
+<6> Register the entity module for state persistence
+<7> Register the command handling module
+<8> Register the event processor module
 
 == Testing the stateful event handler
 
@@ -313,66 +271,58 @@ Let's create a comprehensive test that verifies the stateful behavior:
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/WhenAllCoursesFullyBookedThenSendNotificationTest.java
 ----
-package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
+public class WhenAllCoursesFullyBookedThenSendNotificationAxonFixtureTest {
 
-import io.axoniq.demo.university.UniversityApplicationTest;
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import io.axoniq.demo.university.shared.configuration.NotificationServiceConfiguration;
-import io.axoniq.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
-import io.axoniq.demo.university.faculty.events.CourseCreated;
-import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
-import io.axoniq.demo.university.shared.ids.CourseId;
-import io.axoniq.demo.university.shared.ids.StudentId;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.junit.jupiter.api.Test;
+    private AxonTestFixture fixture;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+    @BeforeEach
+    void beforeEach() {
+        var application = new UniversityAxonApplication();
+        var sliceConfigurer = application.configurer(configurer -> { // <1>
+            configurer = NotificationServiceConfiguration.configure(configurer);
+            return AllCoursesFullyBookedNotifierConfiguration.configure(configurer);
+        });
+        fixture = AxonTestFixture.with(sliceConfigurer);
+    }
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-
-public class WhenAllCoursesFullyBookedThenSendNotificationTest extends UniversityApplicationTest { // <1>
-
-    @Override
-    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) { // <2>
-        configurer = NotificationServiceConfiguration.configure(configurer);
-        configurer = AllCoursesFullyBookedNotifierConfiguration.configure(configurer);
-        return configurer;
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
     }
 
     @Test
     void automationTest() {
-        // when // <3>
         var studentId1 = StudentId.random();
         var studentId2 = StudentId.random();
         var courseId1 = CourseId.random();
         var courseId2 = CourseId.random();
 
-        List<Object> events = List.of( // <4>
-                new CourseCreated(courseId1, "Course 1", 2), // Create course with capacity 2
-                new CourseCreated(courseId2, "Course 2", 2), // Create course with capacity 2
-                new StudentSubscribedToCourse(studentId1, courseId1), // Fill first course
-                new StudentSubscribedToCourse(studentId2, courseId1),
-                new StudentSubscribedToCourse(studentId1, courseId2), // Fill second course
-                new StudentSubscribedToCourse(studentId2, courseId2)  // This should trigger notification
-        );
-        eventsOccurred(events);
-
-        // then // <5>
         var expectedNotification = new NotificationService.Notification("admin", "All courses are fully booked now.");
-        RecordingNotificationService notificationService = (RecordingNotificationService) sut.getComponent(NotificationService.class);
-        await().atMost(10, TimeUnit.SECONDS)
-                .untilAsserted(() -> assertThat(notificationService.sent()).contains(expectedNotification));
+
+        fixture.given()
+                .events( // <2>
+                        new CourseCreated(courseId1, "Course 1", 2), // Create course with capacity 2
+                        new CourseCreated(courseId2, "Course 2", 2), // Create course with capacity 2
+                        new StudentSubscribedToCourse(studentId1, courseId1), // Fill first course
+                        new StudentSubscribedToCourse(studentId2, courseId1),
+                        new StudentSubscribedToCourse(studentId1, courseId2), // Fill second course
+                        new StudentSubscribedToCourse(studentId2, courseId2)  // This should trigger notification
+                )
+                .then()
+                .await(r -> r.expect(cfg -> assertNotificationSent(cfg, expectedNotification)));
     }
+
+    private void assertNotificationSent(Configuration configuration, NotificationService.Notification expectedNotification) {
+        var notificationService = (RecordingNotificationService) configuration.getComponent(NotificationService.class);
+        assertThat(notificationService.sent()).contains(expectedNotification); // <3>
+    }
+
 }
 ----
 
-<1> Extend the test infrastructure
-<2> Configure both notification service and our stateful handler
-<3> **When**: Create a scenario where all courses become fully booked
-<4> Sequence of events that gradually fills all courses to capacity
-<5> **Then**: Verify the notification was sent when condition was met
+<.> Configure both notification service and our stateful handler
+<.> Sequence of events that gradually fills all courses to capacity
+<.> **Then**: Verify the notification was sent when condition was met
 
 == Key concepts review
 

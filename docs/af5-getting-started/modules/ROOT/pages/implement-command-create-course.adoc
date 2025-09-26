@@ -30,11 +30,6 @@ Following our Vertical Slice Architecture, we'll place each message in its appro
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
-
-import io.axoniq.demo.university.faculty.shared.ids.CourseId;
-import org.axonframework.modelling.annotations.TargetEntityId;
-
 public record CreateCourse(
     CourseId courseId,
     String name,
@@ -71,10 +66,6 @@ Next, let's define the event that will be published when a course is created:
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/events/CourseCreated.java
 ----
-package io.axoniq.demo.university.faculty.events;
-
-import org.axonframework.eventsourcing.annotations.EventTag;
-
 public record CourseCreated(
     @EventTag
     CourseId courseId, // <1>
@@ -99,137 +90,7 @@ In the future, the configuration API will expose methods to do that without plac
 == Specification by example
 
 With our messages defined, we'll now follow a Test-First approach to specify the behavior of our slice (feature).
-If you've already explored previous milestones you may see `AxonTestFixture` being used.
-This test support is under heavy development but wasn't adjusted to the changes in Milestone 3.
-So for now, we will inherit from `UniversityApplicationTest` in all our test classes.
-Please check it out below and copy it to your project.
-
-[source,java]
-.src/test/java/io/axoniq/demo/university/UniversityApplicationTest.java
-----
-package io.axoniq.demo.university;
-
-import jakarta.annotation.Nonnull;
-import org.assertj.core.api.Assertions;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventhandling.gateway.EventGateway;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.eventstreaming.StreamingCondition;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
-import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
-import org.axonframework.test.fixture.RecordingEventStore;
-import org.axonframework.test.server.AxonServerContainerUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
-public abstract class UniversityApplicationTest {
-
-    protected AxonConfiguration sut;
-
-    @BeforeEach
-    void beforeEach() throws IOException {
-        var configurer = UniversityAxonApplication.configurer(this::configureTestApplication);
-        sut = configurer.start();
-    }
-
-    @AfterEach
-    void afterEach() {
-        sut.shutdown();
-    }
-
-    private EventSourcingConfigurer configureTestApplication(EventSourcingConfigurer configurer) {
-        configurer = configurer.componentRegistry(cr -> cr.registerEnhancer(new MessagesRecordingConfigurationEnhancer()));
-        configurer = useEventStorageEngineAsEventSource(configurer);
-        configurer = overrideConfigurer(configurer);
-        return configurer;
-    }
-
-    private static EventSourcingConfigurer useEventStorageEngineAsEventSource(EventSourcingConfigurer eventSourcingConfigurer) {
-        return eventSourcingConfigurer.messaging(m -> m.eventProcessing(
-                        ep -> ep.pooledStreaming(
-                                ps -> ps.defaults((cfg, d) -> d.eventSource(eventSourceFromEventStorageEngine(cfg)))
-                        )
-                )
-        );
-    }
-
-    private static StreamableEventSource<EventMessage> eventSourceFromEventStorageEngine(Configuration configuration) {
-        var eventStorageEngine = configuration.getComponent(EventStorageEngine.class);
-        return new StreamableEventSource<>() {
-            @Override
-            public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition) {
-                return eventStorageEngine.stream(condition);
-            }
-
-            @Override
-            public CompletableFuture<TrackingToken> firstToken() {
-                return eventStorageEngine.firstToken();
-            }
-
-            @Override
-            public CompletableFuture<TrackingToken> latestToken() {
-                return eventStorageEngine.latestToken();
-            }
-
-            @Override
-            public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
-                return eventStorageEngine.tokenAt(at);
-            }
-        };
-    }
-
-    protected void eventOccurred(Object event) {
-        eventsOccurred(event);
-    }
-
-    protected void eventsOccurred(Object... events) {
-        eventsOccurred(List.of(events));
-    }
-
-    protected void eventsOccurred(List<Object> events) {
-        var eventGateway = sut.getComponent(EventGateway.class);
-        var unitOfWork = sut.getComponent(UnitOfWorkFactory.class).create();
-        unitOfWork.onInvocation(ctx -> eventGateway.publish(ctx, events));
-        unitOfWork.execute().join();
-        var eventStore = (RecordingEventStore) sut.getComponent(EventStore.class);
-        eventStore.reset();
-    }
-
-    protected void executeCommand(Object command) {
-        var commandGateway = sut.getComponent(CommandGateway.class);
-        commandGateway.sendAndWait(command);
-    }
-
-    protected void assertEvents(Object... events) {
-        var eventStore = (RecordingEventStore) sut.getComponent(EventStore.class);
-        Assertions.assertThat(eventStore.recorded().stream().map(Message::payload)).contains(events);
-    }
-
-    protected void assertNoEvents() {
-        var eventStore = (RecordingEventStore) sut.getComponent(EventStore.class);
-        Assertions.assertThat(eventStore.recorded().stream().map(Message::payload)).isEmpty();
-    }
-
-    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) {
-        // this is the place, where you will configure module to be tested
-        return configurer;
-    }
-}
-----
+Axon provides excellent support for testing through the `AxonTestFixture`.
 
 So keep focus on the current command - `CreateCourse` and create corresponding `CreateCourseTest` class in the `io.axoniq.demo.university.faculty.write.createcourse` package.
 
@@ -240,8 +101,6 @@ Depending on your IDE, the shortcut or menu may vary, but it's a shortcut worth 
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
-
 class CreateCourseTest {
 
 }
@@ -259,24 +118,34 @@ We need to have access to application components in tests to verify their behavi
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
+class CreateCourseTest {
 
-class CreateCourseTest extends UniversityApplicationTest { // <1>
+    private AxonTestFixture fixture;
 
-    @Override
-    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) {
-        return CreateCourseConfiguration.configure(configurer); // <2>
+    @BeforeEach // <1>
+    void beforeEach() {
+        var application = new UniversityAxonApplication();
+        fixture = AxonTestFixture.with(application.configurer()); // <2>
+    }
+
+    @AfterEach
+    void afterEach() {
+        fixture.stop(); // <3>
     }
 
 }
 ----
 
-<.> Inheriting from `UniversityApplicationTest` gives us access to the application configuration and some helper methods to execute commands and verify events.
-<.> This line configures the test to use the `CreateCourseConfiguration` class, which we will allow us to test just this slice in isolation.
+<.> The `@BeforeEach` marks this method to be called before any test is executed in our test class.
+Adding the code to create the `AxonTestFixture` here will ensure that we have a fresh fixture for each test case, and thus we make our different tests independent.
+<.> This line creates a new `AxonTestFixture` based on our configurer. The configuration will be built and started from the configurer by the fixture itself.
+In this case, we use the whole application configuration, but you may also create a dedicated configuration for the slice if you want to keep your tests more focused and check the slice implementation correctness in isolation.
+To achieve that, just change the fixture creation line to: `AxonTestFixture.with(application.configurer(CreateCourseConfiguration::configure));`.
+<.> Remember after each test to stop the fixture, so all resources (like Axon Server connections) are properly released.
 
 === Testing the command
 
-Thanks to the help of the `UniversityApplicationTest` we can now create a test following the Given-When-Then pattern:
+Thanks to the help of the `AxonTestFixture` we can now create a test following the Given-When-Then pattern:
 
 * *Given*: Set the initial state for our test.
 Since we are designing our system to follow Event-Sourcing patterns, we need to set the list of events that have already happened before receiving the command.
@@ -293,36 +162,27 @@ image::EventModeling_CreateCourse_GWT_Spec1.png[]
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
+class CreateCourseTest {
 
-class CreateCourseTest extends UniversityApplicationTest {
-
-    @Override
-    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) {
-        return CreateCourseConfiguration.configure(configurer);
-    }
+    // fixture creation skipped for brevity
 
     @Test
-    void givenNotExistingCourse_WhenCreateCourse_ThenSuccess() {
-        // given // <1>
-        var courseId = new CourseId(UUID.randomUUID().toString());
+    void givenCourseCreated_WhenCreateCourse_ThenSuccess_NoEvents() {
+        var courseId = CourseId.random();
         var courseName = "Event Sourcing in Practice";
         var capacity = 3;
 
-        // when
-        executeCommand(
-                new CreateCourse(courseId, courseName, capacity) // <2>
-        );
-
-        // then
-        assertEvents(
-                new CourseCreated(courseId, courseName, capacity) // <3>
-        );
+        fixture.given()
+               .event(new CourseCreated(courseId, courseName, capacity)) // <1>
+               .when()
+               .command(new CreateCourse(courseId, courseName, capacity)) // <2>
+               .then()
+               .success() // <3>
+               .noEvents(); // <3>
     }
 
 }
 ----
-
 <.> In our case, when we receive the `CreateCourse` command, we expect that no previous events were received in the system.
 We may even skip the whole `given` section if there is nothing to execute.
 <.> We provide the `CreateCourse` command we want to dispatch against the system (scoped to the given configuration).
@@ -349,10 +209,6 @@ Let's create a new class for that inside the slice package, name it `CreateCours
 .src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseCommandHandler.java
 ----
 package io.axoniq.demo.university.faculty.write.createcourse;
-
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.modelling.annotations.InjectEntity;
 
 class CreateCourseCommandHandler {
 
@@ -436,32 +292,23 @@ So let's add a test case for that to the `CreateCourseTest` class as below.
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
-
-import java.util.UUID;
-
 class CreateCourseTest {
 
     // fixture creation skipped for brevity
 
     @Test
     void givenCourseCreated_WhenCreateCourse_ThenSuccess_NoEvents() {
-        // given
         var courseId = CourseId.random();
         var courseName = "Event Sourcing in Practice";
         var capacity = 3;
 
-        eventOccurred(
-                new CourseCreated(courseId, courseName, capacity) // <1>
-        );
-
-        // when
-        executeCommand(
-                new CreateCourse(courseId, courseName, capacity) // <2>
-        );
-
-        // then
-        assertNoEvents(); // <3>
+        fixture.given()
+                .event(new CourseCreated(courseId, courseName, capacity)) // <1>
+                .when()
+                .command(new CreateCourse(courseId, courseName, capacity)) // <2>
+                .then()
+                .success()
+                .noEvents(); // <3>
     }
 
 }
@@ -496,8 +343,6 @@ I'm going to put it as internal class in the handler, because it will be used ju
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseCommandHandler.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
-
 class CreateCourseCommandHandler {
 
     @EventSourcedEntity(tagKey = "courseId") // <1>
@@ -560,8 +405,6 @@ Come back to the `CreateCourseConfiguration` class and add the `State` class to 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseConfiguration.java
 ----
-package io.axoniq.demo.university.faculty.write.createcourse;
-
 public class CreateCourseConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {

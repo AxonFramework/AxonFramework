@@ -33,10 +33,6 @@ First, let's create the read model that represents course statistics:
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/read/coursestats/CoursesStatsReadModel.java
 ----
-package io.axoniq.demo.university.faculty.read.coursestats;
-
-import io.axoniq.demo.university.shared.ids.CourseId;
-
 public record CoursesStatsReadModel( // <1>
         CourseId courseId,
         String name,
@@ -69,12 +65,6 @@ Now let's define the repository interface for storing and retrieving course stat
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/read/coursestats/CourseStatsRepository.java
 ----
-package io.axoniq.demo.university.faculty.read.coursestats;
-
-import io.axoniq.demo.university.shared.ids.CourseId;
-
-import java.util.Optional;
-
 public interface CourseStatsRepository {
     CoursesStatsReadModel save(CoursesStatsReadModel stats); // <1>
 
@@ -99,13 +89,6 @@ For this tutorial, we'll use a simple in-memory implementation. In production, y
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/read/coursestats/InMemoryCourseStatsRepository.java
 ----
-package io.axoniq.demo.university.faculty.read.coursestats;
-
-import io.axoniq.demo.university.shared.ids.CourseId;
-
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
 class InMemoryCourseStatsRepository implements CourseStatsRepository {
 
     private final ConcurrentHashMap<CourseId, CoursesStatsReadModel> stats = new ConcurrentHashMap<>(); // <1>
@@ -135,11 +118,6 @@ Now let's create the projection that builds the read model from events:
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/read/coursestats/CoursesStatsProjection.java
 ----
-package io.axoniq.demo.university.faculty.read.coursestats;
-
-import io.axoniq.demo.university.faculty.events.*;
-import org.axonframework.eventhandling.annotation.EventHandler;
-
 class CoursesStatsProjection {
 
     private final CourseStatsRepository repository;
@@ -203,15 +181,6 @@ Finally, let's wire everything together with a proper Axon Framework 5 configura
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/read/coursestats/CourseStatsConfiguration.java
 ----
-package io.axoniq.demo.university.faculty.read.coursestats;
-
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-
-import java.util.concurrent.CompletableFuture;
-
 public class CourseStatsConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
@@ -219,9 +188,7 @@ public class CourseStatsConfiguration {
                 .pooledStreaming("Projection_CourseStats_Processor")
                 .eventHandlingComponents(
                         c -> c.annotated(cfg -> new CoursesStatsProjection(cfg.getComponent(CourseStatsRepository.class))) // <2>
-                )
-                // Due to a minor bug in the InMemoryEventStorageEngine this customization is needed if you want to use the implementation in the tests
-                .customized((c, cus) -> cus.initialToken(s -> CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(0))));
+                ).notCustomized();
 
         return configurer
                 .componentRegistry(cr -> cr.registerComponent(CourseStatsRepository.class, cfg -> new InMemoryCourseStatsRepository())) // <3>
@@ -249,165 +216,142 @@ Let's create comprehensive tests to verify our read model works correctly:
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/read/coursestats/CourseStatsProjectionTest.java
 ----
-package io.axoniq.demo.university.faculty.read.coursestats;
+public class CourseStatsProjectionTest {
 
-import io.axoniq.demo.university.UniversityApplicationTest;
-import io.axoniq.demo.university.faculty.events.*;
-import io.axoniq.demo.university.shared.ids.CourseId;
-import io.axoniq.demo.university.shared.ids.StudentId;
-import org.awaitility.Awaitility;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class CourseStatsProjectionTest extends UniversityApplicationTest { // <1>
-
-    @Override
-    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) { // <2>
-        return CourseStatsConfiguration.configure(configurer);
+    @BeforeEach
+    void beforeEach() {
+        var application = new UniversityAxonApplication();
+        fixture = AxonTestFixture.with(application.configurer(CourseStatsConfiguration::configure)); // <1>
     }
 
-    @Nested
-    class CourseCreation { // <3>
-
-        @Test
-        void givenNotExistingCourse_WhenGetById_ThenNotFound() {
-            // given
-            var courseId = CourseId.random();
-
-            // when
-            var found = courseStatsRepository().findById(courseId);
-
-            // then
-            assertThat(found).isEmpty();
-        }
-
-        @Test
-        void givenCourseCreated_WhenGetById_ThenFoundCourseWithInitialCapacity() {
-            // given
-            var courseId = CourseId.random();
-            eventOccurred(
-                    new CourseCreated(courseId, "Event Sourcing in Practice", 42)
-            );
-
-            // when & then
-            CoursesStatsReadModel expectedReadModel = new CoursesStatsReadModel(
-                    courseId,
-                    "Event Sourcing in Practice",
-                    42,
-                    0 // Initially no students
-            );
-            assertReadModel(expectedReadModel);
-        }
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
     }
 
-    @Nested
-    class CourseUpdates {
+    @Test
+    void givenNotExistingCourse_WhenGetById_ThenNotFound() {
+        var courseId = CourseId.random();
 
-        @Test
-        void givenCourseCreated_WhenCourseRenamed_ThenReadModelUpdatedWithNewName() {
-            // given
-            var courseId = CourseId.random();
-            var originalName = "Event Sourcing in Practice";
-            var newName = "Advanced Event Sourcing";
-
-            eventOccurred(new CourseCreated(courseId, originalName, 42));
-            eventOccurred(new CourseRenamed(courseId, newName));
-
-            // when & then
-            CoursesStatsReadModel expectedReadModel = new CoursesStatsReadModel(
-                    courseId,
-                    newName, // Updated name
-                    42,
-                    0
-            );
-            assertReadModel(expectedReadModel);
-        }
-
-        @Test
-        void givenCourseCreated_WhenCourseCapacityChanged_ThenReadModelUpdatedWithNewCapacity() {
-            // given
-            var courseId = CourseId.random();
-            var originalCapacity = 42;
-            var newCapacity = 100;
-
-            eventOccurred(new CourseCreated(courseId, "Event Sourcing in Practice", originalCapacity));
-            eventOccurred(new CourseCapacityChanged(courseId, newCapacity));
-
-            // when & then
-            CoursesStatsReadModel expectedReadModel = new CoursesStatsReadModel(
-                    courseId,
-                    "Event Sourcing in Practice",
-                    newCapacity, // Updated capacity
-                    0
-            );
-            assertReadModel(expectedReadModel);
-        }
+        fixture.when()
+                .nothing()
+                .then()
+                .expect(cfg -> assertReadModelNotFound(cfg, courseId));
     }
 
-    @Nested
-    class StudentEnrollments {
+    @Test
+    void givenCourseCreated_WhenGetById_ThenFoundCourseWithInitialCapacity() {
+        var courseId = CourseId.random();
+        CoursesStatsReadModel expectedReadModel = new CoursesStatsReadModel(
+                courseId,
+                "Event Sourcing in Practice",
+                42,
+                0
+        );
 
-        @Test
-        void givenCourseCreated_WhenStudentSubscribedToCourse_ThenReadModelUpdatedWithIncreasedSubscribedStudents() {
-            // given
-            var courseId = CourseId.random();
-            var studentId = StudentId.random();
-
-            eventOccurred(new CourseCreated(courseId, "Event Sourcing in Practice", 42));
-            eventOccurred(new StudentSubscribedToCourse(studentId, courseId));
-
-            // when & then
-            CoursesStatsReadModel expectedReadModel = new CoursesStatsReadModel(
-                    courseId,
-                    "Event Sourcing in Practice",
-                    42,
-                    1 // One student subscribed
-            );
-            assertReadModel(expectedReadModel);
-        }
-
-        @Test
-        void givenCourseCreatedWithStudentSubscribed_WhenStudentUnsubscribedFromCourse_ThenReadModelUpdatedWithDecreasedSubscribedStudents() {
-            // given
-            var courseId = CourseId.random();
-            var studentId = StudentId.random();
-
-            eventOccurred(new CourseCreated(courseId, "Event Sourcing in Practice", 42));
-            eventOccurred(new StudentSubscribedToCourse(studentId, courseId));
-            eventOccurred(new StudentUnsubscribedFromCourse(studentId, courseId));
-
-            // when & then
-            CoursesStatsReadModel expectedReadModel = new CoursesStatsReadModel(
-                    courseId,
-                    "Event Sourcing in Practice",
-                    42,
-                    0 // Back to zero students
-            );
-            assertReadModel(expectedReadModel);
-        }
+        fixture.given()
+                .events(new CourseCreated(courseId, "Event Sourcing in Practice", 42))
+                .then()
+                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel))); // <2>
     }
 
-    private void assertReadModel(CoursesStatsReadModel expectedReadModel) { // <4>
-        Awaitility.await().untilAsserted(() -> {
-            var found = courseStatsRepository().findById(expectedReadModel.courseId());
-            assertThat(found).isNotEmpty();
-            assertThat(found).hasValue(expectedReadModel);
-        });
+    @Test
+    void givenCourseCreated_WhenCourseRenamed_ThenReadModelUpdatedWithNewName() {
+        var courseId = CourseId.random();
+        var originalName = "Event Sourcing in Practice";
+        var newName = "Advanced Event Sourcing";
+
+        CoursesStatsReadModel expectedReadModel = new CoursesStatsReadModel(
+                courseId,
+                newName,
+                42,
+                0
+        );
+
+        fixture.given()
+                .events(new CourseCreated(courseId, originalName, 42), new CourseRenamed(courseId, newName))
+                .then()
+                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
     }
 
-    private CourseStatsRepository courseStatsRepository() { // <5>
-        return sut.getComponent(CourseStatsRepository.class);
+    @Test
+    void givenCourseCreated_WhenCourseCapacityChanged_ThenReadModelUpdatedWithNewCapacity() {
+        var courseId = CourseId.random();
+        var originalCapacity = 42;
+        var newCapacity = 100;
+
+        CoursesStatsReadModel expectedReadModel = new CoursesStatsReadModel(
+                courseId,
+                "Event Sourcing in Practice",
+                newCapacity,
+                0
+        );
+
+        fixture.given()
+                .events(new CourseCreated(courseId, "Event Sourcing in Practice", originalCapacity),
+                        new CourseCapacityChanged(courseId, newCapacity))
+                .then()
+                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
+    }
+
+    @Test
+    void givenCourseCreated_WhenStudentSubscribedToCourse_ThenReadModelUpdatedWithIncreasedSubscribedStudents() {
+        var courseId = CourseId.random();
+        var studentId = StudentId.random();
+
+        CoursesStatsReadModel expectedReadModel = new CoursesStatsReadModel(
+                courseId,
+                "Event Sourcing in Practice",
+                42,
+                1
+        );
+
+        fixture.given()
+                .events(new CourseCreated(courseId, "Event Sourcing in Practice", 42),
+                        new StudentSubscribedToCourse(studentId, courseId))
+                .then()
+                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
+    }
+
+    @Test
+    void givenCourseCreatedWithStudentSubscribed_WhenStudentUnsubscribedFromCourse_ThenReadModelUpdatedWithDecreasedSubscribedStudents() {
+        var courseId = CourseId.random();
+        var studentId = StudentId.random();
+
+        CoursesStatsReadModel expectedReadModel = new CoursesStatsReadModel(
+                courseId,
+                "Event Sourcing in Practice",
+                42,
+                0
+        );
+
+        fixture.given()
+                .events(new CourseCreated(courseId, "Event Sourcing in Practice", 42),
+                        new StudentSubscribedToCourse(studentId, courseId),
+                        new StudentUnsubscribedFromCourse(studentId, courseId))
+                .then()
+                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
+    }
+
+    private void assertReadModel(Configuration configuration, CoursesStatsReadModel expectedReadModel) {
+        var found = courseStatsRepository(configuration).findById(expectedReadModel.courseId());
+        assertThat(found).isNotEmpty();
+        assertThat(found).hasValue(expectedReadModel);
+    }
+
+    private void assertReadModelNotFound(Configuration configuration, CourseId courseId) {
+        var found = courseStatsRepository(configuration).findById(courseId);
+        assertThat(found).isEmpty();
+    }
+
+    private CourseStatsRepository courseStatsRepository(Configuration configuration) { // <3>
+        return configuration.getComponent(CourseStatsRepository.class);
     }
 
 }
 ----
 
-<.> Extend the test infrastructure base class
 <.> Configure our read model components for testing
-<.> Group tests logically using nested test classes
 <.> Async assertion using Awaitility, because the projection is eventually consistent, we need to wait for it to be updated
 <.> Helper to access the repository from the test configuration
 
