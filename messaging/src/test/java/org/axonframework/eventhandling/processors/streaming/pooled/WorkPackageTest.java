@@ -223,7 +223,6 @@ class WorkPackageTest {
      * This means an event was scheduled, was validated to be handled by the EventValidator, processed by the
      * BatchProcessor and the updated token stored.
      */
-    @Disabled("TODO #3432 - Adjust TokenStore API to be async-native")
     @Test
     void scheduleEventRunsSuccessfully() {
         TrackingToken expectedToken = new GlobalSequenceTrackingToken(1L);
@@ -234,7 +233,7 @@ class WorkPackageTest {
 
         List<EventMessage> validatedEvents = eventFilter.getValidatedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, validatedEvents.size()));
-        assertEquals(testMessage, validatedEvents.get(0));
+        assertEquals(testMessage, validatedEvents.getFirst());
 
         var processedEvents = batchProcessor.getProcessedEvents();
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
@@ -330,7 +329,8 @@ class WorkPackageTest {
                     // This should be done inside the assertWithin, as the WorkPackage does not re-trigger itself.
                     // Furthermore, the test could be too fast to incorporate the extremelyShortClaimExtensionThreshold as a reason to extend the claim too.
                     testSubjectWithShortThreshold.scheduleWorker();
-                    verify(tokenStore, atLeastOnce()).extendClaim(PROCESSOR_NAME, segment.getSegmentId(), null);
+                    verify(tokenStore, atLeastOnce())
+                            .extendClaim(eq(PROCESSOR_NAME), eq(segment.getSegmentId()), any());
                 }
         );
     }

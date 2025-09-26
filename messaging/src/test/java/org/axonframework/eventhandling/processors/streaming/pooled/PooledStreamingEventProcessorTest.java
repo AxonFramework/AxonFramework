@@ -167,7 +167,7 @@ class PooledStreamingEventProcessorTest {
         joinAndUnwrap(
                 tokenStore.storeToken(new GlobalSequenceTrackingToken(1L), "test", 3, ctx)
         );
-        when(tokenStore.fetchAvailableSegments(testSubject.name(), null))
+        when(tokenStore.fetchAvailableSegments(eq(testSubject.name()), any()))
                 .thenReturn(completedFuture(
                         Collections.singletonList(Segment.computeSegment(2, 0, 1, 2, 3))
                 ));
@@ -674,7 +674,7 @@ class PooledStreamingEventProcessorTest {
         }
 
         @Test
-        void coordinatorExtendsClaimsEarlierForBusyWorkPackages() throws Exception {
+        void coordinatorExtendsClaimsEarlierForBusyWorkPackages() {
             withTestSubject(
                     List.of(),
                     c -> c.initialSegmentCount(1).enableCoordinatorClaimExtension()
@@ -702,8 +702,8 @@ class PooledStreamingEventProcessorTest {
                    .until(isWaiting::get);
 
             // As the WorkPackage is blocked, we can verify if the claim is extended but not stored.
-            verify(tokenStore, timeout(5000)).extendClaim(PROCESSOR_NAME, 0, null);
-            verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0), any(ProcessingContext.class));
+            verify(tokenStore, timeout(5000)).extendClaim(eq(PROCESSOR_NAME), eq(0), any());
+            verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0), any());
 
             // Unblock the WorkPackage after successful validation
             handleLatch.countDown();
@@ -720,7 +720,7 @@ class PooledStreamingEventProcessorTest {
         }
 
         @Test
-        void coordinatorExtendingClaimFailsAndAbortsWorkPackage() throws Exception {
+        void coordinatorExtendingClaimFailsAndAbortsWorkPackage() {
             withTestSubject(
                     List.of(),
                     c -> c.initialSegmentCount(1).enableCoordinatorClaimExtension()
@@ -729,7 +729,7 @@ class PooledStreamingEventProcessorTest {
             String expectedExceptionMessage = "bummer";
             doThrow(new RuntimeException(expectedExceptionMessage))
                     .when(tokenStore)
-                    .extendClaim(PROCESSOR_NAME, 0, null);
+                    .extendClaim(eq(PROCESSOR_NAME), eq(0), any());
 
             AtomicBoolean isWaiting = new AtomicBoolean(false);
             CountDownLatch handleLatch = new CountDownLatch(1);
@@ -753,8 +753,8 @@ class PooledStreamingEventProcessorTest {
                    .until(isWaiting::get);
 
             // As the WorkPackage is blocked, we can verify if the claim is extended, but not stored.
-            verify(tokenStore, timeout(5000)).extendClaim(PROCESSOR_NAME, 0, null);
-            verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0), any(ProcessingContext.class));
+            verify(tokenStore, timeout(5000)).extendClaim(eq(PROCESSOR_NAME), eq(0), any());
+            verify(tokenStore, never()).storeToken(any(), eq(PROCESSOR_NAME), eq(0), any());
 
             // Although the WorkPackage is waiting, the Coordinator should in the meantime fail with extending the claim.
             // This updates the processing status of the WorkPackage.
@@ -814,9 +814,7 @@ class PooledStreamingEventProcessorTest {
             startEventProcessor();
             assertWithin(
                     250, TimeUnit.MILLISECONDS,
-                    () -> verify(tokenStore, atLeastOnce()).extendClaim(testSubject.name(),
-                                                                        0,
-                                                                        null)
+                    () -> verify(tokenStore, atLeastOnce()).extendClaim(eq(testSubject.name()), eq(0), any())
             );
             assertWithin(100, TimeUnit.MILLISECONDS, () -> assertTrue(testSubject.processingStatus().isEmpty()));
         }
@@ -1049,7 +1047,6 @@ class PooledStreamingEventProcessorTest {
                     List.of(),
                     c -> c.initialSegmentCount(1).tokenClaimInterval(testTokenClaimInterval)
             );
-
 
             // when
             startEventProcessor();

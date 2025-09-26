@@ -29,7 +29,6 @@ import java.lang.invoke.MethodHandles;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
@@ -99,13 +98,9 @@ class MergeTask extends CoordinatorTask {
     protected CompletableFuture<Boolean> task() {
         logger.debug("Processor [{}] will perform merge instruction for segment {}.", name, segmentId);
 
-        int[] segments = joinAndUnwrap(
-                unitOfWorkFactory
-                        .create()
-                        .executeWithResult(context ->
-                                                   tokenStore.fetchSegments(name, null)
-                        )
-        );
+        int[] segments = joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                context -> tokenStore.fetchSegments(name, context)
+        ));
         Segment thisSegment = Segment.computeSegment(segmentId, segments);
         int thatSegmentId = thisSegment.mergeableSegmentId();
         Segment thatSegment = Segment.computeSegment(thatSegmentId, segments);
@@ -135,14 +130,9 @@ class MergeTask extends CoordinatorTask {
     }
 
     private CompletableFuture<TrackingToken> fetchTokenInUnitOfWork(int segmentId) {
-        return joinAndUnwrap(unitOfWorkFactory
-                                     .create()
-                                     .executeWithResult(context ->
-                                                                CompletableFuture.completedFuture(
-                                                                        tokenStore.fetchToken(name,
-                                                                                              segmentId,
-                                                                                              null))
-                                     ));
+        return unitOfWorkFactory.create().executeWithResult(
+                context -> tokenStore.fetchToken(name, segmentId, context)
+        );
     }
 
     private Boolean mergeSegments(Segment thisSegment, TrackingToken thisToken,
@@ -155,21 +145,16 @@ class MergeTask extends CoordinatorTask {
                 ? MergedTrackingToken.merged(thatToken, thisToken)
                 : MergedTrackingToken.merged(thisToken, thatToken);
 
-        joinAndUnwrap(
-                unitOfWorkFactory
-                        .create()
-                        .executeWithResult(context -> {
-                            joinAndUnwrap(tokenStore.deleteToken(name, tokenToDelete, null));
-                            joinAndUnwrap(tokenStore.storeToken(mergedToken,
-                                                                name,
-                                                                mergedSegment.getSegmentId(),
-                                                                context));
-                            joinAndUnwrap(tokenStore.releaseClaim(name,
-                                                                  mergedSegment.getSegmentId(),
-                                                                  null));
-                            return emptyCompletedFuture();
-                        })
-        );
+        joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                context -> tokenStore.deleteToken(name, tokenToDelete, context)
+                                     .thenCompose(result -> tokenStore.storeToken(mergedToken,
+                                                                                  name,
+                                                                                  mergedSegment.getSegmentId(),
+                                                                                  context))
+                                     .thenCompose(result -> tokenStore.releaseClaim(name,
+                                                                                    mergedSegment.getSegmentId(),
+                                                                                    context))
+        ));
 
         logger.info("Processor [{}] successfully merged {} with {} into {}.",
                     name, thisSegment, thatSegment, mergedSegment);

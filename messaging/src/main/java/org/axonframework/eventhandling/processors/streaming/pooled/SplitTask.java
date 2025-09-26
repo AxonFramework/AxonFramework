@@ -16,10 +16,12 @@
 
 package org.axonframework.eventhandling.processors.streaming.pooled;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
@@ -29,7 +31,6 @@ import java.lang.invoke.MethodHandles;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
@@ -57,11 +58,11 @@ class SplitTask extends CoordinatorTask {
     private final UnitOfWorkFactory unitOfWorkFactory;
 
     /**
-     * Constructs a {@link SplitTask}.
+     * Constructs a {@code SplitTask}.
      *
      * @param result            The {@link CompletableFuture} to {@link #complete(Boolean, Throwable)} once
      *                          {@link #run()} has finalized.
-     * @param name              The name of the {@link Coordinator} this instruction will be ran in. Used to correctly
+     * @param name              The name of the {@link Coordinator} this instruction will be run in. Used to correctly
      *                          deal with the {@code tokenStore}.
      * @param segmentId         The identifier of the {@link Segment} this instruction should split
      * @param workPackages      The collection of {@link WorkPackage}s controlled by the {@link Coordinator}. Will be
@@ -106,42 +107,43 @@ class SplitTask extends CoordinatorTask {
     }
 
     private CompletableFuture<Boolean> fetchSegmentAndSplit(int segmentId) {
-        return unitOfWorkFactory
-                .create()
-                .executeWithResult(context -> {
-                    int[] segments = joinAndUnwrap(tokenStore.fetchSegments(name, null));
-                    Segment segmentToSplit = Segment.computeSegment(segmentId, segments);
-                    return CompletableFuture.completedFuture(splitAndRelease(segmentToSplit));
-                });
+        return unitOfWorkFactory.create().executeWithResult(
+                context -> tokenStore.fetchSegments(name, context)
+                                     .thenApply(segments -> Segment.computeSegment(segmentId, segments))
+                                     .thenApply(this::splitAndRelease)
+        );
     }
 
     private boolean splitAndRelease(Segment segmentToSplit) {
-        joinAndUnwrap(
-                unitOfWorkFactory
-                        .create()
-                        .executeWithResult(context -> {
-                            TrackingToken tokenToSplit = joinAndUnwrap(
-                                    tokenStore.fetchToken(name, segmentToSplit.getSegmentId(), null)
-                            );
-                            TrackerStatus[] splitStatuses = TrackerStatus.split(segmentToSplit, tokenToSplit);
-                            joinAndUnwrap(tokenStore.initializeSegment(
-                                    splitStatuses[1].getTrackingToken(),
-                                    name,
-                                    splitStatuses[1].getSegment().getSegmentId(),
-                                    null
-                            ));
-                            joinAndUnwrap(tokenStore.releaseClaim(name,
-                                                                  splitStatuses[0].getSegment().getSegmentId(),
-                                                                  null));
-                            logger.info("Processor [{}] successfully split {} into {} and {}.",
-                                        name,
-                                        segmentToSplit,
-                                        splitStatuses[0].getSegment(),
-                                        splitStatuses[1].getSegment());
-                            return emptyCompletedFuture();
-                        })
-        );
+        joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                context -> tokenStore.fetchToken(name, segmentToSplit.getSegmentId(), context)
+                                     .thenApply(tokenToSplit -> TrackerStatus.split(segmentToSplit, tokenToSplit))
+                                     .thenCompose(splitStatuses -> splitAndRelease(
+                                             splitStatuses, segmentToSplit, context
+                                     ))
+        ));
         return true;
+    }
+
+    @Nonnull
+    private CompletableFuture<Void> splitAndRelease(@Nonnull TrackerStatus[] splitStatuses,
+                                                    @Nonnull Segment segmentToSplit,
+                                                    @Nonnull ProcessingContext context) {
+        return tokenStore.initializeSegment(
+                                 splitStatuses[1].getTrackingToken(),
+                                 name,
+                                 splitStatuses[1].getSegment().getSegmentId(),
+                                 context
+                         )
+                         .thenCompose(result -> tokenStore.releaseClaim(
+                                 name,
+                                 splitStatuses[0].getSegment().getSegmentId(),
+                                 context
+                         ))
+                         .thenRun(() -> logger.info(
+                                 "Processor [{}] successfully split {} into {} and {}.",
+                                 name, segmentToSplit, splitStatuses[0].getSegment(), splitStatuses[1].getSegment()
+                         ));
     }
 
     @Override

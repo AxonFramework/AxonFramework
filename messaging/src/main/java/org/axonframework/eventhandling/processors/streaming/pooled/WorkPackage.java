@@ -67,8 +67,8 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
  * {@code WorkPackage}, several methods have threading notes describing what can invoke them safely.
  * <p>
  * Since the {@code WorkPackage} is in charge of a {@code Segment}, it maintains the claim on the matching
- * {@link TrackingToken}. In absence of new events, it will also {@link TokenStore#extendClaim(String, int)} on the
- * {@code TrackingToken}.
+ * {@link TrackingToken}. In absence of new events, it will also
+ * {@link TokenStore#extendClaim(String, int, ProcessingContext)} on the {@code TrackingToken}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -354,7 +354,7 @@ class WorkPackage {
         });
     }
 
-    private void processEvents() throws Exception {
+    private void processEvents() {
         List<EventMessage> eventBatch = new ArrayList<>();
         while (!isAbortTriggered() && eventBatch.size() < batchSize && !processingQueue.isEmpty()) {
             ProcessingEntry entry = processingQueue.poll();
@@ -414,14 +414,9 @@ class WorkPackage {
     public void extendClaimIfThresholdIsMet() {
         if (now() > nextClaimExtension.get()) {
             logger.debug("Work Package [{}]-[{}] will extend its token claim.", name, segment.getSegmentId());
-            joinAndUnwrap(
-                    unitOfWorkFactory
-                            .create()
-                            .executeWithResult(context -> {
-                                tokenStore.extendClaim(name, segment.getSegmentId(), null);
-                                return emptyCompletedFuture();
-                            })
-            );
+            joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                    context -> tokenStore.extendClaim(name, segment.getSegmentId(), context)
+            ));
             nextClaimExtension.set(now() + claimExtensionThreshold);
         }
     }
@@ -434,10 +429,10 @@ class WorkPackage {
     }
 
     /**
-     * Indicates whether this {@link WorkPackage} has any processing capacity remaining, or whether it has reached its
+     * Indicates whether this {@code WorkPackage} has any processing capacity remaining, or whether it has reached its
      * soft limit. Note that one can still deliver events for processing in this {@code WorkPackage}.
      *
-     * @return {@code true} if the {@link WorkPackage} has remaining capacity, or {@code false} if the soft limit has
+     * @return {@code true} if the {@code WorkPackage} has remaining capacity, or {@code false} if the soft limit has
      * been reached
      */
     public boolean hasRemainingCapacity() {
@@ -445,7 +440,7 @@ class WorkPackage {
     }
 
     /**
-     * Indicates whether this {@link WorkPackage} has any work in the queue or scheduled.
+     * Indicates whether this {@code WorkPackage} has any work in the queue or scheduled.
      *
      * @return {@code true} if the {@code processingQueue} is empty and there is nothing scheduled, or {@code false}
      * otherwise.
@@ -455,9 +450,9 @@ class WorkPackage {
     }
 
     /**
-     * Returns the {@link Segment} that this {@link WorkPackage} is processing events for.
+     * Returns the {@link Segment} that this {@code WorkPackage} is processing events for.
      *
-     * @return the {@link Segment} that this {@link WorkPackage} is processing events for
+     * @return the {@link Segment} that this {@code WorkPackage} is processing events for
      */
     public Segment segment() {
         return segment;
@@ -471,14 +466,14 @@ class WorkPackage {
      * WorkPackage} threads must not rely on this method.
      *
      * @return the {@link TrackingToken} of the last {@link MessageStream.Entry} that was delivered to this
-     * {@link WorkPackage}
+     * {@code WorkPackage}
      */
     public TrackingToken lastDeliveredToken() {
         return lastDeliveredToken;
     }
 
     /**
-     * Indicates whether an abort has been triggered for this {@link WorkPackage}. When {@code true}, any events
+     * Indicates whether an abort has been triggered for this {@code WorkPackage}. When {@code true}, any events
      * scheduled for processing by this {@code WorkPackage} are likely to be ignored.
      * <p>
      * Use {@link #abort(Exception)} (possibly with a {@code null} reason) to obtain a {@link CompletableFuture} with a
@@ -491,7 +486,7 @@ class WorkPackage {
     }
 
     /**
-     * Marks this {@link WorkPackage} as <em>aborted</em>. The returned {@link CompletableFuture} is completed with the
+     * Marks this {@code WorkPackage} as <em>aborted</em>. The returned {@link CompletableFuture} is completed with the
      * abort reason once the {@code WorkPackage} has finished any processing that may had been started already.
      * <p>
      * If this {@code WorkPackage} was already aborted in another request, the returned {@code CompletableFuture} will
@@ -499,8 +494,8 @@ class WorkPackage {
      * <p>
      * An aborted {@code WorkPackage} cannot be restarted.
      *
-     * @param abortReason the reason to request the {@link WorkPackage} to abort
-     * @return a {@link CompletableFuture} that completes with the first reason once the {@link WorkPackage} has stopped
+     * @param abortReason the reason to request the {@code WorkPackage} to abort
+     * @return a {@link CompletableFuture} that completes with the first reason once the {@code WorkPackage} has stopped
      * processing
      */
     public CompletableFuture<Exception> abort(Exception abortReason) {
@@ -590,7 +585,7 @@ class WorkPackage {
     }
 
     /**
-     * Package private builder class to construct a {@link WorkPackage}. Not used for validation of the fields as is the
+     * Package private builder class to construct a {@code WorkPackage}. Not used for validation of the fields as is the
      * case with most builders, but purely to clarify the construction of a {@code WorkPackage}.
      */
     static class Builder {
@@ -611,9 +606,9 @@ class WorkPackage {
                 new EventSchedulingProcessingContext(EmptyApplicationContext.INSTANCE);
 
         /**
-         * The {@code name} of the processor this {@link WorkPackage} processes events for.
+         * The {@code name} of the processor this {@code WorkPackage} processes events for.
          *
-         * @param name the name of the processor this {@link WorkPackage} processes events for
+         * @param name the name of the processor this {@code WorkPackage} processes events for
          * @return the current Builder instance, for fluent interfacing
          */
         Builder name(String name) {
@@ -740,7 +735,7 @@ class WorkPackage {
 
         /**
          * Defines the {@link Clock} used for time dependent operations. For example used to update whenever this
-         * {@link WorkPackage} updated the {@link TrackingToken} claim last. Defaults to
+         * {@code WorkPackage} updated the {@link TrackingToken} claim last. Defaults to
          * {@link GenericEventMessage#clock}.
          *
          * @param clock the {@link Clock} used for time dependent operations
@@ -753,7 +748,7 @@ class WorkPackage {
 
         /**
          * Provides a {@link ProcessingContext} used to evaluate whether an event can be scheduled for processing by
-         * this {@link WorkPackage}. The provided {@code ProcessingContext} is enriched with resources from the
+         * this {@code WorkPackage}. The provided {@code ProcessingContext} is enriched with resources from the
          * {@link MessageStream.Entry} to evaluate whether the event can be handled by this package's {@link Segment}.
          * Currently, the only usage of the context is for
          * {@link org.axonframework.eventhandling.EventHandlingComponent#sequenceIdentifierFor(EventMessage,
@@ -772,9 +767,9 @@ class WorkPackage {
         }
 
         /**
-         * Initializes a {@link WorkPackage} as specified through this Builder.
+         * Initializes a {@code WorkPackage} as specified through this Builder.
          *
-         * @return a {@link WorkPackage} as specified through this Builder
+         * @return a {@code WorkPackage} as specified through this Builder
          */
         WorkPackage build() {
             return new WorkPackage(this);
@@ -805,7 +800,7 @@ class WorkPackage {
 
     /**
      * Container of a {@link MessageStream.Entry} and {@code boolean} whether the given {@code eventMessage} can be
-     * handled in this package. The combination constitutes to a processing entry the {@link WorkPackage} should
+     * handled in this package. The combination constitutes to a processing entry the {@code WorkPackage} should
      * ingest.
      */
     private static class DefaultProcessingEntry implements ProcessingEntry {
@@ -849,7 +844,7 @@ class WorkPackage {
 
         @Override
         public TrackingToken trackingToken() {
-            return processingEntries.get(0).trackingToken();
+            return processingEntries.getFirst().trackingToken();
         }
 
         @Override
