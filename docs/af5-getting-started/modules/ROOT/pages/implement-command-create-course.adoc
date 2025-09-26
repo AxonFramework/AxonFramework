@@ -141,6 +141,11 @@ class CreateCourseTest {
         fixture = AxonTestFixture.with(application.configurer()); // <2>
     }
 
+    @AfterEach
+    void afterEach() {
+        fixture.stop(); // <3>
+    }
+
 }
 ----
 
@@ -149,6 +154,7 @@ Adding the code to create the `AxonTestFixture` here will ensure that we have a 
 <.> This line creates a new `AxonTestFixture` based on our configurer. The configuration will be built and started from the configurer by the fixture itself.
 In this case, we use the whole application configuration, but you may also create a dedicated configuration for the slice if you want to keep your tests more focused and check the slice implementation correctness in isolation.
 To achieve that, just change the fixture creation line to: `AxonTestFixture.with(application.configurer(CreateCourseConfiguration::configure));`.
+<.> Remember after each test to stop the fixture, so all resources (like Axon Server connections) are properly released.
 
 === Testing the command
 
