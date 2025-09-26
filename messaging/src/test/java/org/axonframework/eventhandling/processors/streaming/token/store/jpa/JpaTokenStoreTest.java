@@ -113,24 +113,20 @@ class JpaTokenStoreTest {
 
     @Test
     void identifierInitializedOnDemand() {
-        Optional<String> id1 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier());
+        Optional<String> id1 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
         assertTrue(id1.isPresent());
-        Optional<String> id2 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier());
+        Optional<String> id2 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
         assertTrue(id2.isPresent());
         assertEquals(id1.get(), id2.get());
     }
 
     @Test
     void identifierReadIfAvailable() {
-        entityManager.persist(new TokenEntry("__config",
-                                             0,
-                                             new ConfigToken(Collections.singletonMap(
-                                                     "id",
-                                                     "test")),
+        entityManager.persist(new TokenEntry("__config", 0, new ConfigToken(Collections.singletonMap("id", "test")),
                                              jpaTokenStore.serializer()));
-        Optional<String> id1 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier());
+        Optional<String> id1 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
         assertTrue(id1.isPresent());
-        Optional<String> id2 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier());
+        Optional<String> id2 = joinAndUnwrap(jpaTokenStore.retrieveStorageIdentifier(mock()));
         assertTrue(id2.isPresent());
         assertEquals(id1.get(), id2.get());
 

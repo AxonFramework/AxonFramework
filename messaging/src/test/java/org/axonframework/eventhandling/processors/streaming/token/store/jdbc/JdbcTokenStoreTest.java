@@ -57,6 +57,8 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link JdbcTokenStore}.
@@ -550,9 +552,9 @@ class JdbcTokenStoreTest {
     @Transactional
     @Test
     void identifierInitializedOnDemand() {
-        Optional<String> id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier());
+        Optional<String> id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
         assertTrue(id1.isPresent());
-        Optional<String> id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier());
+        Optional<String> id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
         assertTrue(id2.isPresent());
         assertEquals(id1.get(), id2.get());
     }
@@ -570,9 +572,9 @@ class JdbcTokenStoreTest {
         ps.setBytes(4, tokenStore.serializer().serialize(token, byte[].class).getData());
         ps.executeUpdate();
 
-        Optional<String> id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier());
+        Optional<String> id1 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
         assertTrue(id1.isPresent());
-        Optional<String> id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier());
+        Optional<String> id2 = joinAndUnwrap(tokenStore.retrieveStorageIdentifier(mock()));
         assertTrue(id2.isPresent());
         assertEquals(id1.get(), id2.get());
 

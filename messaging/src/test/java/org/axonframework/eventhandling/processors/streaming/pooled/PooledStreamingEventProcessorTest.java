@@ -601,7 +601,8 @@ class PooledStreamingEventProcessorTest {
         void getTokenStoreIdentifier() {
             String expectedIdentifier = "some-identifier";
 
-            when(tokenStore.retrieveStorageIdentifier()).thenReturn(completedFuture(Optional.of(expectedIdentifier)));
+            when(tokenStore.retrieveStorageIdentifier(any()))
+                    .thenReturn(completedFuture(Optional.of(expectedIdentifier)));
 
             assertEquals(expectedIdentifier, testSubject.getTokenStoreIdentifier());
         }

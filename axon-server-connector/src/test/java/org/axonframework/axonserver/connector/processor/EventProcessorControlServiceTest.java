@@ -114,7 +114,7 @@ class EventProcessorControlServiceTest {
         eventProcessors.put(THAT_PROCESSOR, mock(EventProcessor.class));
 //        when(processingConfiguration.eventProcessors()).thenReturn(eventProcessors);
         TokenStore tokenStore = mock(TokenStore.class);
-        when(tokenStore.retrieveStorageIdentifier()).thenReturn(completedFuture(Optional.of(TOKEN_STORE_IDENTIFIER)));
+        when(tokenStore.retrieveStorageIdentifier(any())).thenReturn(completedFuture(Optional.of(TOKEN_STORE_IDENTIFIER)));
 //        when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
         TransactionManager transactionManager = mock(TransactionManager.class);
         when(transactionManager.fetchInTransaction(any()))
@@ -151,7 +151,7 @@ class EventProcessorControlServiceTest {
         eventProcessors.put(THAT_PROCESSOR, mock(EventProcessor.class));
 //        when(processingConfiguration.eventProcessors()).thenReturn(eventProcessors);
         TokenStore tokenStore = mock(TokenStore.class);
-        when(tokenStore.retrieveStorageIdentifier()).thenReturn(completedFuture(Optional.of(TOKEN_STORE_IDENTIFIER)));
+        when(tokenStore.retrieveStorageIdentifier(any())).thenReturn(completedFuture(Optional.of(TOKEN_STORE_IDENTIFIER)));
 //        when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
         TransactionManager transactionManager = mock(TransactionManager.class);
         when(transactionManager.fetchInTransaction(any()))
@@ -195,7 +195,7 @@ class EventProcessorControlServiceTest {
         eventProcessors.put(THAT_PROCESSOR, mock(EventProcessor.class));
 //        when(processingConfiguration.eventProcessors()).thenReturn(eventProcessors);
         TokenStore tokenStore = mock(TokenStore.class);
-        when(tokenStore.retrieveStorageIdentifier()).thenReturn(completedFuture(Optional.empty()));
+        when(tokenStore.retrieveStorageIdentifier(any())).thenReturn(completedFuture(Optional.empty()));
 //        when(processingConfiguration.tokenStore(anyString())).thenReturn(tokenStore);
         TransactionManager transactionManager = mock(TransactionManager.class);
         when(transactionManager.fetchInTransaction(any()))

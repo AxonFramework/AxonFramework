@@ -402,7 +402,7 @@ public class JpaTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<Optional<String>> retrieveStorageIdentifier() {
+    public CompletableFuture<Optional<String>> retrieveStorageIdentifier(@Nullable ProcessingContext context) {
         try {
             return completedFuture(Optional.of(getConfig()).map(i -> i.get("id")));
         } catch (Exception e) {

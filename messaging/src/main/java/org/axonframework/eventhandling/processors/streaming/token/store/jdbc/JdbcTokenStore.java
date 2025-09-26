@@ -187,7 +187,9 @@ public class JdbcTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<Optional<String>> retrieveStorageIdentifier() throws UnableToRetrieveIdentifierException {
+    public CompletableFuture<Optional<String>> retrieveStorageIdentifier(
+            @Nullable ProcessingContext context
+    ) throws UnableToRetrieveIdentifierException {
         return completedFuture(Optional.of(loadConfigurationToken()).map(configToken -> configToken.get("id")));
     }
 

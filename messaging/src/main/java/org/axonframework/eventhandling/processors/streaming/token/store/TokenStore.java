@@ -301,12 +301,15 @@ public interface TokenStore {
      * {@link #fetchToken(String, int, ProcessingContext)}, {@link #fetchSegments(String, ProcessingContext)}, etc. When
      * no transaction is active, the behavior is undefined.
      *
+     * @param context The current {@link ProcessingContext}, if any.
      * @return A {@link CompletableFuture} that provides an identifier to uniquely identify the storage location of
      * tokens in this {@code TokenStore} on completion.
      * @throws UnableToRetrieveIdentifierException When the implementation was unable to determine its identifier.
      */
     @Nonnull
-    default CompletableFuture<Optional<String>> retrieveStorageIdentifier() throws UnableToRetrieveIdentifierException {
+    default CompletableFuture<Optional<String>> retrieveStorageIdentifier(
+            @Nullable ProcessingContext context
+    ) throws UnableToRetrieveIdentifierException {
         return completedFuture(Optional.empty());
     }
 }

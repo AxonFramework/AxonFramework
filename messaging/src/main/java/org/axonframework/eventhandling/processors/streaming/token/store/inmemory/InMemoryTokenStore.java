@@ -174,7 +174,7 @@ public class InMemoryTokenStore implements TokenStore {
 
     @Nonnull
     @Override
-    public CompletableFuture<Optional<String>> retrieveStorageIdentifier() {
+    public CompletableFuture<Optional<String>> retrieveStorageIdentifier(@Nullable ProcessingContext context) {
         return completedFuture(Optional.of(identifier));
     }
 
