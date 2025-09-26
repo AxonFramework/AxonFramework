@@ -36,8 +36,6 @@ First, let's define the command that will be sent internally and the event that 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/SendAllCoursesFullyBookedNotification.java
 ----
-package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
-
 public record SendAllCoursesFullyBookedNotification(String facultyId) { // <1>
 }
 ----
@@ -47,11 +45,6 @@ public record SendAllCoursesFullyBookedNotification(String facultyId) { // <1>
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/events/AllCoursesFullyBookedNotificationSent.java
 ----
-package io.axoniq.demo.university.faculty.events;
-
-import io.axoniq.demo.university.faculty.FacultyTags;
-import org.axonframework.eventsourcing.annotations.EventTag;
-
 public record AllCoursesFullyBookedNotificationSent( // <1>
         @EventTag(key = FacultyTags.FACULTY_ID) // <2>
         String facultyId
@@ -69,28 +62,6 @@ Now let's create the main stateful event handler with its internal state managem
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/WhenAllCoursesFullyBookedThenSendNotification.java
 ----
-package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
-
-import io.axoniq.demo.university.faculty.FacultyTags;
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import io.axoniq.demo.university.faculty.events.*;
-import io.axoniq.demo.university.shared.ids.CourseId;
-import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
-import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.annotations.InjectEntity;
-
-import java.util.HashMap;
-import java.util.Map;
-
 public class WhenAllCoursesFullyBookedThenSendNotification {
 
     private static final String FACULTY_ID = "ONLY_FACULTY_ID"; // <1>
@@ -256,18 +227,6 @@ Now we need to configure all the components - the event-sourced entity, command 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/automation/allcoursesfullybookednotifier/AllCoursesFullyBookedNotifierConfiguration.java
 ----
-package io.axoniq.demo.university.faculty.automation.allcoursesfullybookednotifier;
-
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.modelling.configuration.EntityModule;
-
-import java.util.concurrent.CompletableFuture;
-
 public class AllCoursesFullyBookedNotifierConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {

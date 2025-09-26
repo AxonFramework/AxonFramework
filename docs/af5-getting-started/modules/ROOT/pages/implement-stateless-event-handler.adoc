@@ -53,8 +53,6 @@ Before we implement our event handler, we need to set up the notification servic
 [source,java]
 .src/main/java/io/axoniq/demo/university/shared/application/notifier/NotificationService.java
 ----
-package io.axoniq.demo.university.shared.application.notifier;
-
 public interface NotificationService { // <1>
 
     record Notification(String recipientId, String message) { // <2>
@@ -77,11 +75,6 @@ NOTE: These are simplified implementations for tutorial purposes. In a real appl
 [source,java]
 .src/main/java/io/axoniq/demo/university/shared/infrastructure/notifier/LoggingNotificationService.java
 ----
-package io.axoniq.demo.university.shared.infrastructure.notifier;
-
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import java.util.logging.Logger;
-
 public class LoggingNotificationService implements NotificationService { // <1>
 
     private static final Logger logger = Logger.getLogger(LoggingNotificationService.class.getName());
@@ -101,12 +94,6 @@ For testing purposes, we need a way to verify that notifications were sent:
 [source,java]
 .src/main/java/io/axoniq/demo/university/shared/infrastructure/notifier/RecordingNotificationService.java
 ----
-package io.axoniq.demo.university.shared.infrastructure.notifier;
-
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 public class RecordingNotificationService implements NotificationService { // <1>
 
     private final NotificationService delegate; // <2>
@@ -140,13 +127,6 @@ public class RecordingNotificationService implements NotificationService { // <1
 [source,java]
 .src/main/java/io/axoniq/demo/university/shared/configuration/NotificationServiceConfiguration.java
 ----
-package io.axoniq.demo.university.shared.configuration;
-
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import io.axoniq.demo.university.shared.infrastructure.notifier.LoggingNotificationService;
-import io.axoniq.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-
 public class NotificationServiceConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
@@ -172,13 +152,6 @@ Now that we have our notification infrastructure, let's implement our stateless 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/automation/studentsubscribednotifier/WhenStudentSubscribedThenSendNotification.java
 ----
-package io.axoniq.demo.university.faculty.automation.studentsubscribednotifier;
-
-import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.MessageStream;
-
 public class WhenStudentSubscribedThenSendNotification { // <1>
 
     private final NotificationService notificationService; // <2>
@@ -214,16 +187,6 @@ Now we need to configure our event handler to be processed by an event processor
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/automation/studentsubscribednotifier/StudentSubscribedNotifierConfiguration.java
 ----
-package io.axoniq.demo.university.faculty.automation.studentsubscribednotifier;
-
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessorModule;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-
-import java.util.concurrent.CompletableFuture;
-
 public class StudentSubscribedNotifierConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
@@ -254,33 +217,18 @@ Let's create a test to verify our event handler works correctly.
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/automation/studentsubscribednotifier/WhenStudentSubscribedThenSendNotificationTest.java
 ----
-package io.axoniq.demo.university.faculty.automation.studentsubscribednotifier;
-
-import io.axoniq.demo.university.faculty.FacultyAxonTestFixture;
-import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
-import io.axoniq.demo.university.shared.application.notifier.NotificationService;
-import io.axoniq.demo.university.shared.configuration.NotificationServiceConfiguration;
-import io.axoniq.demo.university.shared.ids.CourseId;
-import io.axoniq.demo.university.shared.ids.StudentId;
-import io.axoniq.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.test.fixture.AxonTestFixture;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 public class WhenStudentSubscribedThenSendNotificationAxonFixtureTest {
 
     private AxonTestFixture fixture;
 
     @BeforeEach
-    void beforeEach() { // <1>
-        fixture = FacultyAxonTestFixture.slice(configurer -> {
+    void beforeEach() {
+        var application = new UniversityAxonApplication();
+        var sliceConfigurer = application.configurer(configurer -> { // <1>
             configurer = NotificationServiceConfiguration.configure(configurer);
             return StudentSubscribedNotifierConfiguration.configure(configurer);
         });
+        fixture = AxonTestFixture.with(sliceConfigurer);
     }
 
     @AfterEach
