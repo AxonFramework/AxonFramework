@@ -57,11 +57,11 @@ class ClaimTask extends CoordinatorTask {
     private final UnitOfWorkFactory unitOfWorkFactory;
 
     /**
-     * Constructs a {@link ClaimTask}.
+     * Constructs a {@code ClaimTask}.
      *
      * @param result            The {@link CompletableFuture} to {@link #complete(Boolean, Throwable)} once
      *                          {@link #run()} has finalized.
-     * @param name              The name of the {@link Coordinator} this instruction will be ran in. Used to correctly
+     * @param name              The name of the {@link Coordinator} this instruction will be run in. Used to correctly
      *                          deal with the {@code tokenStore}.
      * @param segmentId         The identifier of the {@link Segment} this instruction should claim.
      * @param workPackages      The collection of {@link WorkPackage}s controlled by the {@link Coordinator}. Will be
@@ -104,32 +104,26 @@ class ClaimTask extends CoordinatorTask {
             return CompletableFuture.completedFuture(true);
         }
         releasesDeadlines.remove(segmentId);
-        List<Segment> segments = joinAndUnwrap(
-                unitOfWorkFactory.create()
-                                 .executeWithResult((context) ->
-                                                            CompletableFuture.completedFuture(
-                                                                    tokenStore.fetchAvailableSegments(name)
-                                                            )
-                                 )
-        );
+        List<Segment> segments = joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                context -> tokenStore.fetchAvailableSegments(name, context)
+        ));
+        if (segments == null) {
+            logger.info("Processor [{}] cannot claim segment {}. It is not available.", name, segmentId);
+            return CompletableFuture.completedFuture(false);
+        }
 
         Optional<Segment> segmentToClaim = segments.stream()
                                                    .filter(segment -> segment.getSegmentId() == segmentId)
                                                    .findFirst();
-        if (!segmentToClaim.isPresent()) {
+        if (segmentToClaim.isEmpty()) {
             logger.info("Processor [{}] cannot claim segment {}. It is not available.", name, segmentId);
             return CompletableFuture.completedFuture(false);
         }
 
         try {
-            joinAndUnwrap(
-                    unitOfWorkFactory.create()
-                                     .executeWithResult((context) ->
-                                                                CompletableFuture.completedFuture(
-                                                                        tokenStore.fetchToken(name, segmentId)
-                                                                )
-                                     )
-            );
+            joinAndUnwrap(unitOfWorkFactory.create().executeWithResult(
+                    context -> tokenStore.fetchToken(name, segmentId, context)
+            ));
         } catch (Exception e) {
             logger.warn("Processor [{}] cannot claim segment {} due to an error.", name, segmentId, e);
             return CompletableFuture.completedFuture(false);
