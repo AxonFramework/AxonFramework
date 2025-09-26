@@ -22,9 +22,8 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 import org.junit.jupiter.api.*;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -74,7 +73,8 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
 
         Configuration configuration = testSubject.registerEntity(testEntityBuilder).build();
 
-        assertThat(configuration.getModuleConfiguration("SimpleStateBasedEntityModule<java.lang.String, java.lang.Object>")).isPresent();
+        assertThat(configuration.getModuleConfiguration(
+                "SimpleStateBasedEntityModule<java.lang.String, java.lang.Object>")).isPresent();
     }
 
     @Test
@@ -88,6 +88,23 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
 
         Configuration configuration =
                 testSubject.registerCommandHandlingModule(statefulCommandHandlingModule)
+                           .build();
+
+        assertThat(configuration.getModuleConfiguration("test")).isPresent();
+    }
+
+    @Test
+    void registerQueryHandlingModuleAddsAModuleConfiguration() {
+        ModuleBuilder<QueryHandlingModule> statefulCommandHandlingModule =
+                QueryHandlingModule.named("test")
+                                   .queryHandlers(handlerPhase -> handlerPhase.queryHandler(
+                                           new QualifiedName(String.class),
+                                           new QualifiedName(String.class),
+                                           (command, context) -> MessageStream.empty().cast()
+                                   ));
+
+        Configuration configuration =
+                testSubject.registerQueryHandlingModule(statefulCommandHandlingModule)
                            .build();
 
         assertThat(configuration.getModuleConfiguration("test")).isPresent();
