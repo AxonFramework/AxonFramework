@@ -109,7 +109,7 @@ public class UniversityAxonApplication {
         var configurer = EventSourcingConfigurer.create();
         configurer = customization.apply(configurer);
 
-        // Override default Axon Server configuration to use DCB context
+        // Override default Axon Server configuration to use DCB context that you've created before
         configurer.componentRegistry(r -> r.registerComponent(AxonServerConfiguration.class, c -> { // <2>
             var axonServerConfig = new AxonServerConfiguration();
             axonServerConfig.setContext(CONTEXT); // <3>

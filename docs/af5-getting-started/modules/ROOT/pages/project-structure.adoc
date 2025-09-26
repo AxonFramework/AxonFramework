@@ -42,7 +42,7 @@ Please ensure you have the following properties and dependencies in your `pom.xm
 
     <properties>
         <assertj.version>3.27.3</assertj.version>
-        <axon.version>5.0.0-M3</axon.version>
+        <axon.version>5.0.0-PREVIEW</axon.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit.version>5.12.1</junit.version>
         <log4j.version>2.24.3</log4j.version>
@@ -156,8 +156,8 @@ Our project will follow this structure of packages:
  ┃ ┃ ┣ 📂 changecoursecapacity
  ┃ ┃ ┣ 📂 subscribestudent
  ┃ ┃ ┗ 📂 ...
- ┃ ┣ 📂 read (query slices - FUTURE MILESTONES)
- ┃ ┗ 📂 automation (automation slices - FUTURE MILESTONES)
+ ┃ ┣ 📂 read (query handling slices )
+ ┃ ┗ 📂 automation (automation slices)
  ┣ 📂 shared (common code, like identifiers, exceptions, etc)
  ┗ 📂 ...
 ----
@@ -170,13 +170,13 @@ You may even use different implementation styles / architectures inside certain 
 You will also see that in this tutorial.
 
 *Write Slices*
-Contains commands that represent user intentions, define business rules through aggregates, produce domain events, and enforce invariants (for example `SubscribeStudent` command → `StudentSubscribed` event, with `SubscriptionsPerStudentNotExceedMax` rule).
+Contains commands that represent user intentions, define business rules through aggregates, produce domain events, and enforce invariants (for example `SubscribeStudentToCourse` command → `StudentSubscribedToCourse` event, with `SubscriptionsPerStudentNotExceedMax` rule).
 
-*Read Slices [FOR THE FUTURE MILESTONES]*
-Implements queries and read models optimized for specific use cases, with projectors that transform events into queryable state (for example `GetSubscriptionsByStudentId` query → `StudentSubscriptionsReadModel`).
+*Read Slices*
+Implements queries and read models optimized for specific use cases, with projectors that transform events into queryable state (for example `GetCourseStatsById` query → `CoursesStatsReadModel`).
 
-*Automation Slices [FOR THE FUTURE MILESTONES]*
-Processes events to trigger subsequent actions, implementing system policies and workflows, that connect different modules (for example `WhenStudentSubscribedToCourseThenSendEmailNotification`).
+*Automation Slices*
+Processes events to trigger subsequent actions, implementing system policies and workflows, that connect different modules (for example `WhenStudentSubscribedThenSendNotification`).
 
 
 [NOTE]
@@ -188,7 +188,7 @@ you can now keep your slices completely independent of each other!
 
 The architecture screams the capabilities of the system by making it explicit:
 
-* Commands (`createcourse` , `SubscribeStudentToCourse`), which are the actions that can be executed
+* Commands (`CreateCourse` , `SubscribeStudentToCourse`), which are the actions that can be executed
 * Events that capture what happened and may notify other parts of the system or the user
 * Queries that provide information about the state of the system
 
