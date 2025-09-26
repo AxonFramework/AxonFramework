@@ -25,7 +25,7 @@ import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.RoutingStrategy;
-import org.axonframework.commandhandling.annotation.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.annotations.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.ConvertingCommandGateway;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -59,9 +59,7 @@ import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
@@ -127,7 +125,6 @@ class MessagingConfigurationDefaultsTest {
         assertInstanceOf(DefaultEventGateway.class, resultConfig.getComponent(EventGateway.class));
         assertInstanceOf(SimpleEventBus.class, resultConfig.getComponent(EventBus.class));
         assertInstanceOf(SimpleQueryBus.class, resultConfig.getComponent(QueryBus.class));
-        assertInstanceOf(SimpleQueryUpdateEmitter.class, resultConfig.getComponent(QueryUpdateEmitter.class));
         assertEquals(QueryPriorityCalculator.defaultCalculator(),
                      resultConfig.getComponent(QueryPriorityCalculator.class));
         assertInstanceOf(DefaultQueryGateway.class, resultConfig.getComponent(QueryGateway.class));
@@ -285,8 +282,8 @@ class MessagingConfigurationDefaultsTest {
     private static class TestCommandBus implements CommandBus {
 
         @Override
-        public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                                   @Nullable ProcessingContext processingContext) {
+        public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                                @Nullable ProcessingContext processingContext) {
             throw new UnsupportedOperationException();
         }
 

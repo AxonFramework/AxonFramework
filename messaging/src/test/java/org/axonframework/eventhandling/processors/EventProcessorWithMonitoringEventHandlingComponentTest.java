@@ -16,7 +16,9 @@
 
 package org.axonframework.eventhandling.processors;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.interceptors.InterceptingEventHandlingComponent;
 import org.axonframework.eventhandling.monitoring.MonitoringEventHandlingComponent;
@@ -130,6 +132,11 @@ class EventProcessorWithMonitoringEventHandlingComponentTest {
                     .handle(eventMessages, ctx)
                     .asCompletableFuture()
             ).get(2, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            throw new UnsupportedOperationException("Not required for tests.");
         }
     }
 }

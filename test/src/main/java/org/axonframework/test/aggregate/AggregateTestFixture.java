@@ -23,7 +23,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
+import org.axonframework.commandhandling.annotations.AnnotatedCommandHandlingComponent;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
@@ -53,16 +53,16 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
-import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.MultiHandlerDefinition;
-import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
+import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotations.ClasspathHandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotations.HandlerDefinition;
+import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.MultiHandlerDefinition;
+import org.axonframework.messaging.annotations.MultiHandlerEnhancerDefinition;
+import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
@@ -235,13 +235,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType,
-                                                          MessageHandler<CommandMessage, CommandResultMessage<?>> commandHandler) {
+                                                          MessageHandler<CommandMessage, CommandResultMessage> commandHandler) {
         return registerCommandHandler(payloadType.getName(), commandHandler);
     }
 
     @Override
     public FixtureConfiguration<T> registerCommandHandler(String commandName,
-                                                          MessageHandler<CommandMessage, CommandResultMessage<?>> commandHandler) {
+                                                          MessageHandler<CommandMessage, CommandResultMessage> commandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         commandBus.subscribe(new QualifiedName(commandName), (CommandHandler) commandHandler);

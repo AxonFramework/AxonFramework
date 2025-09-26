@@ -60,7 +60,7 @@ class AsyncInMemoryStreamableEventSourceTest {
         legacySource.publishMessage(event2);
 
         // Then - Both should report same head token
-        TrackingToken asyncHead = asyncSource.firstToken(processingContext).get();
+        TrackingToken asyncHead = asyncSource.latestToken(processingContext).get();
         TrackingToken legacyHead = legacySource.createHeadToken();
 
         assertEquals(legacyHead.position(), asyncHead.position());
@@ -148,7 +148,7 @@ class AsyncInMemoryStreamableEventSourceTest {
         }
 
         // Then - Both should have cleared their events
-        assertNull(asyncSource.firstToken(processingContext).get());
+        assertNull(asyncSource.latestToken(processingContext).get());
         assertNull(legacySource.createHeadToken());
 
         // And new streams should see no events

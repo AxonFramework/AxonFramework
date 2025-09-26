@@ -973,9 +973,12 @@ class Coordinator {
             }
 
             if (eventStream == null && !workPackages.isEmpty() && !(trackingToken instanceof NoToken)) {
-                var startStreamingFrom = Objects.requireNonNullElse(trackingToken, new GlobalSequenceTrackingToken(-1));
-                eventStream = eventSource.open(StreamingCondition.conditionFor(startStreamingFrom, eventCriteria),
-                                               null);
+                var startStreamingFrom = Objects.requireNonNullElse(
+                        trackingToken, joinAndUnwrap(eventSource.firstToken(null))
+                );
+                eventStream = eventSource.open(
+                        StreamingCondition.conditionFor(startStreamingFrom, eventCriteria), null
+                );
                 logger.debug("Processor [{}] opened stream with tracking token [{}] and criteria [{}].",
                              name,
                              trackingToken,

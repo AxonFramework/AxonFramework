@@ -71,22 +71,20 @@ public class SimpleCommandHandlingComponent implements
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                     @Nonnull CommandHandler commandHandler) {
-        requireNonNull(name, "The name of the command handler may not be null");
-        requireNonNull(commandHandler, "The command handler may not be null");
         commandHandlers.put(name, commandHandler);
         return this;
     }
 
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull CommandHandlingComponent commandHandlingComponent) {
-        subComponents.add(requireNonNull(commandHandlingComponent, "The command handling component may not be null"));
+        subComponents.add(commandHandlingComponent);
         return this;
     }
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
-                                                                @Nonnull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
+                                                             @Nonnull ProcessingContext context) {
         QualifiedName qualifiedName = requireNonNull(command, "The command message cannot be null.")
                 .type()
                 .qualifiedName();

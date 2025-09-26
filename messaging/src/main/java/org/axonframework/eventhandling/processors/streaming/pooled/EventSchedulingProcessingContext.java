@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.processors.streaming.pooled;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.annotation.Internal;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.ApplicationContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;

@@ -126,10 +126,10 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
 
     @Override
     @Nonnull
-    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage message,
-                                                                      @Nonnull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage> handleCreate(@Nonnull CommandMessage message,
+                                                                   @Nonnull ProcessingContext context) {
         if (isInstanceCommand(message) && !isCreationalCommand(message)) {
-            return MessageStream.failed(new EntityMissingForInstanceCommandHandler(message));
+            return MessageStream.failed(new EntityMissingForInstanceCommandHandlerException(message));
         }
         try {
             CommandHandler commandHandler = creationalCommandHandlers.get(message.type().qualifiedName());
@@ -145,13 +145,13 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
 
     @Override
     @Nonnull
-    public MessageStream.Single<CommandResultMessage<?>> handleInstance(
+    public MessageStream.Single<CommandResultMessage> handleInstance(
             @Nonnull CommandMessage message,
             @Nonnull E entity,
             @Nonnull ProcessingContext context
     ) {
         if (isCreationalCommand(message) && !isInstanceCommand(message)) {
-            return MessageStream.failed(new EntityExistsForCreationalCommandHandler(message, entity));
+            return MessageStream.failed(new EntityAlreadyExistsForCreationalCommandHandlerException(message, entity));
         }
         try {
             var childrenWithCommandHandlers = children.stream()
@@ -194,7 +194,7 @@ public class ConcreteEntityMetamodel<E> implements DescribableComponent, EntityM
      * {@link EntityChildMetamodel#canHandle(CommandMessage, Object, ProcessingContext)}. If multiple children can
      * handle the command, an exception is thrown.
      */
-    private MessageStream.Single<CommandResultMessage<?>> handleForChildren(
+    private MessageStream.Single<CommandResultMessage> handleForChildren(
             List<EntityChildMetamodel<?, E>> childrenWithCommandHandler,
             CommandMessage message,
             E entity,

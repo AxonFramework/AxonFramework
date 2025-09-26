@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateInvocationException;
@@ -454,7 +454,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                                                ProcessingContext context) throws Exception {
         //noinspection unchecked
         return handlers.stream()
-                       .filter(mh -> mh.unwrap(ForwardingCommandMessageHandlingMember.class)
+                       .filter(mh -> mh.unwrap(ForwardingCommandHandlingMember.class)
                                        .map(c -> c.canForward(command, aggregateRoot))
                                        .orElse(true))
                        .findFirst()

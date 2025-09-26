@@ -52,8 +52,8 @@ public class RecordingCommandBus implements CommandBus {
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                               @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                            @Nullable ProcessingContext processingContext) {
         dispatchedCommands.add(command);
         try {
             return CompletableFuture.completedFuture(asCommandResultMessage(
@@ -72,16 +72,14 @@ public class RecordingCommandBus implements CommandBus {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
-    private static <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult) {
+    private static CommandResultMessage asCommandResultMessage(@Nullable Object commandResult) {
         if (commandResult instanceof CommandResultMessage) {
-            return (CommandResultMessage<R>) commandResult;
-        } else if (commandResult instanceof Message) {
-            Message commandResultMessage = (Message) commandResult;
-            return new GenericCommandResultMessage<>(commandResultMessage);
+            return (CommandResultMessage) commandResult;
+        } else if (commandResult instanceof Message commandResultMessage) {
+            return new GenericCommandResultMessage(commandResultMessage);
         }
         MessageType type = new MessageType(ObjectUtils.nullSafeTypeOf(commandResult));
-        return new GenericCommandResultMessage<>(type, (R) commandResult);
+        return new GenericCommandResultMessage(type, commandResult);
     }
 
     /**

@@ -193,9 +193,9 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
-                                                             @Nullable ProcessingContext processingContext,
-                                                             @Nonnull List<TaggedEventMessage<?>> events) {
+    public CompletableFuture<AppendTransaction<?>> appendEvents(@Nonnull AppendCondition condition,
+                                                                @Nullable ProcessingContext processingContext,
+                                                                @Nonnull List<TaggedEventMessage<?>> events) {
         try {
             assertValidTags(events);
         } catch (Exception e) {
@@ -205,14 +205,14 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
             return CompletableFuture.completedFuture(EmptyAppendTransaction.INSTANCE);
         }
 
-        return CompletableFuture.completedFuture(new AppendTransaction() {
+        return CompletableFuture.completedFuture(new AppendTransaction<AggregateBasedConsistencyMarker>() {
 
             private final AtomicBoolean txFinished = new AtomicBoolean(false);
             private final AggregateBasedConsistencyMarker preCommitConsistencyMarker =
                     AggregateBasedConsistencyMarker.from(condition);
 
             @Override
-            public CompletableFuture<ConsistencyMarker> commit() {
+            public CompletableFuture<AggregateBasedConsistencyMarker> commit(@Nullable ProcessingContext context) {
                 if (txFinished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException(
                             "Already committed or rolled back"
@@ -231,11 +231,15 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
                     txResult.completeExceptionally(e);
                 }
 
-                var afterCommitConsistencyMarker = aggregateSequencer.forwarded();
                 return txResult.exceptionallyCompose(
                                        e -> CompletableFuture.failedFuture(translateConflictException(e))
                                )
-                               .thenApply(r -> afterCommitConsistencyMarker);
+                               .thenApply(v -> aggregateSequencer.forwarded());
+            }
+
+            @Override
+            public CompletableFuture<ConsistencyMarker> afterCommit(@Nonnull AggregateBasedConsistencyMarker marker, @Nullable ProcessingContext context) {
+                return CompletableFuture.completedFuture(marker);
             }
 
             private Throwable translateConflictException(Throwable e) {
@@ -247,7 +251,7 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
             }
 
             @Override
-            public void rollback() {
+            public void rollback(@Nullable ProcessingContext context) {
                 txFinished.set(true);
             }
         });

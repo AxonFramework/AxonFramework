@@ -22,7 +22,7 @@ import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventSourcedEntityFactory;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.modelling.StateManager;

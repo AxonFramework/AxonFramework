@@ -91,8 +91,8 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                               @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                            @Nullable ProcessingContext processingContext) {
         return connector.dispatch(command, processingContext);
     }
 
@@ -152,8 +152,9 @@ public class DistributedCommandBus implements CommandBus {
             callback.onError(e);
         }
 
-        private void handleSuccess(CommandMessage commandMessage, CommandBusConnector.ResultCallback callback,
-                                   CommandResultMessage<?> resultMessage) {
+        private void handleSuccess(CommandMessage commandMessage,
+                                   CommandBusConnector.ResultCallback callback,
+                                   CommandResultMessage resultMessage) {
             logger.debug("Successfully processed command [{}] with result [{}]", commandMessage.type(), resultMessage);
             callback.onSuccess(resultMessage);
         }

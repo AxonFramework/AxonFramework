@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config.annotation;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.transaction.annotation.Transactional;
 

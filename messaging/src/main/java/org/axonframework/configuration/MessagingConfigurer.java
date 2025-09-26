@@ -28,7 +28,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.CorrelationDataProviderRegistry;
 import org.axonframework.messaging.interceptors.DispatchInterceptorRegistry;
@@ -190,24 +190,6 @@ public class MessagingConfigurer implements ApplicationConfigurer {
                 registry,
                 parameterResolverFactoryBuilder::build
         ));
-        return this;
-    }
-
-    /**
-     * Registers the given {@link QueryUpdateEmitter} factory in this {@code Configurer}.
-     * <p>
-     * The {@code queryUpdateEmitterBuilder} receives the {@link Configuration} as input and is expected to return a
-     * {@link QueryUpdateEmitter} instance.
-     *
-     * @param queryUpdateEmitterBuilder The builder constructing the {@link QueryUpdateEmitter}.
-     * @return The current instance of the {@code Configurer} for a fluent API.
-     */
-    public MessagingConfigurer registerQueryUpdateEmitter(
-            @Nonnull ComponentBuilder<QueryUpdateEmitter> queryUpdateEmitterBuilder
-    ) {
-        delegate.componentRegistry(
-                cr -> cr.registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder)
-        );
         return this;
     }
 

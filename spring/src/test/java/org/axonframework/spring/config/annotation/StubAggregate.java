@@ -19,7 +19,7 @@ package org.axonframework.spring.config.annotation;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.spring.utils.StubDomainEvent;

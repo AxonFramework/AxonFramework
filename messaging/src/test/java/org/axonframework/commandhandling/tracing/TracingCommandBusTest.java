@@ -106,7 +106,7 @@ class TracingCommandBusTest {
         testSubject.subscribe(testCommand.type().qualifiedName(),
                               (command, processingContext) -> {
                                   spanFactory.verifySpanActive("CommandBus.handleCommand");
-                                  return MessageStream.just(new GenericCommandResultMessage<>(
+                                  return MessageStream.just(new GenericCommandResultMessage(
                                           new MessageType("result"), "ok"
                                   ));
                               });

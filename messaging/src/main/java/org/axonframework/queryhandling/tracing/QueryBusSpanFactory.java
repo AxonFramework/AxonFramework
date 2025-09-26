@@ -47,7 +47,7 @@ public interface QueryBusSpanFactory {
      * @param distributed  Whether the subscription query is from a distributed source.
      * @return The span for the handling of the subscription query.
      */
-    Span createSubscriptionQuerySpan(SubscriptionQueryMessage<?, ?, ?> queryMessage, boolean distributed);
+    Span createSubscriptionQuerySpan(SubscriptionQueryMessage queryMessage, boolean distributed);
 
     /**
      * Creates a span for processing a subscription query update that has been received from the server.
@@ -57,26 +57,7 @@ public interface QueryBusSpanFactory {
      * @return The span for the processing of the subscription query update.
      */
     Span createSubscriptionQueryProcessUpdateSpan(SubscriptionQueryUpdateMessage updateMessage,
-                                                  SubscriptionQueryMessage<?, ?, ?> queryMessage);
-
-    /**
-     * Creates a span for a scatter-gather query.
-     *
-     * @param queryMessage The query message being handled.
-     * @param distributed  Whether the query is from a distributed source.
-     * @return The span for the handling of the scatter-gather query.
-     */
-    Span createScatterGatherSpan(QueryMessage queryMessage, boolean distributed);
-
-    /**
-     * Creates a span for one of the handlers of a scatter-gather query. There can be multiple for the same within one
-     * application. The handler index is used to distinguish between them.
-     *
-     * @param queryMessage The query message being handled.
-     * @param handlerIndex The index of the handler. Starts at 0.
-     * @return The span for the handling of the scatter-gather query.
-     */
-    Span createScatterGatherHandlerSpan(QueryMessage queryMessage, int handlerIndex);
+                                                  SubscriptionQueryMessage queryMessage);
 
     /**
      * Creates a span for a streaming query.

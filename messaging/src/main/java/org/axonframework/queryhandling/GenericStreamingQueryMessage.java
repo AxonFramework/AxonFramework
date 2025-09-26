@@ -58,24 +58,7 @@ public class GenericStreamingQueryMessage
     public <P> GenericStreamingQueryMessage(@Nonnull MessageType type,
                                             @Nullable Object payload,
                                             @Nonnull Class<P> responseType) {
-        this(type, payload, new PublisherResponseType<>(responseType));
-    }
-
-    /**
-     * Constructs a {@code GenericStreamingQueryMessage} for the given {@code type}, {@code payload}, and
-     * {@code responseType}.
-     * <p>
-     * The {@link Metadata} defaults to an empty instance.
-     *
-     * @param <P>          The type of {@link #payload() payload} expressing the query in this class.
-     * @param type         The {@link MessageType type} for this {@link StreamingQueryMessage}.
-     * @param payload      The payload expressing the query for this {@link StreamingQueryMessage}.
-     * @param responseType The expected {@link ResponseType response type} for this {@link StreamingQueryMessage}.
-     */
-    public <P> GenericStreamingQueryMessage(@Nonnull MessageType type,
-                                            @Nullable Object payload,
-                                            @Nonnull ResponseType<Publisher<P>> responseType) {
-        this(new GenericMessage(type, payload, Metadata.emptyInstance()), responseType);
+        this(new GenericMessage(type, payload, Metadata.emptyInstance()), new PublisherResponseType<>(responseType));
     }
 
     /**
@@ -99,24 +82,8 @@ public class GenericStreamingQueryMessage
         this(delegate, new PublisherResponseType<>(responseType));
     }
 
-    /**
-     * Constructs a {@code GenericStreamingQueryMessage} with given {@code delegate}, and {@code responseType}.
-     * <p>
-     * The {@code delegate} will be used supply the {@link Message#payload() payload}, {@link Message#type() type},
-     * {@link Message#metadata() metadata} and {@link Message#identifier() identifier} of the resulting
-     * {@code GenericQueryMessage}.
-     * <p>
-     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
-     * of Work.
-     *
-     * @param <P>          The type of {@link #payload() payload} expressing the query in this class.
-     * @param delegate     The {@link Message} containing {@link Message#payload() payload},
-     *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
-     *                     {@link Message#metadata() metadata} for the {@link SubscriptionQueryMessage} to reconstruct.
-     * @param responseType The expected {@link ResponseType response type} for this {@link StreamingQueryMessage}.
-     */
-    public <P> GenericStreamingQueryMessage(@Nonnull Message delegate,
-                                            @Nonnull ResponseType<Publisher<P>> responseType) {
+    private <P> GenericStreamingQueryMessage(@Nonnull Message delegate,
+                                             @Nonnull ResponseType<Publisher<P>> responseType) {
         super(delegate, responseType);
     }
 
@@ -144,14 +111,13 @@ public class GenericStreamingQueryMessage
     public StreamingQueryMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter) {
         Object convertedPayload = payloadAs(type, converter);
         if (ObjectUtils.nullSafeTypeOf(convertedPayload).isAssignableFrom(payloadType())) {
-            //noinspection unchecked
             return (StreamingQueryMessage) super.withConvertedPayload(type, converter);
         }
         Message delegate = delegate();
         GenericMessage converted = new GenericMessage(delegate.identifier(),
-                                                           delegate.type(),
-                                                           convertedPayload,
-                                                           delegate.metadata());
+                                                      delegate.type(),
+                                                      convertedPayload,
+                                                      delegate.metadata());
         return new GenericStreamingQueryMessage(converted, internalResponseType());
     }
 

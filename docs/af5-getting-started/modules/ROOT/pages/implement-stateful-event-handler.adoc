@@ -75,7 +75,7 @@ import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.shared.application.notifier.NotificationService;
 import io.axoniq.demo.university.faculty.events.*;
 import io.axoniq.demo.university.shared.ids.CourseId;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
@@ -86,7 +86,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.annotation.InjectEntity;
+import org.axonframework.modelling.annotations.InjectEntity;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -21,7 +21,7 @@ import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
-import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.junit.jupiter.api.*;
 
 import static org.axonframework.commandhandling.CommandBusTestUtils.aCommandBus;

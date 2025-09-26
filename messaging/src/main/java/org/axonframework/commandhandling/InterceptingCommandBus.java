@@ -106,8 +106,8 @@ public class InterceptingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                               @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                            @Nullable ProcessingContext processingContext) {
         return interceptingDispatcher.interceptAndDispatch(command, processingContext);
     }
 
@@ -138,8 +138,8 @@ public class InterceptingCommandBus implements CommandBus {
 
         @Nonnull
         @Override
-        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage command,
-                                                                    @Nonnull ProcessingContext context) {
+        public MessageStream.Single<CommandResultMessage> handle(@Nonnull CommandMessage command,
+                                                                 @Nonnull ProcessingContext context) {
             return interceptorChain.proceed(command, context)
                                    .first()
                                    .cast();
@@ -157,13 +157,13 @@ public class InterceptingCommandBus implements CommandBus {
             this.interceptorChain = new DefaultMessageDispatchInterceptorChain<>(interceptors, dispatcher);
         }
 
-        private CompletableFuture<CommandResultMessage<?>> interceptAndDispatch(
+        private CompletableFuture<CommandResultMessage> interceptAndDispatch(
                 @Nonnull CommandMessage command,
                 @Nullable ProcessingContext context
         ) {
             return interceptorChain.proceed(command, context)
                                    .first()
-                                   .<CommandResultMessage<?>>cast()
+                                   .<CommandResultMessage>cast()
                                    .asCompletableFuture()
                                    .thenApply(Entry::message);
         }

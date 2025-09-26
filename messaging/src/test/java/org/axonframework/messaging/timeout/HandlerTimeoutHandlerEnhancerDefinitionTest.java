@@ -15,19 +15,19 @@
  */
 package org.axonframework.messaging.timeout;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.deadline.annotation.DeadlineHandler;
+import org.axonframework.deadline.annotations.DeadlineHandler;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MessageHandlerTimeout;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.messaging.annotations.AnnotatedMessageHandlingMemberDefinition;
+import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotations.MessageHandlerTimeout;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.replay.annotations;
 
-import org.axonframework.messaging.annotation.HasHandlerAttributes;
+import org.axonframework.messaging.annotations.HasHandlerAttributes;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

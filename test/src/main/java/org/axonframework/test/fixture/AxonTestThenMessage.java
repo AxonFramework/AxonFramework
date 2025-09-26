@@ -18,8 +18,10 @@ package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.awaitility.Awaitility;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.Reporter;
@@ -29,12 +31,15 @@ import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.saga.CommandValidator;
 import org.hamcrest.Matcher;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -125,6 +130,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T eventsSatisfy(@Nonnull Consumer<List<EventMessage>> consumer) {
+        Objects.requireNonNull(consumer, "The consumer may not be null.");
         var publishedEvents = eventSink.recorded();
         try {
             consumer.accept(publishedEvents);
@@ -136,6 +142,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T eventsMatch(@Nonnull Predicate<List<EventMessage>> predicate) {
+        Objects.requireNonNull(predicate, "The predicate may not be null.");
         var publishedEvents = eventSink.recorded();
         var result = predicate.test(publishedEvents);
         if (!result) {
@@ -151,6 +158,16 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
+    public T await(@Nonnull Consumer<T> assertion, @Nonnull Duration timeout) {
+        Objects.requireNonNull(assertion, "The assertion may not be null.");
+        Objects.requireNonNull(timeout, "The timeout may not be null.");
+        Awaitility.waitAtMost(timeout)
+                  .pollInterval(Duration.ofMillis(50))
+                  .untilAsserted(() -> assertion.accept(self()));
+        return self();
+    }
+
+    @Override
     public T commands(@Nonnull CommandMessage... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(List.of(expectedCommands));
         return self();
@@ -158,6 +175,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T commandsSatisfy(@Nonnull Consumer<List<CommandMessage>> consumer) {
+        Objects.requireNonNull(consumer, "The consumer may not be null.");
         var dispatchedCommands = commandBus.recordedCommands();
         try {
             consumer.accept(dispatchedCommands);
@@ -169,6 +187,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T commandsMatch(@Nonnull Predicate<List<CommandMessage>> predicate) {
+        Objects.requireNonNull(predicate, "The predicate may not be null.");
         var dispatchedCommands = commandBus.recordedCommands();
         var result = predicate.test(dispatchedCommands);
         if (!result) {
@@ -185,6 +204,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer) {
+        Objects.requireNonNull(consumer, "The consumer may not be null.");
         try {
             consumer.accept(actualException);
         } catch (AssertionError e) {
@@ -195,6 +215,8 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message) {
+        Objects.requireNonNull(type, "The type may not be null.");
+        Objects.requireNonNull(message, "The message may not be null.");
         if (actualException == null) {
             throw new AxonAssertionError(
                     "Expected exception of type " + type + " with message '" + message + "' but got none");
@@ -208,6 +230,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T exception(@Nonnull Class<? extends Throwable> type) {
+        Objects.requireNonNull(type, "The type may not be null.");
         if (actualException == null) {
             throw new AxonAssertionError(
                     "Expected exception of type " + type + " but got none");
@@ -255,7 +278,21 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public AxonTestPhase.Setup and() {
-        return new AxonTestFixture(configuration, c -> customization);
+        return new AxonTestFixture(configuration, customization);
+    }
+
+    @Override
+    public T expect(@Nonnull Consumer<Configuration> function) {
+        Objects.requireNonNull(function, "The function may not be null.");
+        function.accept(configuration);
+        return self();
+    }
+
+    @Override
+    public T expectAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function) {
+        Objects.requireNonNull(function, "The function may not be null.");
+        function.apply(configuration).join();
+        return self();
     }
 
     private T self() {

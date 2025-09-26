@@ -33,37 +33,37 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Steven van Beelen
  */
-class GenericSubscriptionQueryMessageTest extends MessageTestSuite<SubscriptionQueryMessage<?, ?, ?>> {
+class GenericSubscriptionQueryMessageTest extends MessageTestSuite<SubscriptionQueryMessage> {
 
     private static final ResponseType<String> TEST_RESPONSE_TYPE = ResponseTypes.instanceOf(String.class);
     private static final ResponseType<String> TEST_UPDATES_TYPE = ResponseTypes.instanceOf(String.class);
 
     @Override
-    protected SubscriptionQueryMessage<?, ?, ?> buildDefaultMessage() {
+    protected SubscriptionQueryMessage buildDefaultMessage() {
         Message delegate =
                 new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA);
-        return new GenericSubscriptionQueryMessage<>(delegate,
-                                                     TEST_RESPONSE_TYPE,
-                                                     TEST_UPDATES_TYPE);
+        return new GenericSubscriptionQueryMessage(delegate,
+                                                   TEST_RESPONSE_TYPE,
+                                                   TEST_UPDATES_TYPE);
     }
 
     @Override
-    protected <P> SubscriptionQueryMessage<?, ?, ?> buildMessage(@Nullable P payload) {
-        return new GenericSubscriptionQueryMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
-                                                     payload,
-                                                     TEST_RESPONSE_TYPE,
-                                                     TEST_UPDATES_TYPE);
+    protected <P> SubscriptionQueryMessage buildMessage(@Nullable P payload) {
+        return new GenericSubscriptionQueryMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
+                                                   payload,
+                                                   TEST_RESPONSE_TYPE,
+                                                   TEST_UPDATES_TYPE);
     }
 
     @Override
-    protected void validateDefaultMessage(@Nonnull SubscriptionQueryMessage<?, ?, ?> result) {
+    protected void validateDefaultMessage(@Nonnull SubscriptionQueryMessage result) {
         assertThat(TEST_RESPONSE_TYPE).isEqualTo(result.responseType());
         assertThat(TEST_UPDATES_TYPE).isEqualTo(result.updatesResponseType());
     }
 
     @Override
-    protected void validateMessageSpecifics(@Nonnull SubscriptionQueryMessage<?, ?, ?> actual,
-                                            @Nonnull SubscriptionQueryMessage<?, ?, ?> result) {
+    protected void validateMessageSpecifics(@Nonnull SubscriptionQueryMessage actual,
+                                            @Nonnull SubscriptionQueryMessage result) {
         assertThat(actual.responseType()).isEqualTo(result.responseType());
         assertThat(actual.updatesResponseType()).isEqualTo(result.updatesResponseType());
     }

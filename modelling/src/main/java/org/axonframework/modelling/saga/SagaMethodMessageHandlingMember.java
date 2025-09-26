@@ -18,8 +18,8 @@ package org.axonframework.modelling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
+import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import jakarta.annotation.Nonnull;

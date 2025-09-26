@@ -18,7 +18,7 @@ package org.axonframework.modelling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
 import org.axonframework.modelling.saga.metamodel.SagaModel;
 import org.junit.jupiter.api.*;

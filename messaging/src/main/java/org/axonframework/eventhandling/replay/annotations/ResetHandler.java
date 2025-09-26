@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.replay.annotations;
 
 import org.axonframework.eventhandling.replay.ResetContext;
-import org.axonframework.messaging.annotation.MessageHandler;
+import org.axonframework.messaging.annotations.MessageHandler;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

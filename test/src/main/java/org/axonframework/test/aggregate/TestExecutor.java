@@ -16,7 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.modelling.command.LegacyRepository;
 

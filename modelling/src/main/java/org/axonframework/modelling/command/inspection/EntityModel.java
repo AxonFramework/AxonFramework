@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@
 package org.axonframework.modelling.command.inspection;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotations.MessageHandlingMember;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**

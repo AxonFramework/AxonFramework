@@ -23,8 +23,10 @@ import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.HandlerDefinition;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.tracing.SpanFactory;
 import org.springframework.beans.BeansException;
@@ -84,8 +86,8 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * The {@link LegacyEventStore} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link SpringAggregateSnapshotter}
-     * @see org.axonframework.messaging.annotation.ClasspathParameterResolverFactory
-     * @see org.axonframework.messaging.annotation.ClasspathHandlerDefinition
+     * @see ClasspathParameterResolverFactory
+     * @see ClasspathHandlerDefinition
      */
     public static Builder builder() {
         return new Builder();
@@ -139,8 +141,8 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
      * <p>
      * The {@link LegacyEventStore} is a <b>hard requirement</b> and as such should be provided.
      *
-     * @see org.axonframework.messaging.annotation.ClasspathParameterResolverFactory
-     * @see org.axonframework.messaging.annotation.ClasspathHandlerDefinition
+     * @see ClasspathParameterResolverFactory
+     * @see ClasspathHandlerDefinition
      */
     public static class Builder extends AggregateSnapshotter.Builder {
 

@@ -20,6 +20,7 @@ import io.grpc.ManagedChannelBuilder;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -38,7 +39,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -98,7 +98,6 @@ class QueryThreadingIntegrationTest {
                                      .axonServerConnectionManager(connectionManager)
                                      .configuration(configuration)
                                      .localSegment(localQueryBus)
-                                     .updateEmitter(localQueryBus.queryUpdateEmitter())
                                      .messageSerializer(serializer)
                                      .genericSerializer(serializer)
                                      .build();
@@ -110,7 +109,6 @@ class QueryThreadingIntegrationTest {
                                       .axonServerConnectionManager(connectionManager)
                                       .configuration(configuration)
                                       .localSegment(localQueryBus2)
-                                      .updateEmitter(localQueryBus.queryUpdateEmitter())
                                       .messageSerializer(serializer)
                                       .genericSerializer(serializer)
                                       .build();
@@ -144,30 +142,34 @@ class QueryThreadingIntegrationTest {
         queryBus.subscribe(QUERY_TYPE_A.name(), String.class, (query, ctx) -> {
             waitingQueries.incrementAndGet();
             QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE_B,
-                                                                               "start",
-                                                                               ResponseTypes.instanceOf(String.class));
-            QueryResponseMessage b = queryBus.query(testQuery).get();
+                                                             "start",
+                                                             ResponseTypes.instanceOf(String.class));
+            QueryResponseMessage b = queryBus.query(testQuery, null)
+                                             .first()
+                                             .asCompletableFuture()
+                                             .thenApply(MessageStream.Entry::message)
+                                             .get();
             waitingQueries.decrementAndGet();
             return "a" + b.payload();
         });
 
-        CompletableFuture<QueryResponseMessage> query1 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
+        MessageStream<QueryResponseMessage> query1 = queryBus.query(
+                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
         );
-        CompletableFuture<QueryResponseMessage> query2 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
+        MessageStream<QueryResponseMessage> query2 = queryBus.query(
+                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
         );
-        CompletableFuture<QueryResponseMessage> query3 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
+        MessageStream<QueryResponseMessage> query3 = queryBus.query(
+                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
         );
-        CompletableFuture<QueryResponseMessage> query4 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
+        MessageStream<QueryResponseMessage> query4 = queryBus.query(
+                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
         );
-        CompletableFuture<QueryResponseMessage> query5 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
+        MessageStream<QueryResponseMessage> query5 = queryBus.query(
+                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
         );
-        CompletableFuture<QueryResponseMessage> query6 = queryBus.query(
-                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
+        MessageStream<QueryResponseMessage> query6 = queryBus.query(
+                new GenericQueryMessage(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class)), null
         );
 
         // Wait until all queries are waiting on the secondary query. Note that query 6 cannot be processed
@@ -179,12 +181,12 @@ class QueryThreadingIntegrationTest {
                });
 
         // We should still have the queries not done, it's waiting on the secondary one.
-        assertFalse(query1.isDone());
-        assertFalse(query2.isDone());
-        assertFalse(query3.isDone());
-        assertFalse(query4.isDone());
-        assertFalse(query5.isDone());
-        assertFalse(query6.isDone());
+        assertFalse(query1.hasNextAvailable());
+        assertFalse(query2.hasNextAvailable());
+        assertFalse(query3.hasNextAvailable());
+        assertFalse(query4.hasNextAvailable());
+        assertFalse(query5.hasNextAvailable());
+        assertFalse(query6.hasNextAvailable());
 
         // unblock the query, it should now process all queries
         secondaryQueryBlock.set(false);
@@ -192,12 +194,12 @@ class QueryThreadingIntegrationTest {
         await().atMost(5, TimeUnit.SECONDS)
                .untilAsserted(() -> {
                    assertEquals(0, waitingQueries.get());
-                   assertTrue(query1.isDone());
-                   assertTrue(query2.isDone());
-                   assertTrue(query3.isDone());
-                   assertTrue(query4.isDone());
-                   assertTrue(query5.isDone());
-                   assertTrue(query6.isDone());
+                   assertTrue(query1.hasNextAvailable());
+                   assertTrue(query2.hasNextAvailable());
+                   assertTrue(query3.hasNextAvailable());
+                   assertTrue(query4.hasNextAvailable());
+                   assertTrue(query5.hasNextAvailable());
+                   assertTrue(query6.hasNextAvailable());
                });
     }
 }

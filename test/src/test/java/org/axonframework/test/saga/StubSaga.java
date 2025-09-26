@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.MetadataValue;
+import org.axonframework.messaging.annotations.MetadataValue;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;

@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
+import org.axonframework.commandhandling.annotations.AnnotatedCommandHandlingComponent;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;

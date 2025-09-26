@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.loopbacktest;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 

@@ -27,34 +27,33 @@ import java.util.Map;
 /**
  * A {@link ResultMessage} that represents a result from handling a {@link CommandMessage}.
  *
- * @param <R> The type of {@link #payload() result} contained in this {@link CommandResultMessage}.
  * @author Milan Savic
  * @since 4.0.0
  */
-public interface CommandResultMessage<R> extends ResultMessage {
+public interface CommandResultMessage extends ResultMessage {
 
     @Override
     @Nonnull
-    CommandResultMessage<R> withMetadata(@Nonnull Map<String, String> metadata);
+    CommandResultMessage withMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    CommandResultMessage<R> andMetadata(@Nonnull Map<String, String> metadata);
+    CommandResultMessage andMetadata(@Nonnull Map<String, String> metadata);
 
     @Override
     @Nonnull
-    default CommandResultMessage<?> withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
+    default CommandResultMessage withConvertedPayload(@Nonnull Class<?> type, @Nonnull Converter converter) {
         return withConvertedPayload((Type) type, converter);
     }
 
     @Override
     @Nonnull
-    default CommandResultMessage<?> withConvertedPayload(@Nonnull TypeReference<?> type,
-                                                         @Nonnull Converter converter) {
+    default CommandResultMessage withConvertedPayload(@Nonnull TypeReference<?> type,
+                                                      @Nonnull Converter converter) {
         return withConvertedPayload(type.getType(), converter);
     }
 
     @Override
     @Nonnull
-    CommandResultMessage<?> withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
+    CommandResultMessage withConvertedPayload(@Nonnull Type type, @Nonnull Converter converter);
 }
