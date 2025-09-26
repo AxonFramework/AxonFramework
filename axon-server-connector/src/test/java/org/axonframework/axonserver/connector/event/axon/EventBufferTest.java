@@ -97,7 +97,7 @@ class EventBufferTest {
 
     @Test
     @Timeout(value = 450, unit = TimeUnit.MILLISECONDS)
-    void dataUpcastAndDeserialized() {
+    void dataUpcastAndDeserialized() throws InterruptedException {
         assertFalse(testSubject.hasNextAvailable());
         eventStream.onNext(TEST_EVENT_WITH_TOKEN);
         assertTrue(testSubject.hasNextAvailable());
@@ -105,7 +105,7 @@ class EventBufferTest {
         TrackedEventMessage<?> peeked =
                 testSubject.peek().orElseThrow(() -> new AssertionError("Expected value to be available"));
         assertEquals(new GlobalSequenceTrackingToken(1L), peeked.trackingToken());
-        assertTrue(peeked instanceof DomainEventMessage<?>);
+        assertInstanceOf(DomainEventMessage.class, peeked);
 
         assertTrue(testSubject.hasNextAvailable());
         assertTrue(testSubject.hasNextAvailable(1, TimeUnit.SECONDS));
