@@ -231,13 +231,11 @@ public class StudentSubscribedNotifierConfiguration {
                 .pooledStreaming("Automation_WhenStudentSubscribedThenSendNotification_Processor") // <2>
                 .eventHandlingComponents( // <3>
                         c -> c.annotated(cfg -> new WhenStudentSubscribedThenSendNotification(cfg.getComponent(NotificationService.class))) // <4>
-                )
-                // Due to a minor bug in the InMemoryEventStorageEngine this customization is needed if you want to use the implementation in the tests
-                .customized((c, cus) -> cus.initialToken(s -> CompletableFuture.completedFuture(new GlobalSequenceTrackingToken(0)))); // <5>
+                ).notCustomized();
 
         return configurer
                 .modelling(modelling -> modelling.messaging(messaging -> messaging.eventProcessing(eventProcessing ->
-                        eventProcessing.pooledStreaming(ps -> ps.processor(automationProcessor)) // <6>
+                        eventProcessing.pooledStreaming(ps -> ps.processor(automationProcessor)) // <5>
                 )));
     }
 }
@@ -247,8 +245,7 @@ public class StudentSubscribedNotifierConfiguration {
 <2> We give the processor a descriptive name that indicates its purpose
 <3> We configure which components should be registered as event handlers
 <4> We create our event handler instance with the required `NotificationService` dependency
-<5> Custom token initialization for testing with `InMemoryEventStorageEngine` (this is a workaround for testing) - will not be needed in further Axon Framework milestones.
-<6> We register the processor module with the event processing configuration
+<5> We register the processor module with the event processing configuration
 
 == Testing the event handler
 
@@ -259,51 +256,63 @@ Let's create a test to verify our event handler works correctly.
 ----
 package io.axoniq.demo.university.faculty.automation.studentsubscribednotifier;
 
-import io.axoniq.demo.university.UniversityApplicationTest;
-import io.axoniq.demo.university.shared.configuration.NotificationServiceConfiguration;
-import io.axoniq.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
+import io.axoniq.demo.university.faculty.FacultyAxonTestFixture;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import io.axoniq.demo.university.shared.application.notifier.NotificationService;
+import io.axoniq.demo.university.shared.configuration.NotificationServiceConfiguration;
 import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.shared.ids.StudentId;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import io.axoniq.demo.university.shared.infrastructure.notifier.RecordingNotificationService;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.TimeUnit;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.awaitility.Awaitility.*;
+public class WhenStudentSubscribedThenSendNotificationAxonFixtureTest {
 
-class WhenStudentSubscribedThenSendNotificationTest extends UniversityApplicationTest { // <1>
+    private AxonTestFixture fixture;
 
-    @Override
-    protected EventSourcingConfigurer overrideConfigurer(EventSourcingConfigurer configurer) { // <2>
-        configurer = NotificationServiceConfiguration.configure(configurer);
-        configurer = StudentSubscribedNotifierConfiguration.configure(configurer);
-        return configurer;
+    @BeforeEach
+    void beforeEach() { // <1>
+        fixture = FacultyAxonTestFixture.slice(configurer -> {
+            configurer = NotificationServiceConfiguration.configure(configurer);
+            return StudentSubscribedNotifierConfiguration.configure(configurer);
+        });
+    }
+
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
     }
 
     @Test
     void automationTest() {
-        // when
         var studentId = StudentId.random();
         var courseId = CourseId.random();
-        eventsOccurred(new StudentSubscribedToCourse(studentId, courseId)); // <3>
 
-        // then
         var expectedNotification = new NotificationService.Notification(studentId.raw(), "You have subscribed to course " + courseId);
-        var notificationService = (RecordingNotificationService) sut.getComponent(NotificationService.class);
-        await().atMost(2, TimeUnit.SECONDS) // <4>
-                .untilAsserted(() -> assertThat(notificationService.sent()).contains(expectedNotification)); // <5>
+
+        fixture.given()
+                .events(new StudentSubscribedToCourse(studentId, courseId)) // <2>
+                .then()
+                .await(r -> r.expect(cfg -> assertNotificationSent(cfg, expectedNotification))); // <3>
     }
+
+    private void assertNotificationSent(Configuration configuration, NotificationService.Notification expectedNotification) {
+        var notificationService = (RecordingNotificationService) configuration.getComponent(NotificationService.class);
+        assertThat(notificationService.sent()).contains(expectedNotification); // <4>
+    }
+
 }
 ----
 
-<1> We extend `UniversityApplicationTest` which provides the test infrastructure
-<2> We configure both the notification service and our event handler for testing
-<3> We use `eventsOccurred()` to publish the `StudentSubscribedToCourse` event
-<4> We use Awaitility to wait for asynchronous processing to complete
-<5> We assert that the expected notification was sent
+<.> We configure both the notification service and our event handler for testing
+<.> We use `events()` to publish the `StudentSubscribedToCourse` event
+<.> The `await` method from `AxonTestFixture` use the Awaitility library under the hood, to wait for asynchronous processing to complete
+<.> We assert that the expected notification was sent
 
 == Key concepts review
 
