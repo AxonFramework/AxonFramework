@@ -441,5 +441,5 @@ public interface ComponentRegistry extends DescribableComponent {
      * @param fullyQualifiedClassName The name of the class of the enhancer to disable.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    ComponentRegistry disableEnhancer(String fullyQualifiedClassName);
+    ComponentRegistry disableEnhancer(@Nonnull String fullyQualifiedClassName);
 }

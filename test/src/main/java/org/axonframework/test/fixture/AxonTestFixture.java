@@ -240,8 +240,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * @param enabled True if Axon Server should be enabled, false otherwise.
          * @return The current Customization, for fluent interfacing.
          */
-        public Customization axonServerEnabled(boolean enabled) {
-            return new Customization(enabled, fieldFilters);
+        public Customization disableAxonServer() {
+            return new Customization(false, fieldFilters);
         }
 
         /**

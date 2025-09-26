@@ -230,7 +230,8 @@ public class SpringComponentRegistry implements
     }
 
     @Override
-    public ComponentRegistry disableEnhancer(String fullyQualifiedClassName) {
+    public ComponentRegistry disableEnhancer(@Nonnull String fullyQualifiedClassName) {
+        Objects.requireNonNull(fullyQualifiedClassName, "The fully qualified class name must not be null.");
         try {
             var enhancerClass = Class.forName(fullyQualifiedClassName);
             if (!ConfigurationEnhancer.class.isAssignableFrom(enhancerClass)) {

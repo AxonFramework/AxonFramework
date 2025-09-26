@@ -313,6 +313,11 @@ public interface AxonTestPhase {
          */
         When when();
 
+        /**
+         * Transitions to the Then phase to validate the results of the test. It skips the When phase.
+         *
+         * @return A {@link Then.Nothing} instance that allows validating the test results.
+         */
         Then.Nothing then();
     }
 
@@ -437,6 +442,11 @@ public interface AxonTestPhase {
          */
         Event events(@Nonnull List<?>... events);
 
+        /**
+         * Transitions to the Then phase to validate the results of the test. It skips the When phase.
+         *
+         * @return A {@link Then.Nothing} instance that allows validating the test results.
+         */
         Nothing nothing();
     }
 
@@ -528,7 +538,7 @@ public interface AxonTestPhase {
              * @param assertion The assertion to wait for. The assertion will be invoked on the current Then instance.
              * @return The current Then instance, for fluent interfacing.
              */
-            default T await(Consumer<T> assertion) {
+            default T await(@Nonnull Consumer<T> assertion) {
                 return await(assertion, Duration.ofSeconds(5));
             }
 
@@ -541,7 +551,7 @@ public interface AxonTestPhase {
              *                  assertion
              * @return The current Then instance, for fluent interfacing.
              */
-            T await(Consumer<T> assertion, Duration timeout);
+            T await(@Nonnull Consumer<T> assertion, @Nonnull Duration timeout);
 
             /**
              * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
@@ -581,6 +591,13 @@ public interface AxonTestPhase {
             }
         }
 
+        /**
+         * Interface describing the operations available in the Then phase of the test fixture execution. It's possible
+         * to assert published messages from the When phase.
+         *
+         * @param <T> The type of the current Then instance, for fluent interfacing. The type depends on the operation
+         *            which was triggered in the When phase.
+         */
         interface MessageAssertions<T extends MessageAssertions<T>> {
 
             /**
