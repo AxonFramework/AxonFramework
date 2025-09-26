@@ -33,7 +33,6 @@ import java.util.Map;
  * Generic implementation of the {@link SubscriptionQueryUpdateMessage} interface holding incremental updates of a
  * subscription query.
  *
- * @param <U> The type of {@link #payload() update} contained in this {@link SubscriptionQueryUpdateMessage}.
  * @author Milan Savic
  * @author Steven van Beelen
  * @since 3.3.0
