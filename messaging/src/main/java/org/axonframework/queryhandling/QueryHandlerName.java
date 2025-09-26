@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.QualifiedName;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * A combination of two {@link QualifiedName QualifiedNames}, one for the query handled by a {@link QueryHandler} and
  * another one specifying the name of the response returned by a {@code QueryHandler}.
@@ -35,4 +37,14 @@ public record QueryHandlerName(
         @Nonnull QualifiedName responseName
 ) {
 
+    /**
+     * Compact constructor asserting whether the {@code queryName} and {@code responseName} are non-null.
+     *
+     * @param queryName    The name of the query a {@link QueryHandler} handlers.
+     * @param responseName The name of the response a {@link QueryHandler} returns.
+     */
+    public QueryHandlerName {
+        requireNonNull(queryName, "The qualifiedName cannot be null.");
+        requireNonNull(responseName, "The qualifiedName cannot be null.");
+    }
 }

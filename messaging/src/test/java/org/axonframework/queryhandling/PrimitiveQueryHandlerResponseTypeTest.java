@@ -18,8 +18,9 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.axonframework.queryhandling.annotations.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
 import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,17 +28,18 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests resolving query handlers which return primitive types.
  */
-@Disabled("TODO #3488 - Reintroduce as part of AnnotationQueryHandlerAdapter changes")
 class PrimitiveQueryHandlerResponseTypeTest {
 
-    private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
-    private final PrimitiveQueryHandler queryHandler = new PrimitiveQueryHandler();
-    private final AnnotationQueryHandlerAdapter<PrimitiveQueryHandler> annotationQueryHandlerAdapter =
-            new AnnotationQueryHandlerAdapter<>(queryHandler);
+    private QueryBus queryBus;
 
     @BeforeEach
     void setUp() {
-        annotationQueryHandlerAdapter.subscribe(queryBus);
+        queryBus = QueryBusTestUtils.aQueryBus();
+
+        PrimitiveQueryHandler queryHandler = new PrimitiveQueryHandler();
+        QueryHandlingComponent queryHandlingComponent =
+                new AnnotatedQueryHandlingComponent<>(queryHandler, PassThroughConverter.MESSAGE_INSTANCE);
+        queryBus.subscribe(queryHandlingComponent);
     }
 
     @Test

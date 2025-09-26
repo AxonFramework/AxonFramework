@@ -151,11 +151,10 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
                              @Nonnull ProcessingContext context,
                              T target) throws Exception {
         try {
-            return handle(message, context, target).first()
-                                                   .asCompletableFuture()
-                                                   .get()
-                                                   .message()
-                                                   .payload();
+            MessageStream.Entry<?> resultEntry = handle(message, context, target).first()
+                                                                                 .asCompletableFuture()
+                                                                                 .get();
+            return resultEntry != null ? resultEntry.message().payload() : null;
         } catch (ExecutionException e) {
             if (e.getCause() instanceof Exception ex) {
                 throw ex;

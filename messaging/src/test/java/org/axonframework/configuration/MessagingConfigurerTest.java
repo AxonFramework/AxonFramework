@@ -54,6 +54,7 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -382,6 +383,23 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
         Configuration configuration =
                 testSubject.registerCommandHandlingModule(statelessCommandHandlingModule)
+                           .build();
+
+        assertThat(configuration.getModuleConfiguration("test")).isPresent();
+    }
+
+    @Test
+    void registerQueryHandlingModuleAddsAModuleConfiguration() {
+        ModuleBuilder<QueryHandlingModule> statefulCommandHandlingModule =
+                QueryHandlingModule.named("test")
+                                   .queryHandlers(handlerPhase -> handlerPhase.queryHandler(
+                                           new QualifiedName(String.class),
+                                           new QualifiedName(String.class),
+                                           (command, context) -> MessageStream.empty().cast()
+                                   ));
+
+        Configuration configuration =
+                testSubject.registerQueryHandlingModule(statefulCommandHandlingModule)
                            .build();
 
         assertThat(configuration.getModuleConfiguration("test")).isPresent();

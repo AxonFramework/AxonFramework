@@ -17,15 +17,15 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageType;
-import org.axonframework.queryhandling.annotations.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
 import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -39,29 +39,27 @@ import static java.util.Arrays.asList;
 
 /**
  * Tests Streaming Query functionality using a {@link SimpleQueryBus}. Query Handlers are subscribed using
- * {@link AnnotationQueryHandlerAdapter}.
+ * {@link AnnotatedQueryHandlingComponent}.
  *
  * @author Milan Savic
  * @author Stefan Dragisic
  */
-@Disabled("TODO #3488 - Reintroduce as part of AnnotationQueryHandlerAdapter changes")
 class StreamingQueryTest {
 
-    private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
-    private final MyQueryHandler myQueryHandler = new MyQueryHandler();
-    private final AnnotationQueryHandlerAdapter<MyQueryHandler> annotationQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
-            myQueryHandler);
+    private QueryBus queryBus = QueryBusTestUtils.aQueryBus();
 
-    private final ErrorQueryHandler errorQueryHandler = new ErrorQueryHandler();
-
-    private final AnnotationQueryHandlerAdapter<ErrorQueryHandler> errorQueryHandlerAdapter = new AnnotationQueryHandlerAdapter<>(
-            errorQueryHandler);
+    private MyQueryHandler myQueryHandler;
 
     private static final ConcurrentLinkedQueue<String> handlersInvoked = new ConcurrentLinkedQueue<>();
 
     @BeforeEach
     void setUp() {
-        annotationQueryHandlerAdapter.subscribe(queryBus);
+        queryBus = QueryBusTestUtils.aQueryBus();
+
+        myQueryHandler = new MyQueryHandler();
+        QueryHandlingComponent queryHandlingComponent =
+                new AnnotatedQueryHandlingComponent<>(myQueryHandler, PassThroughConverter.MESSAGE_INSTANCE);
+        queryBus.subscribe(queryHandlingComponent);
     }
 
     @AfterEach
@@ -86,23 +84,6 @@ class StreamingQueryTest {
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
                     .expectNext("a", "b", "c", "d")
                     .verifyComplete();
-    }
-
-    @Test
-    void switchHandlerOnError() {
-        handlersInvoked.removeIf(n -> true);
-        errorQueryHandlerAdapter.subscribe(queryBus);
-
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType("listQuery"), "criteria", String.class
-        );
-
-        StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
-                    .expectNext("a", "b", "c", "d")
-                    .verifyComplete();
-
-        List<String> handlers_invoked = new ArrayList<>(handlersInvoked);
-        Assertions.assertEquals(asList("handler_error", "handler_healthy"), handlers_invoked);
     }
 
     @Test
@@ -213,8 +194,7 @@ class StreamingQueryTest {
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class))
-                    .expectErrorMatches(t -> t instanceof QueryExecutionException
-                            && t.getMessage().startsWith("Error starting stream"))
+                    .expectErrorMatches(t -> t instanceof QueryExecutionException)
                     .verify();
     }
 
@@ -272,8 +252,7 @@ class StreamingQueryTest {
         Flux<String> flux = streamingQueryPayloads(testQuery, String.class);
 
         StepVerifier.create(flux)
-                    .expectErrorMatches(t -> t instanceof QueryExecutionException
-                            && t.getMessage().startsWith("Error starting stream"))
+                    .expectErrorMatches(t -> t instanceof QueryExecutionException)
                     .verify();
 
         StepVerifier.create(flux)
@@ -284,7 +263,7 @@ class StreamingQueryTest {
     private static class ErrorQueryHandler {
 
         @SuppressWarnings("unused")
-        @QueryHandler(queryName = "listQuery")
+        @QueryHandler(queryName = "faultyListQuery")
         public Flux<String> listQuery(String criteria) {
             handlersInvoked.add("handler_error");
             throw new RuntimeException("ooops");

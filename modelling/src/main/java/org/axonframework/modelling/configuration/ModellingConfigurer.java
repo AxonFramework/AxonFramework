@@ -28,6 +28,7 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -104,8 +105,30 @@ public class ModellingConfigurer implements ApplicationConfigurer {
     public ModellingConfigurer registerCommandHandlingModule(
             @Nonnull ModuleBuilder<CommandHandlingModule> moduleBuilder
     ) {
-        delegate.registerCommandHandlingModule(Objects.requireNonNull(moduleBuilder, "ModuleBuilder may not be null"));
-        return this;
+        return messaging(messagingConfigurer -> messagingConfigurer.registerCommandHandlingModule(
+                moduleBuilder
+        ));
+    }
+
+    /**
+     * Registers the given {@link ModuleBuilder builder} for a {@link QueryHandlingModule} to use in this
+     * configuration.
+     * <p>
+     * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
+     * will not be accessible from other {@code Modules} to enforce encapsulation. The sole exception to this, are
+     * {@code Modules} registered with the resulting {@link QueryHandlingModule} itself.
+     *
+     * @param moduleBuilder The builder returning a query handling module to register with
+     *                      {@code this ModellingConfigurer}.
+     * @return A {@code ModellingConfigurer} instance for further configuring.
+     */
+    @Nonnull
+    public ModellingConfigurer registerQueryHandlingModule(
+            @Nonnull ModuleBuilder<QueryHandlingModule> moduleBuilder
+    ) {
+        return messaging(messagingConfigurer -> messagingConfigurer.registerQueryHandlingModule(
+                moduleBuilder
+        ));
     }
 
     /**
@@ -118,7 +141,7 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     @Nonnull
-    public <I, E> ModellingConfigurer registerEntity(@Nonnull EntityModule<I, E> entityModule){
+    public <I, E> ModellingConfigurer registerEntity(@Nonnull EntityModule<I, E> entityModule) {
         Objects.requireNonNull(entityModule, "EntityModule may not be null");
         delegate.componentRegistry(cr -> cr.registerModule(entityModule));
         return this;

@@ -16,9 +16,7 @@
 
 package org.axonframework.queryhandling.annotations;
 
-import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotations.AnnotatedMessageHandlingMemberDefinition;
@@ -34,6 +32,7 @@ import org.junit.jupiter.api.*;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static org.axonframework.messaging.annotations.MessageStreamResolverUtils.resolveToStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -100,27 +99,13 @@ class MethodQueryHandlerDefinitionTest {
         assertEquals(CharSequence.class, handler.resultType());
     }
 
-    // TODO This local static function should be replaced with a dedicated interface that converts types.
-    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<?> returnTypeConverter(Object result) {
-        if (result instanceof CompletableFuture<?> future) {
-            return MessageStream.fromFuture(future.thenApply(
-                    r -> new GenericMessage(new MessageType(r.getClass()), r)
-            ));
-        }
-        if (result instanceof MessageStream<?> stream) {
-            return stream;
-        }
-        return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
-    }
-
     private <R> QueryHandlingMember<R> messageHandler(String methodName) {
         try {
             MessageHandlingMember<MethodQueryHandlerDefinitionTest> handler = handlerDefinition.createHandler(
                     MethodQueryHandlerDefinitionTest.class,
                     MethodQueryHandlerDefinitionTest.class.getDeclaredMethod(methodName, String.class),
                     parameterResolver,
-                    MethodQueryHandlerDefinitionTest::returnTypeConverter
+                    result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
             ).orElseThrow(IllegalArgumentException::new);
             //noinspection unchecked
             return testSubject.wrapHandler(handler)
