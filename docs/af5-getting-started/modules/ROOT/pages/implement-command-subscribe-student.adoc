@@ -23,10 +23,6 @@ Let's define them as Java records, as before.
 ----
 package io.axoniq.demo.university.faculty.events;
 
-import org.axonframework.eventsourcing.annotations.EventTag;
-import io.axoniq.demo.university.faculty.shared.ids.StudentId;
-import io.axoniq.demo.university.faculty.shared.ids.CourseId;
-
 public record StudentEnrolledInFaculty(
         @EventTag // <1>
         StudentId studentId,
@@ -43,10 +39,6 @@ public record StudentEnrolledInFaculty(
 .src/main/java/io/axoniq/demo/university/faculty/events/StudentSubscribedToCourse.java
 ----
 package io.axoniq.demo.university.faculty.events;
-
-import org.axonframework.eventsourcing.annotations.EventTag;
-import io.axoniq.demo.university.faculty.shared.ids.StudentId;
-import io.axoniq.demo.university.faculty.shared.ids.CourseId;
 
 public record StudentSubscribedToCourse(
         @EventTag // <1>
@@ -68,9 +60,6 @@ Last, but not least, we define the `SubscribeStudentToCourse` command.
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java
 ----
 package io.axoniq.demo.university.faculty.write.createcourse;
-
-import io.axoniq.demo.university.faculty.shared.ids.StudentId;
-import io.axoniq.demo.university.faculty.shared.ids.CourseId;
 
 public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
 }
@@ -104,18 +93,6 @@ Let's create tests for these scenarios.
 .src/test/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourseTest.java
 ----
 package io.axoniq.demo.university.faculty.write.subscribestudent;
-
-import io.axoniq.demo.university.UniversityApplicationTest;
-import io.axoniq.demo.university.faculty.events.CourseCreated;
-import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
-import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
-import io.axoniq.demo.university.shared.ids.CourseId;
-import io.axoniq.demo.university.shared.ids.StudentId;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 
 class SubscribeStudentToCourseTest {
 
@@ -306,9 +283,6 @@ We're going to use the `SubscriptionId` class and define it as an `TargetEntityI
 ----
 package io.axoniq.demo.university.faculty.write.subscribestudent;
 
-import io.axoniq.demo.university.faculty.shared.ids.CourseId;
-import io.axoniq.demo.university.faculty.shared.ids.StudentId;
-
 record SubscriptionId(CourseId courseId, StudentId studentId) {
 
 }
@@ -319,9 +293,6 @@ record SubscriptionId(CourseId courseId, StudentId studentId) {
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java
 ----
 package io.axoniq.demo.university.faculty.write.createcourse;
-
-import io.axoniq.demo.university.faculty.shared.ids.StudentId;
-import io.axoniq.demo.university.faculty.shared.ids.CourseId;
 
 public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
 
@@ -596,12 +567,6 @@ To do so, let's create a new class `SubscribeStudentToCourseConfiguration` with 
 .src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseConfiguration.java
 ----
 package io.axoniq.demo.university.faculty.write.subscribestudent;
-
-import org.axonframework.configuration.NewConfiguration;
-import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule;
-import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.modelling.StateManager;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 
 public class SubscribeStudentConfiguration {
 
