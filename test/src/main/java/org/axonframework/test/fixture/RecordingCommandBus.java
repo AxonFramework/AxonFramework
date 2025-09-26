@@ -104,7 +104,8 @@ public class RecordingCommandBus implements CommandBus {
      * @return The result of the given {@code command}. May be {@code null} if the command has not been dispatched yet.
      */
     @Nullable
-    public Message resultOf(CommandMessage command) {
+    public Message resultOf(@Nonnull CommandMessage command) {
+        Objects.requireNonNull(command, "Command Message may not be null.");
         return recorded.get(command);
     }
 
