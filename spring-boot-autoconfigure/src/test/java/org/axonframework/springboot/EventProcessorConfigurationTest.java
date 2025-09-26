@@ -22,6 +22,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.Module;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessorModule;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.inmemory.InMemoryTokenStore;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.spring.config.SpringComponentRegistry;
 import org.axonframework.springboot.fixture.event.test1.FirstHandler;
@@ -59,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Simon Zambrovski
  */
 class EventProcessorConfigurationTest {
-
 
     private static final String KEY1 = "org.axonframework.springboot.fixture.event.test1";
     private static final String KEY2 = "org.axonframework.springboot.fixture.event.test2";
@@ -232,12 +232,12 @@ class EventProcessorConfigurationTest {
 
         @Bean(name = "tokenStore")
         public TokenStore store1() {
-            return Mockito.mock(TokenStore.class);
+            return new InMemoryTokenStore();
         }
 
         @Bean(name = "store2")
         public TokenStore store2() {
-            return Mockito.mock(TokenStore.class);
+            return new InMemoryTokenStore();
         }
     }
 }
