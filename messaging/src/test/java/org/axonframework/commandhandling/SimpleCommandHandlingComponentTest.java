@@ -20,14 +20,24 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-
+/**
+ * Test class validating the {@link SimpleCommandHandlingComponent}.
+ *
+ * @author Mitchell Herrijgers
+ */
 class SimpleCommandHandlingComponentTest {
 
     private final AtomicBoolean command1Handled = new AtomicBoolean(false);
@@ -35,7 +45,7 @@ class SimpleCommandHandlingComponentTest {
     private final AtomicBoolean command2HandledChild = new AtomicBoolean(false);
     private final AtomicBoolean command3Handled = new AtomicBoolean(false);
 
-    private final CommandHandlingComponent handlingComponent = SimpleCommandHandlingComponent
+    private final SimpleCommandHandlingComponent handlingComponent = SimpleCommandHandlingComponent
             .create("MySuperComponent")
             .subscribe(
                     new QualifiedName("Command1"),
@@ -114,5 +124,39 @@ class SimpleCommandHandlingComponentTest {
                              .join();
         });
         assertInstanceOf(NoHandlerForCommandException.class, exception.getCause());
+    }
+
+    @Test
+    void handleReturnsFailedMessageStreamForExceptionThrowingCommandHandlingComponent() {
+        QualifiedName faultyCommand = new QualifiedName("Error!");
+        CommandHandler faultyCommandHandler = (command, context) -> {
+            throw new MockException();
+        };
+        handlingComponent.subscribe(faultyCommand, faultyCommandHandler);
+
+        CommandMessage command = new GenericCommandMessage(new MessageType(faultyCommand), "");
+        MessageStream.Single<CommandResultMessage> result =
+                handlingComponent.handle(command, StubProcessingContext.forMessage(command));
+
+        Optional<Throwable> resultError = result.error();
+        assertThat(resultError).isPresent();
+        assertThat(resultError.get()).isInstanceOf(MockException.class);
+    }
+
+    @Test
+    void handleReturnsFailedMessageStreamForExceptionThrowingCommandHandler() {
+        QualifiedName faultyCommand = new QualifiedName("Error!");
+        CommandHandlingComponent faultyComponent = mock(CommandHandlingComponent.class);
+        when(faultyComponent.handle(any(), any())).thenThrow(new MockException());
+        when(faultyComponent.supportedCommands()).thenReturn(Set.of(faultyCommand));
+        handlingComponent.subscribe(faultyComponent);
+
+        CommandMessage command = new GenericCommandMessage(new MessageType(faultyCommand), "");
+        MessageStream<CommandResultMessage> result =
+                handlingComponent.handle(command, StubProcessingContext.forMessage(command));
+
+        Optional<Throwable> resultError = result.error();
+        assertThat(resultError).isPresent();
+        assertThat(resultError.get()).isInstanceOf(MockException.class);
     }
 }

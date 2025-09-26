@@ -27,17 +27,17 @@ import org.axonframework.messaging.MessageType;
  *
  * @author Steven van Beelen
  */
-class GenericCommandResultMessageTest extends MessageTestSuite<CommandResultMessage<?>> {
+class GenericCommandResultMessageTest extends MessageTestSuite<CommandResultMessage> {
 
     @Override
-    protected CommandResultMessage<?> buildDefaultMessage() {
-        return new GenericCommandResultMessage<>(new GenericMessage(
+    protected CommandResultMessage buildDefaultMessage() {
+        return new GenericCommandResultMessage(new GenericMessage(
                 TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA
         ));
     }
 
     @Override
-    protected <P> CommandResultMessage<?> buildMessage(@Nullable P payload) {
-        return new GenericCommandResultMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
+    protected <P> CommandResultMessage buildMessage(@Nullable P payload) {
+        return new GenericCommandResultMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)), payload);
     }
 }

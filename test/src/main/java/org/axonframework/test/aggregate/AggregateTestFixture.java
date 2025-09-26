@@ -235,13 +235,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType,
-                                                          MessageHandler<CommandMessage, CommandResultMessage<?>> commandHandler) {
+                                                          MessageHandler<CommandMessage, CommandResultMessage> commandHandler) {
         return registerCommandHandler(payloadType.getName(), commandHandler);
     }
 
     @Override
     public FixtureConfiguration<T> registerCommandHandler(String commandName,
-                                                          MessageHandler<CommandMessage, CommandResultMessage<?>> commandHandler) {
+                                                          MessageHandler<CommandMessage, CommandResultMessage> commandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         commandBus.subscribe(new QualifiedName(commandName), (CommandHandler) commandHandler);

@@ -19,7 +19,6 @@ package org.axonframework.messaging;
 import org.awaitility.Awaitility;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandBusTestUtils;
-import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandPriorityCalculator;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
@@ -51,7 +50,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -178,7 +176,7 @@ class AsyncMessageHandlerTest {
                 commandBus.subscribe(
                         new QualifiedName(CheckIfPrime.class.getName()),
                         (command, context) -> {
-                            CommandResultMessage<Boolean> value = new GenericCommandResultMessage<>(
+                            CommandResultMessage value = new GenericCommandResultMessage(
                                     null, isPrime(((CheckIfPrime) command.payload()).value())
                             );
 
@@ -194,7 +192,7 @@ class AsyncMessageHandlerTest {
                 commandBus.subscribe(
                         new QualifiedName(CheckIfPrime.class.getName()),
                         (command, context) -> {
-                            CommandResultMessage<Boolean> data = new GenericCommandResultMessage<>(
+                            CommandResultMessage data = new GenericCommandResultMessage(
                                     null, isPrime(((CheckIfPrime) command.payload()).value())
                             );
 
@@ -209,7 +207,7 @@ class AsyncMessageHandlerTest {
             void returningBooleanShouldUseResult() {
                 commandBus.subscribe(
                         new QualifiedName(CheckIfPrime.class.getName()),
-                        (command, context) -> MessageStream.just(new GenericCommandResultMessage<>(
+                        (command, context) -> MessageStream.just(new GenericCommandResultMessage(
                                 null, isPrime(((CheckIfPrime) command.payload()).value())
                         ))
                 );
@@ -264,10 +262,6 @@ class AsyncMessageHandlerTest {
         assertThat(commandGateway.sendAndWait(new CheckIfPrime(2), Boolean.class)).isTrue();
         assertThat(commandGateway.sendAndWait(new CheckIfPrime(4), Boolean.class)).isFalse();
         assertThatThrownBy(() -> commandGateway.sendAndWait(new CheckIfPrime(10), Boolean.class))
-                .isInstanceOf(CommandExecutionException.class)
-                .cause()
-                .isInstanceOf(ExecutionException.class)
-                .cause()
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("unsupported value: 10");
     }

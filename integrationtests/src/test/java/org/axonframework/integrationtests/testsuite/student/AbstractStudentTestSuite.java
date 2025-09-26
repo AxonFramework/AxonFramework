@@ -57,8 +57,8 @@ import java.util.Objects;
  */
 public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegrationTest {
 
-    protected static final GenericCommandResultMessage<String> SUCCESSFUL_COMMAND_RESULT =
-            new GenericCommandResultMessage<>(new MessageType("empty"), "successful");
+    protected static final GenericCommandResultMessage SUCCESSFUL_COMMAND_RESULT =
+            new GenericCommandResultMessage(new MessageType("empty"), "successful");
 
     protected UnitOfWorkFactory unitOfWorkFactory;
 

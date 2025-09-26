@@ -32,7 +32,6 @@ import java.util.Map;
 /**
  * Generic implementation of the {@link QueryResponseMessage} interface.
  *
- * @param <R> The type of {@link #payload() response} contained in this {@link QueryResponseMessage}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 3.2.0

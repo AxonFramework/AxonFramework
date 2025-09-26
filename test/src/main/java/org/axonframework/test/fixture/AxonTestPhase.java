@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -288,14 +289,18 @@ public interface AxonTestPhase {
         Given commands(@Nonnull List<?> commands);
 
         /**
-         * Allows running custom setup steps (other than executing messages) on any component retrievable from the {@link Configuration}.
+         * Allows running custom setup steps (other than executing messages) on any component retrievable from the
+         * {@link Configuration}.
+         *
          * @param function The function to execute on the configuration.
          * @return The current Given instance, for fluent interfacing.
          */
         Given execute(@Nonnull Function<Configuration, Void> function);
 
         /**
-         * Allows running custom setup steps (other than executing messages) on any component retrievable from the {@link Configuration}.
+         * Allows running custom setup steps (other than executing messages) on any component retrievable from the
+         * {@link Configuration}.
+         *
          * @param function The function to execute on the configuration.
          * @return The current Given instance, for fluent interfacing.
          */
@@ -307,6 +312,13 @@ public interface AxonTestPhase {
          * @return A {@link When} instance that allows executing the test.
          */
         When when();
+
+        /**
+         * Transitions to the Then phase to validate the results of the test. It skips the When phase.
+         *
+         * @return A {@link Then.Nothing} instance that allows validating the test results.
+         */
+        Then.Nothing then();
     }
 
     /**
@@ -343,6 +355,19 @@ public interface AxonTestPhase {
              * @return A {@link Then} instance that allows validating the test results.
              */
             Then.Event then();
+        }
+
+        /**
+         * When-phase after no action in the When-phase.
+         */
+        interface Nothing {
+
+            /**
+             * Transitions to the Then phase to validate the results of the test.
+             *
+             * @return A {@link Then} instance that allows validating the test results.
+             */
+            Then.Nothing then();
         }
 
         /**
@@ -416,6 +441,13 @@ public interface AxonTestPhase {
          * @return The current When instance, for fluent interfacing.
          */
         Event events(@Nonnull List<?>... events);
+
+        /**
+         * Transitions to the Then phase to validate the results of the test. It skips the When phase.
+         *
+         * @return A {@link Then.Nothing} instance that allows validating the test results.
+         */
+        Nothing nothing();
     }
 
     /**
@@ -444,7 +476,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the command result. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            Command resultMessageSatisfies(@Nonnull Consumer<? super CommandResultMessage<?>> consumer);
+            Command resultMessageSatisfies(@Nonnull Consumer<? super CommandResultMessage> consumer);
 
             /**
              * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
@@ -483,13 +515,90 @@ public interface AxonTestPhase {
         }
 
         /**
+         * Operations available in the Then phase of the test fixture execution only if no command or event was
+         * dispatched during the When phase.
+         */
+        interface Nothing extends Message<Nothing> {
+
+        }
+
+        /**
          * Interface describing the operations available in the Then phase of the test fixture execution. It's possible
          * to assert published messages from the When phase.
          *
          * @param <T> The type of the current Then instance, for fluent interfacing. The type depends on the operation
          *            which was triggered in the When phase.
          */
-        interface Message<T extends Message<T>> {
+        interface Message<T extends Message<T>> extends MessageAssertions<T> {
+
+            /**
+             * Waits until the given {@code assertion} passes or the default timeout of 5 seconds is reached. The
+             * assertion receives the current Then instance, allowing to invoke any of its assertion methods.
+             *
+             * @param assertion The assertion to wait for. The assertion will be invoked on the current Then instance.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            default T await(@Nonnull Consumer<T> assertion) {
+                return await(assertion, Duration.ofSeconds(5));
+            }
+
+            /**
+             * Waits until the given {@code assertion} passes or the given {@code timeout} is reached. The assertion
+             * receives the current Then instance, allowing to invoke any of its assertion methods.
+             *
+             * @param assertion The assertion to wait for. The assertion will be invoked on the current Then instance.
+             * @param timeout   The maximum time to wait for the assertion to pass. If the timeout is reached, the
+             *                  assertion.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            T await(@Nonnull Consumer<T> assertion, @Nonnull Duration timeout);
+
+            /**
+             * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
+             * test scenarios within a single test method. The same configuration from the original fixture is reused,
+             * so all components are shared among the invocations.
+             * <p>
+             * Example usage:
+             * <pre>
+             * {@code
+             * fixture.given()
+             *        .event(new AccountCreatedEvent("account-1"))
+             *        .when()
+             *        .command(new WithdrawMoneyCommand("account-1", 50.00))
+             *        .then()
+             *        .events(new MoneyWithdrawnEvent("account-1", 50.00))
+             *        .success()
+             *        .and()  // Return to setup phase with same configuration
+             *        .given() // Start a new scenario
+             *        .event(new AccountCreatedEvent("account-2"))
+             *        .when()
+             *        .command(new WithdrawMoneyCommand("account-2", 30.00))
+             *        .then()
+             *        .events(new MoneyWithdrawnEvent("account-2", 30.00));
+             * }
+             * </pre>
+             *
+             * @return A {@link Setup} instance that allows configuring a new test scenario.
+             */
+            Setup and();
+
+            /**
+             * Stops the fixture, releasing any active resources, like registered handlers or pending event processing
+             * tasks.
+             */
+            default void stop() {
+                and().stop();
+            }
+        }
+
+        /**
+         * Interface describing the operations available in the Then phase of the test fixture execution. It's possible
+         * to assert published messages from the When phase.
+         *
+         * @param <T> The type of the current Then instance, for fluent interfacing. The type depends on the operation
+         *            which was triggered in the When phase.
+         */
+        interface MessageAssertions<T extends MessageAssertions<T>> {
 
             /**
              * Expect the given set of events to have been published during the {@link When} phase.
@@ -633,54 +742,19 @@ public interface AxonTestPhase {
 
             /**
              * Allows running assertions on any component retrievable from the {@link Configuration}.
+             *
              * @param function The function to execute on the configuration.
              * @return The current Then instance, for fluent interfacing.
              */
-            T execute(@Nonnull Function<Configuration, Void> function);
+            T expect(@Nonnull Consumer<Configuration> function);
 
             /**
              * Allows running assertions on any component retrievable from the {@link Configuration}.
+             *
              * @param function The function to execute on the configuration.
              * @return The current Then instance, for fluent interfacing.
              */
-            T executeAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function);
-
-            /**
-             * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
-             * test scenarios within a single test method. The same configuration from the original fixture is reused,
-             * so all components are shared among the invocations.
-             * <p>
-             * Example usage:
-             * <pre>
-             * {@code
-             * fixture.given()
-             *        .event(new AccountCreatedEvent("account-1"))
-             *        .when()
-             *        .command(new WithdrawMoneyCommand("account-1", 50.00))
-             *        .then()
-             *        .events(new MoneyWithdrawnEvent("account-1", 50.00))
-             *        .success()
-             *        .and()  // Return to setup phase with same configuration
-             *        .given() // Start a new scenario
-             *        .event(new AccountCreatedEvent("account-2"))
-             *        .when()
-             *        .command(new WithdrawMoneyCommand("account-2", 30.00))
-             *        .then()
-             *        .events(new MoneyWithdrawnEvent("account-2", 30.00));
-             * }
-             * </pre>
-             *
-             * @return A {@link Setup} instance that allows configuring a new test scenario.
-             */
-            Setup and();
-
-            /**
-             * Stops the fixture, releasing any active resources, like registered handlers or pending event processing
-             * tasks.
-             */
-            default void stop() {
-                and().stop();
-            }
+            T expectAsync(@Nonnull Function<Configuration, CompletableFuture<?>> function);
         }
     }
 }

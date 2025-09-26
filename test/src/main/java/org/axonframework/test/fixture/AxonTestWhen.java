@@ -175,4 +175,23 @@ class AxonTestWhen implements AxonTestPhase.When {
             );
         }
     }
+
+    @Override
+    public AxonTestPhase.When.Nothing nothing() {
+        return new Nothing();
+    }
+
+    class Nothing implements AxonTestPhase.When.Nothing {
+
+        @Override
+        public AxonTestPhase.Then.Nothing then() {
+            return new AxonTestThenNothing(
+                    configuration,
+                    customization,
+                    commandBus,
+                    eventSink,
+                    actualException
+            );
+        }
+    }
 }

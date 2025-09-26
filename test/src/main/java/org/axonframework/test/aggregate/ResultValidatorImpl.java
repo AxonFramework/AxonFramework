@@ -322,13 +322,13 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     public ResultValidator<T> expectResultMessagePayload(Object expectedPayload) {
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
-        PayloadMatcher<CommandResultMessage<?>> expectedMatcher =
+        PayloadMatcher<CommandResultMessage> expectedMatcher =
                 new PayloadMatcher<>(CoreMatchers.equalTo(expectedPayload));
         expectedMatcher.describeTo(expectedDescription);
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
         } else if (!verifyPayloadEquality(expectedPayload, actualReturnValue.payload())) {
-            PayloadMatcher<CommandResultMessage<?>> actualMatcher =
+            PayloadMatcher<CommandResultMessage> actualMatcher =
                     new PayloadMatcher<>(CoreMatchers.equalTo(actualReturnValue.payload()));
             actualMatcher.describeTo(actualDescription);
             reporter.reportWrongResult(actualDescription, expectedDescription);
@@ -352,7 +352,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     }
 
     @Override
-    public ResultValidator<T> expectResultMessage(CommandResultMessage<?> expectedResultMessage) {
+    public ResultValidator<T> expectResultMessage(CommandResultMessage expectedResultMessage) {
         expectResultMessagePayload(expectedResultMessage.payload());
 
         StringDescription expectedDescription = new StringDescription();
@@ -371,7 +371,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     }
 
     @Override
-    public ResultValidator<T> expectResultMessageMatching(Matcher<? super CommandResultMessage<?>> matcher) {
+    public ResultValidator<T> expectResultMessageMatching(Matcher<? super CommandResultMessage> matcher) {
         if (matcher == null) {
             return expectResultMessageMatching(nullValue());
         }

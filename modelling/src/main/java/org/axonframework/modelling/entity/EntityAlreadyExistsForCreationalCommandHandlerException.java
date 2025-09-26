@@ -16,28 +16,31 @@
 
 package org.axonframework.modelling.entity;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 
 /**
- * Exception indicating that a creational command handler was invoked for an entity that already exists. If this command
- * is valid for instances of the entity, as well as creational commands, an instance command can be defined for the same
- * {@link CommandMessage#type()}.
+ * Exception indicating that a creational command handler was invoked for an entity that already exists.
+ * <p>
+ * If this command is valid for instances of the entity, as well as creational commands, an instance command can be
+ * defined for the same {@link CommandMessage#type()}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class EntityExistsForCreationalCommandHandler extends RuntimeException {
+public class EntityAlreadyExistsForCreationalCommandHandlerException extends RuntimeException {
 
     /**
-     * Creates a new exception with the given {@code commandMessage} and {@code existingEntity}.
+     * Creates a new exception with the given {@code command} and {@code existingEntity}.
      *
-     * @param commandMessage The {@link CommandMessage} that was handled.
+     * @param command        The {@link CommandMessage} that was handled.
      * @param existingEntity The existing entity that was found.
      */
-    public EntityExistsForCreationalCommandHandler(CommandMessage commandMessage, Object existingEntity) {
+    public EntityAlreadyExistsForCreationalCommandHandlerException(@Nonnull CommandMessage command,
+                                                                   @Nonnull Object existingEntity) {
         super(String.format(
                 "Creational command handler for command [%s] encountered an already existing entity: [%s]",
-                commandMessage.type(),
+                command.type(),
                 existingEntity
         ));
     }

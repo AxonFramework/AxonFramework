@@ -89,8 +89,8 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
 
     @Nonnull
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                               @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                            @Nullable ProcessingContext processingContext) {
         shutdownLatch.ifShuttingDown("Cannot dispatch new commands as this bus is being shutdown");
         try (ShutdownLatch.ActivityHandle commandInTransit = shutdownLatch.registerActivity()) {
             return connection.commandChannel()
@@ -198,7 +198,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     ) implements ResultCallback {
 
         @Override
-        public void onSuccess(CommandResultMessage<?> resultMessage) {
+        public void onSuccess(CommandResultMessage resultMessage) {
             logger.debug("Command [{}] completed successfully with result [{}]", command.getName(), resultMessage);
             result.complete(CommandConverter.convertResultMessage(resultMessage, command.getMessageIdentifier()));
         }

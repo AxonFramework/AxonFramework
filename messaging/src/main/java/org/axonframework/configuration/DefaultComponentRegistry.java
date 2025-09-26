@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
@@ -273,6 +274,24 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     @Override
     public DefaultComponentRegistry setOverridePolicy(@Nonnull OverridePolicy overridePolicy) {
         this.overridePolicy = requireNonNull(overridePolicy, "The override policy must not be null.");
+        return this;
+    }
+
+    @Override
+    public ComponentRegistry disableEnhancer(@Nonnull String fullyQualifiedClassName) {
+        Objects.requireNonNull(fullyQualifiedClassName, "The fully qualified class name must not be null.");
+        try {
+            var enhancerClass = Class.forName(fullyQualifiedClassName);
+            if (!ConfigurationEnhancer.class.isAssignableFrom(enhancerClass)) {
+                throw new IllegalArgumentException(
+                        String.format("Class %s is not a ConfigurationEnhancer", fullyQualifiedClassName)
+                );
+            }
+            //noinspection unchecked
+            return disableEnhancer((Class<? extends ConfigurationEnhancer>) enhancerClass);
+        } catch (ClassNotFoundException e) {
+            logger.warn("Disabling Configuration Enhancer [{}] won't take effect as the enhancer class could not be found.", fullyQualifiedClassName);
+        }
         return this;
     }
 

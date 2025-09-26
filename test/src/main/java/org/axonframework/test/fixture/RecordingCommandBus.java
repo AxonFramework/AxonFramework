@@ -49,7 +49,8 @@ public class RecordingCommandBus implements CommandBus {
     private final Map<CommandMessage, Message> recorded = new HashMap<>();
 
     /**
-     * Creates a new {@link RecordingCommandBus} that will record all commands dispatched to the given {@code delegate}.
+     * Creates a new {@code RecordingCommandBus} that will record all commands dispatched to the given
+     * {@code delegate}.
      *
      * @param delegate The {@link CommandBus} to which commands will be dispatched.
      */
@@ -58,8 +59,8 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage command,
-                                                               @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage> dispatch(@Nonnull CommandMessage command,
+                                                            @Nullable ProcessingContext processingContext) {
         recorded.put(command, null);
         var commandResult = delegate.dispatch(command, processingContext);
         commandResult.thenApply(result -> {
@@ -79,18 +80,41 @@ public class RecordingCommandBus implements CommandBus {
         descriptor.describeWrapperOf(delegate);
     }
 
+    /**
+     * Returns map of all the {@link CommandMessage CommandMessages} dispatched, and their corresponding results.
+     *
+     * @return A map of all the {@link CommandMessage CommandMessages} dispatched, and their corresponding results.
+     */
     public Map<CommandMessage, Message> recorded() {
         return Map.copyOf(recorded);
     }
 
+    /**
+     * Returns the commands that have been dispatched to this {@link CommandBus}.
+     *
+     * @return The commands that have been dispatched to this {@link CommandBus}
+     */
     public List<CommandMessage> recordedCommands() {
         return List.copyOf(recorded.keySet());
     }
 
-    public Message resultOf(CommandMessage command) {
+    /**
+     * Returns the result of the given {@code command}.
+     *
+     * @param command The command for which the result is returned.
+     * @return The result of the given {@code command}. May be {@code null} if the command has not been dispatched yet.
+     */
+    @Nullable
+    public Message resultOf(@Nonnull CommandMessage command) {
+        Objects.requireNonNull(command, "Command Message may not be null.");
         return recorded.get(command);
     }
 
+    /**
+     * Resets this recording {@link CommandBus}, by removing all recorded {@link CommandMessage CommandMessages}.
+     *
+     * @return This recording {@link CommandBus}, for fluent interfacing.
+     */
     public RecordingCommandBus reset() {
         recorded.clear();
         return this;

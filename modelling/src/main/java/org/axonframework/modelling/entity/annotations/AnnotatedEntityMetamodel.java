@@ -284,13 +284,13 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
             logger.debug("Registered creational command handler for [{}] on [{}]", qualifiedName, entityType);
             builder.creationalCommandHandler(qualifiedName, ((command, context) -> handler
                     .handle(command, context, null)
-                    .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
+                    .<CommandResultMessage>mapMessage(GenericCommandResultMessage::new)
                     .first()));
         } else {
             logger.debug("Registered instance command handler for [{}] on [{}]", qualifiedName, entityType);
             builder.instanceCommandHandler(qualifiedName, ((command, entity, context) -> handler
                     .handle(command, context, entity)
-                    .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
+                    .<CommandResultMessage>mapMessage(GenericCommandResultMessage::new)
                     .first()));
         }
     }
@@ -437,8 +437,8 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
 
     @Override
     @Nonnull
-    public MessageStream.Single<CommandResultMessage<?>> handleCreate(@Nonnull CommandMessage message,
-                                                                      @Nonnull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage> handleCreate(@Nonnull CommandMessage message,
+                                                                   @Nonnull ProcessingContext context) {
         MessageType type = message.type();
         if (logger.isDebugEnabled()) {
             logger.debug("Handling creation command: {} for type: {}", type, entityType());
@@ -457,9 +457,9 @@ public class AnnotatedEntityMetamodel<E> implements EntityMetamodel<E>, Describa
 
     @Override
     @Nonnull
-    public MessageStream.Single<CommandResultMessage<?>> handleInstance(@Nonnull CommandMessage message,
-                                                                        @Nonnull E entity,
-                                                                        @Nonnull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage> handleInstance(@Nonnull CommandMessage message,
+                                                                     @Nonnull E entity,
+                                                                     @Nonnull ProcessingContext context) {
         MessageType type = message.type();
         if (logger.isDebugEnabled()) {
             logger.debug("Handling instance command: {} for entity: {} of type: {}",
