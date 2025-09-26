@@ -137,7 +137,7 @@ public class EventBuffer implements TrackingEventStream {
     }
 
     @Override
-    public boolean hasNextAvailable(int timeout, TimeUnit timeUnit) {
+    public boolean hasNextAvailable(int timeout, TimeUnit timeUnit) throws InterruptedException {
         long deadline = System.currentTimeMillis() + timeUnit.toMillis(timeout);
         try {
             while (peekNullable() == null && System.currentTimeMillis() < deadline) {
@@ -162,7 +162,7 @@ public class EventBuffer implements TrackingEventStream {
         } catch (InterruptedException e) {
             logger.warn("Event consumer thread was interrupted. Returning thread to event processor.", e);
             Thread.currentThread().interrupt();
-            return false;
+            throw e;
         }
     }
 
@@ -180,7 +180,7 @@ public class EventBuffer implements TrackingEventStream {
     }
 
     @Override
-    public TrackedEventMessage<?> nextAvailable() {
+    public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
         try {
             hasNextAvailable(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
             return peekEvent == null ? eventStream.next() : peekEvent;
