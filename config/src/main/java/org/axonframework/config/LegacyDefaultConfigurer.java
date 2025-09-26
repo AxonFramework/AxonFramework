@@ -83,10 +83,6 @@ import org.axonframework.modelling.saga.SagaManagerSpanFactory;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
-import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
-import org.axonframework.queryhandling.annotations.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.tracing.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.tracing.DefaultQueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
@@ -788,19 +784,6 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     @Override
     public LegacyConfigurer registerQueryHandler(@Nonnull Function<LegacyConfiguration, Object> queryHandlerBuilder) {
-        messageHandlerRegistrars.add(new Component<>(
-                () -> config,
-                "QueryHandlerRegistrar",
-                configuration -> new MessageHandlerRegistrar(
-                        () -> configuration,
-                        queryHandlerBuilder,
-                        (config, queryHandler) -> new AnnotationQueryHandlerAdapter<>(
-                                queryHandler,
-                                config.parameterResolverFactory(),
-                                config.handlerDefinition(queryHandler.getClass())
-                        ).subscribe(config.queryBus())
-                )
-        ));
         return this;
     }
 
