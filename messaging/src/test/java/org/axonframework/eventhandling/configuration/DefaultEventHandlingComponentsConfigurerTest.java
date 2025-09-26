@@ -93,10 +93,8 @@ class DefaultEventHandlingComponentsConfigurerTest {
         @Test
         void shouldDecorateAllComponents() {
             //given
-            var component1 = EventHandlingComponentBuilder.builder()
-                                                          .handles(new QualifiedName(String.class),
-                                                                   (e, c) -> MessageStream.empty())
-                                                          .build();
+            var component1 = new SimpleEventHandlingComponent()
+                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
             var component2 = new SimpleEventHandlingComponent();
             component2.subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 

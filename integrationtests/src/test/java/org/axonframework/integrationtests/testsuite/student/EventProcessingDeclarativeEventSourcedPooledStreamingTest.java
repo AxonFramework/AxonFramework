@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.configuration.EventHandlingComponentBuilder;
+import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
@@ -99,10 +99,8 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
 
     @Nonnull
     private static EventHandlingComponent whenStudentEnrolledToMaxCoursesThenSendNotificationAutomation() {
-        return EventHandlingComponentBuilder
-                .builder()
-                .sequencingPolicy(SequentialPolicy.INSTANCE)
-                .handles(
+        return new SimpleEventHandlingComponent(SequentialPolicy.INSTANCE)
+                .subscribe(
                         new QualifiedName(StudentEnrolledEvent.class),
                         (event, context) -> {
                             var converter = context.component(Converter.class);
@@ -121,7 +119,7 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
                             }
                             return MessageStream.empty();
                         }
-                ).build();
+                );
     }
 
     protected void verifyNotificationSentTo(String studentId) {

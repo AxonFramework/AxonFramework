@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.configuration;
+package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.DelegatingEventHandlingComponent;
-import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
@@ -37,15 +32,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test class validating the {@link DefaultEventHandlingComponentBuilder} functionality.
+ * Test class validating the {@link SimpleEventHandlingComponent} functionality.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class DefaultEventHandlingComponentBuilderTest {
+class SimpleEventHandlingComponentTest {
 
     private static final StubProcessingContext STUB_PROCESSING_CONTEXT = new StubProcessingContext();
-    private final EventHandlingComponentBuilder.SequencingPolicyPhase builder = new DefaultEventHandlingComponentBuilder(new SimpleEventHandlingComponent());
 
     @Nested
     class SequencingPolicyTest {
@@ -57,9 +51,8 @@ class DefaultEventHandlingComponentBuilderTest {
             SequencingPolicy sequencingPolicy = (event, context) -> Optional.of(expectedIdentifier);
 
             // when
-            var component = builder.sequencingPolicy(sequencingPolicy)
-                                   .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
-                                   .build();
+            var component = new SimpleEventHandlingComponent(sequencingPolicy)
+                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             // then
             var sampleEvent = EventTestUtils.asEventMessage("sample");
@@ -77,9 +70,8 @@ class DefaultEventHandlingComponentBuilderTest {
             var expectedIdentifier = "sequenceId";
 
             // when
-            var component = builder.sequenceIdentifier(e -> expectedIdentifier)
-                                   .handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
-                                   .build();
+            var component = new SimpleEventHandlingComponent((e, ctx) -> Optional.of(expectedIdentifier))
+                    .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty());
 
             // then
             var sampleEvent = EventTestUtils.asEventMessage("sample");
@@ -96,15 +88,15 @@ class DefaultEventHandlingComponentBuilderTest {
             // given
             var handler1Invoked = new AtomicBoolean();
             var handler2Invoked = new AtomicBoolean();
-            var component = builder.handles(new QualifiedName(String.class), (e, c) -> {
-                                          handler1Invoked.set(true);
-                                          return MessageStream.empty();
-                                   })
-                                   .handles(new QualifiedName(String.class), (e, c) -> {
-                                          handler2Invoked.set(true);
-                                          return MessageStream.empty();
-                                   })
-                                   .build();
+            var component = new SimpleEventHandlingComponent()
+                    .subscribe(new QualifiedName(String.class), (e, c) -> {
+                        handler1Invoked.set(true);
+                        return MessageStream.empty();
+                    })
+                    .subscribe(new QualifiedName(String.class), (e, c) -> {
+                        handler2Invoked.set(true);
+                        return MessageStream.empty();
+                    });
 
             //  when
             EventMessage sampleMessage = EventTestUtils.asEventMessage("Message1");
@@ -122,10 +114,10 @@ class DefaultEventHandlingComponentBuilderTest {
         @Test
         void shouldDecorateEventHandlingComponent() {
             // given
-            SampleDecoration component = (SampleDecoration)
-                    builder.handles(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
-                           .decorated(SampleDecoration::new)
-                           .build();
+            SampleDecoration component = new SampleDecoration(
+                    new SimpleEventHandlingComponent()
+                            .subscribe(new QualifiedName(String.class), (e, c) -> MessageStream.empty())
+            );
 
             // when
             EventMessage sampleMessage = EventTestUtils.asEventMessage("Message1");

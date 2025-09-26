@@ -28,8 +28,7 @@ import static org.axonframework.common.BuilderUtils.*;
 /**
  * A {@link SequencingPolicy} implementation that extracts the sequence identifier from the {@link EventMessage}'s
  * {@link org.axonframework.messaging.Metadata}, based on a given {@code metadataKey}. In the absence of the given
- * {@code metadataKey} on the {@link org.axonframework.messaging.Metadata}, the {@link EventMessage#identifier()} is
- * used.
+ * {@code metadataKey} on the {@link org.axonframework.messaging.Metadata}, the {@link Optional#empty()} is returned.
  *
  * @author Lucas Campos
  * @since 4.6.0
@@ -47,14 +46,11 @@ public class MetadataSequencingPolicy implements SequencingPolicy {
      * @param metadataKey The key to be used as a lookup for the property to be used as the Sequence Policy.
      */
     public MetadataSequencingPolicy(@Nonnull String metadataKey) {
-        this.metadataKey =  assertNonBlank(metadataKey, "MetadataKey value may not be null or blank.");;
+        this.metadataKey = assertNonBlank(metadataKey, "MetadataKey value may not be null or blank.");
     }
 
     @Override
     public Optional<Object> getSequenceIdentifierFor(@Nonnull EventMessage event, @Nonnull ProcessingContext context) {
-        return Optional.ofNullable(
-                event.metadata()
-                     .getOrDefault(metadataKey, event.identifier())
-        );
+        return Optional.ofNullable(event.metadata().get(metadataKey));
     }
 }
