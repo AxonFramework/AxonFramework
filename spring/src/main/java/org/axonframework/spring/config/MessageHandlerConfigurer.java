@@ -33,6 +33,7 @@ import org.axonframework.eventhandling.configuration.EventHandlingComponentsConf
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 import org.axonframework.spring.config.EventProcessorSettings.PooledEventProcessorSettings;
 import org.axonframework.spring.config.EventProcessorSettings.SubscribingEventProcessorSettings;
 import org.springframework.beans.BeansException;
@@ -88,8 +89,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                 configureEventHandlers(registry);
                 break;
             case QUERY:
-                // TODO: register query handler registration as a part of #3364
-//                handlerBeans.forEach(handler -> configurer.registerQueryHandler(c -> applicationContext.getBean(handler)));
+                configureQueryHandlers(registry);
                 break;
             case COMMAND:
                 configureCommandHandlers(registry);
@@ -145,6 +145,18 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
         });
     }
 
+    private void configureQueryHandlers(ComponentRegistry registry) {
+        groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
+            var moduleName = "QueryHandling[" + packageName + "]";
+            var queryHandlingModuleBuilder = QueryHandlingModule
+                    .named(moduleName)
+                    .queryHandlers();
+            beanDefs.forEach(namedBeanDefinition -> queryHandlingModuleBuilder.annotatedQueryHandlingComponent(
+                    this.createComponentBuilder(namedBeanDefinition)
+            ));
+            registry.registerModule(queryHandlingModuleBuilder.build());
+        });
+    }
 
     private void configureCommandHandlers(ComponentRegistry registry) {
         groupNamedBeanDefinitionsByPackage().forEach((packageName, beanDefs) -> {
