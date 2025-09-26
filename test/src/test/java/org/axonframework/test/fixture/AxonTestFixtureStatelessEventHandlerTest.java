@@ -19,7 +19,6 @@ package org.axonframework.test.fixture;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentBuilder;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.messaging.Message;
@@ -70,11 +69,11 @@ public class AxonTestFixtureStatelessEventHandlerTest {
                 EventProcessorModule
                         .pooledStreaming("test-given-event-then-command")
                         .eventHandlingComponents(c -> c.declarative(
-                                cfg -> new DefaultEventHandlingComponentBuilder(new SimpleEventHandlingComponent())
-                                        .handles(
+                                cfg -> new SimpleEventHandlingComponent()
+                                        .subscribe(
                                                 new QualifiedName(StudentNameChangedEvent.class),
                                                 AxonTestFixtureStatelessEventHandlerTest::handleStudentNameChanged
-                                        ).build()
+                                        )
                         )).notCustomized()
         ))));
         return configurer;

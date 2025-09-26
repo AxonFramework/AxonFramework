@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.EventHandlerRegistry;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
-import org.axonframework.eventhandling.configuration.DefaultEventHandlingComponentBuilder;
 import org.axonframework.eventhandling.conversion.EventConverter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
@@ -180,11 +179,9 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
                 .unwrap(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember.class)
                 .map(MethodSequencingPolicyEventHandlerDefinition.SequencingPolicyEventMessageHandlingMember::sequencingPolicy);
 
-        return sequencingPolicy.map(sp -> (EventHandler) new DefaultEventHandlingComponentBuilder(new SimpleEventHandlingComponent())
-                .sequencingPolicy(sp)
-                .handles(qualifiedName, interceptedEventHandler)
-                .build()
-        ).orElse(interceptedEventHandler);
+        return sequencingPolicy
+                .map(sp -> (EventHandler) new SimpleEventHandlingComponent(sp).subscribe(qualifiedName, interceptedEventHandler))
+                .orElse(interceptedEventHandler);
     }
 
     @Override

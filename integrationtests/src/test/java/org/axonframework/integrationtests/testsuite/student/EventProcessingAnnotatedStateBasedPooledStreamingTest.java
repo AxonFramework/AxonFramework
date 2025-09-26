@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventHandlingComponent;
-import org.axonframework.eventhandling.configuration.EventHandlingComponentBuilder;
+import org.axonframework.eventhandling.SimpleEventHandlingComponent;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.sequencing.SequentialPolicy;
@@ -117,10 +117,8 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
 
     @Nonnull
     private static EventHandlingComponent studentCoursesProjector() {
-        return EventHandlingComponentBuilder
-                .builder()
-                .sequencingPolicy(SequentialPolicy.INSTANCE)
-                .handles(
+        return new SimpleEventHandlingComponent(SequentialPolicy.INSTANCE)
+                .subscribe(
                         new QualifiedName(StudentEnrolledEvent.class),
                         (event, context) -> {
                             var converter = context.component(Converter.class);
@@ -138,7 +136,7 @@ public class EventProcessingAnnotatedStateBasedPooledStreamingTest extends Abstr
                             );
                             return MessageStream.empty();
                         }
-                ).build();
+                );
     }
 
     private void verifyReadModelState(String studentId, Consumer<StudentCoursesReadModel> stateVerifier) {
