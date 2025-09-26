@@ -239,16 +239,17 @@ class WorkPackageTest {
         assertWithin(500, TimeUnit.MILLISECONDS, () -> assertEquals(1, processedEvents.size()));
         assertEquals(expectedToken, TrackingToken.fromContext(processedEvents.getFirst().context()).get());
 
-        ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
-        verify(tokenStore).storeToken(
-                tokenCaptor.capture(),
-                eq(PROCESSOR_NAME),
-                eq(segment.getSegmentId()),
-                any(ProcessingContext.class)
-        );
-        assertEquals(expectedToken, tokenCaptor.getValue());
-
-        assertEquals(1, trackerStatusUpdates.size());
+        assertWithin(500, TimeUnit.MILLISECONDS, () -> {
+            ArgumentCaptor<TrackingToken> tokenCaptor = ArgumentCaptor.forClass(TrackingToken.class);
+            verify(tokenStore).storeToken(
+                    tokenCaptor.capture(),
+                    eq(PROCESSOR_NAME),
+                    eq(segment.getSegmentId()),
+                    any(ProcessingContext.class)
+            );
+            assertEquals(expectedToken, tokenCaptor.getValue());
+            assertEquals(1, trackerStatusUpdates.size());
+        });
         OptionalLong resultPosition = trackerStatusUpdates.getFirst().getCurrentPosition();
         assertTrue(resultPosition.isPresent());
         assertEquals(1L, resultPosition.getAsLong());
