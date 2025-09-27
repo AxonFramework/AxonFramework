@@ -22,12 +22,14 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.queryhandling.QueryBus;
 
 import java.util.Objects;
 
 /**
- * ConfigurationEnhancer that registers {@link RecordingEventStore}, {@link RecordingEventSink} and
- * {@link RecordingCommandBus}. The recorded messages can then be used to assert expectations with test cases.
+ * ConfigurationEnhancer that registers {@link RecordingEventStore}, {@link RecordingEventSink},
+ * {@link RecordingCommandBus}, and {@link RecordingQueryBus}. The recorded messages can then be used to assert
+ * expectations with test cases.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -46,7 +48,10 @@ public class MessagesRecordingConfigurationEnhancer implements ConfigurationEnha
                                           ? delegate : new RecordingEventSink(delegate))
                .registerDecorator(CommandBus.class,
                                   Integer.MAX_VALUE,
-                                  (config, name, delegate) -> new RecordingCommandBus(delegate));
+                                  (config, name, delegate) -> new RecordingCommandBus(delegate))
+               .registerDecorator(QueryBus.class,
+                                  Integer.MAX_VALUE,
+                                  (config, name, delegate) -> new RecordingQueryBus(delegate));
     }
 
     @Override
