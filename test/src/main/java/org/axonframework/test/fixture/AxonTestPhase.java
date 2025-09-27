@@ -358,6 +358,19 @@ public interface AxonTestPhase {
         }
 
         /**
+         * When-phase specific for executing a {@link org.axonframework.queryhandling.QueryMessage query}.
+         */
+        interface Query {
+
+            /**
+             * Transitions to the Then phase to validate the results of the test.
+             *
+             * @return A {@link Then} instance that allows validating the test results.
+             */
+            Then.Query then();
+        }
+
+        /**
          * When-phase after no action in the When-phase.
          */
         interface Nothing {
@@ -443,6 +456,39 @@ public interface AxonTestPhase {
         Event events(@Nonnull List<?>... events);
 
         /**
+         * Dispatches the given {@code payload} query to the appropriate query handler and records all activity for
+         * result validation. The query will be dispatched with empty metadata.
+         *
+         * @param payload The query to execute.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default Query query(@Nonnull Object payload) {
+            return query(payload, new HashMap<>());
+        }
+
+        /**
+         * Dispatches the given {@code payload} query with the provided {@code metadata} to the appropriate query
+         * handler and records all activity for result validation.
+         *
+         * @param payload  The query to execute.
+         * @param metadata The metadata to attach to the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default Query query(@Nonnull Object payload, @Nonnull Map<String, String> metadata) {
+            return query(payload, Metadata.from(metadata));
+        }
+
+        /**
+         * Dispatches the given {@code payload} query with the provided {@code metadata} to the appropriate query
+         * handler and records all activity for result validation.
+         *
+         * @param payload  The query to execute.
+         * @param metadata The metadata to attach to the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        Query query(@Nonnull Object payload, @Nonnull Metadata metadata);
+
+        /**
          * Transitions to the Then phase to validate the results of the test. It skips the When phase.
          *
          * @return A {@link Then.Nothing} instance that allows validating the test results.
@@ -512,6 +558,50 @@ public interface AxonTestPhase {
              * @return The current Then instance, for fluent interfacing.
              */
             Event success();
+        }
+
+        /**
+         * Operations available in the Then phase of the test fixture execution only if query was dispatched during
+         * the When phase.
+         */
+        interface Query extends Message<Query> {
+
+            /**
+             * Expect a successful execution of the When phase, regardless of the actual return value.
+             *
+             * @return The current Then instance, for fluent interfacing.
+             */
+            Query success();
+
+            /**
+             * Invokes the given {@code consumer} of the query result message that has been returned during the When
+             * phase, allowing for <b>any</b> form of assertion.
+             *
+             * @param consumer Consumes the query result. You may place your own assertions here.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            Query resultMessageSatisfies(@Nonnull Consumer<? super org.axonframework.queryhandling.QueryResponseMessage> consumer);
+
+            /**
+             * Expect the last query handler from the When phase to return the given {@code expectedPayload} after
+             * execution. The actual and expected values are compared using their equals methods.
+             * <p>
+             * Only take queries into account that were dispatched explicitly with the {@link When#query}. Hence, do
+             * not take into accounts queries dispatched as side effects of the message handlers.
+             *
+             * @param expectedPayload The expected result message payload of the query execution.
+             * @return The current Then, for fluent interfacing.
+             */
+            Query resultMessagePayload(@Nonnull Object expectedPayload);
+
+            /**
+             * Invokes the given {@code consumer} of the query result payload that has been returned during the When
+             * phase, allowing for <b>any</b> form of assertion.
+             *
+             * @param consumer Consumes the query result payload. You may place your own assertions here.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            Query resultMessagePayloadSatisfies(@Nonnull Consumer<Object> consumer);
         }
 
         /**

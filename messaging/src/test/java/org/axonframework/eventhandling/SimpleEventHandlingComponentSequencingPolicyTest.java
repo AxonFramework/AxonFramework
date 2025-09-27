@@ -178,7 +178,8 @@ class SimpleEventHandlingComponentSequencingPolicyTest {
 
             mainComponent.subscribe(
                     new QualifiedName("java.lang", "String"),
-                    new SimpleEventHandlingComponent(SequentialPolicy.INSTANCE).subscribe(new QualifiedName("java.lang", "String"), new PlainEventHandler())
+                    new SimpleEventHandlingComponent(SequentialPolicy.INSTANCE)
+                            .subscribe(new QualifiedName("java.lang", "String"), new PlainEventHandler())
             );
 
             var event = eventMessage("test-event");
