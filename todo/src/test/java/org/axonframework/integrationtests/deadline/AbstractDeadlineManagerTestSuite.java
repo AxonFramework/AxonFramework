@@ -26,15 +26,15 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotations.DeadlineHandler;
-import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.annotations.Timestamp;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
-import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -114,13 +114,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @BeforeEach
     void setUp() {
         spanFactory = new TestSpanFactory();
-        LegacyEventStore eventStore =
-                spy(LegacyEmbeddedEventStore.builder()
-                                            .storageEngine(new LegacyInMemoryEventStorageEngine())
-                                            .spanFactory(DefaultEventBusSpanFactory.builder()
-                                                                                   .spanFactory(spanFactory)
-                                                                                   .build())
-                                            .build());
+        EventStore eventStore =
+                spy(new SimpleEventStore(new InMemoryEventStorageEngine(), new AnnotationBasedTagResolver()));
         List<CorrelationDataProvider> correlationDataProviders = new ArrayList<>();
         correlationDataProviders.add(new MessageOriginProvider());
         correlationDataProviders.add(new SimpleCorrelationDataProvider(CUSTOM_CORRELATION_DATA_KEY));
@@ -969,7 +964,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @SuppressWarnings("unused")
     public static class MySaga {
 
-        private transient LegacyEventStore eventStore;
+        private transient EventStore eventStore;
 
         @StartSaga
         @SagaEventHandler(associationProperty = "id")
@@ -1032,7 +1027,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         }
 
         @Autowired
-        public void setEventStore(LegacyEventStore eventStore) {
+        public void setEventStore(EventStore eventStore) {
             this.eventStore = eventStore;
         }
     }
@@ -1147,7 +1142,8 @@ public abstract class AbstractDeadlineManagerTestSuite {
         public @NotNull MessageStream<?> interceptOnDispatch(@NotNull Message message,
                                                              @Nullable ProcessingContext context,
                                                              @NotNull MessageDispatchInterceptorChain<Message> interceptorChain) {
-            return interceptorChain.proceed(message.andMetadata(Metadata.with(CUSTOM_CORRELATION_DATA_KEY, correlationData)), context);
+            return interceptorChain.proceed(message.andMetadata(Metadata.with(CUSTOM_CORRELATION_DATA_KEY,
+                                                                              correlationData)), context);
         }
     }
 }

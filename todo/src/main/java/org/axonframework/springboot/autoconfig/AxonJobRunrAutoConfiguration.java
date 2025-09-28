@@ -17,8 +17,8 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
@@ -66,7 +66,7 @@ public class AxonJobRunrAutoConfiguration {
     @ConditionalOnMissingBean
     public DeadlineManager deadlineManager(
             JobScheduler jobScheduler,
-            LegacyConfiguration configuration,
+            Configuration configuration,
             @Qualifier("eventSerializer") Serializer serializer,
             TransactionManager transactionManager,
             DeadlineManagerSpanFactory spanFactory
