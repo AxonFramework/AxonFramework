@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.DomainEventTestUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
@@ -35,14 +36,13 @@ import java.util.Optional;
 import static java.util.Collections.singletonMap;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventhandling.DomainEventTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Base test class for {@link LegacyEventStorageEngine} implementations.
  * <p>
- * Methods are public so they can be overridden by {@link LegacyEventStorageEngine} implementation test cases in different
- * repository, like the [Mongo Extension](https://github.com/AxonFramework/extension-mongo).
+ * Methods are public so they can be overridden by {@link LegacyEventStorageEngine} implementation test cases in
+ * different repository, like the [Mongo Extension](https://github.com/AxonFramework/extension-mongo).
  *
  * @author Rene de Waele
  */
@@ -58,11 +58,11 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void storeAndLoadEvents() {
-        testSubject.appendEvents(createDomainEvents(4));
-        assertEquals(4, testSubject.readEvents(AGGREGATE).asStream().count());
+        testSubject.appendEvents(DomainEventTestUtils.createDomainEvents(4));
+        assertEquals(4, testSubject.readEvents(DomainEventTestUtils.AGGREGATE).asStream().count());
 
-        testSubject.appendEvents(createDomainEvent("otherAggregate", 0));
-        assertEquals(4, testSubject.readEvents(AGGREGATE).asStream().count());
+        testSubject.appendEvents(DomainEventTestUtils.createDomainEvent("otherAggregate", 0));
+        assertEquals(4, testSubject.readEvents(DomainEventTestUtils.AGGREGATE).asStream().count());
         assertEquals(1, testSubject.readEvents("otherAggregate").asStream().count());
     }
 
@@ -71,15 +71,15 @@ public abstract class EventStorageEngineTest {
         testSubject.appendEvents(new GenericEventMessage(new MessageType("event"), "Hello world"));
 
         List<? extends TrackedEventMessage> actual = testSubject.readEvents(null, false)
-                                                                   .toList();
+                                                                .toList();
         assertEquals(1, actual.size());
         assertFalse(actual.getFirst() instanceof DomainEventMessage);
     }
 
     @Test
     public void storeAndLoadEventsArray() {
-        testSubject.appendEvents(createDomainEvent(0), createDomainEvent(1));
-        assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
+        testSubject.appendEvents(DomainEventTestUtils.createDomainEvent(0), DomainEventTestUtils.createDomainEvent(1));
+        assertEquals(2, testSubject.readEvents(DomainEventTestUtils.AGGREGATE).asStream().count());
     }
 
     @Test
@@ -98,8 +98,8 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void returnedEventMessageBehavior() {
-        testSubject.appendEvents(createDomainEvent().withMetadata(singletonMap("key", "value")));
-        DomainEventMessage messageWithMetadata = testSubject.readEvents(AGGREGATE).next();
+        testSubject.appendEvents(DomainEventTestUtils.createDomainEvent().withMetadata(singletonMap("key", "value")));
+        DomainEventMessage messageWithMetadata = testSubject.readEvents(DomainEventTestUtils.AGGREGATE).next();
 
         /// we make sure persisted events have the same Metadata alteration logic
         DomainEventMessage altered = messageWithMetadata.withMetadata(singletonMap("key2", "value"));
@@ -123,32 +123,34 @@ public abstract class EventStorageEngineTest {
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public void readPartialStream() {
-        testSubject.appendEvents(createDomainEvents(5));
-        assertEquals(2L, testSubject.readEvents(AGGREGATE, 2).asStream().findFirst().get().getSequenceNumber());
-        assertEquals(4L, testSubject.readEvents(AGGREGATE, 2).asStream().reduce((a, b) -> b).get().getSequenceNumber());
-        assertEquals(3L, testSubject.readEvents(AGGREGATE, 2).asStream().count());
+        testSubject.appendEvents(DomainEventTestUtils.createDomainEvents(5));
+        assertEquals(2L, testSubject.readEvents(DomainEventTestUtils.AGGREGATE, 2).asStream().findFirst().get()
+                                    .getSequenceNumber());
+        assertEquals(4L, testSubject.readEvents(DomainEventTestUtils.AGGREGATE, 2).asStream().reduce((a, b) -> b).get()
+                                    .getSequenceNumber());
+        assertEquals(3L, testSubject.readEvents(DomainEventTestUtils.AGGREGATE, 2).asStream().count());
     }
 
     @Test
     public void storeAndLoadSnapshot() {
-        testSubject.storeSnapshot(createDomainEvent(0));
-        testSubject.storeSnapshot(createDomainEvent(1));
-        testSubject.storeSnapshot(createDomainEvent(3));
-        testSubject.storeSnapshot(createDomainEvent(2));
-        assertTrue(testSubject.readSnapshot(AGGREGATE).isPresent());
-        assertEquals(3, testSubject.readSnapshot(AGGREGATE).get().getSequenceNumber());
+        testSubject.storeSnapshot(DomainEventTestUtils.createDomainEvent(0));
+        testSubject.storeSnapshot(DomainEventTestUtils.createDomainEvent(1));
+        testSubject.storeSnapshot(DomainEventTestUtils.createDomainEvent(3));
+        testSubject.storeSnapshot(DomainEventTestUtils.createDomainEvent(2));
+        assertTrue(testSubject.readSnapshot(DomainEventTestUtils.AGGREGATE).isPresent());
+        assertEquals(3, testSubject.readSnapshot(DomainEventTestUtils.AGGREGATE).get().getSequenceNumber());
     }
 
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public void loadTrackedEvents() throws InterruptedException {
-        testSubject.appendEvents(createDomainEvents(4));
+        testSubject.appendEvents(DomainEventTestUtils.createDomainEvents(4));
         assertEquals(4, testSubject.readEvents(null, false).count());
 
         // give the clock some time to make sure the last message is really last
         Thread.sleep(10);
 
-        DomainEventMessage eventMessage = createDomainEvent("otherAggregate", 0);
+        DomainEventMessage eventMessage = DomainEventTestUtils.createDomainEvent("otherAggregate", 0);
         testSubject.appendEvents(eventMessage);
         assertEquals(5, testSubject.readEvents(null, false).count());
         assertEquals(eventMessage.identifier(),
@@ -158,7 +160,7 @@ public abstract class EventStorageEngineTest {
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public void loadPartialStreamOfTrackedEvents() {
-        List<DomainEventMessage> events = createDomainEvents(4);
+        List<DomainEventMessage> events = DomainEventTestUtils.createDomainEvents(4);
         testSubject.appendEvents(events);
         TrackingToken token = testSubject.readEvents(null, false).findFirst().get().trackingToken();
         assertEquals(3, testSubject.readEvents(token, false).count());
@@ -168,82 +170,82 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void createTailToken() {
-        DomainEventMessage event1 = createDomainEvent(0, Instant.parse("2007-12-03T10:15:00.00Z"));
-        DomainEventMessage event2 = createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
-        DomainEventMessage event3 = createDomainEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
+        DomainEventMessage event1 = DomainEventTestUtils.createDomainEvent(0, Instant.parse("2007-12-03T10:15:00.00Z"));
+        DomainEventMessage event2 = DomainEventTestUtils.createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage event3 = DomainEventTestUtils.createDomainEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
 
         testSubject.appendEvents(event1, event2, event3);
 
         TrackingToken headToken = testSubject.createTailToken();
 
         List<EventMessage> readEvents = testSubject.readEvents(headToken, false)
-                                                      .collect(toList());
+                                                   .collect(toList());
 
         assertEventStreamsById(Arrays.asList(event1, event2, event3), readEvents);
     }
 
     @Test
     public void createHeadToken() {
-        DomainEventMessage event1 = createDomainEvent(0, Instant.parse("2007-12-03T10:15:00.00Z"));
-        DomainEventMessage event2 = createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
-        DomainEventMessage event3 = createDomainEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
+        DomainEventMessage event1 = DomainEventTestUtils.createDomainEvent(0, Instant.parse("2007-12-03T10:15:00.00Z"));
+        DomainEventMessage event2 = DomainEventTestUtils.createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage event3 = DomainEventTestUtils.createDomainEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
 
         testSubject.appendEvents(event1, event2, event3);
 
         TrackingToken headToken = testSubject.createHeadToken();
 
         List<EventMessage> readEvents = testSubject.readEvents(headToken, false)
-                                                      .collect(toList());
+                                                   .collect(toList());
 
         assertTrue(readEvents.isEmpty());
     }
 
     @Test
     public void createTokenAt() {
-        DomainEventMessage event1 = createDomainEvent(0, Instant.parse("2007-12-03T10:15:00.00Z"));
-        DomainEventMessage event2 = createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
-        DomainEventMessage event3 = createDomainEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
+        DomainEventMessage event1 = DomainEventTestUtils.createDomainEvent(0, Instant.parse("2007-12-03T10:15:00.00Z"));
+        DomainEventMessage event2 = DomainEventTestUtils.createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage event3 = DomainEventTestUtils.createDomainEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
 
         testSubject.appendEvents(event1, event2, event3);
 
         TrackingToken tokenAt = testSubject.createTokenAt(Instant.parse("2007-12-03T10:15:30.00Z"));
 
         List<EventMessage> readEvents = testSubject.readEvents(tokenAt, false)
-                                                      .collect(toList());
+                                                   .collect(toList());
 
         assertEventStreamsById(Arrays.asList(event2, event3), readEvents);
     }
 
     @Test
     public void createTokenAtExactTime() {
-        DomainEventMessage event1 = createDomainEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
-        DomainEventMessage event2 = createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
-        DomainEventMessage event3 = createDomainEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
+        DomainEventMessage event1 = DomainEventTestUtils.createDomainEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
+        DomainEventMessage event2 = DomainEventTestUtils.createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage event3 = DomainEventTestUtils.createDomainEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
 
         testSubject.appendEvents(event1, event2, event3);
 
         TrackingToken tokenAt = testSubject.createTokenAt(Instant.parse("2007-12-03T10:15:30.00Z"));
 
         List<EventMessage> readEvents = testSubject.readEvents(tokenAt, false)
-                                                      .collect(toList());
+                                                   .collect(toList());
 
         assertEventStreamsById(Arrays.asList(event1, event2, event3), readEvents);
     }
 
     @Test
     public void createTokenWithUnorderedEvents() {
-        DomainEventMessage event1 = createDomainEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
-        DomainEventMessage event2 = createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
-        DomainEventMessage event3 = createDomainEvent(2, Instant.parse("2007-12-03T10:15:50.00Z"));
-        DomainEventMessage event4 = createDomainEvent(3, Instant.parse("2007-12-03T10:15:45.00Z"));
-        DomainEventMessage event5 = createDomainEvent(4, Instant.parse("2007-12-03T10:15:42.00Z"));
+        DomainEventMessage event1 = DomainEventTestUtils.createDomainEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
+        DomainEventMessage event2 = DomainEventTestUtils.createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage event3 = DomainEventTestUtils.createDomainEvent(2, Instant.parse("2007-12-03T10:15:50.00Z"));
+        DomainEventMessage event4 = DomainEventTestUtils.createDomainEvent(3, Instant.parse("2007-12-03T10:15:45.00Z"));
+        DomainEventMessage event5 = DomainEventTestUtils.createDomainEvent(4, Instant.parse("2007-12-03T10:15:42.00Z"));
 
         testSubject.appendEvents(event1, event2, event3, event4, event5);
 
         TrackingToken tokenAt = testSubject.createTokenAt(Instant.parse("2007-12-03T10:15:45.00Z"));
 
         List<EventMessage> readEvents = testSubject.readEvents(tokenAt, false)
-                                                      .collect(toList());
+                                                   .collect(toList());
 
         assertEventStreamsById(Arrays.asList(event3, event4, event5), readEvents);
     }
@@ -256,9 +258,9 @@ public abstract class EventStorageEngineTest {
     public void createTokenAtTimeAfterLastEvent() {
         Instant dateTimeAfterLastEvent = Instant.parse("2008-12-03T10:15:30.00Z");
 
-        DomainEventMessage event1 = createDomainEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
-        DomainEventMessage event2 = createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
-        DomainEventMessage event3 = createDomainEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
+        DomainEventMessage event1 = DomainEventTestUtils.createDomainEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
+        DomainEventMessage event2 = DomainEventTestUtils.createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage event3 = DomainEventTestUtils.createDomainEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
         testSubject.appendEvents(event1, event2, event3);
 
         TrackingToken result = testSubject.createTokenAt(dateTimeAfterLastEvent);
@@ -276,9 +278,9 @@ public abstract class EventStorageEngineTest {
     public void createTokenAtTimeBeforeFirstEvent() {
         Instant dateTimeBeforeFirstEvent = Instant.parse("2006-12-03T10:15:30.00Z");
 
-        DomainEventMessage event1 = createDomainEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
-        DomainEventMessage event2 = createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
-        DomainEventMessage event3 = createDomainEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
+        DomainEventMessage event1 = DomainEventTestUtils.createDomainEvent(0, Instant.parse("2007-12-03T10:15:30.00Z"));
+        DomainEventMessage event2 = DomainEventTestUtils.createDomainEvent(1, Instant.parse("2007-12-03T10:15:40.00Z"));
+        DomainEventMessage event3 = DomainEventTestUtils.createDomainEvent(2, Instant.parse("2007-12-03T10:15:35.00Z"));
         testSubject.appendEvents(event1, event2, event3);
 
         TrackingToken result = testSubject.createTokenAt(dateTimeBeforeFirstEvent);

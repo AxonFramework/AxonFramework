@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
@@ -26,14 +27,14 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventEntry;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.processors.streaming.token.GapAwareTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.eventsourcing.eventstore.LegacyBatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.AppendEventsStatementBuilder;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.AppendSnapshotStatementBuilder;
@@ -51,7 +52,7 @@ import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataW
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadSnapshotDataStatementBuilder;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.TimestampWriter;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
-import org.axonframework.modelling.command.ConcurrencyException;
+import org.axonframework.modelling.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.slf4j.Logger;
@@ -75,7 +76,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.Assert.isTrue;
@@ -92,14 +92,15 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * <p>
  * Before using this store make sure the database contains a table named {@link EventSchema#domainEventTable()} and
  * {@link EventSchema#snapshotTable()} in which to store events and snapshots in respectively. For convenience, these
- * tables can be constructed through the {@link LegacyJdbcEventStorageEngine#createSchema(EventTableFactory)} operation.
+ * tables can be constructed through the {@link LegacyJdbcEventStorageEngine#createSchema(EventTableFactory)}
+ * operation.
  *
  * @author Rene de Waele
  * @since 3.0
  * @deprecated In favor of the {@code LegacyJdbcEventStorageEngine}.
  */
 @Deprecated(since = "5.0.0", forRemoval = true)
-public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine {
+public class LegacyJdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -818,7 +819,7 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
      * The event and snapshot {@link Serializer}, {@link ConnectionProvider} and {@link TransactionManager} are <b>hard
      * requirements</b> and as such should be provided.
      */
-    public static class Builder extends LegacyBatchingEventStorageEngine.Builder {
+    public static class Builder extends BatchingEventStorageEngine.Builder {
 
         private ConnectionProvider connectionProvider;
         private TransactionManager transactionManager;
@@ -952,8 +953,9 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
         }
 
         /**
-         * Set the PreparedStatement to be used on {@link LegacyJdbcEventStorageEngine#cleanGaps(Connection, SortedSet)}.
-         * Defaults to {@link JdbcEventStorageEngineStatements#cleanGaps(Connection, EventSchema, SortedSet)}
+         * Set the PreparedStatement to be used on
+         * {@link LegacyJdbcEventStorageEngine#cleanGaps(Connection, SortedSet)}. Defaults to
+         * {@link JdbcEventStorageEngineStatements#cleanGaps(Connection, EventSchema, SortedSet)}
          *
          * @return the current Builder instance, for fluent interfacing
          */
@@ -1059,11 +1061,11 @@ public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngi
             return this;
         }
 
-        @Override
-        public LegacyJdbcEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
-            super.snapshotFilter(snapshotFilter);
-            return this;
-        }
+//        @Override
+//        public LegacyJdbcEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
+//            super.snapshotFilter(snapshotFilter);
+//            return this;
+//        }
 
         @Override
         public LegacyJdbcEventStorageEngine.Builder batchSize(int batchSize) {

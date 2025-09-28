@@ -17,7 +17,9 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.DomainEventTestUtils;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
@@ -25,29 +27,27 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
-import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
-import static org.axonframework.eventhandling.EventTestUtils.AGGREGATE;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the specifics around a {@link LegacyBatchingEventStorageEngine}.
+ * Test class validating the specifics around a {@link BatchingEventStorageEngine}.
  *
  * @author Rene de Waele
  */
 @Transactional
-public abstract class BatchingEventStorageEngineTest<E extends LegacyBatchingEventStorageEngine, EB extends LegacyBatchingEventStorageEngine.Builder>
+public abstract class BatchingEventStorageEngineTest<E extends BatchingEventStorageEngine, EB extends BatchingEventStorageEngine.Builder>
         extends AbstractEventStorageEngineTest<E, EB> {
 
-    private LegacyBatchingEventStorageEngine testSubject;
+    private BatchingEventStorageEngine testSubject;
 
     @Test
     protected void loadLargeAmountOfEventsFromAggregateStream() {
         int eventCount = testSubject.batchSize() + 10;
-        testSubject.appendEvents(createDomainEvents(eventCount));
+        testSubject.appendEvents(DomainEventTestUtils.createDomainEvents(eventCount));
         testSubject.appendEvents(new GenericEventMessage(new MessageType("event"), "test"));
-        assertEquals(eventCount, testSubject.readEvents(AGGREGATE).asStream().count());
+        assertEquals(eventCount, testSubject.readEvents(EventTestUtils.AGGREGATE).asStream().count());
         Optional<? extends DomainEventMessage> resultEventMessage =
-                testSubject.readEvents(AGGREGATE).asStream().reduce((a, b) -> b);
+                testSubject.readEvents(EventTestUtils.AGGREGATE).asStream().reduce((a, b) -> b);
         assertTrue(resultEventMessage.isPresent());
         assertEquals(eventCount - 1, resultEventMessage.get().getSequenceNumber());
     }
@@ -55,7 +55,7 @@ public abstract class BatchingEventStorageEngineTest<E extends LegacyBatchingEve
     @Test
     void loadLargeAmountFromOpenStream() {
         int eventCount = testSubject.batchSize() + 10;
-        testSubject.appendEvents(createDomainEvents(eventCount));
+        testSubject.appendEvents(DomainEventTestUtils.createDomainEvents(eventCount));
         GenericEventMessage last =
                 new GenericEventMessage(new MessageType("event"), "test");
         testSubject.appendEvents(last);
@@ -67,7 +67,7 @@ public abstract class BatchingEventStorageEngineTest<E extends LegacyBatchingEve
         assertEquals(last.identifier(), resultEventMessage.get().identifier());
     }
 
-    protected void setTestSubject(LegacyBatchingEventStorageEngine testSubject) {
+    protected void setTestSubject(BatchingEventStorageEngine testSubject) {
         super.setTestSubject(this.testSubject = testSubject);
     }
 }

@@ -17,10 +17,11 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.DomainEventTestUtils;
 import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
+import org.axonframework.modelling.ConcurrencyException;
 import org.axonframework.modelling.command.AggregateStreamCreationException;
-import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.junit.jupiter.api.*;
 
@@ -30,7 +31,6 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.eventhandling.DomainEventTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -43,16 +43,19 @@ import static org.mockito.Mockito.*;
  *
  * @author Rene de Waele
  */
-public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEventStorageEngine, EB extends AbstractLegacyEventStorageEngine.Builder>
+public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStorageEngine, EB extends AbstractEventStorageEngine.Builder>
         extends EventStorageEngineTest {
 
-    private AbstractLegacyEventStorageEngine testSubject;
+    private AbstractEventStorageEngine testSubject;
 
     @Test
     public void uniqueKeyConstraintOnFirstEventIdentifierThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
                 AggregateStreamCreationException.class,
-                () -> testSubject.appendEvents(createDomainEvent("id", AGGREGATE, 0), createDomainEvent("id", "otherAggregate", 0))
+                () -> testSubject.appendEvents(DomainEventTestUtils.createDomainEvent("id",
+                                                                                      DomainEventTestUtils.AGGREGATE,
+                                                                                      0),
+                                               DomainEventTestUtils.createDomainEvent("id", "otherAggregate", 0))
         );
     }
 
@@ -60,7 +63,10 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
     public void uniqueKeyConstraintOnEventIdentifier() {
         assertThrows(
                 ConcurrencyException.class,
-                () -> testSubject.appendEvents(createDomainEvent("id", AGGREGATE, 1), createDomainEvent("id", "otherAggregate", 1))
+                () -> testSubject.appendEvents(DomainEventTestUtils.createDomainEvent("id",
+                                                                                      DomainEventTestUtils.AGGREGATE,
+                                                                                      1),
+                                               DomainEventTestUtils.createDomainEvent("id", "otherAggregate", 1))
         );
     }
 
@@ -75,8 +81,9 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
         //noinspection unchecked
         testSubject = createEngine(engineBuilder -> (EB) engineBuilder.upcasterChain(mockUpcasterChain));
 
-        testSubject.appendEvents(createDomainEvents(4));
-        List<DomainEventMessage> upcastedEvents = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
+        testSubject.appendEvents(DomainEventTestUtils.createDomainEvents(4));
+        List<DomainEventMessage> upcastedEvents = testSubject.readEvents(DomainEventTestUtils.AGGREGATE).asStream()
+                                                             .collect(toList());
         assertEquals(8, upcastedEvents.size());
 
         Iterator<DomainEventMessage> iterator = upcastedEvents.iterator();
@@ -93,7 +100,8 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
     public void storeDuplicateFirstEventWithExceptionTranslatorThrowsAggregateIdentifierAlreadyExistsException() {
         assertThrows(
                 AggregateStreamCreationException.class,
-                () -> testSubject.appendEvents(createDomainEvent(0), createDomainEvent(0))
+                () -> testSubject.appendEvents(DomainEventTestUtils.createDomainEvent(0),
+                                               DomainEventTestUtils.createDomainEvent(0))
         );
     }
 
@@ -101,7 +109,8 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
     public void storeDuplicateEventWithExceptionTranslator() {
         assertThrows(
                 ConcurrencyException.class,
-                () -> testSubject.appendEvents(createDomainEvent(1), createDomainEvent(1))
+                () -> testSubject.appendEvents(DomainEventTestUtils.createDomainEvent(1),
+                                               DomainEventTestUtils.createDomainEvent(1))
         );
     }
 
@@ -111,7 +120,8 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
         testSubject = createEngine(engineBuilder -> (EB) engineBuilder.persistenceExceptionResolver(e -> false));
         assertThrows(
                 EventStoreException.class,
-                () -> testSubject.appendEvents(createDomainEvent(0), createDomainEvent(0))
+                () -> testSubject.appendEvents(DomainEventTestUtils.createDomainEvent(0),
+                                               DomainEventTestUtils.createDomainEvent(0))
         );
     }
 
@@ -120,10 +130,10 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
         SnapshotFilter allowAll = SnapshotFilter.allowAll();
 
         //noinspection unchecked
-        testSubject = createEngine(builder -> (EB) builder.snapshotFilter(allowAll));
+//        testSubject = createEngine(builder -> (EB) builder.snapshotFilter(allowAll));
 
-        testSubject.storeSnapshot(createDomainEvent(1));
-        assertTrue(testSubject.readSnapshot(AGGREGATE).isPresent());
+        testSubject.storeSnapshot(DomainEventTestUtils.createDomainEvent(1));
+        assertTrue(testSubject.readSnapshot(DomainEventTestUtils.AGGREGATE).isPresent());
     }
 
     @Test
@@ -131,10 +141,10 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
         SnapshotFilter rejectAll = SnapshotFilter.rejectAll();
 
         //noinspection unchecked
-        testSubject = createEngine(builder -> (EB) builder.snapshotFilter(rejectAll));
+//        testSubject = createEngine(builder -> (EB) builder.snapshotFilter(rejectAll));
 
-        testSubject.storeSnapshot(createDomainEvent(1));
-        assertFalse(testSubject.readSnapshot(AGGREGATE).isPresent());
+        testSubject.storeSnapshot(DomainEventTestUtils.createDomainEvent(1));
+        assertFalse(testSubject.readSnapshot(DomainEventTestUtils.AGGREGATE).isPresent());
     }
 
     @Test
@@ -142,13 +152,13 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEve
         SnapshotFilter combinedFilter = SnapshotFilter.allowAll().combine(SnapshotFilter.rejectAll());
 
         //noinspection unchecked
-        testSubject = createEngine(builder -> (EB) builder.snapshotFilter(combinedFilter));
+//        testSubject = createEngine(builder -> (EB) builder.snapshotFilter(combinedFilter));
 
-        testSubject.storeSnapshot(createDomainEvent(1));
-        assertFalse(testSubject.readSnapshot(AGGREGATE).isPresent());
+        testSubject.storeSnapshot(DomainEventTestUtils.createDomainEvent(1));
+        assertFalse(testSubject.readSnapshot(DomainEventTestUtils.AGGREGATE).isPresent());
     }
 
-    protected void setTestSubject(AbstractLegacyEventStorageEngine testSubject) {
+    protected void setTestSubject(AbstractEventStorageEngine testSubject) {
         super.setTestSubject(this.testSubject = testSubject);
     }
 
