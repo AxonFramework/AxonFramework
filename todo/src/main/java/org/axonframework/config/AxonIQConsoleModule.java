@@ -16,6 +16,11 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.LifecycleRegistry;
+import org.axonframework.configuration.Module;
 import org.axonframework.util.MavenArtifactVersionResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
-import jakarta.annotation.Nullable;
 
 /**
  * Module related to AxonIQ console, for now it's just logging information about AxonIQ console when it's not suppressed
@@ -32,7 +36,7 @@ import jakarta.annotation.Nullable;
  * @author Gerard Klijs
  * @since 4.9.0
  */
-public class AxonIQConsoleModule implements ModuleConfiguration {
+public class AxonIQConsoleModule implements Module {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private static final String DISABLE_CONSOLE_MESSAGE_SYSTEM_PROPERTY = "disable-axoniq-console-message";
@@ -49,8 +53,15 @@ public class AxonIQConsoleModule implements ModuleConfiguration {
                     "################################################################################################\n";
 
     @Override
-    public void initialize(LegacyConfiguration config) {
+    public String name() {
+        return "AxonIQConsoleModule";
+    }
+
+    @Override
+    public Configuration build(@Nonnull Configuration parent,
+                               @Nonnull LifecycleRegistry lifecycleRegistry) {
         maybeLogConsoleIsAvailable();
+        return null;
     }
 
     /**
@@ -73,7 +84,7 @@ public class AxonIQConsoleModule implements ModuleConfiguration {
         MavenArtifactVersionResolver resolver =
                 new MavenArtifactVersionResolver("io.axoniq.console",
                                                  "console-framework-client",
-                                                 LegacyDefaultConfigurer.class.getClassLoader());
+                                                 AxonIQConsoleModule.class.getClassLoader());
         String version;
         try {
             version = resolver.get();
