@@ -23,7 +23,6 @@ import org.axonframework.eventhandling.processors.streaming.StreamingEventProces
 import org.axonframework.eventhandling.processors.streaming.pooled.PooledStreamingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
-import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.spring.config.EventProcessorSettings;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -80,8 +79,9 @@ public class EventProcessorProperties {
         /**
          * Sets the source for this processor.
          * <p>
-         * Defaults to streaming from the {@link LegacyEventStore} when the {@link #mode} is set to {@link Mode#POOLED},
-         * and to subscribing to the {@link EventBus} when the {@link #mode} is set to {@link Mode#SUBSCRIBING}.
+         * Defaults to streaming from the {@link org.axonframework.eventsourcing.eventstore.EventStore} when the
+         * {@link #mode} is set to {@link Mode#POOLED}, and to subscribing to the {@link EventBus} when the
+         * {@link #mode} is set to {@link Mode#SUBSCRIBING}.
          */
         private String source;
 
@@ -112,8 +112,8 @@ public class EventProcessorProperties {
         private TimeUnit tokenClaimIntervalTimeUnit = TimeUnit.MILLISECONDS;
 
         /**
-         * The maximum number of threads the processor should process events with.
-         * Defaults to 4 for a {@link PooledStreamingEventProcessor}.
+         * The maximum number of threads the processor should process events with. Defaults to 4 for a
+         * {@link PooledStreamingEventProcessor}.
          */
         private int threadCount = 4;
 
@@ -168,7 +168,6 @@ public class EventProcessorProperties {
         public Mode getMode() {
             return mode;
         }
-
 
         /**
          * Retrieves the processor mode.
@@ -273,8 +272,8 @@ public class EventProcessorProperties {
         }
 
         /**
-         * Sets the number of threads to use to process Events.
-         * If this field is not configured, the thread count defaults to 4 for a {@link PooledStreamingEventProcessor}.
+         * Sets the number of threads to use to process Events. If this field is not configured, the thread count
+         * defaults to 4 for a {@link PooledStreamingEventProcessor}.
          * <p>
          *
          * @param threadCount the number of threads to use to process Events.
@@ -307,6 +306,7 @@ public class EventProcessorProperties {
 
         /**
          * Sets the name of the TokenStore bean.
+         *
          * @param tokenStore A name of the Spring Bean used for this processor.
          */
         public void setTokenStore(@Nonnull String tokenStore) {
@@ -316,6 +316,7 @@ public class EventProcessorProperties {
 
         /**
          * Retrieves the name of the TokenStore bean.
+         *
          * @return Name of the token store Spring Bean.
          */
         @Override
