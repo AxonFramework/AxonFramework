@@ -17,10 +17,8 @@
 package org.axonframework.springboot;
 
 import com.codahale.metrics.MetricRegistry;
-import org.axonframework.config.LegacyConfigurer;
-import org.axonframework.config.MessageMonitorFactory;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.metrics.GlobalMetricRegistry;
+import org.axonframework.monitoring.MessageMonitorFactory;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration;
 import org.axonframework.springboot.utils.GrpcServerStub;
@@ -94,10 +92,10 @@ class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
     @Configuration
     public static class Context {
 
-        @Autowired
-        public void configure(LegacyConfigurer configurer) {
-            configurer.configureMessageMonitor(EventBus.class, mockMessageMonitorFactory());
-        }
+//        @Autowired
+//        public void configure(LegacyConfigurer configurer) {
+//            configurer.configureMessageMonitor(EventBus.class, mockMessageMonitorFactory());
+//        }
 
         @Bean
         public MessageMonitorFactory mockMessageMonitorFactory() {
