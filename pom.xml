@@ -26,6 +26,7 @@
         <module>eventsourcing</module>
         <module>integrationtests</module>
         <module>legacy</module>
+        <module>legacy-aggregate</module>
         <module>messaging</module>
         <module>metrics</module>
         <module>metrics-micrometer</module>
@@ -600,7 +601,7 @@
                 <configuration>
                     <publishingServerId>central</publishingServerId>
                     <excludeArtifacts>
-                        axon-integrationtests,axon-configuration,axon-legacy,axon-metrics,axon-micrometer,axon-migration,axon-tracing-opentelemetry
+                        axon-integrationtests,axon-configuration,axon-legacy,axon-legacy-aggregate,axon-metrics,axon-micrometer,axon-migration,axon-tracing-opentelemetry
                     </excludeArtifacts>
                 </configuration>
             </plugin>
