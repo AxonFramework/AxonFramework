@@ -18,10 +18,11 @@ package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.axonserver.connector.TagsConfiguration;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.SnapshotterSpanFactory;
-import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.snapshotting.AggregateSnapshotter;
+import org.axonframework.eventsourcing.snapshotting.Snapshotter;
+import org.axonframework.eventsourcing.snapshotting.SnapshotterSpanFactory;
 import org.axonframework.messaging.annotations.HandlerDefinition;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
@@ -58,16 +59,16 @@ public class LegacyAxonAutoConfiguration {
     }
 
     @ConditionalOnMissingBean(Snapshotter.class)
-    @ConditionalOnBean(LegacyEventStore.class)
+    @ConditionalOnBean(EventStore.class)
     @Bean
-    public SpringAggregateSnapshotter aggregateSnapshotter(LegacyConfiguration configuration,
-                                                           HandlerDefinition handlerDefinition,
-                                                           ParameterResolverFactory parameterResolverFactory,
-                                                           LegacyEventStore eventStore,
-                                                           TransactionManager transactionManager,
-                                                           SnapshotterSpanFactory spanFactory) {
+    public AggregateSnapshotter aggregateSnapshotter(Configuration configuration,
+                                                     HandlerDefinition handlerDefinition,
+                                                     ParameterResolverFactory parameterResolverFactory,
+                                                     EventStore eventStore,
+                                                     TransactionManager transactionManager,
+                                                     SnapshotterSpanFactory spanFactory) {
         return SpringAggregateSnapshotter.builder()
-                                         .repositoryProvider(configuration::repository)
+//                                         .repositoryProvider(configuration::repository)
                                          .transactionManager(transactionManager)
                                          .eventStore(eventStore)
                                          .parameterResolverFactory(parameterResolverFactory)
