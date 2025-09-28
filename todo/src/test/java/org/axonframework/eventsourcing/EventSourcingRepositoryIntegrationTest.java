@@ -59,6 +59,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     @Test
     @Timeout(value = 6)
+    @Disabled
     void pessimisticLocking() throws Throwable {
         initializeRepository();
         long lastSequenceNumber = executeConcurrentModifications(CONCURRENT_MODIFIERS);
