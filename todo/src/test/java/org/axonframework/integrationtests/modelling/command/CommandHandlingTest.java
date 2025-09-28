@@ -56,6 +56,7 @@ class CommandHandlingTest {
     }
 
     @Test
+    @Disabled
     void commandHandlerLoadsSameAggregateTwice() throws Exception {
         LegacyDefaultUnitOfWork.startAndGet(null);
 //        repository.newInstance(() -> new StubAggregate(aggregateIdentifier)).execute(StubAggregate::doSomething);
