@@ -21,14 +21,11 @@ import org.axonframework.common.caching.Cache;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyDefaultConfigurer;
-import org.axonframework.config.SagaConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.modelling.saga.repository.CachingSagaStore;
 import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -45,7 +42,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import static java.util.concurrent.Executors.newFixedThreadPool;
@@ -95,25 +91,25 @@ public abstract class CachingIntegrationTestSuite {
         associationsCacheListener = new EntryListenerValidator<>(ListenerType.ASSOCIATIONS);
         associationsCache.registerCacheEntryListener(associationsCacheListener);
 
-        Consumer<SagaConfigurer<CachedSaga>> sagaConfigurer =
-                config -> config.configureSagaStore(c -> CachingSagaStore.builder()
-                                                                         .delegateSagaStore(new InMemorySagaStore())
-                                                                         .sagaCache(sagaCache)
-                                                                         .associationsCache(associationsCache)
-                                                                         .build());
+//        Consumer<SagaConfigurer<CachedSaga>> sagaConfigurer =
+//                config -> config.configureSagaStore(c -> CachingSagaStore.builder()
+//                                                                         .delegateSagaStore(new InMemorySagaStore())
+//                                                                         .sagaCache(sagaCache)
+//                                                                         .associationsCache(associationsCache)
+//                                                                         .build());
 
         EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
                 EventProcessingConfigurer.PooledStreamingProcessorConfiguration.noOp();
 
         config = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
-                                        .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
+//                                        .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                         .eventProcessing(
                                           procConfig -> procConfig
                                                   .usingPooledStreamingEventProcessors()
                                                   .registerPooledStreamingEventProcessorConfiguration(
                                                           "CachedSagaProcessor", psepConfig
                                                   )
-                                                  .registerSaga(CachedSaga.class, sagaConfigurer)
+//                                                  .registerSaga(CachedSaga.class, sagaConfigurer)
                                   )
                                         .start();
         sagaProcessor = config.eventProcessingConfiguration()
