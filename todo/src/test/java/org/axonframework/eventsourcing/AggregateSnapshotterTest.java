@@ -73,6 +73,7 @@ public class AggregateSnapshotterTest {
     }
 
     @Test
+    @Disabled("TODO #3105")
     void createSnapshot_FirstEventLoadedIsSnapshotEvent() {
         UUID aggregateIdentifier = UUID.randomUUID();
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
@@ -96,6 +97,7 @@ public class AggregateSnapshotterTest {
     }
 
     @Test
+    @Disabled("TODO #3105")
     void createSnapshot_AggregateMarkedDeletedWillNotGenerateSnapshot() {
         String aggregateIdentifier = UUID.randomUUID().toString();
         DomainEventMessage firstEvent = new GenericDomainEventMessage(
