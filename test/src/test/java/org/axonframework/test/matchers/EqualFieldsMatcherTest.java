@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.test.aggregate.MyEvent;
-import org.axonframework.test.aggregate.MyOtherEvent;
 import org.hamcrest.StringDescription;
 import org.junit.jupiter.api.*;
 

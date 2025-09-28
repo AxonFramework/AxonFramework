@@ -24,11 +24,9 @@ import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
-import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.MapStringEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.axonframework.test.matchers.Matchers;
-import org.axonframework.test.saga.CommandValidator;
 import org.hamcrest.Matcher;
 
 import java.time.Duration;

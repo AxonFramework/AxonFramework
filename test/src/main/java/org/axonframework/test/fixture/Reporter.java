@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.aggregate;
+package org.axonframework.test.fixture;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;

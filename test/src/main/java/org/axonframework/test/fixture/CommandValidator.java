@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.saga;
+package org.axonframework.test.fixture;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.Matchers;
+import org.axonframework.test.utils.DescriptionUtils;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -30,13 +31,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static org.axonframework.test.saga.DescriptionUtils.describe;
-
 /**
  * Helper class for validation of dispatched commands.
  *
  * @author Allard Buijze
- * @since 1.1
+ * @since 1.1.0
  */
 public class CommandValidator {
 
@@ -47,8 +46,8 @@ public class CommandValidator {
     /**
      * Creates a validator which monitors the given {@code commandBus}.
      *
-     * @param commandBus  the command bus to monitor
-     * @param fieldFilter the filter describing the Fields to include in a comparison
+     * @param commandBus  The command bus to monitor.
+     * @param fieldFilter The filter describing the Fields to include in a comparison.
      */
     public CommandValidator(RecordingCommandBus commandBus, FieldFilter fieldFilter) {
         this(commandBus::getDispatchedCommands, commandBus::clearCommands, fieldFilter);
@@ -125,7 +124,7 @@ public class CommandValidator {
             Description expectedDescription = new StringDescription();
             Description actualDescription = new StringDescription();
             matcher.describeTo(expectedDescription);
-            describe(dispatchedCommands.get(), actualDescription);
+            DescriptionUtils.describe(dispatchedCommands.get(), actualDescription);
             throw new AxonAssertionError(
                     "Incorrect dispatched command.\n"
                             + "Expected <" + expectedDescription + ">,\n but got <" + actualDescription + ">."
