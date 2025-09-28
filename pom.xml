@@ -90,7 +90,7 @@
         <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
         <jakarta.validation.version>3.1.1</jakarta.validation.version>
         <!-- Logging -->
-        <log4j.version>2.25.1</log4j.version>
+        <log4j.version>2.25.2</log4j.version>
         <slf4j.version>2.0.17</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.37</dropwizard.metrics.version>
@@ -112,7 +112,7 @@
         <jackson.version>2.20.0</jackson.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version>
-        <jobrunr.version>8.0.2</jobrunr.version>
+        <jobrunr.version>8.1.0</jobrunr.version>
         <quartz.version>2.5.0</quartz.version>
         <!-- Spring -->
         <spring.version>6.2.11</spring.version>
@@ -125,17 +125,17 @@
         <junit.jupiter.version>5.13.4</junit.jupiter.version>
         <mockito.version>5.20.0</mockito.version>
         <testcontainers.version>1.21.3</testcontainers.version>
-        <assertj.version>3.27.5</assertj.version>
+        <assertj.version>3.27.6</assertj.version>
         <!-- Validation -->
         <hibernate-validator.version>9.0.1.Final</hibernate-validator.version>
         <!-- Build / Plugin -->
-        <central-publishing-maven-plugin.version>0.8.0</central-publishing-maven-plugin.version>
+        <central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
         <eclipse.transformer-maven-plugin.version>1.0.0</eclipse.transformer-maven-plugin.version>
         <felix.maven-bundle-plugin.version>6.0.0</felix.maven-bundle-plugin.version>
         <jacoco-maven.version>0.8.13</jacoco-maven.version>
         <maven-assembly.version>3.7.1</maven-assembly.version>
         <maven-clean.version>3.5.0</maven-clean.version>
-        <maven-compiler.version>3.14.0</maven-compiler.version>
+        <maven-compiler.version>3.14.1</maven-compiler.version>
         <maven-enforcer.version>3.6.1</maven-enforcer.version>
         <maven-failsafe.version>3.5.4</maven-failsafe.version>
         <maven-gpg.version>3.2.8</maven-gpg.version>
