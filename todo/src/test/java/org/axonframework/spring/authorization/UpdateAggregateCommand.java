@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,21 @@
 
 package org.axonframework.spring.authorization;
 
-import org.springframework.security.access.annotation.Secured;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 import java.util.UUID;
 
 /**
- * Test command with authorization annotation
+ * Test command
  *
  * @author Roald Bankras
  */
-@Secured("ROLE_aggregate.create")
-public class CreateAggregateCommand {
+class UpdateAggregateCommand {
 
+    @TargetAggregateIdentifier
     private final UUID aggregateId;
 
-    public CreateAggregateCommand(UUID aggregateId) {
+    public UpdateAggregateCommand(UUID aggregateId) {
         this.aggregateId = aggregateId;
     }
 

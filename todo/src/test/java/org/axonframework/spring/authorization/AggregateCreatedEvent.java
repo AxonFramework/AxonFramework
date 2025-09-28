@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,17 @@
 
 package org.axonframework.spring.authorization;
 
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
-
 import java.util.UUID;
 
 /**
- * Test command
+ * Test event
  *
  * @author Roald Bankras
  */
-class UpdateAggregateCommand {
-
-    @TargetAggregateIdentifier
+public class AggregateCreatedEvent {
     private final UUID aggregateId;
 
-    public UpdateAggregateCommand(UUID aggregateId) {
+    public AggregateCreatedEvent(UUID aggregateId) {
         this.aggregateId = aggregateId;
     }
 
