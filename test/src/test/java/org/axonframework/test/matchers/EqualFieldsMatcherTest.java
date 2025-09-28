@@ -78,7 +78,7 @@ class EqualFieldsMatcherTest {
         testSubject.matches(expectedEvent);
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
-        assertEquals("org.axonframework.test.aggregate.MyEvent", description.toString());
+        assertEquals("org.axonframework.test.matchers.MyEvent", description.toString());
     }
 
     @Test
@@ -86,7 +86,7 @@ class EqualFieldsMatcherTest {
         testSubject.matches(new MyOtherEvent());
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
-        assertEquals("org.axonframework.test.aggregate.MyEvent", description.toString());
+        assertEquals("org.axonframework.test.matchers.MyEvent", description.toString());
     }
 
     @Test
@@ -94,6 +94,6 @@ class EqualFieldsMatcherTest {
         testSubject.matches(new MyEvent(aggregateId, 2));
         StringDescription description = new StringDescription();
         testSubject.describeTo(description);
-        assertEquals("org.axonframework.test.aggregate.MyEvent (failed on field 'someValue')", description.toString());
+        assertEquals("org.axonframework.test.matchers.MyEvent (failed on field 'someValue')", description.toString());
     }
 }
