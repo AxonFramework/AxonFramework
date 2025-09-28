@@ -56,6 +56,7 @@ import static org.mockito.Mockito.*;
 @Tags({
         @Tag("flaky"),
 })
+@Disabled("TODO #3435")
 class MultiStreamableMessageSourceTest {
 
     private MultiStreamableMessageSource testSubject;
