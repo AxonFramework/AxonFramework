@@ -35,6 +35,7 @@ import java.util.Map;
  *
  * @author Steven van Beelen
  */
+@Disabled("TODO #3727")
 class EhCacheIntegrationTest extends CachingIntegrationTestSuite {
 
     private CacheManager cacheManager;

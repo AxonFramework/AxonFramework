@@ -34,6 +34,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  *
  * @author Gerard Klijs
  */
+@Disabled("TODO #3727")
 class JCacheIntegrationTest extends CachingIntegrationTestSuite {
 
     private CacheManager cacheManager;

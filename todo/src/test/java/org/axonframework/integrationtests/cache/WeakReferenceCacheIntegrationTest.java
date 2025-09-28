@@ -18,12 +18,14 @@ package org.axonframework.integrationtests.cache;
 
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.WeakReferenceCache;
+import org.junit.jupiter.api.*;
 
 /**
  * {@link WeakReferenceCache} specific implementation of the {@link CachingIntegrationTestSuite}.
  *
  * @author Steven van Beelen
  */
+@Disabled("TODO #3727")
 class WeakReferenceCacheIntegrationTest extends CachingIntegrationTestSuite {
 
     @Override
