@@ -21,7 +21,6 @@ import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -77,9 +76,6 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
         assertInstanceOf(InterceptingEventStore.class, eventSink.get());
         // By default, the Event Store and the Event Sink should be the same instance.
         assertEquals(eventStore.get(), eventSink.get());
-
-        Optional<Snapshotter> snapshotter = result.getOptionalComponent(Snapshotter.class);
-        assertTrue(snapshotter.isPresent());
     }
 
     @Test
@@ -116,18 +112,6 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                           .build();
 
         assertEquals(expected, result.getComponent(EventStore.class));
-    }
-
-    @Test
-    void registerSnapshotterOverridesDefault() {
-        Snapshotter expected = (aggregateType, aggregateIdentifier) -> {
-
-        };
-
-        Configuration result = testSubject.registerSnapshotter(c -> expected)
-                                          .build();
-
-        assertEquals(expected, result.getComponent(Snapshotter.class));
     }
 
     @Test
@@ -176,7 +160,8 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                 testSubject.registerEntity(testEntityBuilder)
                            .build();
 
-        assertThat(configuration.getModuleConfiguration("SimpleStateBasedEntityModule<java.lang.String, java.lang.Object>")).isPresent();
+        assertThat(configuration.getModuleConfiguration(
+                "SimpleStateBasedEntityModule<java.lang.String, java.lang.Object>")).isPresent();
     }
 
     @Test

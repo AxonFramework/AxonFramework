@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Component;
@@ -30,11 +31,9 @@ import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
-import org.axonframework.commandhandling.configuration.CommandHandlingModule;
 import org.axonframework.modelling.configuration.EntityModule;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
 
@@ -53,7 +52,6 @@ import java.util.function.Consumer;
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventStore}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventSink}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link Snapshotter}</li>
  * </ul>
  * To replace or decorate any of these defaults, use their respective interfaces as the identifier. For example, to
  * adjust the {@code EventStore}, do
@@ -189,22 +187,6 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      */
     public EventSourcingConfigurer registerEventStore(@Nonnull ComponentBuilder<EventStore> eventStoreFactory) {
         delegate.componentRegistry(cr -> cr.registerComponent(EventStore.class, eventStoreFactory));
-        return this;
-    }
-
-    /**
-     * Registers the given {@link Snapshotter} factory in this {@code Configurer}.
-     * <p>
-     * The {@code snapshotterFactory} receives the {@link Configuration} as input and is expected to return a
-     * {@link Snapshotter} instance.
-     *
-     * @param snapshotterFactory The factory building the {@link Snapshotter}.
-     * @return The current instance of the {@code Configurer} for a fluent API.
-     */
-    public EventSourcingConfigurer registerSnapshotter(
-            @Nonnull ComponentBuilder<Snapshotter> snapshotterFactory
-    ) {
-        delegate.componentRegistry(cr -> cr.registerComponent(Snapshotter.class, snapshotterFactory));
         return this;
     }
 
