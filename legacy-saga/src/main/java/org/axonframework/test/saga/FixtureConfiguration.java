@@ -17,12 +17,10 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
-import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotations.ClasspathHandlerEnhancerDefinition;
@@ -143,9 +141,9 @@ public interface FixtureConfiguration {
      * @param deadlineDispatchInterceptor the interceptor for dispatching (scheduling) deadlines
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration registerDeadlineDispatchInterceptor(
-            MessageDispatchInterceptor<? super DeadlineMessage> deadlineDispatchInterceptor
-    );
+//    FixtureConfiguration registerDeadlineDispatchInterceptor(
+//            MessageDispatchInterceptor<? super DeadlineMessage> deadlineDispatchInterceptor
+//    );
 
     /**
      * Registers a deadline handler interceptor which will always be invoked before a deadline is handled to perform a
@@ -154,9 +152,9 @@ public interface FixtureConfiguration {
      * @param deadlineHandlerInterceptor the interceptor for handling deadlines
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<DeadlineMessage> deadlineHandlerInterceptor
-    );
+//    FixtureConfiguration registerDeadlineHandlerInterceptor(
+//            MessageHandlerInterceptor<DeadlineMessage> deadlineHandlerInterceptor
+//    );
 
     /**
      * Registers a {@link MessageHandlerInterceptor} for {@link EventMessage EventMessages}.

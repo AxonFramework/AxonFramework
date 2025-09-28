@@ -23,8 +23,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.annotations.Timestamp;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
-import org.axonframework.eventhandling.scheduling.EventScheduler;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotations.MetadataValue;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -51,8 +49,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public class StubSaga {
 
     private static final int TRIGGER_DURATION_MINUTES = 10;
-    @Inject
-    private transient EventScheduler scheduler;
+//    @Inject
+//    private transient EventScheduler scheduler;
     @Inject
     private NonTransientResource nonTransientResource;
     @Inject
@@ -60,7 +58,7 @@ public class StubSaga {
 
     private final List<Object> handledEvents = new ArrayList<>();
 
-    private ScheduleToken timer;
+//    private ScheduleToken timer;
 
     @StartSaga
     @SagaEventHandler(associationProperty = "identifier")
@@ -75,24 +73,24 @@ public class StubSaga {
             associateWith("extraIdentifier", extraIdentifier.toString());
         }
 
-        timer = scheduler.schedule(
-                message.timestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
-                new GenericEventMessage(
-                        new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
-                )
-        );
+//        timer = scheduler.schedule(
+//                message.timestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
+//                new GenericEventMessage(
+//                        new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
+//                )
+//        );
     }
 
     @StartSaga(forceNew = true)
     @SagaEventHandler(associationProperty = "identifier")
     public void handleForcedSagaStart(ForceTriggerSagaStartEvent event, @Timestamp Instant timestamp) {
         handledEvents.add(event);
-        timer = scheduler.schedule(
-                timestamp.plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
-                new GenericEventMessage(
-                        new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
-                )
-        );
+//        timer = scheduler.schedule(
+//                timestamp.plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
+//                new GenericEventMessage(
+//                        new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
+//                )
+//        );
     }
 
     @SagaEventHandler(associationProperty = "identifier")
@@ -135,13 +133,13 @@ public class StubSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleResetTriggerEvent(ResetTriggerEvent event) {
         handledEvents.add(event);
-        scheduler.cancelSchedule(timer);
-        timer = scheduler.schedule(
-                Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
-                new GenericEventMessage(
-                        new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
-                )
-        );
+//        scheduler.cancelSchedule(timer);
+//        timer = scheduler.schedule(
+//                Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
+//                new GenericEventMessage(
+//                        new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
+//                )
+//        );
     }
 
     @SagaEventHandler(associationProperty = "identifier", associationResolver = AssociationResolverStub.class)
@@ -149,9 +147,9 @@ public class StubSaga {
         handledEvents.add(event);
     }
 
-    public EventScheduler getScheduler() {
-        return scheduler;
-    }
+//    public EventScheduler getScheduler() {
+//        return scheduler;
+//    }
 
     public void associateWith(String key, String value) {
         SagaLifecycle.associateWith(key, value);

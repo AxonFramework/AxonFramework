@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -258,8 +257,8 @@ public interface FixtureConfiguration<T> {
      * @param deadlineDispatchInterceptor the interceptor for dispatching (scheduling) deadlines
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
-            MessageDispatchInterceptor<? super DeadlineMessage> deadlineDispatchInterceptor);
+//    FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
+//            MessageDispatchInterceptor<? super DeadlineMessage> deadlineDispatchInterceptor);
 
     /**
      * Registers a deadline handler interceptor which will always be invoked before a deadline is handled to perform a
@@ -268,8 +267,8 @@ public interface FixtureConfiguration<T> {
      * @param deadlineHandlerInterceptor the interceptor for handling deadlines
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<DeadlineMessage> deadlineHandlerInterceptor);
+//    FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
+//            MessageHandlerInterceptor<DeadlineMessage> deadlineHandlerInterceptor);
 
     /**
      * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing objects.

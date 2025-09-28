@@ -16,16 +16,9 @@
 
 package org.axonframework.test.saga;
 
-import jakarta.inject.Inject;
-import org.axonframework.eventhandling.annotations.Timestamp;
-import org.axonframework.eventhandling.scheduling.EventScheduler;
-import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.modelling.saga.SagaEventHandler;
-import org.axonframework.modelling.saga.StartSaga;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -46,48 +39,48 @@ class FixtureTest_ScheduledEvents {
         testSubject = new SagaTestFixture<>(EventSchedulingSaga.class);
     }
 
-    @Test
-    void expectScheduledEvent() {
-        testSubject.givenNoPriorActivity()
-                   .whenPublishingA(new TriggerSagaStartEvent(IDENTIFIER))
-                   .expectScheduledEvent(TRIGGER_DURATION_MINUTES, EVENT_TO_SCHEDULE);
-    }
-
-    @Test
-    void expectScheduledEventOfType() {
-        testSubject.givenNoPriorActivity()
-                   .whenPublishingA(new TriggerSagaStartEvent(IDENTIFIER))
-                   .expectScheduledEventOfType(TRIGGER_DURATION_MINUTES, String.class);
-    }
-
-    @Test
-    void expectScheduledEventDurationAdjustedByElapsedTime() {
-        Duration elapsedTime = Duration.ofMinutes(1);
-
-        testSubject.givenAggregate(IDENTIFIER)
-                   .published(new TriggerSagaStartEvent(IDENTIFIER))
-                   .whenTimeElapses(elapsedTime)
-                   .expectScheduledEvent(TRIGGER_DURATION_MINUTES.minus(elapsedTime), EVENT_TO_SCHEDULE)
-                   .expectNoScheduledDeadlines();
-    }
-
-    @Test
-    void noExpectScheduledEvent() {
-        testSubject.givenAggregate(IDENTIFIER)
-                   .published(new TriggerSagaStartEvent(IDENTIFIER))
-                   .whenAggregate(IDENTIFIER)
-                   .publishes(new CancelScheduledTokenEvent(IDENTIFIER))
-                   .expectNoScheduledEvent(TRIGGER_DURATION_MINUTES, EVENT_TO_SCHEDULE);
-    }
-
-    @Test
-    void noExpectScheduledEventOfType() {
-        testSubject.givenAggregate(IDENTIFIER)
-                   .published(new TriggerSagaStartEvent(IDENTIFIER))
-                   .whenAggregate(IDENTIFIER)
-                   .publishes(new CancelScheduledTokenEvent(IDENTIFIER))
-                   .expectNoScheduledEventOfType(TRIGGER_DURATION_MINUTES, String.class);
-    }
+//    @Test
+//    void expectScheduledEvent() {
+//        testSubject.givenNoPriorActivity()
+//                   .whenPublishingA(new TriggerSagaStartEvent(IDENTIFIER))
+//                   .expectScheduledEvent(TRIGGER_DURATION_MINUTES, EVENT_TO_SCHEDULE);
+//    }
+//
+//    @Test
+//    void expectScheduledEventOfType() {
+//        testSubject.givenNoPriorActivity()
+//                   .whenPublishingA(new TriggerSagaStartEvent(IDENTIFIER))
+//                   .expectScheduledEventOfType(TRIGGER_DURATION_MINUTES, String.class);
+//    }
+//
+//    @Test
+//    void expectScheduledEventDurationAdjustedByElapsedTime() {
+//        Duration elapsedTime = Duration.ofMinutes(1);
+//
+//        testSubject.givenAggregate(IDENTIFIER)
+//                   .published(new TriggerSagaStartEvent(IDENTIFIER))
+//                   .whenTimeElapses(elapsedTime)
+//                   .expectScheduledEvent(TRIGGER_DURATION_MINUTES.minus(elapsedTime), EVENT_TO_SCHEDULE)
+//                   .expectNoScheduledDeadlines();
+//    }
+//
+//    @Test
+//    void noExpectScheduledEvent() {
+//        testSubject.givenAggregate(IDENTIFIER)
+//                   .published(new TriggerSagaStartEvent(IDENTIFIER))
+//                   .whenAggregate(IDENTIFIER)
+//                   .publishes(new CancelScheduledTokenEvent(IDENTIFIER))
+//                   .expectNoScheduledEvent(TRIGGER_DURATION_MINUTES, EVENT_TO_SCHEDULE);
+//    }
+//
+//    @Test
+//    void noExpectScheduledEventOfType() {
+//        testSubject.givenAggregate(IDENTIFIER)
+//                   .published(new TriggerSagaStartEvent(IDENTIFIER))
+//                   .whenAggregate(IDENTIFIER)
+//                   .publishes(new CancelScheduledTokenEvent(IDENTIFIER))
+//                   .expectNoScheduledEventOfType(TRIGGER_DURATION_MINUTES, String.class);
+//    }
 
     private static class CancelScheduledTokenEvent {
 
@@ -106,19 +99,19 @@ class FixtureTest_ScheduledEvents {
     @SuppressWarnings("unused")
     public static class EventSchedulingSaga {
 
-        @Inject
-        private transient EventScheduler scheduler;
-        private ScheduleToken scheduleToken;
+//        @Inject
+//        private transient EventScheduler scheduler;
+//        private ScheduleToken scheduleToken;
 
-        @StartSaga
-        @SagaEventHandler(associationProperty = "identifier")
-        public void on(TriggerSagaStartEvent event, @Timestamp Instant timestamp) {
-            scheduleToken = scheduler.schedule(timestamp.plus(TRIGGER_DURATION_MINUTES), EVENT_TO_SCHEDULE);
-        }
-
-        @SagaEventHandler(associationProperty = "identifier")
-        public void on(CancelScheduledTokenEvent event) {
-            scheduler.cancelSchedule(scheduleToken);
-        }
+//        @StartSaga
+//        @SagaEventHandler(associationProperty = "identifier")
+//        public void on(TriggerSagaStartEvent event, @Timestamp Instant timestamp) {
+//            scheduleToken = scheduler.schedule(timestamp.plus(TRIGGER_DURATION_MINUTES), EVENT_TO_SCHEDULE);
+//        }
+//
+//        @SagaEventHandler(associationProperty = "identifier")
+//        public void on(CancelScheduledTokenEvent event) {
+//            scheduler.cancelSchedule(scheduleToken);
+//        }
     }
 }

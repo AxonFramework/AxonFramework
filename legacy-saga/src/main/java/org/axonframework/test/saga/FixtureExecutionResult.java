@@ -17,12 +17,9 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.hamcrest.Matcher;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 
 
@@ -71,7 +68,7 @@ public interface FixtureExecutionResult {
      * @param matcher  A matcher defining the event expected to be published
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEventMatching(Duration duration, Matcher<? super EventMessage> matcher);
+//    FixtureExecutionResult expectScheduledEventMatching(Duration duration, Matcher<? super EventMessage> matcher);
 
     /**
      * Asserts that a deadline scheduled after given {@code duration} matches the given {@code matcher}.
@@ -80,8 +77,8 @@ public interface FixtureExecutionResult {
      * @param matcher  The matcher that must match with the deadline scheduled at the given time
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledDeadlineMatching(Duration duration,
-                                                           Matcher<? super DeadlineMessage> matcher);
+//    FixtureExecutionResult expectScheduledDeadlineMatching(Duration duration,
+//                                                           Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that an event equal to the given {@code event} has been scheduled for publication after the given
@@ -94,7 +91,7 @@ public interface FixtureExecutionResult {
      * @param event    The expected event
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEvent(Duration duration, Object event);
+//    FixtureExecutionResult expectScheduledEvent(Duration duration, Object event);
 
     /**
      * Asserts that a deadline equal to the given {@code deadline} has been scheduled after the given {@code duration}.
@@ -106,7 +103,7 @@ public interface FixtureExecutionResult {
      * @param deadline The expected deadline
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledDeadline(Duration duration, Object deadline);
+//    FixtureExecutionResult expectScheduledDeadline(Duration duration, Object deadline);
 
     /**
      * Asserts that an event of the given {@code eventType} has been scheduled for publication after the given
@@ -116,7 +113,7 @@ public interface FixtureExecutionResult {
      * @param eventType The type of the expected event
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEventOfType(Duration duration, Class<?> eventType);
+//    FixtureExecutionResult expectScheduledEventOfType(Duration duration, Class<?> eventType);
 
     /**
      * Asserts that a deadline of the given {@code deadlineType} has been scheduled after the given {@code duration}.
@@ -125,7 +122,7 @@ public interface FixtureExecutionResult {
      * @param deadlineType The type of the expected deadline
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
+//    FixtureExecutionResult expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
 
     /**
      * Asserts that a deadline with the given {@code deadlineName} has been scheduled after the given {@code duration}.
@@ -134,7 +131,7 @@ public interface FixtureExecutionResult {
      * @param deadlineName the name of the expected deadline
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledDeadlineWithName(Duration duration, String deadlineName);
+//    FixtureExecutionResult expectScheduledDeadlineWithName(Duration duration, String deadlineName);
 
     /**
      * Asserts that an event matching the given {@code matcher} has been scheduled to be published at the given
@@ -147,8 +144,8 @@ public interface FixtureExecutionResult {
      * @param matcher       A matcher defining the event expected to be published
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEventMatching(Instant scheduledTime,
-                                                        Matcher<? super EventMessage> matcher);
+//    FixtureExecutionResult expectScheduledEventMatching(Instant scheduledTime,
+//                                                        Matcher<? super EventMessage> matcher);
 
     /**
      * Asserts that a deadline matching the given {@code matcher} has been scheduled at the given
@@ -161,8 +158,8 @@ public interface FixtureExecutionResult {
      * @param matcher       The matcher defining the deadline expected
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledDeadlineMatching(Instant scheduledTime,
-                                                           Matcher<? super DeadlineMessage> matcher);
+//    FixtureExecutionResult expectScheduledDeadlineMatching(Instant scheduledTime,
+//                                                           Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that an event equal to the given {@code event} has been scheduled for publication at the given
@@ -178,7 +175,7 @@ public interface FixtureExecutionResult {
      * @param event         The expected event
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEvent(Instant scheduledTime, Object event);
+//    FixtureExecutionResult expectScheduledEvent(Instant scheduledTime, Object event);
 
     /**
      * Asserts that a deadline equal to the given {@code deadline} has been scheduled at the given
@@ -194,7 +191,7 @@ public interface FixtureExecutionResult {
      * @param deadline      The expected deadline
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledDeadline(Instant scheduledTime, Object deadline);
+//    FixtureExecutionResult expectScheduledDeadline(Instant scheduledTime, Object deadline);
 
     /**
      * Asserts that an event of the given {@code eventType} has been scheduled for publication at the given
@@ -207,7 +204,7 @@ public interface FixtureExecutionResult {
      * @param eventType     The type of the expected event
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEventOfType(Instant scheduledTime, Class<?> eventType);
+//    FixtureExecutionResult expectScheduledEventOfType(Instant scheduledTime, Class<?> eventType);
 
     /**
      * Asserts that a deadline of the given {@code deadlineType} has been scheduled at the given {@code scheduledTime}.
@@ -216,7 +213,7 @@ public interface FixtureExecutionResult {
      * @param deadlineType  The type of the expected deadline
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
+//    FixtureExecutionResult expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
 
     /**
      * Asserts that a deadline with the given {@code deadlineName} has been scheduled at the given
@@ -226,7 +223,7 @@ public interface FixtureExecutionResult {
      * @param deadlineName  the name of the expected deadline
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
+//    FixtureExecutionResult expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
 
     /**
      * Asserts that the given commands have been dispatched in exactly the order given. The command objects are compared
@@ -263,7 +260,7 @@ public interface FixtureExecutionResult {
      *
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledEvents();
+//    FixtureExecutionResult expectNoScheduledEvents();
 
     /**
      * Asserts that <b>no</b> event matching the given {@code matcher} has been scheduled to be published after the
@@ -274,8 +271,8 @@ public interface FixtureExecutionResult {
      * @param matcher                 the matcher defining the event which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledEventMatching(Duration durationToScheduledTime,
-                                                          Matcher<? super EventMessage> matcher);
+//    FixtureExecutionResult expectNoScheduledEventMatching(Duration durationToScheduledTime,
+//                                                          Matcher<? super EventMessage> matcher);
 
     /**
      * Asserts that <b>no</b> event equal to the given {@code event} has been scheduled after the given
@@ -289,7 +286,7 @@ public interface FixtureExecutionResult {
      * @param event                   the event which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledEvent(Duration durationToScheduledTime, Object event);
+//    FixtureExecutionResult expectNoScheduledEvent(Duration durationToScheduledTime, Object event);
 
     /**
      * Asserts that <b>no</b> event of the given {@code eventType} has been scheduled after the given
@@ -300,7 +297,7 @@ public interface FixtureExecutionResult {
      * @param eventType               the type of the event which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledEventOfType(Duration durationToScheduledTime, Class<?> eventType);
+//    FixtureExecutionResult expectNoScheduledEventOfType(Duration durationToScheduledTime, Class<?> eventType);
 
     /**
      * Asserts that <b>no</b> event matching the given {@code matcher} has been scheduled at the given
@@ -313,8 +310,8 @@ public interface FixtureExecutionResult {
      * @param matcher       the matcher defining the event which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledEventMatching(Instant scheduledTime,
-                                                          Matcher<? super EventMessage> matcher);
+//    FixtureExecutionResult expectNoScheduledEventMatching(Instant scheduledTime,
+//                                                          Matcher<? super EventMessage> matcher);
 
     /**
      * Asserts that <b>no</b> event equal to the given {@code event} has been scheduled at the given
@@ -330,7 +327,7 @@ public interface FixtureExecutionResult {
      * @param event         the event which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledEvent(Instant scheduledTime, Object event);
+//    FixtureExecutionResult expectNoScheduledEvent(Instant scheduledTime, Object event);
 
     /**
      * Asserts that <b>no</b> event with the given {@code eventType} has been scheduled at the given
@@ -340,7 +337,7 @@ public interface FixtureExecutionResult {
      * @param eventType     the type of the event which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledEventOfType(Instant scheduledTime, Class<?> eventType);
+//    FixtureExecutionResult expectNoScheduledEventOfType(Instant scheduledTime, Class<?> eventType);
 
     /**
      * Asserts that no deadlines are scheduled. This means that either no deadlines were scheduled at all, all schedules
@@ -348,7 +345,7 @@ public interface FixtureExecutionResult {
      *
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadlines();
+//    FixtureExecutionResult expectNoScheduledDeadlines();
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} is scheduled. Can be used to validate if a
@@ -357,7 +354,7 @@ public interface FixtureExecutionResult {
      * @param matcher the matcher defining the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    FixtureExecutionResult expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage> matcher);
+//    FixtureExecutionResult expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} should be scheduled after the given
@@ -370,8 +367,8 @@ public interface FixtureExecutionResult {
      * @param matcher                 the matcher defining the deadline which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadlineMatching(Duration durationToScheduledTime,
-                                                             Matcher<? super DeadlineMessage> matcher);
+//    FixtureExecutionResult expectNoScheduledDeadlineMatching(Duration durationToScheduledTime,
+//                                                             Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled after the given
@@ -387,7 +384,7 @@ public interface FixtureExecutionResult {
      * @param deadline                the deadline which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline);
+//    FixtureExecutionResult expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline);
 
     /**
      * Asserts that <b>no</b> deadline of the given {@code deadlineType} has been scheduled at the given
@@ -400,7 +397,7 @@ public interface FixtureExecutionResult {
      * @param deadlineType            the type of the deadline which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType);
+//    FixtureExecutionResult expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType);
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled after the given
@@ -413,7 +410,7 @@ public interface FixtureExecutionResult {
      * @param deadlineName            the name of the deadline which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadlineWithName(Duration durationToScheduledTime, String deadlineName);
+//    FixtureExecutionResult expectNoScheduledDeadlineWithName(Duration durationToScheduledTime, String deadlineName);
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled at the given
@@ -427,8 +424,8 @@ public interface FixtureExecutionResult {
      * @param matcher       the matcher defining the deadline which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant scheduledTime,
-                                                             Matcher<? super DeadlineMessage> matcher);
+//    FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant scheduledTime,
+//                                                             Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled at the given
@@ -445,7 +442,7 @@ public interface FixtureExecutionResult {
      * @param deadline      the deadline which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadline(Instant scheduledTime, Object deadline);
+//    FixtureExecutionResult expectNoScheduledDeadline(Instant scheduledTime, Object deadline);
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineType} has been scheduled at the given
@@ -456,7 +453,7 @@ public interface FixtureExecutionResult {
      * @param deadlineType  the type of the deadline which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
+//    FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled at the given
@@ -467,7 +464,7 @@ public interface FixtureExecutionResult {
      * @param deadlineName  the name of the deadline which should not be scheduled
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
+//    FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled between the {@code to} and
@@ -481,8 +478,8 @@ public interface FixtureExecutionResult {
      * @param matcher the matcher defining the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant from, Instant to,
-                                                             Matcher<? super DeadlineMessage> matcher);
+//    FixtureExecutionResult expectNoScheduledDeadlineMatching(Instant from, Instant to,
+//                                                             Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled between the {@code to} and
@@ -496,7 +493,7 @@ public interface FixtureExecutionResult {
      * @param deadline the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    FixtureExecutionResult expectNoScheduledDeadline(Instant from, Instant to, Object deadline);
+//    FixtureExecutionResult expectNoScheduledDeadline(Instant from, Instant to, Object deadline);
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineType} has been scheduled between the {@code to} and
@@ -510,7 +507,7 @@ public interface FixtureExecutionResult {
      * @param deadlineType the type of the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType);
+//    FixtureExecutionResult expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType);
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled between the {@code to} and
@@ -524,7 +521,7 @@ public interface FixtureExecutionResult {
      * @param deadlineName the name of the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName);
+//    FixtureExecutionResult expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName);
 
     /**
      * Assert that the saga published events on the EventBus as defined by the given {@code matcher}. Only events
@@ -541,7 +538,7 @@ public interface FixtureExecutionResult {
      * @param matcher the matcher that defines the expected list of deadlines
      * @return the current FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectTriggeredDeadlinesMatching(Matcher<? extends List<? super DeadlineMessage>> matcher);
+//    FixtureExecutionResult expectTriggeredDeadlinesMatching(Matcher<? extends List<? super DeadlineMessage>> matcher);
 
     /**
      * Assert that the saga published events on the EventBus in the exact sequence of the given {@code expected} events.
@@ -560,27 +557,27 @@ public interface FixtureExecutionResult {
      * @param expected the sequence of deadlines expected to have been triggered
      * @return the current FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectTriggeredDeadlines(Object... expected);
+//    FixtureExecutionResult expectTriggeredDeadlines(Object... expected);
 
     /**
      * Asserts that the given {@code expectedDeadlineNames} have been triggered. Matches that the given names are
      * complete, in the same order and match the triggered deadlines by validating with
-     * {@link DeadlineMessage#getDeadlineName()}.
+     * {@code DeadlineMessage#getDeadlineName()}.
      *
      * @param expectedDeadlineNames the sequence of deadline names expected to have been triggered
      * @return the current FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectTriggeredDeadlinesWithName(String... expectedDeadlineNames);
+//    FixtureExecutionResult expectTriggeredDeadlinesWithName(String... expectedDeadlineNames);
 
     /**
      * Asserts that the given {@code expectedDeadlineTypes} have been triggered. Matches that the given types are
      * complete, in the same order and match the triggered deadlines by validating with
-     * {@link DeadlineMessage#payloadType()}.
+     * {@code DeadlineMessage#payloadType()}.
      *
      * @param expectedDeadlineTypes the sequence of deadline types expected to have been triggered
      * @return the current FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes);
+//    FixtureExecutionResult expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes);
 
     /**
      * Expect a successful execution of the given event handler.

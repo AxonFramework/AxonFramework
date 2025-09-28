@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
@@ -209,7 +208,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         if (CommandMessage.class.isAssignableFrom(messageType)) {
             return false;
         }
-        return !DeadlineMessage.class.isAssignableFrom(messageType);
+        return true;
+//        return !DeadlineMessage.class.isAssignableFrom(messageType);
     }
 
     /**

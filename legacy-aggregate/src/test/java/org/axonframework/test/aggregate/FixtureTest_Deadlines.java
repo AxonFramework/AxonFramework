@@ -17,10 +17,6 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.deadline.DeadlineManager;
-import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.deadline.annotations.DeadlineHandler;
 import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
@@ -59,247 +55,247 @@ class FixtureTest_Deadlines {
         fixture = new AggregateTestFixture<>(MyAggregate.class);
     }
 
-    @Test
-    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
-    void expectScheduledDeadline() {
-        fixture.givenNoPriorActivity()
-               .when(CREATE_COMMAND)
-               .expectScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), DEADLINE_PAYLOAD);
-    }
-
-    @Test
-    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
-    void expectScheduledDeadlineOfType() {
-        fixture.givenNoPriorActivity()
-               .when(CREATE_COMMAND)
-               .expectScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
-    }
-
-    @Test
-    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
-    void expectScheduledDeadlineWithName() {
-        fixture.given(new MyAggregateCreatedEvent(AGGREGATE_ID, DEADLINE_NAME, "deadlineId"))
-               .when(new SetPayloadlessDeadlineCommand(AGGREGATE_ID))
-               .expectScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void expectNoScheduledDeadline() {
-        fixture.givenCommands(CREATE_COMMAND)
-               .when(new ResetTriggerCommand(AGGREGATE_ID))
-               .expectNoScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), DEADLINE_PAYLOAD);
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void expectNoScheduledDeadlineOfType() {
-        fixture.givenCommands(CREATE_COMMAND)
-               .when(new ResetTriggerCommand(AGGREGATE_ID))
-               .expectNoScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void expectNoScheduledDeadlineWithName() {
-        fixture.givenCommands(CREATE_COMMAND)
-               .when(new ResetTriggerCommand(AGGREGATE_ID))
-               .expectNoScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), DEADLINE_NAME);
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void expectTriggeredDeadlinesMatching() {
-        fixture.givenNoPriorActivity()
-               .andGivenCommands(CREATE_COMMAND)
-               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-               .expectTriggeredDeadlinesMatching(payloadsMatching(exactSequenceOf(deepEquals(DEADLINE_PAYLOAD))));
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void triggeredDeadlinesMatching() {
-        fixture.givenNoPriorActivity()
-               .andGivenCommands(CREATE_COMMAND)
-               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-               .expectTriggeredDeadlinesMatching(payloadsMatching(exactSequenceOf(deepEquals(DEADLINE_PAYLOAD))));
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void expectTriggeredDeadlines() {
-        fixture.givenNoPriorActivity()
-               .andGivenCommands(CREATE_COMMAND)
-               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-               .expectTriggeredDeadlines(DEADLINE_PAYLOAD);
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void triggeredDeadlines() {
-        fixture.givenNoPriorActivity()
-               .andGivenCommands(CREATE_COMMAND)
-               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-               .expectTriggeredDeadlines(DEADLINE_PAYLOAD);
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void triggeredDeadlinesFailsForIncorrectDeadlines() {
-        ResultValidator<MyAggregate> given =
-                fixture.givenNoPriorActivity()
-                       .andGivenCommands(CREATE_COMMAND)
-                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
-
-        AxonAssertionError result = assertThrows(
-                AxonAssertionError.class,
-                () -> given.expectTriggeredDeadlines(NONE_OCCURRING_DEADLINE_PAYLOAD)
-        );
-
-        assertTrue(
-                result.getMessage().contains("Expected deadlines were not triggered at the given deadline manager.")
-        );
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void triggeredDeadlinesFailsForIncorrectNumberOfDeadlines() {
-        ResultValidator<MyAggregate> given =
-                fixture.givenNoPriorActivity()
-                       .andGivenCommands(CREATE_COMMAND)
-                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
-
-        AxonAssertionError result = assertThrows(
-                AxonAssertionError.class,
-                () -> given.expectTriggeredDeadlines(DEADLINE_PAYLOAD, NONE_OCCURRING_DEADLINE_PAYLOAD)
-        );
-
-        assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void triggeredDeadlinesWithName() {
-        fixture.givenNoPriorActivity()
-               .andGivenCommands(CREATE_COMMAND)
-               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-               .expectTriggeredDeadlinesWithName(DEADLINE_NAME);
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void triggeredDeadlinesWithNameFailsForIncorrectDeadlines() {
-        ResultValidator<MyAggregate> given =
-                fixture.givenNoPriorActivity()
-                       .andGivenCommands(CREATE_COMMAND)
-                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
-
-        AxonAssertionError result = assertThrows(
-                AxonAssertionError.class,
-                () -> given.expectTriggeredDeadlinesWithName(NONE_OCCURRING_DEADLINE_PAYLOAD)
-        );
-
-        assertTrue(
-                result.getMessage().contains("Expected deadlines were not triggered at the given deadline manager.")
-        );
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void triggeredDeadlinesWithNameFailsForIncorrectNumberOfDeadlines() {
-        ResultValidator<MyAggregate> given =
-                fixture.givenNoPriorActivity()
-                       .andGivenCommands(CREATE_COMMAND)
-                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
-
-        AxonAssertionError result = assertThrows(
-                AxonAssertionError.class,
-                () -> given.expectTriggeredDeadlinesWithName(DEADLINE_PAYLOAD, NONE_OCCURRING_DEADLINE_PAYLOAD)
-        );
-
-        assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void triggeredDeadlinesOfType() {
-        fixture.givenNoPriorActivity()
-               .andGivenCommands(CREATE_COMMAND)
-               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-               .expectTriggeredDeadlinesOfType(String.class);
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void triggeredDeadlinesOfTypeFailsForIncorrectDeadlines() {
-        ResultValidator<MyAggregate> given =
-                fixture.givenNoPriorActivity()
-                       .andGivenCommands(CREATE_COMMAND)
-                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
-
-        AxonAssertionError result = assertThrows(
-                AxonAssertionError.class,
-                () -> given.expectTriggeredDeadlinesOfType(Integer.class)
-        );
-
-        assertTrue(
-                result.getMessage().contains("Expected deadlines were not triggered at the given deadline manager.")
-        );
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void triggeredDeadlinesOfTypeFailsForIncorrectNumberOfDeadlines() {
-        ResultValidator<MyAggregate> given =
-                fixture.givenNoPriorActivity()
-                       .andGivenCommands(CREATE_COMMAND)
-                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
-
-        AxonAssertionError result = assertThrows(
-                AxonAssertionError.class,
-                () -> given.expectTriggeredDeadlinesOfType(String.class, String.class)
-        );
-
-        assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void deadlineWhichCancelsSchedule() {
-        fixture.givenNoPriorActivity()
-               .andGivenCommands(CREATE_COMMAND)
-               .when(new ResetTriggerCommand(AGGREGATE_ID))
-               .expectNoScheduledDeadlines();
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void deadlineWhichCancelsAll() {
-        fixture.givenNoPriorActivity()
-               .andGivenCommands(CREATE_COMMAND)
-               .when(new ResetAllTriggerCommand(AGGREGATE_ID))
-               .expectNoScheduledDeadlines();
-    }
-
-    @Test
-    @Disabled("TODO #3065 - Revisit Deadline support")
-    void deadlineDispatcherInterceptor() {
-        fixture.registerDeadlineDispatchInterceptor(
-                       (message, context, chain) ->
-                               chain.proceed(
-                                       asDeadlineMessage(
-                                               message.getDeadlineName(),
-                                               "fakeDeadlineDetails",
-                                               message.timestamp()
-                                       ),
-                                       context
-                               )
-               )
-               .givenNoPriorActivity()
-               .andGivenCommands(CREATE_COMMAND)
-               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
-               .expectTriggeredDeadlines("fakeDeadlineDetails");
-    }
+//    @Test
+//    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
+//    void expectScheduledDeadline() {
+//        fixture.givenNoPriorActivity()
+//               .when(CREATE_COMMAND)
+//               .expectScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), DEADLINE_PAYLOAD);
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
+//    void expectScheduledDeadlineOfType() {
+//        fixture.givenNoPriorActivity()
+//               .when(CREATE_COMMAND)
+//               .expectScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3073 - Revisit Aggregate Test Fixture")
+//    void expectScheduledDeadlineWithName() {
+//        fixture.given(new MyAggregateCreatedEvent(AGGREGATE_ID, DEADLINE_NAME, "deadlineId"))
+//               .when(new SetPayloadlessDeadlineCommand(AGGREGATE_ID))
+//               .expectScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void expectNoScheduledDeadline() {
+//        fixture.givenCommands(CREATE_COMMAND)
+//               .when(new ResetTriggerCommand(AGGREGATE_ID))
+//               .expectNoScheduledDeadline(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), DEADLINE_PAYLOAD);
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void expectNoScheduledDeadlineOfType() {
+//        fixture.givenCommands(CREATE_COMMAND)
+//               .when(new ResetTriggerCommand(AGGREGATE_ID))
+//               .expectNoScheduledDeadlineOfType(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), String.class);
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void expectNoScheduledDeadlineWithName() {
+//        fixture.givenCommands(CREATE_COMMAND)
+//               .when(new ResetTriggerCommand(AGGREGATE_ID))
+//               .expectNoScheduledDeadlineWithName(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), DEADLINE_NAME);
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void expectTriggeredDeadlinesMatching() {
+//        fixture.givenNoPriorActivity()
+//               .andGivenCommands(CREATE_COMMAND)
+//               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+//               .expectTriggeredDeadlinesMatching(payloadsMatching(exactSequenceOf(deepEquals(DEADLINE_PAYLOAD))));
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void triggeredDeadlinesMatching() {
+//        fixture.givenNoPriorActivity()
+//               .andGivenCommands(CREATE_COMMAND)
+//               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+//               .expectTriggeredDeadlinesMatching(payloadsMatching(exactSequenceOf(deepEquals(DEADLINE_PAYLOAD))));
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void expectTriggeredDeadlines() {
+//        fixture.givenNoPriorActivity()
+//               .andGivenCommands(CREATE_COMMAND)
+//               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+//               .expectTriggeredDeadlines(DEADLINE_PAYLOAD);
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void triggeredDeadlines() {
+//        fixture.givenNoPriorActivity()
+//               .andGivenCommands(CREATE_COMMAND)
+//               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+//               .expectTriggeredDeadlines(DEADLINE_PAYLOAD);
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void triggeredDeadlinesFailsForIncorrectDeadlines() {
+//        ResultValidator<MyAggregate> given =
+//                fixture.givenNoPriorActivity()
+//                       .andGivenCommands(CREATE_COMMAND)
+//                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+//
+//        AxonAssertionError result = assertThrows(
+//                AxonAssertionError.class,
+//                () -> given.expectTriggeredDeadlines(NONE_OCCURRING_DEADLINE_PAYLOAD)
+//        );
+//
+//        assertTrue(
+//                result.getMessage().contains("Expected deadlines were not triggered at the given deadline manager.")
+//        );
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void triggeredDeadlinesFailsForIncorrectNumberOfDeadlines() {
+//        ResultValidator<MyAggregate> given =
+//                fixture.givenNoPriorActivity()
+//                       .andGivenCommands(CREATE_COMMAND)
+//                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+//
+//        AxonAssertionError result = assertThrows(
+//                AxonAssertionError.class,
+//                () -> given.expectTriggeredDeadlines(DEADLINE_PAYLOAD, NONE_OCCURRING_DEADLINE_PAYLOAD)
+//        );
+//
+//        assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void triggeredDeadlinesWithName() {
+//        fixture.givenNoPriorActivity()
+//               .andGivenCommands(CREATE_COMMAND)
+//               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+//               .expectTriggeredDeadlinesWithName(DEADLINE_NAME);
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void triggeredDeadlinesWithNameFailsForIncorrectDeadlines() {
+//        ResultValidator<MyAggregate> given =
+//                fixture.givenNoPriorActivity()
+//                       .andGivenCommands(CREATE_COMMAND)
+//                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+//
+//        AxonAssertionError result = assertThrows(
+//                AxonAssertionError.class,
+//                () -> given.expectTriggeredDeadlinesWithName(NONE_OCCURRING_DEADLINE_PAYLOAD)
+//        );
+//
+//        assertTrue(
+//                result.getMessage().contains("Expected deadlines were not triggered at the given deadline manager.")
+//        );
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void triggeredDeadlinesWithNameFailsForIncorrectNumberOfDeadlines() {
+//        ResultValidator<MyAggregate> given =
+//                fixture.givenNoPriorActivity()
+//                       .andGivenCommands(CREATE_COMMAND)
+//                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+//
+//        AxonAssertionError result = assertThrows(
+//                AxonAssertionError.class,
+//                () -> given.expectTriggeredDeadlinesWithName(DEADLINE_PAYLOAD, NONE_OCCURRING_DEADLINE_PAYLOAD)
+//        );
+//
+//        assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void triggeredDeadlinesOfType() {
+//        fixture.givenNoPriorActivity()
+//               .andGivenCommands(CREATE_COMMAND)
+//               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+//               .expectTriggeredDeadlinesOfType(String.class);
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void triggeredDeadlinesOfTypeFailsForIncorrectDeadlines() {
+//        ResultValidator<MyAggregate> given =
+//                fixture.givenNoPriorActivity()
+//                       .andGivenCommands(CREATE_COMMAND)
+//                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+//
+//        AxonAssertionError result = assertThrows(
+//                AxonAssertionError.class,
+//                () -> given.expectTriggeredDeadlinesOfType(Integer.class)
+//        );
+//
+//        assertTrue(
+//                result.getMessage().contains("Expected deadlines were not triggered at the given deadline manager.")
+//        );
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void triggeredDeadlinesOfTypeFailsForIncorrectNumberOfDeadlines() {
+//        ResultValidator<MyAggregate> given =
+//                fixture.givenNoPriorActivity()
+//                       .andGivenCommands(CREATE_COMMAND)
+//                       .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1));
+//
+//        AxonAssertionError result = assertThrows(
+//                AxonAssertionError.class,
+//                () -> given.expectTriggeredDeadlinesOfType(String.class, String.class)
+//        );
+//
+//        assertTrue(result.getMessage().contains("Got wrong number of triggered deadlines."));
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void deadlineWhichCancelsSchedule() {
+//        fixture.givenNoPriorActivity()
+//               .andGivenCommands(CREATE_COMMAND)
+//               .when(new ResetTriggerCommand(AGGREGATE_ID))
+//               .expectNoScheduledDeadlines();
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void deadlineWhichCancelsAll() {
+//        fixture.givenNoPriorActivity()
+//               .andGivenCommands(CREATE_COMMAND)
+//               .when(new ResetAllTriggerCommand(AGGREGATE_ID))
+//               .expectNoScheduledDeadlines();
+//    }
+//
+//    @Test
+//    @Disabled("TODO #3065 - Revisit Deadline support")
+//    void deadlineDispatcherInterceptor() {
+//        fixture.registerDeadlineDispatchInterceptor(
+//                       (message, context, chain) ->
+//                               chain.proceed(
+//                                       asDeadlineMessage(
+//                                               message.getDeadlineName(),
+//                                               "fakeDeadlineDetails",
+//                                               message.timestamp()
+//                                       ),
+//                                       context
+//                               )
+//               )
+//               .givenNoPriorActivity()
+//               .andGivenCommands(CREATE_COMMAND)
+//               .whenTimeElapses(Duration.ofMinutes(TRIGGER_DURATION_MINUTES + 1))
+//               .expectTriggeredDeadlines("fakeDeadlineDetails");
+//    }
 
     @Test
     @Disabled("TODO #3065 - Revisit Deadline support")
@@ -320,13 +316,13 @@ class FixtureTest_Deadlines {
     }
 
 
-    public static DeadlineMessage asDeadlineMessage(String deadlineName,
-                                                    Object payload,
-                                                    Instant expiryTime) {
-        return new GenericDeadlineMessage(
-                deadlineName, new GenericMessage(new MessageType(payload.getClass()), payload), () -> expiryTime
-        );
-    }
+//    public static DeadlineMessage asDeadlineMessage(String deadlineName,
+//                                                    Object payload,
+//                                                    Instant expiryTime) {
+//        return new GenericDeadlineMessage(
+//                deadlineName, new GenericMessage(new MessageType(payload.getClass()), payload), () -> expiryTime
+//        );
+//    }
 
     private static class CreateMyAggregateCommand {
 
@@ -398,46 +394,46 @@ class FixtureTest_Deadlines {
         public MyAggregate() {
         }
 
-        @CommandHandler
-        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
-        public void handle(CreateMyAggregateCommand command, DeadlineManager deadlineManager) {
-            String deadlineName = DEADLINE_NAME;
-            String deadlineId = deadlineManager.schedule(
-                    Duration.ofMinutes(TRIGGER_DURATION_MINUTES), deadlineName, DEADLINE_PAYLOAD
-            );
-            apply(new MyAggregateCreatedEvent(command.aggregateId, deadlineName, deadlineId));
-        }
-
-        @CommandHandler
-        public void handle(ResetTriggerCommand command, DeadlineManager deadlineManager) {
-            deadlineManager.cancelSchedule(deadlineName, deadlineId);
-        }
-
-        @CommandHandler
-        public void handle(ResetAllTriggerCommand command, DeadlineManager deadlineManager) {
-            deadlineManager.cancelAll(deadlineName);
-        }
-
-        @CommandHandler
-        public void handle(SetPayloadlessDeadlineCommand command, DeadlineManager deadlineManager) {
-            deadlineManager.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
-        }
-
-        @DeadlineHandler
-        public void handleDeadline(String deadlineInfo) {
-            // Nothing to be done for test purposes, having this deadline handler invoked is sufficient
-        }
-
-        @DeadlineHandler(deadlineName = "payloadless-deadline")
-        public void handle() {
-            // Nothing to be done for test purposes, having this deadline handler invoked is sufficient
-        }
-
-        @EventSourcingHandler
-        public void on(MyAggregateCreatedEvent event) {
-            this.id = event.aggregateId;
-            this.deadlineName = event.deadlineName;
-            this.deadlineId = event.deadlineId;
-        }
+//        @CommandHandler
+//        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+//        public void handle(CreateMyAggregateCommand command, DeadlineManager deadlineManager) {
+//            String deadlineName = DEADLINE_NAME;
+//            String deadlineId = deadlineManager.schedule(
+//                    Duration.ofMinutes(TRIGGER_DURATION_MINUTES), deadlineName, DEADLINE_PAYLOAD
+//            );
+//            apply(new MyAggregateCreatedEvent(command.aggregateId, deadlineName, deadlineId));
+//        }
+//
+//        @CommandHandler
+//        public void handle(ResetTriggerCommand command, DeadlineManager deadlineManager) {
+//            deadlineManager.cancelSchedule(deadlineName, deadlineId);
+//        }
+//
+//        @CommandHandler
+//        public void handle(ResetAllTriggerCommand command, DeadlineManager deadlineManager) {
+//            deadlineManager.cancelAll(deadlineName);
+//        }
+//
+//        @CommandHandler
+//        public void handle(SetPayloadlessDeadlineCommand command, DeadlineManager deadlineManager) {
+//            deadlineManager.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES), "payloadless-deadline");
+//        }
+//
+//        @DeadlineHandler
+//        public void handleDeadline(String deadlineInfo) {
+//            // Nothing to be done for test purposes, having this deadline handler invoked is sufficient
+//        }
+//
+//        @DeadlineHandler(deadlineName = "payloadless-deadline")
+//        public void handle() {
+//            // Nothing to be done for test purposes, having this deadline handler invoked is sufficient
+//        }
+//
+//        @EventSourcingHandler
+//        public void on(MyAggregateCreatedEvent event) {
+//            this.id = event.aggregateId;
+//            this.deadlineName = event.deadlineName;
+//            this.deadlineId = event.deadlineId;
+//        }
     }
 }

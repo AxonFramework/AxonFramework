@@ -17,7 +17,6 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.hamcrest.Matcher;
 
@@ -215,7 +214,7 @@ public interface ResultValidator<T> {
      * @param matcher  the matcher that must match with the deadline scheduled at the given time
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectScheduledDeadlineMatching(Duration duration, Matcher<? super DeadlineMessage> matcher);
+//    ResultValidator<T> expectScheduledDeadlineMatching(Duration duration, Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that a deadline equal to the given {@code deadline} has been scheduled after the given {@code duration}.
@@ -227,7 +226,7 @@ public interface ResultValidator<T> {
      * @param deadline the expected deadline
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectScheduledDeadline(Duration duration, Object deadline);
+//    ResultValidator<T> expectScheduledDeadline(Duration duration, Object deadline);
 
     /**
      * Asserts that a deadline of the given {@code deadlineType} has been scheduled after the given {@code duration}.
@@ -236,7 +235,7 @@ public interface ResultValidator<T> {
      * @param deadlineType the type of the expected deadline
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
+//    ResultValidator<T> expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType);
 
     /**
      * Asserts that a deadline with the given {@code deadlineName} has been scheduled after the given {@code duration}.
@@ -245,7 +244,7 @@ public interface ResultValidator<T> {
      * @param deadlineName the name of the expected deadline
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectScheduledDeadlineWithName(Duration duration, String deadlineName);
+//    ResultValidator<T> expectScheduledDeadlineWithName(Duration duration, String deadlineName);
 
     /**
      * Asserts that a deadline matching the given {@code matcher} has been scheduled at the given {@code
@@ -258,8 +257,8 @@ public interface ResultValidator<T> {
      * @param matcher       the matcher defining the deadline expected
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectScheduledDeadlineMatching(Instant scheduledTime,
-                                                       Matcher<? super DeadlineMessage> matcher);
+//    ResultValidator<T> expectScheduledDeadlineMatching(Instant scheduledTime,
+//                                                       Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that a deadline equal to the given {@code deadline} has been scheduled at the given {@code
@@ -275,7 +274,7 @@ public interface ResultValidator<T> {
      * @param deadline      the expected deadline
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectScheduledDeadline(Instant scheduledTime, Object deadline);
+//    ResultValidator<T> expectScheduledDeadline(Instant scheduledTime, Object deadline);
 
     /**
      * Asserts that a deadline of the given {@code deadlineType} has been scheduled at the given {@code scheduledTime}.
@@ -284,7 +283,7 @@ public interface ResultValidator<T> {
      * @param deadlineType  the type of the expected deadline
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
+//    ResultValidator<T> expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
 
     /**
      * Asserts that a deadline with the given {@code deadlineName} has been scheduled at the given {@code
@@ -294,7 +293,7 @@ public interface ResultValidator<T> {
      * @param deadlineName  the name of the expected deadline
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
+//    ResultValidator<T> expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
 
     /**
      * Asserts that no deadlines are scheduled. This means that either no deadlines were scheduled at all, all schedules
@@ -302,7 +301,7 @@ public interface ResultValidator<T> {
      *
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlines();
+//    ResultValidator<T> expectNoScheduledDeadlines();
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} is scheduled. Can be used to validate if a
@@ -311,7 +310,7 @@ public interface ResultValidator<T> {
      * @param matcher the matcher defining the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage> matcher);
+//    ResultValidator<T> expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} should be scheduled after the given {@code
@@ -323,8 +322,8 @@ public interface ResultValidator<T> {
      * @param matcher                 the matcher defining the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineMatching(Duration durationToScheduledTime,
-                                                         Matcher<? super DeadlineMessage> matcher);
+//    ResultValidator<T> expectNoScheduledDeadlineMatching(Duration durationToScheduledTime,
+//                                                         Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled after the given {@code
@@ -339,7 +338,7 @@ public interface ResultValidator<T> {
      * @param deadline                the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline);
+//    ResultValidator<T> expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline);
 
     /**
      * Asserts that <b>no</b> deadline of the given {@code deadlineType} has been scheduled after the given {@code
@@ -351,7 +350,7 @@ public interface ResultValidator<T> {
      * @param deadlineType            the type of the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType);
+//    ResultValidator<T> expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType);
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled after the given {@code
@@ -363,7 +362,7 @@ public interface ResultValidator<T> {
      * @param deadlineName            the name of the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineWithName(Duration durationToScheduledTime, String deadlineName);
+//    ResultValidator<T> expectNoScheduledDeadlineWithName(Duration durationToScheduledTime, String deadlineName);
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled at the given {@code
@@ -377,8 +376,8 @@ public interface ResultValidator<T> {
      * @param matcher       the matcher defining the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineMatching(Instant scheduledTime,
-                                                         Matcher<? super DeadlineMessage> matcher);
+//    ResultValidator<T> expectNoScheduledDeadlineMatching(Instant scheduledTime,
+//                                                         Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled at the given {@code
@@ -395,7 +394,7 @@ public interface ResultValidator<T> {
      * @param deadline      the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadline(Instant scheduledTime, Object deadline);
+//    ResultValidator<T> expectNoScheduledDeadline(Instant scheduledTime, Object deadline);
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineType} has been scheduled at the given {@code
@@ -406,7 +405,7 @@ public interface ResultValidator<T> {
      * @param deadlineType  the type of the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
+//    ResultValidator<T> expectNoScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType);
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled at the given {@code
@@ -417,7 +416,7 @@ public interface ResultValidator<T> {
      * @param deadlineName  the name of the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
+//    ResultValidator<T> expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName);
 
     /**
      * Asserts that <b>no</b> deadline matching the given {@code matcher} has been scheduled between the {@code to} and {@code from} times, where {@code to} and
@@ -428,7 +427,7 @@ public interface ResultValidator<T> {
      * @param matcher the matcher defining the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage> matcher);
+//    ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage> matcher);
 
     /**
      * Asserts that <b>no</b> deadline equal to the given {@code deadline} has been scheduled between the {@code to} and {@code from} times, where {@code to}
@@ -439,7 +438,7 @@ public interface ResultValidator<T> {
      * @param deadline the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadline(Instant from, Instant to, Object deadline);
+//    ResultValidator<T> expectNoScheduledDeadline(Instant from, Instant to, Object deadline);
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineType} has been scheduled between the {@code to} and {@code from} times, where {@code to}
@@ -450,7 +449,7 @@ public interface ResultValidator<T> {
      * @param deadlineType the type of the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType);
+//    ResultValidator<T> expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType);
 
     /**
      * Asserts that <b>no</b> deadline with the given {@code deadlineName} has been scheduled between the {@code to} and {@code from} times, where {@code to}
@@ -461,7 +460,7 @@ public interface ResultValidator<T> {
      * @param deadlineName the name of the deadline which should not be scheduled
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName);
+//    ResultValidator<T> expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName);
 
     /**
      * Asserts that deadlines matching the given {@code matcher} have been triggered for this aggregate.
@@ -469,7 +468,7 @@ public interface ResultValidator<T> {
      * @param matcher the matcher that defines the expected list of deadlines
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectTriggeredDeadlinesMatching(Matcher<? extends List<? super DeadlineMessage>> matcher);
+//    ResultValidator<T> expectTriggeredDeadlinesMatching(Matcher<? extends List<? super DeadlineMessage>> matcher);
 
     /**
      * Asserts that given {@code expected} deadlines have been triggered. Deadlines are compared by their type
@@ -478,7 +477,7 @@ public interface ResultValidator<T> {
      * @param expected the sequence of deadlines expected to have been triggered
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectTriggeredDeadlines(Object... expected);
+//    ResultValidator<T> expectTriggeredDeadlines(Object... expected);
 
     /**
      * Asserts that the given {@code expectedDeadlineNames} have been triggered. Matches that the given names are
@@ -488,7 +487,7 @@ public interface ResultValidator<T> {
      * @param expectedDeadlineNames the sequence of deadline names expected to have been triggered
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectTriggeredDeadlinesWithName(String... expectedDeadlineNames);
+//    ResultValidator<T> expectTriggeredDeadlinesWithName(String... expectedDeadlineNames);
 
     /**
      * Asserts that the given {@code expectedDeadlineTypes} have been triggered. Matches that the given types are
@@ -498,7 +497,7 @@ public interface ResultValidator<T> {
      * @param expectedDeadlineTypes the sequence of deadline types expected to have been triggered
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator<T> expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes);
+//    ResultValidator<T> expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes);
 
     /**
      * Asserts that the Aggregate has been marked for deletion.

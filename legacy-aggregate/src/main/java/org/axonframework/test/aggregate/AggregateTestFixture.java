@@ -28,7 +28,6 @@ import org.axonframework.commandhandling.annotations.AnnotatedCommandHandlingCom
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -82,7 +81,6 @@ import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaMode
 import org.axonframework.serialization.PassThroughConverter;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.FixtureExecutionException;
-import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
@@ -137,7 +135,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private boolean useStateStorage;
     private RepositoryProvider repositoryProvider;
     private IdentifierValidatingRepository<T> repository;
-    private final StubDeadlineManager deadlineManager;
+    //    private final StubDeadlineManager deadlineManager;
     private String aggregateIdentifier;
     private Deque<DomainEventMessage> givenEvents;
     private Deque<DomainEventMessage> storedEvents;
@@ -156,13 +154,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      * @param aggregateType the aggregate to initialize the test fixture for
      */
     public AggregateTestFixture(Class<T> aggregateType) {
-        deadlineManager = new StubDeadlineManager();
+//        deadlineManager = new StubDeadlineManager();
         commandBus = new SimpleCommandBus(new SimpleUnitOfWorkFactory(EmptyApplicationContext.INSTANCE),
                                           Collections.emptyList());
         eventStore = new RecordingEventStore();
         resources.add(commandBus);
         resources.add(eventStore);
-        resources.add(deadlineManager);
+//        resources.add(deadlineManager);
 
         this.aggregateType = aggregateType;
         this.storedEvents = new LinkedList<>();
@@ -291,19 +289,19 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
-    @Override
-    public FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
-            MessageDispatchInterceptor<? super DeadlineMessage> deadlineDispatchInterceptor) {
-        this.deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
-        return this;
-    }
-
-    @Override
-    public FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
-            MessageHandlerInterceptor<DeadlineMessage> deadlineHandlerInterceptor) {
-        this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
-        return this;
-    }
+//    @Override
+//    public FixtureConfiguration<T> registerDeadlineDispatchInterceptor(
+//            MessageDispatchInterceptor<? super DeadlineMessage> deadlineDispatchInterceptor) {
+//        this.deadlineManager.registerDispatchInterceptor(deadlineDispatchInterceptor);
+//        return this;
+//    }
+//
+//    @Override
+//    public FixtureConfiguration<T> registerDeadlineHandlerInterceptor(
+//            MessageHandlerInterceptor<DeadlineMessage> deadlineHandlerInterceptor) {
+//        this.deadlineManager.registerHandlerInterceptor(deadlineHandlerInterceptor);
+//        return this;
+//    }
 
     @Override
     public FixtureConfiguration<T> registerFieldFilter(FieldFilter fieldFilter) {
@@ -417,7 +415,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                     aggregateIdentifier,
                     sequenceNumber++,
                     new GenericMessage(new MessageType(payload.getClass()), payload, metadata),
-                    deadlineManager.getCurrentDateTime()
+                    Instant.now()
+//                    deadlineManager.getCurrentDateTime()
             );
             this.givenEvents.add(eventMessage);
         }
@@ -479,26 +478,26 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public TestExecutor<T> andGivenCurrentTime(Instant currentTime) {
-        deadlineManager.initializeAt(currentTime);
+//        deadlineManager.initializeAt(currentTime);
         return this;
     }
 
     @Override
     public Instant currentTime() {
-        return deadlineManager.getCurrentDateTime();
+        return Instant.now();//deadlineManager.getCurrentDateTime();
     }
 
     @Override
     public ResultValidator<T> whenTimeElapses(Duration elapsedTime) {
         logger.debug("Starting WHEN-phase");
-        deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
+//        deadlineManager.advanceTimeBy(elapsedTime, this::handleDeadline);
         return buildResultValidator();
     }
 
     @Override
     public ResultValidator<T> whenTimeAdvancesTo(Instant newPointInTime) {
         logger.debug("Starting WHEN-phase");
-        deadlineManager.advanceTimeTo(newPointInTime, this::handleDeadline);
+//        deadlineManager.advanceTimeTo(newPointInTime, this::handleDeadline);
         return buildResultValidator();
     }
 
@@ -554,8 +553,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
         ResultValidatorImpl<T> resultValidator = new ResultValidatorImpl<>(publishedEvents,
                                                                            fieldFilter,
-                                                                           () -> repository.getAggregate(),
-                                                                           deadlineManager);
+                                                                           () -> repository.getAggregate()
+//                , deadlineManager
+        );
 
         executeAtSimulatedTime(() -> whenPhase.accept(resultValidator));
 
@@ -572,22 +572,22 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
      * Handles the given {@code deadlineMessage} in the aggregate described by the given {@code aggregateDescriptor}.
      * Deadline message is handled in the scope of a {@link LegacyUnitOfWork}. If handling the deadline results in an
      * exception, the exception will be wrapped in a {@link FixtureExecutionException}.
-     *
-     * @param aggregateDescriptor A {@link ScopeDescriptor} describing the aggregate under test
-     * @param deadlineMessage     The {@link DeadlineMessage} to be handled
+     * <p>
+     * //     * @param aggregateDescriptor A {@link ScopeDescriptor} describing the aggregate under test //     * @param
+     * deadlineMessage     The {@code DeadlineMessage} to be handled
      */
-    protected void handleDeadline(ScopeDescriptor aggregateDescriptor, DeadlineMessage deadlineMessage)
-            throws Exception {
-        ensureRepositoryConfiguration();
-        repository.send(deadlineMessage, new LegacyMessageSupportingContext(deadlineMessage), aggregateDescriptor);
-    }
-
+//    protected void handleDeadline(ScopeDescriptor aggregateDescriptor, DeadlineMessage deadlineMessage)
+//            throws Exception {
+//        ensureRepositoryConfiguration();
+//        repository.send(deadlineMessage, new LegacyMessageSupportingContext(deadlineMessage), aggregateDescriptor);
+//    }
     private ResultValidator<T> buildResultValidator() {
         MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
         ResultValidatorImpl<T> resultValidator = new ResultValidatorImpl<>(publishedEvents,
                                                                            fieldFilter,
-                                                                           () -> repository.getAggregate(),
-                                                                           deadlineManager);
+                                                                           () -> repository.getAggregate()
+//                , deadlineManager
+        );
         resultValidator.assertValidRecording();
         logger.debug("Starting EXPECT-phase");
         return resultValidator;

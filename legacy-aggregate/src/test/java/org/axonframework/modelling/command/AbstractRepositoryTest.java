@@ -16,8 +16,6 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.deadline.DeadlineMessage;
-import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -165,43 +163,43 @@ class AbstractRepositoryTest {
         assertFalse(testSubject.canResolve(new AggregateScopeDescriptor("other-non-matching-type", AGGREGATE_ID)));
     }
 
-    @Test
-    void sendWorksAsExpected() throws Exception {
-        DeadlineMessage testMsg = aDeadlineMessage();
-        ProcessingContext context = StubProcessingContext.forMessage(testMsg);
-        AggregateScopeDescriptor testDescriptor =
-                new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
-
-        testSubject.send(testMsg, context, testDescriptor);
-
-        verify(spiedAggregate).handle(testMsg, context);
-    }
-
-    @Test
-    void sendThrowsIllegalArgumentExceptionIfHandleFails() throws Exception {
-        DeadlineMessage testMsg = aDeadlineMessage();
-        ProcessingContext context = StubProcessingContext.forMessage(testMsg);
-        AggregateScopeDescriptor testDescriptor =
-                new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
-
-        //noinspection ConstantConditions
-        assertThrows(IllegalArgumentException.class, () -> testSubject.send(failureMessage, context, testDescriptor));
-
-        //noinspection ConstantConditions
-        verify(spiedAggregate).handle(failureMessage, context);
-    }
-
-    @Test
-    void sendFailsSilentlyOnAggregateNotFoundException() throws Exception {
-        DeadlineMessage testMsg = aDeadlineMessage();
-        ProcessingContext context = StubProcessingContext.forMessage(testMsg);
-        AggregateScopeDescriptor testDescriptor =
-                new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), "some-other-aggregate-id");
-
-        testSubject.send(testMsg, context, testDescriptor);
-
-        verifyNoInteractions(spiedAggregate);
-    }
+//    @Test
+//    void sendWorksAsExpected() throws Exception {
+//        DeadlineMessage testMsg = aDeadlineMessage();
+//        ProcessingContext context = StubProcessingContext.forMessage(testMsg);
+//        AggregateScopeDescriptor testDescriptor =
+//                new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
+//
+//        testSubject.send(testMsg, context, testDescriptor);
+//
+//        verify(spiedAggregate).handle(testMsg, context);
+//    }
+//
+//    @Test
+//    void sendThrowsIllegalArgumentExceptionIfHandleFails() throws Exception {
+//        DeadlineMessage testMsg = aDeadlineMessage();
+//        ProcessingContext context = StubProcessingContext.forMessage(testMsg);
+//        AggregateScopeDescriptor testDescriptor =
+//                new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), AGGREGATE_ID);
+//
+//        //noinspection ConstantConditions
+//        assertThrows(IllegalArgumentException.class, () -> testSubject.send(failureMessage, context, testDescriptor));
+//
+//        //noinspection ConstantConditions
+//        verify(spiedAggregate).handle(failureMessage, context);
+//    }
+//
+//    @Test
+//    void sendFailsSilentlyOnAggregateNotFoundException() throws Exception {
+//        DeadlineMessage testMsg = aDeadlineMessage();
+//        ProcessingContext context = StubProcessingContext.forMessage(testMsg);
+//        AggregateScopeDescriptor testDescriptor =
+//                new AggregateScopeDescriptor(JpaAggregate.class.getSimpleName(), "some-other-aggregate-id");
+//
+//        testSubject.send(testMsg, context, testDescriptor);
+//
+//        verifyNoInteractions(spiedAggregate);
+//    }
 
     @Test
     void checkedExceptionFromConstructorDoesNotAttemptToStoreAggregate() {
@@ -217,12 +215,12 @@ class AbstractRepositoryTest {
         assertEquals("Throwing checked exception", uow.getExecutionResult().getExceptionResult().getMessage());
     }
 
-    private static DeadlineMessage aDeadlineMessage() {
-        var payload = "payload";
-        return new GenericDeadlineMessage(
-                "deadline-name",
-                new GenericMessage(new MessageType(payload.getClass()), payload),
-                Instant::now
-        );
-    }
+//    private static DeadlineMessage aDeadlineMessage() {
+//        var payload = "payload";
+//        return new GenericDeadlineMessage(
+//                "deadline-name",
+//                new GenericMessage(new MessageType(payload.getClass()), payload),
+//                Instant::now
+//        );
+//    }
 }

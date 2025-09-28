@@ -17,7 +17,6 @@
 package org.axonframework.messaging.timeout;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotations.MessageHandlerTimeout;
@@ -108,9 +107,10 @@ public class HandlerTimeoutHandlerEnhancerDefinition implements HandlerEnhancerD
         if (original.canHandleMessageType(QueryMessage.class)) {
             return configuration.getQueries();
         }
-        if (original.canHandleMessageType(DeadlineMessage.class)) {
-            return configuration.getDeadlines();
-        }
+        // TODO #3065
+//        if (original.canHandleMessageType(DeadlineMessage.class)) {
+//            return configuration.getDeadlines();
+//        }
         return null;
     }
 }

@@ -16,9 +16,9 @@
 
 package org.axonframework.test.aggregate;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.messaging.Message;
@@ -26,8 +26,6 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.test.FixtureExecutionException;
-import org.axonframework.test.deadline.DeadlineManagerValidator;
-import org.axonframework.test.deadline.StubDeadlineManager;
 import org.axonframework.test.fixture.Reporter;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.MapStringEntryMatcher;
@@ -37,8 +35,6 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -47,9 +43,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import jakarta.annotation.Nonnull;
 
-import static org.axonframework.test.matchers.Matchers.*;
+import static org.axonframework.test.matchers.Matchers.deepEquals;
 import static org.hamcrest.CoreMatchers.*;
 
 /**
@@ -66,7 +61,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
     private final Reporter reporter = new Reporter();
     private final FieldFilter fieldFilter;
     private final Supplier<Aggregate<T>> state;
-    private final DeadlineManagerValidator deadlineManagerValidator;
+//    private final DeadlineManagerValidator deadlineManagerValidator;
     private Message actualReturnValue;
     private Throwable actualException;
 
@@ -78,12 +73,14 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
      */
     public ResultValidatorImpl(List<EventMessage> publishedEvents,
                                FieldFilter fieldFilter,
-                               Supplier<Aggregate<T>> aggregateState,
-                               StubDeadlineManager stubDeadlineManager) {
+                               Supplier<Aggregate<T>> aggregateState
+//            ,
+//                               StubDeadlineManager stubDeadlineManager
+    ) {
         this.publishedEvents = publishedEvents;
         this.fieldFilter = fieldFilter;
         this.state = aggregateState;
-        this.deadlineManagerValidator = new DeadlineManagerValidator(stubDeadlineManager, fieldFilter);
+//        this.deadlineManagerValidator = new DeadlineManagerValidator(stubDeadlineManager, fieldFilter);
     }
 
     @Override
@@ -148,176 +145,176 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
         return this;
     }
 
-    @Override
-    public ResultValidator<T> expectScheduledDeadlineMatching(Duration duration,
-                                                              Matcher<? super DeadlineMessage> matcher) {
-        deadlineManagerValidator.assertScheduledDeadlineMatching(duration, matcher);
-        return this;
-    }
+//    @Override
+//    public ResultValidator<T> expectScheduledDeadlineMatching(Duration duration,
+//                                                              Matcher<? super DeadlineMessage> matcher) {
+//        deadlineManagerValidator.assertScheduledDeadlineMatching(duration, matcher);
+//        return this;
+//    }
 
-    @Override
-    public ResultValidator<T> expectScheduledDeadline(Duration duration, Object deadline) {
-        return expectScheduledDeadlineMatching(duration, messageWithPayload(deepEquals(deadline, fieldFilter)));
-    }
-
-    @Override
-    public ResultValidator<T> expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType) {
-        return expectScheduledDeadlineMatching(duration, messageWithPayload(any(deadlineType)));
-    }
-
-    @Override
-    public ResultValidator<T> expectScheduledDeadlineWithName(Duration duration, String deadlineName) {
-        return expectScheduledDeadlineMatching(
-                duration,
-                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
-        );
-    }
-
-    @Override
-    public ResultValidator<T> expectScheduledDeadlineMatching(Instant scheduledTime,
-                                                              Matcher<? super DeadlineMessage> matcher) {
-        deadlineManagerValidator.assertScheduledDeadlineMatching(scheduledTime, matcher);
-        return this;
-    }
-
-    @Override
-    public ResultValidator<T> expectScheduledDeadline(Instant scheduledTime, Object deadline) {
-        return expectScheduledDeadlineMatching(
-                scheduledTime,
-                messageWithPayload(deepEquals(deadline, fieldFilter))
-        );
-    }
-
-    @Override
-    public ResultValidator<T> expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType) {
-        return expectScheduledDeadlineMatching(scheduledTime, messageWithPayload(any(deadlineType)));
-    }
-
-    @Override
-    public ResultValidator<T> expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName) {
-        return expectScheduledDeadlineMatching(
-                scheduledTime,
-                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
-        );
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlines() {
-        deadlineManagerValidator.assertNoScheduledDeadlines();
-        return this;
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage> matcher) {
-        deadlineManagerValidator.assertNoScheduledDeadlineMatching(matcher);
-        return this;
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlineMatching(Duration durationToScheduledTime,
-                                                                Matcher<? super DeadlineMessage> matcher) {
-        Instant scheduledTime = deadlineManagerValidator.currentDateTime().plus(durationToScheduledTime);
-        return expectNoScheduledDeadlineMatching(scheduledTime, matcher);
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline) {
-        return expectNoScheduledDeadlineMatching(
-                durationToScheduledTime, messageWithPayload(deepEquals(deadline, fieldFilter))
-        );
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType) {
-        return expectNoScheduledDeadlineMatching(durationToScheduledTime, messageWithPayload(any(deadlineType)));
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlineWithName(Duration durationToScheduledTime, String deadlineName) {
-        return expectNoScheduledDeadlineMatching(
-                durationToScheduledTime,
-                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
-        );
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant scheduledTime,
-                                                                Matcher<? super DeadlineMessage> matcher) {
-        return expectNoScheduledDeadlineMatching(matches(
-                deadlineMessage -> deadlineMessage.timestamp().equals(scheduledTime)
-                        && matcher.matches(deadlineMessage)
-        ));
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadline(Instant scheduledTime, Object deadline) {
-        return expectNoScheduledDeadlineMatching(
-                scheduledTime,
-                messageWithPayload(deepEquals(deadline, fieldFilter))
-        );
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType) {
-        return expectNoScheduledDeadlineMatching(scheduledTime, messageWithPayload(any(deadlineType)));
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName) {
-        return expectNoScheduledDeadlineMatching(
-                scheduledTime,
-                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
-        );
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage> matcher) {
-        return expectNoScheduledDeadlineMatching(matches(
-                deadlineMessage -> !(deadlineMessage.timestamp().isBefore(from) || deadlineMessage.timestamp().isAfter(to))
-                        && matcher.matches(deadlineMessage)
-        ));
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadline(Instant from, Instant to, Object deadline) {
-        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(deepEquals(deadline, fieldFilter)));
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType) {
-        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(any(deadlineType)));
-    }
-
-    @Override
-    public ResultValidator<T> expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName) {
-        return expectNoScheduledDeadlineMatching(from, to, matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName)));
-    }
-
-    @Override
-    public ResultValidator<T> expectTriggeredDeadlinesMatching(
-            Matcher<? extends List<? super DeadlineMessage>> matcher
-    ) {
-        deadlineManagerValidator.assertTriggeredDeadlinesMatching(matcher);
-        return this;
-    }
-
-    @Override
-    public ResultValidator<T> expectTriggeredDeadlines(Object... expected) {
-        deadlineManagerValidator.assertTriggeredDeadlines(expected);
-        return this;
-    }
-
-    @Override
-    public ResultValidator<T> expectTriggeredDeadlinesWithName(String... expectedDeadlineNames) {
-        deadlineManagerValidator.assertTriggeredDeadlinesWithName(expectedDeadlineNames);
-        return this;
-    }
-
-    @Override
-    public ResultValidator<T> expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes) {
-        deadlineManagerValidator.assertTriggeredDeadlinesOfType(expectedDeadlineTypes);
-        return this;
-    }
+//    @Override
+//    public ResultValidator<T> expectScheduledDeadline(Duration duration, Object deadline) {
+//        return expectScheduledDeadlineMatching(duration, messageWithPayload(deepEquals(deadline, fieldFilter)));
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectScheduledDeadlineOfType(Duration duration, Class<?> deadlineType) {
+//        return expectScheduledDeadlineMatching(duration, messageWithPayload(any(deadlineType)));
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectScheduledDeadlineWithName(Duration duration, String deadlineName) {
+//        return expectScheduledDeadlineMatching(
+//                duration,
+//                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+//        );
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectScheduledDeadlineMatching(Instant scheduledTime,
+//                                                              Matcher<? super DeadlineMessage> matcher) {
+//        deadlineManagerValidator.assertScheduledDeadlineMatching(scheduledTime, matcher);
+//        return this;
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectScheduledDeadline(Instant scheduledTime, Object deadline) {
+//        return expectScheduledDeadlineMatching(
+//                scheduledTime,
+//                messageWithPayload(deepEquals(deadline, fieldFilter))
+//        );
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType) {
+//        return expectScheduledDeadlineMatching(scheduledTime, messageWithPayload(any(deadlineType)));
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectScheduledDeadlineWithName(Instant scheduledTime, String deadlineName) {
+//        return expectScheduledDeadlineMatching(
+//                scheduledTime,
+//                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+//        );
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadlines() {
+//        deadlineManagerValidator.assertNoScheduledDeadlines();
+//        return this;
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadlineMatching(Matcher<? super DeadlineMessage> matcher) {
+//        deadlineManagerValidator.assertNoScheduledDeadlineMatching(matcher);
+//        return this;
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadlineMatching(Duration durationToScheduledTime,
+//                                                                Matcher<? super DeadlineMessage> matcher) {
+//        Instant scheduledTime = deadlineManagerValidator.currentDateTime().plus(durationToScheduledTime);
+//        return expectNoScheduledDeadlineMatching(scheduledTime, matcher);
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadline(Duration durationToScheduledTime, Object deadline) {
+//        return expectNoScheduledDeadlineMatching(
+//                durationToScheduledTime, messageWithPayload(deepEquals(deadline, fieldFilter))
+//        );
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadlineOfType(Duration durationToScheduledTime, Class<?> deadlineType) {
+//        return expectNoScheduledDeadlineMatching(durationToScheduledTime, messageWithPayload(any(deadlineType)));
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadlineWithName(Duration durationToScheduledTime, String deadlineName) {
+//        return expectNoScheduledDeadlineMatching(
+//                durationToScheduledTime,
+//                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+//        );
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant scheduledTime,
+//                                                                Matcher<? super DeadlineMessage> matcher) {
+//        return expectNoScheduledDeadlineMatching(matches(
+//                deadlineMessage -> deadlineMessage.timestamp().equals(scheduledTime)
+//                        && matcher.matches(deadlineMessage)
+//        ));
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadline(Instant scheduledTime, Object deadline) {
+//        return expectNoScheduledDeadlineMatching(
+//                scheduledTime,
+//                messageWithPayload(deepEquals(deadline, fieldFilter))
+//        );
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadlineOfType(Instant scheduledTime, Class<?> deadlineType) {
+//        return expectNoScheduledDeadlineMatching(scheduledTime, messageWithPayload(any(deadlineType)));
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadlineWithName(Instant scheduledTime, String deadlineName) {
+//        return expectNoScheduledDeadlineMatching(
+//                scheduledTime,
+//                matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName))
+//        );
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadlineMatching(Instant from, Instant to, Matcher<? super DeadlineMessage> matcher) {
+//        return expectNoScheduledDeadlineMatching(matches(
+//                deadlineMessage -> !(deadlineMessage.timestamp().isBefore(from) || deadlineMessage.timestamp().isAfter(to))
+//                        && matcher.matches(deadlineMessage)
+//        ));
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadline(Instant from, Instant to, Object deadline) {
+//        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(deepEquals(deadline, fieldFilter)));
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadlineOfType(Instant from, Instant to, Class<?> deadlineType) {
+//        return expectNoScheduledDeadlineMatching(from, to, messageWithPayload(any(deadlineType)));
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectNoScheduledDeadlineWithName(Instant from, Instant to, String deadlineName) {
+//        return expectNoScheduledDeadlineMatching(from, to, matches(deadlineMessage -> deadlineMessage.getDeadlineName().equals(deadlineName)));
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectTriggeredDeadlinesMatching(
+//            Matcher<? extends List<? super DeadlineMessage>> matcher
+//    ) {
+//        deadlineManagerValidator.assertTriggeredDeadlinesMatching(matcher);
+//        return this;
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectTriggeredDeadlines(Object... expected) {
+//        deadlineManagerValidator.assertTriggeredDeadlines(expected);
+//        return this;
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectTriggeredDeadlinesWithName(String... expectedDeadlineNames) {
+//        deadlineManagerValidator.assertTriggeredDeadlinesWithName(expectedDeadlineNames);
+//        return this;
+//    }
+//
+//    @Override
+//    public ResultValidator<T> expectTriggeredDeadlinesOfType(Class<?>... expectedDeadlineTypes) {
+//        deadlineManagerValidator.assertTriggeredDeadlinesOfType(expectedDeadlineTypes);
+//        return this;
+//    }
 
     @Override
     public ResultValidator<T> expectResultMessagePayload(Object expectedPayload) {

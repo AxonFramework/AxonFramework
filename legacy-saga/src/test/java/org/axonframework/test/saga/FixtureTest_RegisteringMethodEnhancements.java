@@ -84,29 +84,29 @@ public class FixtureTest_RegisteringMethodEnhancements {
         );
     }
 
-    @Test
-    void createHandlerMethodIsCalledForRegisteredCustomHandlerDefinition() {
-        AtomicBoolean handlerDefinitionReached = new AtomicBoolean(false);
-
-        testSubject.registerHandlerDefinition(new TestHandlerDefinition(handlerDefinitionReached))
-                   .givenNoPriorActivity()
-                   .whenPublishingA(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER))
-                   .expectScheduledEventOfType(Duration.ofMinutes(10), TimerTriggeredEvent.class);
-
-        assertTrue(handlerDefinitionReached.get());
-    }
-
-    @Test
-    void wrapHandlerMethodIsCalledForRegisteredCustomHandlerEnhancerDefinition() {
-        AtomicBoolean handlerEnhancerReached = new AtomicBoolean(false);
-
-        testSubject.registerHandlerEnhancerDefinition(new TestHandlerEnhancerDefinition(handlerEnhancerReached))
-                   .givenNoPriorActivity()
-                   .whenPublishingA(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER))
-                   .expectScheduledEventOfType(Duration.ofMinutes(10), TimerTriggeredEvent.class);
-
-        assertTrue(handlerEnhancerReached.get());
-    }
+//    @Test
+//    void createHandlerMethodIsCalledForRegisteredCustomHandlerDefinition() {
+//        AtomicBoolean handlerDefinitionReached = new AtomicBoolean(false);
+//
+//        testSubject.registerHandlerDefinition(new TestHandlerDefinition(handlerDefinitionReached))
+//                   .givenNoPriorActivity()
+//                   .whenPublishingA(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER))
+//                   .expectScheduledEventOfType(Duration.ofMinutes(10), TimerTriggeredEvent.class);
+//
+//        assertTrue(handlerDefinitionReached.get());
+//    }
+//
+//    @Test
+//    void wrapHandlerMethodIsCalledForRegisteredCustomHandlerEnhancerDefinition() {
+//        AtomicBoolean handlerEnhancerReached = new AtomicBoolean(false);
+//
+//        testSubject.registerHandlerEnhancerDefinition(new TestHandlerEnhancerDefinition(handlerEnhancerReached))
+//                   .givenNoPriorActivity()
+//                   .whenPublishingA(new TriggerSagaStartEvent(TEST_AGGREGATE_IDENTIFIER))
+//                   .expectScheduledEventOfType(Duration.ofMinutes(10), TimerTriggeredEvent.class);
+//
+//        assertTrue(handlerEnhancerReached.get());
+//    }
 
     @Test
     void testRegisterParameterResolverFactoryStillCallsMetadataValue() {
