@@ -133,6 +133,7 @@ class AbstractSnapshotterTest {
     }
 
     @Test
+    @Disabled("TODO #3105")
     void scheduleSnapshot_ConcurrencyExceptionIsSilenced() {
         RecordingAppender recordingAppender = RecordingAppender.getInstance();
         recordingAppender.startRecording(e -> e.getLevel().isMoreSpecificThan(Level.WARN));

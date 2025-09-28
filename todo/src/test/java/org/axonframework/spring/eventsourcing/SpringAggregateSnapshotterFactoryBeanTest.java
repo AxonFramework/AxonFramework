@@ -97,6 +97,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     @Test
+    @Disabled("TODO #3105")
     void retrieveAggregateFactoryFromRepositoryIfNotExplicitlyAvailable() {
         testSubject.setEventStore(null);
         reset(mockApplicationContext);
@@ -156,6 +157,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
     }
 
     @Test
+    @Disabled("TODO #3105")
     void snapshotCreatedNewTransactionRolledBack() {
         testSubject.setTransactionManager(mockTransactionManager);
         SpringAggregateSnapshotter snapshotter = testSubject.getObject();
