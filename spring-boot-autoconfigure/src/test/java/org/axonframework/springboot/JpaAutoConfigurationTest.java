@@ -25,8 +25,6 @@ import org.axonframework.eventhandling.processors.streaming.token.store.TokenSto
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.springboot.util.DeadLetterQueueProviderConfigurerModule;
 import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider;
 import org.junit.jupiter.api.*;
@@ -72,12 +70,11 @@ class JpaAutoConfigurationTest {
             assertEquals(JpaTokenStore.class,
                          tokenStores.get("tokenStore").getClass());
 
-            //noinspection rawtypes
-            Map<String, SagaStore> sagaStores =
-                    context.getBeansOfType(SagaStore.class);
-            assertTrue(sagaStores.containsKey("sagaStore"));
-            assertEquals(JpaSagaStore.class,
-                         sagaStores.get("sagaStore").getClass());
+//            Map<String, SagaStore> sagaStores =
+//                    context.getBeansOfType(SagaStore.class);
+//            assertTrue(sagaStores.containsKey("sagaStore"));
+//            assertEquals(JpaSagaStore.class,
+//                         sagaStores.get("sagaStore").getClass());
 
             Map<String, SQLErrorCodesResolver> persistenceExceptionResolvers =
                     context.getBeansOfType(SQLErrorCodesResolver.class);

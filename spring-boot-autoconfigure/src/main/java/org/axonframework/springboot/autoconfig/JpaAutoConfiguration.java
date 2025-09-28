@@ -24,8 +24,6 @@ import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueu
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.TokenStoreProperties;
@@ -40,7 +38,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Lazy;
 
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -82,15 +79,6 @@ public class JpaAutoConfiguration {
                             .serializer(serializer)
                             .claimTimeout(tokenStoreProperties.getClaimTimeout())
                             .build();
-    }
-
-    @Lazy
-    @Bean
-    @ConditionalOnMissingBean(SagaStore.class)
-    public JpaSagaStore sagaStore(EntityManagerProvider entityManagerProvider) {
-        return JpaSagaStore.builder()
-                           .entityManagerProvider(entityManagerProvider)
-                           .build();
     }
 
     @Bean
