@@ -90,8 +90,6 @@ public abstract class AbstractSubscriptionQueryTestSuite {
     private static final String TEST_UPDATE_PAYLOAD = "some-update";
 
     private static final String FOUND = "found";
-    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
-    };
 
     private QueryBus queryBus;
     private QueryGateway queryGateway;
