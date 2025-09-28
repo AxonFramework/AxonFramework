@@ -27,7 +27,7 @@ import org.axonframework.messaging.DelayedMessageStream;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.modelling.repository.Repository;
 
@@ -36,9 +36,10 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A {@link CommandHandlingComponent} that handles commands for an entity. It will resolve the identifier of the entity
- * through the provided {@link EntityIdResolver}, load it from the provided {@link Repository} and delegate the handling
- * of the command to the {@link EntityMetamodel} of the entity.
+ * A {@link CommandHandlingComponent} that handles commands for an entity.
+ * <p>
+ * It will resolve the identifier of the entity through the provided {@link EntityIdResolver}, load it from the provided
+ * {@link Repository} and delegate the handling of the command to the {@link EntityMetamodel} of the entity.
  *
  * @param <ID> The type of the identifier of the entity.
  * @param <E>  The type of the entity.

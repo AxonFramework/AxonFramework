@@ -30,6 +30,7 @@ import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.annotations.MetadataValue;
 import org.axonframework.messaging.annotations.SourceId;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.serialization.json.JacksonConverter;
 import org.junit.jupiter.api.*;
 

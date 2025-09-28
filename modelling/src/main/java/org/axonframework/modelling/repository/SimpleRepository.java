@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling;
+package org.axonframework.modelling.repository;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.repository.ManagedEntity;
-import org.axonframework.modelling.repository.Repository;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;

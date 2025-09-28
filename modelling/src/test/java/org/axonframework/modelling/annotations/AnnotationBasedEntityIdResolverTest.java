@@ -21,9 +21,11 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 class AnnotationBasedEntityIdResolverTest {
 
-    private final AnnotationBasedEntityIdResolver testSubject = new AnnotationBasedEntityIdResolver();
+    private final AnnotationBasedEntityIdResolver<Object> testSubject = new AnnotationBasedEntityIdResolver<>();
 
     @Test
     void resolvesIdOfSingleTargetCommand() {
@@ -37,7 +39,6 @@ class AnnotationBasedEntityIdResolverTest {
         // then
         Assertions.assertEquals("id-2792793", result);
     }
-
 
     @Test
     void resolvesIdOfSingleTargetCommandWithGetterAnnotated() {
@@ -72,10 +73,9 @@ class AnnotationBasedEntityIdResolverTest {
         var message = new GenericCommandMessage(new MessageType(command.getClass()), command);
 
         // then
-        Assertions.assertThrows(MultipleTargetEntityIdsFoundInPayload.class, () -> testSubject.resolve(
+        assertThrows(MultipleTargetEntityIdsFoundInPayloadException.class, () -> testSubject.resolve(
                 message, StubProcessingContext.forMessage(message)));
     }
-
 
     @Test
     void resolvesNonNullIdWhenOnlyOneTargedIdFieldIsNonNull() {
@@ -112,11 +112,9 @@ class AnnotationBasedEntityIdResolverTest {
         );
 
         // when & then
-        Assertions.assertThrows(NoEntityIdFoundInPayload.class, () -> {
-            testSubject.resolve(commandMessage, StubProcessingContext.forMessage(commandMessage));
-        });
+        assertThrows(NoEntityIdFoundInPayloadException.class,
+                     () -> testSubject.resolve(commandMessage, StubProcessingContext.forMessage(commandMessage)));
     }
-
 
     static class SingleTargetCommand {
 
@@ -172,7 +170,6 @@ class AnnotationBasedEntityIdResolverTest {
             return targetId2;
         }
     }
-
 
     static class NoTargetCommand {
 

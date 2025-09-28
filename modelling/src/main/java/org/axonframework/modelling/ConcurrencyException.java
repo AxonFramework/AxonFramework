@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command;
+package org.axonframework.modelling;
 
 import org.axonframework.common.AxonTransientException;
 
 /**
- * Exception indicating that concurrent access to a repository was detected. Most likely, two threads were modifying
- * the
- * same aggregate.
+ * Exception indicating that concurrent access to a repository was detected. Most likely, two threads were modifying the
+ * same entity.
  *
  * @author Allard Buijze
- * @since 0.3
+ * @since 0.3.0
  */
 public class ConcurrencyException extends AxonTransientException {
 
     /**
      * Initialize a ConcurrencyException with the given {@code message}.
      *
-     * @param message The message describing the cause of the exception
+     * @param message The message describing the cause of the exception.
      */
     public ConcurrencyException(String message) {
         super(message);
@@ -40,8 +39,8 @@ public class ConcurrencyException extends AxonTransientException {
     /**
      * Initialize a ConcurrencyException with the given {@code message} and {@code cause}.
      *
-     * @param message The message describing the cause of the exception
-     * @param cause   The cause of the exception
+     * @param message The message describing the cause of the exception.
+     * @param cause   The cause of the exception.
      */
     public ConcurrencyException(String message, Throwable cause) {
         super(message, cause);

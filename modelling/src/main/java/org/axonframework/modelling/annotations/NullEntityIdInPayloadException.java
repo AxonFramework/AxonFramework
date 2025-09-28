@@ -17,16 +17,16 @@
 package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.EntityIdResolver;
 
 /**
  * Exception indicating that the payload of a message resolved to a {@code null} id. A non-null id is required to
  * resolve the entity from the {@link org.axonframework.modelling.StateManager}.
  *
+ * @author Mitchell Herrijgers
  * @see EntityIdResolver
  * @see TargetEntityId
  * @since 5.0.0
- * @author Mitchell Herrijgers
  */
 public class NullEntityIdInPayloadException extends RuntimeException {
 

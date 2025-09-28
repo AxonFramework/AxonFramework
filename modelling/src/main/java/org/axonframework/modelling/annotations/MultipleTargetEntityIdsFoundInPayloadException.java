@@ -17,22 +17,24 @@
 package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.EntityIdResolver;
 
 import java.util.List;
 
 /**
- * Exception indicating that multiple identifiers were found in the payload of a message. When the
- * {@link AnnotationBasedEntityIdResolver} resolves an identifier from the payload, it expects only one identifier to be
- * present. If multiple identifiers are found, this exception is thrown. Multiple {@link TargetEntityId} annotations are
- * allowed, but out of all non-null values, only one distinct value may be returned.
+ * Exception indicating that multiple identifiers were found in the payload of a message.
+ * <p>
+ * When the {@link AnnotationBasedEntityIdResolver} resolves an identifier from the payload, it expects only one
+ * identifier to be present. If multiple identifiers are found, this exception is thrown. Multiple
+ * {@link TargetEntityId} annotations are allowed, but out of all non-null values, only one distinct value may be
+ * returned.
  *
  * @author Mitchell Herrijgers
  * @see EntityIdResolver
  * @see TargetEntityId
  * @since 5.0.0
  */
-public class MultipleTargetEntityIdsFoundInPayload extends RuntimeException {
+public class MultipleTargetEntityIdsFoundInPayloadException extends RuntimeException {
 
     /**
      * Initialize the exception with the given {@code identifiers} found in the payload of type {@code payloadClass}.
@@ -40,7 +42,8 @@ public class MultipleTargetEntityIdsFoundInPayload extends RuntimeException {
      * @param identifiers  The identifiers found in the payload.
      * @param payloadClass The type of the payload.
      */
-    public MultipleTargetEntityIdsFoundInPayload(@Nonnull List<Object> identifiers, @Nonnull Class<?> payloadClass) {
+    public MultipleTargetEntityIdsFoundInPayloadException(@Nonnull List<Object> identifiers,
+                                                          @Nonnull Class<?> payloadClass) {
         super(String.format("Found multiple identifiers in payload of type [%s]: %s. Only one identifier is allowed.",
                             payloadClass.getName(), identifiers));
     }

@@ -19,9 +19,9 @@ package org.axonframework.modelling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentBuilder;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.modelling.SimpleRepositoryEntityLoader;
-import org.axonframework.modelling.SimpleRepositoryEntityPersister;
-import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.EntityIdResolver;
+import org.axonframework.modelling.repository.SimpleRepositoryEntityLoader;
+import org.axonframework.modelling.repository.SimpleRepositoryEntityPersister;
 import org.axonframework.modelling.repository.Repository;
 
 /**
@@ -148,6 +148,13 @@ public interface StateBasedEntityModule<ID, E> extends EntityModule<ID, E> {
      */
     interface EntityIdResolverPhase<ID, E> extends ModuleBuilder<StateBasedEntityModule<ID, E>> {
 
+        /**
+         * Registers the given {@code entityIdResolver} to resolver the entity's identifiers from a given
+         * {@link org.axonframework.messaging.Message} when loading.
+         *
+         * @param entityIdResolver A factory method constructing an {@link EntityIdResolver}.
+         * @return The {@link StateBasedEntityModule}, signaling the end of this builder.
+         */
         StateBasedEntityModule<ID, E> entityIdResolver(
                 @Nonnull ComponentBuilder<EntityIdResolver<ID>> entityIdResolver
         );

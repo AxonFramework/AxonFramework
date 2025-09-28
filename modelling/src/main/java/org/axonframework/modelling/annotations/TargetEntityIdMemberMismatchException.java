@@ -17,9 +17,12 @@
 package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.modelling.PropertyBasedEntityIdResolver;
 
 /**
- * Exception indicating that while using the {@link PropertyBasedEntityIdResolver} the indicated field could not be found.
+ * Exception indicating that while using the {@link PropertyBasedEntityIdResolver} the indicated field could not be
+ * found.
+ * <p>
  * This indicates a mismatch between the property configured in the {@link InjectEntity#idProperty()} and the actual
  * payload class.
  *
@@ -37,7 +40,7 @@ public class TargetEntityIdMemberMismatchException extends RuntimeException {
     public TargetEntityIdMemberMismatchException(@Nonnull String fieldName, @Nonnull Class<?> payloadClass) {
         super(String.format(
                 "Could not find field [%s] or its accessor in payload of type [%s] as indicated on the @InjectModel annotation.",
-                            fieldName,
-                            payloadClass.getName()));
+                fieldName,
+                payloadClass.getName()));
     }
 }

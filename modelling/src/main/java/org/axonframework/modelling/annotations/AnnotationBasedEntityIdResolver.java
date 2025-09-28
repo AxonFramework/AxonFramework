@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.EntityIdResolver;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
@@ -33,19 +33,20 @@ import java.util.stream.StreamSupport;
 
 /**
  * Implementation of a {@link EntityIdResolver} that inspects the payload of a {@link Message} for fields or methods
- * annotated with {@link TargetEntityId}. Multiple fields may be annotated, but only exactly one must resolve one
- * distinct non-null value.
+ * annotated with {@link TargetEntityId}.
  * <p>
- * If multiple ids are found, an {@link MultipleTargetEntityIdsFoundInPayload} is thrown. If no identifier is found at
- * all, a {@link NoEntityIdFoundInPayload} is thrown as components depending on the identifier will not work.
+ * Multiple fields may be annotated, but only exactly one must resolve one distinct non-null value.
+ * <p>
+ * If multiple ids are found, an {@link MultipleTargetEntityIdsFoundInPayloadException} is thrown. If no identifier is found at
+ * all, a {@link NoEntityIdFoundInPayloadException} is thrown as components depending on the identifier will not work.
  * <p>
  * For performance reasons, the resolved identifier members are cached per payload type.
  *
+ * @param <T> The type of the identifier to resolve.
  * @author Mitchell Herrijgers
  * @see TargetEntityId
  * @see EntityIdResolver
  * @since 5.0.0
- * @param <T> The type of the identifier to resolve.
  */
 public class AnnotationBasedEntityIdResolver<T> implements EntityIdResolver<T> {
 
@@ -61,10 +62,10 @@ public class AnnotationBasedEntityIdResolver<T> implements EntityIdResolver<T> {
                 .filter(Objects::nonNull)
                 .toList();
         if (identifiers.size() > 1) {
-            throw new MultipleTargetEntityIdsFoundInPayload(identifiers, payload.getClass());
+            throw new MultipleTargetEntityIdsFoundInPayloadException(identifiers, payload.getClass());
         }
         if (identifiers.isEmpty()) {
-            throw new NoEntityIdFoundInPayload(payload.getClass());
+            throw new NoEntityIdFoundInPayloadException(payload.getClass());
         }
         //noinspection unchecked
         return (T) identifiers.getFirst();

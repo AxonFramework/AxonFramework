@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.annotations;
+package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
@@ -22,14 +22,16 @@ import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.annotations.NullEntityIdInPayloadException;
+import org.axonframework.modelling.annotations.TargetEntityIdMemberMismatchException;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Implementation of a {@link EntityIdResolver} that inspects the payload of a {@link Message} for an identifier. The
- * identifier is resolved by looking for a field or method with the given {@code property} name. Methods will
+ * Implementation of a {@link EntityIdResolver} that inspects the payload of a {@link Message} for an identifier.
+ * <p>
+ * The identifier is resolved by looking for a field or method with the given {@code property} name. Methods will
  * automatically be resolved by looking for a method with the name {@code get<Property>} or {@code <Property>}.
  * <p>
  * This field or method needs to have or return a non-null value. If a {@code null} value is found, a

@@ -31,15 +31,15 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotations.InjectEntity;
-import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.axonframework.serialization.Converter;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests whether stateful command handling components can process commands that target multiple entities at the same
@@ -107,8 +107,8 @@ class MultiEntityCommandHandlingComponentTest extends AbstractCommandHandlingStu
 
         // But five can not enroll for the first course
         assertThatThrownBy(() -> enrollStudentToCourse("my-studentId-5", "my-courseId-1"))
-            .isInstanceOf(CommandExecutionException.class)
-            .hasMessageContaining("Course already has 3 students");
+                .isInstanceOf(CommandExecutionException.class)
+                .hasMessageContaining("Course already has 3 students");
     }
 
     @Test
@@ -123,8 +123,8 @@ class MultiEntityCommandHandlingComponentTest extends AbstractCommandHandlingStu
 
         // But not a second time
         assertThatThrownBy(() -> sendCommand(new AssignMentorCommand("my-studentId-1", "my-studentId-3")))
-            .isInstanceOf(CommandExecutionException.class)
-            .hasMessageContaining("Mentor already assigned to a mentee");
+                .isInstanceOf(CommandExecutionException.class)
+                .hasMessageContaining("Mentor already assigned to a mentee");
     }
 
     private static class MultiModelAnnotatedCommandHandler {
@@ -144,7 +144,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractCommandHandlingStu
                 throw new IllegalArgumentException("Course already has 3 students");
             }
 
-            eventAppender.append( new StudentEnrolledEvent(command.studentId(), command.courseId()));
+            eventAppender.append(new StudentEnrolledEvent(command.studentId(), command.courseId()));
 
             assertTrue(student.getCoursesEnrolled().contains(command.courseId()));
             assertTrue(course.getStudentsEnrolled().contains(command.studentId()));

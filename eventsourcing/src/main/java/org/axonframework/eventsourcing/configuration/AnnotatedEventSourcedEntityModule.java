@@ -28,11 +28,11 @@ import org.axonframework.eventsourcing.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotations.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntityFactoryDefinition;
-import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.conversion.MessageConverter;
+import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
-import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.annotations.AnnotatedEntityMetamodel;
 

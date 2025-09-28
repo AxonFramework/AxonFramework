@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling;
+package org.axonframework.modelling.annotations;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.conversion.EventConverter;
@@ -27,6 +27,9 @@ import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityEvolver;
+import org.axonframework.modelling.EntityEvolvingComponent;
+import org.axonframework.modelling.StateEvolvingException;
 
 import java.util.Objects;
 import java.util.Set;

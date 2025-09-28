@@ -28,7 +28,7 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Pers
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.EntityIdResolver;
 import org.axonframework.serialization.Converter;
 
 import java.util.List;
