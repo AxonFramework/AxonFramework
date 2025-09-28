@@ -62,24 +62,10 @@ public class SpringLazyCreatingModule<S extends Module> extends BaseModule<Sprin
         return moduleName != null ? moduleName : super.name();
     }
 
-    /*
-    @Override
-    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
-        Module module = moduleBuilder.apply(parent).build();
-        this.moduleName = module.name(); // update the name for the configuration
-        Optional.of(parent.getComponent(ComponentRegistry.class, () -> null))
-                .ifPresentOrElse((r) -> r.registerModule(module),
-                                 () -> componentRegistry(r -> r.registerModule(module)));
-        Configuration configuration = module.build(parent, lifecycleRegistry);
-
-        return configuration;
-    }
-     */
-
     @Override
     protected Configuration postProcessConfiguration(Configuration moduleConfiguration) {
         Module module = moduleBuilder.apply(moduleConfiguration).build();
-        //this.moduleName = module.name(); // update the name for the configuration
+        this.moduleName = module.name(); // update the name for the configuration
         Optional.of(moduleConfiguration.getComponent(ComponentRegistry.class, () -> null))
                 .ifPresentOrElse((r) -> r.registerModule(module),
                                  () -> componentRegistry(r -> r.registerModule(module)));
