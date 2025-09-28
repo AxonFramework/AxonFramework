@@ -19,6 +19,7 @@ package org.axonframework.integrationtests.eventsourcing.eventstore.jpa;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
@@ -33,7 +34,6 @@ import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTes
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.eventstreaming.EventCriteria;
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.eventstreaming.Tag;
@@ -98,7 +98,17 @@ class AggregateBasedJpaEventStorageEngineTest
                 entityManagerProvider,
                 transactionManager,
                 converter,
-                config -> config.persistenceExceptionResolver(new SQLErrorCodesResolver(List.of()))
+                config -> config.persistenceExceptionResolver(new PersistenceExceptionResolver() {
+                    @Override
+                    public boolean isDuplicateKeyViolation(Exception exception) {
+                        return causeIsEntityExistsException(exception);
+                    }
+
+                    private boolean causeIsEntityExistsException(Throwable exception) {
+                        return exception instanceof java.sql.SQLIntegrityConstraintViolationException
+                                || (exception.getCause() != null && causeIsEntityExistsException(exception.getCause()));
+                    }
+                })
         );
     }
 
