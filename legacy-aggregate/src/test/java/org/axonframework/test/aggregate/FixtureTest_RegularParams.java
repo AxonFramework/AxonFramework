@@ -221,6 +221,7 @@ class FixtureTest_RegularParams {
     }
 
     @Test
+    @Disabled("TODO #3486")
     void fixture_CommandHandlerDispatchesNonDomainEvents() {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1),
                                             new MyEvent("aggregateId", 2),

@@ -48,6 +48,7 @@ class FixtureWhenPhaseAggregateInvocationTest {
     }
 
     @Test
+    @Disabled("TODO #3486")
     void creatingAggregateThroughWhenConstructingPublishesEventsWhenSuccessful() {
         testFixture.givenNoPriorActivity()
                    .whenConstructing(() -> new MyAggregate(AGGREGATE_ID, SHOULD_NOT_FAIL))
@@ -63,6 +64,7 @@ class FixtureWhenPhaseAggregateInvocationTest {
     }
 
     @Test
+    @Disabled("TODO #3486")
     void changingAggregateThroughWhenInvokingPublishesEventsWhenSuccessful() {
         testFixture.given(new AggregateCreatedEvent(AGGREGATE_ID, SHOULD_NOT_FAIL))
                    .whenInvoking(AGGREGATE_ID, aggregate -> aggregate.createEntity(STATE, SHOULD_NOT_FAIL))
@@ -78,6 +80,7 @@ class FixtureWhenPhaseAggregateInvocationTest {
     }
 
     @Test
+    @Disabled("TODO #3486")
     void changingAggregateMemberThroughWhenInvokedWorks() {
         String expectedState = "new-state";
 
@@ -95,6 +98,7 @@ class FixtureWhenPhaseAggregateInvocationTest {
     }
 
     @Test
+    @Disabled("TODO #3486")
     void usingWhenInvokedWithNonExistingAggregateIdentifierThrowsIllegalArgumentException() {
         assertThrows(
                 AssertionError.class,

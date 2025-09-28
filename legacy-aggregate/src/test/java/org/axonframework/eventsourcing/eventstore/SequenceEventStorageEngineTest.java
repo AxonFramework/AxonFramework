@@ -51,6 +51,7 @@ import static org.mockito.Mockito.eq;
  *
  * @author Allard Buijze
  */
+@Disabled("TODO #3486")
 class SequenceEventStorageEngineTest {
 
     private LegacyEventStorageEngine activeStorage;

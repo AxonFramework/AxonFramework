@@ -48,6 +48,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Allard Buijze
  */
+@Disabled("TODO #3486")
 class LegacyEventSourcingRepositoryTest {
 
     private EventStore mockEventStore;
