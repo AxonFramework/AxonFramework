@@ -44,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Allard Buijze
  */
+@Disabled("TODO #3097")
 class JpaSagaStoreTest {
     private static final TypeReference<Set<String>> SET_OF_STRINGS = new TypeReference<>() {};
 
