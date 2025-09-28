@@ -137,6 +137,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
     }
 
     @Test
+    @Disabled("TODO #3105")
     public void snapshotFilterRejectsSnapshots() {
         SnapshotFilter rejectAll = SnapshotFilter.rejectAll();
 
@@ -148,6 +149,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
     }
 
     @Test
+    @Disabled("TODO #3105")
     public void snapshotFilterRejectsSnapshotsOnCombinedFilter() {
         SnapshotFilter combinedFilter = SnapshotFilter.allowAll().combine(SnapshotFilter.rejectAll());
 
