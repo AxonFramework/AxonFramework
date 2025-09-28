@@ -38,8 +38,8 @@ import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.LegacyGenericJpaRepository;
-import org.axonframework.modelling.command.LegacyRepository;
+import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.Repository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -76,7 +76,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
     private final List<EventMessage> capturedEvents = new ArrayList<>();
     @Autowired
     @Qualifier("simpleRepository")
-    private LegacyGenericJpaRepository<JpaAggregate> repository;
+    private GenericJpaRepository<JpaAggregate> repository;
     @Autowired
     private EventBus eventBus;
     @PersistenceContext
@@ -243,12 +243,12 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         }
 
         @Bean("simpleRepository")
-        public LegacyRepository<JpaAggregate> simpleRepository(EntityManagerProvider entityManagerProvider,
-                                                               EventBus eventBus) {
-            return LegacyGenericJpaRepository.builder(JpaAggregate.class)
-                                             .entityManagerProvider(entityManagerProvider)
-                                             .eventBus(eventBus)
-                                             .build();
+        public Repository<JpaAggregate> simpleRepository(EntityManagerProvider entityManagerProvider,
+                                                         EventBus eventBus) {
+            return GenericJpaRepository.builder(JpaAggregate.class)
+                                       .entityManagerProvider(entityManagerProvider)
+                                       .eventBus(eventBus)
+                                       .build();
         }
     }
 }
