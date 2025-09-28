@@ -27,6 +27,7 @@
         <module>integrationtests</module>
         <module>legacy</module>
         <module>legacy-aggregate</module>
+        <module>legacy-saga</module>
         <module>messaging</module>
         <module>metrics</module>
         <module>metrics-micrometer</module>
@@ -37,6 +38,7 @@
         <module>spring-boot-starter</module>
         <module>test</module>
         <module>tracing-opentelemetry</module>
+        <module>todo</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -601,7 +603,7 @@
                 <configuration>
                     <publishingServerId>central</publishingServerId>
                     <excludeArtifacts>
-                        axon-integrationtests,axon-configuration,axon-legacy,axon-legacy-aggregate,axon-metrics,axon-micrometer,axon-migration,axon-tracing-opentelemetry
+                        axon-integrationtests,axon-configuration,axon-legacy,axon-legacy-aggregate,axon-legacy-saga,axon-metrics,axon-micrometer,axon-migration,axon-tracing-opentelemetry,axon-todo
                     </excludeArtifacts>
                 </configuration>
             </plugin>
