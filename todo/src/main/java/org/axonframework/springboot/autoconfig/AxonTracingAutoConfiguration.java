@@ -18,15 +18,15 @@ package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
 import org.axonframework.commandhandling.tracing.DefaultCommandBusSpanFactory;
-import org.axonframework.config.ConfigurerModule;
+import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
 import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
-import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
-import org.axonframework.eventsourcing.SnapshotterSpanFactory;
+import org.axonframework.eventsourcing.snapshotting.DefaultSnapshotterSpanFactory;
+import org.axonframework.eventsourcing.snapshotting.SnapshotterSpanFactory;
 import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
 import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
 import org.axonframework.modelling.command.RepositorySpanFactory;
@@ -182,11 +182,13 @@ public class AxonTracingAutoConfiguration {
     }
 
     @Bean
-    public ConfigurerModule configurerModuleForTracing(List<SpanAttributesProvider> spanAttributesProviders) {
-        return configurer -> configurer.onInitialize(config -> {
-            SpanFactory spanFactory = config.spanFactory();
-            spanAttributesProviders.forEach(spanFactory::registerSpanAttributeProvider);
-        });
+    public ConfigurationEnhancer configurerModuleForTracing(List<SpanAttributesProvider> spanAttributesProviders) {
+        return componentRegistry -> {
+//            configurer.onInitialize(config -> {
+//                SpanFactory spanFactory = config.spanFactory();
+//                spanAttributesProviders.forEach(spanFactory::registerSpanAttributeProvider);
+//            });
+        };
     }
 
     @Bean

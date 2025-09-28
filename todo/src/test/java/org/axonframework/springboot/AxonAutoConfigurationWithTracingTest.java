@@ -24,8 +24,8 @@ import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
-import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
-import org.axonframework.eventsourcing.SnapshotterSpanFactory;
+import org.axonframework.eventsourcing.snapshotting.DefaultSnapshotterSpanFactory;
+import org.axonframework.eventsourcing.snapshotting.SnapshotterSpanFactory;
 import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
 import org.axonframework.modelling.command.DefaultRepositorySpanFactory;
 import org.axonframework.modelling.command.RepositorySpanFactory;
@@ -267,7 +267,8 @@ class AxonAutoConfigurationWithTracingTest {
 
                     assertTrue(context.containsBean("snapshotterSpanFactory"));
                     assertNotNull(context.getBean(SnapshotterSpanFactory.class));
-                    assertEquals(DefaultSnapshotterSpanFactory.class, context.getBean(SnapshotterSpanFactory.class).getClass());
+                    assertEquals(DefaultSnapshotterSpanFactory.class,
+                                 context.getBean(SnapshotterSpanFactory.class).getClass());
                 });
     }
 
@@ -295,7 +296,8 @@ class AxonAutoConfigurationWithTracingTest {
 
                     assertTrue(context.containsBean("eventBusSpanFactory"));
                     assertNotNull(context.getBean(EventBusSpanFactory.class));
-                    assertEquals(DefaultEventBusSpanFactory.class, context.getBean(EventBusSpanFactory.class).getClass());
+                    assertEquals(DefaultEventBusSpanFactory.class,
+                                 context.getBean(EventBusSpanFactory.class).getClass());
                 });
     }
 
@@ -323,7 +325,8 @@ class AxonAutoConfigurationWithTracingTest {
 
                     assertTrue(context.containsBean("queryBusSpanFactory"));
                     assertNotNull(context.getBean(QueryBusSpanFactory.class));
-                    assertEquals(DefaultQueryBusSpanFactory.class, context.getBean(QueryBusSpanFactory.class).getClass());
+                    assertEquals(DefaultQueryBusSpanFactory.class,
+                                 context.getBean(QueryBusSpanFactory.class).getClass());
                 });
     }
 
@@ -351,9 +354,11 @@ class AxonAutoConfigurationWithTracingTest {
 
                     assertTrue(context.containsBean("queryUpdateEmitterSpanFactory"));
                     assertNotNull(context.getBean(QueryUpdateEmitterSpanFactory.class));
-                    assertEquals(DefaultQueryUpdateEmitterSpanFactory.class, context.getBean(QueryUpdateEmitterSpanFactory.class).getClass());
+                    assertEquals(DefaultQueryUpdateEmitterSpanFactory.class,
+                                 context.getBean(QueryUpdateEmitterSpanFactory.class).getClass());
                 });
     }
+
     @Test
     void queryUpdateEmitterSpanFactoryCanBeOverriddenByUser() {
         QueryUpdateEmitterSpanFactory mock = Mockito.mock(QueryUpdateEmitterSpanFactory.class);
@@ -378,7 +383,8 @@ class AxonAutoConfigurationWithTracingTest {
 
                     assertTrue(context.containsBean("commandBusSpanFactory"));
                     assertNotNull(context.getBean(CommandBusSpanFactory.class));
-                    assertEquals(DefaultCommandBusSpanFactory.class, context.getBean(CommandBusSpanFactory.class).getClass());
+                    assertEquals(DefaultCommandBusSpanFactory.class,
+                                 context.getBean(CommandBusSpanFactory.class).getClass());
                 });
     }
 

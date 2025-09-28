@@ -19,7 +19,6 @@ package org.axonframework.springboot;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.modelling.command.LegacyRepository;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
@@ -32,8 +31,10 @@ import java.time.Duration;
  */
 @ConfigurationProperties("axon.tracing")
 public class TracingProperties {
+
     /**
-     * Properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     * Properties describing the tracing settings for the
+     * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter}.
      */
     private SnapshotterProperties snapshotter = new SnapshotterProperties();
 
@@ -58,7 +59,7 @@ public class TracingProperties {
     private SagaManagerProperties sagaManager = new SagaManagerProperties();
 
     /**
-     * Properties describing the tracing settings for the {@link LegacyRepository}.
+     * Properties describing the tracing settings for the {@link org.axonframework.modelling.repository.Repository}.
      */
     private RepositoryProperties repository = new RepositoryProperties();
 
@@ -80,18 +81,22 @@ public class TracingProperties {
     private AttributeProviders attributeProviders;
 
     /**
-     * Returns the properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     * Returns the properties describing the tracing settings for the
+     * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter}.
      *
-     * @return the properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     * @return the properties describing the tracing settings for the
+     * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter}.
      */
     public SnapshotterProperties getSnapshotter() {
         return snapshotter;
     }
 
     /**
-     * Sets the properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     * Sets the properties describing the tracing settings for the
+     * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter}.
      *
-     * @param snapshotter the properties describing the tracing settings for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     * @param snapshotter the properties describing the tracing settings for the
+     *                    {@link org.axonframework.eventsourcing.snapshotting.Snapshotter}.
      */
     public void setSnapshotter(SnapshotterProperties snapshotter) {
         this.snapshotter = snapshotter;
@@ -117,6 +122,7 @@ public class TracingProperties {
 
     /**
      * Returns the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     *
      * @return the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
      */
     public QueryBusProperties getQueryBus() {
@@ -125,7 +131,9 @@ public class TracingProperties {
 
     /**
      * Sets the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
-     * @param queryBus the properties describing the tracing settings for the {@link org.axonframework.queryhandling.QueryBus}.
+     *
+     * @param queryBus the properties describing the tracing settings for the
+     *                 {@link org.axonframework.queryhandling.QueryBus}.
      */
     public void setQueryBus(QueryBusProperties queryBus) {
         this.queryBus = queryBus;
@@ -176,10 +184,10 @@ public class TracingProperties {
 
     /**
      * Returns the properties describing the tracing settings for the
-     * {@link LegacyRepository}.
+     * {@link org.axonframework.modelling.repository.Repository}.
      *
      * @return the properties describing the tracing settings for the
-     * {@link LegacyRepository}.
+     * {@link org.axonframework.modelling.repository.Repository}.
      */
     public RepositoryProperties getRepository() {
         return repository;
@@ -187,32 +195,28 @@ public class TracingProperties {
 
     /**
      * Sets the properties describing the tracing settings for the
-     * {@link LegacyRepository}.
+     * {@link org.axonframework.modelling.repository.Repository}.
      *
      * @param repository the properties describing the tracing settings for the
-     *                   {@link LegacyRepository}.
+     *                   {@link org.axonframework.modelling.repository.Repository}.
      */
     public void setRepository(RepositoryProperties repository) {
         this.repository = repository;
     }
 
     /**
-     * Returns the properties describing the tracing settings for the
-     * {@link EventProcessor}.
+     * Returns the properties describing the tracing settings for the {@link EventProcessor}.
      *
-     * @return The properties describing the tracing settings for the
-     * {@link EventProcessor}.
+     * @return The properties describing the tracing settings for the {@link EventProcessor}.
      */
     public EventProcessorProperties getEventProcessor() {
         return eventProcessor;
     }
 
     /**
-     * Sets the properties describing the tracing settings for the
-     * {@link EventProcessor}.
+     * Sets the properties describing the tracing settings for the {@link EventProcessor}.
      *
-     * @param eventProcessor The properties describing the tracing settings for the
-     *                       {@link EventProcessor}.
+     * @param eventProcessor The properties describing the tracing settings for the {@link EventProcessor}.
      */
     public void setEventProcessor(EventProcessorProperties eventProcessor) {
         this.eventProcessor = eventProcessor;
@@ -399,16 +403,19 @@ public class TracingProperties {
     }
 
     /**
-     * Configuration properties for the behavior of creating tracing spans for the {@link org.axonframework.eventsourcing.Snapshotter}.
+     * Configuration properties for the behavior of creating tracing spans for the
+     * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter}.
      */
     public static class SnapshotterProperties {
+
         /**
          * Whether the creation of the snapshot should be represented by a separate trace.
          */
         private boolean separateTrace = false;
 
         /**
-         * Wether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         * Wether the aggregate type should be included in the span names of the
+         * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter} spans.
          */
         private boolean aggregateTypeInSpanName = true;
 
@@ -431,18 +438,22 @@ public class TracingProperties {
         }
 
         /**
-         * Whether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         * Whether the aggregate type should be included in the span names of the
+         * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter} spans.
          *
-         * @return whether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         * @return whether the aggregate type should be included in the span names of the
+         * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter} spans.
          */
         public boolean isAggregateTypeInSpanName() {
             return aggregateTypeInSpanName;
         }
 
         /**
-         * Sets whether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         * Sets whether the aggregate type should be included in the span names of the
+         * {@link org.axonframework.eventsourcing.snapshotting.Snapshotter} spans.
          *
-         * @param aggregateTypeInSpanName whether the aggregate type should be included in the span names of the {@link org.axonframework.eventsourcing.Snapshotter} spans.
+         * @param aggregateTypeInSpanName whether the aggregate type should be included in the span names of the
+         *                                {@link org.axonframework.eventsourcing.snapshotting.Snapshotter} spans.
          */
         public void setAggregateTypeInSpanName(boolean aggregateTypeInSpanName) {
             this.aggregateTypeInSpanName = aggregateTypeInSpanName;
@@ -493,7 +504,7 @@ public class TracingProperties {
          * Whether distributed queries should be part of the same trace.
          */
         private boolean distributedInSameTrace = true;
-        
+
         /**
          * Whether distributed queries should be part of the same trace. Defaults to {@code true}.
          *
@@ -569,7 +580,7 @@ public class TracingProperties {
 
     /**
      * Configuration properties for the behavior of creating tracing spans for the
-     * {@link LegacyRepository}.
+     * {@link org.axonframework.modelling.repository.Repository}.
      *
      * @since 4.9.0
      */
@@ -632,31 +643,30 @@ public class TracingProperties {
     }
 
     /**
-     * Configuration properties for the behavior of creating tracing spans for the
-     * {@link EventProcessor} implementations.
+     * Configuration properties for the behavior of creating tracing spans for the {@link EventProcessor}
+     * implementations.
      *
      * @since 4.9.0
      */
     public static class EventProcessorProperties {
 
         /**
-         * Disables the creation of a batch trace. This means each event is handled in its own trace.
-         * Defaults to {@code false}.
+         * Disables the creation of a batch trace. This means each event is handled in its own trace. Defaults to
+         * {@code false}.
          */
         private boolean disableBatchTrace = false;
 
         /**
          * Whether distributed events should be part of the same trace. Defaults to {@code false}. When set to
-         * {@code true}, the {@link EventProcessor} will create a new trace each batch
-         * event, as long as the batch is handled within the time limit set by
-         * {@link #distributedInSameTraceTimeLimit}.
+         * {@code true}, the {@link EventProcessor} will create a new trace each batch event, as long as the batch is
+         * handled within the time limit set by {@link #distributedInSameTraceTimeLimit}.
          */
         private boolean distributedInSameTrace = false;
 
         /**
-         * The time limit for events handled by a {@link StreamingEventProcessor} to be
-         * traced in the same trace as the trace that published it. Defaults to 2 minutes. Only used when
-         * {@link #distributedInSameTrace} is {@code true}.
+         * The time limit for events handled by a {@link StreamingEventProcessor} to be traced in the same trace as the
+         * trace that published it. Defaults to 2 minutes. Only used when {@link #distributedInSameTrace} is
+         * {@code true}.
          */
         private Duration distributedInSameTraceTimeLimit = Duration.ofMinutes(2);
 
@@ -681,9 +691,8 @@ public class TracingProperties {
 
         /**
          * Whether distributed events should be part of the same trace. Defaults to {@code false}. When set to
-         * {@code true}, the {@link EventProcessor} will create a new trace each batch
-         * event, as long as the batch is handled within the time limit set by
-         * {@link #distributedInSameTraceTimeLimit}.
+         * {@code true}, the {@link EventProcessor} will create a new trace each batch event, as long as the batch is
+         * handled within the time limit set by {@link #distributedInSameTraceTimeLimit}.
          *
          * @return Whether distributed events should be part of the same trace.
          */
@@ -693,9 +702,8 @@ public class TracingProperties {
 
         /**
          * Whether distributed events should be part of the same trace. Defaults to {@code false}. When set to
-         * {@code true}, the {@link EventProcessor} will create a new trace each batch
-         * event, as long as the batch is handled within the time limit set by
-         * {@link #distributedInSameTraceTimeLimit}.
+         * {@code true}, the {@link EventProcessor} will create a new trace each batch event, as long as the batch is
+         * handled within the time limit set by {@link #distributedInSameTraceTimeLimit}.
          *
          * @param distributedInSameTrace Whether distributed events should be part of the same trace.
          */
@@ -704,26 +712,24 @@ public class TracingProperties {
         }
 
         /**
-         * The time limit for events handled by a {@link StreamingEventProcessor} to be
-         * traced in the same trace as the trace that published it. Defaults to 2 minutes. Only used when
-         * {@link #distributedInSameTrace} is {@code true}.
+         * The time limit for events handled by a {@link StreamingEventProcessor} to be traced in the same trace as the
+         * trace that published it. Defaults to 2 minutes. Only used when {@link #distributedInSameTrace} is
+         * {@code true}.
          *
-         * @return The time limit for events handled by a
-         * {@link StreamingEventProcessor} to be traced in the same trace as the trace
-         * that published it.
+         * @return The time limit for events handled by a {@link StreamingEventProcessor} to be traced in the same trace
+         * as the trace that published it.
          */
         public Duration getDistributedInSameTraceTimeLimit() {
             return distributedInSameTraceTimeLimit;
         }
 
         /**
-         * The time limit for events handled by a {@link StreamingEventProcessor} to be
-         * traced in the same trace as the trace that published it. Defaults to 2 minutes. Only used when
-         * {@link #distributedInSameTrace} is {@code true}.
+         * The time limit for events handled by a {@link StreamingEventProcessor} to be traced in the same trace as the
+         * trace that published it. Defaults to 2 minutes. Only used when {@link #distributedInSameTrace} is
+         * {@code true}.
          *
-         * @param distributedInSameTraceTimeLimit The time limit for events handled by a
-         *                                        {@link StreamingEventProcessor} to be
-         *                                        traced in the same trace as the trace that published it.
+         * @param distributedInSameTraceTimeLimit The time limit for events handled by a {@link StreamingEventProcessor}
+         *                                        to be traced in the same trace as the trace that published it.
          */
         public void setDistributedInSameTraceTimeLimit(Duration distributedInSameTraceTimeLimit) {
             this.distributedInSameTraceTimeLimit = distributedInSameTraceTimeLimit;
