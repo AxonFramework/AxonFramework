@@ -250,7 +250,7 @@ class StreamingQueryEndToEndTest {
                            .thenApply(responseMessage -> responseMessage.payloadAs(type))
                            .get();
         } catch (IllegalPayloadAccessException e) {
-            // TODO #3488 Check if this is still needed
+            // TODO #3488 - Axon Server Query Bus replacement
 //            if (response != null && response.optionalExceptionResult().isPresent()) {
 //                throw response.optionalExceptionResult().get();
 //            } else {
