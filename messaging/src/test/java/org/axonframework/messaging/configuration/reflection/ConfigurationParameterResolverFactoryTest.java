@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.config;
+package org.axonframework.messaging.configuration.reflection;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.configuration.Configuration;
@@ -23,7 +23,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotations.ParameterResolver;
-import org.axonframework.messaging.configuration.reflection.ConfigurationParameterResolverFactory;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;

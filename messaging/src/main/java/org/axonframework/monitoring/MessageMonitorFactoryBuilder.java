@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.config;
+package org.axonframework.monitoring;
 
 import org.axonframework.common.Assert;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -30,8 +29,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Class used by {@link LegacyDefaultConfigurer} to maintain the configuration for Message Monitors and create the
- * function used in the {@link Component}.
+ * Class used by {@code LegacyDefaultConfigurer} to maintain the configuration for Message Monitors and create the
+ * function used in the {@link org.axonframework.configuration.Component}.
  */
 class MessageMonitorFactoryBuilder {
 
@@ -73,7 +72,7 @@ class MessageMonitorFactoryBuilder {
         return this;
     }
 
-    BiFunction<Class<?>, String, MessageMonitor<Message>> build(LegacyConfiguration configuration) {
+    BiFunction<Class<?>, String, MessageMonitor<Message>> build(Configuration configuration) {
         assertNotBuilt();
         built = true;
         return (type, name) -> {

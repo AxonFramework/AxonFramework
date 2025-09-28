@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.config;
+package org.axonframework.monitoring;
 
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
-import org.axonframework.monitoring.MessageMonitor;
 
 /**
  * Interface describing a factory for a Message Monitor.
+ *
+ * @author Oscar Scholten
+ * @since 3.1.0
  */
 @FunctionalInterface
 public interface MessageMonitorFactory {
@@ -28,10 +31,10 @@ public interface MessageMonitorFactory {
     /**
      * Function to create a Message Monitor based on the given configuration, component type and component name.
      *
-     * @param configuration The global configuration the implementation may use to obtain dependencies
-     * @param componentType The type of the component for which the Message Monitor must be created
-     * @param componentName The name of the component for which the Message Monitor must be created
-     * @return the Message Monitor for the component
+     * @param configuration The global configuration the implementation may use to obtain dependencies.
+     * @param componentType The type of the component for which the Message Monitor must be created.
+     * @param componentName The name of the component for which the Message Monitor must be created.
+     * @return The Message Monitor for the component.
      */
-    MessageMonitor<Message> create(LegacyConfiguration configuration, Class<?> componentType, String componentName);
+    MessageMonitor<Message> create(Configuration configuration, Class<?> componentType, String componentName);
 }

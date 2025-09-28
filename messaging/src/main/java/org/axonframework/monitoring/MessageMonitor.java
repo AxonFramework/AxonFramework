@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
  * @author Nakul Mishra
  * @since 3.0
  */
-@Deprecated
 public interface MessageMonitor<T extends Message> {
 
     /**
