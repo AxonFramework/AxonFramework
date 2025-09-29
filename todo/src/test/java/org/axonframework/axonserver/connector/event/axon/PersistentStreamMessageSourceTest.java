@@ -44,6 +44,7 @@ import java.util.stream.IntStream;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@Disabled("TODO #3520")
 @ExtendWith(MockitoExtension.class)
 class PersistentStreamMessageSourceTest {
 
