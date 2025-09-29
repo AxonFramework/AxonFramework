@@ -19,9 +19,11 @@ package org.axonframework.commandhandling.annotations;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandMessageHandlerInterceptorChain;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
@@ -72,17 +74,13 @@ class AnnotatedCommandHandlingComponentTest {
 
     @Test
     void handlerDispatchingVoidReturnType() {
-        CommandMessage testCommand = new GenericCommandMessage(new MessageType(String.class),
-                                                               "myStringPayload");
+        CommandMessage testCommand = new GenericCommandMessage(new MessageType(String.class), "myStringPayload");
 
-        Object result = testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand))
-                                   .first()
-                                   .asCompletableFuture()
-                                   .join()
-                                   .message()
-                                   .payload();
+        MessageStream.Single<CommandResultMessage> resultStream =
+                testSubject.handle(testCommand, StubProcessingContext.forMessage(testCommand));
 
-        assertNull(result);
+        assertTrue(resultStream.isCompleted());
+        assertFalse(resultStream.hasNextAvailable());
         assertEquals(1, annotatedCommandHandler.voidHandlerInvoked);
         assertEquals(0, annotatedCommandHandler.returningHandlerInvoked);
     }
