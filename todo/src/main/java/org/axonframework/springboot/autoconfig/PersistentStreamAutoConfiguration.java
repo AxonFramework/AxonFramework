@@ -17,7 +17,6 @@
 package org.axonframework.springboot.autoconfig;
 
 
-import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.event.axon.DefaultPersistentStreamMessageSourceFactory;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSource;
@@ -26,6 +25,7 @@ import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessage
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
@@ -120,28 +120,30 @@ public class PersistentStreamAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(name = "axon.axonserver.auto-persistent-streams-enable")
-    public ConfigurerModule autoPersistentStreamMessageSourceDefinitionBuilder(
+    public ConfigurationEnhancer autoPersistentStreamMessageSourceDefinitionBuilder(
             PersistentStreamScheduledExecutorBuilder executorBuilder,
             PersistentStreamMessageSourceFactory psFactory,
             AxonServerConfiguration axonServerConfiguration) {
-        AxonServerConfiguration.PersistentStreamSettings psSettings = axonServerConfiguration.getAutoPersistentStreamsSettings();
-        return configurer -> configurer.eventProcessing().usingSubscribingEventProcessors(
-                processingGroupName -> {
-                    String psName = processingGroupName + "-stream";
-                    return new PersistentStreamMessageSourceDefinition(
-                            processingGroupName,
-                            new PersistentStreamProperties(psName,
-                                                           psSettings.getInitialSegmentCount(),
-                                                           psSettings.getSequencingPolicy(),
-                                                           psSettings.getSequencingPolicyParameters(),
-                                                           psSettings.getInitialPosition(),
-                                                           psSettings.getFilter()),
-                            executorBuilder.build(psSettings.getThreadCount(), psName),
-                            psSettings.getBatchSize(),
-                            null,
-                            psFactory
-                    );
-                });
+//        AxonServerConfiguration.PersistentStreamSettings psSettings = axonServerConfiguration.getAutoPersistentStreamsSettings();
+//        return configurer -> configurer.eventProcessing().usingSubscribingEventProcessors(
+//                processingGroupName -> {
+//                    String psName = processingGroupName + "-stream";
+//                    return new PersistentStreamMessageSourceDefinition(
+//                            processingGroupName,
+//                            new PersistentStreamProperties(psName,
+//                                                           psSettings.getInitialSegmentCount(),
+//                                                           psSettings.getSequencingPolicy(),
+//                                                           psSettings.getSequencingPolicyParameters(),
+//                                                           psSettings.getInitialPosition(),
+//                                                           psSettings.getFilter()),
+//                            executorBuilder.build(psSettings.getThreadCount(), psName),
+//                            psSettings.getBatchSize(),
+//                            null,
+//                            psFactory
+//                    );
+//                });
+        return componentRegistry -> {
+        };
     }
 
     /**
@@ -170,49 +172,49 @@ public class PersistentStreamAutoConfiguration {
     /**
      * Creates a {@link ConfigurerModule} to configure
      * {@link org.axonframework.eventhandling.sequencing.SequencingPolicy sequencing policies} for persistent streams
-     * connected to {@link SubscribingEventProcessor subscribing event processors} with
-     * a dead letter queue.
+     * connected to {@link SubscribingEventProcessor subscribing event processors} with a dead letter queue.
      *
      * @param processorProperties     Contains the configured event processors.
      * @param axonServerConfiguration Contains the persistent stream definitions.
      * @return A {@link ConfigurerModule} to configure
      * {@link org.axonframework.eventhandling.sequencing.SequencingPolicy sequencing policies} for persistent streams
-     * connected to {@link SubscribingEventProcessor subscribing event processors} with
-     * a dead letter queue.
+     * connected to {@link SubscribingEventProcessor subscribing event processors} with a dead letter queue.
      */
     @Bean
     @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
-    public ConfigurerModule persistentStreamProcessorsConfigurerModule(
+    public ConfigurationEnhancer persistentStreamProcessorsConfigurerModule(
             EventProcessorProperties processorProperties,
             AxonServerConfiguration axonServerConfiguration
     ) {
-        return configurer -> configurer.eventProcessing(
-                processingConfigurer -> processorProperties.getProcessors()
-                                                           .entrySet()
-                                                           .stream()
-                                                           .filter(e -> e.getValue().getMode()
-                                                                         .equals(EventProcessorProperties.Mode.SUBSCRIBING))
-                                                           .filter(e -> e.getValue().getDlq().isEnabled())
-                                                           .filter(e -> axonServerConfiguration.getPersistentStreams()
-                                                                                               .containsKey(
-                                                                                                       e.getValue()
-                                                                                                        .source()))
-                                                           .forEach(e -> {
-                                                               AxonServerConfiguration.PersistentStreamSettings persistentStreamConfig =
-                                                                       axonServerConfiguration.getPersistentStreams()
-                                                                                              .get(e.getValue()
-                                                                                                    .source());
-                                                               processingConfigurer.registerSequencingPolicy(
-                                                                       e.getKey(),
-                                                                       // TODO #3520
-                                                                       null
-//                                                                       new PersistentStreamSequencingPolicyProvider(
-//                                                                               e.getKey(),
-//                                                                               persistentStreamConfig.getSequencingPolicy(),
-//                                                                               persistentStreamConfig.getSequencingPolicyParameters()
-//                                                                       )
-                                                               );
-                                                           })
-        );
+        return componentRegistry -> {
+        };
+//        return configurer -> configurer.eventProcessing(
+//                processingConfigurer -> processorProperties.getProcessors()
+//                                                           .entrySet()
+//                                                           .stream()
+//                                                           .filter(e -> e.getValue().getMode()
+//                                                                         .equals(EventProcessorProperties.Mode.SUBSCRIBING))
+//                                                           .filter(e -> e.getValue().getDlq().isEnabled())
+//                                                           .filter(e -> axonServerConfiguration.getPersistentStreams()
+//                                                                                               .containsKey(
+//                                                                                                       e.getValue()
+//                                                                                                        .source()))
+//                                                           .forEach(e -> {
+//                                                               AxonServerConfiguration.PersistentStreamSettings persistentStreamConfig =
+//                                                                       axonServerConfiguration.getPersistentStreams()
+//                                                                                              .get(e.getValue()
+//                                                                                                    .source());
+//                                                               processingConfigurer.registerSequencingPolicy(
+//                                                                       e.getKey(),
+//                                                                       // TODO #3520
+//                                                                       null
+////                                                                       new PersistentStreamSequencingPolicyProvider(
+////                                                                               e.getKey(),
+////                                                                               persistentStreamConfig.getSequencingPolicy(),
+////                                                                               persistentStreamConfig.getSequencingPolicyParameters()
+////                                                                       )
+//                                                               );
+//                                                           })
+//        );
     }
 }

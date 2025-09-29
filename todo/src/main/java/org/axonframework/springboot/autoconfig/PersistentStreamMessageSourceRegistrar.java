@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,17 +41,17 @@ import static io.axoniq.axonserver.connector.impl.ObjectUtils.nonNullOrDefault;
  *
  * @author Marc Gathier
  * @since 4.10.0
- */
+ */ // TODO #3520 Fix as part of Persistent Streams reintroduction
 public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionRegistryPostProcessor {
 
-    private final Map<String, AxonServerConfiguration.PersistentStreamSettings> persistentStreams;
+//    private final Map<String, AxonServerConfiguration.PersistentStreamSettings> persistentStreams;
     private final PersistentStreamScheduledExecutorBuilder executorBuilder;
 
     /**
      * Instantiates a {@link PersistentStreamMessageSourceRegistrar} instance.
      * <p>
      * This registrar will retrieve the
-     * {@link AxonServerConfiguration.PersistentStreamSettings persistent stream definitions} from the given
+     * {@code AxonServerConfiguration.PersistentStreamSettings persistent stream definitions} from the given
      * {@code environment}.
      *
      * @param environment     Application configuration environment.
@@ -61,12 +61,12 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
     public PersistentStreamMessageSourceRegistrar(Environment environment,
                                                   PersistentStreamScheduledExecutorBuilder executorBuilder) {
         Binder binder = Binder.get(environment);
-        this.persistentStreams =
-                binder.bind(
-                              "axon.axonserver.persistent-streams",
-                              Bindable.mapOf(String.class, AxonServerConfiguration.PersistentStreamSettings.class)
-                      )
-                      .orElse(Collections.emptyMap());
+//        this.persistentStreams =
+//                binder.bind(
+//                              "axon.axonserver.persistent-streams",
+//                              Bindable.mapOf(String.class, AxonServerConfiguration.PersistentStreamSettings.class)
+//                      )
+//                      .orElse(Collections.emptyMap());
         this.executorBuilder = executorBuilder;
     }
 
@@ -74,29 +74,29 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
     public void postProcessBeanDefinitionRegistry(
             @Nonnull BeanDefinitionRegistry beanDefinitionRegistry
     ) throws BeansException {
-        persistentStreams.forEach((name, settings) -> {
-            BeanDefinitionBuilder beanDefinition =
-                    BeanDefinitionBuilder.genericBeanDefinition(PersistentStreamMessageSourceDefinition.class);
-            String streamName = nonNullOrDefault(settings.getName(), name);
-            beanDefinition.addConstructorArgValue(streamName);
-
-            BeanDefinitionBuilder streamProperties =
-                    BeanDefinitionBuilder.genericBeanDefinition(PersistentStreamProperties.class);
-            streamProperties.addConstructorArgValue(streamName);
-            streamProperties.addConstructorArgValue(settings.getInitialSegmentCount());
-            streamProperties.addConstructorArgValue(settings.getSequencingPolicy());
-            streamProperties.addConstructorArgValue(settings.getSequencingPolicyParameters());
-            streamProperties.addConstructorArgValue(settings.getInitialPosition());
-            streamProperties.addConstructorArgValue(settings.getFilter());
-
-            beanDefinition.addConstructorArgValue(streamProperties.getBeanDefinition());
-            beanDefinition.addConstructorArgValue(executorBuilder.build(settings.getThreadCount(), streamName));
-            beanDefinition.addConstructorArgValue(settings.getBatchSize());
-            beanDefinition.addConstructorArgValue(null);
-            beanDefinition.addConstructorArgValue(new RuntimeBeanReference(PersistentStreamMessageSourceFactory.class));
-
-            beanDefinitionRegistry.registerBeanDefinition(name, beanDefinition.getBeanDefinition());
-        });
+//        persistentStreams.forEach((name, settings) -> {
+//            BeanDefinitionBuilder beanDefinition =
+//                    BeanDefinitionBuilder.genericBeanDefinition(PersistentStreamMessageSourceDefinition.class);
+//            String streamName = nonNullOrDefault(settings.getName(), name);
+//            beanDefinition.addConstructorArgValue(streamName);
+//
+//            BeanDefinitionBuilder streamProperties =
+//                    BeanDefinitionBuilder.genericBeanDefinition(PersistentStreamProperties.class);
+//            streamProperties.addConstructorArgValue(streamName);
+//            streamProperties.addConstructorArgValue(settings.getInitialSegmentCount());
+//            streamProperties.addConstructorArgValue(settings.getSequencingPolicy());
+//            streamProperties.addConstructorArgValue(settings.getSequencingPolicyParameters());
+//            streamProperties.addConstructorArgValue(settings.getInitialPosition());
+//            streamProperties.addConstructorArgValue(settings.getFilter());
+//
+//            beanDefinition.addConstructorArgValue(streamProperties.getBeanDefinition());
+//            beanDefinition.addConstructorArgValue(executorBuilder.build(settings.getThreadCount(), streamName));
+//            beanDefinition.addConstructorArgValue(settings.getBatchSize());
+//            beanDefinition.addConstructorArgValue(null);
+//            beanDefinition.addConstructorArgValue(new RuntimeBeanReference(PersistentStreamMessageSourceFactory.class));
+//
+//            beanDefinitionRegistry.registerBeanDefinition(name, beanDefinition.getBeanDefinition());
+//        });
     }
 
     @Override

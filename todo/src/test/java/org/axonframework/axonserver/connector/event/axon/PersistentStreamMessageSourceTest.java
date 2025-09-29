@@ -108,7 +108,7 @@ class PersistentStreamMessageSourceTest {
         messageSource.subscribe(eventConsumer);
 
         // when/then
-        assertDoesNotThrow(() -> messageSource.subscribe(eventConsumer));
+        Assertions.assertDoesNotThrow(() -> messageSource.subscribe(eventConsumer));
     }
 
     @Test
@@ -130,7 +130,7 @@ class PersistentStreamMessageSourceTest {
         Consumer<List<? extends EventMessage>> newConsumer = mock(Consumer.class);
 
         // when/then
-        assertDoesNotThrow(() -> messageSource.subscribe(newConsumer));
+        Assertions.assertDoesNotThrow(() -> messageSource.subscribe(newConsumer));
     }
 
     @Test
