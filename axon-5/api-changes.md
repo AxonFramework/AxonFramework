@@ -1092,7 +1092,9 @@ and less reflection is needed at runtime, which improves performance.
 EntityMetamodel<ImmutableTask> metamodel = AnnotatedEntityMetamodel.forConcreteType(
         ImmutableTask.class,
         configuration.getComponent(ParameterResolverFactory.class),
-        configuration.getComponent(MessageTypeResolver.class)
+        configuration.getComponent(MessageTypeResolver.class),
+        configuration.getComponent(MessageConverter.class),
+        configuration.getComponent(EventConverter.class)
 );
 ```
 
@@ -1159,7 +1161,7 @@ class MyPreFiveClass {
 
     @CommandHandler
     fun handle(command: CreateMyEntityCommand) {
-        apply(MyEntityCreatedEvent(command.id, command.name))
+        AggregateLifecycle.apply(MyEntityCreatedEvent(command.id, command.name))
         // Other initialization logic...
     }
 
@@ -1186,8 +1188,8 @@ public class MyPreFiveClass {
     private String id;
 
     @CommandHandler
-    public void handle(CreateMyEntityCommand command) {
-        apply(new MyEntityCreatedEvent(command.getId(), command.getName()));
+    public void handle(CreateMyEntityCommand command, EventAppender appender) {
+        appender.append(new MyEntityCreatedEvent(command.getId(), command.getName()));
         // Other initialization logic...
     }
 
@@ -1278,8 +1280,7 @@ Here is an example of both a creational and an instance command handler in Java:
 
 ```java
 public class MyEntity {
-
-    @AggregateIdentifier
+    
     private String id;
 
     @EntityCreator
@@ -1290,14 +1291,14 @@ public class MyEntity {
 
     // Creational command handler
     @CommandHandler
-    public static void create(CreateMyEntityCommand command) {
-        apply(new MyEntityCreatedEvent(command.getId(), command.getName()));
+    public static void create(CreateMyEntityCommand command, EventAppender appender) {
+        appender.append(new MyEntityCreatedEvent(command.getId(), command.getName()));
     }
 
     // Instance command handler
     @CommandHandler
-    public void handle(UpdateMyEntityCommand command) {
-        apply(new MyEntityUpdatedEvent(id, command.getNewName()));
+    public void handle(UpdateMyEntityCommand command, EventAppender appender) {
+        appender.append(new MyEntityUpdatedEvent(id, command.getNewName()));
         // Other update logic...
     }
 }
@@ -1385,12 +1386,11 @@ exceptions, you will need to change your code. The following table shows the cha
 
 ### Spring Configuration
 
-AF5 fosters auto-detection and auto-configuration of entities, command and message handlers in Spring environment. The
-`@EventSourced` annotation
-is still used as a Spring meta-annotation for a prototype scoped component and now is additionally is meta-annotated
-with `@EventSourcedEntity` (
-replicating all its attributes.) This effectively means that you only need to put the `@EventSourced` annotation to your
-entity and the remaining
+AF5 fosters auto-detection and auto-configuration of entities, command and message handlers in Spring environment. To
+not rely on the old `@Aggregate` stereotype, we introduced the
+`@EventSourced` annotation. The `@EventSourced` annotation is still used as a Spring meta-annotation for a prototype
+scoped component and now is additionally is meta-annotated with `@EventSourcedEntity` ( replicating all its attributes.)
+This effectively means that you only need to put the `@EventSourced` annotation to your entity and the remaining
 configuration will be executed by Spring Auto-Configuration. The following attributes are available:
 
 | Attribute                    | Type                                                   | Description                                                                                      |
