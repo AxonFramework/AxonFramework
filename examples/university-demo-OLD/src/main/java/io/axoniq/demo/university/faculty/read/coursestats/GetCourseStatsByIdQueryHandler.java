@@ -8,8 +8,9 @@ public record GetCourseStatsByIdQueryHandler(
 
     @QueryHandler
     GetCourseStatsById.Result handle(GetCourseStatsById query) {
-        var stats = repository.findByIdOrThrow(query.courseId());
-        return new GetCourseStatsById.Result(stats);
+        return repository.findById(query.courseId())
+                .map(GetCourseStatsById.Result::new)
+                .orElseGet(() -> new GetCourseStatsById.Result(null));
     }
 
 }
