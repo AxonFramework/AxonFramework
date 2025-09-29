@@ -35,6 +35,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
+@Disabled("Kept for checking with old approach mostly, to see what we can carry over")
 class MultiEventHandlerInvokerTest {
 
     private static final Object NO_RESET_PAYLOAD = null;

@@ -82,8 +82,7 @@ public class MultiEventHandlerInvoker implements EventHandlerInvoker {
     }
 
     private boolean canHandle(EventHandlerInvoker invoker, EventMessage eventMessage, ProcessingContext context, Segment segment) {
-        return (invoker.supportsReset() || !ReplayToken.isReplay(eventMessage))
-                && invoker.canHandle(eventMessage, context, segment);
+        return invoker.supportsReset() && invoker.canHandle(eventMessage, context, segment);
     }
 
     @Override

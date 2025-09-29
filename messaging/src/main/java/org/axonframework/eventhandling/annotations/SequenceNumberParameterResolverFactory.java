@@ -19,14 +19,11 @@ package org.axonframework.eventhandling.annotations;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.LegacyResources;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotations.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link Long} type
@@ -35,7 +32,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * Primitive long parameters are also supported.
  *
  * @author Mark Ingram
- * @since 2.1
+ * @since 2.1.0
  */
 @Priority(Priority.HIGH)
 public final class SequenceNumberParameterResolverFactory extends
@@ -64,20 +61,12 @@ public final class SequenceNumberParameterResolverFactory extends
         @Nullable
         @Override
         public Long resolveParameterValue(@Nonnull ProcessingContext context) {
-            var sequenceNumber = context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
-            if (sequenceNumber != null) {
-                return sequenceNumber;
-            }
-            if (Message.fromContext(context) instanceof DomainEventMessage domainEventMessage) {
-                return domainEventMessage.getSequenceNumber();
-            }
-            return null;
+            return context.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
         }
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            var sequenceInContext = context.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
-            return sequenceInContext || Message.fromContext(context) instanceof DomainEventMessage;
+            return context.containsResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY);
         }
     }
 }

@@ -17,8 +17,6 @@
 package org.axonframework.eventhandling.processors.errorhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.processors.EventProcessingException;
 
 /**
@@ -26,7 +24,7 @@ import org.axonframework.eventhandling.processors.EventProcessingException;
  *
  * @author Rene de Waele
  */
-public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationErrorHandler {
+public enum PropagatingErrorHandler implements ErrorHandler {
 
     /**
      * Singleton instance of a {@link PropagatingErrorHandler}.
@@ -40,12 +38,6 @@ public enum PropagatingErrorHandler implements ErrorHandler, ListenerInvocationE
      */
     public static PropagatingErrorHandler instance() {
         return INSTANCE;
-    }
-
-    @Override
-    public void onError(@Nonnull Exception exception, @Nonnull EventMessage event,
-                        @Nonnull EventMessageHandler eventHandler) throws Exception {
-        throw exception;
     }
 
     @Override

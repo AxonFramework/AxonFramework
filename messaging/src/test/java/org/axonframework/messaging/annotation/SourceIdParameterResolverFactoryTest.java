@@ -18,13 +18,14 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotations.ParameterResolver;
 import org.axonframework.messaging.annotations.SourceId;
 import org.axonframework.messaging.annotations.SourceIdParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -68,12 +69,11 @@ class SourceIdParameterResolverFactoryTest {
     void resolvesToAggregateIdentifierWhenAnnotatedForDomainEventMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
-        final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage(
-                "test", UUID.randomUUID().toString(), 0L, new MessageType("event"), "event"
-        );
-        ProcessingContext context = StubProcessingContext.forMessage(eventMessage);
+        EventMessage eventMessage = EventTestUtils.createEvent(0);
+        String aggregateId = UUID.randomUUID().toString();
+        ProcessingContext context = StubProcessingContext.forMessage(eventMessage, aggregateId, 0L, "aggregateType");
         assertTrue(resolver.matches(context));
-        assertEquals(eventMessage.getAggregateIdentifier(), resolver.resolveParameterValue(context));
+        assertEquals(aggregateId, resolver.resolveParameterValue(context));
     }
 
     @Test

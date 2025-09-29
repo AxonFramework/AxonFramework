@@ -16,10 +16,10 @@
 
 package org.axonframework.modelling;
 
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.conversion.EventConverter;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.annotations.SequenceNumber;
 import org.axonframework.eventhandling.annotations.Timestamp;
@@ -29,6 +29,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.annotations.MetadataValue;
 import org.axonframework.messaging.annotations.SourceId;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.serialization.json.JacksonConverter;
@@ -38,6 +39,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 
+import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
+import static org.axonframework.eventhandling.EventTestUtils.createEvent;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -63,10 +66,11 @@ class AnnotationBasedEntityEvolvingComponentTest {
         void mutatesStateOnOriginalInstanceIfEventHandlerDoNotReturnsTheModelType() {
             // given
             var state = new TestState();
-            var event = domainEvent(0);
+            var event = createEvent(0);
+            var context = StubProcessingContext.forMessage(event, "id", 0, "test");
 
             // when
-            ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
+            ENTITY_EVOLVER.evolve(state, event, context);
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -76,10 +80,11 @@ class AnnotationBasedEntityEvolvingComponentTest {
         void returnsStateAfterHandlingEvent() {
             // given
             var state = new TestState();
-            var event = domainEvent(0);
+            var event = createEvent(0);
+            var context = StubProcessingContext.forMessage(event, "id", 0, "test");
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
+            state = ENTITY_EVOLVER.evolve(state, event, context);
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -89,14 +94,17 @@ class AnnotationBasedEntityEvolvingComponentTest {
         void handlesSequenceOfEvents() {
             // given
             var state = new TestState();
-            DomainEventMessage event0 = domainEvent(0);
-            DomainEventMessage event1 = domainEvent(1);
-            DomainEventMessage event2 = domainEvent(2);
+            EventMessage event0 = createEvent(0);
+            var context0 = StubProcessingContext.forMessage(event0, "id", 0, "test");
+            EventMessage event1 = createEvent(1);
+            var context1 = StubProcessingContext.forMessage(event1, "id", 1, "test");
+            EventMessage event2 = createEvent(2);
+            var context2 = StubProcessingContext.forMessage(event2, "id", 2, "test");
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event0, StubProcessingContext.forMessage(event0));
-            state = ENTITY_EVOLVER.evolve(state, event1, StubProcessingContext.forMessage(event1));
-            state = ENTITY_EVOLVER.evolve(state, event2, StubProcessingContext.forMessage(event2));
+            state = ENTITY_EVOLVER.evolve(state, event0, context0);
+            state = ENTITY_EVOLVER.evolve(state, event1, context1);
+            state = ENTITY_EVOLVER.evolve(state, event2, context2);
 
             // then
             assertEquals("null-0-1-2", state.handledPayloads);
@@ -111,10 +119,13 @@ class AnnotationBasedEntityEvolvingComponentTest {
         void resolvesMetadata() {
             // given
             var state = new TestState();
-            var event = domainEvent(0, "sampleValue");
+            var event = new GenericEventMessage(new MessageType(Integer.class),
+                                                0,
+                                                Metadata.with("sampleKey", "sampleValue"));
+            var context = StubProcessingContext.forMessage(event, "id", 0, "test");
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
+            state = ENTITY_EVOLVER.evolve(state, event, context);
 
             // then
             assertEquals("null-sampleValue", state.handledMetadata);
@@ -124,10 +135,11 @@ class AnnotationBasedEntityEvolvingComponentTest {
         void resolvesSequenceNumber() {
             // given
             var state = new TestState();
-            var event = domainEvent(0);
+            var event = createEvent(0);
+            var context = StubProcessingContext.forMessage(event, "id", 0, "test");
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
+            state = ENTITY_EVOLVER.evolve(state, event, context);
 
             // then
             assertEquals("null-0", state.handledSequences);
@@ -137,10 +149,11 @@ class AnnotationBasedEntityEvolvingComponentTest {
         void resolvesSources() {
             // given
             var state = new TestState();
-            var event = domainEvent(0);
+            var event = createEvent(0);
+            var context = StubProcessingContext.forMessage(event, "id", 0, "test");
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
+            state = ENTITY_EVOLVER.evolve(state, event, context);
 
             // then
             assertEquals("null-id", state.handledSources);
@@ -153,10 +166,11 @@ class AnnotationBasedEntityEvolvingComponentTest {
 
             // given
             var state = new TestState();
-            var event = domainEvent(0);
+            var event = createEvent(0);
+            var context = StubProcessingContext.forMessage(event, "id", 0, "test");
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
+            state = ENTITY_EVOLVER.evolve(state, event, context);
 
             // then
             assertEquals("null-" + timestamp, state.handledTimestamps);
@@ -178,7 +192,7 @@ class AnnotationBasedEntityEvolvingComponentTest {
                                                                                      converter,
                                                                                      messageTypeResolver);
             var state = new HandlingJustStringState();
-            var event = domainEvent(0);
+            var event = createEvent(0);
 
             // when
             state = eventSourcedComponent.evolve(state, event, StubProcessingContext.forMessage(event));
@@ -191,10 +205,11 @@ class AnnotationBasedEntityEvolvingComponentTest {
         void invokesOnlyMostSpecificHandler() {
             // given
             var state = new TestState();
-            var event = domainEvent(0);
+            var event = createEvent(0);
+            var context = StubProcessingContext.forMessage(event, "id", 0, "test");
 
             // when
-            state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
+            state = ENTITY_EVOLVER.evolve(state, event, context);
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -230,7 +245,7 @@ class AnnotationBasedEntityEvolvingComponentTest {
         void doNotMutateGivenStateIfRecord() {
             // given
             var state = RecordState.empty();
-            var event = domainEvent(0);
+            var event = createEvent(0);
 
             // when
             ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
@@ -243,7 +258,7 @@ class AnnotationBasedEntityEvolvingComponentTest {
         void returnsNewObjectIfRecord() {
             // given
             var state = RecordState.empty();
-            var event = domainEvent(0);
+            var event = createEvent(0);
 
             // when
             state = ENTITY_EVOLVER.evolve(state, event, StubProcessingContext.forMessage(event));
@@ -263,11 +278,13 @@ class AnnotationBasedEntityEvolvingComponentTest {
                                                                            converter,
                                                                            messageTypeResolver);
             var state = new ErrorThrowingState();
-            var event = domainEvent(0);
+            var event = createEvent(0);
 
             // when-then
             var exception = assertThrows(StateEvolvingException.class,
-                                         () -> testSubject.evolve(state, event, StubProcessingContext.forMessage(event)));
+                                         () -> testSubject.evolve(state,
+                                                                  event,
+                                                                  StubProcessingContext.forMessage(event)));
             assertEquals(
                     "Failed to apply event [java.lang.Integer#0.0.1] in order to evolve [class org.axonframework.modelling.AnnotationBasedEntityEvolvingComponentTest$ErrorThrowingState] state",
                     exception.getMessage()
@@ -279,7 +296,7 @@ class AnnotationBasedEntityEvolvingComponentTest {
         @Test
         void rejectsNullModel() {
             // given
-            var event = domainEvent(0);
+            var event = createEvent(0);
 
             // when-then
             //noinspection DataFlowIssue
@@ -287,20 +304,6 @@ class AnnotationBasedEntityEvolvingComponentTest {
                          () -> ENTITY_EVOLVER.evolve(null, event, StubProcessingContext.forMessage(event)),
                          "Model may not be null");
         }
-    }
-
-    private static DomainEventMessage domainEvent(int seq) {
-        return domainEvent(seq, null);
-    }
-
-    private static DomainEventMessage domainEvent(int seq, String sampleMetadata) {
-        return new GenericDomainEventMessage(
-                "test",
-                "id",
-                seq,
-                new MessageType(Integer.class),
-                seq, sampleMetadata == null ? Metadata.emptyInstance() : Metadata.with("sampleKey", sampleMetadata)
-        );
     }
 
     private static class TestState {

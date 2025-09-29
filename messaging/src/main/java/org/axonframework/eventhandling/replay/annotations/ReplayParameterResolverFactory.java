@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.replay.ReplayStatus;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotations.ParameterResolver;
@@ -28,22 +29,25 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+import java.util.Optional;
 
 /**
  * An implementation of the {@link org.axonframework.messaging.annotations.ParameterResolverFactory} which resolves the
- * {@link ReplayStatus} parameter. Will resolve a {@link ReplayStatus#REPLAY} parameter
- * if the {@link org.axonframework.messaging.Message} is a {@link org.axonframework.eventhandling.TrackedEventMessage},
- * containing a {@link ReplayToken}. Otherwise, it will resolve a
- * {@link ReplayStatus#REGULAR} parameter.
+ * {@link ReplayStatus} parameter.
+ * <p>
+ * Will resolve a {@link ReplayStatus#REPLAY} parameter if the {@link ProcessingContext} is a contains a
+ * {@link ReplayToken}. Otherwise, it will resolve a {@link ReplayStatus#REGULAR} parameter.
  *
  * @author Allard Buijze
- * @since 3.2
+ * @since 3.2.0
  */
 public class ReplayParameterResolverFactory implements ParameterResolverFactory {
 
     @Nullable
     @Override
-    public ParameterResolver<ReplayStatus> createInstance(@Nonnull Executable executable, @Nonnull Parameter[] parameters, int parameterIndex) {
+    public ParameterResolver<ReplayStatus> createInstance(@Nonnull Executable executable,
+                                                          @Nonnull Parameter[] parameters,
+                                                          int parameterIndex) {
         if (ReplayStatus.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return new ReplayParameterResolver();
         }
@@ -55,8 +59,9 @@ public class ReplayParameterResolverFactory implements ParameterResolverFactory 
         @Nullable
         @Override
         public ReplayStatus resolveParameterValue(@Nonnull ProcessingContext context) {
-            if (Message.fromContext(context) instanceof EventMessage eventMessage) {
-                return ReplayToken.isReplay(eventMessage) ? ReplayStatus.REPLAY : ReplayStatus.REGULAR;
+            Optional<TrackingToken> optionalToken = TrackingToken.fromContext(context);
+            if (Message.fromContext(context) instanceof EventMessage && optionalToken.isPresent()) {
+                return ReplayToken.isReplay(optionalToken.get()) ? ReplayStatus.REPLAY : ReplayStatus.REGULAR;
             }
             return ReplayStatus.REGULAR;
         }

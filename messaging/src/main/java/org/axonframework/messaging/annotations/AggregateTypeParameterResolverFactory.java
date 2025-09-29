@@ -19,15 +19,13 @@ package org.axonframework.messaging.annotations;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.LegacyResources;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * An extension of the AbstractAnnotatedParameterResolverFactory that accepts parameters of a {@link String} type that
- * are annotated with the {@link AggregateType} annotation and assigns the aggregate type of the
- * {@link org.axonframework.eventhandling.DomainEventMessage}.
+ * are annotated with the {@link AggregateType} annotation and assigns the aggregate type from the
+ * {@link ProcessingContext} if present.
  *
  * @author Frank Scheffler
  * @since 4.7.0
@@ -63,16 +61,12 @@ public final class AggregateTypeParameterResolverFactory
             if (aggregateType != null) {
                 return aggregateType;
             }
-            if (Message.fromContext(context) instanceof DomainEventMessage domainEventMessage) {
-                return domainEventMessage.getType();
-            }
             return null;
         }
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            var aggregateTypeInContext = context.containsResource(LegacyResources.AGGREGATE_TYPE_KEY);
-            return aggregateTypeInContext || Message.fromContext(context) instanceof DomainEventMessage;
+            return context.containsResource(LegacyResources.AGGREGATE_TYPE_KEY);
         }
     }
 }

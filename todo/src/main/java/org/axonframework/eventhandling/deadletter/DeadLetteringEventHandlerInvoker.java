@@ -22,10 +22,11 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.processors.errorhandling.ErrorContext;
 import org.axonframework.eventhandling.processors.errorhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.processors.errorhandling.PropagatingErrorHandler;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.sequencing.SequencingPolicy;
 import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -124,7 +125,8 @@ public class DeadLetteringEventHandlerInvoker
     }
 
     @Override
-    public void handle(@Nonnull EventMessage message, @Nonnull ProcessingContext context, @Nonnull Segment segment) throws Exception {
+    public void handle(@Nonnull EventMessage message, @Nonnull ProcessingContext context, @Nonnull Segment segment)
+            throws Exception {
         if (!super.sequencingPolicyMatchesSegment(message, segment, context)) {
             logger.trace("Ignoring event with id [{}] as it is not assigned to segment [{}].",
                          message.identifier(), segment);
@@ -164,7 +166,8 @@ public class DeadLetteringEventHandlerInvoker
         );
     }
 
-    private void invokeHandlers(@Nonnull EventMessage message, @Nonnull ProcessingContext context, @Nonnull Segment segment, Object sequenceIdentifier) {
+    private void invokeHandlers(@Nonnull EventMessage message, @Nonnull ProcessingContext context,
+                                @Nonnull Segment segment, Object sequenceIdentifier) {
         if (logger.isTraceEnabled()) {
             logger.trace("Event [{}] with queue id [{}] is not present in the dead-letter queue."
                                  + "Handle operation is delegated to the wrapped EventHandlerInvoker.",
@@ -236,7 +239,8 @@ public class DeadLetteringEventHandlerInvoker
                                                     transactionManager);
         LegacyUnitOfWork<?> uow = new LegacyDefaultUnitOfWork<>(null);
         uow.attachTransaction(transactionManager);
-        return (boolean)uow.executeWithResult((ctx) -> queue.process(sequenceFilter, processingTask::process)).payload();
+        return (boolean) uow.executeWithResult((ctx) -> queue.process(sequenceFilter, processingTask::process))
+                            .payload();
     }
 
     public Registration registerHandlerInterceptor(
@@ -279,7 +283,11 @@ public class DeadLetteringEventHandlerInvoker
         private Builder() {
             // The parent's error handler defaults to propagating the error.
             // Otherwise, faulty events would not be dead lettered.
-            super.listenerInvocationErrorHandler(PropagatingErrorHandler.instance());
+            super.listenerInvocationErrorHandler(
+                    (exception, event, eventHandler) -> PropagatingErrorHandler.instance().handleError(
+                            new ErrorContext("processor", exception, List.of(event))
+                    )
+            );
         }
 
         /**
@@ -328,7 +336,9 @@ public class DeadLetteringEventHandlerInvoker
         /**
          * Sets whether this {@link DeadLetteringEventHandlerInvoker} supports resets of the provided
          * {@link SequencedDeadLetterQueue}. If set to {@code true}, {@link SequencedDeadLetterQueue#clear()} will be
-         * invoked upon a {@link EventHandlerInvoker#performReset(ProcessingContext)}/{@link EventHandlerInvoker#performReset(Object, ProcessingContext)} invocation. Defaults to {@code false}.
+         * invoked upon a
+         * {@link EventHandlerInvoker#performReset(ProcessingContext)}/{@link EventHandlerInvoker#performReset(Object,
+         * ProcessingContext)} invocation. Defaults to {@code false}.
          *
          * @param allowReset A toggle dictating whether this {@link DeadLetteringEventHandlerInvoker} supports resets of
          *                   the provided {@link SequencedDeadLetterQueue}.
@@ -345,12 +355,11 @@ public class DeadLetteringEventHandlerInvoker
          * {@link SequencedDeadLetterQueue#enqueueIfPresent(Object, Supplier)} when we can be sure the sequence
          * identifier is not present.
          * <p>
-         * This can happen in two cases. Either we start with an empty {@link SequencedDeadLetterQueue},
-         * and we haven't enqueued this identifier yet. Or the queue was not empty at the start.
-         * In this case, we can skip the identifier once we checked that we did not enqueue it before.
-         * If the identifier might be present, we always call the
-         * SequencedDeadLetterQueue#enqueueIfPresent(Object, Supplier)} as the sequence might have been cleaned up in
-         * the meantime.
+         * This can happen in two cases. Either we start with an empty {@link SequencedDeadLetterQueue}, and we haven't
+         * enqueued this identifier yet. Or the queue was not empty at the start. In this case, we can skip the
+         * identifier once we checked that we did not enqueue it before. If the identifier might be present, we always
+         * call the SequencedDeadLetterQueue#enqueueIfPresent(Object, Supplier)} as the sequence might have been cleaned
+         * up in the meantime.
          *
          * @return The current Builder instance for fluent interfacing.
          */
@@ -361,17 +370,17 @@ public class DeadLetteringEventHandlerInvoker
 
         /**
          * Sets the size of the cache. When there are already sequences stored in a dead-letter queue, we need to check
-         * for each sequence identifier if it's already included. This result is stored so we can skip a second "is enqueued"
-         * check when we encounter the same sequence identifier. This method thus limits memory use of the cache.
-         * The size defaults to {@code 1024}.
+         * for each sequence identifier if it's already included. This result is stored so we can skip a second "is
+         * enqueued" check when we encounter the same sequence identifier. This method thus limits memory use of the
+         * cache. The size defaults to {@code 1024}.
          * <p>
-         * If you have a lot of long-living aggregates, it might improve performance to increase the
-         * cache size at the cost of more memory use. If you only have aggregates that are short-lived, setting it
-         * to a lower value frees up memory, while it might not affect performance.
+         * If you have a lot of long-living aggregates, it might improve performance to increase the cache size at the
+         * cost of more memory use. If you only have aggregates that are short-lived, setting it to a lower value frees
+         * up memory, while it might not affect performance.
          * <p>
-         * This setting is applied per {@link Segment}.
-         * Note that this setting will only be used in combination with {@link #enableSequenceIdentifierCache()}, and
-         * when the {@link SequencedDeadLetterQueue} is not empty when constructing the cache.
+         * This setting is applied per {@link Segment}. Note that this setting will only be used in combination with
+         * {@link #enableSequenceIdentifierCache()}, and when the {@link SequencedDeadLetterQueue} is not empty when
+         * constructing the cache.
          *
          * @param sequenceIdentifierCacheSize The size to keep track of sequence identifiers which are not present.
          * @return The current Builder instance for fluent interfacing.

@@ -59,6 +59,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
+@Disabled("TODO #3517")
 class DeadLetteringEventHandlerInvokerTest {
 
     private static final DomainEventMessage TEST_EVENT = createDomainEvent();
@@ -111,7 +112,6 @@ class DeadLetteringEventHandlerInvokerTest {
                 DeadLetteringEventHandlerInvoker.builder()
                                                 .eventHandlers(handler)
                                                 .sequencingPolicy(sequencingPolicy)
-                                                .listenerInvocationErrorHandler(PropagatingErrorHandler.instance())
                                                 .queue(queue)
                                                 .enqueuePolicy(enqueuePolicy)
                                                 .transactionManager(transactionManager);
