@@ -22,10 +22,24 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * Autoconfiguration class that registers a bean creation method for the {@link SecuredMessageHandlerDefinition}.
+ * <p>
+ * Only triggered if the {@code org.springframework.security.access.annotation.Secured} class is on the classpath.
+ *
+ * @author Roald Bankras
+ * @since 4.11.0
+ */
 @AutoConfiguration
 @ConditionalOnClass(name = "org.springframework.security.access.annotation.Secured")
 public class SecurityAutoConfiguration {
 
+    /**
+     * Bean creation method constructing a {@link SecuredMessageHandlerDefinition} allowing for secured message
+     * handlers.
+     *
+     * @return The {@link HandlerEnhancerDefinition} allowing for secured message handlers.
+     */
     @Bean
     public HandlerEnhancerDefinition securedMessageHandlerDefinition() {
         return new SecuredMessageHandlerDefinition();

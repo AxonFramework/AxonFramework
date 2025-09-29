@@ -21,7 +21,6 @@ import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.messaging.Message;
-import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.StringDescription;

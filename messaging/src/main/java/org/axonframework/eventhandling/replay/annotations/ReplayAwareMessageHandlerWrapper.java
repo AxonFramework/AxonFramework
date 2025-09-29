@@ -16,10 +16,13 @@
 
 package org.axonframework.eventhandling.replay.annotations;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
-import org.axonframework.messaging.annotations.HandlerAttributes;
+import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotations.HandlerAttributes;
 import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
@@ -28,7 +31,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.lang.reflect.Member;
 import java.util.Map;
 import java.util.Optional;
-import jakarta.annotation.Nonnull;
 
 import static java.util.Collections.singletonMap;
 
@@ -70,9 +72,11 @@ public class ReplayAwareMessageHandlerWrapper implements HandlerEnhancerDefiniti
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, T target)
-                throws Exception {
-            if (ReplayToken.isReplay(message)) {
+        public Object handleSync(@Nonnull Message message,
+                                 @Nonnull ProcessingContext context,
+                                 @Nullable T target) throws Exception {
+            Optional<TrackingToken> optionalToken = TrackingToken.fromContext(context);
+            if (optionalToken.isPresent() && ReplayToken.isReplay(optionalToken.get())) {
                 return null;
             }
             return super.handleSync(message, context, target);

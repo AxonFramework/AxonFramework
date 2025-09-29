@@ -21,6 +21,8 @@ import org.junit.jupiter.api.*;
 
 import java.util.List;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -30,12 +32,14 @@ class TokenStoreTest {
 
     @Test
     void fetchAvailableSegments() {
-        when(tokenStore.fetchSegments("")).thenReturn(new int[]{0, 1, 2, 3});
-        List<Segment> availableSegments = tokenStore.fetchAvailableSegments("");
+        when(tokenStore.fetchSegments("", null))
+                .thenReturn(completedFuture(new int[]{0, 1, 2, 3}));
+        List<Segment> availableSegments =
+                joinAndUnwrap(tokenStore.fetchAvailableSegments("", null));
 
         assertEquals(4, availableSegments.size());
 
-        Segment segment0 = availableSegments.get(0);
+        Segment segment0 = availableSegments.getFirst();
         assertEquals(0, segment0.getSegmentId());
         assertEquals(3, segment0.getMask());
 
@@ -51,4 +55,5 @@ class TokenStoreTest {
         assertEquals(3, segment3.getSegmentId());
         assertEquals(3, segment3.getMask());
     }
+
 }

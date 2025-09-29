@@ -18,11 +18,11 @@ package org.axonframework.modelling.entity.annotations;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.modelling.annotations.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.annotations.EntityIdResolverDefinition;
-import org.axonframework.modelling.command.EntityIdResolver;
+import org.axonframework.modelling.EntityIdResolver;
 
 /**
  * {@link EntityIdResolverDefinition} that converts the payload of incoming messages based on the

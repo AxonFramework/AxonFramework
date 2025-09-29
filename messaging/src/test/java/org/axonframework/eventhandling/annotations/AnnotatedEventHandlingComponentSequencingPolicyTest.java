@@ -17,30 +17,30 @@
 package org.axonframework.eventhandling.annotations;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.sequencing.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.sequencing.MetadataSequencingPolicy;
 import org.axonframework.eventhandling.sequencing.PropertySequencingPolicy;
-import org.axonframework.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.eventhandling.sequencing.SequentialPerAggregatePolicy;
+import org.axonframework.eventhandling.sequencing.SequentialPolicy;
 import org.axonframework.messaging.LegacyResources;
-import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.PassThroughConverter;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.axonframework.eventhandling.sequencing.SequentialPolicy.FULL_SEQUENTIAL_POLICY;
 
 /**
- * Test class validating the {@link AnnotatedEventHandlingComponent} sequencing policy behavior.
- * Verifies that {@code sequenceIdentifierFor} returns correct values based on {@link SequencingPolicy}
- * annotations at both class and method levels.
+ * Test class validating the {@link AnnotatedEventHandlingComponent} sequencing policy behavior. Verifies that
+ * {@code sequenceIdentifierFor} returns correct values based on {@link SequencingPolicy} annotations at both class and
+ * method levels.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -58,7 +58,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             // given
             var eventHandler = new EventHandlerWithoutPolicy();
             var component = annotatedEventHandlingComponent(eventHandler);
-            var event = eventMessage("test-event");
+            var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
             // when
@@ -84,7 +84,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             // given
             var eventHandler = new SequentialPolicyEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
-            var event = eventMessage("test-event");
+            var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
             // when
@@ -99,7 +99,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             // given
             var eventHandler = new FullConcurrencyPolicyEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
-            var event = eventMessage("test-event");
+            var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
             // when
@@ -115,7 +115,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             var eventHandler = new MetadataSequencingPolicyEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
             var metadata = Metadata.with("userId", "user123");
-            var event = eventMessage("test-event", metadata);
+            var event = new GenericEventMessage(new MessageType(String.class), "test-event", metadata);
             var context = messageProcessingContext(event);
 
             // when
@@ -131,7 +131,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             var eventHandler = new PropertySequencingPolicyEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
             var eventPayload = new OrderEvent("order123", "item456");
-            var event = eventMessage(eventPayload);
+            var event = EventTestUtils.asEventMessage(eventPayload);
             var context = messageProcessingContext(event);
 
             // when
@@ -146,7 +146,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             // given
             var eventHandler = new SequentialPerAggregatePolicyEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
-            var event = eventMessage("test-event");
+            var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
             // when
@@ -205,7 +205,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             // given
             var eventHandler = new MethodLevelSequentialPolicyEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
-            var event = eventMessage("test-event");
+            var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
             // when
@@ -220,7 +220,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             // given
             var eventHandler = new MethodLevelFullConcurrencyPolicyEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
-            var event = eventMessage("test-event");
+            var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
             // when
@@ -236,7 +236,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             var eventHandler = new MethodLevelMetadataSequencingPolicyEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
             var metadata = Metadata.with("tenantId", "tenant789");
-            var event = eventMessage("test-event", metadata);
+            var event = new GenericEventMessage(new MessageType(String.class), "test-event", metadata);
             var context = messageProcessingContext(event);
 
             // when
@@ -252,7 +252,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             var eventHandler = new MethodLevelPropertySequencingPolicyEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
             var eventPayload = new CustomerEvent("customer456", "John Doe");
-            var event = eventMessage(eventPayload);
+            var event = EventTestUtils.asEventMessage(eventPayload);
             var context = messageProcessingContext(event);
 
             // when
@@ -267,7 +267,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             // given
             var eventHandler = new MethodLevelSequentialPerAggregatePolicyEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
-            var event = eventMessage("test-event");
+            var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
             // when
@@ -326,7 +326,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             // given
             var eventHandler = new MixedPolicyEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
-            var event = eventMessage("test-event");
+            var event = EventTestUtils.asEventMessage("test-event");
             var context = messageProcessingContext(event);
 
             // when
@@ -342,7 +342,7 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             var eventHandler = new MixedPolicyEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
             var eventPayload = new OrderEvent("order789", "item123");
-            var event = eventMessage(eventPayload);
+            var event = EventTestUtils.asEventMessage(eventPayload);
             var context = messageProcessingContext(event);
 
             // when
@@ -374,8 +374,8 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             // given
             var eventHandler = new MultipleHandlersEventHandler();
             var component = annotatedEventHandlingComponent(eventHandler);
-            var stringEvent = eventMessage("test-event");
-            var orderEvent = eventMessage(new OrderEvent("order123", "item456"));
+            var stringEvent = EventTestUtils.asEventMessage("test-event");
+            var orderEvent = EventTestUtils.asEventMessage(new OrderEvent("order123", "item456"));
             var context = messageProcessingContext(stringEvent);
 
             // when
@@ -399,21 +399,6 @@ class AnnotatedEventHandlingComponentSequencingPolicyTest {
             void handleOrder(OrderEvent event) {
             }
         }
-    }
-
-    private static EventMessage eventMessage(Object payload) {
-        return eventMessage(payload, Metadata.emptyInstance());
-    }
-
-    private static EventMessage eventMessage(Object payload, Metadata metadata) {
-        return new GenericDomainEventMessage(
-                AGGREGATE_TYPE,
-                AGGREGATE_IDENTIFIER,
-                0L,
-                new MessageType(payload.getClass()),
-                payload,
-                metadata
-        );
     }
 
     private static ProcessingContext messageProcessingContext(EventMessage event) {

@@ -16,7 +16,7 @@
 package org.axonframework.messaging.timeout;
 
 import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.deadline.annotations.DeadlineHandler;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.annotations.AnnotatedMessageHandlingMemberDefinition;
@@ -122,29 +122,28 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
         assertInstanceOf(TimeoutWrappedMessageHandlingMember.class, result);
     }
 
+    // TODO #3065
+//    @Test
+//    void createsCorrectHandlerEnhancerDefinitionForDeadlineHandlerWithAnnotation() throws NoSuchMethodException {
+//        MessageHandlingMember<DeadlineHandlerWithAnnotation> handler = getHandler(DeadlineHandlerWithAnnotation.class,
+//                                                                                  "handle");
+//        MessageHandlingMember<DeadlineHandlerWithAnnotation> result = handlerEnhancerDefinition.wrapHandler(handler);
+//
+//        assertIsWrappedAndAssert(result, 100, 50, 10);
+//
+//        assertInstanceOf(TimeoutWrappedMessageHandlingMember.class, result);
+//    }
 
-    @Test
-    void createsCorrectHandlerEnhancerDefinitionForDeadlineHandlerWithAnnotation() throws NoSuchMethodException {
-        MessageHandlingMember<DeadlineHandlerWithAnnotation> handler = getHandler(DeadlineHandlerWithAnnotation.class,
-                                                                                  "handle");
-        MessageHandlingMember<DeadlineHandlerWithAnnotation> result = handlerEnhancerDefinition.wrapHandler(handler);
-
-        assertIsWrappedAndAssert(result, 100, 50, 10);
-
-        assertInstanceOf(TimeoutWrappedMessageHandlingMember.class, result);
-    }
-
-
-    @Test
-    void createsCorrectHandlerEnhancerDefinitionForDeadlineHandlerWithoutAnnotation() throws NoSuchMethodException {
-        MessageHandlingMember<DeadlineHandlerWithAnnotation> handler = getHandler(DeadlineHandlerWithAnnotation.class,
-                                                                                  "handleDefault");
-        MessageHandlingMember<DeadlineHandlerWithAnnotation> result = handlerEnhancerDefinition.wrapHandler(handler);
-
-        assertIsWrappedAndAssert(result, 10000, 4000, 1000);
-
-        assertInstanceOf(TimeoutWrappedMessageHandlingMember.class, result);
-    }
+//    @Test
+//    void createsCorrectHandlerEnhancerDefinitionForDeadlineHandlerWithoutAnnotation() throws NoSuchMethodException {
+//        MessageHandlingMember<DeadlineHandlerWithAnnotation> handler = getHandler(DeadlineHandlerWithAnnotation.class,
+//                                                                                  "handleDefault");
+//        MessageHandlingMember<DeadlineHandlerWithAnnotation> result = handlerEnhancerDefinition.wrapHandler(handler);
+//
+//        assertIsWrappedAndAssert(result, 10000, 4000, 1000);
+//
+//        assertInstanceOf(TimeoutWrappedMessageHandlingMember.class, result);
+//    }
 
     private void assertIsWrappedAndAssert(MessageHandlingMember<?> handler, int timeout, int warningThreshold,
                                           int warningInterval) {
@@ -207,16 +206,16 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
         }
     }
 
-    @SuppressWarnings("unused")
-    static class DeadlineHandlerWithAnnotation {
-
-        @MessageHandlerTimeout(timeoutMs = 100, warningThresholdMs = 50, warningIntervalMs = 10)
-        @DeadlineHandler
-        public void handle(String message) {
-        }
-
-        @DeadlineHandler
-        public void handleDefault(String message) {
-        }
-    }
+//    @SuppressWarnings("unused")
+//    static class DeadlineHandlerWithAnnotation {
+//
+//        @MessageHandlerTimeout(timeoutMs = 100, warningThresholdMs = 50, warningIntervalMs = 10)
+//        @DeadlineHandler
+//        public void handle(String message) {
+//        }
+//
+//        @DeadlineHandler
+//        public void handleDefault(String message) {
+//        }
+//    }
 }

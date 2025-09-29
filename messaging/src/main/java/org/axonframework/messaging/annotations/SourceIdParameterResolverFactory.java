@@ -19,9 +19,7 @@ package org.axonframework.messaging.annotations;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.Priority;
-import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.messaging.LegacyResources;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
@@ -62,16 +60,12 @@ public final class SourceIdParameterResolverFactory
             if (sourceId != null) {
                 return sourceId;
             }
-            if (Message.fromContext(context) instanceof DomainEventMessage message) {
-                return message.getAggregateIdentifier();
-            }
             throw new IllegalArgumentException();
         }
 
         @Override
         public boolean matches(@Nonnull ProcessingContext context) {
-            var sourceIdInContext = context.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
-            return sourceIdInContext || Message.fromContext(context) instanceof DomainEventMessage;
+            return context.containsResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY);
         }
     }
 }

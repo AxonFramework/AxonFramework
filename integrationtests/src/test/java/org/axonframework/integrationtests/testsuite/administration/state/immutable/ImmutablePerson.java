@@ -18,12 +18,11 @@ package org.axonframework.integrationtests.testsuite.administration.state.immuta
 
 import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.events.EmailAddressChanged;
-import org.axonframework.modelling.command.EntityId;
 
 @EventSourcedEntity(
         concreteTypes = {
@@ -33,7 +32,6 @@ import org.axonframework.modelling.command.EntityId;
 )
 public interface ImmutablePerson {
 
-    @EntityId
     PersonIdentifier identifier();
 
     String emailAddress();

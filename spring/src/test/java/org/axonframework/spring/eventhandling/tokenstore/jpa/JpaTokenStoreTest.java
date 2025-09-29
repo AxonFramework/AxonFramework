@@ -54,6 +54,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ContextConfiguration
@@ -78,12 +79,13 @@ class JpaTokenStoreTest {
     @Transactional
     @Test
     void stealingFromOtherThreadFailsWithRowLock() throws Exception {
-        jpaTokenStore.initializeTokenSegments("processor", 1);
+
+         joinAndUnwrap(jpaTokenStore.initializeTokenSegments("processor", 1, null, null));
 
         ExecutorService executor1 = Executors.newSingleThreadExecutor();
         CountDownLatch cdl = new CountDownLatch(1);
         try {
-            jpaTokenStore.fetchToken("processor", 0);
+            jpaTokenStore.fetchToken("processor", 0, null);
             Future<?> result = executor1.submit(() -> {
 
                 DefaultTransactionDefinition txDef = new DefaultTransactionDefinition();
@@ -91,7 +93,7 @@ class JpaTokenStoreTest {
                 TransactionStatus tx = transactionManager.getTransaction(txDef);
                 cdl.countDown();
                 try {
-                    stealingJpaTokenStore.fetchToken("processor", 0);
+                    joinAndUnwrap(stealingJpaTokenStore.fetchToken("processor", 0, null));
                 } finally {
                     transactionManager.rollback(tx);
                 }

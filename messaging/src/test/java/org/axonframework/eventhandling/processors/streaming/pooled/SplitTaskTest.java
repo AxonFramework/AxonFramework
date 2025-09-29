@@ -16,10 +16,9 @@
 
 package org.axonframework.eventhandling.processors.streaming.pooled;
 
-import org.axonframework.common.FutureUtils;
-import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.segmenting.Segment;
 import org.axonframework.eventhandling.processors.streaming.segmenting.TrackerStatus;
+import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.UnableToClaimTokenException;
@@ -31,6 +30,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.axonframework.common.FutureUtils.emptyCompletedFuture;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -43,14 +44,11 @@ class SplitTaskTest {
 
     private static final String PROCESSOR_NAME = "test";
     private static final int SEGMENT_ID = Segment.ROOT_SEGMENT.getSegmentId();
-
-    private CompletableFuture<Boolean> result;
     private final Map<Integer, WorkPackage> workPackages = new HashMap<>();
     private final TokenStore tokenStore = mock(TokenStore.class);
-
-    private SplitTask testSubject;
-
     private final WorkPackage workPackage = mock(WorkPackage.class);
+    private CompletableFuture<Boolean> result;
+    private SplitTask testSubject;
 
     @BeforeEach
     void setUp() {
@@ -71,16 +69,22 @@ class SplitTaskTest {
         TrackerStatus expectedSplit = expectedTokens[1];
 
         when(workPackage.segment()).thenReturn(testSegmentToSplit);
-        when(workPackage.abort(null)).thenReturn(FutureUtils.emptyCompletedFuture());
-        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(testTokenToSplit);
+        when(workPackage.abort(null)).thenReturn(emptyCompletedFuture());
+        when(tokenStore.fetchToken(eq(PROCESSOR_NAME), eq(SEGMENT_ID), any()))
+                .thenReturn(completedFuture(testTokenToSplit));
+        when(tokenStore.initializeSegment(any(), anyString(), anyInt(), any())).thenReturn(emptyCompletedFuture());
+        when(tokenStore.releaseClaim(any(), anyInt(), any())).thenReturn(emptyCompletedFuture());
         workPackages.put(SEGMENT_ID, workPackage);
 
         testSubject.run();
 
-        verify(tokenStore).initializeSegment(
-                expectedSplit.getTrackingToken(), PROCESSOR_NAME, expectedSplit.getSegment().getSegmentId()
-        );
-        verify(tokenStore).releaseClaim(PROCESSOR_NAME, expectedOriginal.getSegment().getSegmentId());
+        verify(tokenStore).initializeSegment(eq(expectedSplit.getTrackingToken()),
+                                             eq(PROCESSOR_NAME),
+                                             eq(expectedSplit.getSegment().getSegmentId()),
+                                             any());
+        verify(tokenStore).releaseClaim(eq(PROCESSOR_NAME),
+                                        eq(expectedOriginal.getSegment().getSegmentId()),
+                                        any());
         assertTrue(result.isDone());
         assertTrue(result.get());
     }
@@ -95,23 +99,31 @@ class SplitTaskTest {
         TrackerStatus expectedOriginal = expectedTokens[0];
         TrackerStatus expectedSplit = expectedTokens[1];
 
-        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(testSegmentIds);
-        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID)).thenReturn(testTokenToSplit);
+        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any()))
+                .thenReturn(completedFuture(testSegmentIds));
+        when(tokenStore.fetchToken(eq(PROCESSOR_NAME), eq(SEGMENT_ID), any()))
+                .thenReturn(completedFuture(testTokenToSplit));
+        when(tokenStore.initializeSegment(any(), anyString(), anyInt(), any())).thenReturn(emptyCompletedFuture());
+        when(tokenStore.releaseClaim(any(), anyInt(), any())).thenReturn(emptyCompletedFuture());
 
         testSubject.run();
 
-        verify(tokenStore).initializeSegment(
-                expectedSplit.getTrackingToken(), PROCESSOR_NAME, expectedSplit.getSegment().getSegmentId()
-        );
-        verify(tokenStore).releaseClaim(PROCESSOR_NAME, expectedOriginal.getSegment().getSegmentId());
+        verify(tokenStore).initializeSegment(eq(expectedSplit.getTrackingToken()),
+                                             eq(PROCESSOR_NAME),
+                                             eq(expectedSplit.getSegment().getSegmentId()),
+                                             any());
+        verify(tokenStore).releaseClaim(eq(PROCESSOR_NAME),
+                                        eq(expectedOriginal.getSegment().getSegmentId()),
+                                        any());
         assertTrue(result.isDone());
         assertTrue(result.get());
     }
 
     @Test
     void runCompletesExceptionallyThroughUnableToClaimTokenException() {
-        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenReturn(new int[]{SEGMENT_ID});
-        when(tokenStore.fetchToken(PROCESSOR_NAME, SEGMENT_ID))
+        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any()))
+                .thenReturn(completedFuture(new int[]{SEGMENT_ID}));
+        when(tokenStore.fetchToken(eq(PROCESSOR_NAME), eq(SEGMENT_ID), any()))
                 .thenThrow(new UnableToClaimTokenException("some exception"));
 
         testSubject.run();
@@ -123,7 +135,8 @@ class SplitTaskTest {
 
     @Test
     void runCompletesExceptionallyThroughOtherException() {
-        when(tokenStore.fetchSegments(PROCESSOR_NAME)).thenThrow(new IllegalStateException("some exception"));
+        when(tokenStore.fetchSegments(eq(PROCESSOR_NAME), any()))
+                .thenThrow(new IllegalStateException("some exception"));
 
         testSubject.run();
 

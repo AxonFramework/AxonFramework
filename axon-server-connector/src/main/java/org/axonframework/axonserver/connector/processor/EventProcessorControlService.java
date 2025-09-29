@@ -28,8 +28,8 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.processors.EventProcessor;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
-import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
+import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessor;
 import org.axonframework.lifecycle.Phase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +41,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toMap;
+import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 
 /**
  * Service that listens to {@link PlatformOutboundInstruction}s to control {@link EventProcessor}s when for example
@@ -193,7 +194,9 @@ public class EventProcessorControlService {
         // TODO #3521 - Be sure to be able to retrieve processor-specific components from their respective Modules
         TokenStore tokenStore = eventProcessingConfiguration.getComponent(TokenStore.class);
         return eventProcessingConfiguration.getComponent(TransactionManager.class)
-                                           .fetchInTransaction(tokenStore::retrieveStorageIdentifier);
+                                           .fetchInTransaction(
+                                                   () -> joinAndUnwrap(tokenStore.retrieveStorageIdentifier(null))
+                                           );
     }
 
     private void registerInstructionHandlers(AxonServerConnection connection,

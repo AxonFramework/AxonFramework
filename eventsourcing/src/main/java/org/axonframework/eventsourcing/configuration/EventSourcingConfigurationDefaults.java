@@ -22,7 +22,6 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.MessagingConfigurationDefaults;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -43,7 +42,6 @@ import java.util.List;
  *     <li>Registers a {@link AnnotationBasedTagResolver} for class {@link TagResolver}</li>
  *     <li>Registers a {@link InMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
  *     <li>Registers a {@link SimpleEventStore} for class {@link EventStore}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link Snapshotter}</li>
  * </ul>
  * Furthermore, this enhancer will decorate the:
  * <ul>
@@ -73,8 +71,7 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
         registry.registerIfNotPresent(TagResolver.class, EventSourcingConfigurationDefaults::defaultTagResolver)
                 .registerIfNotPresent(EventStorageEngine.class,
                                       EventSourcingConfigurationDefaults::defaultEventStorageEngine)
-                .registerIfNotPresent(EventStore.class, EventSourcingConfigurationDefaults::defaultEventStore)
-                .registerIfNotPresent(Snapshotter.class, EventSourcingConfigurationDefaults::defaultSnapshotter);
+                .registerIfNotPresent(EventStore.class, EventSourcingConfigurationDefaults::defaultEventStore);
         // Register decorators
         registry.registerDecorator(
                 EventStore.class,
@@ -100,11 +97,5 @@ public class EventSourcingConfigurationDefaults implements ConfigurationEnhancer
     private static EventStore defaultEventStore(Configuration config) {
         return new SimpleEventStore(config.getComponent(EventStorageEngine.class),
                                     config.getComponent(TagResolver.class));
-    }
-
-    private static Snapshotter defaultSnapshotter(Configuration config) {
-        return (aggregateType, aggregateIdentifier) -> {
-            // TODO #3105 - Replace this Snapshotter for the new Snapshotter
-        };
     }
 }

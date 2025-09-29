@@ -38,7 +38,7 @@ import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.conversion.MessageConverter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.AnnotationBasedEntityEvolvingComponent;
+import org.axonframework.modelling.annotations.AnnotationBasedEntityEvolvingComponent;
 import org.axonframework.modelling.entity.ConcreteEntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodel;
 import org.axonframework.modelling.entity.EntityMetamodelBuilder;

@@ -15,7 +15,6 @@
  */
 package org.axonframework.messaging.timeout;
 
-import org.axonframework.eventhandling.processors.errorhandling.LoggingErrorHandler;
 import org.slf4j.Logger;
 
 import java.util.concurrent.Future;
@@ -157,7 +156,7 @@ class AxonTimeLimitedTask {
     /**
      * Even though the task was processed successfully, it might have been interrupted while processing, and the
      * exception might have been caught and swallowed by a lower component. This happens, for example, by the
-     * {@link LoggingErrorHandler} , which is the default in event processors.
+     * {@code LoggingErrorHandler} , which is the default in event processors.
      * <p>
      * This function checks if the task was interrupted, and if so, it throws an {@link AxonTimeoutException} to
      * indicate that the processing was aborted due to a timeout. If the task was not interrupted, it checks if the

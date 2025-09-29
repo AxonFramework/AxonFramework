@@ -19,20 +19,13 @@ package org.axonframework.springboot.autoconfig;
 import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.modelling.saga.repository.SagaStore;
-import org.axonframework.modelling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.springboot.EventProcessorProperties;
 import org.axonframework.springboot.TokenStoreProperties;
-import org.axonframework.springboot.util.DeadLetterQueueProviderConfigurerModule;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.axonframework.springboot.util.jpa.ContainerManagedEntityManagerProvider;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -40,7 +33,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Lazy;
 
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -84,42 +76,10 @@ public class JpaAutoConfiguration {
                             .build();
     }
 
-    @Lazy
-    @Bean
-    @ConditionalOnMissingBean(SagaStore.class)
-    public JpaSagaStore sagaStore(EntityManagerProvider entityManagerProvider) {
-        return JpaSagaStore.builder()
-                           .entityManagerProvider(entityManagerProvider)
-                           .build();
-    }
-
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnBean(DataSource.class)
     public PersistenceExceptionResolver persistenceExceptionResolver(DataSource dataSource) throws SQLException {
         return new SQLErrorCodesResolver(dataSource);
     }
-
-    // tag::JpaDeadLetterQueueProviderConfigurerModule[]
-    @Bean
-    @ConditionalOnMissingBean
-    public DeadLetterQueueProviderConfigurerModule deadLetterQueueProviderConfigurerModule(
-            EventProcessorProperties eventProcessorProperties,
-            EntityManagerProvider entityManagerProvider,
-            TransactionManager transactionManager,
-            Serializer genericSerializer,
-            @Qualifier("eventSerializer") Serializer eventSerializer
-    ) {
-        return new DeadLetterQueueProviderConfigurerModule(
-                eventProcessorProperties,
-                processingGroup -> config -> JpaSequencedDeadLetterQueue.builder()
-                                                                        .processingGroup(processingGroup)
-                                                                        .entityManagerProvider(entityManagerProvider)
-                                                                        .transactionManager(transactionManager)
-                                                                        .genericSerializer(genericSerializer)
-                                                                        .eventSerializer(eventSerializer)
-                                                                        .build()
-        );
-    }
-    // end::JpaDeadLetterQueueProviderConfigurerModule[]
 }

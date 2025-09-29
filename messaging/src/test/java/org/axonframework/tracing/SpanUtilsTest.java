@@ -17,7 +17,6 @@
 package org.axonframework.tracing;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -75,18 +74,19 @@ class SpanUtilsTest {
         assertEquals("SuperCommand#0.0.1", SpanUtils.determineMessageName(message));
     }
 
-    @Test
-    void determineMessageNameForDeadlineWithoutPayload() {
-        GenericDeadlineMessage message =
-                new GenericDeadlineMessage(new MessageType("deadline"), "myDeadlineName");
-        assertEquals("deadline#0.0.1", SpanUtils.determineMessageName(message));
-    }
+    // TODO #3065
+//    @Test
+//    void determineMessageNameForDeadlineWithoutPayload() {
+//        GenericDeadlineMessage message =
+//                new GenericDeadlineMessage(new MessageType("deadline"), "myDeadlineName");
+//        assertEquals("deadline#0.0.1", SpanUtils.determineMessageName(message));
+//    }
 
-    @Test
-    void determineMessageNameForDeadlineWithPayload() {
-        GenericDeadlineMessage message = new GenericDeadlineMessage(
-                "myDeadlineName", new MessageType("deadline"), "MyPayload"
-        );
-        assertEquals("deadline#0.0.1", SpanUtils.determineMessageName(message));
-    }
+//    @Test
+//    void determineMessageNameForDeadlineWithPayload() {
+//        GenericDeadlineMessage message = new GenericDeadlineMessage(
+//                "myDeadlineName", new MessageType("deadline"), "MyPayload"
+//        );
+//        assertEquals("deadline#0.0.1", SpanUtils.determineMessageName(message));
+//    }
 }
