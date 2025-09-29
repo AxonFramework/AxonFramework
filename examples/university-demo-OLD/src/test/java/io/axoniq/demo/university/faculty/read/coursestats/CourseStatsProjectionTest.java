@@ -6,6 +6,7 @@ import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.shared.ids.StudentId;
 import org.awaitility.Awaitility;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.queryhandling.QueryGateway;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -128,9 +129,11 @@ public class CourseStatsProjectionTest extends UniversityApplicationTest {
 
     private void assertReadModel(CoursesStatsReadModel expectedReadModel) {
         Awaitility.await().untilAsserted(() -> {
-            var found = courseStatsRepository().findById(expectedReadModel.courseId());
-            assertThat(found).isNotEmpty();
-            assertThat(found).hasValue(expectedReadModel);
+            var found = configuration.getComponent(QueryGateway.class)
+                    .query(new GetCourseStatsById(expectedReadModel.courseId()), GetCourseStatsById.Result.class, null)
+                    .join();
+            assertThat(found).isNotNull();
+            assertThat(found.stats()).isEqualTo(expectedReadModel);
         });
     }
 

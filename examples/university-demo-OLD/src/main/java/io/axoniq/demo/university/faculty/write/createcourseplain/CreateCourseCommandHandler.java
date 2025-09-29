@@ -29,18 +29,18 @@ class CreateCourseCommandHandler implements CommandHandler {
 
     @Override
     @Nonnull
-    public MessageStream.Single<CommandResultMessage<?>> handle(
+    public MessageStream.Single<CommandResultMessage> handle(
             @Nonnull CommandMessage command,
             @Nonnull ProcessingContext context
     ) {
         var eventAppender = EventAppender.forContext(context);
         var payload = command.payloadAs(CreateCourse.class, messageConverter);
         var state = context.component(StateManager.class);
-        CompletableFuture<CommandResultMessage<?>> decideFuture = state
+        CompletableFuture<CommandResultMessage> decideFuture = state
                 .loadEntity(State.class, payload.courseId(), context)
                 .thenApply(entity -> decide(payload, entity))
                 .thenAccept(eventAppender::append)
-                .thenApply(r -> new GenericCommandResultMessage<>(messageTypeResolver.resolveOrThrow(CommandResult.class),
+                .thenApply(r -> new GenericCommandResultMessage(messageTypeResolver.resolveOrThrow(CommandResult.class),
                                                                   new CommandResult(payload.courseId().toString())));
         return MessageStream.fromFuture(decideFuture);
     }

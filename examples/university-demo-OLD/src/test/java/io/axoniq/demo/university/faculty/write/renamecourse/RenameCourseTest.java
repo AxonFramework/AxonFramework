@@ -24,7 +24,7 @@ class RenameCourseTest extends UniversityApplicationTest {
         // when-then
         assertThatThrownBy(() -> executeCommand(
                 new RenameCourse(courseId, "Event Sourcing in Practice")
-        )).cause().hasMessageContaining("Course with given id does not exist");
+        )).hasMessageContaining("Course with given id does not exist");
     }
 
     @Test

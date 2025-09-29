@@ -15,6 +15,11 @@ class CreateCourseAxonFixtureTest {
         fixture = FacultyAxonTestFixture.slice(CreateCoursePlainConfiguration::configure);
     }
 
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
+    }
+
     @Test
     void givenNotExistingCourse_WhenCreateCourse_ThenSuccess() {
         var courseId = CourseId.random();

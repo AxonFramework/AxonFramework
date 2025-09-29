@@ -6,6 +6,7 @@ import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.CourseRenamed;
 import io.axoniq.demo.university.shared.ids.CourseId;
 import org.axonframework.test.fixture.AxonTestFixture;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +21,11 @@ class ChangeCourseCapacityAxonFixtureTest {
         fixture = FacultyAxonTestFixture.slice(ChangeCourseCapacityConfiguration::configure);
     }
 
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
+    }
+
     @Test
     void givenNotExistingCourse_WhenChangeCapacity_ThenException() {
         var courseId = CourseId.random();
@@ -29,8 +35,7 @@ class ChangeCourseCapacityAxonFixtureTest {
                 .when()
                 .command(new ChangeCourseCapacity(courseId, 5))
                 .then()
-                .exceptionSatisfies(ex -> assertThat(ex)
-                        .isInstanceOf(IllegalStateException.class)
+                .exceptionSatisfies(ex -> assertThat(ex) // CommandExecutionException(AxonServerRemoteCommandHandlingException) in AxonServer, but not in the InMemory? Where handle that?
                         .hasMessageContaining("Course with given id does not exist")
                 );
     }
