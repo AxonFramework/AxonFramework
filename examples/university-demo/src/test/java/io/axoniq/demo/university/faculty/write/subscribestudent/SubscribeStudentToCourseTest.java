@@ -7,6 +7,7 @@ import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.shared.ids.StudentId;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -51,7 +52,7 @@ class SubscribeStudentToCourseTest extends UniversityApplicationTest {
         // when-then
         assertThatThrownBy(() -> executeCommand(
                 new SubscribeStudentToCourse(studentId, courseId)
-        )).cause().hasMessageContaining("Student already subscribed to this course");
+        )).hasMessageContaining("Student already subscribed to this course");
         assertNoEvents();
     }
 
@@ -75,11 +76,11 @@ class SubscribeStudentToCourseTest extends UniversityApplicationTest {
         // when-then
         assertThatThrownBy(() -> executeCommand(
                 new SubscribeStudentToCourse(student3Id, courseId)
-        )).cause().hasMessageContaining("Course is fully booked");
+        )).hasMessageContaining("Course is fully booked");
         assertNoEvents();
     }
 
-    @Test
+    @RepeatedTest(10)
     void studentSubscribedToTooManyCourses() {
         // given
         var studentId = StudentId.random();
@@ -102,7 +103,7 @@ class SubscribeStudentToCourseTest extends UniversityApplicationTest {
         // when-then
         assertThatThrownBy(() -> executeCommand(
                 new SubscribeStudentToCourse(studentId, targetCourseId)
-        )).cause().hasMessageContaining("Student subscribed to too many courses");
+        )).hasMessageContaining("Student subscribed to too many courses");
         assertNoEvents();
     }
 }

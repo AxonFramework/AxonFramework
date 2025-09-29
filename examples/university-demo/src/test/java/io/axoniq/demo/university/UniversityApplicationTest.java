@@ -1,30 +1,22 @@
 package io.axoniq.demo.university;
 
 import io.axoniq.demo.university.faculty.FacultyModuleConfiguration;
-import jakarta.annotation.Nonnull;
 import org.assertj.core.api.Assertions;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.Configuration;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.test.fixture.MessagesRecordingConfigurationEnhancer;
 import org.axonframework.test.fixture.RecordingEventStore;
+import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import java.time.Instant;
+import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 public abstract class UniversityApplicationTest {
 
@@ -32,9 +24,22 @@ public abstract class UniversityApplicationTest {
 
     @BeforeEach
     void beforeEach() {
-        var properties = overrideProperties(ConfigurationProperties.load());
+        var configuration = ConfigurationProperties.load();
+        var properties = overrideProperties(configuration);
+        purgeAxonServerIfEnabled(configuration);
         var configurer = new UniversityAxonApplication().configurer(properties, this::configureTestApplication);
-        configuration = configurer.start();
+        this.configuration = configurer.start();
+    }
+
+    private static void purgeAxonServerIfEnabled(ConfigurationProperties configuration) {
+        boolean axonServerEnabled = configuration.axonServerEnabled();
+        if (axonServerEnabled) {
+            try {
+                AxonServerContainerUtils.purgeEventsFromAxonServer("localhost", 8024, "university", true);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @AfterEach
@@ -44,43 +49,8 @@ public abstract class UniversityApplicationTest {
 
     private EventSourcingConfigurer configureTestApplication(EventSourcingConfigurer configurer) {
         configurer = configurer.componentRegistry(cr -> cr.registerEnhancer(new MessagesRecordingConfigurationEnhancer()));
-        configurer = useEventStorageEngineAsEventSource(configurer);
         configurer = overrideConfigurer(configurer);
         return configurer;
-    }
-
-    private static EventSourcingConfigurer useEventStorageEngineAsEventSource(EventSourcingConfigurer eventSourcingConfigurer) {
-        return eventSourcingConfigurer.messaging(m -> m.eventProcessing(
-                        ep -> ep.pooledStreaming(
-                                ps -> ps.defaults((cfg, d) -> d.eventSource(eventSourceFromEventStorageEngine(cfg)))
-                        )
-                )
-        );
-    }
-
-    private static StreamableEventSource<EventMessage> eventSourceFromEventStorageEngine(Configuration configuration) {
-        var eventStorageEngine = configuration.getComponent(EventStorageEngine.class);
-        return new StreamableEventSource<>() {
-            @Override
-            public MessageStream<EventMessage> open(@Nonnull StreamingCondition condition) {
-                return eventStorageEngine.stream(condition);
-            }
-
-            @Override
-            public CompletableFuture<TrackingToken> firstToken() {
-                return eventStorageEngine.firstToken();
-            }
-
-            @Override
-            public CompletableFuture<TrackingToken> latestToken() {
-                return eventStorageEngine.latestToken();
-            }
-
-            @Override
-            public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
-                return eventStorageEngine.tokenAt(at);
-            }
-        };
     }
 
     protected void eventOccurred(Object event) {

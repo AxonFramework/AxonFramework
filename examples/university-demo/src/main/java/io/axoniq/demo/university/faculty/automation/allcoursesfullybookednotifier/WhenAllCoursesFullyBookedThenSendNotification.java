@@ -4,19 +4,16 @@ import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.shared.application.notifier.NotificationService;
 import io.axoniq.demo.university.faculty.events.*;
 import io.axoniq.demo.university.shared.ids.CourseId;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.annotations.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandDispatcher;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
-import org.axonframework.eventsourcing.annotation.reflection.EntityCreator;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
+import org.axonframework.eventsourcing.annotations.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotations.reflection.EntityCreator;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.annotation.InjectEntity;
+import org.axonframework.modelling.annotations.InjectEntity;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -99,7 +96,7 @@ public class WhenAllCoursesFullyBookedThenSendNotification {
     static class AutomationCommandHandler {
 
         @CommandHandler
-        public void decide(
+        void decide(
                 SendAllCoursesFullyBookedNotification command,
                 @InjectEntity(idProperty = FacultyTags.FACULTY_ID) State state,
                 ProcessingContext context
@@ -117,7 +114,7 @@ public class WhenAllCoursesFullyBookedThenSendNotification {
     static class AutomationEventHandler {
 
         @EventHandler
-        public CompletableFuture<?> react(
+        CompletableFuture<?> react(
                 StudentSubscribedToCourse event,
                 CommandDispatcher commandDispatcher,
                 ProcessingContext context
@@ -127,7 +124,7 @@ public class WhenAllCoursesFullyBookedThenSendNotification {
         }
 
         @EventHandler
-        public CompletableFuture<?> react(
+        CompletableFuture<?> react(
                 CourseCapacityChanged event,
                 CommandDispatcher commandDispatcher,
                 ProcessingContext context

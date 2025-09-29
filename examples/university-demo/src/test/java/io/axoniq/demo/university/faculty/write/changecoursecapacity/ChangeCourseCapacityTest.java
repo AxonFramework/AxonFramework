@@ -25,7 +25,7 @@ class ChangeCourseCapacityTest extends UniversityApplicationTest {
         // when-then
         assertThatThrownBy(() -> executeCommand(
                 new ChangeCourseCapacity(courseId, 5)
-        )).cause().hasMessageContaining("Course with given id does not exist");
+        )).hasMessageContaining("Course with given id does not exist");
     }
 
     @Test

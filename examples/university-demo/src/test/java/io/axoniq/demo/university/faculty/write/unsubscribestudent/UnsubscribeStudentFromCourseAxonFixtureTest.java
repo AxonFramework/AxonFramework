@@ -19,6 +19,11 @@ class UnsubscribeStudentFromCourseAxonFixtureTest {
         fixture = FacultyAxonTestFixture.slice(UnsubscribeStudentConfiguration::configure);
     }
 
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
+    }
+
     @Test
     void successfulUnsubscribe() {
         var studentId = StudentId.random();

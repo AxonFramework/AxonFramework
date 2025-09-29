@@ -14,12 +14,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.TimeUnit;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
-public class WhenAllCoursesFullyBookedThenSendNotificationTest {
+public class WhenAllCoursesFullyBookedThenSendNotificationAxonFixtureTest {
 
     private AxonTestFixture fixture;
 
@@ -47,12 +44,12 @@ public class WhenAllCoursesFullyBookedThenSendNotificationTest {
 
         fixture.given()
                 .events(
-                        new CourseCreated(courseId1, "Course 1", 2),
-                        new CourseCreated(courseId2, "Course 2", 2),
-                        new StudentSubscribedToCourse(studentId1, courseId1),
+                        new CourseCreated(courseId1, "Course 1", 2), // Create course with capacity 2
+                        new CourseCreated(courseId2, "Course 2", 2), // Create course with capacity 2
+                        new StudentSubscribedToCourse(studentId1, courseId1), // Fill first course
                         new StudentSubscribedToCourse(studentId2, courseId1),
-                        new StudentSubscribedToCourse(studentId1, courseId2),
-                        new StudentSubscribedToCourse(studentId2, courseId2)
+                        new StudentSubscribedToCourse(studentId1, courseId2), // Fill second course
+                        new StudentSubscribedToCourse(studentId2, courseId2)  // This should trigger notification
                 )
                 .then()
                 .await(r -> r.expect(cfg -> assertNotificationSent(cfg, expectedNotification)));
@@ -60,8 +57,7 @@ public class WhenAllCoursesFullyBookedThenSendNotificationTest {
 
     private void assertNotificationSent(Configuration configuration, NotificationService.Notification expectedNotification) {
         var notificationService = (RecordingNotificationService) configuration.getComponent(NotificationService.class);
-        await().atMost(10, TimeUnit.SECONDS)
-                .untilAsserted(() -> assertThat(notificationService.sent()).contains(expectedNotification));
+        assertThat(notificationService.sent()).contains(expectedNotification);
     }
 
 }

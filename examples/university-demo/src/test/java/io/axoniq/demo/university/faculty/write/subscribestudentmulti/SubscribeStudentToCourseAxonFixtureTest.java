@@ -20,6 +20,11 @@ class SubscribeStudentToCourseAxonFixtureTest {
         fixture = FacultyAxonTestFixture.slice(SubscribeStudentMultiEntityConfiguration::configure);
     }
 
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
+    }
+
     @Test
     void successfulSubscription() {
         var courseId = CourseId.random();

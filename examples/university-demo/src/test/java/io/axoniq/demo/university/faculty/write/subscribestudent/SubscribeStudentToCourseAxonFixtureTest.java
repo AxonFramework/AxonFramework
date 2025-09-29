@@ -20,6 +20,11 @@ class SubscribeStudentToCourseAxonFixtureTest {
         fixture = FacultyAxonTestFixture.slice(SubscribeStudentConfiguration::configure);
     }
 
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
+    }
+
     @Test
     void successfulSubscription() {
         var courseId = CourseId.random();
@@ -46,7 +51,9 @@ class SubscribeStudentToCourseAxonFixtureTest {
                 .when()
                 .command(new SubscribeStudentToCourse(studentId, courseId))
                 .then()
-                .exception(RuntimeException.class, "Student already subscribed to this course");
+                .exceptionSatisfies(thrown -> assertThat(thrown)
+                        .hasMessageContaining("Student already subscribed to this course")
+                );
     }
 
     @Test
@@ -99,7 +106,9 @@ class SubscribeStudentToCourseAxonFixtureTest {
                 .when()
                 .command(new SubscribeStudentToCourse(student3Id, courseId))
                 .then()
-                .exception(RuntimeException.class, "Course is fully booked");
+                .exceptionSatisfies(thrown -> assertThat(thrown)
+                        .hasMessageContaining("Course is fully booked")
+                );
     }
 
     @Test
@@ -124,8 +133,7 @@ class SubscribeStudentToCourseAxonFixtureTest {
                 .then()
                 .noEvents()
                 .exceptionSatisfies(thrown -> assertThat(thrown)
-                        .isInstanceOf(RuntimeException.class)
-                        .hasMessage("Student subscribed to too many courses")
+                        .hasMessageContaining("Student subscribed to too many courses")
                 );
     }
 }

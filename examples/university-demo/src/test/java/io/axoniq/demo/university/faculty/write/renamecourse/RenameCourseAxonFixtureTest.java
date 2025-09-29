@@ -7,6 +7,8 @@ import io.axoniq.demo.university.shared.ids.CourseId;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 class RenameCourseAxonFixtureTest {
 
     private AxonTestFixture fixture;
@@ -14,6 +16,11 @@ class RenameCourseAxonFixtureTest {
     @BeforeEach
     void beforeEach() {
         fixture = FacultyAxonTestFixture.slice(RenameCourseConfiguration::configure);
+    }
+
+    @AfterEach
+    void afterEach() {
+        fixture.stop();
     }
 
     @Test
@@ -25,8 +32,10 @@ class RenameCourseAxonFixtureTest {
                 .when()
                 .command(new RenameCourse(courseId, "Event Sourcing in Practice"))
                 .then()
-                .exception(RuntimeException.class, "Course with given id does not exist")
-                .noEvents();
+                .noEvents()
+                .exceptionSatisfies(thrown -> assertThat(thrown)
+                        .hasMessageContaining("Course with given id does not exist")
+                );
     }
 
     @Test
