@@ -23,6 +23,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.deadletter.jpa.JpaSequencedDeadLetterQueue;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStoreConfiguration;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.EventProcessorProperties;
@@ -74,11 +75,8 @@ public class JpaAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public TokenStore tokenStore(Serializer serializer, EntityManagerProvider entityManagerProvider) {
-        return JpaTokenStore.builder()
-                            .entityManagerProvider(entityManagerProvider)
-                            .serializer(serializer)
-                            .claimTimeout(tokenStoreProperties.getClaimTimeout())
-                            .build();
+        var config = JpaTokenStoreConfiguration.DEFAULT.claimTimeout(tokenStoreProperties.getClaimTimeout());
+        return new JpaTokenStore(entityManagerProvider,serializer, config);
     }
 
     @Bean
