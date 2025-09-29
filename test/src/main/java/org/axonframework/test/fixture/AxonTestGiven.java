@@ -44,7 +44,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
     private final AxonTestFixture.Customization customization;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
-    private final RecordingQueryBus queryBus;
+    private final RecordingQueryGateway queryGateway;
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
@@ -57,7 +57,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
      *                            and validate any commands that have been sent.
      * @param eventSink           The recording {@link org.axonframework.eventhandling.EventSink}, used to capture and
      *                            validate any events that have been sent.
-     * @param queryBus            The recording {@link org.axonframework.queryhandling.QueryBus}, used to capture and
+     * @param queryGateway        The recording {@link org.axonframework.queryhandling.QueryGateway}, used to capture and
      *                            validate any queries that have been sent.
      * @param messageTypeResolver The message type resolver used to generate the
      *                            {@link org.axonframework.messaging.MessageType} out of command, event, or query
@@ -70,7 +70,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
             @Nonnull AxonTestFixture.Customization customization,
             @Nonnull RecordingCommandBus commandBus,
             @Nonnull RecordingEventSink eventSink,
-            @Nonnull RecordingQueryBus queryBus,
+            @Nonnull RecordingQueryGateway queryGateway,
             @Nonnull MessageTypeResolver messageTypeResolver,
             @Nonnull UnitOfWorkFactory unitOfWorkFactory
     ) {
@@ -78,7 +78,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
         this.customization = customization;
         this.commandBus = commandBus;
         this.eventSink = eventSink;
-        this.queryBus = queryBus;
+        this.queryGateway = queryGateway;
         this.messageTypeResolver = messageTypeResolver;
         this.unitOfWorkFactory = unitOfWorkFactory;
     }
@@ -180,7 +180,7 @@ class AxonTestGiven implements AxonTestPhase.Given {
                 customization,
                 commandBus,
                 eventSink,
-                queryBus,
+                queryGateway,
                 messageTypeResolver,
                 unitOfWorkFactory
         );

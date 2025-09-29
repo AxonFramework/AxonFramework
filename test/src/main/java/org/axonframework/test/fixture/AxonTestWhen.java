@@ -23,14 +23,12 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
 
 import java.util.Arrays;
 import java.util.List;
@@ -49,12 +47,13 @@ class AxonTestWhen implements AxonTestPhase.When {
     private final AxonTestFixture.Customization customization;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
-    private final RecordingQueryBus queryBus;
+    private final RecordingQueryGateway queryGateway;
     private final MessageTypeResolver messageTypeResolver;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
     private Message actualResult;
-    private MessageStream<QueryResponseMessage> actualQueryResult;
+    private Object lastQuery;
+    private CompletableFuture<?> actualQueryResult;
     private Throwable actualException;
 
     /**
@@ -66,7 +65,7 @@ class AxonTestWhen implements AxonTestPhase.When {
      *                            and validate any commands that have been sent.
      * @param eventSink           The recording {@link org.axonframework.eventhandling.EventSink}, used to capture and
      *                            validate any events that have been sent.
-     * @param queryBus            The recording {@link org.axonframework.queryhandling.QueryBus}, used to capture and
+     * @param queryGateway        The recording {@link org.axonframework.queryhandling.QueryGateway}, used to capture and
      *                            validate any queries that have been sent.
      * @param messageTypeResolver The message type resolver used to generate the
      *                            {@link org.axonframework.messaging.MessageType} out of command, event, or query
@@ -79,7 +78,7 @@ class AxonTestWhen implements AxonTestPhase.When {
             @Nonnull AxonTestFixture.Customization customization,
             @Nonnull RecordingCommandBus commandBus,
             @Nonnull RecordingEventSink eventSink,
-            @Nonnull RecordingQueryBus queryBus,
+            @Nonnull RecordingQueryGateway queryGateway,
             @Nonnull MessageTypeResolver messageTypeResolver,
             @Nonnull UnitOfWorkFactory unitOfWorkFactory
     ) {
@@ -87,7 +86,7 @@ class AxonTestWhen implements AxonTestPhase.When {
         this.customization = customization;
         this.commandBus = commandBus.reset();
         this.eventSink = eventSink.reset();
-        this.queryBus = queryBus.reset();
+        this.queryGateway = queryGateway.reset();
         this.messageTypeResolver = messageTypeResolver;
         this.unitOfWorkFactory = unitOfWorkFactory;
     }
@@ -145,14 +144,17 @@ class AxonTestWhen implements AxonTestPhase.When {
     @Override
     public Query query(@Nonnull Object payload, @Nonnull Metadata metadata) {
         var messageType = messageTypeResolver.resolveOrThrow(payload);
-        var message = new GenericQueryMessage(messageType, payload, ResponseTypes.instanceOf(Object.class));
+        var baseMessage = new GenericEventMessage(messageType, payload, metadata);
+        var message = new GenericQueryMessage(baseMessage, ResponseTypes.instanceOf(Object.class));
         inUnitOfWorkOnInvocation(processingContext -> {
             try {
-                actualQueryResult = queryBus.query(message, processingContext);
+                lastQuery = message;
+                actualQueryResult = queryGateway.query(message, Object.class, processingContext);
                 actualException = null;
                 return CompletableFuture.completedFuture(null);
             } catch (Exception e) {
-                actualQueryResult = null;
+                lastQuery = message;
+                actualQueryResult = CompletableFuture.failedFuture(e);
                 actualException = e;
                 return CompletableFuture.failedFuture(e);
             }
@@ -213,7 +215,8 @@ class AxonTestWhen implements AxonTestPhase.When {
                     customization,
                     commandBus,
                     eventSink,
-                    queryBus,
+                    queryGateway,
+                    lastQuery,
                     actualQueryResult,
                     actualException
             );

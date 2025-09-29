@@ -19,14 +19,9 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.test.aggregate.Reporter;
-import org.axonframework.test.matchers.PayloadMatcher;
-import org.hamcrest.CoreMatchers;
 import org.hamcrest.StringDescription;
 
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -41,7 +36,8 @@ class AxonTestThenQuery
         implements AxonTestPhase.Then.Query {
 
     private final Reporter reporter = new Reporter();
-    private final MessageStream<QueryResponseMessage> actualResult;
+    private final Object lastQuery;
+    private final CompletableFuture<?> actualResult;
 
     /**
      * Constructs an {@code AxonTestThenQuery} for the given parameters.
@@ -52,8 +48,9 @@ class AxonTestThenQuery
      *                             and validate any commands that have been sent.
      * @param eventSink            The recording {@link org.axonframework.eventhandling.EventSink}, used to capture and
      *                             validate any events that have been sent.
-     * @param queryBus             The recording {@link org.axonframework.queryhandling.QueryBus}, used to capture and
+     * @param queryGateway         The recording {@link org.axonframework.queryhandling.QueryGateway}, used to capture and
      *                             validate any queries that have been sent.
+     * @param lastQuery            The last query that was executed.
      * @param lastQueryResult      The last result of query handling.
      * @param lastQueryException   The exception thrown during the when-phase, potentially {@code null}.
      */
@@ -62,65 +59,52 @@ class AxonTestThenQuery
             @Nonnull AxonTestFixture.Customization customization,
             @Nonnull RecordingCommandBus commandBus,
             @Nonnull RecordingEventSink eventSink,
-            @Nonnull RecordingQueryBus queryBus,
-            @Nonnull MessageStream<QueryResponseMessage> lastQueryResult,
+            @Nonnull RecordingQueryGateway queryGateway,
+            @Nonnull Object lastQuery,
+            @Nonnull CompletableFuture<?> lastQueryResult,
             @Nullable Throwable lastQueryException
     ) {
         super(configuration, customization, commandBus, eventSink, lastQueryException);
+        this.lastQuery = lastQuery;
         this.actualResult = lastQueryResult;
     }
 
     @Override
     public AxonTestPhase.Then.Query success() {
-        return resultMessageSatisfies(q -> {
-        });
-    }
-
-    @Override
-    public AxonTestPhase.Then.Query resultMessageSatisfies(@Nonnull Consumer<? super QueryResponseMessage> consumer) {
         StringDescription expectedDescription = new StringDescription();
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
         }
         try {
-            if (actualResult != null) {
-                var nextEntry = actualResult.next();
-                if (nextEntry.isPresent()) {
-                    consumer.accept(nextEntry.get().message());
-                }
-            }
-        } catch (AssertionError e) {
-            reporter.reportWrongResult(actualResult, "Result message to satisfy custom assertions: " + e.getMessage());
+            // Just join to ensure the query completed successfully
+            actualResult.join();
+        } catch (Exception e) {
+            reporter.reportUnexpectedException(e, expectedDescription);
         }
         return this;
+    }
+
+    @Override
+    public AxonTestPhase.Then.Query resultMessageSatisfies(@Nonnull Consumer<? super org.axonframework.queryhandling.QueryResponseMessage> consumer) {
+        // Note: QueryGateway doesn't provide QueryResponseMessage, only the actual result
+        // This method would need to be reconsidered for the QueryGateway approach
+        throw new UnsupportedOperationException("resultMessageSatisfies is not supported with QueryGateway approach. Use resultMessagePayloadSatisfies instead.");
     }
 
     @Override
     public AxonTestPhase.Then.Query resultMessagePayload(@Nonnull Object expectedPayload) {
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
-        PayloadMatcher<QueryResponseMessage> expectedMatcher =
-                new PayloadMatcher<>(CoreMatchers.equalTo(expectedPayload));
-        expectedMatcher.describeTo(expectedDescription);
+        expectedDescription.appendText("Query result payload: ").appendValue(expectedPayload);
+
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
         } else {
             try {
-                if (actualResult == null) {
-                    reporter.reportWrongResult("No query results", expectedDescription.toString());
-                } else {
-                    var nextEntry = actualResult.next();
-                    if (nextEntry.isEmpty()) {
-                        reporter.reportWrongResult("No query results", expectedDescription.toString());
-                    } else {
-                        Object actualPayload = nextEntry.get().message().payload();
-                        if (!verifyPayloadEquality(expectedPayload, actualPayload)) {
-                            PayloadMatcher<QueryResponseMessage> actualMatcher =
-                                    new PayloadMatcher<>(CoreMatchers.equalTo(actualPayload));
-                            actualMatcher.describeTo(actualDescription);
-                            reporter.reportWrongResult(actualDescription, expectedDescription);
-                        }
-                    }
+                Object actualPayload = actualResult.join();
+                if (!verifyPayloadEquality(expectedPayload, actualPayload)) {
+                    actualDescription.appendText("Query result payload: ").appendValue(actualPayload);
+                    reporter.reportWrongResult(actualDescription.toString(), expectedDescription.toString());
                 }
             } catch (Exception e) {
                 reporter.reportWrongResult(e.getMessage(), expectedDescription.toString());
@@ -136,13 +120,8 @@ class AxonTestThenQuery
             reporter.reportUnexpectedException(actualException, expectedDescription);
         }
         try {
-            if (actualResult != null) {
-                var nextEntry = actualResult.next();
-                if (nextEntry.isPresent()) {
-                    Object payload = nextEntry.get().message().payload();
-                    consumer.accept(payload);
-                }
-            }
+            Object payload = actualResult.join();
+            consumer.accept(payload);
         } catch (AssertionError e) {
             reporter.reportWrongResult("Query result payload assertion failed",
                                        "Result message to satisfy custom assertions: " + e.getMessage());
@@ -157,16 +136,15 @@ class AxonTestThenQuery
         StringDescription description = new StringDescription();
         if (actualException == null) {
             try {
-                Object resultPayload = null;
-                if (actualResult != null) {
-                    var nextEntry = actualResult.next();
-                    if (nextEntry.isPresent()) {
-                        resultPayload = nextEntry.get().message().payload();
-                    }
-                }
+                Object resultPayload = actualResult.join();
                 reporter.reportUnexpectedReturnValue(resultPayload, description);
             } catch (Exception e) {
-                reporter.reportUnexpectedReturnValue(e, description);
+                // Check if this is the expected exception type
+                if (!type.isInstance(e.getCause() != null ? e.getCause() : e)) {
+                    description.appendText("Exception of type: ").appendValue(type);
+                    reporter.reportWrongException(e.getCause() != null ? e.getCause() : e, description);
+                }
+                return this;
             }
         }
         return super.exception(type);
@@ -177,16 +155,16 @@ class AxonTestThenQuery
         StringDescription description = new StringDescription();
         if (actualException == null) {
             try {
-                Object resultPayload = null;
-                if (actualResult != null) {
-                    var nextEntry = actualResult.next();
-                    if (nextEntry.isPresent()) {
-                        resultPayload = nextEntry.get().message().payload();
-                    }
-                }
+                Object resultPayload = actualResult.join();
                 reporter.reportUnexpectedReturnValue(resultPayload, description);
             } catch (Exception e) {
-                reporter.reportUnexpectedReturnValue(e, description);
+                // Check if this is the expected exception type and message
+                Throwable actualException = e.getCause() != null ? e.getCause() : e;
+                if (!type.isInstance(actualException) || !message.equals(actualException.getMessage())) {
+                    description.appendText("Exception of type: ").appendValue(type).appendText(" with message: ").appendValue(message);
+                    reporter.reportWrongException(actualException, description);
+                }
+                return this;
             }
         }
         return super.exception(type, message);
@@ -197,16 +175,12 @@ class AxonTestThenQuery
         StringDescription description = new StringDescription();
         if (actualException == null) {
             try {
-                Object resultPayload = null;
-                if (actualResult != null) {
-                    var nextEntry = actualResult.next();
-                    if (nextEntry.isPresent()) {
-                        resultPayload = nextEntry.get().message().payload();
-                    }
-                }
+                Object resultPayload = actualResult.join();
                 reporter.reportUnexpectedReturnValue(resultPayload, description);
             } catch (Exception e) {
-                reporter.reportUnexpectedReturnValue(e, description);
+                // Provide the actual exception to the consumer
+                consumer.accept(e.getCause() != null ? e.getCause() : e);
+                return this;
             }
         }
         return super.exceptionSatisfies(consumer);
