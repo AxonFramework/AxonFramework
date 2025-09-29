@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>5.0.0-preview</version>
+    <version>5.0.0-SNAPSHOT</version>
     <modules>
         <module>axon-server-connector</module>
         <module>eventsourcing</module>
@@ -873,7 +873,7 @@
         <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
         <url>https://github.com/AxonFramework/AxonFramework</url>
-        <tag>axon-5.0.0-preview</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <developers>
