@@ -149,7 +149,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     @Override
     public Object handleSync(@Nonnull Message message,
                              @Nonnull ProcessingContext context,
-                             T target) throws Exception {
+                             @Nullable T target) throws Exception {
         try {
             MessageStream.Entry<?> resultEntry = handle(message, context, target).first()
                                                                                  .asCompletableFuture()
