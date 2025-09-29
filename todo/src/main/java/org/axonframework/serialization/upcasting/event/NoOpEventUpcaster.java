@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,24 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import org.axonframework.serialization.upcasting.SingleEntryMultiUpcaster;
+import java.util.stream.Stream;
 
 /**
- * Abstract implementation of a {@link SingleEntryMultiUpcaster} and an {@link EventUpcaster} that eases the common
- * process of upcasting one intermediate event representation to several other representations by applying a flat
- * mapping function to the input stream of intermediate representations.
+ * Event upcaster that does nothing.
  *
- * @author Steven van Beelen
- * @since 3.0.6
+ * @author Rene de Waele
+ * @since 3.0
  */
-public abstract class EventMultiUpcaster
-        extends SingleEntryMultiUpcaster<IntermediateEventRepresentation> implements EventUpcaster {
+public enum NoOpEventUpcaster implements EventUpcaster {
 
+    /**
+     * Instance of an EventUpcaster that does nothing.
+     */
+    INSTANCE;
+
+    @Override
+    public Stream<IntermediateEventRepresentation> upcast(
+            Stream<IntermediateEventRepresentation> intermediateRepresentations) {
+        return intermediateRepresentations;
+    }
 }

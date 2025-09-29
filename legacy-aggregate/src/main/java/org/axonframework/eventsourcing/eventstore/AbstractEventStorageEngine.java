@@ -24,11 +24,10 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.modelling.command.AggregateStreamCreationException;
 import org.axonframework.modelling.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,8 +37,6 @@ import jakarta.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.eventhandling.EventUtils.upcastAndDeserializeTrackedEvents;
-import static org.axonframework.eventsourcing.EventStreamUtils.upcastAndDeserializeDomainEvents;
 
 /**
  * Abstract {@link LegacyEventStorageEngine} implementation that takes care of event serialization and upcasting.
@@ -50,7 +47,7 @@ import static org.axonframework.eventsourcing.EventStreamUtils.upcastAndDeserial
 public abstract class AbstractEventStorageEngine implements LegacyEventStorageEngine {
 
     private final Serializer snapshotSerializer;
-    protected final EventUpcaster upcasterChain;
+//    protected final EventUpcaster upcasterChain;
     private final PersistenceExceptionResolver persistenceExceptionResolver;
     private final Serializer eventSerializer;
 //    private final SnapshotFilter snapshotFilter;
@@ -66,7 +63,7 @@ public abstract class AbstractEventStorageEngine implements LegacyEventStorageEn
     protected AbstractEventStorageEngine(Builder builder) {
         builder.validate();
         this.snapshotSerializer = builder.snapshotSerializer.get();
-        this.upcasterChain = builder.upcasterChain;
+//        this.upcasterChain = builder.upcasterChain;
         this.persistenceExceptionResolver = builder.persistenceExceptionResolver;
         this.eventSerializer = builder.eventSerializer.get();
 //        this.snapshotFilter = builder.snapshotFilter;
@@ -75,26 +72,29 @@ public abstract class AbstractEventStorageEngine implements LegacyEventStorageEn
     @Override
     public Stream<? extends TrackedEventMessage> readEvents(TrackingToken trackingToken, boolean mayBlock) {
         Stream<? extends TrackedEventData<?>> input = readEventData(trackingToken, mayBlock);
-        return upcastAndDeserializeTrackedEvents(input, getEventSerializer(), upcasterChain);
+        return null;
+//        return upcastAndDeserializeTrackedEvents(input, getEventSerializer(), upcasterChain);
     }
 
     @Override
     public DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber) {
         Stream<? extends DomainEventData<?>> input = readEventData(aggregateIdentifier, firstSequenceNumber);
-        return upcastAndDeserializeDomainEvents(input, getEventSerializer(), upcasterChain);
+        return null;
+//        return upcastAndDeserializeDomainEvents(input, getEventSerializer(), upcasterChain);
     }
 
     @Override
     public Optional<DomainEventMessage> readSnapshot(@Nonnull String aggregateIdentifier) {
-        return readSnapshotData(aggregateIdentifier)
+        return Optional.empty();
+//        return readSnapshotData(aggregateIdentifier)
 //                .filter(snapshotFilter::allow)
-                .map(snapshot -> upcastAndDeserializeDomainEvents(Stream.of(snapshot),
-                                                                  getSnapshotSerializer(),
-                                                                  upcasterChain
-                ))
-                .flatMap(DomainEventStream::asStream)
-                .findFirst()
-                .map(event -> (DomainEventMessage) event);
+//                .map(snapshot -> upcastAndDeserializeDomainEvents(Stream.of(snapshot),
+//                                                                  getSnapshotSerializer(),
+//                                                                  upcasterChain
+//                ))
+//                .flatMap(DomainEventStream::asStream)
+//                .findFirst()
+//                .map(event -> (DomainEventMessage) event);
     }
 
     @Override
@@ -242,7 +242,7 @@ public abstract class AbstractEventStorageEngine implements LegacyEventStorageEn
     /**
      * Abstract Builder class to instantiate an {@link AbstractEventStorageEngine}.
      * <p>
-     * The {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster} and the {@code snapshotFilter} defaults to a
+     * The {@code EventUpcaster} defaults to a {@code NoOpEventUpcaster} and the {@code snapshotFilter} defaults to a
      * {@code SnapshotFilter#allowAll()} instance.
      * <p>
      * The event and snapshot {@link Serializer} are <b>hard requirements</b> and as such should be provided.
@@ -250,7 +250,7 @@ public abstract class AbstractEventStorageEngine implements LegacyEventStorageEn
     public abstract static class Builder {
 
         private Supplier<Serializer> snapshotSerializer;
-        protected EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
+//        protected EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
         private PersistenceExceptionResolver persistenceExceptionResolver;
         private Supplier<Serializer> eventSerializer;
 //        private SnapshotFilter snapshotFilter = SnapshotFilter.allowAll();
@@ -268,17 +268,17 @@ public abstract class AbstractEventStorageEngine implements LegacyEventStorageEn
         }
 
         /**
-         * Sets the {@link EventUpcaster} used to deserialize events of older revisions. Defaults to a
-         * {@link NoOpEventUpcaster}.
+         * Sets the {@code EventUpcaster} used to deserialize events of older revisions. Defaults to a
+         * {@code NoOpEventUpcaster}.
          *
-         * @param upcasterChain an {@link EventUpcaster} used to deserialize events of older revisions
+         * @param upcasterChain an {@code EventUpcaster} used to deserialize events of older revisions
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder upcasterChain(EventUpcaster upcasterChain) {
-            assertNonNull(upcasterChain, "EventUpcaster may not be null");
-            this.upcasterChain = upcasterChain;
-            return this;
-        }
+//        public Builder upcasterChain(EventUpcaster upcasterChain) {
+//            assertNonNull(upcasterChain, "EventUpcaster may not be null");
+//            this.upcasterChain = upcasterChain;
+//            return this;
+//        }
 
         /**
          * Sets the {@link PersistenceExceptionResolver} used to detect concurrency exceptions from the backing

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore;
+package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventsourcing.EventStreamUtils;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -34,7 +30,7 @@ import java.util.stream.Stream;
  * access to all events (from the first to the most recent) or any subset of these.
  *
  * @author Rene de Waele
- */
+ */ // TODO This is a duplicate of the DomainEventStream in the axon-todo module. Duplicated on purpose as otherwise there are cyclic dependencies
 public interface DomainEventStream extends Iterator<DomainEventMessage> {
 
     /**
@@ -44,15 +40,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage> {
      * @param sequenceNumberSupplier supplier of the sequence number of the last used upstream event entry
      * @return A DomainEventStream containing all events contained in the stream
      */
-    static DomainEventStream of(Stream<? extends DomainEventMessage> stream, Supplier<Long> sequenceNumberSupplier) {
-        Objects.requireNonNull(stream);
-        return new IteratorBackedDomainEventStream(stream.iterator()) {
-            @Override
-            public Long getLastSequenceNumber() {
-                return sequenceNumberSupplier.get();
-            }
-        };
-    }
+    DomainEventStream of(Stream<? extends DomainEventMessage> stream, Supplier<Long> sequenceNumberSupplier);
 
     /**
      * Create a new DomainEventStream with events obtained from the given {@code stream}.
@@ -60,18 +48,14 @@ public interface DomainEventStream extends Iterator<DomainEventMessage> {
      * @param stream Stream that serves as a source of events in the resulting DomainEventStream
      * @return A DomainEventStream containing all events contained in the stream
      */
-    static DomainEventStream of(Stream<? extends DomainEventMessage> stream) {
-        return new IteratorBackedDomainEventStream(stream.iterator());
-    }
+    DomainEventStream of(Stream<? extends DomainEventMessage> stream);
 
     /**
      * Create an empty DomainEventStream.
      *
      * @return A DomainEventStream containing no events
      */
-    static DomainEventStream empty() {
-        return DomainEventStream.of();
-    }
+    DomainEventStream empty();
 
     /**
      * Create a new DomainEventStream containing only the given {@code event}.
@@ -79,39 +63,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage> {
      * @param event The event to add to the resulting DomainEventStream
      * @return A DomainEventStream consisting of only the given event
      */
-    static DomainEventStream of(DomainEventMessage event) {
-        Objects.requireNonNull(event);
-        return new DomainEventStream() {
-            private boolean hasNext = true;
-
-            @Override
-            public DomainEventMessage peek() {
-                if (hasNext) {
-                    return event;
-                }
-                throw new NoSuchElementException();
-            }
-
-            @Override
-            public boolean hasNext() {
-                return hasNext;
-            }
-
-            @Override
-            public DomainEventMessage next() {
-                if (hasNext) {
-                    hasNext = false;
-                    return event;
-                }
-                throw new NoSuchElementException();
-            }
-
-            @Override
-            public Long getLastSequenceNumber() {
-                return event.getSequenceNumber();
-            }
-        };
-    }
+    DomainEventStream of(DomainEventMessage event);
 
     /**
      * Create a new DomainEventStream from the given {@code events}.
@@ -119,9 +71,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage> {
      * @param events Events to add to the resulting DomainEventStream
      * @return A DomainEventStream consisting of all given events
      */
-    static DomainEventStream of(DomainEventMessage... events) {
-        return DomainEventStream.of(Arrays.asList(events));
-    }
+    DomainEventStream of(DomainEventMessage... events);
 
     /**
      * Create a new DomainEventStream with events obtained from the given {@code list}.
@@ -129,10 +79,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage> {
      * @param list list that serves as a source of events in the resulting DomainEventStream
      * @return A DomainEventStream containing all events returned by the list
      */
-    static DomainEventStream of(List<? extends DomainEventMessage> list) {
-        return list.isEmpty() ? of(Stream.empty(), () -> null) :
-                of(list.stream(), () -> list.isEmpty() ? null : list.get(list.size() - 1).getSequenceNumber());
-    }
+    DomainEventStream of(List<? extends DomainEventMessage> list);
 
     /**
      * Concatenate two DomainEventStreams. In the resulting stream events from stream {@code a} will be followed by
@@ -142,27 +89,20 @@ public interface DomainEventStream extends Iterator<DomainEventMessage> {
      * @param b The second stream that will follow the first stream
      * @return A concatenation of stream a and b
      */
-    static DomainEventStream concat(DomainEventStream a, DomainEventStream b) {
-        Objects.requireNonNull(a);
-        Objects.requireNonNull(b);
-        return new ConcatenatingDomainEventStream(a, b);
-    }
+    DomainEventStream concat(DomainEventStream a, DomainEventStream b);
 
     /**
      * Returns a stream that provides the items of this stream that match the given {@code filter}.
      *
      * @param filter The filter to apply to the stream
-     * @return A filtered version of this stream 
+     * @return A filtered version of this stream
      */
-    default DomainEventStream filter(Predicate<? super DomainEventMessage> filter) {
-        Objects.requireNonNull(filter);
-        return new FilteringDomainEventStream(this, filter);
-    }
-    
+    DomainEventStream filter(Predicate<? super DomainEventMessage> filter);
+
     /**
-     * Returns {@code true} if the stream has more events, meaning that a call to {@code next()} will not
-     * result in an exception. If a call to this method returns {@code false}, there is no guarantee about the
-     * result of a consecutive call to {@code next()}
+     * Returns {@code true} if the stream has more events, meaning that a call to {@code next()} will not result in an
+     * exception. If a call to this method returns {@code false}, there is no guarantee about the result of a
+     * consecutive call to {@code next()}
      *
      * @return {@code true} if the stream contains more events.
      */
@@ -171,12 +111,12 @@ public interface DomainEventStream extends Iterator<DomainEventMessage> {
 
     /**
      * Returns the next events in the stream, if available. Use {@code hasNext()} to obtain a guarantee about the
-     * availability of any next event. Each call to {@code next()} will forward the pointer to the next event in
-     * the stream.
+     * availability of any next event. Each call to {@code next()} will forward the pointer to the next event in the
+     * stream.
      * <p/>
      * If the pointer has reached the end of the stream, the behavior of this method is undefined. It could either
-     * return {@code null}, or throw an exception, depending on the actual implementation. Use {@link #hasNext()}
-     * to confirm the existence of elements after the current pointer.
+     * return {@code null}, or throw an exception, depending on the actual implementation. Use {@link #hasNext()} to
+     * confirm the existence of elements after the current pointer.
      *
      * @return the next event in the stream.
      */
@@ -184,13 +124,13 @@ public interface DomainEventStream extends Iterator<DomainEventMessage> {
     DomainEventMessage next();
 
     /**
-     * Returns the next events in the stream, if available, without moving the pointer forward. Hence, a call to {@link
-     * #next()} will return the same event as a call to {@code peek()}. Use {@code hasNext()} to obtain a
+     * Returns the next events in the stream, if available, without moving the pointer forward. Hence, a call to
+     * {@link #next()} will return the same event as a call to {@code peek()}. Use {@code hasNext()} to obtain a
      * guarantee about the availability of any next event.
      * <p/>
      * If the pointer has reached the end of the stream, the behavior of this method is undefined. It could either
-     * return {@code null}, or throw an exception, depending on the actual implementation. Use {@link #hasNext()}
-     * to confirm the existence of elements after the current pointer.
+     * return {@code null}, or throw an exception, depending on the actual implementation. Use {@link #hasNext()} to
+     * confirm the existence of elements after the current pointer.
      *
      * @return the next event in the stream.
      */
@@ -223,8 +163,5 @@ public interface DomainEventStream extends Iterator<DomainEventMessage> {
      *
      * @return This DomainEventStream as a Stream of event messages
      */
-    default Stream<? extends DomainEventMessage> asStream() {
-        return EventStreamUtils.asStream(this);
-    }
-
+    Stream<? extends DomainEventMessage> asStream();
 }

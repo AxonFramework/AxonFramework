@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.eventsourcing.DomainEventStream;
 
 import static java.util.Arrays.asList;
 

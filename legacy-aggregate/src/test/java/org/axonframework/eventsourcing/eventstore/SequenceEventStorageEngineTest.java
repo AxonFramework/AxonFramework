@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -37,14 +38,7 @@ import java.util.stream.Stream;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.eq;
 
 /**
  * Test class validating the {@link SequenceEventStorageEngine}.
@@ -86,8 +80,8 @@ class SequenceEventStorageEngineTest {
         DomainEventMessage event2 = new GenericDomainEventMessage(
                 "type", "aggregate", 1, new MessageType("event"), "test2"
         );
-        when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event1));
-        when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event2));
+//        when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event1));
+//        when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event2));
 
         DomainEventStream actual = testSubject.readEvents("aggregate", 0);
         assertEquals(0L, (long) actual.getLastSequenceNumber());
@@ -117,8 +111,8 @@ class SequenceEventStorageEngineTest {
         DomainEventMessage event2 = new GenericDomainEventMessage(
                 "type", "aggregate", 1, new MessageType("event"), "test2"
         );
-        when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
-        when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event1, event2));
+//        when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
+//        when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event1, event2));
 
         DomainEventStream actual = testSubject.readEvents("aggregate", 0);
         verify(activeStorage, never()).readEvents(anyString(), anyLong());
@@ -147,8 +141,8 @@ class SequenceEventStorageEngineTest {
         DomainEventMessage event2 = new GenericDomainEventMessage(
                 "type", "aggregate", 1, new MessageType("event"), "test2"
         );
-        when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event1, event2));
-        when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
+//        when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.of(event1, event2));
+//        when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
 
         DomainEventStream actual = testSubject.readEvents("aggregate", 0);
         assertEquals(1L, (long) actual.getLastSequenceNumber());
@@ -342,13 +336,13 @@ class SequenceEventStorageEngineTest {
                 "type", "aggregate", 2, new MessageType("event"), "test3"
         );
 
-        when(historicStorage.readEvents(eq("aggregate"), eq(0L))).thenReturn(DomainEventStream.of(event1));
-        when(historicStorage.readEvents(eq("aggregate"), longThat(l -> l > 0))).thenReturn(DomainEventStream.empty());
+//        when(historicStorage.readEvents(eq("aggregate"), eq(0L))).thenReturn(DomainEventStream.of(event1));
+//        when(historicStorage.readEvents(eq("aggregate"), longThat(l -> l > 0))).thenReturn(DomainEventStream.empty());
 
-        when(activeStorage.readEvents(eq("aggregate"), longThat(l -> l < 2)))
-                .thenReturn(DomainEventStream.of(snapshotEvent, event3));
-        when(activeStorage.readEvents(eq("aggregate"), eq(2L))).thenReturn(DomainEventStream.of(event3));
-        when(activeStorage.readEvents(eq("aggregate"), longThat(l -> l > 2))).thenReturn(DomainEventStream.empty());
+//        when(activeStorage.readEvents(eq("aggregate"), longThat(l -> l < 2)))
+//                .thenReturn(DomainEventStream.of(snapshotEvent, event3));
+//        when(activeStorage.readEvents(eq("aggregate"), eq(2L))).thenReturn(DomainEventStream.of(event3));
+//        when(activeStorage.readEvents(eq("aggregate"), longThat(l -> l > 2))).thenReturn(DomainEventStream.empty());
 
         // Emulate readEvents from AbstractEventStore.readEvents(java.lang.String) after snapshot
         DomainEventStream actual = testSubject.readEvents("aggregate", 2);
@@ -379,14 +373,14 @@ class SequenceEventStorageEngineTest {
                 "type", "aggregate", 2, new MessageType("event"), "test3"
         );
 
-        when(historicStorage.readEvents(eq("aggregate"), eq(0L)))
-                .thenReturn(DomainEventStream.of(event1, snapshotEvent, event3));
-        when(historicStorage.readEvents(eq("aggregate"), eq(1L)))
-                .thenReturn(DomainEventStream.of(snapshotEvent, event3));
-        when(historicStorage.readEvents(eq("aggregate"), eq(2L))).thenReturn(DomainEventStream.of(event3));
-        when(historicStorage.readEvents(eq("aggregate"), longThat(l -> l > 2))).thenReturn(DomainEventStream.empty());
-
-        when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
+//        when(historicStorage.readEvents(eq("aggregate"), eq(0L)))
+//                .thenReturn(DomainEventStream.of(event1, snapshotEvent, event3));
+//        when(historicStorage.readEvents(eq("aggregate"), eq(1L)))
+//                .thenReturn(DomainEventStream.of(snapshotEvent, event3));
+//        when(historicStorage.readEvents(eq("aggregate"), eq(2L))).thenReturn(DomainEventStream.of(event3));
+//        when(historicStorage.readEvents(eq("aggregate"), longThat(l -> l > 2))).thenReturn(DomainEventStream.empty());
+//
+//        when(activeStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
 
         // Emulate readEvents from AbstractEventStore.readEvents(java.lang.String) after snapshot
         DomainEventStream actual = testSubject.readEvents("aggregate", 2);
@@ -417,13 +411,13 @@ class SequenceEventStorageEngineTest {
                 "type", "aggregate", 2, new MessageType("event"), "test4"
         );
 
-        when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
-
-        when(activeStorage.readEvents(eq("aggregate"), eq(0L)))
-                .thenReturn(DomainEventStream.of(event1, snapshotEvent, event3));
-        when(activeStorage.readEvents(eq("aggregate"), eq(1L))).thenReturn(DomainEventStream.of(snapshotEvent, event3));
-        when(activeStorage.readEvents(eq("aggregate"), eq(2L))).thenReturn(DomainEventStream.of(event3));
-        when(activeStorage.readEvents(eq("aggregate"), longThat(l -> l > 2))).thenReturn(DomainEventStream.empty());
+//        when(historicStorage.readEvents(eq("aggregate"), anyLong())).thenReturn(DomainEventStream.empty());
+//
+//        when(activeStorage.readEvents(eq("aggregate"), eq(0L)))
+//                .thenReturn(DomainEventStream.of(event1, snapshotEvent, event3));
+//        when(activeStorage.readEvents(eq("aggregate"), eq(1L))).thenReturn(DomainEventStream.of(snapshotEvent, event3));
+//        when(activeStorage.readEvents(eq("aggregate"), eq(2L))).thenReturn(DomainEventStream.of(event3));
+//        when(activeStorage.readEvents(eq("aggregate"), longThat(l -> l > 2))).thenReturn(DomainEventStream.empty());
 
         // Emulate readEvents from AbstractEventStore.readEvents(java.lang.String) after snapshot
         DomainEventStream actual = testSubject.readEvents("aggregate", 2);

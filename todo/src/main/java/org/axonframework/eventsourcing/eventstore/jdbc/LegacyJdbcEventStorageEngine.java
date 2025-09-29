@@ -1024,11 +1024,11 @@ public class LegacyJdbcEventStorageEngine extends BatchingEventStorageEngine {
             return this;
         }
 
-        @Override
-        public LegacyJdbcEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
-            super.upcasterChain(upcasterChain);
-            return this;
-        }
+//        @Override
+//        public LegacyJdbcEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
+//            super.upcasterChain(upcasterChain);
+//            return this;
+//        }
 
         /**
          * {@inheritDoc} Defaults to a {@link JdbcSQLErrorCodesResolver}.

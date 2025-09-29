@@ -71,6 +71,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
     }
 
     @Test
+    @Disabled("TODO #3597")
     public void storeAndLoadEventsWithUpcaster() {
         EventUpcaster mockUpcasterChain = mock(EventUpcaster.class);
         //noinspection unchecked
@@ -79,7 +80,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
             return inputStream.flatMap(e -> Stream.of(e, e));
         });
         //noinspection unchecked
-        testSubject = createEngine(engineBuilder -> (EB) engineBuilder.upcasterChain(mockUpcasterChain));
+//        testSubject = createEngine(engineBuilder -> (EB) engineBuilder.upcasterChain(mockUpcasterChain));
 
         testSubject.appendEvents(DomainEventTestUtils.createDomainEvents(4));
         List<DomainEventMessage> upcastedEvents = testSubject.readEvents(DomainEventTestUtils.AGGREGATE).asStream()

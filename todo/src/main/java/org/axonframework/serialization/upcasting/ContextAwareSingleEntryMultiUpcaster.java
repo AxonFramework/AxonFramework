@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,29 +22,25 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Abstract implementation of an {@link Upcaster} that eases the common process of upcasting one intermediate
- * representation to another representation by applying a simple mapping function to the input stream of intermediate
- * representations. Additionally, it's a context aware implementation, which enables it to store and reuse context
- * information from one entry to another during upcasting.
+ * representation to several other representations by applying a simple flat mapping function to the input stream of
+ * intermediate representations. Additionally, it's a context aware implementation, which enables it to store and reuse
+ * context information from one entry to another during upcasting.
  *
  * @param <T> the type of entry to be upcasted as {@code T}
  * @param <C> the type of context used as {@code C}
  * @author Steven van Beelen
  * @since 3.1
  */
-public abstract class ContextAwareSingleEntryUpcaster<T, C> implements Upcaster<T> {
+public abstract class ContextAwareSingleEntryMultiUpcaster<T, C> implements Upcaster<T> {
 
     @Override
     public Stream<T> upcast(Stream<T> intermediateRepresentations) {
         C context = buildContext();
-        return intermediateRepresentations.map(entry -> {
+        return intermediateRepresentations.flatMap(entry -> {
             if (!canUpcast(entry, context)) {
-                return entry;
+                return Stream.of(entry);
             }
-            return requireNonNull(
-                    doUpcast(entry, context),
-                    "Result from #doUpcast() should not be null. "
-                            + "To remove an intermediateRepresentation add a filter to the input stream."
-            );
+            return requireNonNull(doUpcast(entry, context));
         });
     }
 
@@ -69,9 +65,9 @@ public abstract class ContextAwareSingleEntryUpcaster<T, C> implements Upcaster<
      *
      * @param intermediateRepresentation the representation of the object to upcast as {@code T}
      * @param context                    the context for this upcaster as {@code C}
-     * @return the upcasted representation
+     * @return the upcasted representations as a {@code Stream} with generic type {@code T}
      */
-    protected abstract T doUpcast(T intermediateRepresentation, C context);
+    protected abstract Stream<T> doUpcast(T intermediateRepresentation, C context);
 
     /**
      * Builds a context of generic type {@code C} to be used when processing the stream of intermediate object

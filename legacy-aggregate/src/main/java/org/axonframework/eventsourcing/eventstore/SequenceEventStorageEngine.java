@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
+import org.axonframework.eventsourcing.DomainEventStream;
 
 import java.time.Instant;
 import java.util.List;
@@ -30,6 +31,8 @@ import java.util.Spliterators;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -192,6 +195,47 @@ public class SequenceEventStorageEngine implements LegacyEventStorageEngine {
         }
 
         @Override
+        public DomainEventStream of(Stream<? extends DomainEventMessage> stream,
+                                    Supplier<Long> sequenceNumberSupplier) {
+            return null;
+        }
+
+        @Override
+        public DomainEventStream of(Stream<? extends DomainEventMessage> stream) {
+            return null;
+        }
+
+        @Override
+        public DomainEventStream empty() {
+            return null;
+        }
+
+        @Override
+        public DomainEventStream of(DomainEventMessage event) {
+            return null;
+        }
+
+        @Override
+        public DomainEventStream of(DomainEventMessage... events) {
+            return null;
+        }
+
+        @Override
+        public DomainEventStream of(List<? extends DomainEventMessage> list) {
+            return null;
+        }
+
+        @Override
+        public DomainEventStream concat(DomainEventStream a, DomainEventStream b) {
+            return null;
+        }
+
+        @Override
+        public DomainEventStream filter(Predicate<? super DomainEventMessage> filter) {
+            return null;
+        }
+
+        @Override
         public boolean hasNext() {
             initActiveIfRequired();
             if (actual == null) {
@@ -240,6 +284,11 @@ public class SequenceEventStorageEngine implements LegacyEventStorageEngine {
                 Long actualLastSequenceNumber = actual.getLastSequenceNumber();
                 return actualLastSequenceNumber != null ? actualLastSequenceNumber : historic.getLastSequenceNumber();
             }
+        }
+
+        @Override
+        public Stream<? extends DomainEventMessage> asStream() {
+            return Stream.empty();
         }
     }
 }

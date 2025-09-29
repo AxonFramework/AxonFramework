@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,16 @@
 
 package org.axonframework.serialization.upcasting.event;
 
-import java.util.stream.Stream;
+import org.axonframework.serialization.upcasting.Upcaster;
 
 /**
- * Event upcaster that does nothing.
+ * Interface that is used for upcasters of event data. The event data provides event context like event identifier,
+ * aggregate identifier, event metadata etc.
  *
  * @author Rene de Waele
  * @since 3.0
  */
-public enum NoOpEventUpcaster implements EventUpcaster {
+@FunctionalInterface
+public interface EventUpcaster extends Upcaster<IntermediateEventRepresentation> {
 
-    /**
-     * Instance of an EventUpcaster that does nothing.
-     */
-    INSTANCE;
-
-    @Override
-    public Stream<IntermediateEventRepresentation> upcast(
-            Stream<IntermediateEventRepresentation> intermediateRepresentations) {
-        return intermediateRepresentations;
-    }
 }
