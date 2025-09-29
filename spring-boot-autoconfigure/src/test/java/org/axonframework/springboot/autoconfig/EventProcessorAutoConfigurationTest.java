@@ -27,9 +27,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * Test class validating whether a Spring {@link Component} with an {@link EventHandler} results in a working
@@ -58,7 +60,8 @@ class EventProcessorAutoConfigurationTest {
             eventGateway.publish(null, "some-event-to-echo");
 
             AtomicBoolean invoked = context.getBean(AtomicBoolean.class);
-            assertThat(invoked).isTrue();
+            await().pollDelay(Duration.ofMillis(50))
+                   .untilAsserted(() -> assertThat(invoked).isTrue());
         });
     }
 
