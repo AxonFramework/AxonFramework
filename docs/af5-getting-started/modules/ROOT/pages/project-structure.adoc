@@ -45,6 +45,7 @@ Please ensure you have the following properties and dependencies in your `pom.xm
         <axon.version>5.0.0-preview</axon.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit.version>5.12.1</junit.version>
+        <jackson.version>2.20.0</jackson.version>
         <log4j.version>2.24.3</log4j.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
@@ -69,6 +70,16 @@ Please ensure you have the following properties and dependencies in your `pom.xm
             <groupId>org.axonframework</groupId>
             <artifactId>axon-eventsourcing</artifactId>
             <version>${axon.version}</version>
+        </dependency>
+
+        <!-- Serialization Dependencies -->
+
+        <dependency>
+            <groupId>com.fasterxml.jackson</groupId>
+            <artifactId>jackson-bom</artifactId>
+            <version>${jackson.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
         </dependency>
 
         <!-- Log4j Dependencies -->
