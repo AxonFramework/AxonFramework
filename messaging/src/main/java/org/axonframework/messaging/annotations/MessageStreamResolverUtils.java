@@ -37,6 +37,15 @@ import java.util.stream.StreamSupport;
 /**
  * Utility class that can resolve the result of any {@link org.axonframework.messaging.configuration.MessageHandler}
  * into the expected corresponding {@link MessageStream}.
+ * <p>
+ * This utility class currently has a major drawback, which is that it only takes the "top level" type into account.
+ * Differently put, if we receive a {@code Mono<Message>} as the given {@code result} of
+ * {@link #resolveToStream(Object, MessageTypeResolver)}, we will push that {@code Message} through the given
+ * {@code typeResolver} and make it the {@link Message#payload()}. Similarly, if we receive a
+ * {@code CompletableFuture<List<Object>>} (or {@code CompletableFuture<List<Message>>} for that matter), we will return
+ * a {@link MessageStream.Single}, while we are actually dealing with a {@link MessageStream}.
+ * <p>
+ * These are known limitation that will be supported in due time.
  *
  * @author Simon Zambrovski
  * @author Steven van Beelen
