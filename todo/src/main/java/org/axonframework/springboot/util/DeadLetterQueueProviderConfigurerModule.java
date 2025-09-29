@@ -17,10 +17,8 @@
 package org.axonframework.springboot.util;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.EventProcessingConfigurer;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.LegacyConfigurer;
+import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.springboot.EventProcessorProperties;
@@ -30,11 +28,10 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * A {@link ConfigurerModule} implementation dedicated towards registering a {@link SequencedDeadLetterQueue} provider
- * with the {@link EventProcessingConfigurer}.
+ * A {@link ConfigurationEnhancer} implementation dedicated towards registering a {@link SequencedDeadLetterQueue}
+ * provider with the {@link org.axonframework.eventhandling.configuration.EventProcessingConfigurer}.
  * <p>
- * Does so through invoking the
- * {@link EventProcessingConfigurer#registerDeadLetterQueueProvider(Function)} operation,
+ * Does so through invoking the {@code EventProcessingConfigurer#registerDeadLetterQueueProvider(Function)} operation,
  * utilizing the given {@code deadLetterQueueProvider}. Only processing groups for which the dead-letter queue is
  * {@link EventProcessorProperties.Dlq#isEnabled() enabled} will receive the provided dead-letter queue.
  *
@@ -42,10 +39,10 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 4.8.0
  */
-public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule {
+public class DeadLetterQueueProviderConfigurerModule implements ConfigurationEnhancer {
 
     private final EventProcessorProperties eventProcessorProperties;
-    private final Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage>>> deadLetterQueueProvider;
+//    private final Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage>>> deadLetterQueueProvider;
 
     /**
      * Construct a {@link DeadLetterQueueProviderConfigurerModule}, using the given {@code eventProcessorProperties} to
@@ -57,24 +54,28 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule
      * @param deadLetterQueueProvider  The function providing the {@link SequencedDeadLetterQueue}.
      */
     public DeadLetterQueueProviderConfigurerModule(
-            EventProcessorProperties eventProcessorProperties,
-            Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage>>> deadLetterQueueProvider
+            EventProcessorProperties eventProcessorProperties
+//            , Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage>>> deadLetterQueueProvider
     ) {
         this.eventProcessorProperties = eventProcessorProperties;
-        this.deadLetterQueueProvider = deadLetterQueueProvider;
+//        this.deadLetterQueueProvider = deadLetterQueueProvider;
     }
+
+//    @Override
+//    public void configureModule(@Nonnull LegacyConfigurer configurer) {
+//        configurer.eventProcessing().registerDeadLetterQueueProvider(
+//                processingGroup -> dlqEnabled(processingGroup)
+//                        ? deadLetterQueueProvider.apply(processingGroup)
+//                        : null
+//        );
+//    }
 
     @Override
-    public void configureModule(@Nonnull LegacyConfigurer configurer) {
-        configurer.eventProcessing().registerDeadLetterQueueProvider(
-                processingGroup -> dlqEnabled(processingGroup)
-                        ? deadLetterQueueProvider.apply(processingGroup)
-                        : null
-        );
-
+    public void enhance(@Nonnull ComponentRegistry registry) {
+        // TODO #3517 Implement as part of referred to issue.
     }
 
-    private boolean dlqEnabled( String processingGroup) {
+    private boolean dlqEnabled(String processingGroup) {
         return dlqEnabled(eventProcessorProperties.getProcessors(), processingGroup);
     }
 

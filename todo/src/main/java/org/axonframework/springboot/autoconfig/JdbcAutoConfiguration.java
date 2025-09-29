@@ -160,16 +160,18 @@ public class JdbcAutoConfiguration {
             @Qualifier("eventSerializer") Serializer eventSerializer,
             Serializer genericSerializer
     ) {
+        // TODO #3517
         return new DeadLetterQueueProviderConfigurerModule(
-                eventProcessorProperties,
-                processingGroup -> config -> JdbcSequencedDeadLetterQueue.builder()
-                                                                         .processingGroup(processingGroup)
-                                                                         .connectionProvider(connectionProvider)
-                                                                         .transactionManager(transactionManager)
-                                                                         .schema(schema)
-                                                                         .genericSerializer(genericSerializer)
-                                                                         .eventSerializer(eventSerializer)
-                                                                         .build()
+                eventProcessorProperties
+//                ,
+//                processingGroup -> config -> JdbcSequencedDeadLetterQueue.builder()
+//                                                                         .processingGroup(processingGroup)
+//                                                                         .connectionProvider(connectionProvider)
+//                                                                         .transactionManager(transactionManager)
+//                                                                         .schema(schema)
+//                                                                         .genericSerializer(genericSerializer)
+//                                                                         .eventSerializer(eventSerializer)
+//                                                                         .build()
         );
     }
 }

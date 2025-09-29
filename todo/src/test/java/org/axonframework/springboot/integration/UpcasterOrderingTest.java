@@ -16,10 +16,7 @@
 
 package org.axonframework.springboot.integration;
 
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.EventProcessingModule;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -59,9 +56,9 @@ class UpcasterOrderingTest {
         //noinspection unchecked
         Stream<IntermediateEventRepresentation> mockStream = mock(Stream.class);
         testApplicationContext.run(context -> {
-            EventUpcasterChain testSubject = context.getBean(LegacyConfiguration.class).upcasterChain();
+//            EventUpcasterChain testSubject = context.getBean(LegacyConfiguration.class).upcasterChain();
 
-            testSubject.upcast(mockStream);
+//            testSubject.upcast(mockStream);
 
             // Since InOrder only works with mocks, we verify the invoked methods on the test stream.
             InOrder upcasterOrder = inOrder(mockStream);
@@ -78,10 +75,10 @@ class UpcasterOrderingTest {
 
         // Normally constructed through Spring Boot autoconfig.
         // As this is the plain Spring module, we need to construct it ourselves.
-        @Bean
-        public EventProcessingModule eventProcessingModule() {
-            return new EventProcessingModule();
-        }
+//        @Bean
+//        public EventProcessingModule eventProcessingModule() {
+//            return new EventProcessingModule();
+//        }
 
         @SuppressWarnings({"unused", "RedundantStreamOptionalCall", "ResultOfMethodCallIgnored", "DataFlowIssue"})
         @Component
