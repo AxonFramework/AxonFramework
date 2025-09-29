@@ -32,6 +32,7 @@ import org.axonframework.eventhandling.configuration.EventHandlingComponentsConf
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer.RequiredComponentPhase;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.spring.config.EventProcessorSettings.PooledEventProcessorSettings;
 import org.axonframework.spring.config.EventProcessorSettings.SubscribingEventProcessorSettings;
@@ -125,7 +126,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                                 .customized(SpringCustomizations.pooledStreamingCustomizations(
                                         packageName,
                                         moduleSettings
-                                ));
+                                ).andThen(c -> c.unitOfWorkFactory(configuration.getComponent(UnitOfWorkFactory.class))));
                     }
                     case SUBSCRIBING -> {
                         var moduleSettings = (SubscribingEventProcessorSettings) settings;
@@ -135,7 +136,7 @@ public class MessageHandlerConfigurer implements ConfigurationEnhancer, Applicat
                                 .customized(SpringCustomizations.subscribingCustomizations(
                                         packageName,
                                         moduleSettings
-                                ));
+                                ).andThen(c -> c.unitOfWorkFactory(configuration.getComponent(UnitOfWorkFactory.class))));
                     }
                 };
             };
