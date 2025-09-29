@@ -175,7 +175,7 @@ class CoursesStatsProjection {
 <.> Increment student count when a student subscribes
 <.> Decrement student count when a student unsubscribes
 
-=== Step 5: Define the Query and Query Handler
+=== Step 5: Define the query and query handler
 
 Now let's create the query and its handler to enable querying the read model:
 
