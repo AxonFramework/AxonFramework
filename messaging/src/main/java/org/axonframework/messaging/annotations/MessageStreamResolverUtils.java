@@ -18,7 +18,6 @@ package org.axonframework.messaging.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
@@ -81,7 +80,7 @@ public class MessageStreamResolverUtils {
         return switch (result) {
             case MessageStream<?> messageStream -> messageStream;
             case CompletableFuture<?> future -> MessageStream.fromFuture(
-                    future.thenApply(r -> new GenericMessage(new MessageType(r.getClass()), r))
+                    future.thenApply(r -> new GenericMessage(typeResolver.resolveOrThrow(r), r))
             );
             case Optional<?> optional when optional.isPresent() -> {
                 Object r = optional.get();
@@ -95,9 +94,7 @@ public class MessageStreamResolverUtils {
             case Stream<?> stream -> MessageStream.fromStream(
                     stream.map(r -> new GenericMessage(typeResolver.resolveOrThrow(r), r))
             );
-            default -> MessageStream.just(
-                    new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result)
-            );
+            default -> MessageStream.just(new GenericMessage(typeResolver.resolveOrThrow(result), result));
         };
     }
 
