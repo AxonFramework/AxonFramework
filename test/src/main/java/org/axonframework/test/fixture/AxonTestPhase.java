@@ -489,6 +489,42 @@ public interface AxonTestPhase {
         Query query(@Nonnull Object payload, @Nonnull Metadata metadata);
 
         /**
+         * Dispatches the given {@code payload} query with the provided {@code responseType} to the appropriate query
+         * handler and records all activity for result validation. The query will be dispatched with empty metadata.
+         *
+         * @param payload      The query to execute.
+         * @param responseType The expected response type for the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default <R> Query query(@Nonnull Object payload, @Nonnull Class<R> responseType) {
+            return query(payload, responseType, new HashMap<>());
+        }
+
+        /**
+         * Dispatches the given {@code payload} query with the provided {@code responseType} and {@code metadata} to the
+         * appropriate query handler and records all activity for result validation.
+         *
+         * @param payload      The query to execute.
+         * @param responseType The expected response type for the query.
+         * @param metadata     The metadata to attach to the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default <R> Query query(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Map<String, String> metadata) {
+            return query(payload, responseType, Metadata.from(metadata));
+        }
+
+        /**
+         * Dispatches the given {@code payload} query with the provided {@code responseType} and {@code metadata} to the
+         * appropriate query handler and records all activity for result validation.
+         *
+         * @param payload      The query to execute.
+         * @param responseType The expected response type for the query.
+         * @param metadata     The metadata to attach to the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        <R> Query query(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Metadata metadata);
+
+        /**
          * Transitions to the Then phase to validate the results of the test. It skips the When phase.
          *
          * @return A {@link Then.Nothing} instance that allows validating the test results.

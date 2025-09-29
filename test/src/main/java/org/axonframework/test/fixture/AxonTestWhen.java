@@ -143,13 +143,18 @@ class AxonTestWhen implements AxonTestPhase.When {
 
     @Override
     public Query query(@Nonnull Object payload, @Nonnull Metadata metadata) {
+        return query(payload, Object.class, metadata);
+    }
+
+    @Override
+    public <R> Query query(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Metadata metadata) {
         var messageType = messageTypeResolver.resolveOrThrow(payload);
         var baseMessage = new GenericEventMessage(messageType, payload, metadata);
-        var message = new GenericQueryMessage(baseMessage, ResponseTypes.instanceOf(Object.class));
+        var message = new GenericQueryMessage(baseMessage, ResponseTypes.instanceOf(responseType));
         inUnitOfWorkOnInvocation(processingContext -> {
             try {
                 lastQuery = message;
-                actualQueryResult = queryGateway.query(message, Object.class, processingContext);
+                actualQueryResult = queryGateway.query(message, responseType, processingContext);
                 actualException = null;
                 return CompletableFuture.completedFuture(null);
             } catch (Exception e) {
