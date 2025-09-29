@@ -174,7 +174,12 @@ class CoursesStatsProjection {
 <.> Increment student count when a student subscribes
 <.> Decrement student count when a student unsubscribes
 
-=== Step 5: Configure the read model components
+=== Step 6: Implement the Query Handler to query the read model
+
+
+
+
+=== Step 7: Configure the read model components
 
 Finally, let's wire everything together with a proper Axon Framework 5 configuration:
 
@@ -190,10 +195,16 @@ public class CourseStatsConfiguration {
                         c -> c.annotated(cfg -> new CoursesStatsProjection(cfg.getComponent(CourseStatsRepository.class))) // <2>
                 ).notCustomized();
 
+        QueryHandlingModule getCourseStatsByIdQueryHandler = QueryHandlingModule.named("get-course-stats-by-id") // <3>
+                .queryHandlers()
+                .annotatedQueryHandlingComponent(cfg -> new GetCourseStatsByIdQueryHandler(cfg.getComponent(CourseStatsRepository.class)))
+                .build();
+
         return configurer
-                .componentRegistry(cr -> cr.registerComponent(CourseStatsRepository.class, cfg -> new InMemoryCourseStatsRepository())) // <3>
+                .componentRegistry(cr -> cr.registerComponent(CourseStatsRepository.class, cfg -> new InMemoryCourseStatsRepository())) // <4>
+                .registerQueryHandlingModule(getCourseStatsByIdQueryHandler) // <5>
                 .modelling(modelling -> modelling.messaging(messaging -> messaging.eventProcessing(eventProcessing ->
-                        eventProcessing.pooledStreaming(ps -> ps.processor(projectionProcessor)) // <4>
+                        eventProcessing.pooledStreaming(ps -> ps.processor(projectionProcessor)) // <6>
                 )));
     }
 
@@ -206,17 +217,23 @@ public class CourseStatsConfiguration {
 
 <.> Create a pooled streaming event processor for handling projection events
 <.> Register the projection with dependency injection of the repository
+<.> Create a query handling module for processing course stats queries
 <.> Register the repository implementation as a component
+<.> Register the query handler as a component
 <.> Register the event processor with the framework
 
 == Testing the read model
 
-Let's create comprehensive tests to verify our read model works correctly:
+Let's create comprehensive tests to verify our read model works correctly.
+The `AxonTestFixture` doesn't have first-class support for testing Queries yet.
+However, it's still flexible enough that we can still use the custom `expect` method to test our projections by leveraging the `Configuration` object to access the `QueryGateway` for performing queries.
 
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/read/coursestats/CourseStatsProjectionTest.java
 ----
 public class CourseStatsProjectionTest {
+
+   private AxonTestFixture fixture;
 
     @BeforeEach
     void beforeEach() {
@@ -236,7 +253,7 @@ public class CourseStatsProjectionTest {
         fixture.when()
                 .nothing()
                 .then()
-                .expect(cfg -> assertReadModelNotFound(cfg, courseId));
+                .expect(cfg -> assertCourseStatsNotExist(cfg, courseId));
     }
 
     @Test
@@ -252,7 +269,7 @@ public class CourseStatsProjectionTest {
         fixture.given()
                 .events(new CourseCreated(courseId, "Event Sourcing in Practice", 42))
                 .then()
-                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel))); // <2>
+                .await(r -> r.expect(cfg -> assertCourseStats(cfg, expectedReadModel))); // <2>
     }
 
     @Test
@@ -271,7 +288,7 @@ public class CourseStatsProjectionTest {
         fixture.given()
                 .events(new CourseCreated(courseId, originalName, 42), new CourseRenamed(courseId, newName))
                 .then()
-                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
+                .await(r -> r.expect(cfg -> assertCourseStats(cfg, expectedReadModel)));
     }
 
     @Test
@@ -291,7 +308,7 @@ public class CourseStatsProjectionTest {
                 .events(new CourseCreated(courseId, "Event Sourcing in Practice", originalCapacity),
                         new CourseCapacityChanged(courseId, newCapacity))
                 .then()
-                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
+                .await(r -> r.expect(cfg -> assertCourseStats(cfg, expectedReadModel)));
     }
 
     @Test
@@ -310,7 +327,7 @@ public class CourseStatsProjectionTest {
                 .events(new CourseCreated(courseId, "Event Sourcing in Practice", 42),
                         new StudentSubscribedToCourse(studentId, courseId))
                 .then()
-                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
+                .await(r -> r.expect(cfg -> assertCourseStats(cfg, expectedReadModel)));
     }
 
     @Test
@@ -330,22 +347,22 @@ public class CourseStatsProjectionTest {
                         new StudentSubscribedToCourse(studentId, courseId),
                         new StudentUnsubscribedFromCourse(studentId, courseId))
                 .then()
-                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
+                .await(r -> r.expect(cfg -> assertCourseStats(cfg, expectedReadModel)));
     }
 
-    private void assertReadModel(Configuration configuration, CoursesStatsReadModel expectedReadModel) {
-        var found = courseStatsRepository(configuration).findById(expectedReadModel.courseId());
-        assertThat(found).isNotEmpty();
-        assertThat(found).hasValue(expectedReadModel);
+    private void assertCourseStats(Configuration configuration, CoursesStatsReadModel expectedReadModel) {
+        var found = configuration.getComponent(QueryGateway.class) // <3>
+                .query(new GetCourseStatsById(expectedReadModel.courseId()), GetCourseStatsById.Result.class, null)
+                .join();
+        assertThat(found).isNotNull();
+        assertThat(found.stats()).isEqualTo(expectedReadModel);
     }
 
-    private void assertReadModelNotFound(Configuration configuration, CourseId courseId) {
-        var found = courseStatsRepository(configuration).findById(courseId);
-        assertThat(found).isEmpty();
-    }
-
-    private CourseStatsRepository courseStatsRepository(Configuration configuration) { // <3>
-        return configuration.getComponent(CourseStatsRepository.class);
+    private void assertCourseStatsNotExist(Configuration configuration, CourseId courseId) {
+        var found = configuration.getComponent(QueryGateway.class)
+                .query(new GetCourseStatsById(courseId), GetCourseStatsById.Result.class, null)
+                .join();
+        assertThat(found.stats()).isNull();
     }
 
 }
@@ -353,7 +370,7 @@ public class CourseStatsProjectionTest {
 
 <.> Configure our read model components for testing
 <.> Async assertion using Awaitility, because the projection is eventually consistent, we need to wait for it to be updated
-<.> Helper to access the repository from the test configuration
+<.> We're getting the QueryGateway from the configuration to perform queries against our read model
 
 == Key read model concepts
 
