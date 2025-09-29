@@ -25,3 +25,4 @@ org.axonframework.springboot.autoconfig.InfrastructureConfiguration
 org.axonframework.springboot.autoconfig.InterceptorAutoConfiguration
 org.axonframework.springboot.autoconfig.NoOpTransactionAutoConfiguration
 org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration
+org.axonframework.springboot.autoconfig.TransactionAutoConfiguration
