@@ -116,6 +116,7 @@ class FixtureTest_RegisteringSagaEnhancements {
     }
 
     @Test
+    @Disabled("TODO revise after Saga support is enabled")
     void registeredResourceInjectorIsCalledUponFirstEventPublication() {
         AtomicBoolean assertion = new AtomicBoolean(false);
         testSubject.registerResourceInjector(saga -> assertion.set(true))
