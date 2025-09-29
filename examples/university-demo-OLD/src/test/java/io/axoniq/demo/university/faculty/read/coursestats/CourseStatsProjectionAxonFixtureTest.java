@@ -5,6 +5,7 @@ import io.axoniq.demo.university.faculty.events.*;
 import io.axoniq.demo.university.shared.ids.CourseId;
 import io.axoniq.demo.university.shared.ids.StudentId;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,7 @@ public class CourseStatsProjectionAxonFixtureTest {
         fixture.when()
                 .nothing()
                 .then()
-                .expect(cfg -> assertReadModelNotFound(cfg, courseId));
+                .expect(cfg -> assertCourseStatsNotExist(cfg, courseId));
     }
 
     @Test
@@ -49,7 +50,7 @@ public class CourseStatsProjectionAxonFixtureTest {
         fixture.given()
                 .events(new CourseCreated(courseId, "Event Sourcing in Practice", 42))
                 .then()
-                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
+                .await(r -> r.expect(cfg -> assertCourseStats(cfg, expectedReadModel)));
     }
 
     @Test
@@ -68,7 +69,7 @@ public class CourseStatsProjectionAxonFixtureTest {
         fixture.given()
                 .events(new CourseCreated(courseId, originalName, 42), new CourseRenamed(courseId, newName))
                 .then()
-                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
+                .await(r -> r.expect(cfg -> assertCourseStats(cfg, expectedReadModel)));
     }
 
     @Test
@@ -88,7 +89,7 @@ public class CourseStatsProjectionAxonFixtureTest {
                 .events(new CourseCreated(courseId, "Event Sourcing in Practice", originalCapacity),
                         new CourseCapacityChanged(courseId, newCapacity))
                 .then()
-                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
+                .await(r -> r.expect(cfg -> assertCourseStats(cfg, expectedReadModel)));
     }
 
     @Test
@@ -107,7 +108,7 @@ public class CourseStatsProjectionAxonFixtureTest {
                 .events(new CourseCreated(courseId, "Event Sourcing in Practice", 42),
                         new StudentSubscribedToCourse(studentId, courseId))
                 .then()
-                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
+                .await(r -> r.expect(cfg -> assertCourseStats(cfg, expectedReadModel)));
     }
 
     @Test
@@ -127,23 +128,22 @@ public class CourseStatsProjectionAxonFixtureTest {
                         new StudentSubscribedToCourse(studentId, courseId),
                         new StudentUnsubscribedFromCourse(studentId, courseId))
                 .then()
-                .await(r -> r.expect(cfg -> assertReadModel(cfg, expectedReadModel)));
+                .await(r -> r.expect(cfg -> assertCourseStats(cfg, expectedReadModel)));
     }
 
-    private void assertReadModel(Configuration configuration, CoursesStatsReadModel expectedReadModel) {
-        var found = courseStatsRepository(configuration).findById(expectedReadModel.courseId());
-        assertThat(found).isNotEmpty();
-        assertThat(found).hasValue(expectedReadModel);
+    private void assertCourseStats(Configuration configuration, CoursesStatsReadModel expectedReadModel) {
+        var found = configuration.getComponent(QueryGateway.class)
+                .query(new GetCourseStatsById(expectedReadModel.courseId()), GetCourseStatsById.Result.class, null)
+                .join();
+        assertThat(found).isNotNull();
+        assertThat(found.stats()).isEqualTo(expectedReadModel);
     }
 
-    private void assertReadModelNotFound(Configuration configuration, CourseId courseId) {
-        var found = courseStatsRepository(configuration).findById(courseId);
-        assertThat(found).isEmpty();
+    private void assertCourseStatsNotExist(Configuration configuration, CourseId courseId) {
+        var found = configuration.getComponent(QueryGateway.class)
+                .query(new GetCourseStatsById(courseId), GetCourseStatsById.Result.class, null)
+                .join();
+        assertThat(found.stats()).isNull();
     }
-
-    private CourseStatsRepository courseStatsRepository(Configuration configuration) {
-        return configuration.getComponent(CourseStatsRepository.class);
-    }
-
 
 }
