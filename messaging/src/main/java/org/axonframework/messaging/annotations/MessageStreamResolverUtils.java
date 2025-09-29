@@ -64,9 +64,7 @@ public class MessageStreamResolverUtils {
                                                    @Nonnull MessageTypeResolver typeResolver) {
         Objects.requireNonNull(typeResolver, "The Message Type Resolver must not be null.");
         if (result == null) {
-            //noinspection ConstantValue
-            MessageType resultType = typeResolver.resolveOrThrow(ObjectUtils.nullSafeTypeOf(result));
-            return MessageStream.just(new GenericMessage(resultType, null));
+            return MessageStream.empty();
         }
 
         // Handle Project Reactor types first with traditional if-statements
