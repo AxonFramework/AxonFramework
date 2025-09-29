@@ -66,6 +66,9 @@ public class SimpleQueryHandlingComponent implements
     @Override
     public SimpleQueryHandlingComponent subscribe(@Nonnull QueryHandlerName queryName,
                                                   @Nonnull QueryHandler handler) {
+        if (handler instanceof QueryHandlingComponent component) {
+            return subscribe(component);
+        }
         queryHandlers.put(queryName, handler);
         return this;
     }
