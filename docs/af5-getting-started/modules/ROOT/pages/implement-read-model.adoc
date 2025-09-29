@@ -168,18 +168,61 @@ class CoursesStatsProjection {
 }
 ----
 
+<.> Constructor injection of the repository for persistence
 <.> Create an initial read model when a course is created with zero students
 <.> Update the course name when renamed
 <.> Update capacity when changed
 <.> Increment student count when a student subscribes
 <.> Decrement student count when a student unsubscribes
 
-=== Step 6: Implement the Query Handler to query the read model
+=== Step 5: Define the Query and Query Handler
 
+Now let's create the query and its handler to enable querying the read model:
 
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/read/coursestats/GetCourseStatsById.java
+----
+package io.axoniq.demo.university.faculty.read.coursestats;
 
+import io.axoniq.demo.university.shared.ids.CourseId;
 
-=== Step 7: Configure the read model components
+public record GetCourseStatsById(CourseId courseId) { // <1>
+    public record Result(CoursesStatsReadModel stats) { // <2>
+    }
+}
+----
+
+<.> Query object containing the course ID to look up
+<.> Result wrapper containing the read model (null if not found)
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/read/coursestats/GetCourseStatsByIdQueryHandler.java
+----
+package io.axoniq.demo.university.faculty.read.coursestats;
+
+import org.axonframework.queryhandling.annotations.QueryHandler;
+
+public record GetCourseStatsByIdQueryHandler(
+        CourseStatsRepository repository // <1>
+) {
+
+    @QueryHandler
+    GetCourseStatsById.Result handle(GetCourseStatsById query) { // <2>
+        return repository.findById(query.courseId()) // <3>
+                .map(GetCourseStatsById.Result::new) // <4>
+                .orElseGet(() -> new GetCourseStatsById.Result(null)); // <5>
+    }
+
+}
+----
+
+<.> Constructor injection of the repository
+<.> Query handler method annotated with `@QueryHandler`
+<.> Look up the read model in the repository
+<.> Wrap found read model in Result
+<.> Return Result with null if not found (safe handling of missing data)
+
+=== Step 6: Configure the read model components
 
 Finally, let's wire everything together with a proper Axon Framework 5 configuration:
 
