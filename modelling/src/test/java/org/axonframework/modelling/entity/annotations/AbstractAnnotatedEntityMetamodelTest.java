@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.conversion.DelegatingEventConverter;
 import org.axonframework.eventhandling.conversion.EventConverter;
@@ -73,7 +74,13 @@ public abstract class AbstractAnnotatedEntityMetamodelTest<E> {
             return metamodel.handleInstance(message, entityState, StubProcessingContext.forMessage(message))
                             .first()
                             .asCompletableFuture()
-                            .thenApply(MessageStream.Entry::message)
+                            .thenApply(result -> {
+                                if (result != null) {
+                                    return result.message();
+                                } else {
+                                    return new GenericCommandResultMessage(new MessageType(Void.class), (Object) null);
+                                }
+                            })
                             .thenApply(CommandResultMessage::payload)
                             .join();
         } catch (Exception e) {
