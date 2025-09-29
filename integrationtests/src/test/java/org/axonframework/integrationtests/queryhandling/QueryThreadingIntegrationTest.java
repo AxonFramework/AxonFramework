@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled("TODO #3488")
+@Disabled("TODO #3488 - Axon Server Query Bus replacement")
 @Testcontainers
 class QueryThreadingIntegrationTest {
 

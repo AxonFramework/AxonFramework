@@ -18,21 +18,18 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotations.CommandHandler;
-import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageHandlerInterceptorChain;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotations.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotations.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotations.ParameterResolverFactory;
-import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.annotations.MethodInvokingMessageHandlingMember;
+import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.internal.util.collections.*;
@@ -44,12 +41,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
+import static org.axonframework.messaging.annotations.MessageStreamResolverUtils.resolveToStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -75,53 +72,39 @@ class AnnotatedHandlerInspectorTest {
                                                           new HashSet<>(asList(D.class, C.class)));
     }
 
-    // TODO This local static function should be replaced with a dedicated interface that converts types.
-    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<?> returnTypeConverter(Object result) {
-        if (result instanceof CompletableFuture<?> future) {
-            return MessageStream.fromFuture(future.thenApply(
-                    r -> new GenericMessage(new MessageType(r.getClass()), r)
-            ));
-        }
-        if (result instanceof MessageStream<?> stream) {
-            return stream;
-        }
-        return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
-    }
-
     @Test
     void complexHandlerHierarchy() throws NoSuchMethodException {
         MethodInvokingMessageHandlingMember<pA> paHandle = new MethodInvokingMessageHandlingMember<>(
                 pA.class.getMethod("paHandle", String.class), CommandMessage.class, String.class,
-                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+                parameterResolverFactory, result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         MethodInvokingMessageHandlingMember<A> aHandle = new MethodInvokingMessageHandlingMember<>(
                 A.class.getMethod("aHandle", String.class), CommandMessage.class, String.class,
-                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+                parameterResolverFactory, result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         MethodInvokingMessageHandlingMember<A> aOn = new MethodInvokingMessageHandlingMember<>(
                 A.class.getMethod("aOn", Integer.class), EventMessage.class, Integer.class,
-                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+                parameterResolverFactory, result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         MethodInvokingMessageHandlingMember<B> bHandle = new MethodInvokingMessageHandlingMember<>(
                 B.class.getMethod("bHandle", Boolean.class), CommandMessage.class, Boolean.class,
-                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+                parameterResolverFactory, result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         MethodInvokingMessageHandlingMember<B> bOn = new MethodInvokingMessageHandlingMember<>(
                 B.class.getMethod("bOn", Long.class), EventMessage.class, Long.class,
-                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+                parameterResolverFactory, result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         MethodInvokingMessageHandlingMember<C> cHandle = new MethodInvokingMessageHandlingMember<>(
                 C.class.getMethod("cHandle", Boolean.class), CommandMessage.class, Boolean.class,
-                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+                parameterResolverFactory, result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         MethodInvokingMessageHandlingMember<C> cOn = new MethodInvokingMessageHandlingMember<>(
                 C.class.getMethod("cOn", Integer.class), EventMessage.class, Integer.class,
-                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+                parameterResolverFactory, result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         MethodInvokingMessageHandlingMember<D> dHandle = new MethodInvokingMessageHandlingMember<>(
                 D.class.getMethod("dHandle", String.class), CommandMessage.class, String.class,
-                parameterResolverFactory, AnnotatedHandlerInspectorTest::returnTypeConverter
+                parameterResolverFactory, result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
 
         Map<Class<?>, SortedSet<MessageHandlingMember<? super A>>> allHandlers = inspector.getAllHandlers();

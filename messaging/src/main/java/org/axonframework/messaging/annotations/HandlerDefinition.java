@@ -17,7 +17,9 @@
 package org.axonframework.messaging.annotations;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -41,13 +43,14 @@ public interface HandlerDefinition {
      * @param declaringType            The type of object declaring the given method
      * @param method                   The method to inspect
      * @param parameterResolverFactory Factory for a {@link ParameterResolver} of the method
-     * @param returnTypeConverter      TODO provide documentation
-     * @return An optional containing the handler if the method is suitable, or an empty Nullable otherwise
+     * @param messageStreamResolver    The lambda resolving a {@link MessageStream} out of the result from
+     *                                 {@link MessageHandlingMember#handle(Message, ProcessingContext, Object)}.
+     * @return An optional containing the handler if the method is suitable, or an empty Nullable otherwise.
      */
     <T> Optional<MessageHandlingMember<T>> createHandler(
             @Nonnull Class<T> declaringType,
             @Nonnull Method method,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull Function<Object, MessageStream<?>> returnTypeConverter
+            @Nonnull Function<Object, MessageStream<?>> messageStreamResolver
     );
 }

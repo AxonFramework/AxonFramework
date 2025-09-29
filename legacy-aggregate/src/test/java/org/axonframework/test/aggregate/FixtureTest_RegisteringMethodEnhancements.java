@@ -146,7 +146,7 @@ public class FixtureTest_RegisteringMethodEnhancements {
                 @Nonnull Class<T> declaringType,
                 @Nonnull Method method,
                 @Nonnull ParameterResolverFactory parameterResolverFactory,
-                @Nonnull Function<Object, MessageStream<?>> returnTypeConverter
+                @Nonnull Function<Object, MessageStream<?>> messageStreamResolver
         ) {
             assertion.set(true);
             // We do not care about a specific MessageHandlingMember,

@@ -20,8 +20,9 @@ import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.queryhandling.annotations.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
 import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.serialization.PassThroughConverter;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
@@ -47,23 +48,25 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Milan Savic
  */
-@Disabled("TODO #3488 - Reintroduce as part of AnnotationQueryHandlerAdapter changes")
 class FutureAsResponseTypeToQueryHandlersTest {
 
     private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
     };
     private static final int FUTURE_RESOLVING_TIMEOUT = 500;
 
-    private final QueryBus queryBus = QueryBusTestUtils.aQueryBus();
-    private final MyQueryHandler myQueryHandler = new MyQueryHandler();
-    private final AnnotationQueryHandlerAdapter<MyQueryHandler> annotationQueryHandlerAdapter =
-            new AnnotationQueryHandlerAdapter<>(myQueryHandler);
+    private QueryBus queryBus;
 
     @BeforeEach
     void setUp() {
-        annotationQueryHandlerAdapter.subscribe(queryBus);
+        queryBus = QueryBusTestUtils.aQueryBus();
+
+        MyQueryHandler myQueryHandler = new MyQueryHandler();
+        QueryHandlingComponent queryHandlingComponent =
+                new AnnotatedQueryHandlingComponent<>(myQueryHandler, PassThroughConverter.MESSAGE_INSTANCE);
+        queryBus.subscribe(queryHandlingComponent);
     }
 
+    @Disabled("TODO #3717")
     @Test
     void queryWithMultipleResponses() throws ExecutionException, InterruptedException {
         QueryMessage testQuery = new GenericQueryMessage(
@@ -96,7 +99,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
                                     .get();
 
         assertEquals("Response", result);
-        assertThat(resultStream.isCompleted()).isTrue();
+        assertThat(resultStream.hasNextAvailable()).isTrue();
     }
 
     @Test
@@ -131,6 +134,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
                     .verifyComplete();
     }
 
+    @Disabled("TODO #3717")
     @Test
     void futureQueryWithMultipleResponses() throws ExecutionException, InterruptedException {
         QueryMessage testQuery = new GenericQueryMessage(
@@ -148,6 +152,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
         assertEquals(asList("Response1", "Response2"), result);
     }
 
+    @Disabled("TODO #3717")
     @Test
     void futureSubscriptionQueryWithMultipleResponses() {
         SubscriptionQueryMessage testQuery = new GenericSubscriptionQueryMessage(
@@ -179,10 +184,12 @@ class FutureAsResponseTypeToQueryHandlersTest {
         }
 
         @QueryHandler(queryName = "myQueryWithSingleResponse")
-        public Future<String> queryHandler2(String criteria) {
-            return executor.schedule(() -> "Response",
-                                     FUTURE_RESOLVING_TIMEOUT,
-                                     TimeUnit.MILLISECONDS);
+        public CompletableFuture<String> queryHandler2(String criteria) {
+            CompletableFuture<String> completableFuture = new CompletableFuture<>();
+            executor.schedule(() -> completableFuture.complete("Response"),
+                              FUTURE_RESOLVING_TIMEOUT,
+                              TimeUnit.MILLISECONDS);
+            return completableFuture;
         }
 
         @QueryHandler(queryName = "myQueryFutureWithMultipleResponses")

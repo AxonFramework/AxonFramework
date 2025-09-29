@@ -16,15 +16,10 @@
 
 package org.axonframework.messaging.annotations;
 
-import org.axonframework.common.ObjectUtils;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.interceptors.annotations.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.interceptors.annotations.MessageInterceptingMember;
 import org.axonframework.messaging.interceptors.annotations.NoMoreInterceptors;
-import org.axonframework.util.ClasspathResolver;
-import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -39,13 +34,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.emptySortedSet;
+import static org.axonframework.messaging.annotations.MessageStreamResolverUtils.resolveToStream;
 
 /**
  * Inspector for a message handling target of type {@code T} that uses annotations on the target to inspect the
@@ -210,23 +205,6 @@ public class AnnotatedHandlerInspector<T> {
         return inspector;
     }
 
-    // TODO This local static function should be replaced with a dedicated interface that converts types.
-    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<?> returnTypeConverter(Object result) {
-        if (result instanceof CompletableFuture<?> future) {
-            return MessageStream.fromFuture(future.thenApply(
-                    r -> new GenericMessage(new MessageType(r.getClass()), r)
-            ));
-        }
-        if (result instanceof MessageStream<?> stream) {
-            return stream;
-        }
-        if (ClasspathResolver.projectReactorOnClasspath() && result instanceof Mono<?> mono) {
-            return MessageStream.fromMono(mono.map(r -> new GenericMessage(new MessageType(r.getClass()), r)));
-        }
-        return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
-    }
-
     @SuppressWarnings("unchecked")
     private void initializeMessageHandlers(ParameterResolverFactory parameterResolverFactory,
                                            HandlerDefinition handlerDefinition) {
@@ -235,19 +213,15 @@ public class AnnotatedHandlerInspector<T> {
             handlerDefinition.createHandler(inspectedType,
                                             method,
                                             parameterResolverFactory,
-                                            AnnotatedHandlerInspector::returnTypeConverter)
+                                            result -> resolveToStream(result, new ClassBasedMessageTypeResolver()))
                              .ifPresent(h -> registerHandler(inspectedType, h));
         }
-        // TODO constructor support is already removed in this branch, so that's why this code is commneted.
-//        for (Constructor<?> constructor : inspectedType.getDeclaredConstructors()) {
-//            handlerDefinition.createHandler(inspectedType, constructor, parameterResolverFactory, )
-//                             .ifPresent(h -> registerHandler(inspectedType, h));
-//        }
 
         // we need to consider handlers from parent/subclasses as well
         subClassInspectors.forEach(sci -> sci.getAllHandlers()
-                                             .forEach((key, value) -> value.forEach(h -> registerHandler(key,
-                                                                                                         (MessageHandlingMember<T>) h))));
+                                             .forEach((key, value) -> value.forEach(
+                                                     h -> registerHandler(key, (MessageHandlingMember<T>) h))
+                                             ));
         superClassInspectors.forEach(sci -> sci.getAllHandlers()
                                                .forEach((key, value) -> value.forEach(h -> {
                                                    boolean isAbstract = h.unwrap(Executable.class)
@@ -261,8 +235,9 @@ public class AnnotatedHandlerInspector<T> {
 
         // we need to consider interceptors from parent/subclasses as well
         subClassInspectors.forEach(sci -> sci.getAllInterceptors()
-                                             .forEach((key, value) -> value.forEach(h -> registerHandler(key,
-                                                                                                         (MessageHandlingMember<T>) h))));
+                                             .forEach((key, value) -> value.forEach(
+                                                     h -> registerHandler(key, (MessageHandlingMember<T>) h))
+                                             ));
         superClassInspectors.forEach(sci -> sci.getAllInterceptors()
                                                .forEach((key, value) -> value.forEach(h -> {
                                                    registerHandler(key, h);

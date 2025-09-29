@@ -19,9 +19,7 @@ package org.axonframework.axonserver.connector.query;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.common.Registration;
 import org.axonframework.common.TypeReference;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -30,13 +28,13 @@ import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryExecutionException;
+import org.axonframework.queryhandling.QueryHandlingComponent;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.queryhandling.StreamingQueryMessage;
-import org.axonframework.queryhandling.annotations.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
 import org.axonframework.queryhandling.annotations.QueryHandler;
+import org.axonframework.serialization.PassThroughConverter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.test.server.AxonServerContainer;
@@ -63,9 +61,10 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * End-to-end tests for Streaming Query functionality. They include backwards compatibility end-to-end tests as well.
  */
-@Disabled("TODO #3488")
+@Disabled("TODO #3488 - Axon Server Query Bus replacement")
 @Testcontainers
 class StreamingQueryEndToEndTest {
+
     private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {};
     private static final int HTTP_PORT = 8024;
     private static final int GRPC_PORT = 8124;
@@ -77,8 +76,6 @@ class StreamingQueryEndToEndTest {
     private AxonServerQueryBus senderQueryBus;
     private AxonServerQueryBus nonStreamingSenderQueryBus;
 
-    private Registration subscription;
-    private Registration nonStreamingSubscription;
 
     @Container
     private static final AxonServerContainer axonServerContainer =
@@ -122,16 +119,10 @@ class StreamingQueryEndToEndTest {
         nonStreamingSenderQueryBus =
                 axonServerQueryBus(senderLocalSegment, nonStreamingAxonServerAddress);
 
-        subscription =
-                new AnnotationQueryHandlerAdapter<>(new MyQueryHandler()).subscribe(handlerQueryBus);
-        nonStreamingSubscription =
-                new AnnotationQueryHandlerAdapter<>(new MyQueryHandler()).subscribe(nonStreamingHandlerQueryBus);
-    }
-
-    @AfterEach
-    void tearDown() {
-        subscription.cancel();
-        nonStreamingSubscription.cancel();
+        QueryHandlingComponent queryHandlingComponent =
+                new AnnotatedQueryHandlingComponent<>(new MyQueryHandler(), PassThroughConverter.MESSAGE_INSTANCE);
+        handlerQueryBus.subscribe(queryHandlingComponent);
+        nonStreamingHandlerQueryBus.subscribe(queryHandlingComponent);
     }
 
     private AxonServerQueryBus axonServerQueryBus(QueryBus localSegment, String axonServerAddress) {
@@ -259,7 +250,7 @@ class StreamingQueryEndToEndTest {
                            .thenApply(responseMessage -> responseMessage.payloadAs(type))
                            .get();
         } catch (IllegalPayloadAccessException e) {
-            // TODO #3488 Check if this is still needed
+            // TODO #3488 - Axon Server Query Bus replacement
 //            if (response != null && response.optionalExceptionResult().isPresent()) {
 //                throw response.optionalExceptionResult().get();
 //            } else {

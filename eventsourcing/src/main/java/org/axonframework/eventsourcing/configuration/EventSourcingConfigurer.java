@@ -36,6 +36,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.modelling.configuration.EntityModule;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
+import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -119,13 +120,31 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * will not be accessible from other {@code Modules} to enforce encapsulation.
      *
      * @param moduleBuilder The builder returning a command handling module to register with
-     *                      {@code this ModellingConfigurer}.
+     *                      {@code this EventSourcingConfigurer}.
      * @return A {@code EventSourcingConfigurer} instance for further configuring.
      */
     public EventSourcingConfigurer registerCommandHandlingModule(
             ModuleBuilder<CommandHandlingModule> moduleBuilder
     ) {
         return modelling(modellingConfigurer -> modellingConfigurer.registerCommandHandlingModule(
+                moduleBuilder
+        ));
+    }
+
+    /**
+     * Registers the given query handling {@code moduleBuilder} to use in this configuration.
+     * <p>
+     * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
+     * will not be accessible from other {@code Modules} to enforce encapsulation.
+     *
+     * @param moduleBuilder The builder returning a query handling module to register with
+     *                      {@code this EventSourcingConfigurer}.
+     * @return A {@code EventSourcingConfigurer} instance for further configuring.
+     */
+    public EventSourcingConfigurer registerQueryHandlingModule(
+            ModuleBuilder<QueryHandlingModule> moduleBuilder
+    ) {
+        return modelling(modellingConfigurer -> modellingConfigurer.registerQueryHandlingModule(
                 moduleBuilder
         ));
     }
