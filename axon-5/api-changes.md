@@ -634,17 +634,12 @@ The new configuration API just allows you to register Event Handlers directly to
 syntax:
 
 ```java
-EventProcessorModule.pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
-.
-
-eventHandlingComponents(components ->components.
-
-declarative(eventHandler1).
-
-annotated(eventHandler2))
-        .
-
-notCustomized();
+public void configurePSEP() {
+    EventProcessorModule.pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
+                        .eventHandlingComponents(components -> components.declarative(eventHandler1)
+                                                                         .annotated(eventHandler2))
+                        .notCustomized();
+}
 ```
 
 With this usage the `eventHandler1` and `eventHandler2` will be assigned to the same Event Processor with the name
