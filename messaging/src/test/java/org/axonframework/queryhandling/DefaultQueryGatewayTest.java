@@ -177,7 +177,7 @@ class DefaultQueryGatewayTest {
         }
 
         @Test
-        void queryWithNullMessageInEntryThrowsNullPointerException() {
+        void queryWithNullMessageInEntryReturnsNull() throws Exception {
             // given...
             MessageStream.Single<QueryResponseMessage> streamWithNullMessage = MessageStream.fromFuture(
                     CompletableFuture.completedFuture(null)
@@ -187,8 +187,7 @@ class DefaultQueryGatewayTest {
             CompletableFuture<String> result = testSubject.query(QUERY_PAYLOAD, String.class, null);
             // then...
             assertThat(result).isDone();
-            assertThat(result).isCompletedExceptionally();
-            assertThat(result.exceptionNow()).isInstanceOf(NullPointerException.class);
+            assertThat(result.get()).isNull();
         }
     }
 
