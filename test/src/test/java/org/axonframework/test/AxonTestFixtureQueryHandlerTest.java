@@ -22,10 +22,15 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
+import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.configuration.QueryHandlingModule;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.axonframework.test.fixture.sampledomain.GetStudentNameQuery;
 import org.junit.jupiter.api.*;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class AxonTestFixtureQueryHandlerTest {
 
@@ -37,6 +42,73 @@ public class AxonTestFixtureQueryHandlerTest {
                .query(new GetStudentNameQuery("Sample"), GetStudentNameQuery.Result.class)
                .then()
                .resultMessagePayload(new GetStudentNameQuery.Result("name-1"));
+    }
+
+    @Test
+    void queryMany_ReturnsMultipleResults() {
+        var configurer = MessagingConfigurer.create();
+        registerQueryManyHandler(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        List<GetStudentNameQuery.Result> expectedResults = Arrays.asList(
+                new GetStudentNameQuery.Result("name-1"),
+                new GetStudentNameQuery.Result("name-2"),
+                new GetStudentNameQuery.Result("name-3")
+        );
+
+        fixture.when()
+               .queryMany(new GetAllStudentsQuery(), GetStudentNameQuery.Result.class)
+               .then()
+               .success()
+               .resultCount(3)
+               .results(expectedResults);
+    }
+
+    @Test
+    void queryMany_WithCustomAssertion() {
+        var configurer = MessagingConfigurer.create();
+        registerQueryManyHandler(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        fixture.when()
+               .queryMany(new GetAllStudentsQuery(), GetStudentNameQuery.Result.class)
+               .then()
+               .success()
+               .resultSatisfies(results -> {
+                   assert results.size() == 3;
+                   assert ((GetStudentNameQuery.Result) results.get(0)).name().equals("name-1");
+                   assert ((GetStudentNameQuery.Result) results.get(1)).name().equals("name-2");
+                   assert ((GetStudentNameQuery.Result) results.get(2)).name().equals("name-3");
+               });
+    }
+
+    private static void registerQueryManyHandler(MessagingConfigurer configurer) {
+        var queryHandling = QueryHandlingModule
+                .named("test-query-many-handler")
+                .queryHandlers()
+                .queryHandler(
+                        new QualifiedName(GetAllStudentsQuery.class),
+                        new QualifiedName(GetStudentNameQuery.Result.class),
+                        (q, ctx) -> MessageStream.fromIterable(Arrays.asList(
+                                new GenericQueryResponseMessage(
+                                        new MessageType(new QualifiedName(GetStudentNameQuery.Result.class)),
+                                        new GetStudentNameQuery.Result("name-1")),
+                                new GenericQueryResponseMessage(
+                                        new MessageType(new QualifiedName(GetStudentNameQuery.Result.class)),
+                                        new GetStudentNameQuery.Result("name-2")),
+                                new GenericQueryResponseMessage(
+                                        new MessageType(new QualifiedName(GetStudentNameQuery.Result.class)),
+                                        new GetStudentNameQuery.Result("name-3"))
+                        ))
+                )
+                .build();
+        configurer.registerQueryHandlingModule(queryHandling);
+    }
+
+    // Simple query class for testing queryMany
+    public static record GetAllStudentsQuery() {
     }
 
     private static ApplicationConfigurer simpleQueryHandlerConfigurer() {
