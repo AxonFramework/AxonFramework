@@ -4,49 +4,217 @@ on:
   pull_request:
     paths-ignore:
       - 'docs/**'
+      - '**/*.md'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'LICENSE'
+      - '.gitignore'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Test and Build on JDK ${{ matrix.java-version }}
+  compile:
+    name: Compile Sources and Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - java-version: 21
-            sonar-enabled: true
-
+    timeout-minutes: 15
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Set up JDK ${{ matrix.java-version }}
+      - name: Set up JDK 21
         uses: actions/setup-java@v5.0.0
         with:
           distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
+          java-version: 21
           cache: "maven"
           server-id: central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
 
-      - name: Regular Build
-        if: ${{ !matrix.sonar-enabled }}
-        run: |
-          ./mvnw -B -U -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 clean verify
+      - name: Generate cache key for compiled artifacts
+        id: cache-key
+        run: echo "key=${{ runner.os }}-compiled-${{ github.sha }}" >> $GITHUB_OUTPUT
 
-      - name: Build with Coverage reports
-        if: matrix.sonar-enabled
+      - name: Cache compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            **/target
+          key: ${{ steps.cache-key.outputs.key }}
+
+      - name: Compile and Install All Modules
         run: |
-          ./mvnw -B -U -Dstyle.color=always -Possrh -Dcoverage -Dsurefire.rerunFailingTestsCount=5 clean verify
+          ./mvnw -B -U -T 1C -Dstyle.color=always clean install -DskipTests
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+  test:
+    name: Module Tests - ${{ matrix.module }}
+    needs: compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: true
+      matrix:
+        module: 
+          - "messaging"
+          - "modelling"
+          - "eventsourcing"
+          - "config"
+          - "test"
+          - "spring"
+          - "axon-server-connector"
+          - "metrics"
+          - "metrics-micrometer"
+          - "tracing-opentelemetry"
+          - "migration"
+          - "legacy"
+          - "spring-boot-autoconfigure"
+          - "spring-boot-starter"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: "maven"
+
+      - name: Restore compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            **/target
+          key: ${{ needs.compile.outputs.cache-key }}
+
+      - name: Run Tests
+        run: |
+          ./mvnw -B -T 1C -Dcoverage -Dsurefire.rerunFailingTestsCount=5 -Dstyle.color=always test -pl ${{ matrix.module }}
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.module }}
+          path: "**/target/surefire-reports/TEST-*.xml"
+        if: always()
+
+  integration-tests:
+    name: Integration (Cross-Module) Tests
+    needs: compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: true
+      matrix:
+        module: ["integrationtests"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: "maven"
+
+      - name: Restore compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            **/target
+          key: ${{ needs.compile.outputs.cache-key }}
+
+      - name: Run Integration Tests
+        run: |
+          ./mvnw -B -T 1C -Dstyle.color=always install -DskipTests -pl ${{ matrix.module }} -am && ./mvnw -B -T 1C -Dstyle.color=always test -Dcoverage -pl ${{ matrix.module }} -Dsurefire.rerunFailingTestsCount=5
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.module }}
+          path: "**/target/surefire-reports/TEST-*.xml"
+        if: always()
+
+  test-summary:
+    name: Test Summary
+    needs: [compile, test, integration-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: always()
+
+    steps:
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-results-*
+          path: test-results
+          merge-multiple: true
+
+      - name: Create test summary
+        uses: test-summary/action@v2
+        with:
+          paths: "test-results/**/TEST-*.xml"
+          show: "fail, skip"
+        if: always()
+
+  sonar:
+    name: Sonar Analysis
+    needs: [compile, test, integration-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.0.0
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: "maven"
+
+      - name: Restore compiled artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            **/target
+          key: ${{ needs.compile.outputs.cache-key }}
+
+      - name: Generate coverage report
+        run: |
+          ./mvnw -B -Dcoverage -Dstyle.color=always install -pl coverage-report
+        env:
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_CHECKS_DISABLE: true
+          TESTCONTAINERS_RYUK_DISABLED: true
 
       - name: Sonar Analysis
-        if: ${{ success() && matrix.sonar-enabled && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           ./mvnw -B -Dstyle.color=always sonar:sonar \
           -Dsonar.projectKey=AxonFramework_AxonFramework \
@@ -56,9 +224,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create test summary
-        uses: test-summary/action@v2
-        with:
-          paths: "**/target/surefire-reports/TEST-*.xml"
-          show: "fail, skip"
-        if: always() # This allows the build step to fail -- due to failing tests -- but still produce a test summary.
+  result:
+    name: Test and Build on JDK 21
+    needs: [compile, test, integration-tests, test-summary, sonar]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always() && !cancelled() && needs.compile.result == 'success' && needs.test.result == 'success' && needs.integration-tests.result == 'success' && needs.test-summary.result == 'success' && (needs.sonar.result == 'success' || needs.sonar.result == 'skipped')
+
+    steps:
+      - name: Success
+        run: echo "🎉 All jobs completed successfully!"
