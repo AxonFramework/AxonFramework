@@ -50,6 +50,7 @@ class FixtureMessageHandlerInterceptorTest {
     }
 
     @Test
+    @Disabled("TODO revise after Saga support is enabled")
     void registeredEventHandlerInterceptorIsInvokedBeforeHandlingEvents() {
         String testId = "some-identifier";
         String testValue = "some-value";

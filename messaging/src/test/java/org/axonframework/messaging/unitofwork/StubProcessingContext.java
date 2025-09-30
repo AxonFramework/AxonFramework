@@ -22,7 +22,7 @@ import org.axonframework.configuration.ComponentDefinition;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.DefaultComponentRegistry;
-import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.ApplicationContext;
 import org.axonframework.messaging.ConfigurationApplicationContext;
 import org.axonframework.messaging.EmptyApplicationContext;
@@ -194,21 +194,21 @@ public class StubProcessingContext implements ProcessingContext {
     }
 
     /**
-     * Creates a new stub {@link ProcessingContext} for the given {@link DomainEventMessage}. You can use this to create
-     * a context compatible with tests that are based on Aggregates.
+     * Creates a new stub {@link ProcessingContext} for the given {@link EventMessage} and aggregate-specific
+     * parameters. You can use this to create a context compatible with tests that are based on Aggregates.
      *
      * @param domainEventMessage The event message with aggregate id, sequence and type.
      * @return A new {@link ProcessingContext} instance containing the given {@code domainEventMessage} aggregate data
      * as resources.
      */
-    @Deprecated
-    public static ProcessingContext forMessage(DomainEventMessage domainEventMessage) {
+    public static ProcessingContext forMessage(EventMessage domainEventMessage,
+                                               String aggregateId,
+                                               long seqNo,
+                                               String aggregateType) {
         return Message.addToContext(new StubProcessingContext(), domainEventMessage)
-                      .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY,
-                                    domainEventMessage.getAggregateIdentifier())
-                      .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
-                                    domainEventMessage.getSequenceNumber())
-                      .withResource(LegacyResources.AGGREGATE_TYPE_KEY, domainEventMessage.getType());
+                      .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, aggregateId)
+                      .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, seqNo)
+                      .withResource(LegacyResources.AGGREGATE_TYPE_KEY, aggregateType);
     }
 
     /**

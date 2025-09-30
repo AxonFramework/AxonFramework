@@ -71,6 +71,9 @@ public class SimpleCommandHandlingComponent implements
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                     @Nonnull CommandHandler commandHandler) {
+        if (commandHandler instanceof CommandHandlingComponent component) {
+            return subscribe(component);
+        }
         commandHandlers.put(name, commandHandler);
         return this;
     }

@@ -34,7 +34,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -58,7 +58,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
     private final List<ComponentFactory<?>> factories = new ArrayList<>();
 
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicReference<Configuration> initialized = new AtomicReference<>();
     private final Map<String, Configuration> moduleConfigurations = new ConcurrentHashMap<>();
 
     private OverridePolicy overridePolicy = OverridePolicy.WARN;
@@ -182,8 +182,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     private Configuration doBuild(@Nullable Configuration optionalParent,
                                   @Nonnull LifecycleRegistry lifecycleRegistry) {
-        if (initialized.getAndSet(true)) {
-            throw new IllegalStateException("Component registry has already been initialized.");
+        Configuration configuration = initialized.get();
+        if (configuration != null) {
+            return configuration;
         }
         this.parentConfig = Optional.ofNullable(optionalParent);
         if (enhancerScanning) {
@@ -195,6 +196,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         buildModules(config, lifecycleRegistry);
         initializeComponents(config, lifecycleRegistry);
         registerFactoryShutdownHandlers(lifecycleRegistry);
+        initialized.set(config);
 
         return config;
     }
@@ -344,7 +346,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("initialized", initialized.get());
+        descriptor.describeProperty("initialized", initialized.get() != null);
         descriptor.describeProperty("components", components);
         descriptor.describeProperty("decorators", decoratorDefinitions);
         descriptor.describeProperty("configurerEnhancers", enhancers);

@@ -16,7 +16,6 @@
 
 package org.axonframework.springboot;
 
-import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
@@ -47,8 +46,8 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests whether {@link LegacyConfigurer} is only shut down after processing active requests if it is
- * in graceful shutdown mode.
+ * Tests whether {@link org.axonframework.configuration.AxonConfiguration} is only shut down after processing active
+ * requests if it is in graceful shutdown mode.
  *
  * @author Mateusz Nowak
  */

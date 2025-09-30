@@ -15,23 +15,20 @@
  */
 package org.axonframework.messaging.timeout;
 
-import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.annotations.EventHandler;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.annotations.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
+import static org.axonframework.messaging.annotations.MessageStreamResolverUtils.resolveToStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TimeoutWrappedMessageHandlingMemberTest {
@@ -51,7 +48,7 @@ class TimeoutWrappedMessageHandlingMemberTest {
                 TestMessageHandler.class,
                 TestMessageHandler.class.getDeclaredMethod("handle", String.class),
                 parameterResolver,
-                TimeoutWrappedMessageHandlingMemberTest::returnTypeConverter
+                result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         assertTrue(optionalHandler.isPresent());
         MessageHandlingMember<TestMessageHandler> original = optionalHandler.get();
@@ -67,20 +64,6 @@ class TimeoutWrappedMessageHandlingMemberTest {
                                                 StubProcessingContext.forMessage(eventMessage),
                                                 new TestMessageHandler())
         );
-    }
-
-    // TODO This local static function should be replaced with a dedicated interface that converts types.
-    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<?> returnTypeConverter(Object result) {
-        if (result instanceof CompletableFuture<?> future) {
-            return MessageStream.fromFuture(future.thenApply(
-                    r -> new GenericMessage(new MessageType(r.getClass()), r)
-            ));
-        }
-        if (result instanceof MessageStream<?> stream) {
-            return stream;
-        }
-        return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
 
     public static class TestMessageHandler {

@@ -54,7 +54,7 @@ public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefiniti
             @Nonnull Class<T> declaringType,
             @Nonnull Method method,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull Function<Object, MessageStream<?>> returnTypeConverter
+            @Nonnull Function<Object, MessageStream<?>> messageStreamResolver
     ) {
         return findAnnotationAttributes(method, MessageHandler.class)
                 .map(attr -> new MethodInvokingMessageHandlingMember<>(
@@ -62,7 +62,7 @@ public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefiniti
                         (Class<? extends Message>) attr.getOrDefault("messageType", Message.class),
                         (Class<? extends Message>) attr.getOrDefault("payloadType", Object.class),
                         parameterResolverFactory,
-                        returnTypeConverter
+                        messageStreamResolver
                 ));
     }
 }

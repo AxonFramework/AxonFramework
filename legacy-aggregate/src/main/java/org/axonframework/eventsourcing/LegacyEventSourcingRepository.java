@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotations.HandlerDefinition;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;

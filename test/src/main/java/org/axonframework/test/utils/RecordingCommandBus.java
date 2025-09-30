@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.ObjectUtils;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -45,6 +46,7 @@ import java.util.concurrent.ConcurrentMap;
  * @author Allard Buijze
  * @since 1.1
  */
+@Internal
 public class RecordingCommandBus implements CommandBus {
 
     private final ConcurrentMap<QualifiedName, CommandHandler> subscriptions = new ConcurrentHashMap<>();

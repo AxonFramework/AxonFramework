@@ -18,9 +18,6 @@ package org.axonframework.integrationtests.cache;
 
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.caching.Cache;
-import org.axonframework.config.EventProcessingConfigurer;
-import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.processors.streaming.StreamingEventProcessor;
@@ -75,7 +72,7 @@ public abstract class CachingIntegrationTestSuite {
     private static final Duration SIXTEEN_SECONDS = Duration.ofSeconds(16);
     private static final Duration THIRTY_TWO_SECONDS = Duration.ofSeconds(32);
 
-    protected LegacyConfiguration config;
+//    protected LegacyConfiguration config;
     private StreamingEventProcessor sagaProcessor;
 
     private EntryListenerValidator<SagaStore.Entry<CachedSaga>> sagaCacheListener;
@@ -98,23 +95,23 @@ public abstract class CachingIntegrationTestSuite {
 //                                                                         .associationsCache(associationsCache)
 //                                                                         .build());
 
-        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
-                EventProcessingConfigurer.PooledStreamingProcessorConfiguration.noOp();
+//        EventProcessingConfigurer.PooledStreamingProcessorConfiguration psepConfig =
+//                EventProcessingConfigurer.PooledStreamingProcessorConfiguration.noOp();
 
-        config = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
+//        config = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
 //                                        .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
-                                        .eventProcessing(
-                                          procConfig -> procConfig
-                                                  .usingPooledStreamingEventProcessors()
-                                                  .registerPooledStreamingEventProcessorConfiguration(
-                                                          "CachedSagaProcessor", psepConfig
-                                                  )
+//                                        .eventProcessing(
+//                                          procConfig -> procConfig
+//                                                  .usingPooledStreamingEventProcessors()
+//                                                  .registerPooledStreamingEventProcessorConfiguration(
+//                                                          "CachedSagaProcessor", psepConfig
+//                                                  )
 //                                                  .registerSaga(CachedSaga.class, sagaConfigurer)
-                                  )
-                                        .start();
-        sagaProcessor = config.eventProcessingConfiguration()
-                              .eventProcessor("CachedSagaProcessor", StreamingEventProcessor.class)
-                              .orElseThrow(() -> new IllegalStateException("CachedSagaProcessor is not present"));
+//                                  )
+//                                        .start();
+//        sagaProcessor = config.eventProcessingConfiguration()
+//                              .eventProcessor("CachedSagaProcessor", StreamingEventProcessor.class)
+//                              .orElseThrow(() -> new IllegalStateException("CachedSagaProcessor is not present"));
     }
 
     /**
@@ -433,7 +430,7 @@ public abstract class CachingIntegrationTestSuite {
         for (Object event : events) {
             eventMessages.add(EventTestUtils.asEventMessage(event));
         }
-        config.eventBus().publish(eventMessages);
+//        config.eventBus().publish(eventMessages);
     }
 
     private Boolean handledEventsUpTo(int handledEvents) {

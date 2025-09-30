@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.gateway;
 
+import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.conversion.MessageConverter;
@@ -119,5 +120,17 @@ class ConvertingCommandGatewayTest {
 
         assertTrue(actual.isDone());
         assertTrue(invoked.get());
+    }
+
+    @Test
+    void resultAsReturnsNullWhenMessageIsNull() {
+        CommandResult stubResult = new FutureCommandResult(FutureUtils.emptyCompletedFuture());
+        when(mockDelegate.send(any(), any())).thenReturn(stubResult);
+
+        when(mockConverter.convert(any(), eq((Type) byte[].class))).thenReturn(HELLO_BYTES);
+
+        CompletableFuture<byte[]> actual = testSubject.send("Test", null).resultAs(byte[].class);
+        assertTrue(actual.isDone());
+        assertNull(actual.join());
     }
 }

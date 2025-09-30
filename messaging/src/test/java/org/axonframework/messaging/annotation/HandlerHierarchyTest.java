@@ -16,13 +16,10 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.common.ObjectUtils;
-import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.GenericMessage;
+import org.axonframework.eventhandling.annotations.EventHandler;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotations.DefaultParameterResolverFactory;
 import org.axonframework.messaging.annotations.HandlerComparator;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
@@ -32,8 +29,8 @@ import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
+import static org.axonframework.messaging.annotations.MessageStreamResolverUtils.resolveToStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -106,24 +103,10 @@ class HandlerHierarchyTest {
         }
     }
 
-    // TODO This local static function should be replaced with a dedicated interface that converts types.
-    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
-    private static MessageStream<?> returnTypeConverter(Object result) {
-        if (result instanceof CompletableFuture<?> future) {
-            return MessageStream.fromFuture(future.thenApply(
-                    r -> new GenericMessage(new MessageType(r.getClass()), r)
-            ));
-        }
-        if (result instanceof MessageStream<?> stream) {
-            return stream;
-        }
-        return MessageStream.just(new GenericMessage(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
-    }
-
     @Test
     void hierarchySort() throws NoSuchMethodException {
-        MultiParameterResolverFactory multiParameterResolverFactory = MultiParameterResolverFactory.ordered(new DefaultParameterResolverFactory());
-
+        MultiParameterResolverFactory multiParameterResolverFactory =
+                MultiParameterResolverFactory.ordered(new DefaultParameterResolverFactory());
 
         Class<? extends Message> eventMessageClass = EventMessage.class;
         MessageHandlingMember<?> bHandler = new MethodInvokingMessageHandlingMember<>(
@@ -131,42 +114,42 @@ class HandlerHierarchyTest {
                 eventMessageClass,
                 B.class,
                 multiParameterResolverFactory,
-                HandlerHierarchyTest::returnTypeConverter
+                result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         MessageHandlingMember<?> iHandler = new MethodInvokingMessageHandlingMember<>(
                 MyEventHandler.class.getMethod("handle", I.class),
                 eventMessageClass,
                 I.class,
                 multiParameterResolverFactory,
-                HandlerHierarchyTest::returnTypeConverter
+                result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         MessageHandlingMember<?> fHandler = new MethodInvokingMessageHandlingMember<>(
                 MyEventHandler.class.getMethod("handle", F.class),
                 eventMessageClass,
                 F.class,
                 multiParameterResolverFactory,
-                HandlerHierarchyTest::returnTypeConverter
+                result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         MessageHandlingMember<?> aHandler = new MethodInvokingMessageHandlingMember<>(
                 MyEventHandler.class.getMethod("handle", A.class),
                 eventMessageClass,
                 A.class,
                 multiParameterResolverFactory,
-                HandlerHierarchyTest::returnTypeConverter
+                result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         MessageHandlingMember<?> gHandler = new MethodInvokingMessageHandlingMember<>(
                 MyEventHandler.class.getMethod("handle", G.class),
                 eventMessageClass,
                 G.class,
                 multiParameterResolverFactory,
-                HandlerHierarchyTest::returnTypeConverter
+                result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
         MessageHandlingMember<?> eHandler = new MethodInvokingMessageHandlingMember<>(
                 MyEventHandler.class.getMethod("handle", E.class),
                 eventMessageClass,
                 E.class,
                 multiParameterResolverFactory,
-                HandlerHierarchyTest::returnTypeConverter
+                result -> resolveToStream(result, new ClassBasedMessageTypeResolver())
         );
 
         List<MessageHandlingMember<?>> handlers = Arrays.asList(bHandler,

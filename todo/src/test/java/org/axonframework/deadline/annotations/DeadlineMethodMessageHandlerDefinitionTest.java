@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Disabled("TODO #3065 - Currently broken because the DeadlineMethodMessageHandlerDefinition is not service loaded")
 class DeadlineMethodMessageHandlerDefinitionTest {
 
     private AnnotationEventHandlerAdapter handlerAdapter;

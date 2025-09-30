@@ -17,8 +17,10 @@
 package org.axonframework.spring.authorization;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.annotations.AnnotationUtils;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotations.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.annotations.WrappedMessageHandlingMember;
@@ -64,14 +66,15 @@ public class SecuredMessageHandlerDefinition implements HandlerEnhancerDefinitio
         }
 
         @Override
-        public Object handleSync(@Nonnull Message message, @Nonnull ProcessingContext context, T target)
-                throws Exception {
+        public MessageStream<?> handle(@Nonnull Message message,
+                                       @Nonnull ProcessingContext context,
+                                       @Nullable T target) {
             if (!hasRequiredRoles(message)) {
                 throw new UnauthorizedMessageException(
                         "Unauthorized message with identifier [" + message.identifier() + "]"
                 );
             }
-            return super.handleSync(message, context, target);
+            return super.handle(message, context, target);
         }
 
         private boolean hasRequiredRoles(@Nonnull Message message) {

@@ -17,27 +17,66 @@
 package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Objects;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * TODO #3488 This should be regarded as a playground object to verify the API. Feel free to remove, adjust, or replicate this class to your needs.
+ * A simple implementation of the {@link QueryHandlingComponent} interface, allowing for easy registration of
+ * {@link QueryHandler QueryHandlers} and other {@link QueryHandlingComponent QueryHandlingComponents}.
+ * <p>
+ * Registered subcomponents are preferred over registered query handlers when handling a query.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class SimpleQueryHandlingComponent
-        implements QueryHandlingComponent, QueryHandlerRegistry<SimpleQueryHandlingComponent> {
+public class SimpleQueryHandlingComponent implements
+        QueryHandlingComponent,
+        QueryHandlerRegistry<SimpleQueryHandlingComponent>,
+        DescribableComponent {
 
-    private final ConcurrentHashMap<QueryHandlerName, QueryHandler> queryHandlers;
+    private final String name;
+    private final Map<QueryHandlerName, QueryHandler> queryHandlers = new HashMap<>();
+    private final Set<QueryHandlingComponent> subComponents = new HashSet<>();
 
-    public SimpleQueryHandlingComponent() {
-        this.queryHandlers = new ConcurrentHashMap<>();
+    /**
+     * Instantiates a simple {@link QueryHandlingComponent} that is able to handle query and delegate them to
+     * subcomponents.
+     *
+     * @param name The name of the component, used for {@link DescribableComponent describing} the component.
+     * @return A simple {@link QueryHandlingComponent} instance with the given {@code name}.
+     */
+    public static SimpleQueryHandlingComponent create(@Nonnull String name) {
+        return new SimpleQueryHandlingComponent(name);
+    }
+
+    private SimpleQueryHandlingComponent(@Nonnull String name) {
+        this.name = Assert.nonEmpty(name, "The name may not be null or empty.");
+    }
+
+    @Override
+    public SimpleQueryHandlingComponent subscribe(@Nonnull QueryHandlerName queryName,
+                                                  @Nonnull QueryHandler handler) {
+        if (handler instanceof QueryHandlingComponent component) {
+            return subscribe(component);
+        }
+        queryHandlers.put(queryName, handler);
+        return this;
+    }
+
+    @Override
+    public SimpleQueryHandlingComponent subscribe(@Nonnull QueryHandlingComponent handlingComponent) {
+        subComponents.add(handlingComponent);
+        return this;
     }
 
     @Nonnull
@@ -45,34 +84,42 @@ public class SimpleQueryHandlingComponent
     public MessageStream<QueryResponseMessage> handle(@Nonnull QueryMessage query,
                                                       @Nonnull ProcessingContext context) {
         QualifiedName name = query.type().qualifiedName();
+        // TODO get QualifiedName as a responseType i.o. making one here for the response
         QueryHandlerName handlerName = new QueryHandlerName(
                 name, new QualifiedName(query.responseType().getExpectedResponseType())
         );
-        QueryHandler handler = queryHandlers.get(handlerName);
-        if (handler == null) {
-            // TODO #3488 this would benefit from a dedicate exception
-            return MessageStream.failed(new IllegalArgumentException(
-                    "No handler found for query with name [" + name + "]"
-            ));
+        Optional<QueryHandlingComponent> optionalSubHandler =
+                subComponents.stream()
+                             .filter(subComponent -> subComponent.supportedQueries().contains(handlerName))
+                             .findFirst();
+        if (optionalSubHandler.isPresent()) {
+            try {
+                return optionalSubHandler.get().handle(query, context);
+            } catch (Throwable e) {
+                return MessageStream.failed(e);
+            }
         }
-        return handler.handle(query, context);
-    }
-
-    @Override
-    public SimpleQueryHandlingComponent subscribe(@Nonnull Set<QueryHandlerName> names,
-                                                  @Nonnull QueryHandler handler) {
-        names.forEach(name -> queryHandlers.put(name, Objects.requireNonNull(handler, "TODO")));
-        return this;
-    }
-
-    @Override
-    public SimpleQueryHandlingComponent subscribe(@Nonnull QueryHandlerName queryName,
-                                                  @Nonnull QueryHandler handler) {
-        return subscribe(Set.of(queryName), handler);
+        if (queryHandlers.containsKey(handlerName)) {
+            try {
+                return queryHandlers.get(handlerName).handle(query, context);
+            } catch (Throwable e) {
+                return MessageStream.failed(e);
+            }
+        }
+        return MessageStream.failed(NoHandlerForQueryException.forHandlingComponent(query));
     }
 
     @Override
     public Set<QueryHandlerName> supportedQueries() {
-        return Set.copyOf(queryHandlers.keySet());
+        Set<QueryHandlerName> combinedNames = new HashSet<>(queryHandlers.keySet());
+        subComponents.forEach(subComponent -> combinedNames.addAll(subComponent.supportedQueries()));
+        return combinedNames;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("name", name);
+        descriptor.describeProperty("queryHandlers", queryHandlers);
+        descriptor.describeProperty("subComponents", subComponents);
     }
 }

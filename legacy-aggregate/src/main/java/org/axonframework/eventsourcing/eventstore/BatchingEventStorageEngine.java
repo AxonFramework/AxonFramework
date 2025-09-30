@@ -23,8 +23,6 @@ import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -156,7 +154,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     /**
      * Abstract Builder class to instantiate a {@link BatchingEventStorageEngine}.
      * <p>
-     * The {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster}, the {@code snapshotFilter} defaults to a
+     * The {@code EventUpcaster} defaults to a {@code NoOpEventUpcaster}, the {@code snapshotFilter} defaults to a
      * {@code SnapshotFilter#allowAll()} instance and the {@code batchSize} is defaulted to an integer of size
      * {@code 100}.
      * <p>
@@ -173,11 +171,11 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
             return this;
         }
 
-        @Override
-        public BatchingEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
-            super.upcasterChain(upcasterChain);
-            return this;
-        }
+//        @Override
+//        public BatchingEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
+//            super.upcasterChain(upcasterChain);
+//            return this;
+//        }
 
         @Override
         public BatchingEventStorageEngine.Builder persistenceExceptionResolver(

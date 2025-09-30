@@ -19,7 +19,6 @@ package org.axonframework.springboot;
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.task.Task;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
-import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;

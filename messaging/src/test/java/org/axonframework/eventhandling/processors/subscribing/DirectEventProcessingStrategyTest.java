@@ -17,12 +17,12 @@
 package org.axonframework.eventhandling.processors.subscribing;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-import static org.axonframework.eventhandling.DomainEventTestUtils.createDomainEvents;
 import static org.mockito.Mockito.*;
 
 /**
@@ -33,7 +33,7 @@ class DirectEventProcessingStrategyTest {
     @SuppressWarnings("unchecked")
     @Test
     void eventsPassedToProcessor() {
-        List<? extends EventMessage> events = createDomainEvents(10);
+        List<? extends EventMessage> events = EventTestUtils.createEvents(19);
         Consumer<List<? extends EventMessage>> mockProcessor = mock(Consumer.class);
         DirectEventProcessingStrategy.INSTANCE.handle(events, mockProcessor);
         verify(mockProcessor).accept(events);

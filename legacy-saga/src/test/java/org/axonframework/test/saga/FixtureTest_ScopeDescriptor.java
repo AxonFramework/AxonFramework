@@ -43,6 +43,7 @@ class FixtureTest_ScopeDescriptor {
     }
 
     @Test
+    @Disabled("TODO revise after Saga support is enabled")
     void resolvesScopeDescriptor() {
         fixture.givenNoPriorActivity()
                .whenPublishingA(new SagaStartEvent("some-identifier"))

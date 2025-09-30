@@ -16,7 +16,6 @@
 
 package org.axonframework.metrics;
 
-import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.configuration.ComponentRegistry;
 import org.junit.jupiter.api.*;
 

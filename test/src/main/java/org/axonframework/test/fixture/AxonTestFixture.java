@@ -157,8 +157,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
     }
 
     /**
-     * Allow to customize the fixture setup.
+     * Allow customizing the fixture setup.
      *
+     * @param axonServerEnabled True if Axon Server should be enabled, false otherwise. It's enabled by default.
      * @param fieldFilters Collections of {@link FieldFilter FieldFilters} used to adjust the matchers for commands,
      *                     events, and result messages.
      */
@@ -171,7 +172,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          * Creates a new instance of {@code Customization}.
          */
         public Customization() {
-            this(false, new ArrayList<>());
+            this(true, new ArrayList<>());
         }
 
         /**
@@ -235,9 +236,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         /**
-         * Configures Axon Server to be enabled or disabled.
+         * Configures Axon Server to be disabled.
          *
-         * @param enabled True if Axon Server should be enabled, false otherwise.
          * @return The current Customization, for fluent interfacing.
          */
         public Customization disableAxonServer() {
@@ -251,6 +251,15 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
          */
         public boolean axonServerEnabled() {
             return axonServerEnabled;
+        }
+
+        /**
+         * Indicates whether Axon Server is disabled.
+         *
+         * @return True if Axon Server is disabled, false otherwise.
+         */
+        public boolean axonServerDisabled() {
+            return! axonServerEnabled;
         }
     }
 }

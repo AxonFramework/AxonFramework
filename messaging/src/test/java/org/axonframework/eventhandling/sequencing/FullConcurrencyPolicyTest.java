@@ -16,9 +16,7 @@
 
 package org.axonframework.eventhandling.sequencing;
 
-import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
@@ -39,15 +37,11 @@ class FullConcurrencyPolicyTest {
     void sequencingIdentifier() {
         FullConcurrencyPolicy testSubject = FullConcurrencyPolicy.INSTANCE;
         ProcessingContext processingContext = new StubProcessingContext();
-        assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), processingContext)).isPresent();
-        assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), processingContext)).isPresent();
-        assertThat(testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()), processingContext)).isPresent();
-    }
-
-    private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
-        return new GenericDomainEventMessage(
-                "aggregateType", aggregateIdentifier.toString(), 0L,
-                new MessageType("event"), new Object()
-        );
+        assertThat(testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+                                                        processingContext)).isPresent();
+        assertThat(testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+                                                        processingContext)).isPresent();
+        assertThat(testSubject.getSequenceIdentifierFor(EventTestUtils.asEventMessage(UUID.randomUUID()),
+                                                        processingContext)).isPresent();
     }
 }

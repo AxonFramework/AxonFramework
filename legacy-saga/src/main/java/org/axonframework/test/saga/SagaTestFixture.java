@@ -23,7 +23,6 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -199,8 +198,9 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     private TrackedEventMessage asTrackedEventMessage(EventMessage event) {
-        return EventUtils.asTrackedEventMessage(
-                event, new GlobalSequenceTrackingToken(globalSequence.getAndIncrement()));
+        return null;
+//        return EventUtils.asTrackedEventMessage(
+//                event, new GlobalSequenceTrackingToken(globalSequence.getAndIncrement()));
     }
 
     /**

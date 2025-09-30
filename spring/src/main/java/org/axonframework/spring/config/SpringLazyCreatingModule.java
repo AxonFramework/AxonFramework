@@ -71,6 +71,7 @@ public class SpringLazyCreatingModule<S extends Module> extends BaseModule<Sprin
         Optional.of(parent.getComponent(ComponentRegistry.class, () -> null))
                 .ifPresentOrElse((r) -> r.registerModule(module),
                                  () -> componentRegistry(r -> r.registerModule(module)));
+
         return configuration;
     }
 }

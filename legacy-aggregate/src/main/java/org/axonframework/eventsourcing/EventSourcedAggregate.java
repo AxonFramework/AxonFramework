@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 //import org.axonframework.eventsourcing.snapshotting.SnapshotTrigger;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.modelling.command.Aggregate;

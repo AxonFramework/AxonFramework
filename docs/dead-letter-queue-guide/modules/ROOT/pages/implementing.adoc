@@ -12,9 +12,6 @@ There are two ways of configuring the `SequencedDeadLetterQueue`.
 The first approach is to register a DLQ provider in the event processor configuration. This approach allows you to specify processing groups if you want to configure the DLQ only for some of them. As DLQs add complexity and introduce some overhead, you should prefer this method when you don't need a separate DLQ for each processing group.
 
 [source,java]
-----
-include::example$source_code/config/src/main/java/org/axonframework/config/EventProcessingConfigurer.java[tag=RegisterDeadLetterQueueProvider]
-----
 
 The `DeadLetterQueueProviderConfigurerModule` has an example of how you can use this.
 

@@ -16,10 +16,7 @@
 
 package org.axonframework.eventhandling.replay;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventhandling.annotations.AnnotationEventHandlerAdapter;
+import org.axonframework.eventhandling.annotations.AnnotatedEventHandlingComponent;
 import org.axonframework.eventhandling.annotations.EventHandler;
 import org.axonframework.eventhandling.processors.streaming.token.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.processors.streaming.token.ReplayToken;
@@ -27,85 +24,78 @@ import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
 import org.axonframework.eventhandling.replay.annotations.ReplayContext;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Arrays.asList;
-import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
-import static org.axonframework.eventhandling.processors.streaming.token.TrackingToken.RESOURCE_KEY;
-import static org.junit.jupiter.api.Assertions.*;
-
 @Disabled("#3304")
 class ReplayContextParameterResolverFactoryTest {
 
-    private final MyResetContext resetContext = new MyResetContext(asList(2L, 3L));
-    private SomeHandler handler;
-    private AnnotationEventHandlerAdapter testSubject;
+    //    private final MyResetContext resetContext = new MyResetContext(asList(2L, 3L));
+//    private SomeHandler handler;
+    private AnnotatedEventHandlingComponent<SomeHandler> testSubject;
     private ReplayToken replayToken;
     private GlobalSequenceTrackingToken regularToken;
     private final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
     @BeforeEach
     void setUp() {
-        handler = new SomeHandler();
-        testSubject = new AnnotationEventHandlerAdapter(handler, messageTypeResolver);
-        regularToken = new GlobalSequenceTrackingToken(1L);
-        replayToken = (ReplayToken) ReplayToken.createReplayToken(regularToken,
-                                                                  new GlobalSequenceTrackingToken(0),
-                                                                  resetContext);
+//        handler = new SomeHandler();
+//        testSubject = new AnnotationEventHandlerAdapter(handler, messageTypeResolver);
+//        regularToken = new GlobalSequenceTrackingToken(1L);
+//        replayToken = (ReplayToken) ReplayToken.createReplayToken(regularToken,
+//                                                                  new GlobalSequenceTrackingToken(0),
+//                                                                  resetContext);
     }
 
-    @Test
-    void resolvesIfMatching() throws Exception {
-        EventMessage replayEvent = new GenericTrackedEventMessage(replayToken,
-                                                                  asEventMessage(1L));
-        ProcessingContext replayContext = StubProcessingContext.forMessage(replayEvent)
-                                                               .withResource(RESOURCE_KEY, replayToken);
-        EventMessage liveEvent = new GenericTrackedEventMessage(regularToken,
-                                                                asEventMessage(2L));
-        ProcessingContext liveContext = StubProcessingContext.forMessage(liveEvent)
-                                                             .withResource(RESOURCE_KEY, regularToken);
-
-        assertTrue(testSubject.canHandle(replayEvent, replayContext));
-        assertTrue(testSubject.canHandle(liveEvent, liveContext));
-        EventMessage event1 = asEventMessage(1L);
-        ProcessingContext event1Context = StubProcessingContext.forMessage(event1)
-                                                               .withResource(RESOURCE_KEY, createToken(1L, true));
-        testSubject.handleSync(event1, event1Context);
-        EventMessage event2 = asEventMessage(2L);
-        ProcessingContext event2Context = StubProcessingContext.forMessage(event2)
-                                                               .withResource(RESOURCE_KEY, createToken(2L, true));
-        testSubject.handleSync(event2, event2Context);
-        EventMessage event3 = asEventMessage(3L);
-        ProcessingContext event3Context = StubProcessingContext.forMessage(event3)
-                                                               .withResource(RESOURCE_KEY, createToken(3L, true));
-        testSubject.handleSync(event3, event3Context);
-        EventMessage event4 = asEventMessage(4L);
-        ProcessingContext event4Context = StubProcessingContext.forMessage(event4)
-                                                               .withResource(RESOURCE_KEY, createToken(4L, true));
-        testSubject.handleSync(event4, event4Context);
-
-        assertEquals(asList(1L, 2L, 3L, 4L), handler.receivedLongs);
-        assertEquals(asList(2L, 3L), handler.receivedInReplay);
-    }
-
-    private TrackedEventMessage createMessage(Long position, boolean replay) {
-        return new GenericTrackedEventMessage(createToken(position, replay), asEventMessage(position));
-    }
-
-    private TrackingToken createToken(Long position, boolean replay) {
-        if (replay) {
-            return ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(position + 1),
-                                                 new GlobalSequenceTrackingToken(position),
-                                                 resetContext);
-        }
-        return new GlobalSequenceTrackingToken(position);
-    }
-
+    //    @Test
+//    void resolvesIfMatching() throws Exception {
+//        EventMessage replayEvent = new GenericTrackedEventMessage(replayToken,
+//                                                                  asEventMessage(1L));
+//        ProcessingContext replayContext = StubProcessingContext.forMessage(replayEvent)
+//                                                               .withResource(RESOURCE_KEY, replayToken);
+//        EventMessage liveEvent = new GenericTrackedEventMessage(regularToken,
+//                                                                asEventMessage(2L));
+//        ProcessingContext liveContext = StubProcessingContext.forMessage(liveEvent)
+//                                                             .withResource(RESOURCE_KEY, regularToken);
+//
+//        assertTrue(testSubject.canHandle(replayEvent, replayContext));
+//        assertTrue(testSubject.canHandle(liveEvent, liveContext));
+//        EventMessage event1 = asEventMessage(1L);
+//        ProcessingContext event1Context = StubProcessingContext.forMessage(event1)
+//                                                               .withResource(RESOURCE_KEY, createToken(1L, true));
+//        testSubject.handleSync(event1, event1Context);
+//        EventMessage event2 = asEventMessage(2L);
+//        ProcessingContext event2Context = StubProcessingContext.forMessage(event2)
+//                                                               .withResource(RESOURCE_KEY, createToken(2L, true));
+//        testSubject.handleSync(event2, event2Context);
+//        EventMessage event3 = asEventMessage(3L);
+//        ProcessingContext event3Context = StubProcessingContext.forMessage(event3)
+//                                                               .withResource(RESOURCE_KEY, createToken(3L, true));
+//        testSubject.handleSync(event3, event3Context);
+//        EventMessage event4 = asEventMessage(4L);
+//        ProcessingContext event4Context = StubProcessingContext.forMessage(event4)
+//                                                               .withResource(RESOURCE_KEY, createToken(4L, true));
+//        testSubject.handleSync(event4, event4Context);
+//
+//        assertEquals(asList(1L, 2L, 3L, 4L), handler.receivedLongs);
+//        assertEquals(asList(2L, 3L), handler.receivedInReplay);
+//    }
+//
+//    private TrackedEventMessage createMessage(Long position, boolean replay) {
+//        return new GenericTrackedEventMessage(createToken(position, replay), asEventMessage(position));
+//    }
+//
+//    private TrackingToken createToken(Long position, boolean replay) {
+//        if (replay) {
+//            return ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(position + 1),
+//                                                 new GlobalSequenceTrackingToken(position),
+//                                                 resetContext);
+//        }
+//        return new GlobalSequenceTrackingToken(position);
+//    }
+//
     private static class SomeHandler {
 
         private List<Long> receivedLongs = new ArrayList<>();

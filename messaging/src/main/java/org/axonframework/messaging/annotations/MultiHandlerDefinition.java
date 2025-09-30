@@ -175,14 +175,14 @@ public class MultiHandlerDefinition implements HandlerDefinition {
             @Nonnull Class<T> declaringType,
             @Nonnull Method method,
             @Nonnull ParameterResolverFactory parameterResolverFactory,
-            @Nonnull Function<Object, MessageStream<?>> returnTypeConverter
+            @Nonnull Function<Object, MessageStream<?>> messageStreamResolver
     ) {
         Optional<MessageHandlingMember<T>> handler = Optional.empty();
         for (HandlerDefinition handlerDefinition : handlerDefinitions) {
             handler = handlerDefinition.createHandler(declaringType,
                                                       method,
                                                       parameterResolverFactory,
-                                                      returnTypeConverter);
+                                                      messageStreamResolver);
             if (handler.isPresent()) {
                 return Optional.of(handlerEnhancerDefinition.wrapHandler(handler.get()));
             }

@@ -16,10 +16,10 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
-import org.axonframework.messaging.unitofwork.UnitOfWorkTestUtils;
+import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.junit.jupiter.api.*;
 
 /**
  * An {@link AbstractSubscriptionQueryTestSuite} implementation validating the {@link SimpleQueryBus}.
@@ -27,13 +27,12 @@ import org.junit.jupiter.api.*;
  * @author Milan Savic
  * @author Steven van Beelen
  */
-@Disabled("TODO #3488 - Reintroduce as part of AnnotationQueryHandlerAdapter changes")
 public class SimpleQueryBusSubscriptionQueryTest extends AbstractSubscriptionQueryTestSuite {
 
-    private final SimpleQueryBus queryBus = new SimpleQueryBus(UnitOfWorkTestUtils.SIMPLE_FACTORY);
+    private final Configuration config = MessagingConfigurer.create().build();
 
     @Override
     public QueryBus queryBus() {
-        return queryBus;
+        return config.getComponent(QueryBus.class);
     }
 }
