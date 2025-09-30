@@ -2,7 +2,11 @@
 
 package io.axoniq.demo.university.shared
 
-data class CourseId(val value: String)
+@JvmExposeBoxed
+@JvmInline
+value class CourseId(val value: String)
 
-data class StudentId(val value: String)
+@JvmExposeBoxed
+@JvmInline
+value class StudentId(val value: String)
 

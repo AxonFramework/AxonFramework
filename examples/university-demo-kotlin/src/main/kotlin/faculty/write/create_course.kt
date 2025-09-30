@@ -3,15 +3,15 @@ package io.axoniq.demo.university.faculty.write
 import io.axoniq.demo.university.faculty.Faculty.Event.CourseCreated
 import io.axoniq.demo.university.faculty.Faculty.Tag.COURSE_ID
 import io.axoniq.demo.university.shared.CourseId
-import org.axonframework.commandhandling.annotation.CommandHandler
+import org.axonframework.commandhandling.annotations.CommandHandler
 import org.axonframework.commandhandling.configuration.CommandHandlingModule
 import org.axonframework.eventhandling.gateway.EventAppender
-import org.axonframework.eventsourcing.EventSourcingHandler
-import org.axonframework.eventsourcing.annotation.EventSourcedEntity
-import org.axonframework.eventsourcing.annotation.reflection.EntityCreator
+import org.axonframework.eventsourcing.annotations.EventSourcedEntity
+import org.axonframework.eventsourcing.annotations.EventSourcingHandler
+import org.axonframework.eventsourcing.annotations.reflection.EntityCreator
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityModule
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
-import org.axonframework.modelling.annotation.InjectEntity
+import org.axonframework.modelling.annotations.InjectEntity
 
 /**
  * Configure slice CreateCourse

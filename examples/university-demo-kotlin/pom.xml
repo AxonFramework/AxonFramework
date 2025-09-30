@@ -29,12 +29,12 @@
 
     <!-- region [dependencies-main] -->
     <spring-boot.version>3.5.6</spring-boot.version>
-    <axon.version>5.0.0-M3</axon.version>
+    <axon.version>5.0.0-preview</axon.version>
     <log4j.version>2.24.3</log4j.version>
     <!-- endregion [dependencies-main] -->
 
     <!-- region [dependencies-test] -->
-    <assertj.version>3.27.4</assertj.version>
+    <assertj.version>3.27.6</assertj.version>
     <awaitility.version>4.3.0</awaitility.version>
     <hamcrest.version>3.0</hamcrest.version>
     <junit.version>5.12.1</junit.version>
@@ -92,6 +92,17 @@
     <!-- region [Axon Framework] -->
     <dependency>
       <groupId>org.axonframework</groupId>
+      <artifactId>axon-spring-boot-starter</artifactId>
+      <version>${axon.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.axonframework</groupId>
+      <artifactId>axon-server-connector</artifactId>
+      <version>${axon.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.axonframework</groupId>
       <artifactId>axon-messaging</artifactId>
       <version>${axon.version}</version>
     </dependency>
@@ -107,13 +118,13 @@
     </dependency>
     <!-- endregion [Axon Framework] -->
 
-    <!-- Event Store Dependencies -->
+    <!-- region [Serialization] -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-kotlin</artifactId>
+    </dependency>
+    <!-- endregion [Serialization] -->
 
-<!--    <dependency>-->
-<!--      <groupId>org.axonframework</groupId>-->
-<!--      <artifactId>axon-server-connector</artifactId>-->
-<!--      <version>${axon.version}</version>-->
-<!--    </dependency>-->
 
     <!-- Log4j Dependencies -->
     <dependency>
