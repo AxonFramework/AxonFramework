@@ -23,6 +23,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.reactivestreams.Publisher;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -358,7 +359,7 @@ public interface AxonTestPhase {
         }
 
         /**
-         * When-phase specific for executing a {@link org.axonframework.queryhandling.QueryMessage query}.
+         * When-phase specific for executing a single {@link org.axonframework.queryhandling.QueryMessage query}.
          */
         interface Query {
 
@@ -368,6 +369,45 @@ public interface AxonTestPhase {
              * @return A {@link Then} instance that allows validating the test results.
              */
             Then.Query then();
+        }
+
+        /**
+         * When-phase specific for executing a queryMany (multiple results query).
+         */
+        interface QueryMany {
+
+            /**
+             * Transitions to the Then phase to validate the results of the test.
+             *
+             * @return A {@link Then} instance that allows validating the test results.
+             */
+            Then.QueryMany then();
+        }
+
+        /**
+         * When-phase specific for executing a streaming query.
+         */
+        interface StreamingQuery {
+
+            /**
+             * Transitions to the Then phase to validate the results of the test.
+             *
+             * @return A {@link Then} instance that allows validating the test results.
+             */
+            Then.StreamingQuery then();
+        }
+
+        /**
+         * When-phase specific for executing a subscription query.
+         */
+        interface SubscriptionQuery {
+
+            /**
+             * Transitions to the Then phase to validate the results of the test.
+             *
+             * @return A {@link Then} instance that allows validating the test results.
+             */
+            Then.SubscriptionQuery then();
         }
 
         /**
@@ -525,6 +565,161 @@ public interface AxonTestPhase {
         <R> Query query(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Metadata metadata);
 
         /**
+         * Dispatches the given {@code payload} queryMany expecting multiple results of {@code responseType}.
+         * The query will be dispatched with empty metadata.
+         *
+         * @param payload      The query to execute.
+         * @param responseType The expected response type for each result.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default <R> QueryMany queryMany(@Nonnull Object payload, @Nonnull Class<R> responseType) {
+            return queryMany(payload, responseType, new HashMap<>());
+        }
+
+        /**
+         * Dispatches the given {@code payload} queryMany with the provided {@code responseType} and {@code metadata},
+         * expecting multiple results.
+         *
+         * @param payload      The query to execute.
+         * @param responseType The expected response type for each result.
+         * @param metadata     The metadata to attach to the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default <R> QueryMany queryMany(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Map<String, String> metadata) {
+            return queryMany(payload, responseType, Metadata.from(metadata));
+        }
+
+        /**
+         * Dispatches the given {@code payload} queryMany with the provided {@code responseType} and {@code metadata},
+         * expecting multiple results.
+         *
+         * @param payload      The query to execute.
+         * @param responseType The expected response type for each result.
+         * @param metadata     The metadata to attach to the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        <R> QueryMany queryMany(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Metadata metadata);
+
+        /**
+         * Dispatches the given {@code payload} as a streaming query expecting streamed results of {@code responseType}.
+         * The query will be dispatched with empty metadata.
+         *
+         * @param payload      The query to execute.
+         * @param responseType The expected response type for streamed results.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default <R> StreamingQuery streamingQuery(@Nonnull Object payload, @Nonnull Class<R> responseType) {
+            return streamingQuery(payload, responseType, new HashMap<>());
+        }
+
+        /**
+         * Dispatches the given {@code payload} as a streaming query with the provided {@code responseType} and
+         * {@code metadata}, expecting streamed results.
+         *
+         * @param payload      The query to execute.
+         * @param responseType The expected response type for streamed results.
+         * @param metadata     The metadata to attach to the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default <R> StreamingQuery streamingQuery(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Map<String, String> metadata) {
+            return streamingQuery(payload, responseType, Metadata.from(metadata));
+        }
+
+        /**
+         * Dispatches the given {@code payload} as a streaming query with the provided {@code responseType} and
+         * {@code metadata}, expecting streamed results.
+         *
+         * @param payload      The query to execute.
+         * @param responseType The expected response type for streamed results.
+         * @param metadata     The metadata to attach to the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        <R> StreamingQuery streamingQuery(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Metadata metadata);
+
+        /**
+         * Dispatches the given {@code payload} as a subscription query expecting initial result and updates of
+         * {@code responseType}. The query will be dispatched with empty metadata.
+         *
+         * @param payload      The query to execute.
+         * @param responseType The expected response type for both initial result and updates.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default <R> SubscriptionQuery subscriptionQuery(@Nonnull Object payload, @Nonnull Class<R> responseType) {
+            return subscriptionQuery(payload, responseType, new HashMap<>());
+        }
+
+        /**
+         * Dispatches the given {@code payload} as a subscription query with the provided {@code responseType} and
+         * {@code metadata}, expecting initial result and updates.
+         *
+         * @param payload      The query to execute.
+         * @param responseType The expected response type for both initial result and updates.
+         * @param metadata     The metadata to attach to the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default <R> SubscriptionQuery subscriptionQuery(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Map<String, String> metadata) {
+            return subscriptionQuery(payload, responseType, Metadata.from(metadata));
+        }
+
+        /**
+         * Dispatches the given {@code payload} as a subscription query with the provided {@code responseType} and
+         * {@code metadata}, expecting initial result and updates.
+         *
+         * @param payload      The query to execute.
+         * @param responseType The expected response type for both initial result and updates.
+         * @param metadata     The metadata to attach to the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        <R> SubscriptionQuery subscriptionQuery(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Metadata metadata);
+
+        /**
+         * Dispatches the given {@code payload} as a subscription query with different initial and update response types.
+         * The query will be dispatched with empty metadata.
+         *
+         * @param payload             The query to execute.
+         * @param initialResponseType The expected response type for the initial result.
+         * @param updateResponseType  The expected response type for updates.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default <I, U> SubscriptionQuery subscriptionQuery(@Nonnull Object payload,
+                                                            @Nonnull Class<I> initialResponseType,
+                                                            @Nonnull Class<U> updateResponseType) {
+            return subscriptionQuery(payload, initialResponseType, updateResponseType, new HashMap<>());
+        }
+
+        /**
+         * Dispatches the given {@code payload} as a subscription query with different initial and update response types
+         * and the provided {@code metadata}.
+         *
+         * @param payload             The query to execute.
+         * @param initialResponseType The expected response type for the initial result.
+         * @param updateResponseType  The expected response type for updates.
+         * @param metadata            The metadata to attach to the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        default <I, U> SubscriptionQuery subscriptionQuery(@Nonnull Object payload,
+                                                            @Nonnull Class<I> initialResponseType,
+                                                            @Nonnull Class<U> updateResponseType,
+                                                            @Nonnull Map<String, String> metadata) {
+            return subscriptionQuery(payload, initialResponseType, updateResponseType, Metadata.from(metadata));
+        }
+
+        /**
+         * Dispatches the given {@code payload} as a subscription query with different initial and update response types
+         * and the provided {@code metadata}.
+         *
+         * @param payload             The query to execute.
+         * @param initialResponseType The expected response type for the initial result.
+         * @param updateResponseType  The expected response type for updates.
+         * @param metadata            The metadata to attach to the query.
+         * @return The current When instance, for fluent interfacing.
+         */
+        <I, U> SubscriptionQuery subscriptionQuery(@Nonnull Object payload,
+                                                    @Nonnull Class<I> initialResponseType,
+                                                    @Nonnull Class<U> updateResponseType,
+                                                    @Nonnull Metadata metadata);
+
+        /**
          * Transitions to the Then phase to validate the results of the test. It skips the When phase.
          *
          * @return A {@link Then.Nothing} instance that allows validating the test results.
@@ -638,6 +833,126 @@ public interface AxonTestPhase {
              * @return The current Then instance, for fluent interfacing.
              */
             Query resultMessagePayloadSatisfies(@Nonnull Consumer<Object> consumer);
+        }
+
+        /**
+         * Operations available in the Then phase of the test fixture execution only if queryMany was dispatched during
+         * the When phase.
+         */
+        interface QueryMany extends Message<QueryMany> {
+
+            /**
+             * Expect a successful execution of the When phase, regardless of the actual return values.
+             *
+             * @return The current Then instance, for fluent interfacing.
+             */
+            QueryMany success();
+
+            /**
+             * Invokes the given {@code consumer} of the queryMany result list that has been returned during the When
+             * phase, allowing for <b>any</b> form of assertion.
+             *
+             * @param consumer Consumes the query results. You may place your own assertions here.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            QueryMany resultSatisfies(@Nonnull Consumer<? super List<?>> consumer);
+
+            /**
+             * Expect the queryMany handler from the When phase to return a list containing the given {@code expectedResults}
+             * after execution. The actual and expected values are compared using their equals methods.
+             *
+             * @param expectedResults The expected result list of the queryMany execution.
+             * @return The current Then, for fluent interfacing.
+             */
+            QueryMany results(@Nonnull List<?> expectedResults);
+
+            /**
+             * Expect the queryMany handler from the When phase to return a list with the expected size.
+             *
+             * @param expectedSize The expected size of the result list.
+             * @return The current Then, for fluent interfacing.
+             */
+            QueryMany resultCount(int expectedSize);
+        }
+
+        /**
+         * Operations available in the Then phase of the test fixture execution only if streamingQuery was dispatched
+         * during the When phase.
+         */
+        interface StreamingQuery extends Message<StreamingQuery> {
+
+            /**
+             * Expect a successful execution of the When phase, regardless of the actual streamed values.
+             *
+             * @return The current Then instance, for fluent interfacing.
+             */
+            StreamingQuery success();
+
+            /**
+             * Invokes the given {@code consumer} of the streamingQuery Publisher that has been returned during the When
+             * phase, allowing for <b>any</b> form of assertion.
+             *
+             * @param consumer Consumes the Publisher. You may place your own assertions here.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            StreamingQuery publisherSatisfies(@Nonnull Consumer<? super Publisher<?>> consumer);
+        }
+
+        /**
+         * Operations available in the Then phase of the test fixture execution only if subscriptionQuery was dispatched
+         * during the When phase.
+         */
+        interface SubscriptionQuery extends Message<SubscriptionQuery> {
+
+            /**
+             * Expect a successful execution of the When phase, regardless of the actual initial result and updates.
+             *
+             * @return The current Then instance, for fluent interfacing.
+             */
+            SubscriptionQuery success();
+
+            /**
+             * Invokes the given {@code consumer} of the subscriptionQuery response that has been returned during the When
+             * phase, allowing for <b>any</b> form of assertion on both initial result and updates.
+             *
+             * @param consumer Consumes the SubscriptionQueryResponse. You may place your own assertions here.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            SubscriptionQuery responseSatisfies(@Nonnull Consumer<? super org.axonframework.queryhandling.SubscriptionQueryResponse<?, ?>> consumer);
+
+            /**
+             * Expect the initial result of the subscription query to match the given {@code expectedInitialResult}.
+             *
+             * @param expectedInitialResult The expected initial result.
+             * @return The current Then, for fluent interfacing.
+             */
+            SubscriptionQuery initialResult(@Nonnull Object expectedInitialResult);
+
+            /**
+             * Invokes the given {@code consumer} of the initial result that has been returned during the When phase,
+             * allowing for <b>any</b> form of assertion.
+             *
+             * @param consumer Consumes the initial result. You may place your own assertions here.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            SubscriptionQuery initialResultSatisfies(@Nonnull Consumer<Object> consumer);
+
+            /**
+             * Expect the updates Publisher of the subscription query to emit the given {@code expectedUpdates}.
+             *
+             * @param expectedUpdates The expected updates.
+             * @return The current Then, for fluent interfacing.
+             */
+            SubscriptionQuery updates(@Nonnull List<?> expectedUpdates);
+
+            /**
+             * Invokes the given {@code consumer} of the updates Publisher that has been returned during the When phase,
+             * allowing for <b>any</b> form of assertion.
+             *
+             * @param consumer Consumes the updates Publisher. You may place your own assertions here.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            SubscriptionQuery updatesSatisfies(@Nonnull Consumer<? super Publisher<?>> consumer);
         }
 
         /**

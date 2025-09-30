@@ -34,7 +34,7 @@ import java.util.List;
  * @since 0.1
  */
 @Deprecated // TODO #3392 - Replace for actual EventSink implementation.
-public interface EventBus extends SubscribableMessageSource<EventMessage> {
+public interface EventBus extends SubscribableMessageSource<EventMessage> { // EventSink, SubscribableEventSource???
 
     /**
      * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed

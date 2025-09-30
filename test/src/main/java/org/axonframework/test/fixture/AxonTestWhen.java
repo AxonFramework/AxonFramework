@@ -29,6 +29,7 @@ import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
+import org.reactivestreams.Publisher;
 
 import java.util.Arrays;
 import java.util.List;
@@ -54,6 +55,9 @@ class AxonTestWhen implements AxonTestPhase.When {
     private Message actualResult;
     private Object lastQuery;
     private CompletableFuture<?> actualQueryResult;
+    private CompletableFuture<List<?>> actualQueryManyResult;
+    private Publisher<?> actualStreamingQueryResult;
+    private org.axonframework.queryhandling.SubscriptionQueryResponse<?, ?> actualSubscriptionQueryResult;
     private Throwable actualException;
 
     /**
@@ -167,6 +171,67 @@ class AxonTestWhen implements AxonTestPhase.When {
         return new Query();
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public <R> AxonTestPhase.When.QueryMany queryMany(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Metadata metadata) {
+        var messageType = messageTypeResolver.resolveOrThrow(payload);
+        var baseMessage = new GenericEventMessage(messageType, payload, metadata);
+        var message = new GenericQueryMessage(baseMessage, ResponseTypes.multipleInstancesOf(responseType));
+        inUnitOfWorkOnInvocation(processingContext -> {
+            try {
+                lastQuery = message;
+                actualQueryManyResult = (CompletableFuture<List<?>>) (CompletableFuture<?>) queryGateway.queryMany(message, responseType, processingContext);
+                actualException = null;
+                return CompletableFuture.completedFuture(null);
+            } catch (Exception e) {
+                lastQuery = message;
+                actualQueryManyResult = CompletableFuture.failedFuture(e);
+                actualException = e;
+                return CompletableFuture.failedFuture(e);
+            }
+        });
+        return new QueryMany();
+    }
+
+    @Override
+    public <R> AxonTestPhase.When.StreamingQuery streamingQuery(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Metadata metadata) {
+        var messageType = messageTypeResolver.resolveOrThrow(payload);
+        var baseMessage = new GenericEventMessage(messageType, payload, metadata);
+        var message = new GenericQueryMessage(baseMessage, ResponseTypes.publisherOf(responseType));
+        try {
+            lastQuery = message;
+            actualStreamingQueryResult = queryGateway.streamingQuery(message, responseType, null);
+            actualException = null;
+        } catch (Exception e) {
+            lastQuery = message;
+            actualStreamingQueryResult = null;
+            actualException = e;
+        }
+        return new StreamingQuery();
+    }
+
+    @Override
+    public <R> AxonTestPhase.When.SubscriptionQuery subscriptionQuery(@Nonnull Object payload, @Nonnull Class<R> responseType, @Nonnull Metadata metadata) {
+        return subscriptionQuery(payload, responseType, responseType, metadata);
+    }
+
+    @Override
+    public <I, U> AxonTestPhase.When.SubscriptionQuery subscriptionQuery(@Nonnull Object payload,
+                                                                          @Nonnull Class<I> initialResponseType,
+                                                                          @Nonnull Class<U> updateResponseType,
+                                                                          @Nonnull Metadata metadata) {
+        try {
+            lastQuery = payload;
+            actualSubscriptionQueryResult = queryGateway.subscriptionQuery(payload, initialResponseType, updateResponseType, null);
+            actualException = null;
+        } catch (Exception e) {
+            lastQuery = payload;
+            actualSubscriptionQueryResult = null;
+            actualException = e;
+        }
+        return new SubscriptionQuery();
+    }
+
     private void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
         var unitOfWork = unitOfWorkFactory.create();
         unitOfWork.onInvocation(action);
@@ -223,6 +288,57 @@ class AxonTestWhen implements AxonTestPhase.When {
                     queryGateway,
                     lastQuery,
                     actualQueryResult,
+                    actualException
+            );
+        }
+    }
+
+    class QueryMany implements AxonTestPhase.When.QueryMany {
+
+        @Override
+        public AxonTestPhase.Then.QueryMany then() {
+            return new AxonTestThenQueryMany(
+                    configuration,
+                    customization,
+                    commandBus,
+                    eventSink,
+                    queryGateway,
+                    lastQuery,
+                    actualQueryManyResult,
+                    actualException
+            );
+        }
+    }
+
+    class StreamingQuery implements AxonTestPhase.When.StreamingQuery {
+
+        @Override
+        public AxonTestPhase.Then.StreamingQuery then() {
+            return new AxonTestThenStreamingQuery(
+                    configuration,
+                    customization,
+                    commandBus,
+                    eventSink,
+                    queryGateway,
+                    lastQuery,
+                    actualStreamingQueryResult,
+                    actualException
+            );
+        }
+    }
+
+    class SubscriptionQuery implements AxonTestPhase.When.SubscriptionQuery {
+
+        @Override
+        public AxonTestPhase.Then.SubscriptionQuery then() {
+            return new AxonTestThenSubscriptionQuery(
+                    configuration,
+                    customization,
+                    commandBus,
+                    eventSink,
+                    queryGateway,
+                    lastQuery,
+                    actualSubscriptionQueryResult,
                     actualException
             );
         }
