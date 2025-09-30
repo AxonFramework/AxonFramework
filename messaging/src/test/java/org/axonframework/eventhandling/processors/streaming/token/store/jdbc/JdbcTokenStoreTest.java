@@ -57,7 +57,6 @@ import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -605,30 +604,27 @@ class JdbcTokenStoreTest {
 
         @Bean
         public JdbcTokenStore tokenStore(DataSource dataSource) {
-            return JdbcTokenStore.builder()
-                                 .connectionProvider(dataSource::getConnection)
-                                 .serializer(TestSerializer.JACKSON.getSerializer())
-                                 .build();
+            return new JdbcTokenStore(dataSource::getConnection,
+                                      TestSerializer.JACKSON.getSerializer(),
+                                      JdbcTokenStoreConfiguration.DEFAULT);
         }
 
         @Bean
         public JdbcTokenStore concurrentTokenStore(DataSource dataSource) {
-            return JdbcTokenStore.builder()
-                                 .connectionProvider(dataSource::getConnection)
-                                 .serializer(TestSerializer.JACKSON.getSerializer())
-                                 .claimTimeout(Duration.ofSeconds(2))
-                                 .nodeId("concurrent")
-                                 .build();
+            var config = JdbcTokenStoreConfiguration.DEFAULT
+                    .claimTimeout(Duration.ofSeconds(2))
+                    .nodeId("concurrent");
+            return new JdbcTokenStore(dataSource::getConnection,
+                                      TestSerializer.JACKSON.getSerializer(), config);
         }
 
         @Bean
         public JdbcTokenStore stealingTokenStore(DataSource dataSource) {
-            return JdbcTokenStore.builder()
-                                 .connectionProvider(dataSource::getConnection)
-                                 .serializer(TestSerializer.JACKSON.getSerializer())
-                                 .claimTimeout(Duration.ofSeconds(-1))
-                                 .nodeId("stealing")
-                                 .build();
+            var config = JdbcTokenStoreConfiguration.DEFAULT
+                    .claimTimeout(Duration.ofSeconds(-1))
+                    .nodeId("stealing");
+            return new JdbcTokenStore(dataSource::getConnection,
+                                      TestSerializer.JACKSON.getSerializer(), config);
         }
 
         @Bean

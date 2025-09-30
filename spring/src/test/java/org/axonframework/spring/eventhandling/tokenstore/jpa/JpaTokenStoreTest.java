@@ -23,6 +23,7 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.jpa.JpaTokenStoreConfiguration;
 import org.axonframework.eventhandling.processors.streaming.token.store.jpa.TokenEntry;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.hibernate.dialect.HSQLDialect;
@@ -141,21 +142,14 @@ class JpaTokenStoreTest {
 
         @Bean
         public JpaTokenStore jpaTokenStore(EntityManagerProvider entityManagerProvider) {
-            return JpaTokenStore.builder()
-                    .entityManagerProvider(entityManagerProvider)
-                    .serializer(JacksonSerializer.defaultSerializer())
-                    .nodeId("local")
-                    .build();
+            var config = JpaTokenStoreConfiguration.DEFAULT.nodeId("local");
+            return new JpaTokenStore(entityManagerProvider, JacksonSerializer.defaultSerializer(), config);
         }
 
         @Bean
         public JpaTokenStore stealingJpaTokenStore(EntityManagerProvider entityManagerProvider) {
-            return JpaTokenStore.builder()
-                    .entityManagerProvider(entityManagerProvider)
-                    .serializer(JacksonSerializer.defaultSerializer())
-                    .claimTimeout(Duration.ofSeconds(-1))
-                    .nodeId("stealing")
-                    .build();
+            var config = JpaTokenStoreConfiguration.DEFAULT.nodeId("stealing").claimTimeout(Duration.ofSeconds(-1));
+            return new JpaTokenStore(entityManagerProvider, JacksonSerializer.defaultSerializer(), config);
         }
 
         @Bean

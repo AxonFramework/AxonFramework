@@ -37,12 +37,9 @@ import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.management.ManagementFactory;
-import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -51,7 +48,6 @@ import java.util.stream.Collectors;
 import static java.lang.String.format;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -82,33 +78,25 @@ public class JpaTokenStore implements TokenStore {
     private final LockModeType loadingLockMode;
 
     /**
-     * Instantiate a {@code JpaTokenStore} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link JpaTokenStore} based on the fields contained in the {@link JpaTokenStoreConfiguration}.
      * <p>
-     * Will assert that the {@link EntityManager}, {@link Serializer}, {@code claimTimeout} and {@code nodeId} are not
-     * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}.
+     * Will assert that the {@link EntityManagerProvider}, {@link Serializer} and {@link JpaTokenStoreConfiguration} are
+     * not {@code null}, otherwise an {@link AxonConfigurationException} will be thrown.
      *
-     * @param builder the {@link Builder} used to instantiate a {@code JpaTokenStore} instance
+     * @param entityManagerProvider The {@link EntityManagerProvider} used to obtain an {@link EntityManager} for.
+     * @param serializer            The {@link Serializer} used to de-/serialize {@link TrackingToken}'s with.
+     * @param configuration
      */
-    protected JpaTokenStore(Builder builder) {
-        builder.validate();
-        this.entityManagerProvider = builder.entityManagerProvider;
-        this.serializer = builder.serializer;
-        this.claimTimeout = builder.claimTimeout;
-        this.nodeId = builder.nodeId;
-        this.loadingLockMode = builder.loadingLockMode;
-    }
-
-    /**
-     * Instantiate a Builder to be able to create a {@code JpaTokenStore}.
-     * <p>
-     * The {@code claimTimeout} to a 10 seconds duration, and {@code nodeId} is defaulted to the name of the managed
-     * bean for the runtime system of the Java virtual machine. The {@link EntityManagerProvider} and {@link Serializer}
-     * are a <b>hard requirements</b> and as such should be provided.
-     *
-     * @return a Builder to be able to create a {@code JpaTokenStore}
-     */
-    public static Builder builder() {
-        return new Builder();
+    public JpaTokenStore(@Nonnull EntityManagerProvider entityManagerProvider, @Nonnull Serializer serializer,
+                         @Nonnull JpaTokenStoreConfiguration configuration) {
+        assertNonNull(entityManagerProvider, "EntityManagerProvider is a hard requirement and should be provided");
+        assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+        assertNonNull(configuration, "The JpaTokenStoreConfiguration should be provided");
+        this.entityManagerProvider = entityManagerProvider;
+        this.serializer = serializer;
+        this.claimTimeout = configuration.claimTimeout();
+        this.nodeId = configuration.nodeId();
+        this.loadingLockMode = configuration.loadingLockMode();
     }
 
     @Nonnull
@@ -437,111 +425,111 @@ public class JpaTokenStore implements TokenStore {
         return serializer;
     }
 
-    /**
-     * Builder class to instantiate a {@link JpaTokenStore}.
-     * <p>
-     * The {@code claimTimeout} to a 10 seconds duration, and {@code nodeId} is defaulted to the name of the managed
-     * bean for the runtime system of the Java virtual machine. The {@link EntityManagerProvider} and {@link Serializer}
-     * are a <b>hard requirements</b> and as such should be provided.
-     */
-    public static class Builder {
-
-        private LockModeType loadingLockMode = LockModeType.PESSIMISTIC_WRITE;
-        private EntityManagerProvider entityManagerProvider;
-        private Serializer serializer;
-        private TemporalAmount claimTimeout = Duration.ofSeconds(10);
-        private String nodeId = ManagementFactory.getRuntimeMXBean().getName();
-
-        /**
-         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the underlying
-         * database.
-         *
-         * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager} used to
-         *                              access the underlying database
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder entityManagerProvider(EntityManagerProvider entityManagerProvider) {
-            assertNonNull(entityManagerProvider, "EntityManagerProvider may not be null");
-            this.entityManagerProvider = entityManagerProvider;
-            return this;
-        }
-
-        /**
-         * Sets the {@link Serializer} used to de-/serialize {@link TrackingToken}s with.
-         *
-         * @param serializer a {@link Serializer} used to de-/serialize {@link TrackingToken}s with
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder serializer(Serializer serializer) {
-            assertNonNull(serializer, "Serializer may not be null");
-            this.serializer = serializer;
-            return this;
-        }
-
-        /**
-         * Sets the {@code claimTimeout} specifying the amount of time this process will wait after which this process
-         * will force a claim of a {@link TrackingToken}. Thus if a claim has not been updated for the given
-         * {@code claimTimeout}, this process will 'steal' the claim. Defaults to a duration of 10 seconds.
-         *
-         * @param claimTimeout a timeout specifying the time after which this process will force a claim
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder claimTimeout(TemporalAmount claimTimeout) {
-            assertNonNull(claimTimeout, "The claim timeout may not be null");
-            this.claimTimeout = claimTimeout;
-            return this;
-        }
-
-        /**
-         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to the name of the managed bean for the
-         * runtime system of the Java virtual machine
-         *
-         * @param nodeId the id as a {@link String} to identify ownership of the tokens
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder nodeId(String nodeId) {
-            assertNodeId(nodeId, "The nodeId may not be null or empty");
-            this.nodeId = nodeId;
-            return this;
-        }
-
-        /**
-         * The {@link LockModeType} to use when loading tokens from the underlying database. Defaults to
-         * {@code LockModeType.PESSIMISTIC_WRITE}, to force a write lock, which prevents lock upgrading and potential
-         * resulting deadlocks.
-         *
-         * @param loadingLockMode The lock mode to use when retrieving tokens from the underlying store
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder loadingLockMode(LockModeType loadingLockMode) {
-            this.loadingLockMode = loadingLockMode;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link JpaTokenStore} as specified through this Builder.
-         *
-         * @return a {@link JpaTokenStore} as specified through this Builder
-         */
-        public JpaTokenStore build() {
-            return new JpaTokenStore(this);
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        protected void validate() throws AxonConfigurationException {
-            assertNonNull(entityManagerProvider,
-                          "The EntityManagerProvider is a hard requirement and should be provided");
-            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
-            assertNodeId(nodeId, "The nodeId is a hard requirement and should be provided");
-        }
-
-        private void assertNodeId(String nodeId, String exceptionMessage) {
-            assertThat(nodeId, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
-        }
-    }
+//    /**
+//     * Builder class to instantiate a {@link JpaTokenStore}.
+//     * <p>
+//     * The {@code claimTimeout} to a 10 seconds duration, and {@code nodeId} is defaulted to the name of the managed
+//     * bean for the runtime system of the Java virtual machine. The {@link EntityManagerProvider} and {@link Serializer}
+//     * are a <b>hard requirements</b> and as such should be provided.
+//     */
+//    public static class Builder {
+//
+//        private LockModeType loadingLockMode = LockModeType.PESSIMISTIC_WRITE;
+//        private EntityManagerProvider entityManagerProvider;
+//        private Serializer serializer;
+//        private TemporalAmount claimTimeout = Duration.ofSeconds(10);
+//        private String nodeId = ManagementFactory.getRuntimeMXBean().getName();
+//
+//        /**
+//         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the underlying
+//         * database.
+//         *
+//         * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager} used to
+//         *                              access the underlying database
+//         * @return the current Builder instance, for fluent interfacing
+//         */
+//        public Builder entityManagerProvider(EntityManagerProvider entityManagerProvider) {
+//            assertNonNull(entityManagerProvider, "EntityManagerProvider may not be null");
+//            this.entityManagerProvider = entityManagerProvider;
+//            return this;
+//        }
+//
+//        /**
+//         * Sets the {@link Serializer} used to de-/serialize {@link TrackingToken}s with.
+//         *
+//         * @param serializer a {@link Serializer} used to de-/serialize {@link TrackingToken}s with
+//         * @return the current Builder instance, for fluent interfacing
+//         */
+//        public Builder serializer(Serializer serializer) {
+//            assertNonNull(serializer, "Serializer may not be null");
+//            this.serializer = serializer;
+//            return this;
+//        }
+//
+//        /**
+//         * Sets the {@code claimTimeout} specifying the amount of time this process will wait after which this process
+//         * will force a claim of a {@link TrackingToken}. Thus if a claim has not been updated for the given
+//         * {@code claimTimeout}, this process will 'steal' the claim. Defaults to a duration of 10 seconds.
+//         *
+//         * @param claimTimeout a timeout specifying the time after which this process will force a claim
+//         * @return the current Builder instance, for fluent interfacing
+//         */
+//        public Builder claimTimeout(TemporalAmount claimTimeout) {
+//            assertNonNull(claimTimeout, "The claim timeout may not be null");
+//            this.claimTimeout = claimTimeout;
+//            return this;
+//        }
+//
+//        /**
+//         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to the name of the managed bean for the
+//         * runtime system of the Java virtual machine
+//         *
+//         * @param nodeId the id as a {@link String} to identify ownership of the tokens
+//         * @return the current Builder instance, for fluent interfacing
+//         */
+//        public Builder nodeId(String nodeId) {
+//            assertNodeId(nodeId, "The nodeId may not be null or empty");
+//            this.nodeId = nodeId;
+//            return this;
+//        }
+//
+//        /**
+//         * The {@link LockModeType} to use when loading tokens from the underlying database. Defaults to
+//         * {@code LockModeType.PESSIMISTIC_WRITE}, to force a write lock, which prevents lock upgrading and potential
+//         * resulting deadlocks.
+//         *
+//         * @param loadingLockMode The lock mode to use when retrieving tokens from the underlying store
+//         * @return the current Builder instance, for fluent interfacing
+//         */
+//        public Builder loadingLockMode(LockModeType loadingLockMode) {
+//            this.loadingLockMode = loadingLockMode;
+//            return this;
+//        }
+//
+//        /**
+//         * Initializes a {@link JpaTokenStore} as specified through this Builder.
+//         *
+//         * @return a {@link JpaTokenStore} as specified through this Builder
+//         */
+//        public JpaTokenStore build() {
+//            return new JpaTokenStore(this);
+//        }
+//
+//        /**
+//         * Validates whether the fields contained in this Builder are set accordingly.
+//         *
+//         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+//         *                                    specifications
+//         */
+//        protected void validate() throws AxonConfigurationException {
+//            assertNonNull(entityManagerProvider,
+//                          "The EntityManagerProvider is a hard requirement and should be provided");
+//            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+//            assertNodeId(nodeId, "The nodeId is a hard requirement and should be provided");
+//        }
+//
+//        private void assertNodeId(String nodeId, String exceptionMessage) {
+//            assertThat(nodeId, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
+//        }
+//    }
 }

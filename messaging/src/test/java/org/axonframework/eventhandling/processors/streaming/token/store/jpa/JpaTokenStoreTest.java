@@ -39,7 +39,6 @@ import java.time.temporal.TemporalAmount;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import static org.axonframework.common.FutureUtils.joinAndUnwrap;
@@ -137,12 +136,10 @@ class JpaTokenStoreTest {
     void customLockMode() {
         EntityManager spyEntityManager = mock(EntityManager.class);
 
-        JpaTokenStore testSubject = JpaTokenStore.builder()
-                                                 .serializer(TestSerializer.JACKSON.getSerializer())
-                                                 .loadingLockMode(LockModeType.NONE)
-                                                 .entityManagerProvider(new SimpleEntityManagerProvider(spyEntityManager))
-                                                 .nodeId("test")
-                                                 .build();
+        var config = JpaTokenStoreConfiguration.DEFAULT.loadingLockMode(LockModeType.NONE).nodeId("test");
+        JpaTokenStore testSubject = new JpaTokenStore(new SimpleEntityManagerProvider(spyEntityManager),
+                                                      TestSerializer.JACKSON.getSerializer(),
+                                                      config);
 
         try {
             joinAndUnwrap(testSubject.fetchToken("processorName", 1, null));
@@ -542,14 +539,13 @@ class JpaTokenStoreTest {
 
 
     private JpaTokenStore getTokenStore(String nodeId, @Nullable TemporalAmount claimTimeOut) {
-        JpaTokenStore.Builder builder = JpaTokenStore.builder()
-                                                     .entityManagerProvider(entityManagerProvider)
-                                                     .serializer(TestSerializer.JACKSON.getSerializer())
-                                                     .nodeId(nodeId);
-        if (!Objects.isNull(claimTimeOut)) {
-            builder.claimTimeout(claimTimeOut);
+        var config = JpaTokenStoreConfiguration.DEFAULT.nodeId(nodeId);
+        if (claimTimeOut != null) {
+            config = config.claimTimeout(claimTimeOut);
         }
-        return builder.build();
+        return new JpaTokenStore(entityManagerProvider,
+                                 TestSerializer.JACKSON.getSerializer(),
+                                 config);
     }
 
     private void newTransaction() {
