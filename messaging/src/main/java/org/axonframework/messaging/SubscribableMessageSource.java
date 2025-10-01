@@ -29,6 +29,7 @@ import jakarta.annotation.Nonnull;
  * @author Allard Buijze
  * @since 3.0
  */
+@Deprecated(since = "5.0", forRemoval = true)
 public interface SubscribableMessageSource<M extends Message> {
 
     /**
