@@ -82,7 +82,7 @@ public class DefaultQueryGateway implements QueryGateway {
                             .asCompletableFuture()
                             .thenApply(MessageStream.Entry::message)
                             .thenApply(queryResponseMessage -> {
-                                if (queryResponseMessage == null) {
+                                if (queryResponseMessage == null) { // in the case of MessageStream.Empty
                                     return null;
                                 }
                                 return queryResponseMessage.payloadAs(responseType);
