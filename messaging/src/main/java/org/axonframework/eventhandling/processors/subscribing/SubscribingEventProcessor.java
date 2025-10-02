@@ -46,8 +46,6 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * Event processor implementation that {@link EventBus#subscribe(Consumer) subscribes} to the {@link EventBus} for
  * events. Events published on the event bus are supplied to this processor in the publishing thread.
  * <p>
- * Depending on the given {@link EventProcessingStrategy} the events are processed directly (in the publishing thread)
- * or asynchronously.
  *
  * @author Rene de Waele
  * @since 3.0.0
@@ -58,7 +56,6 @@ public class SubscribingEventProcessor implements EventProcessor {
     private final SubscribingEventProcessorConfiguration configuration;
     private final SubscribableEventSource<? extends EventMessage> messageSource;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
-    private final EventProcessingStrategy processingStrategy;
     private final ErrorHandler errorHandler;
 
     private volatile Registration eventBusRegistration;
@@ -72,10 +69,12 @@ public class SubscribingEventProcessor implements EventProcessor {
      *     <li>A {@link SubscribableEventSource}.</li>
      * </ul>
      * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
-
-     * @param name A {@link String} defining this {@link EventProcessor} instance.
-     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual {@link EventMessage}s.
-     * @param configuration The {@link SubscribingEventProcessorConfiguration} used to configure a {@code SubscribingEventProcessor} instance.
+     *
+     * @param name                    A {@link String} defining this {@link EventProcessor} instance.
+     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual
+     *                                {@link EventMessage}s.
+     * @param configuration           The {@link SubscribingEventProcessorConfiguration} used to configure a
+     *                                {@code SubscribingEventProcessor} instance.
      */
     public SubscribingEventProcessor(
             @Nonnull String name,
@@ -89,7 +88,6 @@ public class SubscribingEventProcessor implements EventProcessor {
         this.configuration = configuration;
         this.messageSource = this.configuration.messageSource();
         this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
-        this.processingStrategy = this.configuration.processingStrategy();
         this.errorHandler = this.configuration.errorHandler();
     }
 
@@ -110,8 +108,7 @@ public class SubscribingEventProcessor implements EventProcessor {
             // This event processor has already been started
             return FutureUtils.emptyCompletedFuture();
         }
-        eventBusRegistration =
-                messageSource.subscribe(eventMessages -> processingStrategy.handle(eventMessages, this::process));
+        eventBusRegistration = messageSource.subscribe(this::process);
         return FutureUtils.emptyCompletedFuture();
     }
 
