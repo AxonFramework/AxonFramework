@@ -43,8 +43,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}, the {@link MessageMonitor} defaults to a
  * {@link EventProcessorSpanFactory} is defaulted to a {@link DefaultEventProcessorSpanFactory} backed by a
  * {@link org.axonframework.tracing.NoOpSpanFactory}, the {@link MessageMonitor} defaults to a
- * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a {@link DirectEventProcessingStrategy}
- * and the {@link UnitOfWorkFactory} defaults to the
+ * {@link NoOpMessageMonitor}, and the {@link UnitOfWorkFactory} defaults to the
  * {@link org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory}. The Event Processor
  * {@link SubscribableEventSource} is <b>hard requirements</b> and as such should be provided.
  *
@@ -54,13 +53,14 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
     private SubscribableEventSource<? extends EventMessage> messageSource;
-    private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
 
     /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration}.
      * <p>
      * This configuration will not have any of the default {@link MessageHandlerInterceptor MessageHandlerInterceptors}
-     * for events. Please use {@link #SubscribingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are desired.
+     * for events. Please use
+     * {@link #SubscribingEventProcessorConfiguration(EventProcessorConfiguration, Configuration)} when those are
+     * desired.
      */
     @Internal
     public SubscribingEventProcessorConfiguration() {
@@ -125,21 +125,6 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         return this;
     }
 
-    /**
-     * Sets the {@link EventProcessingStrategy} determining whether events are processed directly or asynchronously.
-     * Defaults to a {@link DirectEventProcessingStrategy}.
-     *
-     * @param processingStrategy The {@link EventProcessingStrategy} determining whether events are processed directly
-     *                           or asynchronously.
-     * @return The current instance, for fluent interfacing.
-     */
-    public SubscribingEventProcessorConfiguration processingStrategy(
-            @Nonnull EventProcessingStrategy processingStrategy) {
-        assertNonNull(processingStrategy, "EventProcessingStrategy may not be null");
-        this.processingStrategy = processingStrategy;
-        return this;
-    }
-
     @Override
     public SubscribingEventProcessorConfiguration unitOfWorkFactory(@Nonnull UnitOfWorkFactory unitOfWorkFactory) {
         super.unitOfWorkFactory(unitOfWorkFactory);
@@ -184,19 +169,9 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
         return messageSource;
     }
 
-    /**
-     * Returns the {@link EventProcessingStrategy} determining how events are processed.
-     *
-     * @return The {@link EventProcessingStrategy} for this processor.
-     */
-    public EventProcessingStrategy processingStrategy() {
-        return processingStrategy;
-    }
-
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
         descriptor.describeProperty("messageSource", messageSource);
-        descriptor.describeProperty("processingStrategy", processingStrategy);
     }
 }
