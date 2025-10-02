@@ -1,17 +1,17 @@
 package io.axoniq.demo.university.faculty.write
 
 import io.axoniq.demo.university.UniversityKotlinApplication
-import io.axoniq.demo.university.faculty.events.CourseCreated
-import io.axoniq.demo.university.faculty.ids.CourseId
-import io.axoniq.demo.university.faculty.write.create_course.CreateCourse
+import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty
 import io.axoniq.demo.university.faculty.write.create_course.registerCreateCourse
+import io.axoniq.demo.university.faculty.write.enroll_student.EnrollStudent
+import io.axoniq.demo.university.faculty.write.enroll_student.registerEnrollStudent
+import io.axoniq.demo.university.shared.ids.StudentId
 import org.axonframework.test.fixture.AxonTestFixture
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-
-class CreateCourseTest {
+internal class EnrollStudentTest {
 
   private lateinit var fixture: AxonTestFixture
 
@@ -23,7 +23,7 @@ class CreateCourseTest {
   @BeforeEach
   fun beforeEach() {
     fixture = AxonTestFixture.with(
-      UniversityKotlinApplication.configurer().registerCreateCourse(),
+      UniversityKotlinApplication.configurer().registerEnrollStudent(),
       { it.disableAxonServer() }
     )
   }
@@ -37,32 +37,14 @@ class CreateCourseTest {
   }
 
   @Test
-  fun `given noPriorEvents - when createCourse - then courseCreated`() {
-    val courseId = CourseId.random()
-    val courseName = "Event Sourcing in Practice"
-    val capacity = 3
-
-    fixture.given()
+  fun `Given noEvents - When ErollStudent - Then StudenEnrolled`() {
+    val studentId = StudentId.random()
+    fixture
+      .given()
       .noPriorActivity()
       .`when`()
-      .command(CreateCourse(courseId, courseName, capacity))
+      .command(EnrollStudent(studentId, "Kermit", "Frog"))
       .then()
-      .success()
-      .events(CourseCreated(courseId, courseName, capacity))
-  }
-
-  @Test
-  fun `given CourseCreated - When CreateCourse - Then SuccessNoEvents`() {
-    val courseId = CourseId.random()
-    val courseName = "Event Sourcing in Practice"
-    val capacity = 3
-
-    fixture.given()
-      .event(CourseCreated(courseId, courseName, capacity))
-      .`when`()
-      .command(CreateCourse(courseId, courseName, capacity))
-      .then()
-      .success()
-      .noEvents()
+      .events(StudentEnrolledInFaculty(studentId, "Kermit", "Frog"))
   }
 }

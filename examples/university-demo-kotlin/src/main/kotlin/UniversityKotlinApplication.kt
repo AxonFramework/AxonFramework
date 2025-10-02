@@ -1,12 +1,17 @@
 package io.axoniq.demo.university
 
-import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.runApplication
+import org.axonframework.configuration.ApplicationConfigurer
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
+
 
 fun main(args: Array<String>) {
-  runApplication<UniversityKotlinApplication>(*args)
 }
 
-@SpringBootApplication
 class UniversityKotlinApplication {
+
+  companion object {
+    @JvmStatic
+    fun configurer(): EventSourcingConfigurer = EventSourcingConfigurer.create()
+  }
+
 }

@@ -1,6 +1,6 @@
 package io.axoniq.demo.university
 
-import io.axoniq.demo.university.faculty.write.registerCreateCourse
+import io.axoniq.demo.university.faculty.write.create_course.registerCreateCourse
 import org.axonframework.configuration.ApplicationConfigurer
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer
 

@@ -82,19 +82,12 @@
     </dependency>
     <!-- endregion [Kotlin] -->
 
-    <!-- region [Spring Boot] -->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-    <!-- endregion [Spring Boot] -->
-
     <!-- region [Axon Framework] -->
-    <dependency>
-      <groupId>org.axonframework</groupId>
-      <artifactId>axon-spring-boot-starter</artifactId>
-      <version>${axon.version}</version>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.axonframework</groupId>-->
+<!--      <artifactId>axon-spring-boot-starter</artifactId>-->
+<!--      <version>${axon.version}</version>-->
+<!--    </dependency>-->
 
     <dependency>
       <groupId>org.axonframework</groupId>
@@ -173,6 +166,12 @@
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
       <version>${awaitility.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>2.0.17</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

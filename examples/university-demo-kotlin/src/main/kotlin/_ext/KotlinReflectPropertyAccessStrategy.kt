@@ -25,7 +25,7 @@ class KotlinReflectPropertyAccessStrategy : PropertyAccessStrategy() {
     }
   }
 
-  override fun getPriority(): Int = 1
+  override fun getPriority(): Int = Int.MIN_VALUE
 
   override fun <T : Any?> propertyFor(targetClass: Class<out T>?, property: String): Property<T>? = when (val kProperty = kProperty(targetClass, property)) {
     null -> null
