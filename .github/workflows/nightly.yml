@@ -1,18 +1,9 @@
-name: Axon Framework
+name: Axon Framework (Nightly - Comprehensive LTS Testing)
 
 on:
-  push:
-    branches:
-      - main
-      - master
-      - axon-*.*.x
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-      - 'README.md'
-      - 'CHANGELOG.md'
-      - 'LICENSE'
-      - '.gitignore'
+  schedule:
+    - cron: '0 2 * * *'  # Run at 2 AM UTC daily
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   compile:
@@ -22,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [21, 25]  # LTS versions
+        java-version: [21, 25]  # All LTS versions
     outputs:
       cache-key-21: ${{ steps.cache-key.outputs.key-21 }}
       cache-key-25: ${{ steps.cache-key.outputs.key-25 }}
@@ -37,9 +28,6 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: "maven"
-          server-id: central
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
 
       - name: Generate cache key
         id: cache-key
@@ -61,15 +49,16 @@ jobs:
           TESTCONTAINERS_CHECKS_DISABLE: true
           TESTCONTAINERS_RYUK_DISABLED: true
 
-  # Full module breakdown for latest LTS (JDK 21)
-  test-jdk21:
-    name: JDK 21 - ${{ matrix.module }}
+  # Full module breakdown for ALL LTS versions (comprehensive testing)
+  test:
+    name: JDK ${{ matrix.java-version }} - ${{ matrix.module }}
     needs: compile
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
+        java-version: [21, 25]
         module:
           - "messaging"
           - "modelling"
@@ -90,11 +79,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Set up JDK 21
+      - name: Set up JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v5.0.0
         with:
           distribution: 'zulu'
-          java-version: 21
+          java-version: ${{ matrix.java-version }}
           cache: "maven"
 
       - name: Restore compiled artifacts
@@ -103,11 +92,11 @@ jobs:
           path: |
             ~/.m2/repository
             **/target
-          key: ${{ needs.compile.outputs.cache-key-21 }}
+          key: ${{ needs.compile.outputs[format('cache-key-{0}', matrix.java-version)] }}
 
       - name: Run Tests
         run: |
-          ./mvnw -B -T 1C -Dcoverage -Dsurefire.rerunFailingTestsCount=5 -Dstyle.color=always test -pl ${{ matrix.module }}
+          ./mvnw -B -T 1C -Dsurefire.rerunFailingTestsCount=5 -Dstyle.color=always test -pl ${{ matrix.module }}
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
           TESTCONTAINERS_CHECKS_DISABLE: true
@@ -116,58 +105,7 @@ jobs:
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-jdk21-${{ matrix.module }}
-          path: "**/target/surefire-reports/TEST-*.xml"
-        if: always()
-
-  # Grouped modules for other LTS versions (fewer jobs)
-  test-jdk25:
-    name: JDK 25 - ${{ matrix.group }}
-    needs: compile
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - group: "core"
-            modules: "messaging,modelling,eventsourcing,config"
-          - group: "integration"
-            modules: "spring,spring-boot-autoconfigure,axon-server-connector"
-          - group: "extensions"
-            modules: "metrics,metrics-micrometer,tracing-opentelemetry,test,migration,legacy,spring-boot-starter"
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Set up JDK 25
-        uses: actions/setup-java@v5.0.0
-        with:
-          distribution: 'zulu'
-          java-version: 25
-          cache: "maven"
-
-      - name: Restore compiled artifacts
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.m2/repository
-            **/target
-          key: ${{ needs.compile.outputs.cache-key-25 }}
-
-      - name: Run Tests
-        run: |
-          ./mvnw -B -T 1C -Dsurefire.rerunFailingTestsCount=5 -Dstyle.color=always test -pl ${{ matrix.modules }}
-        env:
-          TESTCONTAINERS_REUSE_ENABLE: true
-          TESTCONTAINERS_CHECKS_DISABLE: true
-          TESTCONTAINERS_RYUK_DISABLED: true
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-jdk25-${{ matrix.group }}
+          name: test-results-jdk${{ matrix.java-version }}-${{ matrix.module }}
           path: "**/target/surefire-reports/TEST-*.xml"
         if: always()
 
@@ -202,7 +140,7 @@ jobs:
 
       - name: Run Integration Tests
         run: |
-          ./mvnw -B -T 1C -Dstyle.color=always install -DskipTests -pl integrationtests -am && ./mvnw -B -T 1C -Dstyle.color=always test -Dcoverage -pl integrationtests -Dsurefire.rerunFailingTestsCount=5
+          ./mvnw -B -T 1C -Dstyle.color=always install -DskipTests -pl integrationtests -am && ./mvnw -B -T 1C -Dstyle.color=always test -pl integrationtests -Dsurefire.rerunFailingTestsCount=5
         env:
           TESTCONTAINERS_REUSE_ENABLE: true
           TESTCONTAINERS_CHECKS_DISABLE: true
@@ -218,7 +156,7 @@ jobs:
   # Test summary per JDK version
   test-summary-jdk21:
     name: Test Summary - JDK 21
-    needs: [compile, test-jdk21, integration-tests]
+    needs: [compile, test, integration-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: always()
@@ -240,7 +178,7 @@ jobs:
 
   test-summary-jdk25:
     name: Test Summary - JDK 25
-    needs: [compile, test-jdk25, integration-tests]
+    needs: [compile, test, integration-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: always()
@@ -260,100 +198,52 @@ jobs:
           show: "fail, skip"
         if: always()
 
-  sonar:
-    name: Sonar Analysis
-    needs: [compile, test-jdk21, integration-tests]
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v5.0.0
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: "maven"
-
-      - name: Restore compiled artifacts
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.m2/repository
-            **/target
-          key: ${{ needs.compile.outputs.cache-key-21 }}
-
-      - name: Generate coverage report
-        run: |
-          ./mvnw -B -Dcoverage -Dstyle.color=always install -pl coverage-report
-        env:
-          TESTCONTAINERS_REUSE_ENABLE: true
-          TESTCONTAINERS_CHECKS_DISABLE: true
-          TESTCONTAINERS_RYUK_DISABLED: true
-
-      - name: Sonar Analysis
-        run: |
-          ./mvnw -B -Dstyle.color=always sonar:sonar \
-          -Dsonar.projectKey=AxonFramework_AxonFramework \
-          -Dsonar.organization=axonframework \
-          -Dsonar.host.url=https://sonarcloud.io \
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy:
-    name: Deploy to Sonatype
-    needs: [compile, test-jdk21, test-jdk25, integration-tests, sonar]
+  # Aggregate summary across all JDK versions
+  test-summary-all:
+    name: Test Summary - All JDK Versions
+    needs: [compile, test, integration-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    if: always()
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v5.0.0
+      - name: Download all test results
+        uses: actions/download-artifact@v4
         with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: "maven"
-          server-id: central
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
+          pattern: test-results-*
+          path: test-results
+          merge-multiple: true
 
-      - name: Deploy to Sonatype
-        run: |
-          ./mvnw -B -U -Dstyle.color=always -Possrh deploy -DskipTests=true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MAVEN_USERNAME: ${{ secrets.SONATYPE_TOKEN_ID }}
-          MAVEN_PASSWORD: ${{ secrets.SONATYPE_TOKEN_PASS }}
+      - name: Create aggregate test summary
+        uses: test-summary/action@v2
+        with:
+          paths: "test-results/**/TEST-*.xml"
+          show: "fail, skip"
+        if: always()
 
   notify:
     name: Notify Slack
-    needs: [deploy]
+    needs: [compile, test, integration-tests, test-summary-all]
     runs-on: ubuntu-latest
     if: always()
 
     steps:
       - name: Notify success to Slack
-        if: needs.deploy.result == 'success'
+        if: needs.test.result == 'success' && needs.integration-tests.result == 'success'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: voxmedia/github-action-slack-notify-build@v2
         with:
           channel_id: CAGSEC92A
-          status: SUCCESS
+          status: SUCCESS - Nightly Build
           color: good
 
       - name: Notify failure to Slack
-        if: needs.deploy.result != 'success'
+        if: needs.test.result != 'success' || needs.integration-tests.result != 'success'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         uses: voxmedia/github-action-slack-notify-build@v2
         with:
           channel_id: CAGSEC92A
-          status: FAILED
+          status: FAILED - Nightly Build
           color: danger
