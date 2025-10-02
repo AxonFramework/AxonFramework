@@ -222,7 +222,7 @@ As you've seen before, for the behavior which is based on some state (so we have
 Let's make it right away!
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourseCommandHandler.java
 ----
 class SubscribeStudentToCourseCommandHandler {
 
