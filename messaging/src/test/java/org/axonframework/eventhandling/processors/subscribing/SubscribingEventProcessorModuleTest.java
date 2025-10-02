@@ -315,22 +315,21 @@ class SubscribingEventProcessorModuleTest {
             // and - type-specific customization
             UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
             SimpleEventBus typeMessageSource = SimpleEventBus.builder().build();
-            EventProcessingStrategy typeProcessingStrategy = DirectEventProcessingStrategy.INSTANCE;
+            ErrorHandler typeErrorHandler = exception -> {};
             configurer.eventProcessing(ep ->
                                                ep.subscribing(sp -> sp.defaults(
                                                        d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
                                                              .messageSource(typeMessageSource)
-                                                             .processingStrategy(typeProcessingStrategy))
+                                                             .errorHandler(typeErrorHandler))
                                                )
             );
 
             // and - instance-specific customization
-            EventProcessingStrategy instanceProcessingStrategy = (e, p) -> {
-            };
+            ErrorHandler instanceErrorHandler = exception -> {};
             var module = EventProcessorModule
                     .subscribing(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
-                    .customized((__, p) -> p.processingStrategy(instanceProcessingStrategy));
+                    .customized((__, p) -> p.errorHandler(instanceErrorHandler));
             configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.processor(module)));
 
             // when
@@ -343,15 +342,14 @@ class SubscribingEventProcessorModuleTest {
             // then
             var processorConfig = configurationOf(processor.orElse(null));
             assertThat(processorConfig).isNotNull();
-            assertThat(processorConfig.errorHandler()).isEqualTo(sharedErrorHandler);
 
             assertThat(processorConfig.unitOfWorkFactory()).isNotEqualTo(sharedUnitOfWorkFactory);
             assertThat(processorConfig.unitOfWorkFactory()).isEqualTo(typeUnitOfWorkFactory);
 
             assertThat(processorConfig.messageSource()).isEqualTo(typeMessageSource);
 
-            assertThat(processorConfig.processingStrategy()).isNotEqualTo(typeProcessingStrategy);
-            assertThat(processorConfig.processingStrategy()).isEqualTo(instanceProcessingStrategy);
+            assertThat(processorConfig.errorHandler()).isNotEqualTo(typeErrorHandler);
+            assertThat(processorConfig.errorHandler()).isEqualTo(instanceErrorHandler);
         }
 
         @Test
@@ -370,24 +368,22 @@ class SubscribingEventProcessorModuleTest {
             // and - type-specific customization
             UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
             SimpleEventBus typeMessageSource = SimpleEventBus.builder().build();
-            EventProcessingStrategy typeProcessingStrategy = DirectEventProcessingStrategy.INSTANCE;
+            ErrorHandler typeErrorHandler = exception -> {};
             configurer.eventProcessing(ep ->
                                                ep.subscribing(sp -> sp.defaults(
                                                        d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
                                                              .messageSource(typeMessageSource)
-                                                             .processingStrategy(typeProcessingStrategy))
+                                                             .errorHandler(typeErrorHandler))
                                                )
             );
 
             // and - instance-specific customization
-            EventProcessingStrategy instanceProcessingStrategy = (e, p) -> {
-            };
+            ErrorHandler instanceErrorHandler = exception -> {};
             var module = EventProcessorModule
                     .subscribing(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
                     .customized((__, p) -> new SubscribingEventProcessorConfiguration().messageSource(p.messageSource())
-                                                                                       .processingStrategy(
-                                                                                               instanceProcessingStrategy));
+                                                                                       .errorHandler(instanceErrorHandler));
             configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.processor(module)));
 
             // when
@@ -400,15 +396,14 @@ class SubscribingEventProcessorModuleTest {
             // then
             var processorConfig = configurationOf(processor.orElse(null));
             assertThat(processorConfig).isNotNull();
-            assertThat(processorConfig.errorHandler()).isEqualTo(sharedErrorHandler);
 
             assertThat(processorConfig.unitOfWorkFactory()).isNotEqualTo(sharedUnitOfWorkFactory);
             assertThat(processorConfig.unitOfWorkFactory()).isNotEqualTo(typeUnitOfWorkFactory);
 
             assertThat(processorConfig.messageSource()).isEqualTo(typeMessageSource);
 
-            assertThat(processorConfig.processingStrategy()).isNotEqualTo(typeProcessingStrategy);
-            assertThat(processorConfig.processingStrategy()).isEqualTo(instanceProcessingStrategy);
+            assertThat(processorConfig.errorHandler()).isNotEqualTo(typeErrorHandler);
+            assertThat(processorConfig.errorHandler()).isEqualTo(instanceErrorHandler);
         }
 
         @Test
@@ -427,12 +422,12 @@ class SubscribingEventProcessorModuleTest {
             // and - type-specific customization
             UnitOfWorkFactory typeUnitOfWorkFactory = aTransactionalUnitOfWork();
             SimpleEventBus typeMessageSource = SimpleEventBus.builder().build();
-            EventProcessingStrategy typeProcessingStrategy = DirectEventProcessingStrategy.INSTANCE;
+            ErrorHandler typeErrorHandler = exception -> {};
             configurer.eventProcessing(ep ->
                                                ep.subscribing(sp -> sp.defaults(
                                                                       d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
                                                                             .messageSource(typeMessageSource)
-                                                                            .processingStrategy(typeProcessingStrategy)
+                                                                            .errorHandler(typeErrorHandler)
                                                               )
                                                )
             );
@@ -453,11 +448,10 @@ class SubscribingEventProcessorModuleTest {
             // then
             var processorConfig = configurationOf(processor.orElse(null));
             assertThat(processorConfig).isNotNull();
-            assertThat(processorConfig.errorHandler()).isEqualTo(sharedErrorHandler);
             assertThat(processorConfig.unitOfWorkFactory()).isNotEqualTo(sharedUnitOfWorkFactory);
             assertThat(processorConfig.unitOfWorkFactory()).isEqualTo(typeUnitOfWorkFactory);
             assertThat(processorConfig.messageSource()).isEqualTo(typeMessageSource);
-            assertThat(processorConfig.processingStrategy()).isEqualTo(typeProcessingStrategy);
+            assertThat(processorConfig.errorHandler()).isEqualTo(typeErrorHandler);
         }
 
         @Test
