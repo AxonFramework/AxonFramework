@@ -19,7 +19,7 @@ In previous section we've defined the `CourseCreated` events, so there are two l
 Let's define them as Java records, as before.
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/events/StudentSubscribedToCourse.java
+.src/main/java/io/axoniq/demo/university/faculty/events/StudentEnrolledInFaculty.java
 ----
 public record StudentEnrolledInFaculty(
         @EventTag // <1>
