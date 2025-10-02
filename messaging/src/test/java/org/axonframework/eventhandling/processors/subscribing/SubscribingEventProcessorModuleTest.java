@@ -35,7 +35,7 @@ import org.axonframework.messaging.EmptyApplicationContext;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionalUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -468,7 +468,7 @@ class SubscribingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             SimpleEventBus globalMessageSource = SimpleEventBus.builder().build();
-            configurer.componentRegistry(cr -> cr.registerComponent(SubscribableMessageSource.class,
+            configurer.componentRegistry(cr -> cr.registerComponent(SubscribableEventSource.class,
                                                                     cfg -> globalMessageSource));
 
             // and
@@ -499,7 +499,7 @@ class SubscribingEventProcessorModuleTest {
             var processorName = "testProcessor";
 
             SimpleEventBus globalMessageSource = SimpleEventBus.builder().build();
-            configurer.componentRegistry(cr -> cr.registerComponent(SubscribableMessageSource.class,
+            configurer.componentRegistry(cr -> cr.registerComponent(SubscribableEventSource.class,
                                                                     cfg -> globalMessageSource));
 
             // and - type-specific customization
@@ -515,7 +515,7 @@ class SubscribingEventProcessorModuleTest {
                     .subscribing(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
                     .customized((axonConfig, customization) -> customization.messageSource(
-                            axonConfig.getComponent(SubscribableMessageSource.class))
+                            axonConfig.getComponent(SubscribableEventSource.class))
                     );
             configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.processor(module)));
 
@@ -576,7 +576,7 @@ class SubscribingEventProcessorModuleTest {
         return EventProcessorModule
                 .subscribing(processorName)
                 .eventHandlingComponents(singleTestEventHandlingComponent())
-                .customized((cfg, c) -> c.messageSource(cfg.getOptionalComponent(SubscribableMessageSource.class)
+                .customized((cfg, c) -> c.messageSource(cfg.getOptionalComponent(SubscribableEventSource.class)
                                                            .orElse(SimpleEventBus.builder().build())));
     }
 

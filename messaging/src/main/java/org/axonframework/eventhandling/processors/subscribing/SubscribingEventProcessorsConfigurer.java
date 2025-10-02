@@ -24,7 +24,7 @@ import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.eventhandling.configuration.EventHandlingComponentsConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessingConfigurer;
 import org.axonframework.eventhandling.configuration.EventProcessorModule;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.SubscribableEventSource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,12 +43,12 @@ import java.util.function.UnaryOperator;
  * customizations.
  * <p>
  * The main purpose is to simplify the configuration of multiple event processors by providing shared configuration
- * capabilities such as default {@link SubscribableMessageSource}, and processor settings that apply to all processors
+ * capabilities such as default {@link SubscribableEventSource}, and processor settings that apply to all processors
  * unless explicitly overridden.
  * <p>
  * The configurer automatically configures default components:
  * <ul>
- * <li>Automatically wires available {@link SubscribableMessageSource} components to all processors</li>
+ * <li>Automatically wires available {@link SubscribableEventSource} components to all processors</li>
  * <li>Applies shared customizations through the {@link #defaults(BiFunction)} and {@link #defaults(UnaryOperator)} methods</li>
  * </ul>
  * <p>
@@ -92,7 +92,7 @@ public class SubscribingEventProcessorsConfigurer {
                         cfg ->
                                 SubscribingEventProcessorModule.Customization.noOp().andThen(
                                         (axonConfig, processorConfig) -> {
-                                            cfg.getOptionalComponent(SubscribableMessageSource.class)
+                                            cfg.getOptionalComponent(SubscribableEventSource.class)
                                                .ifPresent(processorConfig::messageSource);
                                             return processorConfig;
                                         }).andThen(processorsDefaultCustomization)

@@ -30,12 +30,10 @@ import org.axonframework.eventhandling.processors.errorhandling.PropagatingError
 import org.axonframework.eventhandling.tracing.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.tracing.EventProcessorSpanFactory;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-
-import java.util.List;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
@@ -48,14 +46,14 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * {@link NoOpMessageMonitor}, the {@link EventProcessingStrategy} defaults to a {@link DirectEventProcessingStrategy}
  * and the {@link UnitOfWorkFactory} defaults to the
  * {@link org.axonframework.messaging.unitofwork.SimpleUnitOfWorkFactory}. The Event Processor
- * {@link SubscribableMessageSource} is <b>hard requirements</b> and as such should be provided.
+ * {@link SubscribableEventSource} is <b>hard requirements</b> and as such should be provided.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
-    private SubscribableMessageSource<? extends EventMessage> messageSource;
+    private SubscribableEventSource<? extends EventMessage> messageSource;
     private EventProcessingStrategy processingStrategy = DirectEventProcessingStrategy.INSTANCE;
 
     /**
@@ -112,16 +110,16 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     }
 
     /**
-     * Sets the {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
+     * Sets the {@link SubscribableEventSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
      * implementation will subscribe itself to receive {@link EventMessage}s.
      *
-     * @param messageSource The {@link SubscribableMessageSource} (e.g. the {@link EventBus}) to which this
+     * @param messageSource The {@link SubscribableEventSource} (e.g. the {@link EventBus}) to which this
      *                      {@link EventProcessor} implementation will subscribe itself to receive
      *                      {@link EventMessage}s.
      * @return The current instance, for fluent interfacing.
      */
     public SubscribingEventProcessorConfiguration messageSource(
-            @Nonnull SubscribableMessageSource<? extends EventMessage> messageSource) {
+            @Nonnull SubscribableEventSource<? extends EventMessage> messageSource) {
         assertNonNull(messageSource, "SubscribableMessageSource may not be null");
         this.messageSource = messageSource;
         return this;
@@ -178,11 +176,11 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     }
 
     /**
-     * Returns the {@link SubscribableMessageSource} to which this processor subscribes.
+     * Returns the {@link SubscribableEventSource} to which this processor subscribes.
      *
-     * @return The {@link SubscribableMessageSource} for receiving events.
+     * @return The {@link SubscribableEventSource} for receiving events.
      */
-    public SubscribableMessageSource<? extends EventMessage> messageSource() {
+    public SubscribableEventSource<? extends EventMessage> messageSource() {
         return messageSource;
     }
 

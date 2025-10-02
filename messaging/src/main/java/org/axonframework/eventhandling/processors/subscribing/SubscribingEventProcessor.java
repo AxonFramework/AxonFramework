@@ -32,7 +32,7 @@ import org.axonframework.eventhandling.processors.errorhandling.ErrorHandler;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
@@ -56,7 +56,7 @@ public class SubscribingEventProcessor implements EventProcessor {
 
     private final String name;
     private final SubscribingEventProcessorConfiguration configuration;
-    private final SubscribableMessageSource<? extends EventMessage> messageSource;
+    private final SubscribableEventSource<? extends EventMessage> messageSource;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final EventProcessingStrategy processingStrategy;
     private final ErrorHandler errorHandler;
@@ -69,7 +69,7 @@ public class SubscribingEventProcessor implements EventProcessor {
      * <p>
      * Will assert the following for their presence in the configuration, prior to constructing this processor:
      * <ul>
-     *     <li>A {@link SubscribableMessageSource}.</li>
+     *     <li>A {@link SubscribableEventSource}.</li>
      * </ul>
      * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
 
@@ -185,7 +185,7 @@ public class SubscribingEventProcessor implements EventProcessor {
      *
      * @return the MessageSource from which the processor receives its events
      */
-    public SubscribableMessageSource<? extends EventMessage> getMessageSource() {
+    public SubscribableEventSource<? extends EventMessage> getMessageSource() {
         return messageSource;
     }
 

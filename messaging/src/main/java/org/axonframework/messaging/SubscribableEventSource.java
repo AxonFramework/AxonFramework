@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025. Axon Framework
+ * Copyright (c) 2010-2023. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstreaming;
+package org.axonframework.messaging;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
 
 import java.util.List;
 import java.util.function.Consumer;
+import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.EventMessage;
 
 /**
  * Interface for a source of {@link EventMessage EventMessages} to which event processors can subscribe.
@@ -31,7 +30,7 @@ import java.util.function.Consumer;
  * {@link EventMessage events} published to this source. When subscribed, consumers will receive all events published to
  * this source since the subscription.
  * <p>
- * This interface is the replacement for the deprecated {@link org.axonframework.messaging.SubscribableMessageSource},
+ * This interface is the replacement for the deprecated {@link org.axonframework.messaging.SubscribableEventSource},
  * focusing specifically on event message handling.
  *
  * @param <E> The type of {@link EventMessage} published by this source.

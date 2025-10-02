@@ -16,23 +16,24 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.SubscribableEventSource;
 
 /**
- * Definition for a {@link SubscribableMessageSource}.
+ * Definition for a {@link SubscribableEventSource}.
  *
  * @param <M> {@link Message} type of the subscribable message source.
  * @author Marc Gathier
  * @since 4.10.0
  */
-public interface SubscribableMessageSourceDefinition<M extends Message> {
+public interface SubscribableEventSourceDefinition<M extends EventMessage> {
 
     /**
-     * Creates a {@link SubscribableMessageSource} based on this definition and the provided configuration.
+     * Creates a {@link SubscribableEventSource} based on this definition and the provided configuration.
      *
-     * @param configuration The Axon {@link Configuration} to base the {@link SubscribableMessageSource} on.
-     * @return A {@link SubscribableMessageSource} based on this definition and the provided configuration.
+     * @param configuration The Axon {@link Configuration} to base the {@link SubscribableEventSource} on.
+     * @return A {@link SubscribableEventSource} based on this definition and the provided configuration.
      */
-    SubscribableMessageSource<M> create(Configuration configuration);
+    SubscribableEventSource<M> create(Configuration configuration);
 }
