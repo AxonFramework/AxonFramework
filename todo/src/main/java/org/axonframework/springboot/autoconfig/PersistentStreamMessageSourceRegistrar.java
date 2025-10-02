@@ -15,26 +15,16 @@
  */
 package org.axonframework.springboot.autoconfig;
 
-import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition;
-import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceFactory;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamEventSourceDefinition;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.config.RuntimeBeanReference;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
-import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
 
-import java.util.Collections;
-import java.util.Map;
 import jakarta.annotation.Nonnull;
-
-import static io.axoniq.axonserver.connector.impl.ObjectUtils.nonNullOrDefault;
 
 /**
  * Post-processor to create Spring beans for persistent streams defined in the application context.
@@ -56,7 +46,7 @@ public class PersistentStreamMessageSourceRegistrar implements BeanDefinitionReg
      *
      * @param environment     Application configuration environment.
      * @param executorBuilder The {@link java.util.concurrent.ScheduledExecutorService} builder used during
-     *                        construction of the {@link PersistentStreamMessageSourceDefinition}.
+     *                        construction of the {@link PersistentStreamEventSourceDefinition}.
      */
     public PersistentStreamMessageSourceRegistrar(Environment environment,
                                                   PersistentStreamScheduledExecutorBuilder executorBuilder) {

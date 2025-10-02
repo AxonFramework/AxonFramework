@@ -275,7 +275,7 @@ class AbstractEventBusTest {
         }
 
         @Override
-        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventProcessor) {
+        public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer) {
             throw new UnsupportedOperationException();
         }
 

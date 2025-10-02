@@ -20,7 +20,7 @@ import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.common.Registration;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.SubscribableEventSource;
 
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,14 +28,14 @@ import java.util.function.Consumer;
 import jakarta.annotation.Nonnull;
 
 /**
- * A {@link SubscribableMessageSource} that receives event from a persistent stream from Axon Server. The persistent
+ * A {@link SubscribableEventSource} that receives event from a persistent stream from Axon Server. The persistent
  * stream is identified by a unique name, which serves as an identifier for the {@link PersistentStream} connection with
  * Axon Server. Using the same name for different instances will overwrite the existing connection.
  *
  * @author Marc Gathier
  * @since 4.10.0
  */
-public class PersistentStreamMessageSource implements SubscribableMessageSource<EventMessage> {
+public class PersistentStreamMessageSource implements SubscribableEventSource<EventMessage> {
 
     private final PersistentStreamConnection persistentStreamConnection;
     private final String name;
@@ -92,14 +92,14 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
     }
 
     @Override
-    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> consumer) {
+    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer) {
         synchronized (this) {
             boolean noConsumer = this.consumer.equals(NO_OP_CONSUMER);
             if (noConsumer) {
-                persistentStreamConnection.open(consumer);
-                this.consumer = consumer;
+                persistentStreamConnection.open(eventsBatchConsumer);
+                this.consumer = eventsBatchConsumer;
             } else {
-                boolean sameConsumer = this.consumer.equals(consumer);
+                boolean sameConsumer = this.consumer.equals(eventsBatchConsumer);
                 if (!sameConsumer) {
                     throw new IllegalStateException(
                             String.format(
