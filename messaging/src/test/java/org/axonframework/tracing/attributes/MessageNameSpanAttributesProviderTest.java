@@ -27,7 +27,6 @@ import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MessageNameSpanAttributesProviderTest {

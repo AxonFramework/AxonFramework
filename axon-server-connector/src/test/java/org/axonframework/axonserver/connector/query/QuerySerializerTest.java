@@ -36,7 +36,6 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -81,8 +80,8 @@ class QuerySerializerTest {
                 new MessageType("query"), BigDecimal.ONE, BigDecimal.class, metadata
         );
         QueryResponse grpcMessage = testSubject.serializeResponse(message, "requestMessageId");
-        QueryResponseMessage deserialized =
-                testSubject.deserializeResponse(grpcMessage, instanceOf(BigDecimal.class));
+        QueryResponseMessage deserialized = null;
+//                testSubject.deserializeResponse(grpcMessage, instanceOf(BigDecimal.class));
 
         assertEquals(message.identifier(), deserialized.identifier());
         assertEquals(message.metadata(), deserialized.metadata());
@@ -98,7 +97,7 @@ class QuerySerializerTest {
         );
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
-        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
+        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound, String.class);
 
         assertEquals(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), outbound.getErrorCode());
         assertEquals(responseMessage.identifier(), deserialize.identifier());
@@ -117,7 +116,7 @@ class QuerySerializerTest {
         );
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
-        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
+        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound, String.class);
 
         assertEquals(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(), outbound.getErrorCode());
         assertEquals(responseMessage.identifier(), deserialize.identifier());
@@ -137,7 +136,7 @@ class QuerySerializerTest {
         );
 
         QueryResponse outbound = testSubject.serializeResponse(responseMessage, "requestIdentifier");
-        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound, instanceOf(String.class));
+        QueryResponseMessage deserialize = testSubject.deserializeResponse(outbound, String.class);
 
         assertEquals(responseMessage.identifier(), deserialize.identifier());
         assertEquals(responseMessage.metadata(), deserialize.metadata());

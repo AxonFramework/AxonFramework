@@ -18,14 +18,13 @@ package org.axonframework.queryhandling.annotations;
 
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.messaging.annotations.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
 import org.axonframework.messaging.annotations.UnsupportedHandlerException;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.junit.jupiter.api.*;
 

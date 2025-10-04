@@ -1574,7 +1574,7 @@ dispatching components.
 ## Query Dispatching and Handling
 
 This section describes numerous changes around Query Dispatching and Handling. For a reintroduction to the
-`QueryBus` and `QueryGateway`, check [this](#query-bus) and [this](#query-gateway) section respectively. For the
+`QueryBus` and `QueryGateway`, check [this](#query-bus) and [this](#query-gateway-and-response-types) section respectively. For the
 newly **recommended** approach to dispatch queries from within another message handling function, please check
 the [Query Dispatcher](#query-dispatcher) section.
 
@@ -1637,7 +1637,7 @@ name is being registered.
 As with any change, if you feel strongly about the previous solution, be sure to reach out to use. We would love to
 hear your use case to deduce the best way forward.
 
-### Query Gateway
+### Query Gateway and Response Types
 
 The `QueryGateway` has undergone some minor API changes to align with the [Async Native API](#async-native-apis).
 This alignment shows itself in being able to provide the `ProcessingContext`. Giving the active `ProcessingContext` is *
@@ -2107,6 +2107,13 @@ This section contains five tables:
 | org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler                       | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
 | org.axonframework.queryhandling.StreamingQueryMessage                                    | Removed due to removal of `ResponseType`. Described [here](#query-dispatching-and-handling) why.                                               |
 | org.axonframework.queryhandling.GenericStreamingQueryMessage                             | Removed due to removal of `ResponseType`. Described [here](#query-dispatching-and-handling) why.                                               |
+| org.axonframework.messaging.responsetypes.AbstractResponseType                           | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.messaging.responsetypes.InstanceResponseType                           | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.messaging.responsetypes.MultipleInstancesResponseType                  | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.messaging.responsetypes.OptionalResponseType                           | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.messaging.responsetypes.PublisherResponseType                          | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.messaging.responsetypes.ResponseType                                   | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
+| org.axonframework.messaging.responsetypes.ResponseTypes                                  | Removed to simplify querying and support none-JVM space, as described [here](#query-gateway-and-response-types).                               |
 
 ### Marked for removal Classes
 

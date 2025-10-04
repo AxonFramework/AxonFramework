@@ -43,7 +43,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
@@ -84,7 +83,6 @@ import java.util.stream.LongStream;
 import static java.util.Arrays.asList;
 import static org.awaitility.Awaitility.await;
 import static org.axonframework.axonserver.connector.utils.AssertUtils.assertWithin;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -647,7 +645,7 @@ class AxonServerQueryBusTest {
                                                                  .setData(ByteString.copyFromUtf8(
                                                                          INSTANCE_RESPONSE_TYPE_XML
                                                                  ))
-                                                                 .setType(InstanceResponseType.class.getName())
+//                                                                 .setType(InstanceResponseType.class.getName())
                                                                  .build())
                                 .putMetaData("index", MetaDataValue.newBuilder().setNumberValue(i).build())
                                 .build();
@@ -796,7 +794,7 @@ class AxonServerQueryBusTest {
                                                              .setData(ByteString.copyFromUtf8(
                                                                      INSTANCE_RESPONSE_TYPE_XML
                                                              ))
-                                                             .setType(InstanceResponseType.class.getName())
+//                                                             .setType(InstanceResponseType.class.getName())
                                                              .build())
                             .putMetaData("response", MetaDataValue.newBuilder().setTextValue("Hello").build())
                             .build();

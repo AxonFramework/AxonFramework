@@ -27,10 +27,8 @@ import io.axoniq.axonserver.grpc.ProcessingKey;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.conversion.MessageConverter;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
@@ -60,7 +58,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.axonframework.messaging.responsetypes.ResponseTypes.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -69,8 +66,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @Disabled("TODO #3488 - Axon Server Query Bus replacement")
 class QueryProcessingTaskIntegrationTest {
 
-    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
-    };
     private static final String CLIENT_ID = "clientId";
     private static final String COMPONENT_NAME = "componentName";
     private static final int DIRECT_QUERY_NUMBER_OF_RESULTS = 1;

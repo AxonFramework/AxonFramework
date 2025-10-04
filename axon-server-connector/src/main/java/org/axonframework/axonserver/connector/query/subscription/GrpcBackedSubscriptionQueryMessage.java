@@ -23,7 +23,6 @@ import org.axonframework.axonserver.connector.query.GrpcBackedQueryMessage;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.LazyDeserializingObject;
@@ -43,7 +42,7 @@ public class GrpcBackedSubscriptionQueryMessage implements SubscriptionQueryMess
 
     private final SubscriptionQuery subscriptionQuery;
     private final GrpcBackedQueryMessage<?, ?> grpcBackedQueryMessage;
-    private final LazyDeserializingObject<ResponseType<?>> serializedUpdateResponseType;
+    private final LazyDeserializingObject<Class<?>> serializedUpdateResponseType;
 
     /**
      * Instantiate a {@link GrpcBackedSubscriptionQueryMessage} with the given {@code subscriptionQuery}, using the
@@ -66,7 +65,7 @@ public class GrpcBackedSubscriptionQueryMessage implements SubscriptionQueryMess
 
     private GrpcBackedSubscriptionQueryMessage(SubscriptionQuery subscriptionQuery,
                                                GrpcBackedQueryMessage<?, ?> grpcBackedQueryMessage,
-                                               LazyDeserializingObject<ResponseType<?>> serializedUpdateResponseType) {
+                                               LazyDeserializingObject<Class<?>> serializedUpdateResponseType) {
         this.subscriptionQuery = subscriptionQuery;
         this.grpcBackedQueryMessage = grpcBackedQueryMessage;
         this.serializedUpdateResponseType = serializedUpdateResponseType;

@@ -57,8 +57,6 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
-import org.axonframework.messaging.responsetypes.InstanceResponseType;
-import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryBus;
@@ -420,19 +418,20 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
             return Flux.error(responseMessage.exceptionResult());
         }
         if (expectedResponseType.isAssignableFrom(responseMessage.payloadType())) {
-            InstanceResponseType<R> instanceResponseType = new InstanceResponseType<>(expectedResponseType);
-            return Flux.just(new ConvertingResponseMessage<>(instanceResponseType, responseMessage));
+//            InstanceResponseType<R> instanceResponseType = new InstanceResponseType<>(expectedResponseType);
+//            return Flux.just(new ConvertingResponseMessage<>(instanceResponseType, responseMessage));
         } else {
-            MultipleInstancesResponseType<R> multiResponseType =
-                    new MultipleInstancesResponseType<>(expectedResponseType);
-            ConvertingResponseMessage<List<R>> convertingMessage =
-                    new ConvertingResponseMessage<>(multiResponseType, responseMessage);
-            return Flux.fromStream(convertingMessage.payload()
-                                                    .stream()
-                                                    .map(payload -> singleMessage(responseMessage,
-                                                                                  payload,
-                                                                                  expectedResponseType)));
+//            MultipleInstancesResponseType<R> multiResponseType =
+//                    new MultipleInstancesResponseType<>(expectedResponseType);
+//            ConvertingResponseMessage<List<R>> convertingMessage =
+//                    new ConvertingResponseMessage<>(multiResponseType, responseMessage);
+//            return Flux.fromStream(convertingMessage.payload()
+//                                                    .stream()
+//                                                    .map(payload -> singleMessage(responseMessage,
+//                                                                                  payload,
+//                                                                                  expectedResponseType)));
         }
+        return null;
     }
 
     private <R> QueryResponseMessage singleMessage(QueryResponseMessage original,

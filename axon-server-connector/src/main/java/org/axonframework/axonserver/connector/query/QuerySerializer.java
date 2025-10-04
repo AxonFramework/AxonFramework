@@ -29,7 +29,6 @@ import org.axonframework.axonserver.connector.util.GrpcMetadataSerializer;
 import org.axonframework.axonserver.connector.util.GrpcObjectSerializer;
 import org.axonframework.axonserver.connector.util.GrpcPayloadSerializer;
 import org.axonframework.messaging.responsetypes.ConvertingResponseMessage;
-import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Serializer;
@@ -62,13 +61,13 @@ public class QuerySerializer {
     /**
      * Instantiate a serializer used to convert Axon {@link QueryMessage}s and {@link QueryResponseMessage}s into Axon
      * Server gRPC messages and vice versa. The provided {@code messageSerializer} is used for converting a message's
-     * payload and metadata, whilst the {@code serializer} is used to convert a {@link QueryMessage}'s {@link
+     * payload and metadata, whilst the {@code serializer} is used to convert a {@link QueryMessage}'s {@code
      * org.axonframework.messaging.responsetypes.ResponseType}.
      *
      * @param messageSerializer a {@link Serializer} used to de-/serialize an Axon Server gRPC message into {@link
      *                          QueryMessage}s and {@link QueryResponseMessage}s and vice versa
      * @param serializer        a {@link Serializer} used to create a dedicated converter for a {@link QueryMessage}
-     *                          {@link org.axonframework.messaging.responsetypes.ResponseType}
+     *                          {@code org.axonframework.messaging.responsetypes.ResponseType}
      * @param configuration     an {@link AxonServerConfiguration} used to set the configurable component id and name in
      *                          the messages
      */
@@ -223,7 +222,8 @@ public class QuerySerializer {
      * @return a {@link QueryResponseMessage} based on the provided {@code queryResponse}
      */
     public <R> QueryResponseMessage deserializeResponse(QueryResponse queryResponse,
-                                                           ResponseType<R> expectedResponseType) {
+                                                           Class<R> expectedResponseType) {
+//                                                           ResponseType<R> expectedResponseType) {
         return new ConvertingResponseMessage<>(
                 expectedResponseType, new GrpcBackedResponseMessage<>(queryResponse, messageSerializer)
         );
