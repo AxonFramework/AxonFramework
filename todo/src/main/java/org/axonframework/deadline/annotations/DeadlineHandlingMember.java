@@ -16,6 +16,7 @@
 
 package org.axonframework.deadline.annotations;
 
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 
 /**
@@ -25,6 +26,7 @@ import org.axonframework.messaging.annotations.MessageHandlingMember;
  * @author Milan Savic
  * @since 3.3.0
  */
+@Internal
 public interface DeadlineHandlingMember<T> extends MessageHandlingMember<T> {
 
 }

@@ -18,6 +18,7 @@ package org.axonframework.messaging.annotations;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -33,6 +34,7 @@ import java.util.Optional;
  * @author Allard Buijze
  * @since 3.0.0
  */
+@Internal
 public interface MessageHandlingMember<T> {
 
     /**

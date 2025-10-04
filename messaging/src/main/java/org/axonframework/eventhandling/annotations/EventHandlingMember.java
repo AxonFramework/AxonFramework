@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.annotations;
 
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 
 /**
@@ -25,6 +26,7 @@ import org.axonframework.messaging.annotations.MessageHandlingMember;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@Internal
 public interface EventHandlingMember<T> extends MessageHandlingMember<T> {
 
     /**
@@ -33,5 +35,4 @@ public interface EventHandlingMember<T> extends MessageHandlingMember<T> {
      * @return The name of the event that can be handled.
      */
     String eventName();
-
 }

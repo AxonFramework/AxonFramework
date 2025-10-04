@@ -16,15 +16,18 @@
 
 package org.axonframework.modelling.command.inspection;
 
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 
 /**
  * Interface specifying a message handler containing a creation policy definition.
  *
+ * @param <T> The type of entity to which the message handler will delegate the actual handling of the message.
  * @author Marc Gathier
- * @since 4.3
+ * @since 4.3.0
  */
+@Internal
 public interface CreationPolicyMember<T> extends MessageHandlingMember<T> {
 
     /**
