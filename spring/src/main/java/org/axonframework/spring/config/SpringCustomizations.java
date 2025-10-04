@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.processors.streaming.token.store.TokenSto
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorConfiguration;
 import org.axonframework.eventhandling.processors.subscribing.SubscribingEventProcessorModule;
 import org.axonframework.eventstreaming.StreamableEventSource;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.SubscribableEventSource;
 
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
@@ -86,7 +86,7 @@ interface SpringCustomizations {
         public SubscribingEventProcessorConfiguration apply(Configuration configuration,
                                                             SubscribingEventProcessorConfiguration subscribingEventProcessorConfiguration) {
             var messageSource = getComponent(configuration,
-                                             SubscribableMessageSource.class,
+                                             SubscribableEventSource.class,
                                              settings.source(),
                                              null
             );

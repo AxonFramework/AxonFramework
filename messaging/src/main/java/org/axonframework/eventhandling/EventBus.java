@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.SubscribableEventSource;
 
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +34,7 @@ import java.util.List;
  * @since 0.1
  */
 @Deprecated // TODO #3392 - Replace for actual EventSink implementation.
-public interface EventBus extends SubscribableMessageSource<EventMessage> {
+public interface EventBus extends SubscribableEventSource<EventMessage> {
 
     /**
      * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed

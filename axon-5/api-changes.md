@@ -1992,7 +1992,7 @@ This section contains five tables:
 | org.axonframework.messaging.annotation.SourceIdParameterResolverFactory                                | org.axonframework.messaging.annotations.SourceIdParameterResolverFactory                              | No                             |
 | org.axonframework.messaging.annotation.UnsupportedHandlerException                                     | org.axonframework.messaging.annotations.UnsupportedHandlerException                                   | No                             |
 | org.axonframework.messaging.annotation.WrappedMessageHandlingMember                                    | org.axonframework.messaging.annotations.WrappedMessageHandlingMember                                  | No                             |
-| org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter                               | org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent                             | No                             |
+| org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter                               | org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent                           | No                             |
 | org.axonframework.queryhandling.annotation.MethodQueryHandlerDefinition                                | org.axonframework.queryhandling.annotations.MethodQueryHandlerDefinition                              | No                             |
 | org.axonframework.queryhandling.annotation.QueryHandler                                                | org.axonframework.queryhandling.annotations.QueryHandler                                              | No                             |
 | org.axonframework.queryhandling.annotation.QueryHandlingMember                                         | org.axonframework.queryhandling.annotations.QueryHandlingMember                                       | No                             |
@@ -2000,6 +2000,9 @@ This section contains five tables:
 | org.axonframework.queryhandling.SubscriptionQueryResult                                                | org.axonframework.queryhandling.SubscriptionQueryResponse                                             | No                             |
 | org.axonframework.queryhandling.DefaultSubscriptionQueryResult                                         | org.axonframework.queryhandling.GenericSubscriptionQueryResponse                                      | No                             |
 | org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult            | org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResponseMessages | No                             |
+| org.axonframework.eventstreaming.SubscribableEventSource                                               | org.axonframework.messaging.SubscribableEventSource                                                   | No                             |
+| org.axonframework.configuration.SubscribableMessageSourceDefinition                                    | org.axonframework.configuration.SubscribableEventSourceDefinition                                     | No                             |
+| org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition              | org.axonframework.axonserver.connector.event.axon.PersistentStreamEventSourceDefinition               | No                             |
 
 ### Removed Classes
 
@@ -2044,6 +2047,7 @@ This section contains five tables:
 | org.axonframework.eventhandling.TrackedEventData                                         | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 | org.axonframework.eventhandling.TrackedDomainEventData                                   | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 | org.axonframework.messaging.Headers                                                      | Removed due to lack of use and foreseen use.                                                                                                   |
+| org.axonframework.messaging.SubscribableMessageSource                                    | Replaced by `org.axonframework.messaging.SubscribableEventSource`, bacause just `EventMessage`s can be sourced.                                |
 | org.axonframework.config.EventProcessingModule                                           | Removed due to changes in the Configuration API (see [Event Processors](#event-processors)).                                                   |
 | org.axonframework.config.EventProcessingConfiguration                                    | Removed due to changes in the Configuration API (see [Event Processors](#event-processors)).                                                   |
 | org.axonframework.config.EventProcessingConfigurer                                       | Removed due to changes in the Configuration API (see [Event Processors](#event-processors)).                                                   |

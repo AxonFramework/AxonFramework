@@ -20,7 +20,7 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.event.axon.DefaultPersistentStreamMessageSourceFactory;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSource;
-import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamEventSourceDefinition;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceFactory;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.configuration.ConfigurationEnhancer;
@@ -111,8 +111,8 @@ public class PersistentStreamAutoConfiguration {
      * Creates a {@code ConfigurerModule} to invoke {@code EventProcessingConfigurer::usingSubscribingEventProcessors}
      *
      * @param executorBuilder         The {@link ScheduledExecutorService} builder used during construction of the
-     *                                {@link PersistentStreamMessageSourceDefinition}.
-     * @param psFactory               used during construction of the {@link PersistentStreamMessageSourceDefinition}.
+     *                                {@link PersistentStreamEventSourceDefinition}.
+     * @param psFactory               used during construction of the {@link PersistentStreamEventSourceDefinition}.
      * @param axonServerConfiguration Contains the persistent stream settings.
      * @return A {@code ConfigurerModule} to configure
      */

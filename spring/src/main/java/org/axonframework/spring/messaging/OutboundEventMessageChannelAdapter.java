@@ -17,7 +17,7 @@
 package org.axonframework.spring.messaging;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -39,7 +39,7 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
 
     private final MessageChannel channel;
     private final Predicate<? super EventMessage> filter;
-    private final SubscribableMessageSource<EventMessage> messageSource;
+    private final SubscribableEventSource<EventMessage> messageSource;
     private final EventMessageConverter eventMessageConverter;
 
     /**
@@ -49,7 +49,7 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
      * @param messageSource The event bus to subscribe to.
      * @param channel       The channel to send event messages to.
      */
-    public OutboundEventMessageChannelAdapter(SubscribableMessageSource<EventMessage> messageSource,
+    public OutboundEventMessageChannelAdapter(SubscribableEventSource<EventMessage> messageSource,
                                               MessageChannel channel) {
         this(messageSource, channel, m -> true);
     }
@@ -62,7 +62,7 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
      * @param channel       The channel to send event messages to.
      * @param filter        The filter that indicates which messages to forward.
      */
-    public OutboundEventMessageChannelAdapter(SubscribableMessageSource<EventMessage> messageSource,
+    public OutboundEventMessageChannelAdapter(SubscribableEventSource<EventMessage> messageSource,
                                               MessageChannel channel, Predicate<? super EventMessage> filter) {
         this(messageSource, channel, filter, new DefaultEventMessageConverter());
     }
@@ -76,7 +76,7 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
      * @param filter        The filter that indicates which messages to forward.
      * @param eventMessageConverter The converter to use to convert event message into Spring message
      */
-    public OutboundEventMessageChannelAdapter(SubscribableMessageSource<EventMessage> messageSource,
+    public OutboundEventMessageChannelAdapter(SubscribableEventSource<EventMessage> messageSource,
                                               MessageChannel channel, Predicate<? super EventMessage> filter,
                                               EventMessageConverter eventMessageConverter) {
         this.channel = channel;
