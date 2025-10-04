@@ -56,7 +56,7 @@ class DefaultQueryGatewayTest {
     private DefaultQueryGateway testSubject;
 
     private ArgumentCaptor<QueryMessage> queryCaptor;
-    private ArgumentCaptor<StreamingQueryMessage> streamingQueryCaptor;
+    private ArgumentCaptor<QueryMessage> streamingQueryCaptor;
     private ArgumentCaptor<SubscriptionQueryMessage> subscriptionQueryCaptor;
 
     @BeforeEach
@@ -68,7 +68,7 @@ class DefaultQueryGatewayTest {
                                               QueryPriorityCalculator.defaultCalculator());
 
         queryCaptor = ArgumentCaptor.forClass(QueryMessage.class);
-        streamingQueryCaptor = ArgumentCaptor.forClass(StreamingQueryMessage.class);
+        streamingQueryCaptor = ArgumentCaptor.forClass(QueryMessage.class);
         subscriptionQueryCaptor = ArgumentCaptor.forClass(SubscriptionQueryMessage.class);
     }
 
@@ -285,7 +285,7 @@ class DefaultQueryGatewayTest {
             // then...
             verify(queryBus).streamingQuery(streamingQueryCaptor.capture(), eq(null));
 
-            StreamingQueryMessage resultMessage = streamingQueryCaptor.getValue();
+            QueryMessage resultMessage = streamingQueryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
             assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
@@ -300,7 +300,7 @@ class DefaultQueryGatewayTest {
             String expectedKey = "key";
             String expectedValue = "value";
             Metadata testMetadata = Metadata.with(expectedKey, expectedValue);
-            Message testQuery = new GenericStreamingQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE)
+            Message testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE)
                     .andMetadata(testMetadata);
             // when...
             StepVerifier.create(testSubject.streamingQuery(testQuery, String.class, null))
@@ -309,7 +309,7 @@ class DefaultQueryGatewayTest {
             // then...
             verify(queryBus).streamingQuery(streamingQueryCaptor.capture(), eq(null));
 
-            StreamingQueryMessage resultMessage = streamingQueryCaptor.getValue();
+            QueryMessage resultMessage = streamingQueryCaptor.getValue();
             assertThat(resultMessage.payload()).isEqualTo(QUERY_PAYLOAD);
             assertThat(resultMessage.payloadType()).isEqualTo(String.class);
             assertThat(resultMessage.responseType()).isEqualTo(RESPONSE_TYPE);
@@ -338,7 +338,7 @@ class DefaultQueryGatewayTest {
                         .expectNext("a", "b", "c")
                         .verifyComplete();
             // then expect query sent...
-            verify(queryBus, times(1)).streamingQuery(any(StreamingQueryMessage.class), eq(null));
+            verify(queryBus, times(1)).streamingQuery(any(QueryMessage.class), eq(null));
         }
 
         @Test

@@ -67,7 +67,6 @@ import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryPriorityCalculator;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResponseMessages;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -196,11 +195,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
 
     @Nonnull
     @Override
-    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull StreamingQueryMessage query,
+    public Publisher<QueryResponseMessage> streamingQuery(@Nonnull QueryMessage query,
                                                           @Nullable ProcessingContext context) {
         Span span = spanFactory.createStreamingQuerySpan(query, true).start();
         try (SpanScope unused = span.makeCurrent()) {
-            StreamingQueryMessage queryWithContext = spanFactory.propagateContext(query);
+            QueryMessage queryWithContext = spanFactory.propagateContext(query);
             int priority = priorityCalculator.determinePriority(queryWithContext);
             AtomicReference<Scheduler> scheduler = new AtomicReference<>(PriorityTaskSchedulers.forPriority(
                     queryResponseExecutor,
@@ -211,7 +210,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                             new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
                                                     .proceed(queryWithContext, null)
                                                     .first()
-                                                    .<StreamingQueryMessage>cast()
+                                                    .<QueryMessage>cast()
                                                     .asMono()
                                                     .map(MessageStream.Entry::message)
                                                     .flatMapMany(intercepted -> {
@@ -411,7 +410,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus> {
                                           .query(queryRequest);
     }
 
-    private <R> Publisher<QueryResponseMessage> deserialize(StreamingQueryMessage queryMessage,
+    private <R> Publisher<QueryResponseMessage> deserialize(QueryMessage queryMessage,
                                                             QueryResponse queryResponse) {
         // TODO #3488 - Replace Serializer and ResponseType use
         //noinspection unchecked

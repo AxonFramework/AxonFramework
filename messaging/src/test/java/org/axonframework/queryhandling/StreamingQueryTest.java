@@ -67,17 +67,17 @@ class StreamingQueryTest {
         myQueryHandler.errorThrown.set(false);
     }
 
-    private <R> Flux<R> streamingQueryPayloads(StreamingQueryMessage testQuery, Class<R> cls) {
+    private <R> Flux<R> streamingQueryPayloads(QueryMessage testQuery, Class<R> cls) {
         return streamingQuery(testQuery).mapNotNull(m -> m.payloadAs(cls));
     }
 
-    private Flux<QueryResponseMessage> streamingQuery(StreamingQueryMessage testQuery) {
+    private Flux<QueryResponseMessage> streamingQuery(QueryMessage testQuery) {
         return Flux.from(queryBus.streamingQuery(testQuery, null));
     }
 
     @Test
     void streamingFluxResults() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("fluxQuery"), "criteria", new MessageType(String.class)
         );
 
@@ -88,7 +88,7 @@ class StreamingQueryTest {
 
     @Test
     void optionalResults() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("optionalResultQuery"), "criteria", new MessageType(String.class)
         );
 
@@ -99,7 +99,7 @@ class StreamingQueryTest {
 
     @Test
     void emptyOptionalResults() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("emptyOptionalResultQuery"), "criteria", new MessageType(String.class)
         );
 
@@ -110,7 +110,7 @@ class StreamingQueryTest {
 
     @Test
     void streamingListResults() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("listQuery"), "criteria", new MessageType(String.class)
         );
 
@@ -121,7 +121,7 @@ class StreamingQueryTest {
 
     @Test
     void streamingStreamResults() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("streamQuery"), "criteria", new MessageType(String.class)
         );
 
@@ -132,7 +132,7 @@ class StreamingQueryTest {
 
     @Test
     void streamingSingleResult() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("singleResultQuery"), "criteria", new MessageType(String.class)
         );
 
@@ -143,7 +143,7 @@ class StreamingQueryTest {
 
     @Test
     void streamingCompletableFutureResult() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("completableFutureQuery"), "criteria", new MessageType(String.class)
         );
 
@@ -154,7 +154,7 @@ class StreamingQueryTest {
 
     @Test
     void streamingFluxAfterHandlerCompletes() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("streamingAfterHandlerCompletesQuery"),
                 "criteria",
                 new MessageType(Long.class)
@@ -167,7 +167,7 @@ class StreamingQueryTest {
 
     @Test
     void streamingMonoResult() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("monoQuery"), "criteria", new MessageType(String.class)
         );
 
@@ -178,7 +178,7 @@ class StreamingQueryTest {
 
     @Test
     void streamingNullResult() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("nullQuery"), "criteria", new MessageType(String.class)
         );
 
@@ -189,7 +189,7 @@ class StreamingQueryTest {
 
     @Test
     void errorResult() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("exceptionQuery"), "criteria", new MessageType(String.class)
         );
 
@@ -200,7 +200,7 @@ class StreamingQueryTest {
 
     @Test
     void throttledFluxQuery() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("throttledFluxQuery"), "criteria", new MessageType(Long.class)
         );
 
@@ -211,7 +211,7 @@ class StreamingQueryTest {
 
     @Test
     void backpressureFluxQuery() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("backPressure"), "criteria", new MessageType(Long.class)
         );
 
@@ -225,7 +225,7 @@ class StreamingQueryTest {
 
     @Test
     void errorStream() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("errorStream"), "criteria", new MessageType(String.class)
         );
 
@@ -235,7 +235,7 @@ class StreamingQueryTest {
 
     @Test
     void queryNotExists() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("queryNotExists"), "criteria", new MessageType(String.class)
         );
 
@@ -245,7 +245,7 @@ class StreamingQueryTest {
 
     @Test
     void resubscribeWorksEvenWhenAnErrorHasBeenCashed() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("exceptionQueryOnce"), "criteria", new MessageType(String.class)
         );
 

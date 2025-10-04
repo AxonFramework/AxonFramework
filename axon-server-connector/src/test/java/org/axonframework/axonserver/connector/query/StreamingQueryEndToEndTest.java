@@ -24,14 +24,12 @@ import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusTestUtils;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
 import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.serialization.PassThroughConverter;
@@ -152,7 +150,7 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void streamingFluxQuery(boolean supportsStreaming) {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(FluxQuery.class), new FluxQuery(), new MessageType(String.class)
         );
 
@@ -169,9 +167,9 @@ class StreamingQueryEndToEndTest {
 
         StepVerifier.create(Flux.range(0, count)
                                 .flatMap(i -> streamingQueryPayloads(
-                                        new GenericStreamingQueryMessage(new MessageType(FluxQuery.class),
-                                                                         new FluxQuery(),
-                                                                         new MessageType(String.class)),
+                                        new GenericQueryMessage(new MessageType(FluxQuery.class),
+                                                                new FluxQuery(),
+                                                                new MessageType(String.class)),
                                         String.class,
                                         supportsStreaming
                                 ))
@@ -183,7 +181,7 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void streamingErrorFluxQuery(boolean supportsStreaming) {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(ErrorFluxQuery.class), new ErrorFluxQuery(), new MessageType(String.class)
         );
 
@@ -195,7 +193,7 @@ class StreamingQueryEndToEndTest {
 
     @Test
     void streamingHandlerErrorFluxQuery() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(HandlerErrorFluxQuery.class), new HandlerErrorFluxQuery(), new MessageType(String.class)
         );
 
@@ -208,7 +206,7 @@ class StreamingQueryEndToEndTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void streamingListQuery(boolean supportsStreaming) {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType(ListQuery.class), new ListQuery(), new MessageType(String.class)
         );
 
@@ -227,7 +225,7 @@ class StreamingQueryEndToEndTest {
         assertEquals(asList("a", "b", "c", "d"), directQueryPayload(testQuery, LIST_OF_STRINGS, supportsStreaming));
     }
 
-    private <R> Flux<R> streamingQueryPayloads(StreamingQueryMessage query, Class<R> cls, boolean supportsStreaming) {
+    private <R> Flux<R> streamingQueryPayloads(QueryMessage query, Class<R> cls, boolean supportsStreaming) {
         if (supportsStreaming) {
             return Flux.from(senderQueryBus.streamingQuery(query, null))
                        .map(m -> m.payloadAs(cls));

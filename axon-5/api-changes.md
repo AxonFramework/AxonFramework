@@ -2105,6 +2105,8 @@ This section contains five tables:
 | org.axonframework.queryhandling.QuerySubscription                                        | Redundant class with current handler registration flow                                                                                         |
 | org.axonframework.queryhandling.QueryInvocationErrorHandler                              | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
 | org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler                       | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
+| org.axonframework.queryhandling.StreamingQueryMessage                                    | Removed due to removal of `ResponseType`. Described [here](#query-dispatching-and-handling) why.                                               |
+| org.axonframework.queryhandling.GenericStreamingQueryMessage                             | Removed due to removal of `ResponseType`. Described [here](#query-dispatching-and-handling) why.                                               |
 
 ### Marked for removal Classes
 

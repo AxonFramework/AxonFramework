@@ -291,8 +291,7 @@ class SimpleQueryBusTest {
         void streamingQueryIsLazy() {
             // given...
             AtomicBoolean invoked = new AtomicBoolean(false);
-            StreamingQueryMessage testQuery =
-                    new GenericStreamingQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> {
                 invoked.set(true);
                 QueryResponseMessage response =
@@ -312,8 +311,7 @@ class SimpleQueryBusTest {
         @Test
         void streamingQueryForUnknownQueryNameAndResponseNameReturnsFailedNoHandlerForQueryExceptionPublisherStream() {
             // given...
-            StreamingQueryMessage testQuery =
-                    new GenericStreamingQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
             // when/then...
             StepVerifier.create(testSubject.streamingQuery(testQuery, null))
                         .expectError(NoHandlerForQueryException.class)
@@ -323,8 +321,7 @@ class SimpleQueryBusTest {
         @Test
         void streamingQueryReturnsPublisherWithSingleEntry() {
             // given...
-            StreamingQueryMessage testQuery =
-                    new GenericStreamingQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, SINGLE_RESPONSE_HANDLER);
             // when/then...
             StepVerifier.create(testSubject.streamingQuery(testQuery, null))
@@ -335,8 +332,7 @@ class SimpleQueryBusTest {
         @Test
         void streamingQueryReturnsFailedPublisherFromFailingStreamResultQueryHandler() {
             // given...
-            StreamingQueryMessage testQuery =
-                    new GenericStreamingQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
             QueryHandler failingHandler = (query, context) -> MessageStream.failed(new MockException("Mock"));
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, failingHandler);
             // when/then...
@@ -348,8 +344,7 @@ class SimpleQueryBusTest {
         @Test
         void streamingQueryResultsInEmptyMessageStream() {
             // given...
-            StreamingQueryMessage testQuery =
-                    new GenericStreamingQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
+            QueryMessage testQuery = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
             testSubject.subscribe(QUERY_NAME, RESPONSE_NAME, (query, context) -> MessageStream.empty().cast());
             // when/then...
             StepVerifier.create(testSubject.streamingQuery(testQuery, null))

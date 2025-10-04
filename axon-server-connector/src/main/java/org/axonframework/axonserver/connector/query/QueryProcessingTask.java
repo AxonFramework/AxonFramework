@@ -24,11 +24,10 @@ import io.axoniq.axonserver.grpc.query.QueryResponse;
 import io.grpc.netty.shaded.io.netty.util.internal.OutOfDirectMemoryError;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
-import org.axonframework.queryhandling.GenericStreamingQueryMessage;
+import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
-import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.tracing.QueryBusSpanFactory;
 import org.axonframework.util.ClasspathResolver;
 import org.reactivestreams.Publisher;
@@ -190,7 +189,7 @@ class QueryProcessingTask implements Runnable, FlowControl {
 
     private <Q, R> void streamingQuery(QueryMessage originalQueryMessage) {
         // noinspection unchecked
-        StreamingQueryMessage streamingQueryMessage = new GenericStreamingQueryMessage(
+        QueryMessage streamingQueryMessage = new GenericQueryMessage(
                 originalQueryMessage,
                 null
 //                (Class<R>) originalQueryMessage.responseType().getExpectedResponseType()

@@ -46,13 +46,11 @@ import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
-import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.QueryExecutionException;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.StreamingQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResponseMessages;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
@@ -210,7 +208,7 @@ class AxonServerQueryBusTest {
                 new MessageType(TEST_QUERY), "Hello, World", new MessageType(String.class)
         );
 
-        private final StreamingQueryMessage testStreamingQuery = new GenericStreamingQueryMessage(
+        private final QueryMessage testStreamingQuery = new GenericQueryMessage(
                 new MessageType(TEST_QUERY), "Hello, World", new MessageType(String.class)
         );
 
@@ -401,7 +399,7 @@ class AxonServerQueryBusTest {
 
     @Test
     void streamingFluxQuery() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "Hello, World", new MessageType(String.class)
         );
 
@@ -432,7 +430,7 @@ class AxonServerQueryBusTest {
 
     @Test
     void streamingQueryReturnsError() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "Hello, World", new MessageType(String.class)
         );
 
@@ -456,7 +454,7 @@ class AxonServerQueryBusTest {
 
     @Test
     void streamingQueryReturnsNoResults() {
-        StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
+        QueryMessage testQuery = new GenericQueryMessage(
                 new MessageType("query"), "Hello, World", new MessageType(String.class)
         );
 
