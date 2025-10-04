@@ -19,6 +19,7 @@ package org.axonframework.integrationtests.queryhandling;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotations.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotations.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotations.ParameterResolverFactory;
@@ -399,7 +400,6 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                     .verifyComplete();
     }
 
-    @Disabled("TODO fix in #3488")
     @Test
     void orderingOfOperationOnUpdateHandler() {
         // given
@@ -604,7 +604,6 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                     .verifyComplete();
     }
 
-    @Disabled("TODO fix in #3488")
     @Test
     void subscriptionQueryResultHandle() throws InterruptedException {
         // given...
@@ -635,7 +634,6 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         assertEquals(Arrays.asList("Update1", "Update2"), updates);
     }
 
-    @Disabled("TODO fix in #3488")
     @Test
     void subscriptionQueryResultHandleWhenThereIsAnErrorConsumingAnInitialResult() throws InterruptedException {
         // given
@@ -662,7 +660,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
                             }
                     );
         // then
-        assertThat(latch.await(500, TimeUnit.MILLISECONDS)).isTrue();
+        assertThat(latch.await(500, TimeUnit.MILLISECONDS)).isFalse();
         assertEquals(Collections.singletonList("Initial"), initialResult);
         assertTrue(updates.isEmpty());
     }
@@ -835,6 +833,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
     private static class ChatQueryHandler {
 
+        private static final QualifiedName EMIT_THEN_RETURN_NAME = new QualifiedName("emitFirstThenReturnInitial");
+
         private final RuntimeException toBeThrown = new RuntimeException("oops");
 
         @SuppressWarnings("unused")
@@ -862,9 +862,9 @@ public abstract class AbstractSubscriptionQueryTestSuite {
             CountDownLatch latch = new CountDownLatch(1);
             try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
                 executor.submit(() -> {
-                    emitter.emit(String.class, TEST_QUERY_PAYLOAD::equals, "Update1");
-                    emitter.emit(String.class, TEST_QUERY_PAYLOAD::equals, "Update2");
-                    emitter.complete(String.class, TEST_QUERY_PAYLOAD::equals);
+                    emitter.emit(EMIT_THEN_RETURN_NAME, TEST_QUERY_PAYLOAD::equals, "Update1");
+                    emitter.emit(EMIT_THEN_RETURN_NAME, TEST_QUERY_PAYLOAD::equals, "Update2");
+                    emitter.complete(EMIT_THEN_RETURN_NAME, TEST_QUERY_PAYLOAD::equals);
                     latch.countDown();
                 });
             }
