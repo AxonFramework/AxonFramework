@@ -44,9 +44,9 @@ class MessageNameSpanAttributesProviderTest {
 
     @Test
     void extractsForQuery() {
-        Message genericQueryMessage = new GenericQueryMessage(
-                new MessageType("query"), "MyQuery", instanceOf(String.class)
-        );
+        Message genericQueryMessage = new GenericQueryMessage(new MessageType("query"),
+                                                              "MyQuery",
+                                                              new MessageType(String.class));
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
         assertEquals("query#0.0.1", map.get("axon_message_name"));

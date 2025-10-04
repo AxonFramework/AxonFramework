@@ -23,9 +23,6 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTestSuite;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
-import org.reactivestreams.Publisher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,20 +33,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class GenericStreamingQueryMessageTest extends MessageTestSuite<StreamingQueryMessage> {
 
-    private static final ResponseType<Publisher<String>> TEST_RESPONSE_TYPE = ResponseTypes.publisherOf(String.class);
+    private static final MessageType TEST_RESPONSE_TYPE = new MessageType(String.class);
 
     @Override
     protected StreamingQueryMessage buildDefaultMessage() {
         Message delegate =
                 new GenericMessage(TEST_IDENTIFIER, TEST_TYPE, TEST_PAYLOAD, TEST_PAYLOAD_TYPE, TEST_METADATA);
-        return new GenericStreamingQueryMessage(delegate, String.class);
+        return new GenericStreamingQueryMessage(delegate, TEST_RESPONSE_TYPE);
     }
 
     @Override
     protected <P> StreamingQueryMessage buildMessage(@Nullable P payload) {
         return new GenericStreamingQueryMessage(new MessageType(ObjectUtils.nullSafeTypeOf(payload)),
                                                 payload,
-                                                String.class);
+                                                TEST_RESPONSE_TYPE);
     }
 
     @Override

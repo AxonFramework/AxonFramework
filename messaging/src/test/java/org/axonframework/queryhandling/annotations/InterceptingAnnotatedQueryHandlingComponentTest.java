@@ -58,7 +58,7 @@ class InterceptingAnnotatedQueryHandlingComponentTest {
                 PassThroughConverter.MESSAGE_INSTANCE
         );
 
-        QueryMessage testQuery = new GenericQueryMessage(new MessageType("echo"), "Hi", instanceOf(String.class));
+        QueryMessage testQuery = new GenericQueryMessage(new MessageType("echo"), "Hi", new MessageType(String.class));
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         String result = testSubject.handle(testQuery, testContext)
@@ -82,7 +82,9 @@ class InterceptingAnnotatedQueryHandlingComponentTest {
                 PassThroughConverter.MESSAGE_INSTANCE
         );
 
-        QueryMessage testQuery = new GenericQueryMessage(new MessageType("faulty"), "hello", instanceOf(Object.class));
+        QueryMessage testQuery = new GenericQueryMessage(new MessageType("faulty"),
+                                                         "hello",
+                                                         new MessageType(Object.class));
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);

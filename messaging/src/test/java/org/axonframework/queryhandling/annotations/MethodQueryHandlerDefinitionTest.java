@@ -36,8 +36,8 @@ import static org.axonframework.messaging.annotations.MessageStreamResolverUtils
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test whether the {@link MethodQueryHandlerDefinition} correctly deals with return types, as well as for
- * example {@link java.util.concurrent.Future} and {@link Optional} which contain a generic type.
+ * Test whether the {@link MethodQueryHandlerDefinition} correctly deals with return types, as well as for example
+ * {@link java.util.concurrent.Future} and {@link Optional} which contain a generic type.
  *
  * @author Allard Buijze
  */
@@ -70,9 +70,9 @@ class MethodQueryHandlerDefinitionTest {
         QueryHandlingMember<MethodQueryHandlerDefinitionTest> handler = messageHandler("optionalReturnType");
         assertEquals(String.class, handler.resultType());
 
-        GenericQueryMessage message = new GenericQueryMessage(
-                new MessageType(String.class), "mock", ResponseTypes.instanceOf(String.class)
-        );
+        GenericQueryMessage message = new GenericQueryMessage(new MessageType(String.class),
+                                                              "mock",
+                                                              new MessageType(String.class));
 
         ProcessingContext context = StubProcessingContext.forMessage(message);
         assertTrue(handler.canHandle(message, context));

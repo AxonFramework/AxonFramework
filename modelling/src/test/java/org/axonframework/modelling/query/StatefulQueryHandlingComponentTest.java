@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.StubProcessingContext;
 import org.axonframework.modelling.SimpleStateManager;
@@ -76,8 +75,7 @@ class StatefulQueryHandlingComponentTest {
             });
 
             // when
-            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD,
-                                                         ResponseTypes.instanceOf(String.class));
+            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
             testSubject.handle(query, messageProcessingContext(query)).first().asCompletableFuture().join();
 
             // then
@@ -96,8 +94,7 @@ class StatefulQueryHandlingComponentTest {
             });
 
             // when
-            QueryMessage query = new GenericQueryMessage(QUERY_TYPE,
-                                                         QUERY_PAYLOAD, ResponseTypes.instanceOf(String.class));
+            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
             testSubject.handle(query, messageProcessingContext(query)).first().asCompletableFuture().join();
 
             // then
@@ -114,8 +111,7 @@ class StatefulQueryHandlingComponentTest {
 
             // when / then
             var exception = assertThrows(RuntimeException.class, () -> {
-                QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD,
-                                                             ResponseTypes.instanceOf(String.class));
+                QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
                 testSubject.handle(query, messageProcessingContext(query))
                            .first()
                            .asCompletableFuture()
@@ -180,8 +176,7 @@ class StatefulQueryHandlingComponentTest {
             });
 
             // when
-            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD,
-                                                         ResponseTypes.instanceOf(String.class));
+            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
             testSubject.handle(query, messageProcessingContext(query)).first().asCompletableFuture().join();
 
             // then
@@ -203,8 +198,7 @@ class StatefulQueryHandlingComponentTest {
             });
 
             // when
-            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD,
-                                                         ResponseTypes.instanceOf(String.class));
+            QueryMessage query = new GenericQueryMessage(QUERY_TYPE, QUERY_PAYLOAD, RESPONSE_TYPE);
             testSubject.handle(query, messageProcessingContext(query)).first().asCompletableFuture().join();
 
             // then

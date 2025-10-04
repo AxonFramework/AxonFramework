@@ -24,7 +24,6 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryMessage;
@@ -128,14 +127,14 @@ public class MessagingTestUtils {
      * Creates a {@link QueryMessage} with a message type derived from the payload's class and specifies the expected
      * single response type.
      *
-     * @param payload            The payload object to include in the query message.
-     * @param singleResponseType The class type expected as a single response to this query.
+     * @param payload      The payload object to include in the query message.
+     * @param responseType The class type expected as a single response to this query.
      * @return A new {@link QueryMessage} instance configured for a single response type.
      */
-    public static QueryMessage query(@Nonnull Object payload, @Nonnull Class<?> singleResponseType) {
+    public static QueryMessage query(@Nonnull Object payload, @Nonnull Class<?> responseType) {
         return new GenericQueryMessage(new MessageType(payload.getClass()),
                                        payload,
-                                       ResponseTypes.instanceOf(singleResponseType));
+                                       new MessageType(responseType));
     }
 
     /**

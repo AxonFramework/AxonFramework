@@ -127,8 +127,8 @@ public class QuerySerializer {
                            .setQuery(queryMessage.type().name())
                            .setClientId(configuration.getClientId())
                            .setComponentName(configuration.getComponentName())
-                           .setResponseType(responseTypeSerializer.apply(queryMessage.responseType()
-                                                                                     .forSerialization()))
+                           // TODO #3488 - Replace Serializer and ResponseType use
+//                           .setResponseType(responseTypeSerializer.apply(queryMessage.responseType().forSerialization()))
                            .setPayload(payloadSerializer.apply(queryMessage))
                            .addProcessingInstructions(nrOfResults(nrResults))
                            .addProcessingInstructions(timeout(timeout))

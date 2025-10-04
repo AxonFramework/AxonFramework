@@ -25,7 +25,6 @@ import org.junit.jupiter.api.*;
 
 import java.util.Map;
 
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MessageTypeSpanAttributesProviderTest {
@@ -35,7 +34,7 @@ class MessageTypeSpanAttributesProviderTest {
     @Test
     void correctTypeForQueryMessage() {
         Message genericQueryMessage = new GenericQueryMessage(
-                new MessageType("myQueryName"), "MyQuery", instanceOf(String.class)
+                new MessageType("myQueryName"), "MyQuery", new MessageType(String.class)
         );
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());

@@ -17,7 +17,6 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent;
 import org.axonframework.queryhandling.annotations.QueryHandler;
 import org.axonframework.serialization.PassThroughConverter;
@@ -87,14 +86,14 @@ class PrimitiveQueryHandlerResponseTypeTest {
      * class, and the second expecting a response type of the primitive class.
      *
      * @param value     A {@link T} value used as the query.
-     * @param boxed     The boxed primitive wrapper type, eg {@link Integer}.class, {@link Long}.class, etc..
-     * @param primitive The unboxed primitive type, eg {@code int}.class, {@code long}.class, etc..
+     * @param boxed     The boxed primitive wrapper type, eg {@link Integer}.class, {@link Long}.class, etc.
+     * @param primitive The unboxed primitive type, eg {@code int}.class, {@code long}.class, etc.
      * @param <T>       The type being tested.
      */
     private <T> void test(final T value, final Class<T> boxed, final Class<T> primitive) {
         MessageType type = new MessageType(value.getClass().getName());
-        final QueryMessage queryBoxed = new GenericQueryMessage(type, value, ResponseTypes.instanceOf(boxed));
-        final QueryMessage queryPrimitive = new GenericQueryMessage(type, value, ResponseTypes.instanceOf(primitive));
+        final QueryMessage queryBoxed = new GenericQueryMessage(type, value, new MessageType(boxed));
+        final QueryMessage queryPrimitive = new GenericQueryMessage(type, value, new MessageType(primitive));
 
         final T responseBoxed = queryBus.query(queryBoxed, null)
                                         .next()

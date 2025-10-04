@@ -24,7 +24,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.serialization.Converter;
 
 import java.lang.reflect.Type;
@@ -39,7 +38,7 @@ import java.util.Map;
  */
 public class GenericQueryMessage extends MessageDecorator implements QueryMessage {
 
-    private final ResponseType<?> responseType;
+    private final MessageType responseType;
 
     /**
      * Constructs a {@link GenericQueryMessage} for the given {@code type}, {@code payload}, and {@code responseType}.
@@ -49,11 +48,11 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      *
      * @param type         The {@link MessageType type} for this {@link QueryMessage}.
      * @param payload      The payload expressing the query for this {@link CommandMessage}.
-     * @param responseType The expected {@link ResponseType response type} for this {@link QueryMessage}.
+     * @param responseType The expected {@link MessageType response type} for this {@link QueryMessage}.
      */
     public GenericQueryMessage(@Nonnull MessageType type,
                                @Nullable Object payload,
-                               @Nonnull ResponseType<?> responseType) {
+                               @Nonnull MessageType responseType) {
         this(new GenericMessage(type, payload, Metadata.emptyInstance()), responseType);
     }
 
@@ -70,17 +69,17 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
      * @param delegate     The {@link Message} containing {@link Message#payload() payload},
      *                     {@link Message#type() type}, {@link Message#identifier() identifier} and
      *                     {@link Message#metadata() metadata} for the {@link QueryMessage} to reconstruct.
-     * @param responseType The expected {@link ResponseType response type} for this {@link QueryMessage}.
+     * @param responseType The expected {@link MessageType response type} for this {@link QueryMessage}.
      */
     public GenericQueryMessage(@Nonnull Message delegate,
-                               @Nonnull ResponseType<?> responseType) {
+                               @Nonnull MessageType responseType) {
         super(delegate);
         this.responseType = responseType;
     }
 
     @Override
     @Nonnull
-    public ResponseType<?> responseType() {
+    public MessageType responseType() {
         return responseType;
     }
 
@@ -114,7 +113,7 @@ public class GenericQueryMessage extends MessageDecorator implements QueryMessag
     @Override
     protected void describeTo(StringBuilder stringBuilder) {
         super.describeTo(stringBuilder);
-        stringBuilder.append(", expectedResponseType='")
+        stringBuilder.append(", responseType='")
                      .append(responseType())
                      .append('\'');
     }

@@ -23,10 +23,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.Metadata;
-import org.axonframework.messaging.responsetypes.PublisherResponseType;
-import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.serialization.Converter;
-import org.reactivestreams.Publisher;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -57,8 +54,8 @@ public class GenericStreamingQueryMessage
      */
     public <P> GenericStreamingQueryMessage(@Nonnull MessageType type,
                                             @Nullable Object payload,
-                                            @Nonnull Class<P> responseType) {
-        this(new GenericMessage(type, payload, Metadata.emptyInstance()), new PublisherResponseType<>(responseType));
+                                            @Nonnull MessageType responseType) {
+        this(new GenericMessage(type, payload, Metadata.emptyInstance()), responseType);
     }
 
     /**
@@ -78,32 +75,25 @@ public class GenericStreamingQueryMessage
      * @param responseType The expected {@link Class response type} for this {@link StreamingQueryMessage}.
      */
     public <P> GenericStreamingQueryMessage(@Nonnull Message delegate,
-                                            @Nonnull Class<P> responseType) {
-        this(delegate, new PublisherResponseType<>(responseType));
-    }
-
-    private <P> GenericStreamingQueryMessage(@Nonnull Message delegate,
-                                             @Nonnull ResponseType<Publisher<P>> responseType) {
+                                            @Nonnull MessageType responseType) {
         super(delegate, responseType);
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    @Nonnull
-    public ResponseType<Publisher<?>> responseType() {
-        return (ResponseType<Publisher<?>>) super.responseType();
-    }
+//    private <P> GenericStreamingQueryMessage(@Nonnull Message delegate,
+//                                             @Nonnull MessageType responseType) {
+//        super(delegate, responseType);
+//    }
 
     @Override
     @Nonnull
     public StreamingQueryMessage withMetadata(@Nonnull Map<String, String> metadata) {
-        return new GenericStreamingQueryMessage(delegate().withMetadata(metadata), internalResponseType());
+        return new GenericStreamingQueryMessage(delegate().withMetadata(metadata), responseType());
     }
 
     @Override
     @Nonnull
     public StreamingQueryMessage andMetadata(@Nonnull Map<String, String> metadata) {
-        return new GenericStreamingQueryMessage(delegate().andMetadata(metadata), internalResponseType());
+        return new GenericStreamingQueryMessage(delegate().andMetadata(metadata), responseType());
     }
 
     @Override
@@ -118,17 +108,11 @@ public class GenericStreamingQueryMessage
                                                       delegate.type(),
                                                       convertedPayload,
                                                       delegate.metadata());
-        return new GenericStreamingQueryMessage(converted, internalResponseType());
+        return new GenericStreamingQueryMessage(converted, responseType());
     }
 
     @Override
     protected String describeType() {
         return "GenericStreamingQueryMessage";
-    }
-
-    @SuppressWarnings("unchecked")
-    @Nonnull
-    private <P> ResponseType<Publisher<P>> internalResponseType() {
-        return (ResponseType<Publisher<P>>) super.responseType();
     }
 }

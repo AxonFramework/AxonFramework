@@ -97,8 +97,9 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage {
 
     @Override
     @Nonnull
-    public ResponseType<R> responseType() {
-        return serializedResponseType.getObject();
+    public MessageType responseType() {
+        // TODO #3488 - Not implementing this, as the GrpcBackedResponseMessage will be removed as part of #3488
+        return null;
     }
 
     @Override

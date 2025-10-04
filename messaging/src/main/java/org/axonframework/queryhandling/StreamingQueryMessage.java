@@ -19,9 +19,7 @@ package org.axonframework.queryhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.TypeReference;
 import org.axonframework.messaging.responsetypes.PublisherResponseType;
-import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.serialization.Converter;
-import org.reactivestreams.Publisher;
 
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -36,10 +34,6 @@ import java.util.Map;
  * @since 4.6.0
  */
 public interface StreamingQueryMessage extends QueryMessage {
-
-    @Override
-    @Nonnull
-    ResponseType<Publisher<?>> responseType();
 
     @Override
     @Nonnull

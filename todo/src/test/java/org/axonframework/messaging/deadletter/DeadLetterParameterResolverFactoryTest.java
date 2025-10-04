@@ -34,12 +34,11 @@ import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link DeadLetterParameterResolverFactory} and
- * {@link DeadLetterParameterResolverFactory.DeadLetterParameterResolver}.
+ * {@code DeadLetterParameterResolverFactory.DeadLetterParameterResolver}.
  *
  * @author Steven van Beelen
  */
@@ -92,9 +91,8 @@ class DeadLetterParameterResolverFactoryTest {
         CommandMessage testCommand =
                 new GenericCommandMessage(new MessageType("command"), "some-command");
         EventMessage testEvent = EventTestUtils.asEventMessage("some-command");
-        QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType("query"), "some-query", instanceOf(String.class)
-        );
+        QueryMessage testQuery =
+                new GenericQueryMessage(new MessageType("query"), "some-query", new MessageType(String.class));
 
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);

@@ -55,7 +55,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -65,7 +64,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 class StreamingQueryEndToEndTest {
 
-    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {};
+    private static final TypeReference<List<String>> LIST_OF_STRINGS = new TypeReference<>() {
+    };
     private static final int HTTP_PORT = 8024;
     private static final int GRPC_PORT = 8124;
     private static final String HOSTNAME = "localhost";
@@ -153,7 +153,7 @@ class StreamingQueryEndToEndTest {
     @ValueSource(booleans = {true, false})
     void streamingFluxQuery(boolean supportsStreaming) {
         StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType(FluxQuery.class), new FluxQuery(), String.class
+                new MessageType(FluxQuery.class), new FluxQuery(), new MessageType(String.class)
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class, supportsStreaming))
@@ -171,7 +171,7 @@ class StreamingQueryEndToEndTest {
                                 .flatMap(i -> streamingQueryPayloads(
                                         new GenericStreamingQueryMessage(new MessageType(FluxQuery.class),
                                                                          new FluxQuery(),
-                                                                         String.class),
+                                                                         new MessageType(String.class)),
                                         String.class,
                                         supportsStreaming
                                 ))
@@ -184,7 +184,7 @@ class StreamingQueryEndToEndTest {
     @ValueSource(booleans = {true, false})
     void streamingErrorFluxQuery(boolean supportsStreaming) {
         StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType(ErrorFluxQuery.class), new ErrorFluxQuery(), String.class
+                new MessageType(ErrorFluxQuery.class), new ErrorFluxQuery(), new MessageType(String.class)
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class, supportsStreaming))
@@ -196,7 +196,7 @@ class StreamingQueryEndToEndTest {
     @Test
     void streamingHandlerErrorFluxQuery() {
         StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType(HandlerErrorFluxQuery.class), new HandlerErrorFluxQuery(), String.class
+                new MessageType(HandlerErrorFluxQuery.class), new HandlerErrorFluxQuery(), new MessageType(String.class)
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class, true))
@@ -209,7 +209,7 @@ class StreamingQueryEndToEndTest {
     @ValueSource(booleans = {true, false})
     void streamingListQuery(boolean supportsStreaming) {
         StreamingQueryMessage testQuery = new GenericStreamingQueryMessage(
-                new MessageType(ListQuery.class), new ListQuery(), String.class
+                new MessageType(ListQuery.class), new ListQuery(), new MessageType(String.class)
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, String.class, supportsStreaming))
@@ -221,7 +221,7 @@ class StreamingQueryEndToEndTest {
     @ValueSource(booleans = {true, false})
     void listQuery(boolean supportsStreaming) throws Throwable {
         QueryMessage testQuery = new GenericQueryMessage(
-                new MessageType(ListQuery.class), new ListQuery(), multipleInstancesOf(String.class)
+                new MessageType(ListQuery.class), new ListQuery(), new MessageType(String.class)
         );
 
         assertEquals(asList("a", "b", "c", "d"), directQueryPayload(testQuery, LIST_OF_STRINGS, supportsStreaming));
@@ -254,7 +254,7 @@ class StreamingQueryEndToEndTest {
 //            if (response != null && response.optionalExceptionResult().isPresent()) {
 //                throw response.optionalExceptionResult().get();
 //            } else {
-                throw e;
+            throw e;
 //            }
         }
     }

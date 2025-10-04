@@ -37,8 +37,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
-import static org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf;
 
 /**
  * Test class validating the {@link AnnotatedQueryHandlingComponent}.
@@ -73,7 +71,8 @@ class AnnotatedQueryHandlingComponentTest {
     @Test
     void handleReturnsFaultyMessageStreamWithNoHandlerForQueryException() {
         // given...
-        QueryMessage testQuery = new GenericQueryMessage(new MessageType("unknown"), null, instanceOf(String.class));
+        QueryMessage testQuery =
+                new GenericQueryMessage(new MessageType("unknown"), null, new MessageType(String.class));
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
@@ -88,9 +87,8 @@ class AnnotatedQueryHandlingComponentTest {
     void handleInvokesQueryHandlerOfConcreteTypeReturningMessageStreamWithSingleResponse() {
         // given...
         String expectedResponse = "hello";
-        QueryMessage testQuery = new GenericQueryMessage(new MessageType("echo"),
-                                                         expectedResponse,
-                                                         instanceOf(String.class));
+        QueryMessage testQuery =
+                new GenericQueryMessage(new MessageType("echo"), expectedResponse, new MessageType(String.class));
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
@@ -107,7 +105,8 @@ class AnnotatedQueryHandlingComponentTest {
     @Test
     void handleInvokesQueryHandlerReturningFaultyMessageStream() {
         // given...
-        QueryMessage testQuery = new GenericQueryMessage(new MessageType("faulty"), "hello", instanceOf(Integer.class));
+        QueryMessage testQuery =
+                new GenericQueryMessage(new MessageType("faulty"), "hello", new MessageType(Integer.class));
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
@@ -123,7 +122,7 @@ class AnnotatedQueryHandlingComponentTest {
         // given...
         QueryMessage testQuery = new GenericQueryMessage(new MessageType("emptyOptional"),
                                                          "hello",
-                                                         instanceOf(String.class));
+                                                         new MessageType(String.class));
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
@@ -135,9 +134,8 @@ class AnnotatedQueryHandlingComponentTest {
     void handleInvokesQueryHandlerReturningAnOptional() {
         // given...
         String expectedResponse = "hello";
-        QueryMessage testQuery = new GenericQueryMessage(new MessageType("optional"),
-                                                         expectedResponse,
-                                                         instanceOf(String.class));
+        QueryMessage testQuery =
+                new GenericQueryMessage(new MessageType("optional"), expectedResponse, new MessageType(String.class));
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
@@ -155,9 +153,9 @@ class AnnotatedQueryHandlingComponentTest {
     void handleInvokesQueryHandlerReturningCollectionResultingInMessageStreamWithMultipleResponses() {
         // given...
         int desiredResponsesCount = 5;
-        QueryMessage testQuery = new GenericQueryMessage(new MessageType("multipleResponses"),
-                                                         desiredResponsesCount,
-                                                         multipleInstancesOf(String.class));
+        QueryMessage testQuery = new GenericQueryMessage(
+                new MessageType("multipleResponses"), desiredResponsesCount, new MessageType(String.class)
+        );
         ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
         // when...
         List<Object> results = testSubject.handle(testQuery, testContext)

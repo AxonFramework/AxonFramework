@@ -1627,8 +1627,7 @@ for the same combination anymore.
 On top of that, Axon Framework 4 be "smart about" selecting a Query Handler that best fit the expected `ResponseType`.
 As Query Handler registration is no longer based on a the `ResponeType`/`Type`, we lose the capability to, for
 example, let a single-response query favor a single-response query handler. Or, for a multiple-response query to favor
-a
-multiple-response query handler, while a query handler was registered for both single and multiple responses.
+a multiple-response query handler, while a query handler was registered for both single and multiple responses.
 
 However, we view losing this capability as a benefit, as (1) it led to complex code and (2) led to unclarity in use,
 as we have noticed over the years. As a consequence, the local `QueryBus` will now throw a
@@ -1646,9 +1645,11 @@ This alignment shows itself in being able to provide the `ProcessingContext`. Gi
 handler should dispatch a query (e.g., as with process automations), it is strongly advised to provide the active
 `ProcessingContext` as part of the send operation.
 
-On top of that, we have eliminated use of the `ResponseType` **entirely** from the `QueryGateway`, as we feel the
-`ResponseType` is an internal concern; not something to be bothered with when dispatching queries.
-To keep support for querying a single or multiple instances, the gateway now has dedicated methods:
+On top of that, we have eliminated use of the `ResponseType` **entirely**. Both from all `QueryMessage` implementations
+as well as from the `QueryGateway`/`QueryBus`. We felt the `ResponseType` was cumbersome to deal with and as such viewed
+as a nuisance for the user. Furthermore, it tied our query solution in the JVM space when distributing queries, which is
+**not** desirable at all. However, to keep support for querying a single or multiple instances, the gateway now has
+dedicated methods:
 
 1. `CompletableFuture<R> QueryGateway#query(Object, Class<R>, ProcessingContext)`
 2. `CompletableFuture<List<R>> QueryGateway#queryMany(Object, Class<R>, ProcessingContext)`
@@ -2316,3 +2317,5 @@ This section contains four subsections, called:
 | `QueryBus#query(QueryMessage<Q, R>)`                                           | `CompletableFuture<QueryResponseMessage<R>>` | `MessageStream<QueryResponseMessage>`        |
 | `QueryGateway#query(String, Q, ResponseType<R>)`                               | `CompletableFuture<R>`                       | `CompletableFuture<List<R>>`                 |`
 | `SubscriptionQueryResult#initialResult()`                                      | `Mono<I>`                                    | `Flux<I>`                                    |`
+| `QueryMessage#responseType()`                                                  | `ResponseType<?>`                            | `MessageType`                                |`
+| `SubscriptionQueryMessage#updatesResponseType()`                               | `ResponseType<?>`                            | `MessageType`                                |`
