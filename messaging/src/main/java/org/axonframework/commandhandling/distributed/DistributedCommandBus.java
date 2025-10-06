@@ -53,7 +53,7 @@ public class DistributedCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(DistributedCommandBus.class);
 
-    private final CommandBus delegate;
+    private final CommandBus localSegment;
     private final CommandBusConnector connector;
     private final ExecutorService executorService;
 
@@ -61,19 +61,19 @@ public class DistributedCommandBus implements CommandBus {
     private final int loadFactor;
 
     /**
-     * Constructs a {@code DistributedCommandBus} using the given {@code delegate} for
+     * Constructs a {@code DistributedCommandBus} using the given {@code localSegment} for
      * {@link #subscribe(QualifiedName, CommandHandler) subscribing} handlers and the given {@code connector} to
      * dispatch commands and replies to different segments of the {@code CommandBus}.
      *
-     * @param delegate      The delegate {@code CommandBus} used to subscribe handlers to.
+     * @param localSegment  The localSegment {@code CommandBus} used to subscribe handlers to.
      * @param connector     The {@code Connector} to dispatch commands or replies.
      * @param configuration The {@code DistributedCommandBusConfiguration} containing the load factor and the
      *                      {@code ExecutorServiceFactory} for this bus.
      */
-    public DistributedCommandBus(@Nonnull CommandBus delegate,
+    public DistributedCommandBus(@Nonnull CommandBus localSegment,
                                  @Nonnull CommandBusConnector connector,
                                  @Nonnull DistributedCommandBusConfiguration configuration) {
-        this.delegate = Objects.requireNonNull(delegate, "The given CommandBus delegate cannot be null.");
+        this.localSegment = Objects.requireNonNull(localSegment, "The given CommandBus localSegment cannot be null.");
         this.connector = Objects.requireNonNull(connector, "The given Connector cannot be null.");
         this.loadFactor = configuration.loadFactor();
         this.executorService = configuration.executorServiceFactory()
@@ -85,7 +85,7 @@ public class DistributedCommandBus implements CommandBus {
     public DistributedCommandBus subscribe(@Nonnull QualifiedName name,
                                            @Nonnull CommandHandler handler) {
         CommandHandler commandHandler = Objects.requireNonNull(handler, "The given handler cannot be null.");
-        delegate.subscribe(name, commandHandler);
+        localSegment.subscribe(name, commandHandler);
         connector.subscribe(name, loadFactor);
         return this;
     }
@@ -98,7 +98,7 @@ public class DistributedCommandBus implements CommandBus {
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeWrapperOf(delegate);
+        descriptor.describeWrapperOf(localSegment);
         descriptor.describeProperty("connector", connector);
     }
 
@@ -132,7 +132,7 @@ public class DistributedCommandBus implements CommandBus {
                              commandMessage.routingKey().orElse(null));
             }
 
-            delegate.dispatch(commandMessage, null).whenComplete((resultMessage, e) -> {
+            localSegment.dispatch(commandMessage, null).whenComplete((resultMessage, e) -> {
                 try {
                     if (e == null) {
                         handleSuccess(commandMessage, callback, resultMessage);
