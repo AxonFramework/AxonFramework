@@ -32,8 +32,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 /**
- * A {@link MessageDispatchInterceptor} that adds the {$code username} and {$code authorities} from the authorized
- * principle.
+ * A {@link MessageDispatchInterceptor} that adds the {$code authorities} from the authorized principle.
  *
  * @author Roald Bankras
  * @since 4.11.0
@@ -51,7 +50,7 @@ public class MessageAuthorizationDispatchInterceptor<T extends Message<?>> imple
             return message;
         }
 
-        logger.debug("Adding message metadata for username & authorities.");
+        logger.debug("Adding message metadata for authorities.");
         Map<String, String> authenticationDetails = new HashMap<>();
         String authorities = authentication.getAuthorities()
                                            .stream()
