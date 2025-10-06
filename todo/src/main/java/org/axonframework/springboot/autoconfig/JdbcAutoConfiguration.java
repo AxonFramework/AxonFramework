@@ -115,7 +115,8 @@ public class JdbcAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)
-    public TokenStore tokenStore(ConnectionProvider connectionProvider, Serializer serializer,
+    public TokenStore tokenStore(ConnectionProvider connectionProvider,
+                                 Serializer serializer,
                                  TokenSchema tokenSchema) {
         var config = JdbcTokenStoreConfiguration.DEFAULT
                              .schema(tokenSchema)
