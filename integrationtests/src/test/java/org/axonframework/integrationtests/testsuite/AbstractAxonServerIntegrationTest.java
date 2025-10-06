@@ -39,7 +39,7 @@ public abstract class AbstractAxonServerIntegrationTest {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractAxonServerIntegrationTest.class);
 
-    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0-SNAPSHOT")
+    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0-EAP2")
             .withAxonServerHostname("localhost")
             .withDevMode(true)
             .withReuse(true);
