@@ -95,7 +95,7 @@ interface SpringCustomizations {
 
             //noinspection unchecked
             return subscribingEventProcessorConfiguration
-                    .messageSource(messageSource);
+                    .eventSource(messageSource);
         }
     }
 

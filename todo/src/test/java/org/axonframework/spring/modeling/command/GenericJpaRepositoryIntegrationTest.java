@@ -91,7 +91,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         eventProcessor = new SubscribingEventProcessor(
                 "test",
                 List.of(new LegacyEventHandlingComponent(eventHandlerInvoker)),
-                new SubscribingEventProcessorConfiguration().messageSource(eventBus)
+                new SubscribingEventProcessorConfiguration().eventSource(eventBus)
         );
         FutureUtils.joinAndUnwrap(eventProcessor.start());
     }

@@ -52,7 +52,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
-    private SubscribableEventSource messageSource;
+    private SubscribableEventSource eventSource;
 
     /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration}.
@@ -113,15 +113,15 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * Sets the {@link SubscribableEventSource} (e.g. the {@link EventBus}) to which this {@link EventProcessor}
      * implementation will subscribe itself to receive {@link EventMessage}s.
      *
-     * @param messageSource The {@link SubscribableEventSource} (e.g. the {@link EventBus}) to which this
+     * @param eventSource The {@link SubscribableEventSource} (e.g. the {@link EventBus}) to which this
      *                      {@link EventProcessor} implementation will subscribe itself to receive
      *                      {@link EventMessage}s.
      * @return The current instance, for fluent interfacing.
      */
-    public SubscribingEventProcessorConfiguration messageSource(
-            @Nonnull SubscribableEventSource messageSource) {
-        assertNonNull(messageSource, "SubscribableMessageSource may not be null");
-        this.messageSource = messageSource;
+    public SubscribingEventProcessorConfiguration eventSource(
+            @Nonnull SubscribableEventSource eventSource) {
+        assertNonNull(eventSource, "SubscribableEventSource may not be null");
+        this.eventSource = eventSource;
         return this;
     }
 
@@ -157,7 +157,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
     @Override
     protected void validate() throws AxonConfigurationException {
         super.validate();
-        assertNonNull(messageSource, "The SubscribableMessageSource is a hard requirement and should be provided");
+        assertNonNull(eventSource, "The SubscribableMessageSource is a hard requirement and should be provided");
     }
 
     /**
@@ -165,13 +165,13 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      *
      * @return The {@link SubscribableEventSource} for receiving events.
      */
-    public SubscribableEventSource messageSource() {
-        return messageSource;
+    public SubscribableEventSource eventSource() {
+        return eventSource;
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
-        descriptor.describeProperty("messageSource", messageSource);
+        descriptor.describeProperty("eventSource", eventSource);
     }
 }

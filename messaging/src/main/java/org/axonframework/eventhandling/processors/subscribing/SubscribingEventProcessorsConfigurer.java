@@ -93,7 +93,7 @@ public class SubscribingEventProcessorsConfigurer {
                                 SubscribingEventProcessorModule.Customization.noOp().andThen(
                                         (axonConfig, processorConfig) -> {
                                             cfg.getOptionalComponent(SubscribableEventSource.class)
-                                               .ifPresent(processorConfig::messageSource);
+                                               .ifPresent(processorConfig::eventSource);
                                             return processorConfig;
                                         }).andThen(processorsDefaultCustomization)
                 )

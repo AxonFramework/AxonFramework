@@ -148,7 +148,7 @@ class SubscribingEventProcessorModuleTest {
             };
             configurer.eventProcessing(
                     ep -> ep.subscribing(
-                            sp -> sp.defaults(d -> d.messageSource(eventBus))
+                            sp -> sp.defaults(d -> d.eventSource(eventBus))
                                     .defaultProcessor("test-processor",
                                                       components -> components.declarative(cfg -> component1)
                                                                               .declarative(cfg -> component2)
@@ -228,7 +228,7 @@ class SubscribingEventProcessorModuleTest {
             configurer.registerEventHandlerInterceptor(c -> globalInterceptor);
             // Register the default interceptor and attach both PSEP modules.
             configurer.eventProcessing(processingConfigurer -> processingConfigurer.subscribing(
-                    sepConfigurer -> sepConfigurer.defaults(defaults -> defaults.messageSource(eventBus)
+                    sepConfigurer -> sepConfigurer.defaults(defaults -> defaults.eventSource(eventBus)
                                                                                 .withInterceptor(defaultInterceptor))
                                                   .processor(sepModuleOne)
                                                   .processor(sepModuleTwo)
@@ -319,7 +319,7 @@ class SubscribingEventProcessorModuleTest {
             configurer.eventProcessing(ep ->
                                                ep.subscribing(sp -> sp.defaults(
                                                        d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
-                                                             .messageSource(typeMessageSource)
+                                                             .eventSource(typeMessageSource)
                                                              .errorHandler(typeErrorHandler))
                                                )
             );
@@ -346,7 +346,7 @@ class SubscribingEventProcessorModuleTest {
             assertThat(processorConfig.unitOfWorkFactory()).isNotEqualTo(sharedUnitOfWorkFactory);
             assertThat(processorConfig.unitOfWorkFactory()).isEqualTo(typeUnitOfWorkFactory);
 
-            assertThat(processorConfig.messageSource()).isEqualTo(typeMessageSource);
+            assertThat(processorConfig.eventSource()).isEqualTo(typeMessageSource);
 
             assertThat(processorConfig.errorHandler()).isNotEqualTo(typeErrorHandler);
             assertThat(processorConfig.errorHandler()).isEqualTo(instanceErrorHandler);
@@ -372,7 +372,7 @@ class SubscribingEventProcessorModuleTest {
             configurer.eventProcessing(ep ->
                                                ep.subscribing(sp -> sp.defaults(
                                                        d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
-                                                             .messageSource(typeMessageSource)
+                                                             .eventSource(typeMessageSource)
                                                              .errorHandler(typeErrorHandler))
                                                )
             );
@@ -382,7 +382,7 @@ class SubscribingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .subscribing(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
-                    .customized((__, p) -> new SubscribingEventProcessorConfiguration().messageSource(p.messageSource())
+                    .customized((__, p) -> new SubscribingEventProcessorConfiguration().eventSource(p.eventSource())
                                                                                        .errorHandler(instanceErrorHandler));
             configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.processor(module)));
 
@@ -400,7 +400,7 @@ class SubscribingEventProcessorModuleTest {
             assertThat(processorConfig.unitOfWorkFactory()).isNotEqualTo(sharedUnitOfWorkFactory);
             assertThat(processorConfig.unitOfWorkFactory()).isNotEqualTo(typeUnitOfWorkFactory);
 
-            assertThat(processorConfig.messageSource()).isEqualTo(typeMessageSource);
+            assertThat(processorConfig.eventSource()).isEqualTo(typeMessageSource);
 
             assertThat(processorConfig.errorHandler()).isNotEqualTo(typeErrorHandler);
             assertThat(processorConfig.errorHandler()).isEqualTo(instanceErrorHandler);
@@ -426,7 +426,7 @@ class SubscribingEventProcessorModuleTest {
             configurer.eventProcessing(ep ->
                                                ep.subscribing(sp -> sp.defaults(
                                                                       d -> d.unitOfWorkFactory(typeUnitOfWorkFactory)
-                                                                            .messageSource(typeMessageSource)
+                                                                            .eventSource(typeMessageSource)
                                                                             .errorHandler(typeErrorHandler)
                                                               )
                                                )
@@ -450,7 +450,7 @@ class SubscribingEventProcessorModuleTest {
             assertThat(processorConfig).isNotNull();
             assertThat(processorConfig.unitOfWorkFactory()).isNotEqualTo(sharedUnitOfWorkFactory);
             assertThat(processorConfig.unitOfWorkFactory()).isEqualTo(typeUnitOfWorkFactory);
-            assertThat(processorConfig.messageSource()).isEqualTo(typeMessageSource);
+            assertThat(processorConfig.eventSource()).isEqualTo(typeMessageSource);
             assertThat(processorConfig.errorHandler()).isEqualTo(typeErrorHandler);
         }
 
@@ -482,7 +482,7 @@ class SubscribingEventProcessorModuleTest {
             // then
             var processorConfig = configurationOf(processor.orElse(null));
             assertThat(processorConfig).isNotNull();
-            assertThat(processorConfig.messageSource()).isEqualTo(globalMessageSource);
+            assertThat(processorConfig.eventSource()).isEqualTo(globalMessageSource);
         }
 
         @Test
@@ -499,7 +499,7 @@ class SubscribingEventProcessorModuleTest {
             // and - type-specific customization
             SimpleEventBus typeMessageSource = SimpleEventBus.builder().build();
             configurer.eventProcessing(ep -> ep.subscribing(
-                                               sp -> sp.defaults((cfg, d) -> d.messageSource(typeMessageSource))
+                                               sp -> sp.defaults((cfg, d) -> d.eventSource(typeMessageSource))
                                        )
             );
 
@@ -508,7 +508,7 @@ class SubscribingEventProcessorModuleTest {
             var module = EventProcessorModule
                     .subscribing(processorName)
                     .eventHandlingComponents(singleTestEventHandlingComponent())
-                    .customized((axonConfig, customization) -> customization.messageSource(
+                    .customized((axonConfig, customization) -> customization.eventSource(
                             axonConfig.getComponent(SubscribableEventSource.class))
                     );
             configurer.eventProcessing(ep -> ep.subscribing(sp -> sp.processor(module)));
@@ -523,8 +523,8 @@ class SubscribingEventProcessorModuleTest {
             // then
             var processorConfig = configurationOf(processor.orElse(null));
             assertThat(processorConfig).isNotNull();
-            assertThat(processorConfig.messageSource()).isNotEqualTo(typeMessageSource);
-            assertThat(processorConfig.messageSource()).isEqualTo(globalMessageSource);
+            assertThat(processorConfig.eventSource()).isNotEqualTo(typeMessageSource);
+            assertThat(processorConfig.eventSource()).isEqualTo(globalMessageSource);
         }
 
         @Test
@@ -570,8 +570,8 @@ class SubscribingEventProcessorModuleTest {
         return EventProcessorModule
                 .subscribing(processorName)
                 .eventHandlingComponents(singleTestEventHandlingComponent())
-                .customized((cfg, c) -> c.messageSource(cfg.getOptionalComponent(SubscribableEventSource.class)
-                                                           .orElse(SimpleEventBus.builder().build())));
+                .customized((cfg, c) -> c.eventSource(cfg.getOptionalComponent(SubscribableEventSource.class)
+                                                         .orElse(SimpleEventBus.builder().build())));
     }
 
     @Nonnull

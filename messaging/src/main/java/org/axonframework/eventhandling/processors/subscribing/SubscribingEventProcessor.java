@@ -54,7 +54,7 @@ public class SubscribingEventProcessor implements EventProcessor {
 
     private final String name;
     private final SubscribingEventProcessorConfiguration configuration;
-    private final SubscribableEventSource messageSource;
+    private final SubscribableEventSource eventSource;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final ErrorHandler errorHandler;
 
@@ -86,7 +86,7 @@ public class SubscribingEventProcessor implements EventProcessor {
         Objects.requireNonNull(configuration, "SubscribingEventProcessorConfiguration may not be null");
         configuration.validate();
         this.configuration = configuration;
-        this.messageSource = this.configuration.messageSource();
+        this.eventSource = this.configuration.eventSource();
         this.eventHandlingComponents = new ProcessorEventHandlingComponents(eventHandlingComponents);
         this.errorHandler = this.configuration.errorHandler();
     }
@@ -108,7 +108,7 @@ public class SubscribingEventProcessor implements EventProcessor {
             // This event processor has already been started
             return FutureUtils.emptyCompletedFuture();
         }
-        eventBusRegistration = messageSource.subscribe(this::process);
+        eventBusRegistration = eventSource.subscribe(this::process);
         return FutureUtils.emptyCompletedFuture();
     }
 
