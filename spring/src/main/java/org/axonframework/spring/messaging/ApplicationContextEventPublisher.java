@@ -33,7 +33,7 @@ import jakarta.annotation.Nonnull;
  */
 public class ApplicationContextEventPublisher implements InitializingBean, ApplicationContextAware {
 
-    private final SubscribableEventSource<? extends EventMessage> messageSource;
+    private final SubscribableEventSource messageSource;
     private ApplicationContext applicationContext;
 
     /**
@@ -42,7 +42,7 @@ public class ApplicationContextEventPublisher implements InitializingBean, Appli
      *
      * @param messageSource The source to subscribe to.
      */
-    public ApplicationContextEventPublisher(SubscribableEventSource<? extends EventMessage> messageSource) {
+    public ApplicationContextEventPublisher(SubscribableEventSource messageSource) {
         this.messageSource = messageSource;
     }
 

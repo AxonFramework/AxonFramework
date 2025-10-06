@@ -33,13 +33,12 @@ import org.axonframework.eventhandling.EventMessage;
  * This interface is the replacement for the deprecated {@link org.axonframework.messaging.SubscribableEventSource},
  * focusing specifically on event message handling.
  *
- * @param <E> The type of {@link EventMessage} published by this source.
  * @author Allard Buijze
  * @author Mateusz Nowak
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface SubscribableEventSource<E extends EventMessage> {
+public interface SubscribableEventSource {
 
     /**
      * Subscribe the given {@code eventsBatchConsumer} to this event source. When subscribed, it will receive all events
@@ -51,5 +50,5 @@ public interface SubscribableEventSource<E extends EventMessage> {
      * @return A {@link Registration} handle to unsubscribe the {@code eventsBatchConsumer}. When unsubscribed, it will
      * no longer receive events.
      */
-    Registration subscribe(@Nonnull Consumer<List<? extends E>> eventsBatchConsumer);
+    Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer);
 }

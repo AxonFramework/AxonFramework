@@ -69,7 +69,7 @@ public class PersistentStreamEventSourceDefinition implements SubscribableEventS
     }
 
     @Override
-    public SubscribableEventSource<EventMessage> create(Configuration configuration) {
+    public SubscribableEventSource create(Configuration configuration) {
         return messageSourceFactory.build(name,
                                           persistentStreamProperties,
                                           scheduler,

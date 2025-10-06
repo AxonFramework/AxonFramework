@@ -35,7 +35,7 @@ import jakarta.annotation.Nonnull;
  * @author Marc Gathier
  * @since 4.10.0
  */
-public class PersistentStreamMessageSource implements SubscribableEventSource<EventMessage> {
+public class PersistentStreamMessageSource implements SubscribableEventSource {
 
     private final PersistentStreamConnection persistentStreamConnection;
     private final String name;

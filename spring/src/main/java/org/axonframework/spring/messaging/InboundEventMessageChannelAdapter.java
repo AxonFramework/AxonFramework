@@ -40,7 +40,7 @@ import static java.util.Collections.singletonList;
  * @author Allard Buijze
  * @since 3.0
  */
-public class InboundEventMessageChannelAdapter implements MessageHandler, SubscribableEventSource<EventMessage> {
+public class InboundEventMessageChannelAdapter implements MessageHandler, SubscribableEventSource {
 
     private final CopyOnWriteArrayList<Consumer<List<? extends EventMessage>>> messageProcessors = new CopyOnWriteArrayList<>();
     private final EventMessageConverter eventMessageConverter;

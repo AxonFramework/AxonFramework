@@ -54,7 +54,7 @@ public class SubscribingEventProcessor implements EventProcessor {
 
     private final String name;
     private final SubscribingEventProcessorConfiguration configuration;
-    private final SubscribableEventSource<? extends EventMessage> messageSource;
+    private final SubscribableEventSource messageSource;
     private final ProcessorEventHandlingComponents eventHandlingComponents;
     private final ErrorHandler errorHandler;
 
@@ -182,7 +182,7 @@ public class SubscribingEventProcessor implements EventProcessor {
      *
      * @return the MessageSource from which the processor receives its events
      */
-    public SubscribableEventSource<? extends EventMessage> getMessageSource() {
+    public SubscribableEventSource getMessageSource() {
         return messageSource;
     }
 

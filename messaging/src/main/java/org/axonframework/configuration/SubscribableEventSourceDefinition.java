@@ -35,5 +35,5 @@ public interface SubscribableEventSourceDefinition<M extends EventMessage> {
      * @param configuration The Axon {@link Configuration} to base the {@link SubscribableEventSource} on.
      * @return A {@link SubscribableEventSource} based on this definition and the provided configuration.
      */
-    SubscribableEventSource<M> create(Configuration configuration);
+    SubscribableEventSource create(Configuration configuration);
 }

@@ -52,7 +52,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class SubscribingEventProcessorConfiguration extends EventProcessorConfiguration {
 
-    private SubscribableEventSource<? extends EventMessage> messageSource;
+    private SubscribableEventSource messageSource;
 
     /**
      * Constructs a new {@code SubscribingEventProcessorConfiguration}.
@@ -119,7 +119,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      * @return The current instance, for fluent interfacing.
      */
     public SubscribingEventProcessorConfiguration messageSource(
-            @Nonnull SubscribableEventSource<? extends EventMessage> messageSource) {
+            @Nonnull SubscribableEventSource messageSource) {
         assertNonNull(messageSource, "SubscribableMessageSource may not be null");
         this.messageSource = messageSource;
         return this;
@@ -165,7 +165,7 @@ public class SubscribingEventProcessorConfiguration extends EventProcessorConfig
      *
      * @return The {@link SubscribableEventSource} for receiving events.
      */
-    public SubscribableEventSource<? extends EventMessage> messageSource() {
+    public SubscribableEventSource messageSource() {
         return messageSource;
     }
 
