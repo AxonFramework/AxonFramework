@@ -40,14 +40,14 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractAdministrationTestSuite extends AbstractAxonServerIntegrationTest {
 
-    private static final CreateEmployee CREATE_EMPLOYEE_1_COMMAND = new CreateEmployee(
-            new PersonIdentifier(PersonType.EMPLOYEE, "1234"),
+    private final CreateEmployee CREATE_EMPLOYEE_1_COMMAND = new CreateEmployee(
+            new PersonIdentifier(PersonType.EMPLOYEE, createId("employee")),
             "mitchell.herrijgers@axoniq.io",
             "Bug Creator",
             3000.0);
 
-    private static final CreateCustomer CREATE_CUSTOMER_1_COMMAND = new CreateCustomer(
-            new PersonIdentifier(PersonType.CUSTOMER, "shomer"),
+    private final CreateCustomer CREATE_CUSTOMER_1_COMMAND = new CreateCustomer(
+            new PersonIdentifier(PersonType.CUSTOMER, createId("customer")),
             "homer@the-simpsons.io"
     );
 

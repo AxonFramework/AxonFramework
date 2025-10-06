@@ -95,6 +95,7 @@ public class AxonServerContainer extends GenericContainer<AxonServerContainer> {
 
         //noinspection resource | ignore from AutoClosable on GenericContainer
         withExposedPorts(AXON_SERVER_HTTP_PORT, AXON_SERVER_GRPC_PORT)
+                .withEnv("TESTCONTAINERS_FORK_NUMBER", "" + System.getProperty("test.forkNumber", "0"))
                 .withEnv(AXONIQ_LICENSE, LICENCE_DEFAULT_LOCATION)
                 .waitingFor(Wait.forLogMessage(WAIT_FOR_LOG_MESSAGE, 1))
                 .waitingFor(Wait.forHttp(HEALTH_ENDPOINT).forPort(AXON_SERVER_HTTP_PORT));

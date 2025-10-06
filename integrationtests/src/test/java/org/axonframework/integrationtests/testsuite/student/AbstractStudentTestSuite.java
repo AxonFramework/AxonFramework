@@ -97,6 +97,7 @@ public abstract class AbstractStudentTestSuite extends AbstractAxonServerIntegra
     /**
      * Starts the Axon Framework application.
      */
+    @Override
     protected void startApp() {
         super.startApp();
         unitOfWorkFactory = startedConfiguration.getComponent(UnitOfWorkFactory.class);

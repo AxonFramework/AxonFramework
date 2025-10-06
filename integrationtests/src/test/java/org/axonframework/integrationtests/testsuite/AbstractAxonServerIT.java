@@ -36,9 +36,9 @@ import java.util.Random;
  *
  * @author Mitchell Herrijgers
  */
-public abstract class AbstractAxonServerIntegrationTest {
+public abstract class AbstractAxonServerIT {
 
-    protected static final Logger logger = LoggerFactory.getLogger(AbstractAxonServerIntegrationTest.class);
+    protected static final Logger logger = LoggerFactory.getLogger(AbstractAxonServerIT.class);
 
     private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0-EAP2")
             .withAxonServerHostname("localhost")
