@@ -38,16 +38,13 @@ import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.management.ManagementFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Duration;
 import java.time.temporal.TemporalAmount;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -56,7 +53,6 @@ import java.util.stream.Collectors;
 import static java.lang.String.format;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
@@ -74,6 +70,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
 public class JdbcTokenStore implements TokenStore {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcTokenStore.class);
+
     private static final String CONFIG_TOKEN_ID = "__config";
     private static final int CONFIG_SEGMENT = 0;
     private static final String COUNT_COLUMN_NAME = "segmentCount";
@@ -85,36 +82,29 @@ public class JdbcTokenStore implements TokenStore {
     private final Class<?> contentType;
 
     /**
-     * Instantiate a {@link JdbcTokenStore} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code JdbcTokenStore} based on the fields contained in the
+     * {@link JdbcTokenStoreConfiguration configuration}.
      * <p>
-     * Will assert that the {@link ConnectionProvider}, {@link Serializer}, {@link TokenSchema}, {@code claimTimeout},
-     * {@code nodeId} and {@code contentType} are not {@code null}, and will throw an {@link AxonConfigurationException}
-     * if any of them is {@code null}.
+     * Will assert that the {@link ConnectionProvider}, {@link Serializer} and {@link JdbcTokenStoreConfiguration} are
+     * not {@code null}, otherwise an {@link AxonConfigurationException} will be thrown.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link JdbcTokenStore} instance
+     * @param connectionProvider The {@link ConnectionProvider} used to provide connections to the underlying database.
+     * @param serializer         The {@link Serializer} used to de-/serialize {@link TrackingToken}'s with.
+     * @param configuration      The {@link JdbcTokenStoreConfiguration} used to instantiate a {@code JdbcTokenStore}
+     *                           instance
      */
-    protected JdbcTokenStore(Builder builder) {
-        builder.validate();
-        this.connectionProvider = builder.connectionProvider;
-        this.serializer = builder.serializer;
-        this.schema = builder.schema;
-        this.claimTimeout = builder.claimTimeout;
-        this.nodeId = builder.nodeId;
-        this.contentType = builder.contentType;
-    }
-
-    /**
-     * Instantiate a Builder to be able to create a {@link JdbcTokenStore}.
-     * <p>
-     * The {@code schema} is defaulted to an {@link TokenSchema}, the {@code claimTimeout} to a 10 seconds duration,
-     * {@code nodeId} is defaulted to the name of the managed bean for the runtime system of the Java virtual machine
-     * and the {@code contentType} to a {@code byte[]} {@link Class}. The {@link ConnectionProvider} and
-     * {@link Serializer} are <b>hard requirements</b> and as such should be provided.
-     *
-     * @return a Builder to be able to create a {@link JdbcTokenStore}
-     */
-    public static Builder builder() {
-        return new Builder();
+    public JdbcTokenStore(@Nonnull ConnectionProvider connectionProvider,
+                          @Nonnull Serializer serializer,
+                          @Nonnull JdbcTokenStoreConfiguration configuration) {
+        assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
+        assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
+        assertNonNull(configuration, "The JdbcTokenStoreConfiguration should be provided");
+        this.connectionProvider = connectionProvider;
+        this.serializer = serializer;
+        this.schema = configuration.schema();
+        this.claimTimeout = configuration.claimTimeout();
+        this.nodeId = configuration.nodeId();
+        this.contentType = configuration.contentType();
     }
 
     /**
@@ -883,127 +873,6 @@ public class JdbcTokenStore implements TokenStore {
             return connectionProvider.getConnection();
         } catch (SQLException e) {
             throw new JdbcException("Failed to obtain a database connection", e);
-        }
-    }
-
-    /**
-     * Builder class to instantiate a {@link JdbcTokenStore}.
-     * <p>
-     * The {@code schema} is defaulted to an {@link TokenSchema}, the {@code claimTimeout} to a 10 seconds duration,
-     * {@code nodeId} is defaulted to the name of the managed bean for the runtime system of the Java virtual machine
-     * and the {@code contentType} to a {@code byte[]} {@link Class}. The {@link ConnectionProvider} and
-     * {@link Serializer} are <b>hard requirements</b> and as such should be provided.
-     */
-    public static class Builder {
-
-        private ConnectionProvider connectionProvider;
-        private Serializer serializer;
-        private TokenSchema schema = new TokenSchema();
-        private TemporalAmount claimTimeout = Duration.ofSeconds(10);
-        private String nodeId = ManagementFactory.getRuntimeMXBean().getName();
-        private Class<?> contentType = byte[].class;
-
-        /**
-         * Sets the {@link ConnectionProvider} used to provide connections to the underlying database.
-         *
-         * @param connectionProvider a {@link ConnectionProvider} used to provide connections to the underlying
-         *                           database
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder connectionProvider(ConnectionProvider connectionProvider) {
-            assertNonNull(connectionProvider, "ConnectionProvider may not be null");
-            this.connectionProvider = connectionProvider;
-            return this;
-        }
-
-        /**
-         * Sets the {@link Serializer} used to de-/serialize {@link TrackingToken}s with.
-         *
-         * @param serializer a {@link Serializer} used to de-/serialize {@link TrackingToken}s with
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder serializer(Serializer serializer) {
-            assertNonNull(serializer, "Serializer may not be null");
-            this.serializer = serializer;
-            return this;
-        }
-
-        /**
-         * Sets the {@code schema} which describes a JDBC token entry for this {@link TokenStore}. Defaults to a default
-         * {@link TokenSchema} instance.
-         *
-         * @param schema a {@link TokenSchema} which describes a JDBC token entry for this {@link TokenStore}
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder schema(TokenSchema schema) {
-            assertNonNull(schema, "TokenSchema may not be null");
-            this.schema = schema;
-            return this;
-        }
-
-        /**
-         * Sets the {@code claimTimeout} specifying the amount of time this process will wait after which this process
-         * will force a claim of a {@link TrackingToken}. Thus if a claim has not been updated for the given
-         * {@code claimTimeout}, this process will 'steal' the claim. Defaults to a duration of 10 seconds.
-         *
-         * @param claimTimeout a timeout specifying the time after which this process will force a claim
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder claimTimeout(TemporalAmount claimTimeout) {
-            assertNonNull(claimTimeout, "The claim timeout may not be null");
-            this.claimTimeout = claimTimeout;
-            return this;
-        }
-
-        /**
-         * Sets the {@code nodeId} to identify ownership of the tokens. Defaults to the name of the managed bean for the
-         * runtime system of the Java virtual machine
-         *
-         * @param nodeId the id as a {@link String} to identify ownership of the tokens
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder nodeId(String nodeId) {
-            assertNodeId(nodeId, "The nodeId may not be null or empty");
-            this.nodeId = nodeId;
-            return this;
-        }
-
-        /**
-         * Sets the {@code contentType} to which a {@link TrackingToken} should be serialized. Defaults to a
-         * {@code byte[]} {@link Class} type.
-         *
-         * @param contentType the content type as a {@link Class }to which a {@link TrackingToken} should be serialized
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder contentType(Class<?> contentType) {
-            assertNonNull(contentType, "The content type may not be null");
-            this.contentType = contentType;
-            return this;
-        }
-
-        /**
-         * Initializes a {@link JdbcTokenStore} as specified through this Builder.
-         *
-         * @return a {@link JdbcTokenStore} as specified through this Builder
-         */
-        public JdbcTokenStore build() {
-            return new JdbcTokenStore(this);
-        }
-
-        /**
-         * Validates whether the fields contained in this Builder are set accordingly.
-         *
-         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
-         *                                    specifications
-         */
-        protected void validate() throws AxonConfigurationException {
-            assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
-            assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
-            assertNodeId(nodeId, "The nodeId is a hard requirement and should be provided");
-        }
-
-        private void assertNodeId(String nodeId, String exceptionMessage) {
-            assertThat(nodeId, name -> Objects.nonNull(name) && !"".equals(name), exceptionMessage);
         }
     }
 }

@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema;
 import org.axonframework.eventhandling.deadletter.jdbc.JdbcSequencedDeadLetterQueue;
 import org.axonframework.eventhandling.processors.streaming.token.store.TokenStore;
 import org.axonframework.eventhandling.processors.streaming.token.store.jdbc.JdbcTokenStore;
+import org.axonframework.eventhandling.processors.streaming.token.store.jdbc.JdbcTokenStoreConfiguration;
 import org.axonframework.eventhandling.processors.streaming.token.store.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
@@ -114,14 +115,13 @@ public class JdbcAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)
-    public TokenStore tokenStore(ConnectionProvider connectionProvider, Serializer serializer,
+    public TokenStore tokenStore(ConnectionProvider connectionProvider,
+                                 Serializer serializer,
                                  TokenSchema tokenSchema) {
-        return JdbcTokenStore.builder()
-                             .connectionProvider(connectionProvider)
+        var config = JdbcTokenStoreConfiguration.DEFAULT
                              .schema(tokenSchema)
-                             .serializer(serializer)
-                             .claimTimeout(tokenStoreProperties.getClaimTimeout())
-                             .build();
+                             .claimTimeout(tokenStoreProperties.getClaimTimeout());
+        return new JdbcTokenStore(connectionProvider::getConnection, serializer, config);
     }
 
 //    @Bean
