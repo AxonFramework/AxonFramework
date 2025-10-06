@@ -51,14 +51,14 @@ class DistributedCommandBusConfigurationTest {
 
     @Test
     void validNumberOfThreadsIsAccepted() {
-        testSubject = testSubject.numberOfThreads(1);
-        assertEquals(1, testSubject.numberOfThreads());
+        testSubject = testSubject.commandThreads(1);
+        assertEquals(1, testSubject.commandThreads());
     }
 
     @ParameterizedTest
     @ValueSource(ints = {0, -1})
     void invalidNumberOfThreadCausesException(int invalidNumberOfThreads) {
-        assertThrows(AxonConfigurationException.class, () -> testSubject.numberOfThreads(invalidNumberOfThreads));
+        assertThrows(AxonConfigurationException.class, () -> testSubject.commandThreads(invalidNumberOfThreads));
     }
 
     @Test

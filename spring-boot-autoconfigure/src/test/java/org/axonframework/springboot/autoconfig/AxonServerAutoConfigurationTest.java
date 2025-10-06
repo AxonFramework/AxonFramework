@@ -95,7 +95,7 @@ class AxonServerAutoConfigurationTest {
             assertThat(context).hasSingleBean(AxonServerConfiguration.class);
             assertThat(context).hasSingleBean(DistributedCommandBusConfiguration.class);
 
-            int numberOfThreads = context.getBean(DistributedCommandBusConfiguration.class).numberOfThreads();
+            int numberOfThreads = context.getBean(DistributedCommandBusConfiguration.class).commandThreads();
             int commandThreads = context.getBean(AxonServerConfiguration.class).getCommandThreads();
             assertThat(numberOfThreads).isEqualTo(commandThreads);
         });
