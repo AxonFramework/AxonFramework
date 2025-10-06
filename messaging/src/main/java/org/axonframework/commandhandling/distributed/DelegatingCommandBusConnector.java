@@ -55,8 +55,8 @@ public abstract class DelegatingCommandBusConnector implements CommandBusConnect
     }
 
     @Override
-    public void subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
-        delegate.subscribe(commandName, loadFactor);
+    public CompletableFuture<Void> subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
+        return delegate.subscribe(commandName, loadFactor);
     }
 
     @Override
