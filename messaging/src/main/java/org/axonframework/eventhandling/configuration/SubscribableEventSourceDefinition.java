@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.configuration;
+package org.axonframework.eventhandling.configuration;
 
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.SubscribableEventSource;
 

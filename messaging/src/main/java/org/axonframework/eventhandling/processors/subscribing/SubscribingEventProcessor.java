@@ -177,15 +177,6 @@ public class SubscribingEventProcessor implements EventProcessor {
         return FutureUtils.emptyCompletedFuture();
     }
 
-    /**
-     * Returns the message source from which this processor receives its events
-     *
-     * @return the MessageSource from which the processor receives its events
-     */
-    public SubscribableEventSource getMessageSource() {
-        return messageSource;
-    }
-
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);

@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector.event.axon;
 import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.configuration.SubscribableEventSourceDefinition;
+import org.axonframework.eventhandling.configuration.SubscribableEventSourceDefinition;
 import org.axonframework.messaging.SubscribableEventSource;
 
 import java.util.concurrent.ScheduledExecutorService;
