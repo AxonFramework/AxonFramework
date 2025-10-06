@@ -171,13 +171,13 @@ public class DefaultQueryGateway implements QueryGateway {
             return queryMessage;
         }
         MessageType initialMessageType = resolveTypeFor(initialType);
-        MessageType initialUpdateType = resolveTypeFor(updateType);
+        MessageType updateMessageType = resolveTypeFor(updateType);
         return query instanceof Message
-                ? new GenericSubscriptionQueryMessage((Message) query, initialMessageType, initialUpdateType)
+                ? new GenericSubscriptionQueryMessage((Message) query, initialMessageType, updateMessageType)
                 : new GenericSubscriptionQueryMessage(resolveTypeFor(query),
                                                       query,
                                                       initialMessageType,
-                                                      initialUpdateType);
+                                                      updateMessageType);
     }
 
     private MessageType resolveTypeFor(Object payload) {
