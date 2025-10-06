@@ -1417,7 +1417,6 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
         // Suppress Thread.sleep, as it's mandatory for this test.
         @Test
-        @SuppressWarnings("java:S2925")
         void startLifecycleHandlersWillOnlyProceedToFollowingPhaseAfterCurrentPhaseIsFinalized()
                 throws InterruptedException {
             Assumptions.assumeTrue(
@@ -1440,15 +1439,13 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             // Start in a different thread as the 'slowPhaseZeroHandler' will otherwise not lock
             Thread startThread = new Thread(() -> testSubject.start());
             startThread.start();
-            // Sleep to give the start thread some time to execute
-            Thread.sleep(350);
 
             try {
                 // Phase one has not started yet, as the method has not been invoked yet.
-                verify(phaseOneHandler, never()).start();
+                await().untilAsserted(() -> verify(phaseOneHandler, never()).start());
                 // The phase zero handlers on the other hand have been invoked
-                verify(phaseZeroHandler).start();
-                verify(slowPhaseZeroHandler).slowStart();
+                await().untilAsserted(() -> verify(phaseZeroHandler).start());
+                await().untilAsserted(() -> verify(slowPhaseZeroHandler).slowStart());
             } finally {
                 slowHandlerLock.unlock();
             }

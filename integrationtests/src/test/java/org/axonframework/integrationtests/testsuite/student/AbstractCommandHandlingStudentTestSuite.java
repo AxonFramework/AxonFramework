@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.function.Consumer;
 
@@ -36,10 +37,14 @@ import java.util.function.Consumer;
  */
 public abstract class AbstractCommandHandlingStudentTestSuite extends AbstractStudentTestSuite {
 
-    private final CommandHandlingModule.SetupPhase commandHandlingModule =
-            CommandHandlingModule.named("student-course-module");
+    private CommandHandlingModule.SetupPhase commandHandlingModule;
 
     protected CommandGateway commandGateway;
+
+    @BeforeEach
+    void beforeEach() {
+        commandHandlingModule = CommandHandlingModule.named("student-course-module");
+    }
 
     @Override
     protected EventSourcingConfigurer testSuiteConfigurer(EventSourcingConfigurer configurer) {

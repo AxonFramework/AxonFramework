@@ -58,9 +58,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-@Tags({
-        @org.junit.jupiter.api.Tag("flaky"),
-})
 public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends AbstractStudentTestSuite {
 
     @Test
@@ -124,10 +121,11 @@ public class EventProcessingDeclarativeEventSourcedPooledStreamingTest extends A
 
     protected void verifyNotificationSentTo(String studentId) {
         UnitOfWork uow = unitOfWorkFactory.create();
-        uow.executeWithResult(context -> context.component(StateManager.class)
-                                                .repository(StudentCoursesAutomationState.class, String.class)
-                                                .load(studentId, context)
-                                                .thenAccept(student -> assertTrue(student.entity().notified()))).join();
+        assertTrue(uow.executeWithResult(context -> context.component(StateManager.class)
+            .repository(StudentCoursesAutomationState.class, String.class)
+            .load(studentId, context)
+            .thenApply(student -> student.entity().notified())).join()
+        );
     }
 
     @Override
