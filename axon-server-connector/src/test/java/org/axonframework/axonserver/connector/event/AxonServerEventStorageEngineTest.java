@@ -50,7 +50,7 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
     private static final String CONTEXT = "default";
 
     @Container
-    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0-SNAPSHOT").withDevMode(true);
+    private static final AxonServerContainer container = new AxonServerContainer("docker.axoniq.io/axoniq/axonserver:2025.2.0-EAP2").withDevMode(true);
 
     private static AxonServerConnection connection;
 
