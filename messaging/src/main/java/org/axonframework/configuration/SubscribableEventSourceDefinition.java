@@ -16,7 +16,6 @@
 
 package org.axonframework.configuration;
 
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.SubscribableEventSource;
 
@@ -27,7 +26,7 @@ import org.axonframework.messaging.SubscribableEventSource;
  * @author Marc Gathier
  * @since 4.10.0
  */
-public interface SubscribableEventSourceDefinition<M extends EventMessage> {
+public interface SubscribableEventSourceDefinition {
 
     /**
      * Creates a {@link SubscribableEventSource} based on this definition and the provided configuration.

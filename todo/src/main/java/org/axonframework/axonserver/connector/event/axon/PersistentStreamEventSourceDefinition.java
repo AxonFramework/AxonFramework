@@ -19,7 +19,6 @@ import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.SubscribableEventSourceDefinition;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableEventSource;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,7 +32,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * @author Marc Gathier
  * @since 4.10.0
  */
-public class PersistentStreamEventSourceDefinition implements SubscribableEventSourceDefinition<EventMessage> {
+public class PersistentStreamEventSourceDefinition implements SubscribableEventSourceDefinition {
 
     private final String name;
     private final PersistentStreamProperties persistentStreamProperties;

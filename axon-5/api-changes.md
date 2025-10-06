@@ -2000,7 +2000,7 @@ This section contains five tables:
 | org.axonframework.queryhandling.SubscriptionQueryResult                                                | org.axonframework.queryhandling.SubscriptionQueryResponse                                             | No                             |
 | org.axonframework.queryhandling.DefaultSubscriptionQueryResult                                         | org.axonframework.queryhandling.GenericSubscriptionQueryResponse                                      | No                             |
 | org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult            | org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResponseMessages | No                             |
-| org.axonframework.eventstreaming.SubscribableEventSource                                               | org.axonframework.messaging.SubscribableEventSource                                                   | No                             |
+| org.axonframework.messaging.SubscribableMessageSource                                                  | org.axonframework.messaging.SubscribableEventSource                                                   | No                             |
 | org.axonframework.configuration.SubscribableMessageSourceDefinition                                    | org.axonframework.configuration.SubscribableEventSourceDefinition                                     | No                             |
 | org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition              | org.axonframework.axonserver.connector.event.axon.PersistentStreamEventSourceDefinition               | No                             |
 
