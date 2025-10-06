@@ -16,12 +16,42 @@
 
 package org.axonframework.queryhandling.distributed;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.queryhandling.QueryHandlerName;
+import org.axonframework.queryhandling.QueryMessage;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
+ * The {@code QueryBusConnector} interface defines the contract for connecting multiple
+ * {@link org.axonframework.queryhandling.QueryBus} instances.
+ * <p>
+ * It allows for the dispatching of queries across different query bus instances, whether they are local or remote. One
+ * connector can be wrapped with another through the {@link DelegatingQueryBusConnector}, upon which more functionality
+ * can be added, such as payload conversion or serialization.
+ *
  * @author Steven van Beelen
  * @since 5.0.0
  */
 public interface QueryBusConnector extends DescribableComponent {
 
+    /**
+     * Subscribes this connector to queries matching the given {@code name}.
+     *
+     * @param name A combination of the {@link org.axonframework.messaging.QualifiedName} of the
+     *             {@link QueryMessage#type()} and {@link QueryMessage#responseType()} to subscribe to.
+     * @return A {@code CompletableFuture} that completes successfully when this connector subscribed to the given
+     * {@code name}.
+     */
+    CompletableFuture<Void> subscribe(@Nonnull QueryHandlerName name);
+
+    /**
+     * Unsubscribes this connector from queries with the given {@code name}.
+     *
+     * @param name A combination of the {@link org.axonframework.messaging.QualifiedName} of the
+     *             {@link QueryMessage#type()} and {@link QueryMessage#responseType()} to unsubscribe from.
+     * @return {@code true} if unsubscribing was successful, {@code false} otherwise.
+     */
+    boolean unsubscribe(@Nonnull QueryHandlerName name);
 }
