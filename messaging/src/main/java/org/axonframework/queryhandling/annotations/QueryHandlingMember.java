@@ -16,6 +16,7 @@
 
 package org.axonframework.queryhandling.annotations;
 
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 
 import java.lang.reflect.Type;
@@ -28,6 +29,7 @@ import java.lang.reflect.Type;
  * @author Allard Buijze
  * @since 3.1.0
  */
+@Internal
 public interface QueryHandlingMember<T> extends MessageHandlingMember<T> {
 
     /**

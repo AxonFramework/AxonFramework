@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.annotations;
 
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 
 /**
@@ -25,6 +26,7 @@ import org.axonframework.messaging.annotations.MessageHandlingMember;
  * @author Allard Buijze
  * @since 3.0.0
  */
+@Internal
 public interface CommandHandlingMember<T> extends MessageHandlingMember<T> {
 
     /**

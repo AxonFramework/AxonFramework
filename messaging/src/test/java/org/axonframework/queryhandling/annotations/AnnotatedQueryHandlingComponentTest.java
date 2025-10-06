@@ -168,6 +168,19 @@ class AnnotatedQueryHandlingComponentTest {
         assertThat(results.size()).isEqualTo(desiredResponsesCount);
     }
 
+    @Test
+    void handleInvokesQueryHandlerReturningNull() {
+        // given...
+        QueryMessage testQuery = new GenericQueryMessage(new MessageType("nullResponse"),
+                                                         "hello",
+                                                         instanceOf(String.class));
+        ProcessingContext testContext = StubProcessingContext.forMessage(testQuery);
+        // when...
+        MessageStream<QueryResponseMessage> result = testSubject.handle(testQuery, testContext);
+        // then...
+        assertThat(result.hasNextAvailable()).isFalse();
+    }
+
     private static class MyQueryHandler {
 
         @SuppressWarnings("unused")
@@ -202,6 +215,12 @@ class AnnotatedQueryHandlingComponentTest {
                 value.add("echo");
             }
             return value;
+        }
+
+        @SuppressWarnings("unused")
+        @QueryHandler(queryName = "nullResponse")
+        public String nullResponse(String echo) {
+            return null;
         }
     }
 

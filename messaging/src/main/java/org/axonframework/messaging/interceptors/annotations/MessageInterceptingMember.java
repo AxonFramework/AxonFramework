@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.interceptors.annotations;
 
+import org.axonframework.common.annotations.Internal;
 import org.axonframework.messaging.annotations.MessageHandlingMember;
 
 /**
@@ -26,6 +27,7 @@ import org.axonframework.messaging.annotations.MessageHandlingMember;
  * @author Allard Buijze
  * @since 4.4.0
  */
+@Internal
 public interface MessageInterceptingMember<T> extends MessageHandlingMember<T> {
 
     @Override

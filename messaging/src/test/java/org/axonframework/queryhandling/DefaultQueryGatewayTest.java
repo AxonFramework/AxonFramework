@@ -166,6 +166,20 @@ class DefaultQueryGatewayTest {
             assertThat(result).isCompletedExceptionally();
             assertThat(result.exceptionNow().getMessage()).isEqualTo("Faking conversion problem");
         }
+
+        @Test
+        void queryWithNullMessageInEntryReturnsNull() throws Exception {
+            // given...
+            MessageStream.Single<QueryResponseMessage> streamWithNullMessage = MessageStream.fromFuture(
+                    CompletableFuture.completedFuture(null)
+            );
+            when(queryBus.query(any(), eq(null))).thenReturn(streamWithNullMessage);
+            // when...
+            CompletableFuture<String> result = testSubject.query(QUERY_PAYLOAD, String.class, null);
+            // then...
+            assertThat(result).isDone();
+            assertThat(result.get()).isNull();
+        }
     }
 
     @Nested

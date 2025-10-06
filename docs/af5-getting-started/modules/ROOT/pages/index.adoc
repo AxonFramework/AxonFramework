@@ -4,7 +4,7 @@
 = Introduction
 
 Welcome to the Axon Framework 5 Getting Started Guide!
-This tutorial is based on the version `5.0.0-M3`, the second Milestone release of Axon Framework 5.
+This tutorial is based on the version `5.0.0-preview`, the Preview Release of Axon Framework 5.
 While this version is not yet production-ready or feature-complete, it does show a lot of new interesting features coming in Axon Framework 5.
 
 Building a new application from scratch can be daunting, especially when learning a new framework.
