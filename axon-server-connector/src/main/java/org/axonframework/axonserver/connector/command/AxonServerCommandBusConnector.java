@@ -28,6 +28,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.common.Assert;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.ShutdownLatch;
 import org.axonframework.messaging.QualifiedName;
@@ -101,7 +102,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
     }
 
     @Override
-    public void subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
+    public CompletableFuture<Void> subscribe(@Nonnull QualifiedName commandName, int loadFactor) {
         Assert.isTrue(loadFactor >= 0, () -> "Load factor must be greater than 0.");
         logger.debug("Subscribing to command [{}] with load factor [{}]", commandName, loadFactor);
         Registration registration = connection.commandChannel()
@@ -123,6 +124,7 @@ public class AxonServerCommandBusConnector implements CommandBusConnector {
             }
         }
         this.subscriptions.put(commandName, registration);
+        return FutureUtils.emptyCompletedFuture();
     }
 
     private CompletableFuture<CommandResponse> handle(Command command) {
