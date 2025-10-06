@@ -80,8 +80,7 @@ class JpaTokenStoreTest {
     @Transactional
     @Test
     void stealingFromOtherThreadFailsWithRowLock() throws Exception {
-
-         joinAndUnwrap(jpaTokenStore.initializeTokenSegments("processor", 1, null, null));
+        joinAndUnwrap(jpaTokenStore.initializeTokenSegments("processor", 1, null, null));
 
         ExecutorService executor1 = Executors.newSingleThreadExecutor();
         CountDownLatch cdl = new CountDownLatch(1);
@@ -131,7 +130,7 @@ class JpaTokenStoreTest {
             sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.hbm2ddl.auto", "create-drop"));
             sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.show_sql", "false"));
             sessionFactory.setJpaPropertyMap(Collections.singletonMap("hibernate.connection.url",
-                    "jdbc:hsqldb:mem:testdb"));
+                                                                      "jdbc:hsqldb:mem:testdb"));
             return sessionFactory;
         }
 

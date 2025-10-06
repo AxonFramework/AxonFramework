@@ -87,7 +87,8 @@ public class JpaTokenStore implements TokenStore {
      * @param serializer            The {@link Serializer} used to de-/serialize {@link TrackingToken}'s with.
      * @param configuration
      */
-    public JpaTokenStore(@Nonnull EntityManagerProvider entityManagerProvider, @Nonnull Serializer serializer,
+    public JpaTokenStore(@Nonnull EntityManagerProvider entityManagerProvider,
+                         @Nonnull Serializer serializer,
                          @Nonnull JpaTokenStoreConfiguration configuration) {
         assertNonNull(entityManagerProvider, "EntityManagerProvider is a hard requirement and should be provided");
         assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");
