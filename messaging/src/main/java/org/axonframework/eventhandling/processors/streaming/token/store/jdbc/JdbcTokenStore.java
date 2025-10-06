@@ -70,6 +70,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
 public class JdbcTokenStore implements TokenStore {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcTokenStore.class);
+
     private static final String CONFIG_TOKEN_ID = "__config";
     private static final int CONFIG_SEGMENT = 0;
     private static final String COUNT_COLUMN_NAME = "segmentCount";
@@ -92,7 +93,8 @@ public class JdbcTokenStore implements TokenStore {
      * @param configuration      The {@link JdbcTokenStoreConfiguration} used to instantiate a {@code JdbcTokenStore}
      *                           instance
      */
-    public JdbcTokenStore(@Nonnull ConnectionProvider connectionProvider, @Nonnull Serializer serializer,
+    public JdbcTokenStore(@Nonnull ConnectionProvider connectionProvider,
+                          @Nonnull Serializer serializer,
                           @Nonnull JdbcTokenStoreConfiguration configuration) {
         assertNonNull(connectionProvider, "The ConnectionProvider is a hard requirement and should be provided");
         assertNonNull(serializer, "The Serializer is a hard requirement and should be provided");

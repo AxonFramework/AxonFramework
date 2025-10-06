@@ -615,7 +615,8 @@ class JdbcTokenStoreTest {
                     .claimTimeout(Duration.ofSeconds(2))
                     .nodeId("concurrent");
             return new JdbcTokenStore(dataSource::getConnection,
-                                      TestSerializer.JACKSON.getSerializer(), config);
+                                      TestSerializer.JACKSON.getSerializer(),
+                                      config);
         }
 
         @Bean
@@ -624,7 +625,8 @@ class JdbcTokenStoreTest {
                     .claimTimeout(Duration.ofSeconds(-1))
                     .nodeId("stealing");
             return new JdbcTokenStore(dataSource::getConnection,
-                                      TestSerializer.JACKSON.getSerializer(), config);
+                                      TestSerializer.JACKSON.getSerializer(),
+                                      config);
         }
 
         @Bean
