@@ -89,6 +89,26 @@ public interface CommandGateway extends DescribableComponent {
     }
 
     /**
+     * Send the given {@code command} and waits for completion.
+     * <p>
+     * If the command was successful, its result (if any) is discarded. If it was unsuccessful an exception is thrown.
+     * Any checked exceptions that may occur as the result of running the command will be wrapped in a
+     * {@link CommandExecutionException}.
+     * <p>
+     * If the result is needed, use {@link #sendAndWait(Object, Class)} instead, as it allows for type conversion of the
+     * result payload.
+     *
+     * @param command The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
+     * @param context The processing context, if any, to dispatch the given {@code command} in.
+     * @return The payload of the result message, or {@code null} when none is present.
+     * @throws CommandExecutionException When a checked exception occurs while handling the command.
+     */
+    @Nullable
+    default Object sendAndWait(@Nonnull Object command, @Nullable ProcessingContext context) {
+        return sendAndWait(command, Object.class, context);
+    }
+
+    /**
      * Send the given {@code command} and waits for the result converted to the {@code resultType}.
      * <p>
      * If the command was successful, its result will be converted to the specified {@code returnType} and returned. If
@@ -104,7 +124,28 @@ public interface CommandGateway extends DescribableComponent {
     @Nullable
     default <R> R sendAndWait(@Nonnull Object command,
                               @Nonnull Class<R> resultType) {
-        return send(command, null).wait(resultType);
+        return sendAndWait(command, resultType, null);
+    }
+
+    /**
+     * Send the given {@code command} and waits for the result converted to the {@code resultType}.
+     * <p>
+     * If the command was successful, its result will be converted to the specified {@code returnType} and returned. If
+     * it was unsuccessful or conversion failed, an exception is thrown. Any checked exceptions that may occur as the
+     * result of running the command will be wrapped in a {@link CommandExecutionException}.
+     *
+     * @param command    The command payload or {@link org.axonframework.commandhandling.CommandMessage} to send.
+     * @param resultType The class representing the type of the expected command result.
+     * @param context    The processing context, if any, to dispatch the given {@code command} in.
+     * @param <R>        The generic type of the expected response.
+     * @return The payload of the result message of type {@code R}, or {@code null} when none is present.
+     * @throws CommandExecutionException When a checked exception occurs while handling the command.
+     */
+    @Nullable
+    default <R> R sendAndWait(@Nonnull Object command,
+                              @Nonnull Class<R> resultType,
+                              @Nullable ProcessingContext context) {
+        return send(command, context).wait(resultType);
     }
 
     /**
