@@ -636,9 +636,9 @@ syntax:
 ```java
 public void configurePSEP() {
     EventProcessorModule.pooledStreaming("when-student-enrolled-to-max-courses-then-send-notification")
-                        .eventHandlingComponents(components -> components.declarative(eventHandler1)
-                                                                         .annotated(eventHandler2))
-                        .notCustomized();
+            .eventHandlingComponents(components -> components.declarative(eventHandler1)
+                    .annotated(eventHandler2))
+            .notCustomized();
 }
 ```
 
@@ -674,7 +674,8 @@ This is not efficient because you cannot distribute the processing of events acr
 But it's straightforward to tune the behavior. The new `@SequencingPolicy` annotation allows declaring sequencing
 policies on event handler methods or classes. Alternatively, you can use the declarative approach with the builder
 pattern.
-The most useful approach with DCB might be the `PropertySequencingPolicy`, which allows you to process events in order when they
+The most useful approach with DCB might be the `PropertySequencingPolicy`, which allows you to process events in order
+when they
 have the same value for a certain property. For example, you can process `StudentEnrolledEvent`s in order when they
 have the same `courseId` property, because they are related to the same course, but allow parallel processing of events
 that are related to different courses.
@@ -1280,7 +1281,7 @@ Here is an example of both a creational and an instance command handler in Java:
 
 ```java
 public class MyEntity {
-    
+
     private String id;
 
     @EntityCreator
@@ -1744,9 +1745,11 @@ can no longer be used outside the scope of a message handling function. To not l
 `QueryBus` now allows for the switch between emitting updates within a `ProcessingContext` or outside a
 `ProcessingContext`. This means the `QueryBus` inherited some methods from the `QueryUpdateEmitter`, being:
 
-1. `CompletableFuture<Void> emitUpdate(Predicate<SubscriptionQueryMessage>, Supplier<SubscriptionQueryUpdateMessage>, ProcessingContext)`
+1.
+`CompletableFuture<Void> emitUpdate(Predicate<SubscriptionQueryMessage>, Supplier<SubscriptionQueryUpdateMessage>, ProcessingContext)`
 2. `CompletableFuture<Void> completeSubscriptions(Predicate<SubscriptionQueryMessage>, ProcessingContext)`
-3. `CompletableFuture<Void> completeSubscriptionsExceptionally(Predicate<SubscriptionQueryMessage>, Throwable, ProcessingContext)`
+3.
+`CompletableFuture<Void> completeSubscriptionsExceptionally(Predicate<SubscriptionQueryMessage>, Throwable, ProcessingContext)`
 
 As becomes clear from the above, the `QueryBus` now sports the methods that (1) take in a `SubscriptionQueryMessage` and
 supplier of a `SubscriptionQueryUpdateMessage`, and (2) take in a nullable `ProcessingContext`.
@@ -1992,7 +1995,7 @@ This section contains five tables:
 | org.axonframework.messaging.annotation.SourceIdParameterResolverFactory                                | org.axonframework.messaging.annotations.SourceIdParameterResolverFactory                              | No                             |
 | org.axonframework.messaging.annotation.UnsupportedHandlerException                                     | org.axonframework.messaging.annotations.UnsupportedHandlerException                                   | No                             |
 | org.axonframework.messaging.annotation.WrappedMessageHandlingMember                                    | org.axonframework.messaging.annotations.WrappedMessageHandlingMember                                  | No                             |
-| org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter                               | org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent                             | No                             |
+| org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter                               | org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent                           | No                             |
 | org.axonframework.queryhandling.annotation.MethodQueryHandlerDefinition                                | org.axonframework.queryhandling.annotations.MethodQueryHandlerDefinition                              | No                             |
 | org.axonframework.queryhandling.annotation.QueryHandler                                                | org.axonframework.queryhandling.annotations.QueryHandler                                              | No                             |
 | org.axonframework.queryhandling.annotation.QueryHandlingMember                                         | org.axonframework.queryhandling.annotations.QueryHandlingMember                                       | No                             |
@@ -2000,6 +2003,7 @@ This section contains five tables:
 | org.axonframework.queryhandling.SubscriptionQueryResult                                                | org.axonframework.queryhandling.SubscriptionQueryResponse                                             | No                             |
 | org.axonframework.queryhandling.DefaultSubscriptionQueryResult                                         | org.axonframework.queryhandling.GenericSubscriptionQueryResponse                                      | No                             |
 | org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult            | org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResponseMessages | No                             |
+| org.axonframework.eventhandling.processors.streaming.token.store.GenericTokenEntry                     | org.axonframework.eventhandling.processors.streaming.token.store.jdbc.JdbcTokenEntry                  | No                             |
 
 ### Removed Classes
 
@@ -2104,6 +2108,7 @@ This section contains five tables:
 | org.axonframework.queryhandling.QuerySubscription                                        | Redundant class with current handler registration flow                                                                                         |
 | org.axonframework.queryhandling.QueryInvocationErrorHandler                              | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
 | org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler                       | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
+| org.axonframework.eventhandling.processors.streaming.token.store.AbstractTokenEntry      | Content of the methods pushed up into `JdbcTokenEntry` as the only implementer.                                                                |
 
 ### Marked for removal Classes
 
@@ -2119,10 +2124,10 @@ per class described) approach.
 
 Note that **any**  changes here may have far extending impact on the original class.
 
-| Class                       | Before                    | After                 | Explanation                                                        | 
-|-----------------------------|---------------------------|-----------------------|--------------------------------------------------------------------|
-| `MetaData`                  | `Map<String, ?>`          | `Map<String, String>` | See the [metadata description](#metadata-with-string-values)       |
-| `SubscriptionQueryResult`   | `implements Registration` | nothing               | The `Registration#cancel` method moved to a local `close()` method |
+| Class                     | Before                    | After                 | Explanation                                                        | 
+|---------------------------|---------------------------|-----------------------|--------------------------------------------------------------------|
+| `MetaData`                | `Map<String, ?>`          | `Map<String, String>` | See the [metadata description](#metadata-with-string-values)       |
+| `SubscriptionQueryResult` | `implements Registration` | nothing               | The `Registration#cancel` method moved to a local `close()` method |
 
 ### Adjusted Constants
 
@@ -2143,23 +2148,26 @@ This section contains four subsections, called:
 
 ### Constructor Parameter adjustments
 
-| Constructor                                                                                | What                                                                                         | Why                                                             | 
-|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
-| One org.axonframework.messaging.AbstractMessage constructor                                | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| One org.axonframework.serialization.SerializedMessage constructor                          | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.messaging.GenericMessage constructors                      | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.commandhandling.GenericCommandMessage constructors         | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.eventhandling.GenericEventMessage constructors             | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.eventhandling.GenericDomainEventMessage constructors       | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.queryhandling.GenericQueryMessage constructors             | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.queryhandling.GenericSubscriptionQueryMessage constructors | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.queryhandling.GenericStreamingQueryMessage constructors    | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.deadline.GenericDeadlineMessage constructors               | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.messaging.GenericResultMessage constructors                | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| `DefaultSubscriptionQueryResult`                                                           | Replaced `Mono` and `Flux` for `SubscriptionQueryResponseMessages` and payload map functions | See [here](#subscription-queries-and-the-query-update-emitter)  |
+| Constructor                                                                                | What                                                                                         | Why                                                            | 
+|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| One org.axonframework.messaging.AbstractMessage constructor                                | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| One org.axonframework.serialization.SerializedMessage constructor                          | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.messaging.GenericMessage constructors                      | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.commandhandling.GenericCommandMessage constructors         | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.eventhandling.GenericEventMessage constructors             | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.eventhandling.GenericDomainEventMessage constructors       | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.queryhandling.GenericQueryMessage constructors             | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.queryhandling.GenericSubscriptionQueryMessage constructors | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.queryhandling.GenericStreamingQueryMessage constructors    | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.deadline.GenericDeadlineMessage constructors               | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.messaging.GenericResultMessage constructors                | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| `DefaultSubscriptionQueryResult`                                                           | Replaced `Mono` and `Flux` for `SubscriptionQueryResponseMessages` and payload map functions | See [here](#subscription-queries-and-the-query-update-emitter) |
+| `JpaTokenStore`                                                                            | Replaced `Serializer` with `Converter`                                                       | See [here](#Serialization-Conversion-changes)                  |
+| `JdbcTokenStore`                                                                           | Replaced `Serializer` with `Converter`                                                       | See [here](#Serialization-Conversion-changes)                  |
+ 
 
 ### Moved, Renamed, or parameter adjusted Methods
 
