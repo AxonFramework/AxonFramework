@@ -26,7 +26,6 @@ import org.axonframework.messaging.Metadata;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Interface towards the Command Handling components of an application.
@@ -83,14 +82,7 @@ public interface CommandGateway extends DescribableComponent {
      * @throws CommandExecutionException When a checked exception occurs while handling the command.
      */
     default void sendAndWait(@Nonnull Object command) {
-        try {
-            send(command, null).getResultMessage().get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new CommandExecutionException("Thread interrupted while waiting for result", e);
-        } catch (ExecutionException e) {
-            throw rethrowUnwrappedExecutionException(e);
-        }
+        sendAndWait(command, Object.class);
     }
 
     /**
@@ -108,14 +100,7 @@ public interface CommandGateway extends DescribableComponent {
      */
     default <R> R sendAndWait(@Nonnull Object command,
                               @Nonnull Class<R> resultType) {
-        try {
-            return send(command, null).resultAs(resultType).get();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new CommandExecutionException("Thread interrupted while waiting for result", e);
-        } catch (ExecutionException e) {
-            throw rethrowUnwrappedExecutionException(e);
-        }
+        return send(command, null).wait(resultType);
     }
 
     /**
@@ -172,16 +157,4 @@ public interface CommandGateway extends DescribableComponent {
     CommandResult send(@Nonnull Object command,
                        @Nonnull Metadata metadata,
                        @Nullable ProcessingContext context);
-
-    private static RuntimeException rethrowUnwrappedExecutionException(@Nonnull ExecutionException executionException) {
-        if (executionException.getCause() instanceof RuntimeException runtimeException) {
-            throw runtimeException;
-        }
-        if (executionException.getCause() instanceof Error error) {
-            throw error;
-        }
-        throw new CommandExecutionException(
-                "Checked exception while handling command.", executionException.getCause()
-        );
-    }
 }

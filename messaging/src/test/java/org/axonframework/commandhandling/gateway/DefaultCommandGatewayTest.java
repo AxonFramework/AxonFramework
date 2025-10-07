@@ -34,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -155,6 +156,36 @@ class DefaultCommandGatewayTest {
         assertThat(testCommand.routingKey()).isEqualTo(resultCommand.routingKey());
         assertThat(testCommand.priority()).isEqualTo(resultCommand.priority());
         assertEquals("OK", result.getResultMessage().get().payload());
+    }
+
+    @Test
+    void sendAndWaitReturnsExpectedResult() {
+        // given...
+        String expectedResult = "OK";
+        when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
+                new GenericCommandResultMessage(new MessageType("result"), expectedResult)
+        ));
+        TestPayload payload = new TestPayload();
+        // when...
+        String result = testSubject.sendAndWait(payload, String.class);
+        // then...
+        assertThat(result).isEqualTo(expectedResult);
+        verify(mockCommandBus).dispatch(
+                argThat(m -> {
+                    Object resultPayload = m.payload();
+                    return resultPayload != null && resultPayload.equals(payload);
+                }),
+                isNull()
+        );
+    }
+
+    @Test
+    void sendAndWaitReturnsUnwrapExecutionException() {
+        // given...
+        when(mockCommandBus.dispatch(any(), any())).thenReturn(CompletableFuture.failedFuture(new MockException()));
+        TestPayload payload = new TestPayload();
+        // when/then...
+        assertThatThrownBy(() -> testSubject.sendAndWait(payload, String.class)).isInstanceOf(MockException.class);
     }
 
     private static class TestPayload {
