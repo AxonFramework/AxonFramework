@@ -207,7 +207,7 @@ class AbstractEventBusTest {
         }
 
         @Override
-        protected void prepareCommit(List<? extends EventMessage> events, ProcessingContext context) {
+        protected void prepareCommit(@Nonnull List<? extends EventMessage> events, ProcessingContext context) {
             if (throwExceptionDuringPrepare) {
                 throw new RuntimeException("Simulated failure during prepare commit");
             }

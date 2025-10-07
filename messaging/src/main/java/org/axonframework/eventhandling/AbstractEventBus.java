@@ -25,14 +25,10 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.BiConsumer;
 
 /**
@@ -48,11 +44,9 @@ import java.util.function.BiConsumer;
  */
 public abstract class AbstractEventBus implements EventBus {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractEventBus.class);
-
     private final Context.ResourceKey<List<EventMessage>> eventsKey = Context.ResourceKey.withLabel("EventBus_Events");
     private final Context.ResourceKey<Boolean> handlersRegistered = Context.ResourceKey.withLabel("EventBus_HandlersRegistered");
-    private final Set<BiConsumer<List<? extends EventMessage>, ProcessingContext>> eventProcessors = new CopyOnWriteArraySet<>();
+    private final EventSubscribers eventSubscribers = new EventSubscribers();
 
     /**
      * Instantiate an {@link AbstractEventBus} based on the fields contained in the {@link Builder}.
@@ -65,64 +59,46 @@ public abstract class AbstractEventBus implements EventBus {
 
     @Override
     public Registration subscribe(
-            @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer) {
-        if (this.eventProcessors.add(eventsBatchConsumer)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Event Processor [{}] subscribed successfully", eventsBatchConsumer);
-            }
-        } else {
-            logger.info("Event Processor [{}] not added. It was already subscribed", eventsBatchConsumer);
-        }
-        return () -> {
-            if (eventProcessors.remove(eventsBatchConsumer)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Event Processor {} unsubscribed successfully", eventsBatchConsumer);
-                }
-                return true;
-            } else {
-                logger.info("Event Processor {} not removed. It was already unsubscribed", eventsBatchConsumer);
-                return false;
-            }
-        };
+            @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer
+    ) {
+        return eventSubscribers.subscribe(eventsBatchConsumer);
     }
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<EventMessage> events) {
-        if (context == null || !(context instanceof ProcessingLifecycle)) {
+        if (context == null) {
             // No processing context, publish immediately
             prepareCommit(events, null);
-            commit(events);
-            afterCommit(events);
+            commit(events, null);
+            afterCommit(events, null);
             return FutureUtils.emptyCompletedFuture();
         }
 
-        ProcessingLifecycle lifecycle = (ProcessingLifecycle) context;
-
         // Check if we've already registered handlers for this context
-        Boolean registered = context.getResource(handlersRegistered);
-        if (registered == null) {
+        boolean registered = context.containsResource(handlersRegistered);
+        if (!registered) {
             // First time publishing in this context, register lifecycle handlers
             context.putResource(handlersRegistered, Boolean.TRUE);
             context.putResource(eventsKey, new ArrayList<>());
 
-            lifecycle.runOnPrepareCommit(ctx -> {
+            context.runOnPrepareCommit(ctx -> {
                 List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
                 if (queuedEvents != null && !queuedEvents.isEmpty()) {
                     processEventsInPhase(queuedEvents, ctx, this::prepareCommit);
                 }
             });
 
-            lifecycle.runOnCommit(ctx -> {
+            context.runOnCommit(ctx -> {
                 List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
                 if (queuedEvents != null && !queuedEvents.isEmpty()) {
-                    commit(new ArrayList<>(queuedEvents));
+                    processEventsInPhase(queuedEvents, ctx, this::commit);
                 }
             });
 
-            lifecycle.runOnAfterCommit(ctx -> {
+            context.runOnAfterCommit(ctx -> {
                 List<EventMessage> queuedEvents = ctx.getResource(eventsKey);
                 if (queuedEvents != null && !queuedEvents.isEmpty()) {
-                    afterCommit(new ArrayList<>(queuedEvents));
+                    processEventsInPhase(queuedEvents, ctx, this::afterCommit);
                 }
             });
         }
@@ -167,8 +143,8 @@ public abstract class AbstractEventBus implements EventBus {
      * @param events  Events to be published by this Event Bus
      * @param context The processing context, or {@code null} if no context is active
      */
-    protected void prepareCommit(List<? extends EventMessage> events, @Nullable ProcessingContext context) {
-        eventProcessors.forEach(eventProcessor -> eventProcessor.accept(events, context));
+    protected void prepareCommit(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
+        eventSubscribers.notifySubscribers(events, context);
     }
 
     /**
@@ -177,7 +153,7 @@ public abstract class AbstractEventBus implements EventBus {
      *
      * @param events Events to be published by this Event Bus
      */
-    protected void commit(List<? extends EventMessage> events) {
+    protected void commit(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
     }
 
     /**
@@ -186,13 +162,13 @@ public abstract class AbstractEventBus implements EventBus {
      *
      * @param events Events to be published by this Event Bus
      */
-    protected void afterCommit(List<? extends EventMessage> events) {
+    protected void afterCommit(@Nonnull List<? extends EventMessage> events, @Nullable ProcessingContext context) {
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventsKey", eventsKey);
-        descriptor.describeProperty("eventProcessors", eventProcessors);
+        descriptor.describeProperty("eventSubscribers", eventSubscribers);
     }
 
     /**
