@@ -1992,7 +1992,7 @@ This section contains five tables:
 | org.axonframework.messaging.annotation.SourceIdParameterResolverFactory                                | org.axonframework.messaging.annotations.SourceIdParameterResolverFactory                              | No                             |
 | org.axonframework.messaging.annotation.UnsupportedHandlerException                                     | org.axonframework.messaging.annotations.UnsupportedHandlerException                                   | No                             |
 | org.axonframework.messaging.annotation.WrappedMessageHandlingMember                                    | org.axonframework.messaging.annotations.WrappedMessageHandlingMember                                  | No                             |
-| org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter                               | org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent                             | No                             |
+| org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter                               | org.axonframework.queryhandling.annotations.AnnotatedQueryHandlingComponent                           | No                             |
 | org.axonframework.queryhandling.annotation.MethodQueryHandlerDefinition                                | org.axonframework.queryhandling.annotations.MethodQueryHandlerDefinition                              | No                             |
 | org.axonframework.queryhandling.annotation.QueryHandler                                                | org.axonframework.queryhandling.annotations.QueryHandler                                              | No                             |
 | org.axonframework.queryhandling.annotation.QueryHandlingMember                                         | org.axonframework.queryhandling.annotations.QueryHandlingMember                                       | No                             |
@@ -2000,6 +2000,9 @@ This section contains five tables:
 | org.axonframework.queryhandling.SubscriptionQueryResult                                                | org.axonframework.queryhandling.SubscriptionQueryResponse                                             | No                             |
 | org.axonframework.queryhandling.DefaultSubscriptionQueryResult                                         | org.axonframework.queryhandling.GenericSubscriptionQueryResponse                                      | No                             |
 | org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResult            | org.axonframework.axonserver.connector.query.subscription.AxonServerSubscriptionQueryResponseMessages | No                             |
+| org.axonframework.messaging.SubscribableMessageSource                                                  | org.axonframework.messaging.SubscribableEventSource                                                   | No                             |
+| org.axonframework.configuration.SubscribableMessageSourceDefinition                                    | org.axonframework.eventhandling.configuration.SubscribableEventSourceDefinition                       | No                             |
+| org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition              | org.axonframework.axonserver.connector.event.axon.PersistentStreamEventSourceDefinition               | No                             |
 
 ### Removed Classes
 
@@ -2044,6 +2047,7 @@ This section contains five tables:
 | org.axonframework.eventhandling.TrackedEventData                                         | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 | org.axonframework.eventhandling.TrackedDomainEventData                                   | Removed in favor of adding a `TrackingToken` to the context of a `MessageStream.Entry`                                                         |
 | org.axonframework.messaging.Headers                                                      | Removed due to lack of use and foreseen use.                                                                                                   |
+| org.axonframework.messaging.SubscribableMessageSource                                    | Replaced by `org.axonframework.messaging.SubscribableEventSource`, bacause just `EventMessage`s can be sourced.                                |
 | org.axonframework.config.EventProcessingModule                                           | Removed due to changes in the Configuration API (see [Event Processors](#event-processors)).                                                   |
 | org.axonframework.config.EventProcessingConfiguration                                    | Removed due to changes in the Configuration API (see [Event Processors](#event-processors)).                                                   |
 | org.axonframework.config.EventProcessingConfigurer                                       | Removed due to changes in the Configuration API (see [Event Processors](#event-processors)).                                                   |
@@ -2104,6 +2108,8 @@ This section contains five tables:
 | org.axonframework.queryhandling.QuerySubscription                                        | Redundant class with current handler registration flow                                                                                         |
 | org.axonframework.queryhandling.QueryInvocationErrorHandler                              | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
 | org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler                       | Removed together with scatter-gather query removal, as described [here](#query-dispatching-and-handling)                                       |
+| org.axonframework.eventhandling.processors.subscribing.EventProcessingStrategy           | The sync/async processing is supported on `EventHandlingComponent` level                                                                       |
+| org.axonframework.eventhandling.processors.subscribing.DirectEventProcessingStrategy     | The sync/async processing is supported on `EventHandlingComponent` level                                                                       |
 
 ### Marked for removal Classes
 
@@ -2119,10 +2125,10 @@ per class described) approach.
 
 Note that **any**  changes here may have far extending impact on the original class.
 
-| Class                       | Before                    | After                 | Explanation                                                        | 
-|-----------------------------|---------------------------|-----------------------|--------------------------------------------------------------------|
-| `MetaData`                  | `Map<String, ?>`          | `Map<String, String>` | See the [metadata description](#metadata-with-string-values)       |
-| `SubscriptionQueryResult`   | `implements Registration` | nothing               | The `Registration#cancel` method moved to a local `close()` method |
+| Class                     | Before                    | After                 | Explanation                                                        | 
+|---------------------------|---------------------------|-----------------------|--------------------------------------------------------------------|
+| `MetaData`                | `Map<String, ?>`          | `Map<String, String>` | See the [metadata description](#metadata-with-string-values)       |
+| `SubscriptionQueryResult` | `implements Registration` | nothing               | The `Registration#cancel` method moved to a local `close()` method |
 
 ### Adjusted Constants
 
@@ -2143,23 +2149,23 @@ This section contains four subsections, called:
 
 ### Constructor Parameter adjustments
 
-| Constructor                                                                                | What                                                                                         | Why                                                             | 
-|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
-| One org.axonframework.messaging.AbstractMessage constructor                                | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| One org.axonframework.serialization.SerializedMessage constructor                          | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.messaging.GenericMessage constructors                      | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.commandhandling.GenericCommandMessage constructors         | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.eventhandling.GenericEventMessage constructors             | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.eventhandling.GenericDomainEventMessage constructors       | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.queryhandling.GenericQueryMessage constructors             | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.queryhandling.GenericSubscriptionQueryMessage constructors | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.queryhandling.GenericStreamingQueryMessage constructors    | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.deadline.GenericDeadlineMessage constructors               | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.messaging.GenericResultMessage constructors                | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                    |
-| `DefaultSubscriptionQueryResult`                                                           | Replaced `Mono` and `Flux` for `SubscriptionQueryResponseMessages` and payload map functions | See [here](#subscription-queries-and-the-query-update-emitter)  |
+| Constructor                                                                                | What                                                                                         | Why                                                            | 
+|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| One org.axonframework.messaging.AbstractMessage constructor                                | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| One org.axonframework.serialization.SerializedMessage constructor                          | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.messaging.GenericMessage constructors                      | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.commandhandling.GenericCommandMessage constructors         | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.eventhandling.GenericEventMessage constructors             | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.eventhandling.GenericDomainEventMessage constructors       | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.queryhandling.GenericQueryMessage constructors             | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.queryhandling.GenericSubscriptionQueryMessage constructors | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.queryhandling.GenericStreamingQueryMessage constructors    | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.deadline.GenericDeadlineMessage constructors               | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.messaging.GenericResultMessage constructors                | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `MessageType` type                                                                 | See [here](#message-type-and-qualified-name)                   |
+| `DefaultSubscriptionQueryResult`                                                           | Replaced `Mono` and `Flux` for `SubscriptionQueryResponseMessages` and payload map functions | See [here](#subscription-queries-and-the-query-update-emitter) |
 
 ### Moved, Renamed, or parameter adjusted Methods
 
@@ -2292,6 +2298,7 @@ This section contains four subsections, called:
 | `QueryUpdateEmitter#queryUpdateHandlerRegistered(SubscriptionQueryMessage)`                                       | Moved duplicate handler registration into `QueryUpdateEmitter#subscribeUpdateHandler` method.                               |
 | `UpdateHandlerRegistration#getRegistration()`                                                                     | Replaced for `UpdateHandler#cancel()`                                                                                       |
 | `QueryUpdateEmitter#activeSubscriptions()`                                                                        | Removed due to limited use (see [Query Dispatching and Handling](#query-dispatching-and-handling)                           |
+| `SubscribingEventProcessor#getMessageSource()`                                                                    | Removed due to no usages.                                                                                                   |
 
 ### Changed Method return types
 

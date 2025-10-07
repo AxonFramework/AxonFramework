@@ -19,7 +19,7 @@ package org.axonframework.spring.messaging;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.SubscribableMessageSource;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 
@@ -40,7 +40,7 @@ import static java.util.Collections.singletonList;
  * @author Allard Buijze
  * @since 3.0
  */
-public class InboundEventMessageChannelAdapter implements MessageHandler, SubscribableMessageSource<EventMessage> {
+public class InboundEventMessageChannelAdapter implements MessageHandler, SubscribableEventSource {
 
     private final CopyOnWriteArrayList<Consumer<List<? extends EventMessage>>> messageProcessors = new CopyOnWriteArrayList<>();
     private final EventMessageConverter eventMessageConverter;
@@ -78,9 +78,9 @@ public class InboundEventMessageChannelAdapter implements MessageHandler, Subscr
 
     @Nonnull
     @Override
-    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> messageProcessor) {
-        messageProcessors.add(messageProcessor);
-        return () -> messageProcessors.remove(messageProcessor);
+    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer) {
+        messageProcessors.add(eventsBatchConsumer);
+        return () -> messageProcessors.remove(eventsBatchConsumer);
     }
 
     /**

@@ -82,22 +82,22 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     @Override
-    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventProcessor) {
-        if (this.eventProcessors.add(eventProcessor)) {
+    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer) {
+        if (this.eventProcessors.add(eventsBatchConsumer)) {
             if (logger.isDebugEnabled()) {
-                logger.debug("EventProcessor [{}] subscribed successfully", eventProcessor);
+                logger.debug("Event Processor [{}] subscribed successfully", eventsBatchConsumer);
             }
         } else {
-            logger.info("EventProcessor [{}] not added. It was already subscribed", eventProcessor);
+            logger.info("Event Processor [{}] not added. It was already subscribed", eventsBatchConsumer);
         }
         return () -> {
-            if (eventProcessors.remove(eventProcessor)) {
+            if (eventProcessors.remove(eventsBatchConsumer)) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("EventListener {} unsubscribed successfully", eventProcessor);
+                    logger.debug("Event Processor {} unsubscribed successfully", eventsBatchConsumer);
                 }
                 return true;
             } else {
-                logger.info("EventListener {} not removed. It was already unsubscribed", eventProcessor);
+                logger.info("Event Processor {} not removed. It was already unsubscribed", eventsBatchConsumer);
                 return false;
             }
         };
