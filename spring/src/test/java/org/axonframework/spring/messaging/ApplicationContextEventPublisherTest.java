@@ -64,7 +64,7 @@ public class ApplicationContextEventPublisherTest {
 
         @Bean
         public EventBus eventBus() {
-            return SimpleEventBus.builder().build();
+            return new SimpleEventBus();
         }
 
         @Bean

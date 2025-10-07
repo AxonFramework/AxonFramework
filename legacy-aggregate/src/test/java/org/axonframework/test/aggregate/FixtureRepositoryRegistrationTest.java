@@ -93,7 +93,7 @@ class FixtureRepositoryRegistrationTest {
                                     .entityManagerProvider(
                                             new SimpleEntityManagerProvider(mock(EntityManager.class))
                                     )
-                                    .eventBus(SimpleEventBus.builder().build())
+                                    .eventBus(new SimpleEventBus())
                                     .build();
         testSubject.registerRepository(testRepository);
 
@@ -126,7 +126,7 @@ class FixtureRepositoryRegistrationTest {
                                     .entityManagerProvider(
                                             new SimpleEntityManagerProvider(mock(EntityManager.class))
                                     )
-                                    .eventBus(SimpleEventBus.builder().build())
+                                    .eventBus(new SimpleEventBus())
                                     .build();
         testSubject.registerRepository(testRepository);
 
@@ -149,7 +149,7 @@ class FixtureRepositoryRegistrationTest {
                                     .entityManagerProvider(
                                             new SimpleEntityManagerProvider(mock(EntityManager.class))
                                     )
-                                    .eventBus(SimpleEventBus.builder().build())
+                                    .eventBus(new SimpleEventBus())
                                     .build();
         testSubject.registerRepository(testRepository);
 
@@ -172,7 +172,7 @@ class FixtureRepositoryRegistrationTest {
                                     .entityManagerProvider(
                                             new SimpleEntityManagerProvider(mock(EntityManager.class))
                                     )
-                                    .eventBus(SimpleEventBus.builder().build())
+                                    .eventBus(new SimpleEventBus())
                                     .build();
         testSubject.registerRepository(testRepository);
 

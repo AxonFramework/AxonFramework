@@ -394,7 +394,7 @@ class SpringBeanResolverFactoryTest {
 
         @Bean
         public EventBus eventBus() {
-            return SimpleEventBus.builder().build();
+            return new SimpleEventBus();
         }
     }
 

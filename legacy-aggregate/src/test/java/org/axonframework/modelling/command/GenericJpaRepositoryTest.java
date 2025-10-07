@@ -75,7 +75,7 @@ class GenericJpaRepositoryTest {
         mockEntityManager = mock(EntityManager.class);
         //noinspection unchecked
         identifierConverter = mock(Function.class);
-        eventBus = SimpleEventBus.builder().build();
+        eventBus = new SimpleEventBus();
         when(identifierConverter.apply(anyString())).thenAnswer(i -> i.getArguments()[0]);
         testSubject =
                 GenericJpaRepository.builder(StubJpaAggregate.class)
@@ -344,7 +344,6 @@ class GenericJpaRepositoryTest {
         private final Map<String, Long> sequencePerAggregate = new HashMap<>();
 
         DomainSequenceAwareEventBus() {
-            super(SimpleEventBus.builder());
         }
 
         @Override
