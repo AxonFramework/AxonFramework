@@ -23,35 +23,21 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.eventhandling.tracing.DefaultEventBusSpanFactory;
-import org.axonframework.eventhandling.tracing.EventBusSpanFactory;
-import org.axonframework.messaging.DefaultMessageDispatchInterceptorChain;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.Span;
-import org.axonframework.tracing.SpanFactory;
-import org.axonframework.tracing.SpanScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.messaging.unitofwork.LegacyUnitOfWork.Phase.*;
 
 /**
@@ -69,12 +55,8 @@ public abstract class AbstractEventBus implements EventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventBus.class);
 
-    private final MessageMonitor<? super EventMessage> messageMonitor;
-
     private final String eventsKey = this + "_EVENTS";
     private final Set<BiConsumer<List<? extends EventMessage>, ProcessingContext>> eventProcessors = new CopyOnWriteArraySet<>();
-    private final Set<MessageDispatchInterceptor<? super EventMessage>> dispatchInterceptors = new CopyOnWriteArraySet<>();
-    private final EventBusSpanFactory spanFactory;
 
     /**
      * Instantiate an {@link AbstractEventBus} based on the fields contained in the {@link Builder}.
@@ -83,8 +65,6 @@ public abstract class AbstractEventBus implements EventBus {
      */
     protected AbstractEventBus(Builder builder) {
         builder.validate();
-        this.messageMonitor = builder.messageMonitor;
-        this.spanFactory = builder.spanFactory;
     }
 
     @Override
@@ -112,15 +92,6 @@ public abstract class AbstractEventBus implements EventBus {
 
     @Override
     public CompletableFuture<Void> publish(@Nullable ProcessingContext context, @Nonnull List<EventMessage> events) {
-        List<? extends EventMessage> eventsWithContext = events
-                .stream()
-                .map(e -> spanFactory.createPublishEventSpan(e)
-                                     .runSupplier(() -> spanFactory.propagateContext(e)))
-                .collect(Collectors.toList());
-        List<MessageMonitor.MonitorCallback> ingested = eventsWithContext.stream()
-                                                                         .map(messageMonitor::onMessageIngested)
-                                                                         .collect(Collectors.toList());
-
         if (CurrentUnitOfWork.isStarted()) {
             LegacyUnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
             Assert.state(!unitOfWork.phase().isAfter(PREPARE_COMMIT),
@@ -130,73 +101,50 @@ public abstract class AbstractEventBus implements EventBus {
                          () -> "It is not allowed to publish events when the root Unit of Work has already been " +
                                  "committed.");
 
-            unitOfWork.afterCommit(u -> ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess));
-            unitOfWork.onRollback(uow -> ingested.forEach(
-                    message -> message.reportFailure(uow.getExecutionResult().getExceptionResult())
-            ));
-
-            eventsQueue(unitOfWork).addAll(eventsWithContext);
+            eventsQueue(unitOfWork).addAll(events);
         } else {
-            spanFactory.createCommitEventsSpan().run(() -> {
-                try {
-                    prepareCommit(intercept(eventsWithContext));
-                    commit(eventsWithContext);
-                    afterCommit(eventsWithContext);
-                    ingested.forEach(MessageMonitor.MonitorCallback::reportSuccess);
-                } catch (Exception e) {
-                    ingested.forEach(m -> m.reportFailure(e));
-                    throw e;
-                }
-            });
+            prepareCommit(events);
+            commit(events);
+            afterCommit(events);
         }
         return FutureUtils.emptyCompletedFuture();
     }
 
     private List<EventMessage> eventsQueue(LegacyUnitOfWork<?> unitOfWork) {
         return unitOfWork.getOrComputeResource(eventsKey, r -> {
-            Span commitSpan = spanFactory.createCommitEventsSpan();
             List<EventMessage> eventQueue = new ArrayList<>();
 
             unitOfWork.onPrepareCommit(u -> {
-                commitSpan.start();
-                try (SpanScope unused = commitSpan.makeCurrent()) {
-                    if (u.parent().isPresent() && !u.parent().get().phase().isAfter(PREPARE_COMMIT)) {
-                        eventsQueue(u.parent().get()).addAll(eventQueue);
-                    } else {
-                        int processedItems = eventQueue.size();
-                        doWithEvents(this::prepareCommit, intercept(eventQueue));
-                        // Make sure events published during publication prepare commit phase are also published
-                        while (processedItems < eventQueue.size()) {
-                            List<? extends EventMessage> newMessages =
-                                    intercept(eventQueue.subList(processedItems, eventQueue.size()));
-                            processedItems = eventQueue.size();
-                            doWithEvents(this::prepareCommit, newMessages);
-                        }
+                if (u.parent().isPresent() && !u.parent().get().phase().isAfter(PREPARE_COMMIT)) {
+                    eventsQueue(u.parent().get()).addAll(eventQueue);
+                } else {
+                    int processedItems = eventQueue.size();
+                    doWithEvents(this::prepareCommit, new ArrayList<>(eventQueue));
+                    // Make sure events published during publication prepare commit phase are also published
+                    while (processedItems < eventQueue.size()) {
+                        List<? extends EventMessage> newMessages = new ArrayList<>(
+                                eventQueue.subList(processedItems, eventQueue.size())
+                        );
+                        processedItems = eventQueue.size();
+                        doWithEvents(this::prepareCommit, newMessages);
                     }
                 }
             });
             unitOfWork.onCommit(u -> {
-                try (SpanScope unused = commitSpan.makeCurrent()) {
-                    if (u.parent().isPresent() && !u.root().phase().isAfter(COMMIT)) {
-                        u.root().onCommit(w -> doWithEvents(this::commit, eventQueue));
-                    } else {
-                        doWithEvents(this::commit, eventQueue);
-                    }
+                if (u.parent().isPresent() && !u.root().phase().isAfter(COMMIT)) {
+                    u.root().onCommit(w -> doWithEvents(this::commit, eventQueue));
+                } else {
+                    doWithEvents(this::commit, eventQueue);
                 }
             });
             unitOfWork.afterCommit(u -> {
-                try (SpanScope unused = commitSpan.makeCurrent()) {
-                    if (u.parent().isPresent() && !u.root().phase().isAfter(AFTER_COMMIT)) {
-                        u.root().afterCommit(w -> doWithEvents(this::afterCommit, eventQueue));
-                    } else {
-                        doWithEvents(this::afterCommit, eventQueue);
-                    }
+                if (u.parent().isPresent() && !u.root().phase().isAfter(AFTER_COMMIT)) {
+                    u.root().afterCommit(w -> doWithEvents(this::afterCommit, eventQueue));
+                } else {
+                    doWithEvents(this::afterCommit, eventQueue);
                 }
             });
-            unitOfWork.onCleanup(u -> {
-                u.resources().remove(eventsKey);
-                commitSpan.end();
-            });
+            unitOfWork.onCleanup(u -> u.resources().remove(eventsKey));
             return eventQueue;
         });
     }
@@ -230,31 +178,6 @@ public abstract class AbstractEventBus implements EventBus {
         }
     }
 
-    /**
-     * Invokes all the dispatch interceptors.
-     *
-     * @param events The original events being published
-     * @return The events to actually publish
-     */
-    protected List<? extends EventMessage> intercept(List<? extends EventMessage> events) {
-        List<EventMessage> preprocessedEvents = new ArrayList<>(events);
-        for (int i = 0; i < preprocessedEvents.size(); i++) {
-            try {
-                // TODO #3392 improve this, currently
-                preprocessedEvents.set(i, new DefaultMessageDispatchInterceptorChain<>(dispatchInterceptors)
-                        .proceed(preprocessedEvents.get(i), null)
-                        .first()
-                        .<EventMessage>cast()
-                        .asCompletableFuture()
-                        .exceptionally(exception -> null) // TODO #3392 validate this
-                        .thenApply(MessageStream.Entry::message)
-                        .get());
-            } catch (Exception e) {
-                throw new RuntimeException("Exception during message dispatch interception", e);
-            }
-        }
-        return preprocessedEvents.stream().filter(Objects::nonNull).toList();
-    }
 
     private void doWithEvents(Consumer<List<? extends EventMessage>> eventsConsumer,
                               List<? extends EventMessage> events) {
@@ -263,8 +186,7 @@ public abstract class AbstractEventBus implements EventBus {
 
     /**
      * Process given {@code events} while the Unit of Work root is preparing for commit. The default implementation
-     * signals the registered {@link MessageMonitor} that the given events are ingested and passes the events to each
-     * registered event processor.
+     * passes the events to each registered event processor.
      *
      * @param events Events to be published by this Event Bus
      */
@@ -297,42 +219,8 @@ public abstract class AbstractEventBus implements EventBus {
 
     /**
      * Abstract Builder class to instantiate {@link AbstractEventBus} implementations.
-     * <p>
-     * The {@link MessageMonitor} is defaulted to an {@link NoOpMessageMonitor} and the {@link EventBusSpanFactory}
-     * defaults to a {@link DefaultEventBusSpanFactory} backed by a {@link NoOpSpanFactory}.
      */
     public abstract static class Builder {
-
-        private MessageMonitor<? super EventMessage> messageMonitor = NoOpMessageMonitor.INSTANCE;
-        private EventBusSpanFactory spanFactory = DefaultEventBusSpanFactory
-                .builder().spanFactory(NoOpSpanFactory.INSTANCE).build();
-
-        /**
-         * Sets the {@link MessageMonitor} to monitor ingested {@link EventMessage}s. Defaults to a
-         * {@link NoOpMessageMonitor}.
-         *
-         * @param messageMonitor a {@link MessageMonitor} to monitor ingested {@link EventMessage}s
-         * @return the current Builder instance, for fluent interfacing
-         */
-        public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage> messageMonitor) {
-            assertNonNull(messageMonitor, "MessageMonitor may not be null");
-            this.messageMonitor = messageMonitor;
-            return this;
-        }
-
-        /**
-         * Sets the {@link SpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link DefaultEventBusSpanFactory} backed by a {@link NoOpSpanFactory} by default, which provides no tracing
-         * capabilities.
-         *
-         * @param spanFactory The {@link EventBusSpanFactory} implementation
-         * @return The current Builder instance, for fluent interfacing.
-         */
-        public Builder spanFactory(@Nonnull EventBusSpanFactory spanFactory) {
-            assertNonNull(spanFactory, "SpanFactory may not be null");
-            this.spanFactory = spanFactory;
-            return this;
-        }
 
         /**
          * Validates whether the fields contained in this Builder are set accordingly.
