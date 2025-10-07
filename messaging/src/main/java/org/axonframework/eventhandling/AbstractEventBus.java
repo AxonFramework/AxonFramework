@@ -95,6 +95,9 @@ public abstract class AbstractEventBus implements EventBus {
                 }
             });
 
+            // Clean up events resource on completion or error to free memory
+            context.doFinally(ctx -> ctx.removeResource(eventsKey));
+
             return queue;
         });
 
