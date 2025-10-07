@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.LegacyMessageSupportingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.test.AxonAssertionError;
@@ -102,7 +103,7 @@ public class EventValidator implements EventMessageHandler {
      */
     public void startRecording() {
         if (!recording) {
-            eventBus.subscribe(eventMessages -> eventMessages.forEach(m -> handleSync(m, new LegacyMessageSupportingContext(m))));
+            eventBus.subscribe((eventMessages, context) -> eventMessages.forEach(m -> handleSync(m, context == null ? new LegacyMessageSupportingContext(m) : Message.addToContext(context, m))));
             recording = true;
         }
         publishedEvents.clear();

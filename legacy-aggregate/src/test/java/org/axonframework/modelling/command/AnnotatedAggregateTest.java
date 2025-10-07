@@ -80,9 +80,9 @@ public class AnnotatedAggregateTest {
         assertNotNull(aggregate);
 
         InOrder inOrder = inOrder(eventBus);
-        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) x -> Event_1.class
+        inOrder.verify(eventBus).publish(null, argThat((ArgumentMatcher<EventMessage>) x -> Event_1.class
                 .equals(x.payloadType()) && ((Event_1) x.payload()).value == 1));
-        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) x -> Event_1.class
+        inOrder.verify(eventBus).publish(null, argThat((ArgumentMatcher<EventMessage>) x -> Event_1.class
                 .equals(x.payloadType()) && ((Event_1) x.payload()).value == 2));
     }
 
@@ -102,9 +102,9 @@ public class AnnotatedAggregateTest {
         assertNotNull(aggregate);
 
         InOrder inOrder = inOrder(eventBus);
-        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) x -> Event_1.class
+        inOrder.verify(eventBus).publish(null, argThat((ArgumentMatcher<EventMessage>) x -> Event_1.class
                 .equals(x.payloadType())));
-        inOrder.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) x -> Event_2.class
+        inOrder.verify(eventBus).publish(null, argThat((ArgumentMatcher<EventMessage>) x -> Event_2.class
                 .equals(x.payloadType())));
     }
 
@@ -139,13 +139,13 @@ public class AnnotatedAggregateTest {
         assertNotNull(aggregate);
 
         InOrder inOrderEvents = inOrder(eventBus);
-        inOrderEvents.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) x -> Event_1.class
+        inOrderEvents.verify(eventBus).publish(null, argThat((ArgumentMatcher<EventMessage>) x -> Event_1.class
                 .equals(x.payloadType())));
         if (applyConditional) {
-            inOrderEvents.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) x -> Event_2.class
+            inOrderEvents.verify(eventBus).publish(null, argThat((ArgumentMatcher<EventMessage>) x -> Event_2.class
                     .equals(x.payloadType())));
         }
-        inOrderEvents.verify(eventBus).publish(argThat((ArgumentMatcher<EventMessage>) x -> Event_3.class
+        inOrderEvents.verify(eventBus).publish(null, argThat((ArgumentMatcher<EventMessage>) x -> Event_3.class
                 .equals(x.payloadType())));
 
         InOrder inOrderSideEffect = inOrder(sideEffect);

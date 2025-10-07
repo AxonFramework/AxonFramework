@@ -93,7 +93,7 @@ class SagaCustomizeIntegrationTest {
                     CurrentUnitOfWork.get().onRollback(u -> tx.rollback());
                     CurrentUnitOfWork.get().onCommit(u -> tx.commit());
                     for (EchoEvent event : events) {
-                        eventBus.publish(asEventMessage(event));
+                        eventBus.publish(null, asEventMessage(event));
                     }
                 });
     }

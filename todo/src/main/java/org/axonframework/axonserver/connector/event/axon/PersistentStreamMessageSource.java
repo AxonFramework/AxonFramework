@@ -24,8 +24,11 @@ import org.axonframework.messaging.SubscribableEventSource;
 
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * A {@link SubscribableEventSource} that receives event from a persistent stream from Axon Server. The persistent
@@ -40,8 +43,8 @@ public class PersistentStreamMessageSource implements SubscribableEventSource {
     private final PersistentStreamConnection persistentStreamConnection;
     private final String name;
 
-    private Consumer<List<? extends EventMessage>> consumer = NO_OP_CONSUMER;
-    private static final Consumer<List<? extends EventMessage>> NO_OP_CONSUMER = events -> {
+    private BiConsumer<List<? extends EventMessage>, ProcessingContext> consumer = NO_OP_CONSUMER;
+    private static final BiConsumer<List<? extends EventMessage>, ProcessingContext> NO_OP_CONSUMER = (events, context) -> {
     };
 
     /**
@@ -92,11 +95,14 @@ public class PersistentStreamMessageSource implements SubscribableEventSource {
     }
 
     @Override
-    public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer) {
+    public Registration subscribe(
+            @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer
+    ) {
         synchronized (this) {
             boolean noConsumer = this.consumer.equals(NO_OP_CONSUMER);
             if (noConsumer) {
-                persistentStreamConnection.open(eventsBatchConsumer);
+                persistentStreamConnection.open(events -> eventsBatchConsumer.accept(events,
+                                                                                     null)); // todo: what with processing context here? Should be null?
                 this.consumer = eventsBatchConsumer;
             } else {
                 boolean sameConsumer = this.consumer.equals(eventsBatchConsumer);

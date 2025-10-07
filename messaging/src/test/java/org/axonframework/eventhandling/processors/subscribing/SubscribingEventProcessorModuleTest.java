@@ -161,7 +161,7 @@ class SubscribingEventProcessorModuleTest {
 
             // when
             EventMessage sampleEvent = EventTestUtils.asEventMessage("test-event");
-            eventBus.publish(sampleEvent);
+            eventBus.publish(null, sampleEvent);
 
             // then
             await().atMost(Duration.ofMillis(500))
@@ -239,7 +239,7 @@ class SubscribingEventProcessorModuleTest {
 
             // When publishing a String event
             EventMessage stringEvent = EventTestUtils.asEventMessage("test-event");
-            eventBus.publish(stringEvent);
+            eventBus.publish(null, stringEvent);
 
             // Then only component one handles it
             await().atMost(Duration.ofMillis(500))
@@ -256,7 +256,7 @@ class SubscribingEventProcessorModuleTest {
 
             // When publishing an Integer event
             EventMessage integerEvent = EventTestUtils.asEventMessage(42);
-            eventBus.publish(integerEvent);
+            eventBus.publish(null, integerEvent);
 
             // Then only component two handles it
             await().atMost(Duration.ofMillis(500))

@@ -19,9 +19,11 @@ package org.axonframework.messaging;
 import org.axonframework.common.Registration;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * Interface for a source of {@link EventMessage EventMessages} to which event processors can subscribe.
@@ -50,5 +52,5 @@ public interface SubscribableEventSource {
      * @return A {@link Registration} handle to unsubscribe the {@code eventsBatchConsumer}. When unsubscribed, it will
      * no longer receive events.
      */
-    Registration subscribe(@Nonnull Consumer<List<? extends EventMessage>> eventsBatchConsumer);
+    Registration subscribe(@Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer);
 }

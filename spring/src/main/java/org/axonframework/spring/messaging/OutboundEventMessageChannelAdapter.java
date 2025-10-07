@@ -19,6 +19,7 @@ package org.axonframework.spring.messaging;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableEventSource;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -101,7 +102,7 @@ public class OutboundEventMessageChannelAdapter implements InitializingBean {
      *
      * @param events the events to handle
      */
-    protected void handle(List<? extends EventMessage> events) {
+    protected void handle(List<? extends EventMessage> events, ProcessingContext context) {
         events.stream()
                 .filter(filter::test)
                 .forEach(event -> channel.send(transform(event)));
