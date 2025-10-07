@@ -61,7 +61,7 @@ class AbstractEventBusTest {
     class WithProcessingContext {
 
         @Test
-        void eventsAreQueuedAndPublishedDuringPrepareCommit() {
+        void eventsAreQueuedAndPublished() {
             // given
             EventMessage event = newEvent();
             UnitOfWork uow = unitOfWorkFactory.create();
