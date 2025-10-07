@@ -33,11 +33,11 @@ import java.util.Objects;
 public class MessageOriginProvider implements CorrelationDataProvider {
 
     /**
-     * The default {@link Message#metaData() metadata} key for the correlation identifier of a {@link Message}.
+     * The default {@link Message#metadata() metadata} key for the correlation identifier of a {@link Message}.
      */
     public static final String DEFAULT_CORRELATION_KEY = "correlationId";
     /**
-     * The default {@link Message#metaData() metadata} key for the trace identifier of a {@link Message}.
+     * The default {@link Message#metadata() metadata} key for the trace identifier of a {@link Message}.
      */
     public static final String DEFAULT_TRACE_KEY = "traceId";
 
@@ -55,7 +55,7 @@ public class MessageOriginProvider implements CorrelationDataProvider {
     /**
      * Initializes a {@code MessageOriginProvider} that uses the given {@code correlationKey}.
      *
-     * @param correlationKey The key used to store the identifier of a {@link Message} in the {@link Message#metaData()}
+     * @param correlationKey The key used to store the identifier of a {@link Message} in the {@link Message#metadata()}
      *                       of a resulting {@code Message}.
      * @param traceKey       The key used to store the identifier of the original {@link Message} giving rise to the
      *                       current {@code Message}.
