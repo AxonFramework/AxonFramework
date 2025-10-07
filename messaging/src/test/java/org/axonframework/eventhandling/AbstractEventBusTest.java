@@ -281,6 +281,38 @@ class AbstractEventBusTest {
             assertTrue(phaseCalls.contains("afterCommit-1"));
             assertTrue(phaseCalls.contains("afterCommit-0"));
         }
+
+        @Test
+        void publicationForbiddenDuringCommitPhase() {
+            // given
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when - try to publish during commit phase
+            uow.runOnCommit(ctx -> {
+                assertThrows(IllegalStateException.class, () -> testSubject.publish(ctx, newEvent()));
+            });
+            CompletableFuture<Void> result = uow.execute();
+
+            // then
+            assertTrue(result.isDone());
+            assertFalse(result.isCompletedExceptionally());
+        }
+
+        @Test
+        void publicationForbiddenDuringAfterCommitPhase() {
+            // given
+            UnitOfWork uow = unitOfWorkFactory.create();
+
+            // when - try to publish during afterCommit phase
+            uow.runOnAfterCommit(ctx -> {
+                assertThrows(IllegalStateException.class, () -> testSubject.publish(ctx, newEvent()));
+            });
+            CompletableFuture<Void> result = uow.execute();
+
+            // then
+            assertTrue(result.isDone());
+            assertFalse(result.isCompletedExceptionally());
+        }
     }
 
     private static EventMessage newEvent() {

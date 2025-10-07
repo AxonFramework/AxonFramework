@@ -70,6 +70,14 @@ public abstract class AbstractEventBus implements EventBus {
             return FutureUtils.emptyCompletedFuture();
         }
 
+        // Check if we're already in or past the commit phase - publishing is forbidden at this point
+        if (context.isCommitted()) {
+            throw new IllegalStateException(
+                    "It is not allowed to publish events when the ProcessingContext has already been committed. "
+                    + "Please start a new ProcessingContext before publishing events."
+            );
+        }
+
         // Register lifecycle handlers and create event queue on first publish in this context
         List<EventMessage> eventQueue = context.computeResourceIfAbsent(eventsKey, () -> {
             ArrayList<EventMessage> queue = new ArrayList<>();
