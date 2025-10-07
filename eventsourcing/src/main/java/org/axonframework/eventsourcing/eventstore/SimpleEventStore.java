@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.FutureUtils;
+import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.processors.streaming.token.TrackingToken;
@@ -26,12 +27,18 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTrans
 import org.axonframework.eventstreaming.StreamingCondition;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.SubscribableEventSource;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.BiConsumer;
 
 /**
  * Simple implementation of the {@link EventStore}.
@@ -41,12 +48,15 @@ import java.util.concurrent.CompletableFuture;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public class SimpleEventStore implements EventStore { // SubscribableEventSource { // todo: wrap EventStore inside impl of SubscribableEventSource
+public class SimpleEventStore implements EventStore, SubscribableEventSource {
+
+    private static final Logger logger = LoggerFactory.getLogger(SimpleEventStore.class);
 
     private final EventStorageEngine eventStorageEngine;
     private final TagResolver tagResolver;
 
     private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey;
+    private final Set<BiConsumer<List<? extends EventMessage>, ProcessingContext>> eventSubscribers = new CopyOnWriteArraySet<>();
 
     /**
      * Constructs a {@code SimpleEventStore} using the given {@code eventStorageEngine} to start
@@ -87,11 +97,15 @@ public class SimpleEventStore implements EventStore { // SubscribableEventSource
             return eventStorageEngine.appendEvents(none, context, taggedEvents)
                                      .thenApply(SimpleEventStore::castTransaction)
                                      .thenApply(tx -> tx.commit(context).thenApply(v -> tx.afterCommit(v, context)))
-                                     .thenApply(marker -> null);
+                                     .thenApply(marker -> {
+                                         notifySubscribers(events, context);
+                                         return null;
+                                     });
         } else {
             // Return a completed future since we have an active context.
             // The user will wait within the context's lifecycle anyhow.
             appendToTransaction(context, events);
+            registerSubscriberNotification(context, events);
             return FutureUtils.emptyCompletedFuture();
         }
     }
@@ -106,6 +120,50 @@ public class SimpleEventStore implements EventStore { // SubscribableEventSource
         for (EventMessage event : events) {
             transaction.appendEvent(event);
         }
+    }
+
+    private void registerSubscriberNotification(ProcessingContext context, List<EventMessage> events) {
+        ResourceKey<Boolean> notificationRegisteredKey = ResourceKey.withLabel("subscriberNotificationRegistered");
+        context.computeResourceIfAbsent(
+                notificationRegisteredKey,
+                () -> {
+                    context.onAfterCommit(ctx -> {
+                        notifySubscribers(events, ctx);
+                        return FutureUtils.emptyCompletedFuture();
+                    });
+                    return true;
+                }
+        );
+    }
+
+    private void notifySubscribers(List<EventMessage> events, ProcessingContext context) {
+        if (!eventSubscribers.isEmpty()) {
+            eventSubscribers.forEach(subscriber -> subscriber.accept(events, context));
+        }
+    }
+
+    @Override
+    public Registration subscribe(
+            @Nonnull BiConsumer<List<? extends EventMessage>, ProcessingContext> eventsBatchConsumer
+    ) {
+        if (this.eventSubscribers.add(eventsBatchConsumer)) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Event subscriber [{}] subscribed successfully", eventsBatchConsumer);
+            }
+        } else {
+            logger.info("Event subscriber [{}] not added. It was already subscribed", eventsBatchConsumer);
+        }
+        return () -> {
+            if (eventSubscribers.remove(eventsBatchConsumer)) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Event subscriber {} unsubscribed successfully", eventsBatchConsumer);
+                }
+                return true;
+            } else {
+                logger.info("Event subscriber {} not removed. It was already unsubscribed", eventsBatchConsumer);
+                return false;
+            }
+        };
     }
 
     @Override
@@ -132,6 +190,7 @@ public class SimpleEventStore implements EventStore { // SubscribableEventSource
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStorageEngine", eventStorageEngine);
         descriptor.describeProperty("tagResolver", tagResolver);
+        descriptor.describeProperty("eventSubscribers", eventSubscribers);
     }
 
     @SuppressWarnings("unchecked")

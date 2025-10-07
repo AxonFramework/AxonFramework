@@ -288,6 +288,114 @@ class SimpleEventStoreTest {
         }
 
     }
+
+    @Nested
+    class Subscription {
+
+        @Test
+        void subscribeAddsConsumerAndReturnsRegistration() {
+            // given
+            var mockConsumer = mock(java.util.function.BiConsumer.class);
+
+            // when
+            var registration = testSubject.subscribe(mockConsumer);
+
+            // then
+            assertNotNull(registration);
+            assertTrue(registration.cancel());
+            assertFalse(registration.cancel()); // Second cancellation should return false
+        }
+
+        @Test
+        void subscribingSameConsumerTwiceOnlyAddsItOnce() {
+            // given
+            var mockConsumer = mock(java.util.function.BiConsumer.class);
+
+            // when
+            var registration1 = testSubject.subscribe(mockConsumer);
+            var registration2 = testSubject.subscribe(mockConsumer);
+
+            // then
+            assertNotNull(registration1);
+            assertNotNull(registration2);
+            assertTrue(registration1.cancel());
+            assertFalse(registration2.cancel()); // Already removed by registration1
+        }
+
+        @Test
+        void subscribersAreNotifiedWhenEventsArePublishedWithoutContext() {
+            // given
+            EventStorageEngine.AppendTransaction<String> mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit(any())).thenReturn(completedFuture("anything"));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class)))
+                    .thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), isNull(), anyList()))
+                    .thenReturn(completedFuture(mockAppendTransaction));
+            when(tagResolver.resolve(any())).thenReturn(Set.of());
+
+            var mockSubscriber = mock(java.util.function.BiConsumer.class);
+            testSubject.subscribe(mockSubscriber);
+            EventMessage testEvent = createEvent(0);
+
+            // when
+            CompletableFuture<Void> result = testSubject.publish(null, testEvent);
+
+            // then
+            awaitSuccessfulCompletion(result);
+            verify(mockSubscriber).accept(eq(List.of(testEvent)), isNull());
+        }
+
+        @Test
+        void subscribersAreNotifiedWhenEventsArePublishedWithContext() {
+            // given
+            EventStorageEngine.AppendTransaction<?> mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit(any(ProcessingContext.class))).thenReturn(completedFuture(null));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class)))
+                    .thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), any(ProcessingContext.class), anyList()))
+                    .thenReturn(completedFuture(mockAppendTransaction));
+            when(tagResolver.resolve(any())).thenReturn(Set.of());
+
+            var mockSubscriber = mock(java.util.function.BiConsumer.class);
+            testSubject.subscribe(mockSubscriber);
+            EventMessage testEventZero = createEvent(0);
+            EventMessage testEventOne = createEvent(1);
+
+            // when
+            UnitOfWork uow = aUnitOfWork();
+            uow.onPreInvocation(context -> testSubject.publish(context, testEventZero, testEventOne));
+
+            awaitSuccessfulCompletion(uow.execute());
+
+            // then
+            verify(mockSubscriber).accept(eq(List.of(testEventZero, testEventOne)), any(ProcessingContext.class));
+        }
+
+        @Test
+        void unsubscribedConsumersAreNotNotified() {
+            // given
+            EventStorageEngine.AppendTransaction<String> mockAppendTransaction = mock();
+            when(mockAppendTransaction.commit(any())).thenReturn(completedFuture("anything"));
+            when(mockAppendTransaction.afterCommit(any(), any(ProcessingContext.class)))
+                    .thenReturn(completedFuture(mock(ConsistencyMarker.class)));
+            when(mockStorageEngine.appendEvents(any(), isNull(), anyList()))
+                    .thenReturn(completedFuture(mockAppendTransaction));
+            when(tagResolver.resolve(any())).thenReturn(Set.of());
+
+            var mockSubscriber = mock(java.util.function.BiConsumer.class);
+            var registration = testSubject.subscribe(mockSubscriber);
+            EventMessage testEvent = createEvent(0);
+
+            // when
+            registration.cancel();
+            CompletableFuture<Void> result = testSubject.publish(null, testEvent);
+
+            // then
+            awaitSuccessfulCompletion(result);
+            verifyNoInteractions(mockSubscriber);
+        }
+    }
+
     @Test
     void describeToDescribesPropertiesForEventStorageEngineAndTheContext() {
         // given
