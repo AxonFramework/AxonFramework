@@ -72,11 +72,8 @@ public abstract class AbstractEventBus implements EventBus {
             return FutureUtils.emptyCompletedFuture();
         }
 
-        // Check if we've already registered handlers for this context
-        boolean registered = context.containsResource(handlersRegistered);
-        if (!registered) {
-            // First time publishing in this context, register lifecycle handlers
-            context.putResource(handlersRegistered, Boolean.TRUE);
+        // Register lifecycle handlers on first publish in this context
+        context.computeResourceIfAbsent(handlersRegistered, () -> {
             context.putResource(eventsKey, new ArrayList<>());
 
             context.runOnPrepareCommit(ctx -> {
@@ -99,9 +96,10 @@ public abstract class AbstractEventBus implements EventBus {
                     processEventsInPhase(queuedEvents, ctx, this::afterCommit);
                 }
             });
-        }
 
-        // Add events to the queue
+            return Boolean.TRUE;
+        });
+
         List<EventMessage> eventQueue = context.getResource(eventsKey);
         if (eventQueue != null) {
             eventQueue.addAll(events);
@@ -117,9 +115,11 @@ public abstract class AbstractEventBus implements EventBus {
      * @param context      The processing context
      * @param processor    The processor to invoke for the events
      */
-    private void processEventsInPhase(List<EventMessage> queuedEvents,
-                                      ProcessingContext context,
-                                      BiConsumer<List<? extends EventMessage>, ProcessingContext> processor) {
+    private void processEventsInPhase(
+            List<EventMessage> queuedEvents,
+            ProcessingContext context,
+            BiConsumer<List<? extends EventMessage>, ProcessingContext> processor
+    ) {
         int processedItems = queuedEvents.size();
         // Create a copy to avoid concurrent modification during event publication
         processor.accept(new ArrayList<>(queuedEvents), context);
