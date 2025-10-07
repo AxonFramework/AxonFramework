@@ -27,8 +27,6 @@ import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -37,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test class validating the {@link AbstractEventBus}.
@@ -73,9 +71,9 @@ class AbstractEventBusTest {
             CompletableFuture<Void> result = uow.execute();
 
             // then
-            assertTrue(result.isDone());
-            assertFalse(result.isCompletedExceptionally());
-            assertEquals(Collections.singletonList(event), testSubject.committedEvents);
+            assertThat(result).isDone();
+            assertThat(result).isNotCompletedExceptionally();
+            assertThat(testSubject.committedEvents).containsExactly(event);
         }
 
         @Test
@@ -108,7 +106,7 @@ class AbstractEventBusTest {
             uow.execute().join();
 
             // then
-            assertEquals(Arrays.asList("prepareCommit", "commit", "afterCommit"), phaseCalls);
+            assertThat(phaseCalls).containsExactly("prepareCommit", "commit", "afterCommit");
         }
 
         @Test
@@ -147,9 +145,9 @@ class AbstractEventBusTest {
             uow.execute().join();
 
             // then - each phase should be called exactly once
-            assertEquals(1, phaseCalls.stream().filter(s -> s.equals("prepareCommit")).count());
-            assertEquals(1, phaseCalls.stream().filter(s -> s.equals("commit")).count());
-            assertEquals(1, phaseCalls.stream().filter(s -> s.equals("afterCommit")).count());
+            assertThat(phaseCalls.stream().filter(s -> s.equals("prepareCommit")).count()).isEqualTo(1);
+            assertThat(phaseCalls.stream().filter(s -> s.equals("commit")).count()).isEqualTo(1);
+            assertThat(phaseCalls.stream().filter(s -> s.equals("afterCommit")).count()).isEqualTo(1);
         }
 
         @Test
@@ -167,7 +165,7 @@ class AbstractEventBusTest {
             uow.execute().join();
 
             // then
-            assertEquals(Arrays.asList(eventA, eventB), testSubject.committedEvents);
+            assertThat(testSubject.committedEvents).containsExactly(eventA, eventB);
         }
 
         @Test
@@ -181,9 +179,8 @@ class AbstractEventBusTest {
 
             // then
             // Events should be: 2, 1, 0 (each prepareCommit publishes N-1)
-            assertEquals(
-                    Arrays.asList(numberedEvent(2), numberedEvent(1), numberedEvent(0)),
-                    testSubject.committedEvents
+            assertThat(testSubject.committedEvents).containsExactly(
+                    numberedEvent(2), numberedEvent(1), numberedEvent(0)
             );
         }
 
@@ -196,7 +193,7 @@ class AbstractEventBusTest {
             testSubject.publish(null, event).join();
 
             // then
-            assertEquals(Collections.singletonList(event), testSubject.committedEvents);
+            assertThat(testSubject.committedEvents).containsExactly(event);
         }
 
         @Test
@@ -215,7 +212,7 @@ class AbstractEventBusTest {
 
             // then
             // Both events should be queued and published together
-            assertEquals(Arrays.asList(event1, event2), testSubject.committedEvents);
+            assertThat(testSubject.committedEvents).containsExactly(event1, event2);
         }
 
         @Test
@@ -229,8 +226,8 @@ class AbstractEventBusTest {
             CompletableFuture<Void> result = uow.execute();
 
             // then
-            assertTrue(result.isCompletedExceptionally());
-            assertTrue(failingBus.committedEvents.isEmpty());
+            assertThat(result).isCompletedExceptionally();
+            assertThat(failingBus.committedEvents).isEmpty();
         }
 
         @Test
@@ -271,15 +268,11 @@ class AbstractEventBusTest {
             // then
             // Events: 2, 1, 0 (each prepareCommit publishes N-1)
             // Each event should go through all three phases
-            assertTrue(phaseCalls.contains("prepareCommit-2"));
-            assertTrue(phaseCalls.contains("prepareCommit-1"));
-            assertTrue(phaseCalls.contains("prepareCommit-0"));
-            assertTrue(phaseCalls.contains("commit-2"));
-            assertTrue(phaseCalls.contains("commit-1"));
-            assertTrue(phaseCalls.contains("commit-0"));
-            assertTrue(phaseCalls.contains("afterCommit-2"));
-            assertTrue(phaseCalls.contains("afterCommit-1"));
-            assertTrue(phaseCalls.contains("afterCommit-0"));
+            assertThat(phaseCalls).contains(
+                    "prepareCommit-2", "prepareCommit-1", "prepareCommit-0",
+                    "commit-2", "commit-1", "commit-0",
+                    "afterCommit-2", "afterCommit-1", "afterCommit-0"
+            );
         }
 
         @Test
@@ -292,8 +285,8 @@ class AbstractEventBusTest {
             CompletableFuture<Void> result = uow.execute();
 
             // then
-            assertTrue(result.isDone());
-            assertTrue(result.isCompletedExceptionally());
+            assertThat(result).isDone();
+            assertThat(result).isCompletedExceptionally();
         }
 
         @Test
@@ -306,8 +299,8 @@ class AbstractEventBusTest {
             CompletableFuture<Void> result = uow.execute();
 
             // then
-            assertTrue(result.isDone());
-            assertTrue(result.isCompletedExceptionally());
+            assertThat(result).isDone();
+            assertThat(result).isCompletedExceptionally();
         }
     }
 
