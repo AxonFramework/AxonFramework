@@ -72,10 +72,12 @@ public class SubscribingEventProcessor implements EventProcessor {
      *     <li>A {@link SubscribableMessageSource}.</li>
      * </ul>
      * If any of these is not present or does not comply to the requirements an {@link AxonConfigurationException} is thrown.
-
-     * @param name A {@link String} defining this {@link EventProcessor} instance.
-     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual {@link EventMessage}s.
-     * @param configuration The {@link SubscribingEventProcessorConfiguration} used to configure a {@code SubscribingEventProcessor} instance.
+     *
+     * @param name                    A {@link String} defining this {@link EventProcessor} instance.
+     * @param eventHandlingComponents The {@link EventHandlingComponent}s which will handle all the individual
+     *                                {@link EventMessage}s.
+     * @param configuration           The {@link SubscribingEventProcessorConfiguration} used to configure a
+     *                                {@code SubscribingEventProcessor} instance.
      */
     public SubscribingEventProcessor(
             @Nonnull String name,
@@ -151,13 +153,13 @@ public class SubscribingEventProcessor implements EventProcessor {
         return eventHandlingComponents.handle(events, context)
                                       .onErrorContinue(ex -> {
                                           try {
-                                              errorHandler.handleError(new ErrorContext(name, ex, events));
+                                              errorHandler.handleError(new ErrorContext(name, ex, events, context));
                                           } catch (RuntimeException re) {
                                               return MessageStream.failed(re);
                                           } catch (Exception e) {
                                               return MessageStream.failed(new EventProcessingException(
-                                                      "Exception occurred while processing events",
-                                                      e));
+                                                      "Exception occurred while processing events", e
+                                              ));
                                           }
                                           return MessageStream.empty().cast();
                                       })

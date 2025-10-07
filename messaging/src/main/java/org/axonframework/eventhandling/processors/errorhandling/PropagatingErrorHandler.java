@@ -20,9 +20,10 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.processors.EventProcessingException;
 
 /**
- * Singleton ErrorHandler implementation that does not do anything.
+ * An {@link ErrorHandler} implementation that rethrows the {@link ErrorContext#error() ErrorContext exception}.
  *
  * @author Rene de Waele
+ * @since 3.0.0
  */
 public enum PropagatingErrorHandler implements ErrorHandler {
 
@@ -32,9 +33,9 @@ public enum PropagatingErrorHandler implements ErrorHandler {
     INSTANCE;
 
     /**
-     * Singleton instance of a {@link PropagatingErrorHandler}.
+     * Singleton instance of a {@code PropagatingErrorHandler}.
      *
-     * @return the singleton instance of {@link PropagatingErrorHandler}
+     * @return The singleton instance of {@code PropagatingErrorHandler}
      */
     public static PropagatingErrorHandler instance() {
         return INSTANCE;
@@ -48,7 +49,7 @@ public enum PropagatingErrorHandler implements ErrorHandler {
         } else if (error instanceof Exception) {
             throw (Exception) error;
         } else {
-            throw new EventProcessingException("An error occurred while handling an event", error);
+            throw new EventProcessingException("An error occurred while handling an event.", error);
         }
     }
 }

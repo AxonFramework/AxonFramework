@@ -353,15 +353,14 @@ public class PooledStreamingEventProcessor implements StreamingEventProcessor {
         return eventHandlingComponents.handle(events, context)
                                       .onErrorContinue(ex -> {
                                           try {
-                                              configuration.errorHandler().handleError(new ErrorContext(name,
-                                                                                                        ex,
-                                                                                                        events));
+                                              configuration.errorHandler()
+                                                           .handleError(new ErrorContext(name, ex, events, context));
                                           } catch (RuntimeException re) {
                                               return MessageStream.failed(re);
                                           } catch (Exception e) {
                                               return MessageStream.failed(new EventProcessingException(
-                                                      "Exception occurred while processing events",
-                                                      e));
+                                                      "Exception occurred while processing events", e
+                                              ));
                                           }
                                           return MessageStream.empty().cast();
                                       })
