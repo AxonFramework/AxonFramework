@@ -245,7 +245,7 @@ public class JdbcAutoConfigurationTest {
 
         @Bean
         public EventBus eventBus() {
-            return SimpleEventBus.builder().build();
+            return new SimpleEventBus();
         }
     }
 }
